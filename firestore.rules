@@ -23,6 +23,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /menuItems/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /products/{productId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -76,6 +86,10 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /whatsapp_logs/{logId} {
+      allow read, write: if isAdmin();
     }
 
     match /test/connection {

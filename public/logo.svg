@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Importing Outfit and Space Grotesk for the exact modern, geometric look -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;family=Space+Grotesk:wght@700;900&amp;display=swap');
+      
+      .logo-3 {
+        font-family: 'Outfit', 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+      }
+      
+      .logo-text {
+        font-family: 'Outfit', 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+      }
+    </style>
+
+    <!-- Gradients matching the user's attachment -->
+    <!-- 3D Digit Gradient: Deep Violet to Hotline Pink -->
+    <linearGradient id="grad3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4c0071" />
+      <stop offset="40%" stop-color="#ab007b" />
+      <stop offset="100%" stop-color="#ff007f" />
+    </linearGradient>
+
+    <!-- Impossible Triangle Bar 1: Cyan to Indigo -->
+    <linearGradient id="gradBar1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="60%" stop-color="#4facfe" />
+      <stop offset="100%" stop-color="#6f00ff" />
+    </linearGradient>
+
+    <!-- Impossible Triangle Bar 2: Indigo to Deep Pink -->
+    <linearGradient id="gradBar2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6f00ff" />
+      <stop offset="60%" stop-color="#b600ff" />
+      <stop offset="100%" stop-color="#ff007f" />
+    </linearGradient>
+
+    <!-- Impossible Triangle Bar 3: Deep Pink to Cyan -->
+    <linearGradient id="gradBar3" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff007f" />
+      <stop offset="60%" stop-color="#ab007b" />
+      <stop offset="100%" stop-color="#00f2fe" />
+    </linearGradient>
+
+    <!-- Text Fill Gradient or Solid -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#030303" />
+      <stop offset="100%" stop-color="#141414" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Shadow for Logo Mark -->
+  <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+    <feDropShadow dx="2" dy="8" stdDeviation="6" flood-color="#6f00ff" flood-opacity="0.12" />
+  </filter>
+
+  <g filter="url(#logoShadow)">
+    <!-- THE STYLIZED "3" MONOGRAM (Left) -->
+    <text x="60" y="295" font-size="285" fill="url(#grad3)" class="logo-3" text-anchor="start">3</text>
+
+    <!-- THE IMPOSSIBLE PENROSE TRIANGLE "D" (Right, Pointing Right) -->
+    <!-- Bar 1 (Upper-Right Face: Cyan to Blue/Indigo) -->
+    <path d="M 245,100 L 452,220 L 417,240 L 285,163 L 285,316 L 245,293 Z" fill="url(#gradBar1)" />
+
+    <!-- Bar 2 (Bottom-Left Face: Indigo to Purple/Pink) -->
+    <path d="M 245,293 L 285,316 L 285,214 L 417,291 L 452,220 L 245,340 Z" fill="url(#gradBar2)" />
+
+    <!-- Bar 3 (Left-Vertical Face Inner Depth: Purple/Pink to Cyan/Blue) -->
+    <path d="M 245,340 L 245,100 L 285,123 L 285,214 L 417,291 L 382,311 Z" fill="url(#gradBar3)" />
+  </g>
+
+  <!-- BRAND NAME "GALAXY" UNDERNEATH WITH SPECIAL CUSTOM "A" LETTERS -->
+  <!-- We write each letter manually for perfect precision and the unique custom pink star/delta wing crossbars -->
+  <g class="logo-text" font-size="52" fill="#050505">
+    <!-- G -->
+    <text x="63" y="420" text-anchor="middle">G</text>
+
+    <!-- CUSTOM A (First) -->
+    <!-- Left Leg -->
+    <path d="M 111,422 L 131,373 L 138,373 L 138,422 Z" fill="#050505" />
+    <!-- Right Leg -->
+    <path d="M 137,373 L 144,373 L 164,422 L 152,422 L 141,392 Z" fill="#050505" />
+    <!-- Pink Space Star/Arrow Crossbar -->
+    <path d="M 138,389 L 131,399 L 138,396 L 145,399 Z" fill="#ff007f" />
+    <circle cx="138" cy="393" r="1.5" fill="#ff007f" />
+
+    <!-- L -->
+    <text x="204" y="420" text-anchor="middle">L</text>
+
+    <!-- CUSTOM A (Second) -->
+    <!-- Left Leg -->
+    <path d="M 241,422 L 261,373 L 268,373 L 268,422 Z" fill="#050505" />
+    <!-- Right Leg -->
+    <path d="M 267,373 L 274,373 L 294,422 L 282,422 L 271,392 Z" fill="#050505" />
+    <!-- Pink Space Star/Arrow Crossbar -->
+    <path d="M 268,389 L 261,399 L 268,396 L 275,399 Z" fill="#ff007f" />
+    <circle cx="268" cy="393" r="1.5" fill="#ff007f" />
+
+    <!-- X -->
+    <text x="345" y="420" text-anchor="middle">X</text>
+
+    <!-- Y -->
+    <text x="419" y="420" text-anchor="middle">Y</text>
+  </g>
+</svg>

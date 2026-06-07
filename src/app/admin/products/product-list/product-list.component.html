@@ -1,0 +1,72 @@
+<div class="space-y-8 animate-fadeIn">
+  <app-admin-page-header 
+    title="Catalog Registry"
+    description="Program and configure inventory assets, dealer overrides, and specifications."
+  >
+    <a routerLink="/admin/products/create" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer decoration-none">
+      Register SKU
+    </a>
+  </app-admin-page-header>
+
+  <div class="flex items-center justify-between gap-4">
+    <app-admin-search-filter
+      placeholder="Search catalog by name, sku..."
+      [value]="searchQuery()"
+      (search)="onSearch($event)"
+    ></app-admin-search-filter>
+  </div>
+
+  <app-admin-data-table [headers]="headers">
+    @for (p of filteredProducts(); track p.id) {
+      <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors">
+        <td class="py-4">
+          <div class="flex items-center gap-3 cursor-pointer" (click)="viewProductDetails(p.id)">
+            <img [src]="p.images?.[0] || 'https://picsum.photos/100/100'" alt="Product thumbnail" class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800" referrerpolicy="no-referrer">
+            <div>
+              <p class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors">{{ p.name }}</p>
+              <p class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase mt-0.5">{{ p.brand }} alliance</p>
+            </div>
+          </div>
+        </td>
+        <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ p.category_id }}</td>
+        <td class="py-4 font-mono text-zinc-500 text-[10px] uppercase">{{ p.sku }}</td>
+        <td class="py-4">
+          <span [class]="p.stock > 10 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase select-none">
+            {{ p.stock }} units
+          </span>
+        </td>
+        <td class="py-4 font-mono font-bold">₹{{ p.sale_price | number }}</td>
+        <td class="py-4 font-mono text-emerald-500 font-bold">₹{{ p.dealer_price | number }}</td>
+        <td class="py-4 text-right">
+          <div class="inline-flex gap-2">
+            <button (click)="viewProductDetails(p.id)" class="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer border-none bg-none">
+              <mat-icon class="text-base">visibility</mat-icon>
+            </button>
+            <button (click)="editProduct(p.id)" class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer border-none bg-none">
+              <mat-icon class="text-base">edit</mat-icon>
+            </button>
+            <button (click)="openDeleteDialog(p.id, $event)" class="text-red-400 hover:text-red-600 p-1 cursor-pointer border-none bg-none">
+              <mat-icon class="text-base">delete_outline</mat-icon>
+            </button>
+          </div>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="7" class="py-8 text-center text-zinc-400 font-sans font-medium uppercase tracking-wide">
+          No matches found in catalog.
+        </td>
+      </tr>
+    }
+  </app-admin-data-table>
+
+  <!-- Delete Dialog -->
+  <app-admin-confirmation-dialog
+    title="Delete Asset"
+    message="This process is irreversible. Are you sure you want to delete this catalogue asset?"
+    confirmText="Delete"
+    [isOpen]="isDeleteDialogOpen()"
+    (confirm)="confirmDelete()"
+    (cancel)="closeDeleteDialog()"
+  ></app-admin-confirmation-dialog>
+</div>

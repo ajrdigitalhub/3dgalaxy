@@ -122,21 +122,26 @@ export class Products {
   getIcon(catId: string): string {
     const icons: Record<string, string> = {
       '3d-printers': 'precision_manufacturing',
-      'fdm-printers': 'layers',
-      'resin-printers': 'opacity',
-      'filaments': 'grain',
-      'pla-filaments': 'eco',
-      'abs-filaments': 'science',
-      'resins': 'water_drop',
-      'scanners': 'scanner',
-      '3d-scanners': 'document_scanner',
-      'spare-parts': 'settings',
-      'cat-1': 'precision_manufacturing',
-      'cat-2': 'grain',
-      'cat-3': 'science',
-      'cat-4': 'settings'
+      'materials': 'grain',
+      '3d-pens': 'gesture',
+      'scanners': 'document_scanner',
+      'laser-engravers': 'grain',
+      'stem-kits': 'school',
+      'spare-parts': 'build',
+      'brahma-farm': 'hub',
+      'fdm': 'layers',
+      'fdm-multicolor': 'palette',
+      'resin': 'opacity',
+      'diy': 'hardware',
+      'semi-assembled': 'construction',
+      'assembled': 'check_circle'
     };
     return icons[catId] || 'category';
+  }
+
+  getCategoryName(id: string): string {
+    const cat = this.ds.categories().find(c => c.id === id);
+    return cat ? cat.name : '';
   }
 
   constructor() {

@@ -1,0 +1,258 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+// User & Access Control
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  roleId    String
+  role      Role       @relation(fields: [roleId], references: [id])
+  status    String     @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // ADMIN, MANAGER, DEALER, CUSTOMER
+  permissions Json     // List of permitted route action/permission keys
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+// Self-referencing unlimited hierarchy Catalog Categories
+model Category {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  image       String?
+  description String?
+  parentId    String?
+  parent      Category?    @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[]   @relation("CategoryHierarchy")
+  products    Product[]
+  menuItems   MenuItem[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Brand Partnerships
+model Brand {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  logo        String?    // Logo image URL
+  banner      String?    // Campaign banner URL
+  description String?
+  products    Product[]
+  menuItems   MenuItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Products with Custom Variant options, 3D assets & SEO metadata
+model Product {
+  id             String           @id @default(uuid())
+  name           String
+  slug           String           @unique
+  sku            String           @unique
+  description    String?
+  mrp            Float
+  salePrice      Float
+  dealerPrice    Float
+  stock          Int              @default(0)
+  categoryId     String
+  category       Category         @relation(fields: [categoryId], references: [id])
+  brandId        String
+  brand          Brand            @relation(fields: [brandId], references: [id])
+  is360Supported Boolean          @default(false)
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?          // Comma-separated tags
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  variants       ProductVariant[]
+  images         ProductImage[]
+  orderItems     OrderItem[]
+  wishlistItems  WishlistItem[]
+  reviews        Review[]
+}
+
+model ProductVariant {
+  id        String      @id @default(uuid())
+  productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String      // e.g. "With AMS Combo", "No AMS Standard"
+  price     Float
+  stock     Int         @default(0)
+  sku       String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  orderItem OrderItem[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Storefront Custom Layout Builder Model
+model HomepageSection {
+  id        String   @id @default(uuid())
+  name      String   // e.g. "Main Hero Carousel"
+  type      String   // HERO_CAROUSEL, FEATURED_PRODUCTS, BRAND_SPOTLIGHT, TESTIMONIALS
+  sequence  Int      @default(0)
+  isVisible Boolean  @default(true)
+  content   Json     // Layout specific JSON configurations
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Dynamic Header Megamenu builder
+model MenuItem {
+  id         String    @id @default(uuid())
+  label      String
+  url        String?
+  parentId   String?
+  parent     MenuItem? @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children   MenuItem[] @relation("MenuHierarchy")
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brandId    String?
+  brand      Brand?    @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// Storefront Global Visual Theme Customization
+model ThemeSettings {
+  id             String   @id @default("global-settings")
+  logo           String?
+  favicon        String?
+  primaryColor   String   @default("#d65108")
+  secondaryColor String   @default("#1e3a8a")
+  typography     String   @default("Inter")
+  headerConfig   Json     // Links, notification bars
+  footerConfig   Json     // Copyright details, social profiles
+  homepageConfig Json     // Active banner indices, structure presets
+  updatedAt      DateTime @updatedAt
+}
+
+// Operations & Core Order Flow
+model Order {
+  id              String      @id @default(uuid())
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  orderNumber     String      @unique
+  totalAmount     Float
+  status          String      @default("PENDING") // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+  paymentStatus   String      @default("UNPAID") // UNPAID, PAID, REFUNDED
+  shipmentCarrier String?
+  trackingNumber  String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String          @id @default(uuid())
+  orderId   String
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product         @relation(fields: [productId], references: [id])
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity  Int
+  price     Float
+  createdAt DateTime        @default(now())
+}
+
+// B2B Accounts & Client Portals
+model Customer {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  phone         String?
+  company       String?
+  tier          String         @default("REGULAR") // REGULAR, DEALER, WHOLESALE
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  addresses     Address[]
+  orders        Order[]
+  wishlistItems WishlistItem[]
+  reviews       Review[]
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  customerId   String
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type         String   @default("SHIPPING") // BILLING, SHIPPING
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zipCode      String
+  country      String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model WhatsappLog {
+  id              String   @id @default(uuid())
+  recipientNumber String
+  messageContent  String
+  status          String   // SENT, FAILED
+  reason          String?
+  templateName    String?
+  parameters      Json?
+  createdAt       DateTime @default(now())
+}

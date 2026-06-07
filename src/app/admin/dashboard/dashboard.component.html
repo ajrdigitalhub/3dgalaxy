@@ -1,0 +1,87 @@
+<div class="space-y-8 animate-fadeIn">
+  <app-admin-page-header 
+    title="Overview Dashboard"
+    description="Real-time status analysis of physical telemetry, inventory, and sales streams."
+  >
+  </app-admin-page-header>
+
+  <!-- KPI TELEMETRY CARDS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <app-admin-statistics-card
+      title="Gross Sales"
+      [value]="'₹' + (kpi().totalSales | number)"
+      subtext="+18% vs Last Cycle"
+      icon="payments"
+      trend="up"
+      trendValue="+18%"
+    ></app-admin-statistics-card>
+
+    <app-admin-statistics-card
+      title="Fulfilled Orders"
+      [value]="ds.orders().length"
+      subtext="100% cloud sync"
+      icon="shopping_bag"
+    ></app-admin-statistics-card>
+
+    <app-admin-statistics-card
+      title="Conversion Ratio"
+      [value]="kpi().conversionRate + '%'"
+      subtext="Stable Session Yield"
+      icon="insights"
+    ></app-admin-statistics-card>
+
+    <app-admin-statistics-card
+      title="Stock Alerts"
+      [value]="inventoryAlerts()"
+      subtext="SKUs below Buffer Limit"
+      icon="warning"
+      [trend]="inventoryAlerts() > 0 ? 'down' : 'none'"
+      trendValue="Alerts active"
+    ></app-admin-statistics-card>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- BAR GRAPH -->
+    <div class="lg:col-span-2 p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-4">
+      <p class="text-xs font-black uppercase tracking-wider text-zinc-400 font-sans">Commercial Sales Curve (INR)</p>
+      <div class="h-44 flex items-end gap-3.5 pt-4">
+        @for (data of monthlySalesChart; track data.month) {
+          <div class="flex-1 flex flex-col items-center gap-2">
+            <div class="w-full bg-blue-600/10 hover:bg-blue-600 rounded-t-lg transition-all relative group cursor-pointer" [style.height.px]="data.height">
+              <div class="absolute -top-7 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 bg-zinc-950 text-white text-[8px] font-mono px-1.5 py-0.5 rounded-md transition-all">₹{{ data.val/1000 }}K</div>
+            </div>
+            <span class="text-[9px] font-mono font-bold text-zinc-400 uppercase">{{ data.month }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- REAL-TIME LAB PRINTER TELEMETRY -->
+    <div class="p-6 bg-zinc-900 text-white rounded-2xl border border-white/5 space-y-4 relative overflow-hidden shadow-2xl font-sans">
+      <div class="absolute -right-12 -bottom-12 opacity-5 text-white"><mat-icon class="text-[10rem] h-auto w-auto">print</mat-icon></div>
+      <div class="flex items-center justify-between border-b border-white/5 pb-2">
+        <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">LAB PRINTER CLUSTER</span>
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+      </div>
+      <div class="space-y-3 relative z-10">
+        @for (p of printerTelemetry; track p.id) {
+          <div class="p-2.5 bg-white/5 border border-white/5 rounded-xl space-y-1">
+            <div class="flex justify-between text-[9px] font-mono">
+              <span class="font-black text-zinc-300">#{{ p.id }} {{ p.model }}</span>
+              <span [class]="p.status === 'Printing' ? 'text-emerald-400' : 'text-zinc-500'" class="font-bold uppercase tracking-wider">{{ p.status }} {{ p.status === 'Printing' ? p.progress + '%' : '' }}</span>
+            </div>
+            @if (p.status === 'Printing') {
+              <div class="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full" [style.width.%]="p.progress"></div>
+              </div>
+              <div class="flex justify-between text-[8px] text-zinc-400 tracking-wider">
+                <span>Material: {{ p.material }}</span>
+                <span>Nozzle: {{ p.nozzleTemp }}° / Bed: {{ p.bedTemp }}°</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

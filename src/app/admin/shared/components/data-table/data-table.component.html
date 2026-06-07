@@ -1,0 +1,14 @@
+<div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans shadow-xs">
+  <table class="w-full text-left text-xs whitespace-nowrap">
+    <thead>
+      <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+        @for (header of headers; track header) {
+          <th class="py-3 pr-4">{{ header }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+      <ng-content></ng-content>
+    </tbody>
+  </table>
+</div>

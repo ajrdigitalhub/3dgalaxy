@@ -1,9 +1,14 @@
 import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, ElementRef, viewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {RouterModule} from '@angular/router';
+import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Category} from '../../services/datastore';
 import {animate} from 'motion';
+
+interface QuickNavItem {
+  id: string;
+  name: string;
+}
 
 @Component({
   selector: 'app-home',
@@ -14,6 +19,7 @@ import {animate} from 'motion';
 })
 export class Home {
   ds = inject(DatastoreService);
+  router = inject(Router);
   heroContainer = viewChild<ElementRef>('heroContainer');
 
   searchQuery = signal<string>('');
@@ -30,7 +36,7 @@ export class Home {
       title: 'Galaxy Core Ecosystem',
       titleHighlight: 'The Future of Manufacturing',
       desc: 'Deploy high-performance 3D printers, precision resins, and industrial filaments across your entire lab with a single unified platform.',
-      image: '/images/hero_galaxy_ecosystem.png',
+      image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
       badge: '3D Galaxy Enterprise',
       badgeIcon: 'rocket_launch',
       link: '/products',
@@ -41,7 +47,7 @@ export class Home {
       title: 'Precision Metrology',
       titleHighlight: 'Every Layer Redefined',
       desc: 'Industrial-grade SLA and FDM solutions for engineering parts with +/- 0.01mm tolerances. From prototyping to production.',
-      image: '/images/hero_precision_metrology.png',
+      image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=2000',
       badge: 'Advanced Services',
       badgeIcon: 'precision_manufacturing',
       link: '/printing-service',
@@ -52,7 +58,7 @@ export class Home {
       title: 'Next-Gen Academy',
       titleHighlight: 'Master the Machine',
       desc: 'Join the industry largest training hub. Certification programs for industrial design, slicer optimization, and maintenance.',
-      image: '/images/hero_academy_mastery.png',
+      image: 'https://images.unsplash.com/photo-1544391459-7f329976378e?auto=format&fit=crop&q=80&w=2000',
       badge: 'Learning Hub',
       badgeIcon: 'school',
       link: '/admin',
@@ -61,10 +67,10 @@ export class Home {
   ];
 
   technologies = [
-    { id: 'fdm', icon: 'animation', name: 'FDM Printing', desc: 'Desktop & industrial fused deposition modeling for rapid prototyping.', image: '/images/tech_fdm_printing.png' },
-    { id: 'resin', icon: 'opacity', name: 'Resin Printing', desc: 'High-precision SLA/DLP/LCD for jewelry, dental, and miniatures.', image: '/images/tech_resin_printing.png' },
-    { id: 'industrial', icon: 'precision_manufacturing', name: 'Industrial', desc: 'Large scale manufacturing for automotive and aerospace sectors.', image: '/images/tech_industrial_printing.png' },
-    { id: 'edu', icon: 'school', name: 'Educational', desc: 'STEM approved units for schools, universities, and makerspaces.', image: '/images/tech_educational_printing.png' }
+    { id: 'fdm', icon: 'animation', name: 'FDM Printing', desc: 'Desktop & industrial fused deposition modeling for rapid prototyping.', image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=800' },
+    { id: 'resin', icon: 'opacity', name: 'Resin Printing', desc: 'High-precision SLA/DLP/LCD for jewelry, dental, and miniatures.', image: 'https://images.unsplash.com/photo-1551021210-994c6498a44b?auto=format&fit=crop&q=80&w=800' },
+    { id: 'industrial', icon: 'precision_manufacturing', name: 'Industrial', desc: 'Large scale manufacturing for automotive and aerospace sectors.', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800' },
+    { id: 'edu', icon: 'school', name: 'Educational', desc: 'STEM approved units for schools, universities, and makerspaces.', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800' }
   ];
 
   brands = [
@@ -103,34 +109,22 @@ export class Home {
   
   featuredProducts = computed(() => this.ds.products().slice(0, 8));
 
-  featuredPrinters = computed(() => {
-    return this.ds.products().filter(p => p.category_id === '3d-printers').slice(0, 6);
-  });
-
-  featuredFilaments = computed(() => {
-    return this.ds.products().filter(p => p.category_id === 'materials').slice(0, 6);
-  });
-
-  featuredSpareParts = computed(() => {
-    return this.ds.products().filter(p => p.category_id === 'spare-parts').slice(0, 6);
-  });
-
   getIcon(catId: string): string {
     const icons: Record<string, string> = {
       '3d-printers': 'precision_manufacturing',
-      'fdm-printers': 'layers',
-      'resin-printers': 'opacity',
-      'filaments': 'grain',
-      'pla-filaments': 'eco',
-      'abs-filaments': 'science',
-      'resins': 'water_drop',
-      'scanners': 'scanner',
-      '3d-scanners': 'document_scanner',
-      'spare-parts': 'settings',
-      'cat-1': 'precision_manufacturing',
-      'cat-2': 'grain',
-      'cat-3': 'science',
-      'cat-4': 'settings'
+      'materials': 'grain',
+      '3d-pens': 'gesture',
+      'scanners': 'document_scanner',
+      'laser-engravers': 'grain',
+      'stem-kits': 'school',
+      'spare-parts': 'build',
+      'brahma-farm': 'hub',
+      'fdm': 'layers',
+      'fdm-multicolor': 'palette',
+      'resin': 'opacity',
+      'diy': 'hardware',
+      'semi-assembled': 'construction',
+      'assembled': 'check_circle'
     };
     return icons[catId] || 'category';
   }
@@ -261,10 +255,41 @@ export class Home {
   }
 
   addToCartById(id: string) {
-    const p = this.ds.products().find(x => x.id === id);
-    if (p) {
-      this.ds.addToCart(p, 1);
+    const prod = this.ds.products().find(p => p.id === id);
+    if (prod) {
+      this.ds.addToCart(prod, 1);
+    } else {
+      this.ds.addToCart({
+        id,
+        name: id === 'prod-3' ? 'Bambu Lab A1 Combo' : 'Creality Sparx i7 Combo',
+        brand: id === 'prod-3' ? 'BAMBU LAB' : 'CREALITY',
+        slug: id === 'prod-3' ? 'bambu-lab-a1-combo' : 'creality-sparx-i7-combo',
+        sku: 'MOCK-SKU-' + id,
+        barcode: '123456789',
+        category_id: 'materials',
+        description: id === 'prod-3' ? 'Seamless multicolor 3D printing with full auto calibration.' : 'Professional grade dual extrusion combo printer setup.',
+        mrp: 55000,
+        sale_price: 48999,
+        dealer_price: 45000,
+        stock: 100,
+        reserved: 0,
+        images: [id === 'prod-3' ? 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' : 'https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png'],
+        specs: [],
+        reviews: [],
+        qnas: [],
+        featured: true,
+        is360Supported: false,
+        tags: [id === 'prod-3' ? 'BAMBU LAB' : 'CREALITY']
+      } as Product, 1);
     }
+  }
+
+  asArray(value: unknown): QuickNavItem[] {
+    return Array.isArray(value) ? (value as QuickNavItem[]) : [];
+  }
+
+  asNumber(value: unknown): number {
+    return typeof value === 'number' ? value : Number(value) || 0;
   }
 
   trackAdClick(id: string) {
@@ -283,9 +308,28 @@ export class Home {
     this.searchQuery.set(q);
   }
 
+  isSubscribed = signal(false);
+
+  subscribeNewsletter(input: HTMLInputElement) {
+    const val = input.value?.trim();
+    if (val) {
+      this.isSubscribed.set(true);
+      input.value = '';
+      setTimeout(() => {
+        this.isSubscribed.set(false);
+      }, 5000);
+    }
+  }
+
   selectFilterCategory(cat: string) {
-    this.filterCategory.set(cat);
-    this.scrollToProducts();
+    const layout = this.ds.homeLayout();
+    const isCatalogVisible = layout.some(s => s.id === 'featured-innovations' && s.visible);
+    if (isCatalogVisible) {
+      this.filterCategory.set(cat);
+      this.scrollToProducts();
+    } else {
+      this.router.navigate(['/products'], { queryParams: { category: cat } });
+    }
   }
 
   // AI-powered suggestions call using browser proxy back to our server

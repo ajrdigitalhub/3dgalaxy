@@ -1,4 +1,4 @@
-# 🚀 3D Galaxy
+# 🚀 3D Galaxy - AJR Digital Hub
 
 A modern, scalable, Shopify-inspired eCommerce platform for 3D Printing products, accessories, materials, scanners, STEM kits, and manufacturing solutions.
 

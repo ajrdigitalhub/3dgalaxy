@@ -1,340 +1,525 @@
-<div class="space-y-24 pb-20 select-none">
+<div class="space-y-24 pb-20 select-none text-neutral-800 dark:text-neutral-100 animate-fadeIn">
   
-  <!-- HERO: IMMERSIVE GALAXY STAGE -->
-  <section #heroContainer class="relative min-h-[85vh] rounded-[4rem] overflow-hidden bg-neutral-950 flex items-center group shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/5">
-    <!-- Animated Nebula/Galaxy Background -->
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(29,78,216,0.15),transparent_70%)]"></div>
-      <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.2),transparent_70%)] blur-[100px]"></div>
-      <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.15),transparent_70%)] blur-[120px]"></div>
+  @for (section of ds.homeLayout(); track section.id) {
+    @if (section.visible) {
       
-      <!-- Particle Effect Mockup (Static images/effects) -->
-      <img [src]="slides[currentSlide()].image" 
-           class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen transition-all duration-1000 scale-105 group-hover:scale-100" 
-           alt="Galaxy Bg"
-           referrerpolicy="no-referrer">
-      <div class="absolute inset-0 bg-linear-to-b from-neutral-950/20 via-neutral-950/80 to-neutral-950"></div>
-    </div>
-
-    <!-- Content Stack -->
-    <div class="relative z-10 w-full px-8 md:px-24">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-        <div class="space-y-10 max-w-3xl">
-          <div class="hero-anim inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-full text-white text-xs font-black uppercase tracking-[0.4em]">
-            <mat-icon class="text-cyan-400 scale-90">{{ slides[currentSlide()].badgeIcon }}</mat-icon>
-            {{ slides[currentSlide()].badge }}
-          </div>
-
-          <div class="hero-anim space-y-6">
-            <h2 class="text-white/40 text-xl font-bold tracking-[0.2em] uppercase font-display">{{ slides[currentSlide()].title }}</h2>
-            <h1 class="text-6xl md:text-8xl font-black tracking-tighter text-white leading-[0.95] font-display">
-              {{ slides[currentSlide()].titleHighlight }}
-            </h1>
-          </div>
-
-          <p class="hero-anim text-neutral-400 text-xl md:text-2xl leading-relaxed max-w-2xl font-medium">
-            {{ slides[currentSlide()].desc }}
-          </p>
-
-          <div class="hero-anim flex flex-col sm:flex-row gap-8 pt-6">
-            <a [routerLink]="[slides[currentSlide()].link]" class="h-20 px-12 bg-white text-black hover:bg-cyan-400 hover:text-black rounded-3xl font-black text-sm uppercase tracking-widest transition-all duration-500 flex items-center justify-center gap-4 group/btn hover:scale-105 shadow-[0_20px_50px_rgba(255,255,255,0.1)] hover:shadow-cyan-500/30">
-              EXPLORE HUB <mat-icon class="transition-transform group-hover/btn:translate-x-2">arrow_forward</mat-icon>
-            </a>
-            <button (click)="scrollToProducts()" class="h-20 px-12 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all duration-500 flex items-center justify-center gap-4 backdrop-blur-2xl">
-              PRODUCT CATALOG <mat-icon>shopping_bag</mat-icon>
-            </button>
-          </div>
-        </div>
-
-        <!-- 3D Accents / Visual Center -->
-        <div class="hero-anim hidden lg:flex justify-center relative">
-          <div class="relative w-[500px] h-[550px]">
-            <div class="absolute -inset-20 bg-blue-500/20 blur-[150px] rounded-full animate-pulse"></div>
-            <!-- Glass Print Box Mockup -->
-            <div class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[4rem] shadow-2xl overflow-hidden group/card transition-all duration-1000 [transform:perspective(1000px)_rotateY(-10deg)] hover:[transform:perspective(1000px)_rotateY(0deg)]">
-              <img [src]="slides[currentSlide()].image" 
-                   class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-110" 
-                   alt="Centerpiece"
-                   referrerpolicy="no-referrer">
-              <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-transparent to-transparent"></div>
+      @switch (section.id) {
+        
+        @case ('hero-slides') {
+          <!-- HERO: IMMERSIVE GALAXY STAGE -->
+          <section #heroContainer id="hero-section" class="relative min-h-[85vh] w-full overflow-hidden bg-neutral-900 dark:bg-neutral-950 flex items-center group border-b border-neutral-800/10 dark:border-neutral-800/40">
+            <!-- Animated Nebula/Galaxy Background -->
+            <div class="absolute inset-0 pointer-events-none">
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.1),transparent_70%)]"></div>
+              <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.15),transparent_70%)] blur-[100px]"></div>
+              <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.12),transparent_70%)] blur-[120px]"></div>
               
-              <!-- Scanning Line Animation -->
-              <div class="absolute top-0 left-0 w-full h-[2px] bg-cyan-400 shadow-[0_0_20px_#22d3ee] animate-scan z-20"></div>
+              <img [src]="slides[currentSlide()].image" 
+                   class="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen transition-all duration-1000 scale-105 group-hover:scale-100" 
+                   alt="Galaxy Bg"
+                   referrerpolicy="no-referrer">
+              <div class="absolute inset-0 bg-linear-to-b from-neutral-900/30 via-neutral-950/80 to-neutral-950"></div>
+            </div>
 
-              <div class="absolute bottom-10 left-10 right-10 p-8 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] space-y-4">
-                <div class="flex items-center justify-between">
-                  <div class="space-y-1">
-                    <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.2em]">Active System</p>
-                    <h4 class="text-xl font-black text-white">GALAXY V-CORE</h4>
+            <!-- Content Stack -->
+            <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-16 lg:py-24">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div class="space-y-8 max-w-3xl text-left">
+                  <div class="hero-anim inline-flex items-center gap-3 px-5 py-2 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-full text-neutral-200 text-xs font-black uppercase tracking-[0.3em]">
+                    <mat-icon class="text-orange-500 scale-90">{{ slides[currentSlide()].badgeIcon }}</mat-icon>
+                    {{ slides[currentSlide()].badge }}
                   </div>
-                  <div class="h-14 w-14 bg-cyan-400 rounded-2xl flex items-center justify-center text-black shadow-[0_0_30px_#22d3ee]">
-                    <mat-icon>precision_manufacturing</mat-icon>
+
+                  <div class="hero-anim space-y-4">
+                    <h2 class="text-white/40 text-sm font-black tracking-[0.25em] uppercase font-display">{{ slides[currentSlide()].title }}</h2>
+                    <h1 class="text-5xl md:text-7xl font-black tracking-tighter text-white leading-[1.05] font-display">
+                      {{ slides[currentSlide()].titleHighlight }}
+                    </h1>
+                  </div>
+
+                  <p class="hero-anim text-neutral-400 text-base md:text-lg leading-relaxed max-w-xl font-medium">
+                    {{ slides[currentSlide()].desc }}
+                  </p>
+
+                  <div class="hero-anim flex flex-col sm:flex-row gap-5 pt-4">
+                    <a [routerLink]="[slides[currentSlide()].link]" class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20">
+                      EXPLORE HUB <mat-icon class="transition-transform group-hover/btn:translate-x-1">arrow_forward</mat-icon>
+                    </a>
+                    <button (click)="scrollToProducts()" class="h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 backdrop-blur-xl">
+                      PRODUCT CATALOG <mat-icon class="scale-90">shopping_bag</mat-icon>
+                    </button>
                   </div>
                 </div>
-                <div class="flex items-center gap-4">
-                  <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full bg-cyan-400 w-3/4"></div>
+
+                <!-- 3D Preview Frame Center -->
+                <div class="hero-anim hidden lg:flex justify-center relative">
+                  <div class="relative w-[450px] h-[480px]">
+                    <div class="absolute -inset-10 bg-orange-500/10 blur-[100px] rounded-full animate-pulse"></div>
+                    <!-- Glass Print Box Mockup -->
+                    <div class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group/card transition-all duration-1000 [transform:perspective(1000px)_rotateY(-5deg)] hover:[transform:perspective(1000px)_rotateY(0deg)]">
+                      <img [src]="slides[currentSlide()].image" 
+                           class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105" 
+                           alt="Centerpiece"
+                           referrerpolicy="no-referrer">
+                      <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-transparent to-transparent"></div>
+                      
+                      <!-- Scanning Line Animation -->
+                      <div class="absolute top-0 left-0 w-full h-[2px] bg-orange-500 shadow-[0_0_20px_#ea580c] animate-scan z-20"></div>
+
+                      <div class="absolute bottom-8 left-8 right-8 p-6 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between">
+                          <div class="space-y-1">
+                            <p class="text-[9px] text-orange-400 font-extrabold uppercase tracking-widest">Active System</p>
+                            <h4 class="text-base font-black text-white leading-none">GALAXY BAMBU X1</h4>
+                          </div>
+                          <div class="h-11 w-11 bg-orange-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-500/30">
+                            <mat-icon class="scale-90">precision_manufacturing</mat-icon>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                          <div class="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-orange-500 w-3/4 animate-pulse"></div>
+                          </div>
+                          <span class="text-[9px] text-white/70 font-bold whitespace-nowrap">75% COMPLETE</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span class="text-[10px] text-white/60 font-black">75% COMPLETE</span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Controls -->
-    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-12 z-20 px-8 py-4 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
-      <button (click)="prevSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Previous Slide"><mat-icon>chevron_left</mat-icon></button>
-      <div class="flex gap-4">
-        @for (s of slides; track s.id; let idx = $index) {
-          <button (click)="setSlide(idx)" 
-                  [attr.aria-label]="'Navigate to slide ' + (idx + 1)"
-                  [class]="currentSlide() === idx ? 'h-1 w-12 bg-cyan-400 rounded-full transition-all duration-500' : 'h-1 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
+            <!-- Slide Control Dots -->
+            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-8 z-20 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
+              <button (click)="prevSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Previous Slide"><mat-icon class="scale-90">chevron_left</mat-icon></button>
+              <div class="flex gap-2">
+                @for (s of slides; track s.id; let idx = $index) {
+                  <button (click)="setSlide(idx)" 
+                          [attr.aria-label]="'Navigate to slide ' + (idx + 1)"
+                          [class]="currentSlide() === idx ? 'h-1.5 w-8 bg-orange-500 rounded-full transition-all duration-500' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
+                }
+              </div>
+              <button (click)="nextSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Next Slide"><mat-icon class="scale-90">chevron_right</mat-icon></button>
+            </div>
+          </section>
         }
-      </div>
-      <button (click)="nextSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Next Slide"><mat-icon>chevron_right</mat-icon></button>
-    </div>
-  </section>
-
-  <!-- WOL3D CATEGORY NAVIGATOR BAR -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 space-y-6">
-    <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
-      <h2 class="text-xs font-black uppercase tracking-[0.3em] text-neutral-400">Quick Navigation</h2>
-      <a routerLink="/products" class="text-xs font-black text-blue-600 hover:underline">All Products →</a>
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-      <a [routerLink]="['/products']" [queryParams]="{ category: '3d-printers' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">precision_manufacturing</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">3D Printers</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'materials' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">grain</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Materials</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: '3d-pens' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">edit</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">3D Pens</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: '3d-scanners' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">scanner</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">3D Scanners</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'laser-engravers' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">flare</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Engravers</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'stem-kits' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">school</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">STEM Kits</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'spare-parts' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">settings</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Spare Parts</span>
-      </a>
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'brahma-3d-farm' }" class="flex flex-col items-center justify-center p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-lg transition-all text-center group">
-        <mat-icon class="text-neutral-500 group-hover:text-orange-500 scale-125 mb-3">business</mat-icon>
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Print Farm</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- WOL3D SPOTLIGHT BANNERS: FEATURED COMBOS -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 space-y-16 py-8">
-    
-    <!-- Spotlight 1: Bambu Lab A1 Combo -->
-    <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-8 md:p-12 shadow-sm hover:shadow-lg transition-all">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-        <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-3xl overflow-hidden p-8 flex items-center justify-center">
-          <img src="/images/products/bambu_a1_combo.png" class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-700" alt="Bambu Lab A1 Combo">
-        </div>
-        <div class="space-y-6 text-left">
-          <div class="space-y-2">
-            <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">BAMBU LAB</span>
-            <h2 class="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tight leading-none">A1 Combo</h2>
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed">
-            Experience seamless multicolor 3D printing with the Bambu Lab A1. Featuring full auto calibration and active flow rate compensation. With a spacious 256*256*256 mm³ build volume and compatibility with various filaments.
-          </p>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">₹48,999</span>
-            <span class="text-sm line-through text-neutral-400">₹55,000</span>
-            <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase rounded-lg">Best Deal</span>
-          </div>
-          <a [routerLink]="['/product/bambu-lab-a1-combo']" class="inline-block px-10 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/10 transition-all">Buy Now</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Spotlight 2: Creality Sparx i7 Combo -->
-    <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-8 md:p-12 shadow-sm hover:shadow-lg transition-all">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-        <div class="space-y-6 text-left order-2 md:order-1">
-          <div class="space-y-2">
-            <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">CREALITY</span>
-            <h2 class="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tight leading-none">Creality Sparx i7 Combo</h2>
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed">
-            The Creality Sparx i7 Combo brings professional grade 3D printing to your workshop with its dual extrusion capability and heated build platform. Engineered for precision and speed, this FDM printer handles complex multi-material projects with ease, delivering consistent layer adhesion and dimensional accuracy.
-          </p>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">₹48,999</span>
-            <span class="text-sm line-through text-neutral-400">₹55,000</span>
-          </div>
-          <a [routerLink]="['/product/creality-sparx-i7-combo']" class="inline-block px-10 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/10 transition-all">Buy Now</a>
-        </div>
-        <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-3xl overflow-hidden p-8 flex items-center justify-center order-1 md:order-2">
-          <img src="/images/products/creality_k1_max.png" class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-700" alt="Creality Sparx i7 Combo">
-        </div>
-      </div>
-    </div>
-
-    <!-- Spotlight 3: Anycubic Kobra 3 Max Combo -->
-    <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-8 md:p-12 shadow-sm hover:shadow-lg transition-all">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-        <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-3xl overflow-hidden p-8 flex items-center justify-center">
-          <img src="https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=800" class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-700" alt="Kobra 3 Max Combo">
-        </div>
-        <div class="space-y-6 text-left">
-          <div class="space-y-2">
-            <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">ANYCUBIC</span>
-            <h2 class="text-3xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tight leading-none">Kobra 3 Max Combo FDM 3D Printer</h2>
-          </div>
-          <p class="text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed">
-            Anycubic Kobra 3 Max Combo FDM 3D Printer stands out as one of the best budget 3D printers, offering high-quality multicolor 3D printing capabilities at a low cost.
-          </p>
-          <div class="flex items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">₹44,999</span>
-            <span class="text-sm line-through text-neutral-400">₹50,000</span>
-          </div>
-          <a [routerLink]="['/product/anycubic-kobra-3-max']" class="inline-block px-10 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/10 transition-all">Buy Now</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FILAMENT SECTION -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 space-y-10 py-8">
-    <div class="text-center space-y-2">
-      <h3 class="text-3xl font-black text-neutral-900 dark:text-white uppercase tracking-tight">Filament</h3>
-      <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Premium Compounded Polymers</p>
-    </div>
-    
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-      @for (p of featuredFilaments(); track p.id) {
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:shadow-md transition-all flex flex-col text-left group">
-          <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-2xl overflow-hidden mb-4 p-4 flex items-center justify-center relative">
-            <img [src]="p.images[0]" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" alt="{{ p.name }}">
-            <button (click)="addToCart(p)" class="absolute bottom-2 right-2 h-10 w-10 bg-neutral-900 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
-              <mat-icon class="scale-75">add_shopping_cart</mat-icon>
-            </button>
-          </div>
-          <div class="space-y-2 flex-1 flex flex-col justify-between">
-            <h4 class="text-xs font-bold text-neutral-800 dark:text-neutral-200 line-clamp-2 uppercase leading-tight">{{ p.name }}</h4>
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-850">
-              <span class="text-sm font-black text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-              <div class="flex items-center text-amber-500">
-                <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                <span class="text-[9px] font-black text-neutral-600 dark:text-neutral-300">4.8</span>
+        
+        @case ('quick-nav') {
+          <!-- QUICK NAVIGATION (Screenshot 2 Alignment) -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-6 text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4">
+              <div class="space-y-1">
+                <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-[#d65108] font-display">QUICK NAVIGATION</h2>
+              </div>
+              <div>
+                <a routerLink="/products" class="text-xs font-black uppercase tracking-widest text-[#d65108] hover:underline flex items-center gap-1 transition-all">
+                  <span>{{ section.config['linkText'] || 'All Products →' }}</span>
+                </a>
               </div>
             </div>
-          </div>
-        </div>
-      }
-    </div>
-    <div class="text-center pt-4">
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'materials' }" class="inline-block px-12 py-3.5 bg-neutral-900 text-white hover:bg-neutral-800 rounded-lg text-xs font-black uppercase tracking-widest text-center shadow-md transition-all">View all</a>
-    </div>
-  </section>
 
-  <!-- SPARE PARTS SECTION -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 space-y-10 py-8">
-    <div class="text-center space-y-2">
-      <h3 class="text-3xl font-black text-neutral-900 dark:text-white uppercase tracking-tight">Spare Parts</h3>
-      <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Precision Replacement Nodes</p>
-    </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+              @for (item of asArray(section.config['items']); track item.id) {
+                <button (click)="selectFilterCategory(item.id)" 
+                        class="group flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl transition-all hover:border-[#d65108] hover:scale-105 h-36 border-b-4 hover:border-b-[#d65108] shadow-xs cursor-pointer">
+                  <div class="h-11 w-11 rounded-xl bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:text-[#d65108] transition-colors">
+                    <mat-icon class="scale-110">{{ getIcon(item.id) }}</mat-icon>
+                  </div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-center text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">{{ item.name }}</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-      @for (p of featuredSpareParts(); track p.id) {
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:shadow-md transition-all flex flex-col text-left group">
-          <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-2xl overflow-hidden mb-4 p-4 flex items-center justify-center relative">
-            <img [src]="p.images[0]" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" alt="{{ p.name }}">
-            <button (click)="addToCart(p)" class="absolute bottom-2 right-2 h-10 w-10 bg-neutral-900 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
-              <mat-icon class="scale-75">add_shopping_cart</mat-icon>
-            </button>
-          </div>
-          <div class="space-y-2 flex-1 flex flex-col justify-between">
-            <h4 class="text-xs font-bold text-neutral-800 dark:text-neutral-200 line-clamp-2 uppercase leading-tight">{{ p.name }}</h4>
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-850">
-              <span class="text-sm font-black text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-              <div class="flex items-center text-amber-500">
-                <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                <span class="text-[9px] font-black text-neutral-600 dark:text-neutral-300">4.9</span>
+        @case ('showcase-1') {
+          <!-- SHOWCASE CARD 1: BAMBU LAB A1 COMBO -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
+                <!-- Image on Left -->
+                <div class="col-span-1 md:col-span-5 flex justify-center">
+                  <img [src]="section.config['image'] || 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'" 
+                       alt="Bambu Lab A1 Combo" 
+                       class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
+                       referrerpolicy="no-referrer">
+                </div>
+                <!-- Copy on Right -->
+                <div class="col-span-1 md:col-span-7 space-y-6 text-left">
+                  <div class="space-y-1">
+                    <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 select-text">{{ section.config['brand'] || 'BAMBU LAB' }}</span>
+                    <h2 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter leading-none font-display select-text">
+                      {{ section.config['name'] || 'A1 Combo' }}
+                    </h2>
+                  </div>
+                  <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
+                    {{ section.config['description'] }}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice']) | currency:'INR':'symbol':'1.0-0' }}</span>
+                    <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp']) | currency:'INR':'symbol':'1.0-0' }}</span>
+                    @if (section.config['badge']) {
+                      <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black tracking-widest uppercase rounded border border-emerald-500/15">{{ section.config['badge'] }}</span>
+                    }
+                  </div>
+                  <div class="pt-2">
+                    <button (click)="addToCartById('prod-3')" 
+                            class="h-12 px-8 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:scale-[1.03] transition-all shadow-md shadow-orange-500/10 flex items-center gap-2 cursor-pointer">
+                      <span>BUY NOW</span>
+                      <mat-icon class="scale-95">shopping_cart</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      }
-    </div>
-    <div class="text-center pt-4">
-      <a [routerLink]="['/products']" [queryParams]="{ category: 'spare-parts' }" class="inline-block px-12 py-3.5 bg-neutral-900 text-white hover:bg-neutral-800 rounded-lg text-xs font-black uppercase tracking-widest text-center shadow-md transition-all">View all</a>
-    </div>
-  </section>
+          </section>
+        }
 
-  <!-- 3D PRINTER SECTION -->
-  <section class="max-w-7xl mx-auto px-4 md:px-8 space-y-10 py-8">
-    <div class="text-center space-y-2">
-      <h3 class="text-3xl font-black text-neutral-900 dark:text-white uppercase tracking-tight">3D Printer</h3>
-      <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest">Additive Fabrication Units</p>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-      @for (p of featuredPrinters(); track p.id) {
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:shadow-md transition-all flex flex-col text-left group">
-          <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-2xl overflow-hidden mb-4 p-4 flex items-center justify-center relative">
-            <img [src]="p.images[0]" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" alt="{{ p.name }}">
-            <button (click)="addToCart(p)" class="absolute bottom-2 right-2 h-10 w-10 bg-neutral-900 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
-              <mat-icon class="scale-75">add_shopping_cart</mat-icon>
-            </button>
-          </div>
-          <div class="space-y-2 flex-1 flex flex-col justify-between">
-            <h4 class="text-xs font-bold text-neutral-800 dark:text-neutral-200 line-clamp-2 uppercase leading-tight">{{ p.name }}</h4>
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-100 dark:border-neutral-850">
-              <span class="text-sm font-black text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-              <div class="flex items-center text-amber-500">
-                <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                <span class="text-[9px] font-black text-neutral-600 dark:text-neutral-300">{{ getProductRating(p) }}</span>
+        @case ('showcase-2') {
+          <!-- SHOWCASE CARD 2: CREALITY SPARX I7 COMBO -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
+                <!-- Copy on Left -->
+                <div class="col-span-1 md:col-span-7 space-y-6 text-left order-2 md:order-1">
+                  <div class="space-y-1">
+                    <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 select-text">{{ section.config['brand'] || 'CREALITY' }}</span>
+                    <h2 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter leading-none font-display select-text">
+                      {{ section.config['name'] || 'Creality Sparx i7 Combo' }}
+                    </h2>
+                  </div>
+                  <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
+                    {{ section.config['description'] }}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice']) | currency:'INR':'symbol':'1.0-0' }}</span>
+                    <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp']) | currency:'INR':'symbol':'1.0-0' }}</span>
+                  </div>
+                  <div class="pt-2">
+                    <button (click)="addToCartById('prod-6')" 
+                            class="h-12 px-8 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:scale-[1.03] transition-all shadow-md shadow-orange-500/10 flex items-center gap-2 cursor-pointer">
+                      <span>BUY NOW</span>
+                      <mat-icon class="scale-95">shopping_cart</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <!-- Image on Right -->
+                <div class="col-span-1 md:col-span-5 flex justify-center order-1 md:order-2">
+                  <img [src]="section.config['image'] || 'https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png'" 
+                       alt="Creality Sparx i7 Combo" 
+                       class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
+                       referrerpolicy="no-referrer">
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      }
-    </div>
-    <div class="text-center pt-4">
-      <a [routerLink]="['/products']" [queryParams]="{ category: '3d-printers' }" class="inline-block px-12 py-3.5 bg-neutral-900 text-white hover:bg-neutral-800 rounded-lg text-xs font-black uppercase tracking-widest text-center shadow-md transition-all">View all</a>
-    </div>
-  </section>
+          </section>
+        }
 
-  <!-- NEWSLETTER / BOTTOM SLIDE MOCK -->
-  <section class="max-w-4xl mx-auto px-4 md:px-8 relative overflow-hidden text-center py-16 bg-neutral-900 rounded-[3rem] border border-white/5">
-    <div class="relative z-10 space-y-8">
-      <h3 class="text-3xl font-black text-white uppercase tracking-tight">Join the Maker’s Collective</h3>
-      <p class="text-neutral-400 text-sm max-w-md mx-auto">Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals.</p>
+        @case ('category-view-filament') {
+          <!-- CATEGORY SPLASH: FILAMENT -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+            <div class="space-y-2">
+              <h1 class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">{{ section.config['title'] }}</h1>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+            </div>
+            <div class="pt-4">
+              <button (click)="selectFilterCategory('materials')" 
+                      class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer">
+                {{ section.config['buttonText'] || 'VIEW ALL' }}
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('category-view-spare-parts') {
+          <!-- CATEGORY SPLASH: SPARE PARTS -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+            <div class="space-y-2">
+              <h1 class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">{{ section.config['title'] }}</h1>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+            </div>
+            <div class="pt-4">
+              <button (click)="selectFilterCategory('spare-parts')" 
+                      class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer">
+                {{ section.config['buttonText'] || 'VIEW ALL' }}
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('category-view-3d-printer') {
+          <!-- CATEGORY SPLASH: 3D PRINTER -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+            <div class="space-y-2">
+              <h1 class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">{{ section.config['title'] }}</h1>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+            </div>
+            <div class="pt-4">
+              <button (click)="selectFilterCategory('3d-printers')" 
+                      class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer">
+                {{ section.config['buttonText'] || 'VIEW ALL' }}
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('newsletter') {
+          <!-- JOIN THE MAKER'S COLLECTIVE NEWSLETTER -->
+          <section [id]="section.id" class="max-w-5xl mx-auto px-6">
+            <div class="bg-neutral-950 dark:bg-neutral-900 border border-neutral-850 dark:border-neutral-800 rounded-[2.5rem] p-12 md:p-16 flex flex-col items-center justify-center text-center space-y-8 relative overflow-hidden shadow-2xl">
+              <!-- Radial Glow -->
+              <div class="absolute -inset-10 bg-[radial-gradient(circle_at_center,_rgba(214,81,8,0.1),transparent_70%)] pointer-events-none"></div>
+              
+              <div class="relative z-10 space-y-3 max-w-xl">
+                <h3 class="text-3xl md:text-4xl font-black text-white tracking-widest font-display select-text">
+                  {{ section.config['title'] || "JOIN THE MAKER'S COLLECTIVE" }}
+                </h3>
+                <p class="text-neutral-400 text-xs font-normal leading-relaxed">
+                  {{ section.config['description'] || 'Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals.' }}
+                </p>
+              </div>
+
+              <!-- Action Field -->
+              <div class="relative z-10 w-full max-w-md flex flex-col sm:flex-row items-stretch gap-3">
+                @if (isSubscribed()) {
+                  <div class="w-full py-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center flex items-center justify-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-widest animate-fadeIn">
+                    <mat-icon class="scale-90 text-emerald-400">check_circle</mat-icon>
+                    <span>Thank you for subscribing!</span>
+                  </div>
+                } @else {
+                  <input type="email" 
+                         #subEmailInput
+                         placeholder="ENTER YOUR EMAIL" 
+                         (keyup.enter)="subscribeNewsletter(subEmailInput)"
+                         class="flex-1 h-12 px-5 bg-white/5 border border-white/10 rounded-xl text-neutral-200 text-xs font-bold tracking-widest placeholder-neutral-500 uppercase outline-none focus:border-white/30" />
+                  <button (click)="subscribeNewsletter(subEmailInput)" 
+                          class="h-12 px-8 bg-white hover:bg-neutral-100 text-neutral-950 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer">
+                    SUBSCRIBE
+                  </button>
+                }
+              </div>
+            </div>
+          </section>
+        }
+
+        @case ('featured-innovations') {
+          <!-- FEATURED: THE PRINTING ELITE -->
+          <section id="products-catalog" class="max-w-7xl mx-auto px-6 space-y-10 text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4">
+              <div class="space-y-1">
+                <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{ section.config['subtitle'] || 'Precision Catalog' }}</h2>
+                <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">{{ section.config['title'] || 'Featured Innovations' }}</h3>
+              </div>
+              <div>
+                <a routerLink="/products" class="h-11 px-5 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1 text-neutral-600 dark:text-neutral-300 transition-colors">
+                  <span>View Catalog</span>
+                  <mat-icon class="scale-75">category</mat-icon>
+                </a>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              @for (p of featuredProducts(); track p.id) {
+                <div class="group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(214,81,8,0.12)] min-h-[440px] hover:-translate-y-2 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-500 ease-out p-4 pb-6 flex flex-col relative text-left overflow-hidden">
+                  
+                  <!-- SPARKLING HOVER EFFECT STARS -->
+                  <div class="absolute inset-0 pointer-events-none overflow-hidden z-20">
+                    <!-- Sparkle 1: Top-Left Amber -->
+                    <div class="sparkle-one">
+                      <svg class="h-6 w-6 text-amber-500 dark:text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z"/>
+                      </svg>
+                    </div>
+                    <!-- Sparkle 2: Top-Right Cyan/Blue -->
+                    <div class="sparkle-two">
+                      <svg class="h-5 w-5 text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z"/>
+                      </svg>
+                    </div>
+                    <!-- Sparkle 3: Middle-Left Yellow -->
+                    <div class="sparkle-three">
+                      <svg class="h-4 w-4 text-yellow-400 dark:text-yellow-300 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c.06 2.8 2 4.7 4.8 4.8-2.8.06-4.7 2-4.8 4.8-.06-2.8-2-4.7-4.8-4.8 2.8-.06 4.7-2 4.8-4.8z"/>
+                      </svg>
+                    </div>
+                    <!-- Sparkle 4: Bottom-Right Orange/Rust -->
+                    <div class="sparkle-four">
+                      <svg class="h-6 w-6 text-orange-600 dark:text-orange-500 drop-shadow-[0_0_8px_rgba(194,65,12,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z"/>
+                      </svg>
+                    </div>
+                    <!-- Sparkle 5: Sparkle burst center -->
+                    <div class="sparkle-five">
+                      <svg class="h-5 w-5 text-neutral-100 dark:text-white drop-shadow-[0_0_6px_rgba(255,255,255,1)]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  @if (p.isExclusive) {
+                    <div class="absolute top-5 right-5 z-20 select-none pointer-events-none opacity-85 hover:opacity-100 transition-opacity">
+                      <div class="relative w-16 h-16 rounded-full border border-orange-500/30 bg-orange-50/90 dark:bg-orange-950/40 flex flex-col items-center justify-center p-1 text-[7px] font-black tracking-tighter text-orange-600 dark:text-orange-400 uppercase text-center leading-none">
+                        <svg class="absolute inset-0 w-full h-full -rotate-12" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2,2"/>
+                        </svg>
+                        <span class="text-[5px] scale-90 tracking-widest font-black">EXCLUSIVE</span>
+                        <span class="font-extrabold text-[8px] my-0.5 text-nowrap tracking-wide">{{ p.brand }}</span>
+                        <span class="text-[5px] scale-90 font-black">DISTRIBUTOR</span>
+                      </div>
+                    </div>
+                  }
+
+                  <div class="relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/80 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-6 mb-5 group-hover:scale-[0.98] transition-transform duration-500">
+                    
+                    <!-- Polished Shimmer Sweep effect -->
+                    <div class="shimmer-effect"></div>
+
+                    <img [src]="p.images[0]" 
+                         class="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" 
+                         alt="{{p.name}}" 
+                         referrerpolicy="no-referrer">
+                    @if (p.warningText) {
+                      <div class="absolute bottom-0 left-0 right-0 bg-[#ffd700] text-neutral-900 text-[9px] font-black tracking-widest uppercase py-1.5 text-center z-10">
+                        {{ p.warningText }}
+                      </div>
+                    }
+
+                    <div class="absolute inset-0 bg-neutral-950/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button (click)="addToCart(p)" 
+                              class="h-11 w-11 bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300">
+                        <mat-icon class="scale-90">add_shopping_cart</mat-icon>
+                      </button>
+                      <a [routerLink]="['/product', p.slug]" 
+                         class="h-11 w-11 bg-white text-neutral-900 hover:bg-neutral-950 hover:text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300">
+                        <mat-icon class="scale-90">visibility</mat-icon>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="flex-1 flex flex-col space-y-2 text-left">
+                    <span class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108]">{{ p.brand }}</span>
+                    <a [routerLink]="['/product', p.slug]" class="block text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-snug hover:text-[#d65108] min-h-[40px] line-clamp-2 transition-colors">{{ p.name }}</a>
+                    
+                    <div class="flex items-center justify-between mt-auto pt-2">
+                      <div class="flex flex-col">
+                        <span class="text-sm font-extrabold text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
+                        @if (p.mrp > activePrice(p)) {
+                          <span class="text-[10px] text-neutral-400 line-through font-normal">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+                        }
+                      </div>
+                      <div class="flex items-center gap-1 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-md">
+                        <mat-icon class="scale-75 -mr-1">star</mat-icon>
+                        <span class="text-[10px] font-black">{{ p.avgRating || getProductRating(p) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        @case ('technology-hubs') {
+          <!-- TECHNOLOGY CARDS: MODULAR HUBS -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12">
+            <div class="text-center space-y-2 max-w-2xl mx-auto">
+              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-[#d65108] font-display">{{ section.config['subtitle'] || 'The Laboratory' }}</h2>
+              <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">{{ section.config['title'] || 'Shop by Technology' }}</h3>
+              <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical manufacturing criteria.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              @for (tech of technologies; track tech.id) {
+                <div class="relative group h-[420px] rounded-[2rem] overflow-hidden border border-neutral-200 dark:border-neutral-800/40 bg-neutral-100 dark:bg-neutral-900">
+                  <img [src]="tech.image" [alt]="tech.name" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" referrerpolicy="no-referrer">
+                  <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-neutral-900/40 to-transparent"></div>
+                  
+                  <div class="absolute inset-0 p-8 flex flex-col justify-between z-10 text-left">
+                    <div class="h-12 w-12 bg-white/25 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center text-white">
+                      <mat-icon class="scale-110">{{ tech.icon }}</mat-icon>
+                    </div>
+                    <div class="space-y-3">
+                      <h4 class="text-2xl font-black text-white tracking-tight">{{ tech.name }}</h4>
+                      <p class="text-neutral-300 text-xs font-normal leading-relaxed">{{ tech.desc }}</p>
+                      <button [routerLink]="['/products']" [queryParams]="{category: tech.id === 'industrial' ? '3d-printers' : tech.id}" class="h-11 w-full bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 select-text cursor-pointer">
+                        EXPLORE STACK
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+        @case ('enterprise-solutions') {
+          <!-- BUSINESS SOLUTIONS: ENTERPRISE HUB -->
+          <section [id]="section.id" class="relative py-24 bg-neutral-900 rounded-[3rem] border border-neutral-800/40 overflow-hidden mx-6 text-left">
+            <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-500/5 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+            <div class="relative z-10 max-w-7xl mx-auto px-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div class="lg:col-span-4 space-y-8 col-span-1">
+                <div class="space-y-3">
+                  <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 font-display">{{ section.config['subtitle'] || 'Enterprise Protocol' }}</h2>
+                  <h3 class="text-5xl font-black text-white tracking-tighter leading-tight font-display">{{ section.config['title'] || 'Industrial Solutions' }}</h3>
+                  <p class="text-neutral-400 text-sm leading-relaxed">Unified 3D setups, industrial consulting, dental molds, and robotic kits formulated for scaling companies.</p>
+                </div>
+                <a [routerLink]="['/printing-service']" class="inline-flex h-12 px-8 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest items-center gap-3 hover:scale-105 transition-all">
+                  BOOK CONSULTATION <mat-icon class="scale-90">support_agent</mat-icon>
+                </a>
+              </div>
+              <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                @for (s of solutions; track s.name) {
+                  <div class="p-6 bg-neutral-950/70 border border-white/5 rounded-2xl hover:border-orange-500/30 transition-all group text-left">
+                    <div class="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500 mb-6 transition-transform group-hover:scale-110">
+                      <mat-icon class="scale-110">{{ s.icon }}</mat-icon>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2">{{ s.name }}</h4>
+                    <p class="text-neutral-500 text-xs font-normal leading-relaxed mb-4">{{ s.desc }}</p>
+                    <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2">
+                      LEARN MORE <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
+                    </a>
+                  </div>
+                }
+              </div>
+            </div>
+          </section>
+        }
+
+        @case ('partners-marquee') {
+          <!-- AUTHORIZED GLOBAL PARTNERS: HORIZONTAL MARQUEE -->
+          <section [id]="section.id" class="py-12 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/10">
+            <div class="max-w-7xl mx-auto px-6 space-y-6">
+              <h2 class="text-center text-[9px] font-black uppercase tracking-[0.4em] text-neutral-400">{{ section.config['title'] || 'Authorised Global Partners' }}</h2>
+              <div class="flex flex-wrap justify-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all">
+                @for (b of [
+                  { name: 'CREALITY', logo: 'C' },
+                  { name: 'BAMBU LAB', logo: 'B' },
+                  { name: 'ANYCUBIC', logo: 'A' },
+                  { name: 'FLASHFORGE', logo: 'F' },
+                  { name: 'PHROZEN', logo: 'P' },
+                  { name: 'PRUSA', logo: 'R' }
+                ]; track b.name) {
+                  <div class="flex items-center gap-3 group cursor-pointer">
+                    <div class="h-10 w-10 rounded-lg bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-lg font-black text-neutral-700 dark:text-neutral-300 group-hover:bg-[#d65108] group-hover:text-white transition-colors">{{ b.logo }}</div>
+                    <span class="text-sm font-bold tracking-tight text-neutral-700 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">{{ b.name }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </section>
+        }
+
+      }
       
-      <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-        <input type="email" placeholder="ENTER YOUR EMAIL" class="flex-1 h-12 px-6 bg-neutral-800 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500 transition-all uppercase tracking-widest">
-        <button class="h-12 px-8 bg-white hover:bg-orange-500 text-black hover:text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all">SUBSCRIBE</button>
-      </div>
-    </div>
-  </section>ion>
+    }
+  }
 
 </div>
 
 <style>
   @keyframes scan {
     0% { transform: translateY(0); }
-    50% { transform: translateY(550px); }
+    50% { transform: translateY(480px); }
     100% { transform: translateY(0); }
   }
   .animate-scan {

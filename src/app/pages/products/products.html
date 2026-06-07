@@ -1,180 +1,337 @@
-<div class="space-y-12 animate-fadeIn pb-24 select-none">
-  
-  <!-- WOL3D STYLE SUBCATEGORY MENU BAR (Screenshot 1) -->
-  <section class="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 space-y-6">
-    <!-- Category Tabs -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+<div class="space-y-10 animate-fadeIn pb-24 select-none text-neutral-800 dark:text-neutral-100">
+
+  <!-- ================= SCREENSHOT 2: GALAXY HUB NAVIGATOR ================= -->
+  <!-- Row 1: High-Impact Category Button Rails -->
+  <section class="w-full bg-neutral-100/50 dark:bg-neutral-900/40 rounded-3xl p-2 border border-neutral-200/50 dark:border-neutral-800/50">
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
       @for (cat of ds.categories().filter(isSubBy('')); track cat.id) {
         <button (click)="filterCategory.set(cat.id === filterCategory() ? '' : cat.id); filterSubcategory.set('')"
-                [class]="filterCategory() === cat.id ? 'flex flex-col items-center justify-center p-5 bg-orange-600 text-white rounded-2xl text-center shadow-lg transition-all border-none font-bold' : 'flex flex-col items-center justify-center p-5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl hover:border-orange-500 hover:shadow-md transition-all text-center group text-neutral-800 dark:text-neutral-200 font-bold'">
-          <mat-icon class="scale-125 mb-3" [class.text-orange-500]="filterCategory() !== cat.id">{{ getIcon(cat.id) }}</mat-icon>
-          <span class="text-[10px] font-black uppercase tracking-wider">{{ cat.name }}</span>
+                [class]="filterCategory() === cat.id 
+                  ? 'h-20 flex flex-col items-center justify-center gap-2 rounded-2xl bg-[#d65108] text-white shadow-lg shadow-orange-500/20 transform scale-105 transition-all duration-300' 
+                  : 'h-20 flex flex-col items-center justify-center gap-2 rounded-2xl bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-800/50 text-neutral-600 dark:text-neutral-300 transition-all duration-300'">
+          <mat-icon class="scale-110" [class.text-orange-500]="filterCategory() !== cat.id">{{ getIcon(cat.id) }}</mat-icon>
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-center px-1 font-display">{{ cat.name }}</span>
         </button>
       }
     </div>
+  </section>
 
-    <!-- Shop by Brand Section -->
-    <div class="space-y-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-      <h3 class="text-xs font-black text-neutral-600 dark:text-neutral-400 uppercase tracking-widest text-left">Shop by Brand</h3>
-      <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-3">
-        @for (brand of ['Creality', 'Bambu Lab', 'Flashforge', 'Elegoo', 'Phrozen', 'Creatbot', 'Snapmaker', 'Anycubic', 'Prusa']; track brand) {
-          <button (click)="filterBrand.set(brand === filterBrand() ? '' : brand)"
-                  [class]="filterBrand() === brand ? 'h-14 bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-none' : 'h-14 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 hover:border-orange-500 text-neutral-800 dark:text-neutral-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center font-bold'">
-            <span class="text-[9px] font-black tracking-tight">{{ brand }}</span>
-          </button>
-        }
-      </div>
+  <!-- Row 2: Shop by Brand Logos Grid (Screenshot 2) -->
+  <section class="bg-white dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-800/50 rounded-3xl p-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/80 pb-4">
+      <h3 class="text-xs font-black uppercase tracking-[0.25em] text-neutral-400 font-display">Shop by Brand</h3>
+      <span class="text-[10px] font-bold text-neutral-400">SELECT AN ENTERPRISE ECOSYSTEM</span>
     </div>
 
-    <!-- Shop by Category Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4 border-t border-neutral-200 dark:border-neutral-800 text-left">
-      <div class="lg:col-span-3 space-y-3">
-        <h3 class="text-xs font-black text-neutral-600 dark:text-neutral-400 uppercase tracking-widest">Shop by Category</h3>
-        <div class="space-y-1">
-          <button (click)="filterSubcategory.set(filterSubcategory() === 'fdm' ? '' : 'fdm')"
-                  [class]="filterSubcategory() === 'fdm' ? 'w-full text-left py-2 text-xs font-black text-orange-600' : 'w-full text-left py-2 text-xs font-bold text-neutral-500 hover:text-neutral-800 transition-colors'">
-            FDM
-          </button>
-          <button (click)="filterSubcategory.set(filterSubcategory() === 'fdm-multicolor' ? '' : 'fdm-multicolor')"
-                  [class]="filterSubcategory() === 'fdm-multicolor' ? 'w-full text-left py-2 text-xs font-black text-orange-600' : 'w-full text-left py-2 text-xs font-bold text-neutral-500 hover:text-neutral-800 transition-colors'">
-            FDM Multicolor
-          </button>
-          <button (click)="filterSubcategory.set(filterSubcategory() === 'resin-printers' ? '' : 'resin-printers')"
-                  [class]="filterSubcategory() === 'resin-printers' ? 'w-full text-left py-2 text-xs font-black text-orange-600' : 'w-full text-left py-2 text-xs font-bold text-neutral-500 hover:text-neutral-800 transition-colors'">
-            Resin
-          </button>
-        </div>
-      </div>
-      <div class="lg:col-span-6 space-y-3">
-        <h3 class="text-xs font-black text-neutral-600 dark:text-neutral-400 uppercase tracking-widest">FDM Sub-Types</h3>
-        <div class="grid grid-cols-2 gap-2">
-          @for (sub of ['DIY', 'Semi Assembled', 'Assembled']; track sub) {
-            <button (click)="filterSubcategory.set(sub.toLowerCase().replace(' ', '-') === filterSubcategory() ? '' : sub.toLowerCase().replace(' ', '-'))"
-                    [class]="filterSubcategory() === sub.toLowerCase().replace(' ', '-') ? 'text-left py-2 text-xs font-black text-orange-600' : 'text-left py-2 text-xs font-bold text-neutral-500 hover:text-neutral-800 transition-colors'">
-              {{ sub }}
-            </button>
-          }
-        </div>
-      </div>
-      <div class="lg:col-span-3 flex items-center justify-end">
-        <button (click)="filterCategory.set(''); filterSubcategory.set(''); filterBrand.set('')" 
-                class="w-full lg:w-auto h-12 px-8 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-md transition-all border-none">
-          View All Products
+    <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-4">
+      @for (brand of [
+        { name: 'Creality', alias: 'Creality', icon: 'CR', desc: 'Creality Labs' },
+        { name: 'Bambu Lab', alias: 'Bambu Lab', icon: 'BL', desc: 'Bambu Lab' },
+        { name: 'Flashforge', alias: 'Flashforge', icon: 'FF', desc: 'Flashforge' },
+        { name: 'Elegoo', alias: 'Elegoo', icon: 'EG', desc: 'Elegoo' },
+        { name: 'Phrozen', alias: 'Phrozen', icon: 'PH', desc: 'Phrozen' },
+        { name: 'CreatBot', alias: 'CreatBot', icon: 'CB', desc: 'CreatBot' },
+        { name: 'Snapmaker', alias: 'Snapmaker', icon: 'SM', desc: 'Snapmaker' },
+        { name: 'Anycubic', alias: 'Anycubic', icon: 'AC', desc: 'Anycubic' },
+        { name: 'Prusa', alias: 'Prusa', icon: 'PR', desc: 'Prusa Josef' }
+      ]; track brand.name) {
+        <button (click)="filterBrand.set(brand.name === filterBrand() ? '' : brand.name)"
+                [class]="filterBrand() === brand.name 
+                  ? 'flex flex-col items-center justify-center p-4 rounded-2xl bg-orange-500/5 border-2 border-orange-500 text-orange-600 dark:text-orange-400 h-24 shadow-md transition-all duration-300' 
+                  : 'flex flex-col items-center justify-center p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-800/60 text-neutral-700 dark:text-neutral-300 h-24 hover:scale-[1.03] transition-all duration-300'">
+          
+          <div class="h-8 w-8 rounded-xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-black text-xs text-neutral-800 dark:text-neutral-200 mb-1 border border-neutral-300/30">
+            {{ brand.icon }}
+          </div>
+          <span class="text-[10px] font-black uppercase tracking-tight font-display text-center truncate w-full">{{ brand.name }}</span>
         </button>
-      </div>
+      }
     </div>
   </section>
 
-  <!-- PRODUCTS GRID AREA -->
-  <div class="space-y-6">
-    <!-- Filters Toolbar -->
-    <div class="flex items-center justify-between bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-2xl shadow-sm">
-      <div class="flex items-center gap-4">
-        <button (click)="showMobileFilters.set(!showMobileFilters())" 
-                class="h-11 px-5 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 text-neutral-800 dark:text-neutral-200 bg-transparent hover:bg-neutral-50">
-          <mat-icon class="scale-75">filter_list</mat-icon> Show filters
-        </button>
-      </div>
-
-      <div class="flex items-center gap-4">
-        <div class="relative group">
-          <select (change)="setSort($any($event.target).value)" 
-                  class="h-11 px-6 bg-transparent border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-black uppercase tracking-widest text-neutral-800 dark:text-neutral-200 cursor-pointer appearance-none pr-10">
-            <option value="popular">Sort by Default sorting</option>
-            <option value="latest">Sort by Latest</option>
-            <option value="price-low">Sort by Price: Low to High</option>
-            <option value="price-high">Sort by Price: High to Low</option>
-          </select>
-          <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none scale-75">expand_more</mat-icon>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex flex-col lg:flex-row gap-8">
-      <!-- Sidebar Filters: Nav Deck (Toggleable) -->
-      @if (showMobileFilters()) {
-        <aside class="w-full lg:w-64 shrink-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 text-left space-y-6 h-fit animate-slideDown">
-          <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
-            <h4 class="text-xs font-black uppercase tracking-widest text-neutral-800 dark:text-neutral-200">Refine Selection</h4>
-            <button (click)="showMobileFilters.set(false)" class="text-neutral-400 hover:text-neutral-800"><mat-icon class="scale-75">close</mat-icon></button>
-          </div>
-          <!-- Category List -->
-          <div class="space-y-2">
-            <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Active Category</p>
-            <div class="flex flex-col gap-1">
-              @for (c of ds.categories().filter(isSubBy('')); track c.id) {
-                <button (click)="filterCategory.set(c.id === filterCategory() ? '' : c.id)"
-                        [class]="filterCategory() === c.id ? 'w-full text-left py-2 px-3 bg-neutral-100 dark:bg-neutral-800 text-orange-600 rounded-lg text-xs font-black' : 'w-full text-left py-2 px-3 text-neutral-600 dark:text-neutral-400 rounded-lg text-xs font-bold hover:bg-neutral-50 dark:hover:bg-neutral-800/50'">
-                  {{ c.name }}
+  <!-- Row 3: Shop by Category sub-rails (Screenshot 2 bottom panel style) -->
+  <section class="bg-neutral-50 dark:bg-neutral-900/30 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6">
+    <div class="flex flex-col md:flex-row items-stretch justify-between gap-6">
+      
+      <!-- Subcategory tree block -->
+      <div class="flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          
+          <div>
+            <h4 class="text-xs font-black uppercase tracking-widest text-[#d65108] mb-3 font-display">Shop by Category</h4>
+            <div class="space-y-2">
+              @for (cat of ds.categories().filter(isSubBy('')); track cat.id) {
+                <button (click)="filterCategory.set(cat.id === filterCategory() ? '' : cat.id); filterSubcategory.set('')"
+                        class="flex items-center gap-2 text-xs font-bold text-neutral-600 dark:text-neutral-300 hover:text-[#d65108] transition-colors">
+                  <mat-icon class="scale-75 text-neutral-400">chevron_right</mat-icon>
+                  <span>{{ cat.name }}</span>
                 </button>
               }
             </div>
           </div>
-        </aside>
-      }
 
-      <!-- Product Cards Grid -->
-      <main class="flex-1">
-        @if (filteredProducts().length > 0) {
-          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 animate-fadeIn">
-            @for (p of filteredProducts(); track p.id) {
-              <div class="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:shadow-lg transition-all flex flex-col text-left relative">
-                
-                <!-- Circular Authorized Seal Badge -->
-                <div class="absolute top-4 right-4 z-10 h-12 w-12 rounded-full border-2 border-orange-500 bg-white flex flex-col items-center justify-center text-center shadow-md">
-                  <span class="text-[6px] font-black text-orange-600 uppercase tracking-tighter leading-none">WOL3D</span>
-                  <span class="text-[6px] font-black text-neutral-900 uppercase tracking-tighter leading-none">SEAL</span>
-                </div>
-
-                <!-- Image container -->
-                <div class="aspect-square bg-neutral-55 dark:bg-neutral-950/40 rounded-2xl overflow-hidden mb-4 p-4 flex items-center justify-center relative">
-                  <img [src]="p.images[0]" class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500" alt="{{ p.name }}">
-                  <button (click)="addToCart(p)" class="absolute bottom-2 right-2 h-10 w-10 bg-neutral-900 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
-                    <mat-icon class="scale-75">add_shopping_cart</mat-icon>
+          <div>
+            <h4 class="text-xs font-black uppercase tracking-widest text-neutral-400 mb-3 font-display">
+              {{ filterCategory() ? getCategoryName(filterCategory()) : 'Subdivisions' }}
+            </h4>
+            <div class="flex flex-wrap gap-2">
+              @if (filterCategory()) {
+                @for (sub of ds.categories().filter(isSubBy(filterCategory())); track sub.id) {
+                  <button (click)="filterSubcategory.set(sub.id === filterSubcategory() ? '' : sub.id)"
+                          [class]="filterSubcategory() === sub.id 
+                            ? 'px-4 py-2 rounded-xl bg-orange-500/10 border border-orange-500 text-orange-600 font-extrabold text-[10px] uppercase tracking-wider' 
+                            : 'px-4 py-2 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-orange-500 text-[10px] uppercase tracking-wider transition-colors'">
+                    {{ sub.name }}
                   </button>
+                }
+                @if (ds.categories().filter(isSubBy(filterCategory())).length === 0) {
+                  <p class="text-[10px] text-neutral-400 font-bold">Standard configuration</p>
+                }
+              } @else {
+                <p class="text-[10px] text-neutral-400 font-bold">Please select a primary system above to inspect subcategories</p>
+              }
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Orange View All CTA -->
+      <div class="flex items-center justify-center shrink-0">
+        <button (click)="filterCategory.set(''); filterSubcategory.set(''); filterBrand.set('')"
+                class="w-full md:w-64 h-12 bg-[#d65108] text-white hover:bg-orange-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-600/10">
+          <span>View All Products</span>
+          <mat-icon class="scale-75">category</mat-icon>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ================= SCREENSHOT 1: FILTER BAR & ACTIVE GRID ================= -->
+  <!-- Top Navigation Filter Bar -->
+  <section class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-2xl px-6 py-4">
+    <div class="flex items-center gap-4 w-full sm:w-auto">
+      
+      <!-- Show Filters Toggle (for display & manual reset) -->
+      <button (click)="showMobileFilters.set(!showMobileFilters())" 
+              class="h-11 px-5 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 text-neutral-600 dark:text-neutral-200 transition-colors">
+        <mat-icon class="scale-90">filter_list</mat-icon>
+        <span>Show Filters</span>
+      </button>
+
+      <!-- Layout toggles -->
+      <div class="hidden md:flex items-center border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden divide-x divide-neutral-200 dark:divide-neutral-800">
+        <button class="h-11 w-11 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 text-[#d65108]" aria-label="Grid View"><mat-icon class="scale-90">grid_view</mat-icon></button>
+        <button class="h-11 w-11 flex items-center justify-center text-neutral-400 hover:text-neutral-600" aria-label="List View"><mat-icon class="scale-90">view_headline</mat-icon></button>
+      </div>
+
+      <!-- Active Filter Badge Chips -->
+      <div class="flex-1 flex flex-wrap gap-2">
+        @if (filterCategory()) {
+          <span class="inline-flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase text-neutral-600 dark:text-neutral-300">
+            Cat: {{ filterCategory() }}
+            <button (click)="filterCategory.set('')" class="text-neutral-500 hover:text-red-500 scale-90"><mat-icon class="scale-75 -my-1">close</mat-icon></button>
+          </span>
+        }
+        @if (filterSubcategory()) {
+          <span class="inline-flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase text-neutral-600 dark:text-neutral-300">
+            Sub: {{ filterSubcategory() }}
+            <button (click)="filterSubcategory.set('')" class="text-neutral-500 hover:text-red-500 scale-90"><mat-icon class="scale-75 -my-1">close</mat-icon></button>
+          </span>
+        }
+        @if (filterBrand()) {
+          <span class="inline-flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase text-neutral-600 dark:text-neutral-300">
+            Brand: {{ filterBrand() }}
+            <button (click)="filterBrand.set('')" class="text-neutral-500 hover:text-red-500 scale-90"><mat-icon class="scale-75 -my-1">close</mat-icon></button>
+          </span>
+        }
+        @if (searchQuery()) {
+          <span class="inline-flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full text-[9px] font-extrabold uppercase text-neutral-600 dark:text-neutral-300">
+            Query: "{{ searchQuery() }}"
+            <button (click)="searchQuery.set('')" class="text-neutral-500 hover:text-red-500 scale-90"><mat-icon class="scale-75 -my-1">close</mat-icon></button>
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+      <!-- Blueprint search -->
+      <div class="relative w-full sm:w-56">
+        <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
+        <input type="text" 
+               [value]="searchQuery()"
+               (input)="onSearch($event)"
+               placeholder="Search product..." 
+               class="h-11 pl-10 pr-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-neutral-700 dark:text-neutral-200 focus:border-[#d65108] outline-none transition-all w-full leading-none">
+      </div>
+
+      <!-- Sorting selection -->
+      <div class="relative min-w-[150px] shrink-0">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-neutral-400 uppercase tracking-tight">Sort By:</span>
+        <select (change)="setSort($any($event.target).value)" 
+                class="w-full h-11 pl-16 pr-8 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-[#d65108] outline-none cursor-pointer appearance-none transition-all">
+          <option value="popular">DEFAULT</option>
+          <option value="latest">NEW</option>
+          <option value="price-low">PRICE: ASC</option>
+          <option value="price-high">PRICE: DESC</option>
+        </select>
+        <mat-icon class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Catalog Grid Section -->
+  <main class="w-full">
+    @if (filteredProducts().length > 0) {
+      
+      <!-- Dynamic column sizing representing neat retail slots -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        
+        @for (p of filteredProducts(); track p.id) {
+          
+          <div class="group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(214,81,8,0.12)] min-h-[440px] hover:-translate-y-2 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-500 ease-out p-4 pb-6 flex flex-col relative text-left overflow-hidden">
+            
+            <!-- SPARKLING HOVER EFFECT STARS -->
+            <div class="absolute inset-0 pointer-events-none overflow-hidden z-20">
+              <!-- Sparkle 1: Top-Left Amber -->
+              <div class="sparkle-one">
+                <svg class="h-6 w-6 text-amber-500 dark:text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z"/>
+                </svg>
+              </div>
+              <!-- Sparkle 2: Top-Right Cyan/Blue -->
+              <div class="sparkle-two">
+                <svg class="h-5 w-5 text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z"/>
+                </svg>
+              </div>
+              <!-- Sparkle 3: Middle-Left Yellow -->
+              <div class="sparkle-three">
+                <svg class="h-4 w-4 text-yellow-400 dark:text-yellow-300 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c.06 2.8 2 4.7 4.8 4.8-2.8.06-4.7 2-4.8 4.8-.06-2.8-2-4.7-4.8-4.8 2.8-.06 4.7-2 4.8-4.8z"/>
+                </svg>
+              </div>
+              <!-- Sparkle 4: Bottom-Right Orange/Rust -->
+              <div class="sparkle-four">
+                <svg class="h-6 w-6 text-orange-600 dark:text-orange-500 drop-shadow-[0_0_8px_rgba(194,65,12,0.9)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z"/>
+                </svg>
+              </div>
+              <!-- Sparkle 5: Sparkle burst center -->
+              <div class="sparkle-five">
+                <svg class="h-5 w-5 text-neutral-100 dark:text-white drop-shadow-[0_0_6px_rgba(255,255,255,1)]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- STAMP BADGE: Exclusive Bambu Lab Distributor Seals on Top Right -->
+            @if (p.isExclusive) {
+              <div class="absolute top-5 right-5 z-20 select-none pointer-events-none opacity-85 hover:opacity-100 transition-opacity">
+                <div class="relative w-16 h-16 rounded-full border border-orange-500/30 bg-orange-50/90 dark:bg-orange-950/40 flex flex-col items-center justify-center p-1 text-[7px] font-black tracking-tighter text-orange-600 dark:text-orange-400 uppercase text-center leading-none">
+                  <svg class="absolute inset-0 w-full h-full -rotate-12" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2,2"/>
+                  </svg>
+                  <span class="text-[5px] scale-90 tracking-widest font-black">EXCLUSIVE</span>
+                  <span class="font-extrabold text-[8px] my-0.5 text-nowrap tracking-wide">{{ p.brand }}</span>
+                  <span class="text-[5px] scale-90 font-black">DISTRIBUTOR</span>
                 </div>
-
-                <!-- Info Stack -->
-                <div class="space-y-3 flex-1 flex flex-col justify-between">
-                  <div class="space-y-1">
-                    <span class="text-[9px] font-black text-neutral-400 uppercase tracking-widest block">{{ p.brand }}</span>
-                    <a [routerLink]="['/product', p.slug]" class="block text-sm font-black text-neutral-900 dark:text-white hover:text-orange-500 transition-colors uppercase leading-tight line-clamp-2 h-10">{{ p.name }}</a>
-                  </div>
-
-                  <div class="space-y-2">
-                    <!-- Rating Stars -->
-                    <div class="flex items-center gap-1 text-amber-500">
-                      <div class="flex text-amber-500">
-                        <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                        <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                        <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                        <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                        <mat-icon class="scale-50 w-auto h-auto">star</mat-icon>
-                      </div>
-                      <span class="text-[9px] font-bold text-neutral-400">(2)</span>
-                    </div>
-
-                    <div class="flex items-baseline gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-850">
-                      <span class="text-base font-black text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-                      @if (p.mrp > activePrice(p)) {
-                        <span class="text-xs text-neutral-400 line-through font-bold">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-
               </div>
             }
+
+            <!-- Card Image Box with light theme look of products -->
+            <div class="relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/80 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-6 mb-5 group-hover:scale-[0.98] transition-transform duration-500">
+              
+              <!-- Polished Shimmer Sweep effect -->
+              <div class="shimmer-effect"></div>
+
+              <img [src]="p.images[0]" 
+                   class="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" 
+                   alt="{{p.name}}" 
+                   referrerpolicy="no-referrer">
+              
+              <!-- Yellow status warning strip (Screenshot 1) -->
+              @if (p.warningText) {
+                <div class="absolute bottom-0 left-0 right-0 bg-[#ffd700] text-neutral-900 text-[9px] font-black tracking-widest uppercase py-1.5 text-center z-10">
+                  {{ p.warningText }}
+                </div>
+              }
+
+              <!-- On-Hover Actions Overlays -->
+              <div class="absolute inset-0 bg-neutral-900/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                <button (click)="addToCart(p)" 
+                        class="h-12 w-12 bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-300"
+                        title="Add to Cart">
+                  <mat-icon class="scale-90">add_shopping_cart</mat-icon>
+                </button>
+                <a [routerLink]="['/product', p.slug]" 
+                   class="h-12 w-12 bg-white text-neutral-900 hover:bg-neutral-800 hover:text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-300"
+                     title="View Details">
+                  <mat-icon class="scale-90">visibility</mat-icon>
+                </a>
+              </div>
+              
+              @if (p.mrp > activePrice(p)) {
+                <div class="absolute top-4 left-4 px-2.5 py-1 bg-red-600 text-white text-[8px] font-black tracking-wide rounded-sm z-10 shadow-lg shadow-red-600/10 uppercase">
+                  SALES
+                </div>
+              }
+            </div>
+
+            <!-- Card Metadata (Screenshot 1: title, stars rating, price) -->
+            <div class="flex-1 flex flex-col space-y-3">
+              
+              <!-- Title -->
+              <a [routerLink]="['/product', p.slug]" 
+                 class="block text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-snug hover:text-[#d65108] dark:hover:text-orange-400 min-h-[40px] line-clamp-2 transition-colors">
+                {{ p.name }}
+              </a>
+
+              <!-- Pricing text formatting -->
+              <div class="flex items-baseline gap-2">
+                <span class="text-base font-extrabold text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
+                @if (p.mrp > activePrice(p)) {
+                  <span class="text-xs text-neutral-400 line-through font-medium">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+                }
+              </div>
+
+              <!-- Rating Star system -->
+              <div class="flex items-center gap-1.5 mt-auto">
+                <div class="flex items-center text-amber-500 select-none">
+                  @for (star of [1,2,3,4,5]; track star) {
+                    <mat-icon class="scale-[0.75] -mx-0.5">star</mat-icon>
+                  }
+                </div>
+                <span class="text-[11px] text-neutral-400 font-bold">({{ p.ratingCount || 1 }})</span>
+              </div>
+
+            </div>
+
           </div>
-        } @else {
-          <div class="py-32 text-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl space-y-6 animate-fadeIn">
-            <mat-icon class="text-neutral-300 scale-150">search_off</mat-icon>
-            <h4 class="text-lg font-black text-neutral-800 dark:text-neutral-200 uppercase tracking-widest">No Products Found</h4>
-            <button (click)="filterCategory.set(''); filterSubcategory.set(''); filterBrand.set('')" class="px-8 py-3 bg-neutral-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-neutral-800 transition-all">Clear Filters</button>
-          </div>
+          
         }
-      </main>
-    </div>
-  </div>
+      </div>
+
+    @} @else {
+      
+      <!-- Empty Sector warnings -->
+      <div class="py-32 text-center space-y-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl">
+        <div class="h-20 w-20 bg-neutral-50 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto border border-neutral-200 dark:border-neutral-800">
+          <mat-icon class="text-neutral-400 scale-[1.5]">category</mat-icon>
+        </div>
+        <div class="space-y-2">
+          <h3 class="text-xl font-bold text-neutral-800 dark:text-white uppercase tracking-wider font-display">No Systems Match</h3>
+          <p class="text-neutral-500 dark:text-neutral-400 text-xs max-w-xs mx-auto">There are currently no products corresponding to the active categories or system limits.</p>
+        </div>
+        <button (click)="filterCategory.set(''); searchQuery.set(''); filterBrand.set(''); filterSubcategory.set('')" 
+                class="h-11 px-8 bg-[#d65108] hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all">
+          RESET FILTERS
+        </button>
+      </div>
+
+    }
+  </main>
 
 </div>

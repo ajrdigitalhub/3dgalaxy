@@ -1,0 +1,19 @@
+<div 
+  class="relative overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-950/20 group transition-all font-sans flex items-center justify-center p-2.5"
+  [style.width]="width"
+  [style.height]="height"
+>
+  @if (src) {
+    <img 
+      [src]="src" 
+      [alt]="alt" 
+      class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+      referrerpolicy="no-referrer"
+    >
+  } @else {
+    <div class="flex flex-col items-center justify-center text-zinc-400 gap-1 select-none">
+      <mat-icon class="text-xs">broken_image</mat-icon>
+      <span class="text-[9px] uppercase font-bold tracking-wider">No attached graphic</span>
+    </div>
+  }
+</div>

@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, inject, computed, signal} from '@angular/core';
-import {RouterOutlet, RouterModule} from '@angular/router';
+import {RouterOutlet, RouterModule, Router} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Advertisement} from '../services/datastore';
@@ -13,6 +13,17 @@ import {DatastoreService, Advertisement} from '../services/datastore';
 })
 export class App {
   public ds = inject(DatastoreService);
+  public router = inject(Router);
+
+  isHome = signal(true);
+
+  constructor() {
+    // Keep isHome updated with active path
+    this.router.events.subscribe(() => {
+      const urlPath = this.router.url.split('?')[0];
+      this.isHome.set(urlPath === '/' || urlPath === '/home');
+    });
+  }
 
   // Categories Hierarchy for Nav
   rootCategories = computed(() => this.ds.categories().filter(c => !c.parent_id));
@@ -60,7 +71,11 @@ export class App {
   }
 
   getSubcategories(parentId: string) {
-    return this.ds.categories().filter(c => c.parent_id === parentId);
+    return this.ds.categories().filter(c => c.parent_id === parentId || c.parentId === parentId);
+  }
+
+  getMenuItemChildren(parentId: string) {
+    return this.ds.menuItems().filter(m => m.parentId === parentId);
   }
 
   onSearch(q: string) {
@@ -73,6 +88,10 @@ export class App {
   }
 
   toggleRoleDropdown() {
+    if (!this.ds.currentUser()) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.isRoleDropdownOpen.update(v => !v);
     this.isBellOpen.set(false);
   }

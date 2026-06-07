@@ -1,0 +1,127 @@
+<div class="space-y-8 animate-fadeIn">
+  <app-admin-page-header 
+    [title]="'Edit SKU: ' + pName()"
+    description="Modify and configure manufacturer alliances, dealers pricing, and technical parameters."
+  >
+    <button (click)="back()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer border-none">
+      Back to Registry
+    </button>
+  </app-admin-page-header>
+
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-hidden shadow-xs">
+    <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex justify-between items-center">
+      <h3 class="text-xs font-black uppercase text-zinc-950 dark:text-white">Configure Catalog SKU: {{ pSku() }}</h3>
+      <div class="flex gap-2">
+        <button (click)="back()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-sans font-bold border-none bg-none">Cancel</button>
+        <button (click)="saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none">Save Asset</button>
+      </div>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
+      <!-- Basic Group -->
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
+        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+      </div>
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
+        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Linked Category *</span>
+          <select [value]="pCatId()" (change)="pCatId.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+            <option value="">Select segment...</option>
+            @for (c of categoryService.categories(); track c.id) {
+              <option [value]="c.id">
+                @if (c.parent_id) { ↳ } {{ c.name }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
+          <select [value]="pBrand()" (change)="pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+            <option value="3D Galaxy">3D Galaxy (Default)</option>
+            @for (br of brandService.brands(); track br.id) {
+              <option [value]="br.name">{{ br.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Prices -->
+      <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
+          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
+          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
+          <input type="number" [value]="pDealer()" (input)="pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none">
+        </div>
+      </div>
+
+      <!-- Stock, Status -->
+      <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
+          <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
+          <select [value]="pStatus()" (change)="pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white font-bold">
+            <option value="active">Active Storefront</option>
+            <option value="draft">Draft (Admin Only)</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Image List Block -->
+      <div class="space-y-1 md:col-span-2">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Media Images (One Absolute URL link per line)</span>
+        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
+      </div>
+
+      <!-- Specifications & Full Rich Description -->
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
+        <textarea rows="4" [value]="pDesc()" (input)="pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+      </div>
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
+        <textarea rows="4" [value]="pLongDesc()" (input)="pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+      </div>
+
+      <!-- Product Variants JSON -->
+      <div class="space-y-1 md:col-span-2">
+        <div class="flex justify-between items-center pr-1">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Product Variants (JSON specifications)</span>
+          <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;With AMS Combo&quot;, &quot;price&quot;: 48000&#125;]</span>
+        </div>
+        <textarea rows="2" [value]="pVariants()" (input)="pVariants.set($any($event.target).value)" placeholder='[{"name": "Standard Bundle", "price": 21499, "stock": 12}, {"name": "With AMS Combo", "price": 38499, "stock": 8}]' class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
+      </div>
+
+      <!-- Search Optimization Meta Data -->
+      <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="col-span-1 md:col-span-2 pb-1 border-b dark:border-zinc-900">
+          <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Page Title</span>
+          <input type="text" [value]="pSeoTitle()" (input)="pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+        </div>
+        <div class="space-y-1">
+          <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Description keywords</span>
+          <input type="text" [value]="pSeoDescription()" (input)="pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

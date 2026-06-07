@@ -97,6 +97,14 @@ export class CartCheckout {
       return;
     }
 
+    if (this.selectedPayment() === 'Razorpay') {
+      const confirmPayment = confirm('🚀 Redirecting to Razorpay Secure Gateway...\n\n(Simulation: Click OK to simulate a successful Card/Netbanking payment verification.)');
+      if (!confirmPayment) {
+        alert('Payment cancelled by user.');
+        return;
+      }
+    }
+
     try {
       const order = await this.ds.checkoutCart({
         name,

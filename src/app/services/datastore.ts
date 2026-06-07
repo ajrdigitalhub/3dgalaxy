@@ -17,7 +17,10 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
-  User as FirebaseUser
+  User as FirebaseUser,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { SeederService } from './seeder';
@@ -26,9 +29,45 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  parent_id: string | null;
+  parent_id: string | null; // internal compatibility
+  parentId: string | null;   // external compatibility
   display_order: number;
+  sortOrder?: number;
   description?: string;
+  icon?: string;
+  image?: string;
+  banner?: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string;
+  banner?: string;
+  description?: string;
+  country?: string;
+  active?: boolean;
+}
+
+export interface MenuItem {
+  id: string;
+  parentId: string | null;
+  categoryId?: string | null;
+  label: string;
+  url: string;
+  sortOrder: number;
+}
+
+export interface ProductVariant {
+  id?: string;
+  name: string;
+  price: number;
+  stock: number;
 }
 
 export interface Specification {
@@ -77,6 +116,14 @@ export interface Product {
   featured: boolean;
   is360Supported: boolean;
   tags: string[];
+  isExclusive?: boolean;
+  warningText?: string;
+  avgRating?: number;
+  ratingCount?: number;
+  variants?: ProductVariant[];
+  status?: 'active' | 'draft' | 'out_of_stock';
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export interface CartItem {
@@ -198,6 +245,14 @@ export interface Settings {
   contactPhone?: string;
 }
 
+export interface HomeLayoutSection {
+  id: string;
+  name: string;
+  visible: boolean;
+  order: number;
+  config: Record<string, unknown>;
+}
+
 export interface CheckoutRequest {
   name: string;
   phone: string;
@@ -270,6 +325,8 @@ export class DatastoreService {
 
   // Core Data Signals
   categories = signal<Category[]>([]);
+  brands = signal<Brand[]>([]);
+  menuItems = signal<MenuItem[]>([]);
   products = signal<Product[]>([]);
   orders = signal<Order[]>([]);
   quotes = signal<QuoteRequest[]>([]);
@@ -278,6 +335,159 @@ export class DatastoreService {
   coupons = signal<Coupon[]>([]);
   socialPosts = signal<SocialPost[]>([]);
   notifications = signal<Campaign[]>([]);
+  
+  homeLayout = signal<HomeLayoutSection[]>([
+    {
+      id: "hero-slides",
+      name: "Hero Slider Banner",
+      visible: true,
+      order: 1,
+      config: {
+        title: "Interactive Sliders"
+      }
+    },
+    {
+      id: "quick-nav",
+      name: "Quick Navigation Menu",
+      visible: true,
+      order: 2,
+      config: {
+        title: "QUICK NAVIGATION",
+        linkText: "All Products →",
+        linkUrl: "/products",
+        items: [
+          { id: "3d-printers", name: "3D PRINTERS", icon: "precision_manufacturing" },
+          { id: "materials", name: "MATERIALS", icon: "grain" },
+          { id: "3d-pens", name: "3D PENS", icon: "gesture" },
+          { id: "scanners", name: "3D SCANNERS", icon: "document_scanner" },
+          { id: "laser-engravers", name: "ENGRAVERS", icon: "grain" },
+          { id: "stem-kits", name: "STEM KITS", icon: "school" },
+          { id: "spare-parts", name: "SPARE PARTS", icon: "build" },
+          { id: "brahma-farm", name: "PRINT FARM", icon: "hub" }
+        ]
+      }
+    },
+    {
+      id: "showcase-1",
+      name: "Highlight Card (Bambu Lab A1)",
+      visible: true,
+      order: 3,
+      config: {
+        productId: "prod-3",
+        brand: "BAMBU LAB",
+        name: "A1 Combo",
+        description: "Experience seamless multicolor 3D printing with the Bambu Lab A1. Featuring full auto calibration and active flow rate compensation. with a spacious 256*256*256 mm³ build volume and compatibility with various filaments.",
+        salePrice: 48999,
+        mrp: 55000,
+        badge: "BEST DEAL",
+        image: "https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png"
+      }
+    },
+    {
+      id: "showcase-2",
+      name: "Highlight Card (Creality Sparx)",
+      visible: true,
+      order: 4,
+      config: {
+        productId: "prod-6",
+        brand: "CREALITY",
+        name: "Creality Sparx i7 Combo",
+        description: "The Creality Sparx i7 Combo brings professional grade 3D printing to your workshop with its dual extrusion capability and heated build platform. Engineered for precision and speed, this FDM printer handles complex multi-material projects with ease, delivering consistent layer adhesion and dimensional accuracy.",
+        salePrice: 48999,
+        mrp: 55000,
+        badge: "",
+        image: "https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png"
+      }
+    },
+    {
+      id: "category-view-filament",
+      name: "Filament Showcase Row",
+      visible: true,
+      order: 5,
+      config: {
+        title: "FILAMENT",
+        subtitle: "PREMIUM COMPOUNDED POLYMERS",
+        buttonText: "VIEW ALL",
+        linkUrl: "/products",
+        queryParams: { category: "materials" }
+      }
+    },
+    {
+      id: "category-view-spare-parts",
+      name: "Spare Parts Showcase Row",
+      visible: true,
+      order: 6,
+      config: {
+        title: "SPARE PARTS",
+        subtitle: "PRECISION REPLACEMENT NODES",
+        buttonText: "VIEW ALL",
+        linkUrl: "/products",
+        queryParams: { category: "spare-parts" }
+      }
+    },
+    {
+      id: "category-view-3d-printer",
+      name: "3D Printer Showcase Row",
+      visible: true,
+      order: 7,
+      config: {
+        title: "3D PRINTER",
+        subtitle: "ADDITIVE FABRICATION UNITS",
+        buttonText: "VIEW ALL",
+        linkUrl: "/products",
+        queryParams: { category: "3d-printers" }
+      }
+    },
+    {
+      id: "newsletter",
+      name: "Newsletter Subscription Banner",
+      visible: true,
+      order: 8,
+      config: {
+        title: "JOIN THE MAKER'S COLLECTIVE",
+        description: "Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals."
+      }
+    },
+    {
+      id: "featured-innovations",
+      name: "Featured Innovation Catalog",
+      visible: false,
+      order: 9,
+      config: {
+        title: "Featured Innovations",
+        subtitle: "Precision Catalog"
+      }
+    },
+    {
+      id: "technology-hubs",
+      name: "Technology Category Hubs",
+      visible: false,
+      order: 10,
+      config: {
+        title: "Shop by Technology",
+        subtitle: "The Laboratory"
+      }
+    },
+    {
+      id: "enterprise-solutions",
+      name: "Enterprise Industrial Hub",
+      visible: false,
+      order: 11,
+      config: {
+        title: "Industrial Solutions",
+        subtitle: "Enterprise Protocol"
+      }
+    },
+    {
+      id: "partners-marquee",
+      name: "Authorized Brand Logos",
+      visible: true,
+      order: 12,
+      config: {
+        title: "Authorised Global Partners"
+      }
+    }
+  ]);
   
   // Local UI State
   cart = signal<CartItem[]>([]);
@@ -302,10 +512,19 @@ export class DatastoreService {
     effect(() => {
       if (this.authReady() && this.userRole() === 'super-admin') {
         // Wait for sync
-        setTimeout(() => {
+        setTimeout(async () => {
           if (this.products().length === 0 && this.categories().length === 0) {
             console.log('No data found, seeding mock data...');
             this.seeder.seedAll();
+          }
+          try {
+            const layoutDoc = await getDoc(doc(db, 'settings', 'homeLayout'));
+            if (!layoutDoc.exists()) {
+              console.log('Seeding default home layout config...');
+              await setDoc(doc(db, 'settings', 'homeLayout'), { sections: this.homeLayout() });
+            }
+          } catch (err) {
+            console.error('Error auto-seeding home layout:', err);
           }
         }, 2000);
       }
@@ -377,6 +596,43 @@ export class DatastoreService {
     return signInWithPopup(auth, provider);
   }
 
+  async loginWithEmail(email: string, pass: string) {
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      return cred.user;
+    } catch (err) {
+      console.error('Email signin error:', err);
+      throw err;
+    }
+  }
+
+  async registerWithEmail(email: string, pass: string, name: string) {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const user = cred.user;
+      await updateProfile(user, { displayName: name });
+      
+      const newProfile: UserProfile = {
+        id: user.uid,
+        name: name,
+        email: user.email || email,
+        role: (user.email === 'arunjaya1999@gmail.com') ? 'super-admin' : 'customer',
+        rewardPoints: 0,
+        active: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      await setDoc(doc(db, 'users', user.uid), newProfile);
+      this.userProfile.set(newProfile);
+      this.userRole.set(newProfile.role);
+      
+      return user;
+    } catch (err) {
+      console.error('Email registration error:', err);
+      throw err;
+    }
+  }
+
   async logout() {
     return signOut(auth);
   }
@@ -386,6 +642,18 @@ export class DatastoreService {
     onSnapshot(collection(db, 'categories'), (snap) => {
       this.categories.set(snap.docs.map(d => ({ ...d.data() as Category, id: d.id })));
     }, err => this.handleFirestoreError(err, 'list', 'categories'));
+
+    // Brands
+    onSnapshot(collection(db, 'brands'), (snap) => {
+      this.brands.set(snap.docs.map(d => ({ ...d.data() as Brand, id: d.id })));
+    }, err => this.handleFirestoreError(err, 'list', 'brands'));
+
+    // Menu Items
+    onSnapshot(collection(db, 'menuItems'), (snap) => {
+      const items = snap.docs.map(d => ({ ...d.data() as MenuItem, id: d.id }));
+      items.sort((a,b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      this.menuItems.set(items);
+    }, err => this.handleFirestoreError(err, 'list', 'menuItems'));
 
     // Products
     onSnapshot(collection(db, 'products'), (snap) => {
@@ -419,6 +687,19 @@ export class DatastoreService {
         this.settings.set(snap.data() as Settings);
       }
     }, err => this.handleFirestoreError(err, 'get', 'settings/global'));
+
+    // Home Layout Configurations
+    onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as { sections: HomeLayoutSection[] };
+        if (data && Array.isArray(data.sections)) {
+          const sorted = [...data.sections].sort((a, b) => (a.order || 0) - (b.order || 0));
+          this.homeLayout.set(sorted);
+        }
+      }
+    }, err => {
+      console.warn('Silent notice: homeLayout rules or missing doc. Default layout loaded as fallback.', err);
+    });
 
     // blogPosts
     onSnapshot(collection(db, 'blogPosts'), (snap) => {
@@ -496,15 +777,55 @@ export class DatastoreService {
   
   async addCategory(cat: Omit<Category, 'id'>) {
     const id = cat.slug || `cat-${Date.now()}`;
-    await setDoc(doc(db, 'categories', id), { ...cat, id });
+    const pId = cat.parent_id || cat.parentId || null;
+    await setDoc(doc(db, 'categories', id), { 
+      ...cat, 
+      id,
+      parent_id: pId,
+      parentId: pId
+    });
   }
 
   async editCategory(id: string, updated: Partial<Category>) {
-    await updateDoc(doc(db, 'categories', id), updated);
+    const pId = ('parent_id' in updated) ? updated.parent_id : (('parentId' in updated) ? updated.parentId : undefined);
+    const mod: any = { ...updated };
+    if (pId !== undefined) {
+      mod.parent_id = pId;
+      mod.parentId = pId;
+    }
+    await updateDoc(doc(db, 'categories', id), mod);
   }
 
   async deleteCategory(id: string) {
     await deleteDoc(doc(db, 'categories', id));
+  }
+
+  // --- BRAND CRUD ---
+  async addBrand(brand: Omit<Brand, 'id'>) {
+    const id = brand.slug || `brand-${Date.now()}`;
+    await setDoc(doc(db, 'brands', id), { ...brand, id });
+  }
+
+  async editBrand(id: string, updated: Partial<Brand>) {
+    await updateDoc(doc(db, 'brands', id), updated);
+  }
+
+  async deleteBrand(id: string) {
+    await deleteDoc(doc(db, 'brands', id));
+  }
+
+  // --- MENU ITEM CRUD ---
+  async addMenuItem(item: Omit<MenuItem, 'id'>) {
+    const id = `menu-${Date.now()}`;
+    await setDoc(doc(db, 'menuItems', id), { ...item, id });
+  }
+
+  async editMenuItem(id: string, updated: Partial<MenuItem>) {
+    await updateDoc(doc(db, 'menuItems', id), updated);
+  }
+
+  async deleteMenuItem(id: string) {
+    await deleteDoc(doc(db, 'menuItems', id));
   }
 
   async addProduct(p: Omit<Product, 'id' | 'stock' | 'reserved' | 'reviews' | 'qnas' | 'slug'> & { stock: number }) {
@@ -529,8 +850,36 @@ export class DatastoreService {
     await deleteDoc(doc(db, 'products', id));
   }
 
+  // --- COUPON AND BLOG CRUD ---
+  async addCoupon(coupon: Coupon) {
+    await setDoc(doc(db, 'coupons', coupon.code), coupon);
+  }
+
+  async deleteCoupon(code: string) {
+    await deleteDoc(doc(db, 'coupons', code));
+  }
+
+  async addBlogPost(blog: Omit<BlogPost, 'id'>) {
+    const id = 'blog-' + Date.now();
+    await setDoc(doc(db, 'blogPosts', id), { ...blog, id });
+  }
+
+  async deleteBlogPost(id: string) {
+    await deleteDoc(doc(db, 'blogPosts', id));
+  }
+
   async updateSettings(updated: Partial<Settings>) {
     await setDoc(doc(db, 'settings', 'global'), updated, { merge: true });
+  }
+
+  async updateHomeLayout(sections: HomeLayoutSection[]) {
+    const sorted = [...sections].sort((a, b) => (a.order || 0) - (b.order || 0));
+    // Assign incremental order values nicely so there is no collision
+    sorted.forEach((section, index) => {
+      section.order = index + 1;
+    });
+    this.homeLayout.set(sorted);
+    await setDoc(doc(db, 'settings', 'homeLayout'), { sections: sorted });
   }
 
   // --- COMPATIBILITY MOCK WRAPPERS (to prevent breaking legacy views) ---

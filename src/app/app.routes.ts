@@ -6,6 +6,7 @@ import {PrintingService} from './pages/printing-service/printing-service';
 import {CartCheckout} from './pages/cart/cart';
 import {OrdersTracking} from './pages/orders/orders';
 import {AdminPanel} from './pages/admin/admin';
+import {Login} from './pages/login/login';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -15,5 +16,8 @@ export const routes: Routes = [
   { path: 'cart', component: CartCheckout },
   { path: 'orders', component: OrdersTracking },
   { path: 'admin', component: AdminPanel },
+  { path: 'login', component: Login },
+  { path: 'terms', loadComponent: () => import('./pages/terms/terms').then(m => m.TermsAndConditions) },
+  { path: 'returns', loadComponent: () => import('./pages/returns/returns').then(m => m.ReturnPolicy) },
   { path: '**', redirectTo: '' }
 ];

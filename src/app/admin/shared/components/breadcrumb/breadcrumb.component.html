@@ -1,0 +1,21 @@
+<nav aria-label="Breadcrumb" class="flex">
+  <ol class="inline-flex items-center space-x-1 md:space-x-2 font-mono text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+    <li class="inline-flex items-center">
+      <span class="inline-flex items-center hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">
+        Admin
+      </span>
+    </li>
+    @for (item of items; track item.label; let last = $last) {
+      <li>
+        <div class="flex items-center">
+          <span class="mx-1 text-zinc-350 dark:text-zinc-650">/</span>
+          @if (!last && item.url) {
+            <span class="ml-1 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer">{{ item.label }}</span>
+          } @else {
+            <span class="ml-1 text-zinc-900 dark:text-white">{{ item.label }}</span>
+          }
+        </div>
+      </li>
+    }
+  </ol>
+</nav>
