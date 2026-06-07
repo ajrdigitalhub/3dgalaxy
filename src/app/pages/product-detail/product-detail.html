@@ -1,0 +1,151 @@
+@if (product(); as p) {
+  <div class="space-y-12 animate-fadeIn pb-24">
+    <!-- BREADCRUMBS -->
+    <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400">
+      <a [routerLink]="['/']" class="hover:text-blue-600 transition-colors">Home</a>
+      <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
+      <a [routerLink]="['/products']" class="hover:text-blue-600 transition-colors">Catalog</a>
+      <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
+      <span class="text-neutral-900 dark:text-neutral-200 truncate">{{ p.name }}</span>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 lg:items-start">
+      <!-- LEFT: STICKY GALLERY -->
+      <div class="space-y-6 lg:space-y-8 lg:sticky lg:top-24">
+        <div class="group relative aspect-square bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex items-center justify-center p-6 sm:p-16 overflow-hidden transition-all duration-700 hover:shadow-2xl hover:shadow-blue-500/5">
+          <img [src]="is360Active() ? active360Image() : activeImage()" 
+               class="max-h-full w-full object-contain transition-all duration-1000 group-hover:scale-105"
+               alt="{{ p.name }}"
+               referrerpolicy="no-referrer">
+
+          @if (is360Active()) {
+            <div class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+              <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-blue-600 hover:text-white transition-all transform active:scale-90">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-blue-600 hover:text-white transition-all transform active:scale-90">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-5">
+          @for (img of p.images; track img) {
+            <button (click)="selectImage(img)" 
+                    [class]="activeImage() === img && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-blue-600 rounded-[1.5rem] p-3 shadow-xl shadow-blue-500/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-blue-300 dark:hover:border-blue-800 transition-all'">
+              <img [src]="img" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
+            </button>
+          }
+          @if (p.is360Supported) {
+            <button (click)="toggle360Sensor()"
+                    [class]="is360Active() ? 'h-24 px-6 bg-blue-600 text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-blue-600/40 ' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all'">
+              <mat-icon class="scale-125 mb-1">360</mat-icon>
+              <span class="text-[10px] font-black uppercase tracking-wider">360° Vision</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- RIGHT: PURCHASING -->
+      <div class="space-y-8 lg:space-y-12">
+        <div class="space-y-4 sm:space-y-6">
+          <div class="flex items-center gap-3">
+             <span class="px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded">{{ p.brand }}</span>
+             <div class="flex items-center text-amber-400">
+               <mat-icon class="text-xs scale-75">star</mat-icon>
+               <span class="text-[10px] sm:text-[11px] text-neutral-500 font-bold ml-1">4.9 / 5.0</span>
+             </div>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]">{{ p.name }}</h1>
+          <p class="text-base sm:text-lg text-neutral-500 leading-relaxed font-medium">{{ p.description }}</p>
+        </div>
+
+        <div class="p-6 sm:p-10 bg-neutral-50 dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 space-y-6 sm:space-y-8">
+          <div class="flex flex-col gap-1">
+            <span class="text-[10px] text-neutral-400 uppercase font-black tracking-[0.2em]">Investment Value</span>
+            <div class="flex items-baseline gap-3 sm:gap-4">
+              <span class="text-3xl sm:text-5xl font-black text-neutral-950 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
+              @if (p.mrp > activePrice(p)) {
+                <span class="text-lg sm:text-xl line-through text-neutral-300 font-bold decoration-2">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+                <span class="text-[9px] sm:text-xs font-bold text-emerald-600 bg-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-sm">-{{ mrpDiscountPercent(p) }}% OFF</span>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div class="inline-flex items-center bg-white dark:bg-neutral-950 border border-neutral-200 rounded-xl sm:rounded-[1.5rem] p-1 sm:p-2 shadow-sm">
+              <button (click)="adjustQty(-1)" class="h-10 w-10 sm:h-12 sm:w-12 hover:bg-neutral-50 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all"><mat-icon class="scale-75">remove</mat-icon></button>
+              <span class="px-6 sm:px-8 text-base sm:text-lg font-black text-neutral-955">{{ quantity() }}</span>
+              <button (click)="adjustQty(1)" class="h-10 w-10 sm:h-12 sm:w-12 hover:bg-neutral-50 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all"><mat-icon class="scale-75">add</mat-icon></button>
+            </div>
+            <button (click)="addToCart(p)" class="flex-1 px-6 px-4 sm:px-8 py-3 sm:py-5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl sm:rounded-[1.5rem] shadow-2xl transition-all flex items-center justify-center gap-3 sm:gap-4">
+              <mat-icon class="scale-75 sm:scale-100">shopping_cart</mat-icon> Add To Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="pt-24 space-y-16">
+      <div class="flex flex-wrap items-center gap-8 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto no-scrollbar">
+        @for (tab of [
+          { id: 'description', label: 'Description' },
+          { id: 'additional', label: 'Additional Information' },
+          { id: 'reviews', label: 'Reviews' }
+        ]; track tab.id) {
+          <button (click)="activeTab.set(tab.id)"
+                  [class]="activeTab() === tab.id ? 'pb-5 border-b-2 border-neutral-950 text-neutral-950 font-black text-xs uppercase tracking-[0.2em] transition-all' : 'pb-5 text-neutral-400 font-bold text-xs uppercase tracking-[0.2em] transition-all'">
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      <div class="min-h-[200px] sm:min-h-[300px]">
+        @switch (activeTab()) {
+          @case ('description') {
+            <div class="prose dark:prose-invert max-w-4xl animate-slideUp">
+              <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6">Product Overiew</h2>
+              <p class="text-base sm:text-lg text-neutral-600 leading-relaxed">{{ p.long_description }}</p>
+            </div>
+          }
+          @case ('additional') {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideUp">
+              @for (spec of p.specs; track spec.label) {
+                <div class="flex items-center justify-between p-8 bg-neutral-50 dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800">
+                  <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">{{ spec.label }}</span>
+                  <span class="text-sm font-black text-neutral-955 tracking-tighter">{{ spec.value }}</span>
+                </div>
+              }
+            </div>
+          }
+          @case ('reviews') {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slideUp">
+              @for (rev of p.reviews; track rev.id) {
+                <div class="p-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[3rem] space-y-6 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-4">
+                       <span class="text-sm font-black">{{ rev.userName }}</span>
+                       <div class="flex text-amber-400 scale-75">
+                         @for (s of [1,2,3,4,5]; track s) { <mat-icon [class.text-neutral-200]="s > rev.rating">star</mat-icon> }
+                       </div>
+                    </div>
+                    <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed italic">"{{ rev.comment }}"</p>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="py-32 text-center space-y-8 animate-fadeIn">
+    <mat-icon class="text-neutral-300 scale-[2]">inventory_2</mat-icon>
+    <h2 class="text-3xl font-black">Profile Not Found</h2>
+    <a [routerLink]="['/products']" class="inline-flex px-10 py-4 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest">Back To Catalog</a>
+  </div>
+}
+

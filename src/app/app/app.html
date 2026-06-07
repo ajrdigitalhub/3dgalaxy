@@ -1,0 +1,378 @@
+<!-- DYNAMIC CORPORATE MASTER PLATFORM SHELL -->
+<div [class]="ds.theme() === 'dark' ? 'dark bg-neutral-950 text-neutral-100 min-h-screen font-sans selection:bg-blue-500/30 transition-all duration-300' : 'bg-neutral-50 text-neutral-900 min-h-screen font-sans selection:bg-blue-500/20 transition-all duration-300'">
+  
+  <!-- INTERACTIVE TOP MARKETING SLIDER BANNER -->
+  @if (topAd(); as ad) {
+    <div class="bg-linear-to-r from-blue-700 via-indigo-700 to-emerald-600 text-white text-xs py-2 px-4 shadow-sm relative overflow-hidden select-none">
+      <div class="max-w-7xl mx-auto flex items-center justify-between font-medium">
+        <button type="button" (click)="clickAd(ad)" class="flex items-center gap-2 cursor-pointer hover:underline mx-auto bg-transparent border-0 text-white font-medium focus:outline-none focus:ring-1 focus:ring-white/20 rounded">
+          <span class="px-2 py-0.5 bg-white/10 text-[9px] font-semibold rounded uppercase tracking-wider">Announcement</span>
+          <span>{{ ad.title }}</span>
+          <span class="text-blue-200 font-bold hidden sm:inline-block">&#x2192; Claim Deal</span>
+        </button>
+        <button (click)="dismissBannerAd()" class="text-white/75 hover:text-white transition-opacity font-bold scale-90 leading-none">✕</button>
+      </div>
+    </div>
+  }
+
+  <!-- CLOUD MOBILE DRAWER (Full screen slide) -->
+  @if (isMobileMenuOpen()) {
+    <div class="fixed inset-0 z-50 overflow-hidden lg:hidden">
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm" 
+           (click)="isMobileMenuOpen.set(false)"
+           (keydown.escape)="isMobileMenuOpen.set(false)"
+           role="button"
+           tabindex="-1"
+           aria-label="Close menu"></div>
+      
+      <!-- Drawer Content -->
+      <div class="absolute inset-y-0 left-0 w-[85%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl flex flex-col animate-slide-in-left">
+        <!-- Drawer Header -->
+        <div class="p-6 border-b border-neutral-100 dark:border-neutral-900 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+             <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                <mat-icon>layers</mat-icon>
+             </div>
+             <span class="text-sm font-black tracking-widest uppercase italic dark:text-white">3D GALAXY</span>
+          </div>
+          <button (click)="isMobileMenuOpen.set(false)" class="h-10 w-10 flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 rounded-full text-neutral-500">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Scrollable Navigation -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-8">
+          <!-- Mobile Search -->
+          <div class="relative group">
+            <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-blue-500 transition-colors">search</mat-icon>
+            <input type="text" 
+                   [value]="searchQuery()"
+                   (input)="onSearch($any($event.target).value)"
+                   placeholder='Search products...' 
+                   class="w-full h-12 pl-12 pr-4 bg-neutral-100 dark:bg-neutral-900 border border-transparent focus:border-blue-500 rounded-xl text-sm font-bold text-neutral-800 dark:text-white outline-none">
+          </div>
+
+          <!-- Hierarchical Tree -->
+          <div class="space-y-4">
+            <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 pb-2 border-b border-neutral-100 dark:border-neutral-900">Catalogue Tree</h4>
+            <div class="space-y-4">
+              @for (cat of rootCategories(); track cat.id) {
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between group">
+                    <a [routerLink]="['/products']" 
+                       [queryParams]="{ category: cat.id }"
+                       (click)="isMobileMenuOpen.set(false)"
+                       class="flex items-center gap-3 text-sm font-bold text-neutral-700 dark:text-neutral-300 hover:text-blue-600 transition-colors">
+                      <mat-icon class="text-blue-500/40 group-hover:text-blue-500 transition-colors">{{ getIcon(cat.id) }}</mat-icon>
+                      {{ cat.name }}
+                    </a>
+                  </div>
+                  
+                  <!-- Subcategories in tree -->
+                  <div class="ml-9 space-y-2 border-l border-neutral-100 dark:border-neutral-900 pl-4">
+                    @for (sub of getSubcategories(cat.id); track sub.id) {
+                      <a [routerLink]="['/products']" 
+                         [queryParams]="{ category: cat.id, subcategory: sub.id }"
+                         (click)="isMobileMenuOpen.set(false)"
+                         class="block text-xs font-semibold text-neutral-400 dark:text-neutral-500 hover:text-blue-500 transition-colors py-1">
+                        {{ sub.name }}
+                      </a>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Utility Links -->
+          <div class="pt-6 border-t border-neutral-100 dark:border-neutral-900 space-y-2">
+            <a [routerLink]="['/admin']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300">
+               <mat-icon class="scale-90 opacity-50">business</mat-icon> Company Hub
+            </a>
+            <a [routerLink]="['/slicer']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300">
+               <mat-icon class="scale-90 opacity-50">support_agent</mat-icon> Expert Support
+            </a>
+          </div>
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-6 border-t border-neutral-100 dark:border-neutral-900 bg-neutral-50 dark:bg-neutral-900/40">
+           <div class="flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="text-[10px] font-black uppercase text-neutral-450">Active Session</span>
+                <span class="text-xs font-bold dark:text-white">{{ ds.userRole() === 'admin' ? 'Super Admin' : 'Sumit - B2B Staff' }}</span>
+              </div>
+              <button (click)="toggleTheme()" class="h-10 w-10 flex items-center justify-center bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
+                <mat-icon class="text-sm">{{ ds.theme() === 'dark' ? 'wb_sunny' : 'nightlight_round' }}</mat-icon>
+              </button>
+           </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- STICKY TWO-ROW PREMIUM HEADER -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-900 select-none">
+    <!-- Row 1: Global Branding & Search -->
+    <div class="max-w-7xl mx-auto px-4 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-4 sm:gap-6">
+      
+      <!-- Mobile Menu Toggle -->
+      <button (click)="isMobileMenuOpen.set(true)" class="xl:hidden h-8 w-8 flex items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-lg transition-all">
+        <mat-icon class="scale-90">menu</mat-icon>
+      </button>
+
+      <!-- Logo Section -->
+      <a [routerLink]="['/']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-2 sm:gap-3 shrink-0 mr-auto lg:mr-0">
+        <div class="h-8 w-8 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-linear-to-tr from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+          <mat-icon class="scale-75 sm:scale-110">layers</mat-icon>
+        </div>
+        <div class="hidden xs:block leading-tight font-display">
+          <h1 class="text-sm sm:text-xl font-black tracking-tight text-neutral-900 dark:text-white uppercase italic">3D GALAXY</h1>
+          <p class="text-[6px] sm:text-[9px] text-blue-500 font-bold uppercase tracking-[0.2em] ml-0.5">Layers to Legacy</p>
+        </div>
+      </a>
+
+      <!-- Global Links (Top Row - Desktop Only) -->
+      <nav class="hidden xl:flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+        <a [routerLink]="['/admin']" class="hover:text-blue-600 dark:hover:text-white transition-colors flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg">
+          <mat-icon class="text-sm scale-75">business</mat-icon> Company
+        </a>
+        <a [routerLink]="['/products']" class="hover:text-blue-600 dark:hover:text-white transition-colors flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/5 text-blue-600 rounded-lg">
+          <mat-icon class="text-sm scale-75">inventory_2</mat-icon> Products
+        </a>
+        <a [routerLink]="['/slicer']" class="hover:text-blue-600 dark:hover:text-white transition-colors flex items-center gap-1.5 px-3 py-1.5">
+          <mat-icon class="text-sm scale-75">support_agent</mat-icon> Support
+        </a>
+      </nav>
+
+      <!-- Advanced Search Command Line -->
+      <div class="flex-1 max-w-xl relative group hidden md:block">
+        <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-blue-500 transition-colors">search</mat-icon>
+        <input type="text" 
+               [value]="searchQuery()"
+               (input)="onSearch($any($event.target).value)"
+               placeholder='Search for "Filaments", "Bambu Lab"...' 
+               class="w-full h-11 pl-12 pr-4 bg-neutral-100 dark:bg-neutral-900 border border-transparent focus:border-blue-500 rounded-xl text-sm font-bold text-neutral-800 dark:text-white outline-none transition-all placeholder:text-neutral-500">
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 hidden xl:block">
+          <span class="px-1.5 py-0.5 border border-neutral-300 dark:border-neutral-700 rounded text-[9px] font-bold text-neutral-400">⌘K</span>
+        </div>
+      </div>
+
+      <!-- User Utilities -->
+      <div class="flex items-center gap-2">
+        <!-- Theme Toggle -->
+        <button (click)="toggleTheme()" class="h-11 w-11 flex items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl transition-all">
+          <mat-icon>{{ ds.theme() === 'dark' ? 'wb_sunny' : 'nightlight_round' }}</mat-icon>
+        </button>
+
+        <!-- Profile -->
+        <button (click)="toggleRoleDropdown()" class="h-11 w-11 flex items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl transition-all">
+          <mat-icon>person_outline</mat-icon>
+        </button>
+
+        <!-- Cart Indicator -->
+        <a [routerLink]="['/cart']" class="h-11 px-3 flex items-center gap-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 relative group">
+          <mat-icon>shopping_basket</mat-icon>
+          <span class="hidden sm:inline text-xs font-black uppercase tracking-widest">{{ cartCount() }}</span>
+          @if (cartCount() > 0) {
+            <span class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-neutral-950 scale-0 group-hover:scale-100 transition-transform">
+              {{ cartCount() }}
+            </span>
+          }
+        </a>
+      </div>
+    </div>
+
+    <!-- Row 2: Iconic Tree Category Bar (Desktop/Tablet Only) -->
+    <div class="border-t border-neutral-100 dark:border-neutral-900/50 hidden md:block bg-neutral-50/50 dark:bg-neutral-950/20">
+      <div class="max-w-7xl mx-auto px-4 lg:px-8">
+        <div class="flex items-stretch justify-center lg:justify-start gap-1 overflow-x-auto no-scrollbar py-0.5">
+          @for (cat of rootCategories(); track cat.id) {
+            <div class="relative group/cat">
+              <a [routerLink]="['/products']" 
+                 [queryParams]="{ category: cat.id }"
+                 class="h-16 lg:h-20 px-5 lg:px-8 flex flex-col items-center justify-center gap-1.5 text-neutral-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-cyan-400 transition-all rounded-none border-b-2 border-transparent hover:border-blue-600 dark:hover:border-cyan-400 min-w-[110px] relative overflow-hidden group/link">
+                
+                <!-- Animated Background Glow -->
+                <div class="absolute inset-0 bg-linear-to-b from-blue-500/5 to-transparent opacity-0 group-hover/link:opacity-100 transition-opacity"></div>
+                
+                <mat-icon class="scale-110 lg:scale-125 transition-transform duration-500 group-hover/cat:-translate-y-1">{{ getIcon(cat.id) }}</mat-icon>
+                <span class="text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-center whitespace-nowrap font-display">{{ cat.name }}</span>
+              </a>
+
+              <!-- Tree Structure Mega Menu Dropdown: Refined Glassmorphism -->
+              <div class="absolute top-full left-1/2 -translate-x-1/2 pt-3 opacity-0 translate-y-4 pointer-events-none lg:group-hover/cat:opacity-100 lg:group-hover/cat:translate-y-0 lg:group-hover/cat:pointer-events-auto transition-all duration-500 z-50 hidden lg:block">
+                <div class="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] rounded-[2.5rem] p-10 w-[640px] flex gap-12 overflow-hidden relative">
+                  <!-- Decorative Element -->
+                  <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full"></div>
+                  
+                  <!-- Category List -->
+                  <div class="flex-1 space-y-8 relative z-10">
+                    <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/50 pb-4">
+                      <div class="flex items-center gap-2">
+                        <mat-icon class="text-blue-500 scale-75">grid_view</mat-icon>
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Precision Blueprint Subsets</h4>
+                      </div>
+                      <a [routerLink]="['/products']" [queryParams]="{ category: cat.id }" class="text-[9px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors">Digital Full Scan →</a>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+                      @for (sub of getSubcategories(cat.id); track sub.id) {
+                        <a [routerLink]="['/products']" 
+                           [queryParams]="{ category: cat.id, subcategory: sub.id }"
+                           class="flex flex-col p-4 rounded-[1.5rem] hover:bg-blue-500/5 group/sub transition-all border border-transparent hover:border-blue-500/10">
+                          <div class="flex items-center justify-between mb-1">
+                            <p class="text-xs font-black uppercase tracking-tight text-neutral-800 dark:text-white group-hover/sub:text-blue-500 transition-colors">{{ sub.name }}</p>
+                            <mat-icon class="text-blue-500 scale-75 opacity-0 group-hover/sub:opacity-100 -translate-x-2 group-hover/sub:translate-x-0 transition-all">north_east</mat-icon>
+                          </div>
+                          @if (sub.description) {
+                            <p class="text-[10px] text-neutral-500 font-medium leading-relaxed line-clamp-1">{{ sub.description }}</p>
+                          }
+                        </a>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Brand Curation -->
+                  <div class="w-52 space-y-8 relative z-10 border-l border-neutral-100 dark:border-neutral-800/50 pl-10">
+                    <h4 class="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400 border-b border-neutral-100 dark:border-neutral-800/50 pb-4">Consortium</h4>
+                    <div class="space-y-5">
+                      @if (cat.id === 'cat-1' || cat.id === '3d-printers') {
+                        <a routerLink="/products" class="flex items-center gap-3 group/brand">
+                          <div class="h-9 w-9 bg-neutral-100 dark:bg-neutral-800 rounded-xl flex items-center justify-center font-black text-[10px] text-blue-500 border border-transparent group-hover/brand:border-blue-500/50 transition-all">CR</div>
+                          <span class="text-[11px] font-bold text-neutral-600 dark:text-neutral-300 group-hover/brand:text-blue-500 transition-colors">Creality Labs</span>
+                        </a>
+                        <a routerLink="/products" class="flex items-center gap-3 group/brand">
+                          <div class="h-9 w-9 bg-neutral-100 dark:bg-neutral-800 rounded-xl flex items-center justify-center font-black text-[10px] text-blue-500 border border-transparent group-hover/brand:border-blue-500/50 transition-all">BL</div>
+                          <span class="text-[11px] font-bold text-neutral-600 dark:text-neutral-300 group-hover/brand:text-blue-500 transition-colors">Bambu Lab</span>
+                        </a>
+                        <a routerLink="/products" class="flex items-center gap-3 group/brand">
+                          <div class="h-9 w-9 bg-neutral-100 dark:bg-neutral-800 rounded-xl flex items-center justify-center font-black text-[10px] text-blue-500 border border-transparent group-hover/brand:border-blue-500/50 transition-all">AC</div>
+                          <span class="text-[11px] font-bold text-neutral-600 dark:text-neutral-300 group-hover/brand:text-blue-500 transition-colors">Anycubic Units</span>
+                        </a>
+                      } @else {
+                        <a routerLink="/products" class="flex items-center gap-3 group/brand">
+                          <div class="h-9 w-9 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-[10px] shadow-lg shadow-blue-500/20">3G</div>
+                          <span class="text-[11px] font-bold text-neutral-600 dark:text-neutral-300 group-hover/brand:text-blue-500 transition-colors">3D Galaxy Store</span>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    <!-- Mobile Bottom Tab Navigation (Sticky & Layered) -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-lg border-t border-neutral-100 dark:border-neutral-900 text-[10px] font-black uppercase tracking-widest text-neutral-400 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
+      <a [routerLink]="['/']" routerLinkActive="text-blue-600" [routerLinkActiveOptions]="{exact: true}" class="flex flex-col items-center gap-1 transition-all">
+        <mat-icon class="scale-90 opacity-40">home</mat-icon> Home
+      </a>
+      <button (click)="isMobileMenuOpen.set(true)" class="flex flex-col items-center gap-1 transition-all">
+        <mat-icon class="scale-90 opacity-40">account_tree</mat-icon> Tree
+      </button>
+      <a [routerLink]="['/products']" routerLinkActive="text-blue-600" class="flex flex-col items-center gap-1 transition-all">
+        <mat-icon class="scale-90 opacity-40">inventory_2</mat-icon> Products
+      </a>
+      <a [routerLink]="['/cart']" routerLinkActive="text-blue-600" class="flex flex-col items-center gap-1 relative transition-all">
+        <mat-icon class="scale-90 opacity-40">shopping_basket</mat-icon> Basket
+        @if (cartCount() > 0) {
+          <span class="absolute top-0 right-3 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-neutral-950"></span>
+        }
+      </a>
+    </div>
+  </header>
+
+  <!-- SECONDARY BREADCRUMB PROMO / ADS STICKY NOTIFICATION COMPONENT -->
+  @if (ds.userRole() === 'customer' && (ds.activeUser().rewardPoints || 0) > 100) {
+    <div class="bg-indigo-600/5 border-b border-indigo-500/10 select-none py-2 text-center text-xs text-indigo-500 animate-fadeIn">
+      🥇 <strong>Loyalty Bonus Activated:</strong> You have an active balance of <span class="font-bold underline">{{ ds.activeUser().rewardPoints }} reward points</span> to redeem in B2B transactions!
+    </div>
+  }
+
+  <!-- MAIN VIEWPORT ROUTER OUTLET SLOT -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative min-h-[60vh]">
+    <router-outlet />
+  </main>
+
+  <!-- FOOTER SPOTS AND ADVERTISEMENT LOGO CODES -->
+  <footer class="border-t border-neutral-200 dark:border-neutral-900 bg-white dark:bg-neutral-950/40 select-none text-left py-8 sm:py-12 text-[10px] sm:text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
+      
+      <!-- Brand overview -->
+      <div class="space-y-2 sm:space-y-3">
+        <div class="flex items-center gap-2">
+          <div class="h-6 w-6 sm:h-8 sm:w-8 rounded-lg bg-linear-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-mono font-bold text-[10px] sm:text-xs">3D</div>
+          <span class="font-mono text-sm sm:text-base font-black text-neutral-800 dark:text-white">3D GALAXY</span>
+        </div>
+        <p class="text-neutral-500 leading-relaxed pr-0 sm:pr-4">
+          World class polymer compounding and SLA printing labs offering bespoke custom slicing estimates.
+        </p>
+        <span class="text-[8px] sm:text-[9px] uppercase font-mono font-semibold tracking-wider text-neutral-450 block">Lab Station: Panchkula, Haryana, India</span>
+      </div>
+
+      <!-- Quick Navigate links -->
+      <div class="space-y-4">
+        <h5 class="font-sans font-black text-neutral-900 dark:text-neutral-200 uppercase tracking-widest text-[10px]">Ecosystem</h5>
+        <div class="flex flex-col gap-2.5 font-bold text-neutral-500">
+          <a [routerLink]="['/products']" class="hover:text-blue-500 transition-colors">Product Catalog</a>
+          <a [routerLink]="['/printing-service']" class="hover:text-blue-500 transition-colors">Manufacturing Hub</a>
+          <a [routerLink]="['/admin']" class="hover:text-blue-500 transition-colors">Academy & Training</a>
+          <a [routerLink]="['/slicer']" class="hover:text-blue-500 transition-colors">Cloud Slicing</a>
+        </div>
+      </div>
+
+      <!-- Support & Company -->
+      <div class="space-y-4">
+        <h5 class="font-sans font-black text-neutral-900 dark:text-neutral-200 uppercase tracking-widest text-[10px]">Support & Governance</h5>
+        <div class="flex flex-col gap-2.5 font-bold text-neutral-500">
+          <a href="#" class="hover:text-blue-500 transition-colors">Technical Support</a>
+          <a href="#" class="hover:text-blue-500 transition-colors">Experience Centers</a>
+          <a href="#" class="hover:text-blue-500 transition-colors">Partner Program</a>
+          <a href="#" class="hover:text-blue-500 transition-colors">Privacy & Security</a>
+        </div>
+      </div>
+
+      <!-- FOOTER ADVERTISEMENT CTR PROXY CARD -->
+      <div class="space-y-4">
+        <h5 class="font-sans font-black text-neutral-900 dark:text-neutral-200 uppercase tracking-widest text-[10px]">Stay Connected</h5>
+        @if (footerAd(); as fad) {
+          <button type="button" (click)="clickAd(fad)" class="w-full text-left p-4 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-2xl cursor-pointer hover:border-blue-500 transition-all space-y-1 relative group focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <span class="absolute top-1.5 right-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-500 font-bold text-[8px] rounded-full uppercase tracking-tighter">Sponsored</span>
+            <h4 class="text-[11px] font-black text-neutral-800 dark:text-white group-hover:text-blue-500 transition-colors pr-10">{{ fad.title }}</h4>
+            <p class="text-[10px] text-neutral-450 leading-relaxed truncate">{{ fad.targetUrl }}</p>
+          </button>
+        }
+        <div class="flex gap-4 pt-2">
+          <button class="h-9 w-9 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-blue-500 transition-colors">
+            <mat-icon class="scale-75">facebook</mat-icon>
+          </button>
+          <button class="h-9 w-9 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-blue-500 transition-colors">
+            <mat-icon class="scale-75">camera_alt</mat-icon>
+          </button>
+          <button class="h-9 w-9 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-blue-500 transition-colors">
+            <mat-icon class="scale-75">smart_display</mat-icon>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fine clearing copy labels -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-100 dark:border-neutral-900 mt-12 pt-8 text-[10px] text-neutral-450 font-bold uppercase tracking-widest flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <p>© 2026 3D GALAXY ECOSYSTEM. OPERATED BY GALAXY LABS INDIA.</p>
+      </div>
+      <div class="flex gap-8">
+        <a href="#" class="hover:text-neutral-900 dark:hover:text-white transition-colors">Sitemap</a>
+        <a href="#" class="hover:text-neutral-900 dark:hover:text-white transition-colors">Accessibility</a>
+        <a href="#" class="hover:text-neutral-900 dark:hover:text-white transition-colors">Ethics & Sustainablity</a>
+      </div>
+    </div>
+  </footer>
+
+</div>

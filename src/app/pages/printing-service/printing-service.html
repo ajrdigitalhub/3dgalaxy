@@ -1,0 +1,285 @@
+<div class="space-y-12 text-left max-w-5xl mx-auto">
+  
+  <!-- INTRO STAGE -->
+  <section class="space-y-2 pt-4">
+    <h1 class="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">Printing Services</h1>
+    <p class="text-neutral-500 text-sm max-w-3xl leading-relaxed">
+      Produce high strength low volume injection-equivalent industrial functional parts or ultra detailed artistic sculptures. 
+      Upload an STL, OBJ, or 3MF model, define material properties, and analyze slicing calculations instantly.
+    </p>
+  </section>
+
+  <!-- SLICER ESTIMATOR DOCK -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- FIRST STEP / CONFIGURATIONS (LEFT 2 COLUMNS) -->
+    <div class="lg:col-span-2 space-y-6">
+      <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-6">
+        
+        <!-- STAGE 1: FILE ACCENT & SAMPLE STATIONS -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-mono font-bold tracking-widest text-blue-500 uppercase">STAGE 1: MODEL UPLOAD</span>
+            <span class="text-[10px] text-neutral-400">STL, OBJ, 3MF limits 150MB</span>
+          </div>
+          
+          <!-- Responsive upload drop zone -->
+          <div class="border-2 border-dashed border-neutral-300 dark:border-neutral-800 hover:border-blue-500 rounded-2xl p-6 text-center bg-neutral-50 dark:bg-neutral-900/40 relative cursor-pointer group transition-all">
+            <input type="file" (change)="onFileDropped($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+            <div class="space-y-2">
+              <mat-icon class="scale-125 text-neutral-400 group-hover:text-blue-500 transition-colors">cloud_upload</mat-icon>
+              <p class="text-xs font-bold text-neutral-700 dark:text-neutral-300">Drag & drop your 3D model here, or <span class="text-blue-500">browse folders</span></p>
+              <p class="text-[10px] text-neutral-455">Upload a file to start auto-calculating volume matrices</p>
+            </div>
+          </div>
+
+          <!-- Real Preset Models Selector for ease of testing -->
+          <div class="space-y-2">
+            <span class="text-xs font-bold text-neutral-500">Or use one of our verified prototype designs for simulation:</span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              @for (sample of demoFiles; track sample.name) {
+                <button (click)="selectDemoFile(sample)" 
+                        [class]="selectedFileName() === sample.name ? 'p-3 bg-blue-500/10 border-2 border-blue-500 text-left rounded-xl' : 'p-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-850 text-left border border-neutral-200 dark:border-neutral-800 rounded-xl transition-all'">
+                  <div class="flex items-start gap-2">
+                    <mat-icon class="text-xs text-blue-500 scale-90 mt-0.5">architecture</mat-icon>
+                    <div>
+                      <h4 class="text-xs font-bold font-mono text-neutral-800 dark:text-neutral-150 line-clamp-1">{{ sample.name }}</h4>
+                      <span class="text-[9px] text-neutral-455 font-mono">{{ sample.volume }} cm³ | {{ sample.presetMaterial }}</span>
+                    </div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Selected File Indicator -->
+          @if (selectedFileName()) {
+            <div class="p-3 bg-emerald-500/10 border border-emerald-500/15 rounded-xl flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
+              <span class="font-mono font-black gap-1 flex items-center">
+                <mat-icon class="scale-90 text-sm">check_circle</mat-icon>
+                Active Model: {{ selectedFileName() }} ({{ selectedFileSize() }})
+              </span>
+              <button (click)="clearFile()" class="text-[10px] hover:underline font-bold text-neutral-500">Reset</button>
+            </div>
+          }
+        </div>
+
+        <!-- STAGE 2: PHYSICAL FILTERS & LAYER SPECIFICATIONS -->
+        <div class="space-y-6">
+          <span class="text-xs font-mono font-bold tracking-widest text-blue-500 uppercase block">STAGE 2: SLICING PARAMETERS</span>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Material Choice -->
+            <div class="space-y-1.5 text-left">
+              <label for="selectedMaterial" class="text-xs font-bold text-neutral-600 dark:text-neutral-400">Polymer Material:</label>
+              <select id="selectedMaterial" [value]="selectedMaterial()" 
+                      (change)="onMaterialChange($event)"
+                      class="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="PLA">3D Galaxy Premium PLA (High Flow, Clog-Free)</option>
+                <option value="PETG">3D Galaxy Premium PETG (Chemical-Resistant)</option>
+                <option value="ABS">3D Galaxy ABS Pro (High Mechanical Rigidity)</option>
+                <option value="TPU">TPU Flexible Filament (Rubberized Durability)</option>
+                <option value="Resin">3D Galaxy Photopolymer Liquid Resin (Micron Precision)</option>
+              </select>
+            </div>
+
+            <!-- Filament Color choosing -->
+            <div class="space-y-1.5 text-left">
+              <label for="selectedColor" class="text-xs font-bold text-neutral-600 dark:text-neutral-400">Extrusion Colorway:</label>
+              <select id="selectedColor" [value]="selectedColor()" 
+                      (change)="onColorChange($event)"
+                      class="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2.5 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="Jet Black">Jet Black (Matte Carbon finish)</option>
+                <option value="Space Gray">Space Gray (Industrial Metallic)</option>
+                <option value="Clear Translucent">Clear Translucent (Resin optically clear)</option>
+                <option value="Neon Green">Neon Green (Vibrant Contrast)</option>
+                <option value="Cherry Red">Cherry Red (Semi-Gloss)</option>
+                <option value="Grey">Grey (High definition fine detail)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SLIDERS: INFILL & DETAIL HEIGHTS -->
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs">
+                <span class="font-bold text-neutral-600 dark:text-neutral-455">Infill Density:</span>
+                <span class="font-mono font-black text-blue-500">{{ infillPercent() }}%</span>
+              </div>
+              <input type="range" min="15" max="100" step="5" 
+                     [value]="infillPercent()" 
+                     (input)="onInfillChange($event)"
+                     class="w-full h-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+              <p class="text-[9px] text-neutral-400">15-30% represents decorative brackets. 40-70% represents structural components. 100% is solid infill.</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <span class="text-xs font-bold text-neutral-600 dark:text-neutral-455 block">Layer Precision Height:</span>
+              <div class="grid grid-cols-4 gap-2">
+                @for (h of [0.05, 0.1, 0.15, 0.2]; track h) {
+                  <button (click)="selectLayerHeight(h)"
+                          [class]="layerHeight() === h ? 'p-2.5 bg-blue-600 text-white rounded-xl text-xs font-mono font-bold' : 'p-2.5 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-850 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-800 text-xs font-mono font-semibold transition-all rounded-xl'">
+                    {{ h }}mm
+                  </button>
+                }
+              </div>
+              <span class="text-[9px] text-neutral-400 block mt-1">Slower build speeds apply to thinner layers (0.05mm / high definition). Fast drafting uses 0.2mm.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGE 3: QUOTE SUBMISSION DETAILS (ONLY IF FILE LOADED) -->
+        @if (selectedFileName()) {
+          <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800/60 rounded-2xl space-y-4 animate-fadeIn">
+            <span class="text-xs font-mono font-bold tracking-widest text-emerald-500 uppercase block">STAGE 3: CUSTOMER DELIVERY DETAILS</span>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="space-y-1">
+                <label for="custName" class="text-[10px] font-bold text-neutral-500">Full Name:</label>
+                <input id="custName" type="text" [value]="custName()" (input)="custName.set($any($event.target).value)" placeholder="Sumit Sharma" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+              </div>
+              <div class="space-y-1">
+                <label for="custPhone" class="text-[10px] font-bold text-neutral-500">WhatsApp Mobile:</label>
+                <input id="custPhone" type="text" [value]="custPhone()" (input)="custPhone.set($any($event.target).value)" placeholder="9876543210" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+              </div>
+              <div class="space-y-1">
+                <label for="custEmail" class="text-[10px] font-bold text-neutral-500">Email Address:</label>
+                <input id="custEmail" type="text" [value]="custEmail()" (input)="custEmail.set($any($event.target).value)" placeholder="sumit&#64;3dgalaxy.co.in" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label for="notesText" class="text-[10px] font-bold text-neutral-500">Design instructions or specific applications notes (Optional):</label>
+              <textarea id="notesText" rows="2" [value]="notesText()" (input)="notesText.set($any($event.target).value)" placeholder="Requires maximum wall layers for outdoor deployment, thread fits..." class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-850 dark:text-white"></textarea>
+            </div>
+
+            <button (click)="submitQuotation()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-transform active:scale-98 flex items-center justify-center gap-1.5 shadow-md shadow-emerald-900/10">
+              <mat-icon>check_circle</mat-icon>
+              Submit Printable Quote Request
+            </button>
+          </div>
+        } @else {
+          <div class="p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl text-center text-xs text-yellow-600 dark:text-yellow-400">
+            ⚠️ Upload a 3D model or select a demo gear prototype to fill up your contact details and submit a quote.
+          </div>
+        }
+
+      </div>
+    </div>
+
+    <!-- CALCULATOR RESULTS SIDEBAR (RIGHT 1 COLUMN) -->
+    <div class="space-y-6">
+      <div class="p-6 bg-linear-to-b from-neutral-900 to-black text-white rounded-3xl border border-white/5 shadow-xl space-y-6 text-left relative overflow-hidden">
+        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500"></div>
+        
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-extrabold tracking-tight">Slicing Cost Report</h3>
+          <mat-icon class="text-blue-400 scale-90">query_stats</mat-icon>
+        </div>
+
+        <!-- Calculation Output Parameters (Metrology) -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
+            <div class="space-y-0.5">
+              <span class="text-[9px] text-neutral-400 block uppercase">Estimated Volume</span>
+              <p class="text-base font-mono font-black text-white">{{ sourceVolume() }} <span class="text-[11px] text-neutral-400">cm³</span></p>
+            </div>
+            <div class="space-y-0.5">
+              <span class="text-[9px] text-neutral-400 block uppercase">Calculated Weight</span>
+              <p class="text-base font-mono font-black text-blue-400">{{ estimatedReport().weightGrams }} <span class="text-[11px] text-neutral-400">g</span></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
+            <div class="space-y-0.5">
+              <span class="text-[9px] text-neutral-400 block uppercase">Machine Spool Run</span>
+              <p class="text-base font-mono font-black text-indigo-400">{{ estimatedReport().hours }} <span class="text-[11px] text-neutral-400">hours</span></p>
+            </div>
+            <div class="space-y-0.5">
+              <span class="text-[9px] text-neutral-400 block uppercase">Slicer Resolution</span>
+              <p class="text-base font-mono font-black text-white">{{ layerHeight() }}<span class="text-[11px] text-neutral-400">mm</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Price Breakdown Lists -->
+        <div class="space-y-3 text-xs">
+          <div class="flex justify-between">
+            <span class="text-neutral-400">Material Cost Summary:</span>
+            <span class="font-mono text-neutral-100">₹{{ estimatedReport().materialCost }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-neutral-400">Machine Time Fee (₹150/hr):</span>
+            <span class="font-mono text-neutral-100">₹{{ estimatedReport().serviceFee }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-neutral-400">GST Tax (18% Govt):</span>
+            <span class="font-mono text-neutral-100">₹{{ estimatedReport().gstTax }}</span>
+          </div>
+          
+          <div class="pt-4 border-t border-white/10 flex justify-between items-baseline">
+            <span class="text-sm font-bold text-white">Estimated Cost:</span>
+            <div class="text-right">
+              <p class="text-2xl font-mono font-black text-blue-400">₹{{ estimatedReport().totalCost }}</p>
+              <p class="text-[8px] text-neutral-505 font-mono">*Invoice generated instantly upon admin confirmation</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="pt-2">
+          <div class="p-3 bg-white/5 rounded-xl border border-white/5 text-[10px] text-neutral-400 leading-relaxed flex items-start gap-2">
+            <mat-icon class="text-blue-400 text-sm scale-90 h-4 w-4 shrink-0 mt-0.5">info</mat-icon>
+            <span>Cost report is an optimized real-time estimation based on weight density and printer layer runs. Slicers inside 3D Galaxy labs will confirm the final quote in the B2B dashboard.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT SUBMITTED QUOTES LOG (CUSTOMER FEEDBACK TRACKING) -->
+      @if (customerQuotes().length > 0) {
+        <div class="p-6 bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl space-y-4">
+          <span class="text-xs font-bold text-neutral-800 dark:text-white uppercase tracking-wider block">Your Quote Requests ({{ customerQuotes().length }})</span>
+          <div class="space-y-3">
+            @for (q of customerQuotes(); track q.id) {
+              <div class="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl space-y-2">
+                <div class="flex justify-between text-[10px]">
+                  <span class="font-mono font-bold text-blue-500">{{ q.quoteNumber }}</span>
+                  <span class="text-neutral-400">{{ q.date.split(' ')[0] }}</span>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-neutral-800 dark:text-neutral-100 font-mono truncate">{{ q.fileName }}</h4>
+                  <p class="text-[9px] text-neutral-455">{{ q.materialType }} | Color: {{ q.color }}</p>
+                </div>
+                <div class="flex justify-between items-center pt-1.5 border-t border-neutral-100 dark:border-neutral-800">
+                  <div>
+                    <span class="text-[8px] text-neutral-400 block font-mono">ESTIMATED PRICE:</span>
+                    <span class="text-xs font-bold text-neutral-800 dark:text-neutral-100">₹{{ q.estimatedCost }}</span>
+                  </div>
+                  <span [class]="'px-2 py-0.5 text-[8px] font-bold rounded-sm uppercase ' + getQuoteStatusClass(q.status)">
+                    {{ q.status }}
+                  </span>
+                </div>
+
+                <!-- IF ESTIMATED, ALLOW SIMULATING ACCEPTS AND MOCK PAYMENTS -->
+                @if (q.status === 'estimated') {
+                  <div class="pt-2 flex gap-1">
+                    <button (click)="approveQuote(q.id)" class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-extrabold uppercase rounded-md transition-all">
+                      Accept Cost
+                    </button>
+                    <button (click)="rejectQuote(q.id)" class="py-1 px-2.5 bg-neutral-150 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-500 dark:text-neutral-300 text-[9px] font-bold rounded-md transition-all">
+                      Discard
+                    </button>
+                  </div>
+                } @else if (q.status === 'approved_by_customer') {
+                  <div class="p-2 bg-emerald-500/10 border border-emerald-500/15 rounded text-[9px] text-emerald-500 font-bold text-center">
+                    ✓ Approved! Ready to fabricate.
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

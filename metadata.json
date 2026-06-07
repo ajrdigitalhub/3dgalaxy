@@ -1,0 +1,6 @@
+{
+  "name": "3D Galaxy",
+  "description": "Enterprise-grade e-commerce platform for 3D printers, custom printing services, filaments, and accessories with advanced analytics and AI recommendation tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
