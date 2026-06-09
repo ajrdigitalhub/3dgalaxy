@@ -1,28 +1,12 @@
-import {
-  AngularNodeAppEngine,
-  createNodeRequestHandler,
-  isMainModule,
-  writeResponseToNodeResponse,
-} from '@angular/ssr/node';
 import express from 'express';
 import {join} from 'node:path';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import axios from 'axios';
-import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
+import { insertWhatsAppLog, fetchWhatsAppLogs, TemplateParams } from './server/queries';
 
-const firebaseApp = initializeApp(firebaseConfig);
-const dbId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
-const db = dbId ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
-
-const browserDistFolder = join(import.meta.dirname, '../browser');
+const browserDistFolder = join(process.cwd(), 'dist/applet/browser');
 
 const app = express();
 app.use(express.json());
-
-const angularApp = new AngularNodeAppEngine();
-
-type TemplateParams = Record<string, string | number | undefined>;
 
 const templates: Record<string, (params: TemplateParams) => string> = {
   ACCOUNT_CREATED: (params: TemplateParams) => `Hello ${params['Name'] || params['name'] || 'User'},
@@ -121,14 +105,13 @@ app.post('/api/whatsapp/send', async (req, res) => {
       reason = 'Simulated sandbox dispatch. Set WHATSAPP_API_URL and WHATSAPP_API_KEY in .env to unlock real message delivery.';
     }
 
-    await addDoc(collection(db, 'whatsapp_logs'), {
+    await insertWhatsAppLog({
       recipientNumber,
       messageContent,
       status,
       reason,
       templateName,
-      parameters: parameters || {},
-      date: new Date().toISOString()
+      parameters: parameters || {}
     });
 
     res.status(200).json({
@@ -146,9 +129,7 @@ app.post('/api/whatsapp/send', async (req, res) => {
 
 app.get('/api/whatsapp/logs', async (req, res) => {
   try {
-    const q = query(collection(db, 'whatsapp_logs'), orderBy('date', 'desc'), limit(100));
-    const snap = await getDocs(q);
-    const logs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const logs = await fetchWhatsAppLogs(100);
     res.status(200).json(logs);
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -162,39 +143,21 @@ app.get('/api/whatsapp/logs', async (req, res) => {
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
-    index: false,
     redirect: false,
   }),
 );
 
-/**
- * Handle all other requests by rendering the Angular application.
- */
-app.use((req, res, next) => {
-  angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
-    .catch(next);
+// Fallback all routes to index.html for SPA
+app.get('*', (req, res) => {
+  res.sendFile(join(browserDistFolder, 'index.html'));
 });
 
 /**
  * Start the server if this module is the main entry point, or it is ran via PM2.
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
-if (isMainModule(import.meta.url) || process.env['pm_id']) {
-  const port = process.env['PORT'] || 4000;
-  app.listen(port, (error) => {
-    if (error) {
-      throw error;
-    }
+const port = process.env['PORT'] || 4000;
+app.listen(port, () => {
+  console.log(`Node Express server listening on http://0.0.0.0:${port}`);
+});
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
-  });
-}
-
-/**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
- */
-export const reqHandler = createNodeRequestHandler(app);

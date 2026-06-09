@@ -3,6 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 
+import { ENV } from './config/env';
+
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import categoryRoutes from './routes/category';
@@ -133,7 +135,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('SERVER PIELINE ERROR OCCURRED:', err);
   res.status(err.status || 500).json({
     error: err.message || 'Severe server-side breakdown. Action halted.',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    details: ENV.NODE_ENV === 'development' ? err.stack : undefined,
   });
 });
 

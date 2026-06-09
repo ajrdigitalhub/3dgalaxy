@@ -7,51 +7,52 @@
         
         @case ('hero-slides') {
           <!-- HERO: IMMERSIVE GALAXY STAGE -->
-          <section #heroContainer id="hero-section" class="relative min-h-[85vh] w-full overflow-hidden bg-neutral-900 dark:bg-neutral-950 flex items-center group border-b border-neutral-800/10 dark:border-neutral-800/40">
+          <section #heroContainer id="hero-section" class="relative min-h-[60vh] lg:min-h-[85vh] w-full overflow-hidden bg-neutral-900 dark:bg-neutral-950 flex items-center group border-b border-neutral-800/10 dark:border-neutral-800/40 touch-pan-y">
             <!-- Animated Nebula/Galaxy Background -->
             <div class="absolute inset-0 pointer-events-none">
               <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.1),transparent_70%)]"></div>
-              <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.15),transparent_70%)] blur-[100px]"></div>
-              <div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.12),transparent_70%)] blur-[120px]"></div>
+              <div class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[500px] lg:h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.15),transparent_70%)] blur-[80px] lg:blur-[100px]"></div>
+              <div class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.12),transparent_70%)] blur-[90px] lg:blur-[120px]"></div>
               
               <img [src]="slides[currentSlide()].image" 
-                   class="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-screen transition-all duration-1000 scale-105 group-hover:scale-100" 
+                   class="absolute inset-0 w-full h-full object-cover lg:object-contain opacity-25 lg:opacity-15 mix-blend-screen transition-opacity duration-700" 
+                   loading="eager"
                    alt="Galaxy Bg"
                    referrerpolicy="no-referrer">
-              <div class="absolute inset-0 bg-linear-to-b from-neutral-900/30 via-neutral-950/80 to-neutral-950"></div>
+              <div class="absolute inset-0 bg-linear-to-b from-neutral-900/40 via-neutral-950/80 to-neutral-950"></div>
             </div>
 
             <!-- Content Stack -->
-            <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-16 lg:py-24">
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div class="space-y-8 max-w-3xl text-left">
-                  <div class="hero-anim inline-flex items-center gap-3 px-5 py-2 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-full text-neutral-200 text-xs font-black uppercase tracking-[0.3em]">
-                    <mat-icon class="text-orange-500 scale-90">{{ slides[currentSlide()].badgeIcon }}</mat-icon>
+            <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 py-12 lg:py-24">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div class="space-y-6 lg:space-y-8 max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
+                  <div class="hero-anim inline-flex items-center gap-2 lg:gap-3 px-4 py-1.5 lg:px-5 lg:py-2 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-full text-neutral-200 text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] lg:tracking-[0.3em]">
+                    <mat-icon class="text-orange-500 scale-75 lg:scale-90">{{ slides[currentSlide()].badgeIcon }}</mat-icon>
                     {{ slides[currentSlide()].badge }}
                   </div>
 
-                  <div class="hero-anim space-y-4">
-                    <h2 class="text-white/40 text-sm font-black tracking-[0.25em] uppercase font-display">{{ slides[currentSlide()].title }}</h2>
-                    <h1 class="text-5xl md:text-7xl font-black tracking-tighter text-white leading-[1.05] font-display">
+                  <div class="hero-anim space-y-3 lg:space-y-4">
+                    <h2 class="text-white/40 text-[10px] lg:text-sm font-black tracking-[0.2em] lg:tracking-[0.25em] uppercase font-display">{{ slides[currentSlide()].title }}</h2>
+                    <h1 class="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-white leading-[1.1] lg:leading-[1.05] font-display">
                       {{ slides[currentSlide()].titleHighlight }}
                     </h1>
                   </div>
 
-                  <p class="hero-anim text-neutral-400 text-base md:text-lg leading-relaxed max-w-xl font-medium">
+                  <p class="hero-anim text-neutral-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
                     {{ slides[currentSlide()].desc }}
                   </p>
 
-                  <div class="hero-anim flex flex-col sm:flex-row gap-5 pt-4">
-                    <a [routerLink]="[slides[currentSlide()].link]" class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20">
-                      EXPLORE HUB <mat-icon class="transition-transform group-hover/btn:translate-x-1">arrow_forward</mat-icon>
+                  <div class="hero-anim flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2 lg:pt-4">
+                    <a [routerLink]="[slides[currentSlide()].link]" class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto">
+                      Shop Now <mat-icon class="transition-transform group-hover/btn:translate-x-1">arrow_forward</mat-icon>
                     </a>
-                    <button (click)="scrollToProducts()" class="h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 backdrop-blur-xl">
+                    <button (click)="scrollToProducts()" class="hidden md:flex h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 items-center justify-center gap-3 backdrop-blur-xl">
                       PRODUCT CATALOG <mat-icon class="scale-90">shopping_bag</mat-icon>
                     </button>
                   </div>
                 </div>
 
-                <!-- 3D Preview Frame Center -->
+                <!-- 3D Preview Frame Center (Desktop Only) -->
                 <div class="hero-anim hidden lg:flex justify-center relative">
                   <div class="relative w-[450px] h-[480px]">
                     <div class="absolute -inset-10 bg-orange-500/10 blur-[100px] rounded-full animate-pulse"></div>
@@ -60,7 +61,7 @@
                       <img [src]="slides[currentSlide()].image" 
                            class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105" 
                            alt="Centerpiece"
-                           referrerpolicy="no-referrer">
+                           referrerpolicy="no-referrer" loading="lazy">
                       <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-transparent to-transparent"></div>
                       
                       <!-- Scanning Line Animation -->
@@ -90,13 +91,13 @@
             </div>
 
             <!-- Slide Control Dots -->
-            <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-8 z-20 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
+            <div class="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20 px-4 py-2 md:px-6 md:py-3 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
               <button (click)="prevSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Previous Slide"><mat-icon class="scale-90">chevron_left</mat-icon></button>
               <div class="flex gap-2">
                 @for (s of slides; track s.id; let idx = $index) {
                   <button (click)="setSlide(idx)" 
                           [attr.aria-label]="'Navigate to slide ' + (idx + 1)"
-                          [class]="currentSlide() === idx ? 'h-1.5 w-8 bg-orange-500 rounded-full transition-all duration-500' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
+                          [class]="currentSlide() === idx ? 'h-1.5 w-6 md:w-8 bg-orange-500 rounded-full transition-all duration-500' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
                 }
               </div>
               <button (click)="nextSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Next Slide"><mat-icon class="scale-90">chevron_right</mat-icon></button>
@@ -105,29 +106,33 @@
         }
         
         @case ('quick-nav') {
-          <!-- QUICK NAVIGATION (Screenshot 2 Alignment) -->
-          <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-6 text-center sm:text-left">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4">
+          <!-- QUICK NAVIGATION (Mobile Swipeable Slider) -->
+          <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-4 md:space-y-6 text-left">
+            <div class="flex items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3 md:pb-5 gap-4">
               <div class="space-y-1">
-                <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-[#d65108] font-display">QUICK NAVIGATION</h2>
+                <h2 class="text-xs md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.4em] text-[#d65108] font-display">QUICK NAVIGATION</h2>
               </div>
               <div>
-                <a routerLink="/products" class="text-xs font-black uppercase tracking-widest text-[#d65108] hover:underline flex items-center gap-1 transition-all">
-                  <span>{{ section.config['linkText'] || 'All Products →' }}</span>
+                <a routerLink="/products" class="text-[10px] md:text-xs font-black uppercase tracking-widest text-[#d65108] hover:underline flex items-center gap-1 transition-all">
+                  <span class="hidden md:inline">{{ section.config['linkText'] || 'All Products →' }}</span>
+                  <span class="md:hidden">View All</span> 
                 </a>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-              @for (item of asArray(section.config['items']); track item.id) {
-                <button (click)="selectFilterCategory(item.id)" 
-                        class="group flex flex-col items-center justify-center gap-3 p-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl transition-all hover:border-[#d65108] hover:scale-105 h-36 border-b-4 hover:border-b-[#d65108] shadow-xs cursor-pointer">
-                  <div class="h-11 w-11 rounded-xl bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:text-[#d65108] transition-colors">
-                    <mat-icon class="scale-110">{{ getIcon(item.id) }}</mat-icon>
-                  </div>
-                  <span class="text-[10px] font-black uppercase tracking-wider text-center text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white">{{ item.name }}</span>
-                </button>
-              }
+            <div class="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
+              <!-- We add gap using wrapper so scrolling is correct -->
+              <div class="flex gap-3 md:gap-4 md:grid md:grid-cols-4 lg:grid-cols-8 pb-2">
+                @for (item of asArray(section.config['items']); track item.id) {
+                  <button (click)="selectFilterCategory(item.id)" 
+                          class="group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-4 md:p-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl md:rounded-[1.5rem] transition-all hover:border-[#d65108] hover:scale-105 h-28 w-28 md:h-36 md:w-auto border-b-4 hover:border-b-[#d65108] shadow-sm cursor-pointer">
+                    <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:text-[#d65108] transition-colors">
+                      <mat-icon class="scale-100 md:scale-110">{{ getIcon(item.id) }}</mat-icon>
+                    </div>
+                    <span class="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white leading-tight px-1">{{ item.name }}</span>
+                  </button>
+                }
+              </div>
             </div>
           </section>
         }

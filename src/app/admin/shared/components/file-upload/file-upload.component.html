@@ -1,11 +1,7 @@
 <div 
   class="relative border border-dashed rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all font-sans min-h-32"
   [class.border-blue-600]="isDragging()"
-  [class.bg-blue-500/5]="isDragging()"
   [class.border-zinc-250]="!isDragging()"
-  [class.dark:border-zinc-800]="!isDragging()"
-  [class.bg-zinc-50/50]="!isDragging()"
-  [class.dark:bg-zinc-950/20]="!isDragging()"
   (dragover)="onDragOver($event)"
   (dragleave)="onDragLeave()"
   (drop)="onDrop($event)"

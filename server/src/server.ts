@@ -1,6 +1,7 @@
 import app from './app';
+import { ENV } from './config/env';
 
-const PORT = process.env.PORT || 4000;
+const PORT = ENV.PORT;
 
 app.listen(PORT, () => {
   console.log(`===============================================`);

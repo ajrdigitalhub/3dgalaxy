@@ -1,4 +1,5 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, ElementRef, viewChild} from '@angular/core';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, ElementRef, viewChild, PLATFORM_ID} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import {CommonModule} from '@angular/common';
 import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
@@ -186,8 +187,10 @@ export class Home {
   }
 
   constructor() {
+    const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
     // Auto-slide effect
     effect((onCleanup) => {
+      if (!isBrowser) return;
       const interval = setInterval(() => {
         this.nextSlide();
       }, 8000);
@@ -195,12 +198,14 @@ export class Home {
     });
 
     // Record top impressions when component boots
-    setTimeout(() => {
-      const topAd = this.activeTopAd();
-      if (topAd) this.ds.recordAdImpression(topAd.id);
-      const footerAd = this.activeFooterAd();
-      if (footerAd) this.ds.recordAdImpression(footerAd.id);
-    }, 1000);
+    if (isBrowser) {
+      setTimeout(() => {
+        const topAd = this.activeTopAd();
+        if (topAd) this.ds.recordAdImpression(topAd.id);
+        const footerAd = this.activeFooterAd();
+        if (footerAd) this.ds.recordAdImpression(footerAd.id);
+      }, 1000);
+    }
   }
 
   scrollToProducts() {

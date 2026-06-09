@@ -2,44 +2,54 @@
   <div class="space-y-12 animate-fadeIn pb-24">
     <!-- BREADCRUMBS -->
     <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400">
-      <a [routerLink]="['/']" class="hover:text-blue-600 transition-colors">Home</a>
+      <a [routerLink]="['/']" class="hover:text-[#d65108] transition-colors">Home</a>
       <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
-      <a [routerLink]="['/products']" class="hover:text-blue-600 transition-colors">Catalog</a>
+      <a [routerLink]="['/products']" class="hover:text-[#d65108] transition-colors">Catalog</a>
       <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
       <span class="text-neutral-900 dark:text-neutral-200 truncate">{{ p.name }}</span>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 lg:items-start">
-      <!-- LEFT: STICKY GALLERY -->
-      <div class="space-y-6 lg:space-y-8 lg:sticky lg:top-24">
-        <div class="group relative aspect-square bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex items-center justify-center p-6 sm:p-16 overflow-hidden transition-all duration-700 hover:shadow-2xl hover:shadow-blue-500/5">
-          <img [src]="is360Active() ? active360Image() : activeImage()" 
-               class="max-h-full w-full object-contain transition-all duration-1000 group-hover:scale-105"
-               alt="{{ p.name }}"
-               referrerpolicy="no-referrer">
-
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 lg:items-start">
+      <!-- LEFT: STICKY GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
+      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-24">
+        
+        <!-- Main Image box (Desktop) & Swipeable Gallery (Mobile) -->
+        <div class="relative w-full aspect-square bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5">
+          
+          <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
+          @for (img of p.images; track img) {
+            <div [class]="(activeImage() === img || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative block' : 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:hidden'">
+               <img [src]="img" 
+                 class="max-h-full w-full object-contain pointer-events-none"
+                 loading="lazy"
+                 alt="{{ p.name }}"
+                 referrerpolicy="no-referrer">
+            </div>
+          }
+          
           @if (is360Active()) {
             <div class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-              <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-blue-600 hover:text-white transition-all transform active:scale-90">
-                <mat-icon>chevron_left</mat-icon>
+              <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
+                <mat-icon class="scale-75 sm:scale-100">chevron_left</mat-icon>
               </button>
-              <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-blue-600 hover:text-white transition-all transform active:scale-90">
-                <mat-icon>chevron_right</mat-icon>
+              <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
+                <mat-icon class="scale-75 sm:scale-100">chevron_right</mat-icon>
               </button>
             </div>
           }
         </div>
 
-        <div class="flex flex-wrap items-center justify-center gap-5">
+        <!-- Thumbnails (Hidden on purely mobile screens since it's swipeable) -->
+        <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
           @for (img of p.images; track img) {
             <button (click)="selectImage(img)" 
-                    [class]="activeImage() === img && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-blue-600 rounded-[1.5rem] p-3 shadow-xl shadow-blue-500/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-blue-300 dark:hover:border-blue-800 transition-all'">
+                    [class]="activeImage() === img && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 transition-all'">
               <img [src]="img" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
             </button>
           }
           @if (p.is360Supported) {
             <button (click)="toggle360Sensor()"
-                    [class]="is360Active() ? 'h-24 px-6 bg-blue-600 text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-blue-600/40 ' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all'">
+                    [class]="is360Active() ? 'h-24 px-6 bg-[#d65108] text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-orange-600/40 ' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all'">
               <mat-icon class="scale-125 mb-1">360</mat-icon>
               <span class="text-[10px] font-black uppercase tracking-wider">360° Vision</span>
             </button>
@@ -48,8 +58,8 @@
       </div>
 
       <!-- RIGHT: PURCHASING -->
-      <div class="space-y-8 lg:space-y-12">
-        <div class="space-y-4 sm:space-y-6">
+      <div class="space-y-6 lg:space-y-12 pb-24 md:pb-0">
+        <div class="space-y-3 sm:space-y-6">
           <div class="flex items-center gap-3">
              <span class="px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded">{{ p.brand }}</span>
              <div class="flex items-center text-amber-400">
@@ -57,29 +67,42 @@
                <span class="text-[10px] sm:text-[11px] text-neutral-500 font-bold ml-1">4.9 / 5.0</span>
              </div>
           </div>
-          <h1 class="text-2xl sm:text-4xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]">{{ p.name }}</h1>
-          <p class="text-base sm:text-lg text-neutral-500 leading-relaxed font-medium">{{ p.description }}</p>
+          <h1 class="text-2xl md:text-4xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]">{{ p.name }}</h1>
+          
+          <!-- Add mobile expandable description -->
+          <details class="md:hidden group text-sm text-neutral-500 font-medium">
+            <summary class="list-none outline-none cursor-pointer flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
+              <span class="text-xs font-black uppercase tracking-widest text-[#d65108]">Brief Overview</span>
+              <mat-icon class="text-neutral-400 group-open:rotate-180 transition-transform">expand_more</mat-icon>
+            </summary>
+            <div class="pt-3 leading-relaxed">
+              {{ p.description }}
+            </div>
+          </details>
+
+          <!-- Desktop description -->
+          <p class="hidden md:block text-base sm:text-lg text-neutral-500 leading-relaxed font-medium">{{ p.description }}</p>
         </div>
 
-        <div class="p-6 sm:p-10 bg-neutral-50 dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 space-y-6 sm:space-y-8">
+        <div class="p-6 md:p-10 bg-neutral-50 dark:bg-neutral-900/40 rounded-[1.5rem] md:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 space-y-6 sm:space-y-8">
           <div class="flex flex-col gap-1">
-            <span class="text-[10px] text-neutral-400 uppercase font-black tracking-[0.2em]">Investment Value</span>
-            <div class="flex items-baseline gap-3 sm:gap-4">
+            <span class="text-[9px] md:text-[10px] text-neutral-400 uppercase font-black tracking-[0.2em]">Investment Value</span>
+            <div class="flex flex-wrap items-baseline gap-2 sm:gap-4">
               <span class="text-3xl sm:text-5xl font-black text-neutral-950 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
               @if (p.mrp > activePrice(p)) {
-                <span class="text-lg sm:text-xl line-through text-neutral-300 font-bold decoration-2">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+                <span class="text-base sm:text-xl line-through text-neutral-300 font-bold decoration-2">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
                 <span class="text-[9px] sm:text-xs font-bold text-emerald-600 bg-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-lg sm:rounded-xl shadow-sm">-{{ mrpDiscountPercent(p) }}% OFF</span>
               }
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 hidden md:flex">
             <div class="inline-flex items-center bg-white dark:bg-neutral-950 border border-neutral-200 rounded-xl sm:rounded-[1.5rem] p-1 sm:p-2 shadow-sm">
               <button (click)="adjustQty(-1)" class="h-10 w-10 sm:h-12 sm:w-12 hover:bg-neutral-50 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all"><mat-icon class="scale-75">remove</mat-icon></button>
               <span class="px-6 sm:px-8 text-base sm:text-lg font-black text-neutral-955">{{ quantity() }}</span>
               <button (click)="adjustQty(1)" class="h-10 w-10 sm:h-12 sm:w-12 hover:bg-neutral-50 rounded-lg sm:rounded-2xl flex items-center justify-center transition-all"><mat-icon class="scale-75">add</mat-icon></button>
             </div>
-            <button (click)="addToCart(p)" class="flex-1 px-6 px-4 sm:px-8 py-3 sm:py-5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl sm:rounded-[1.5rem] shadow-2xl transition-all flex items-center justify-center gap-3 sm:gap-4">
+            <button (click)="addToCart(p)" class="flex-1 px-6 px-4 sm:px-8 py-3 sm:py-5 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs sm:text-sm uppercase tracking-widest rounded-xl sm:rounded-[1.5rem] shadow-2xl transition-all flex items-center justify-center gap-3 sm:gap-4">
               <mat-icon class="scale-75 sm:scale-100">shopping_cart</mat-icon> Add To Cart
             </button>
           </div>
@@ -141,6 +164,27 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Sticky Add To Cart Bottom Bar -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp">
+    <div class="flex items-center gap-4 max-w-xl mx-auto">
+      <div class="flex flex-col">
+        <span class="text-[9px] font-black uppercase tracking-widest text-[#d65108]">Total Value</span>
+        <span class="text-xl font-black text-neutral-900 dark:text-white">{{ activePrice(p) * quantity() | currency:'INR':'symbol':'1.0-0' }}</span>
+      </div>
+      <div class="flex-1 flex gap-2">
+        <div class="inline-flex items-center bg-neutral-100 dark:bg-neutral-900 rounded-xl p-1 shrink-0">
+          <button (click)="adjustQty(-1)" class="h-10 w-10 flex items-center justify-center font-bold" aria-label="Decrease quantity"><mat-icon class="scale-75">remove</mat-icon></button>
+          <span class="w-8 text-center text-sm font-black">{{ quantity() }}</span>
+          <button (click)="adjustQty(1)" class="h-10 w-10 flex items-center justify-center font-bold" aria-label="Increase quantity"><mat-icon class="scale-75">add</mat-icon></button>
+        </div>
+        <button (click)="addToCart(p)" class="flex-1 h-12 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#d65108]/20 flex items-center justify-center gap-2">
+          <mat-icon class="scale-90">shopping_cart</mat-icon> ADD
+        </button>
+      </div>
+    </div>
+  </div>
+
 } @else {
   <div class="py-32 text-center space-y-8 animate-fadeIn">
     <mat-icon class="text-neutral-300 scale-[2]">inventory_2</mat-icon>

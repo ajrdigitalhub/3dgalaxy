@@ -44,6 +44,7 @@ export class App {
 
   // Mobile UI triggers
   isMobileMenuOpen = signal(false);
+  isMobileSearchOpen = signal(false);
   isRoleDropdownOpen = signal<boolean>(false);
   isBellOpen = signal<boolean>(false);
 

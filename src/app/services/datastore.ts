@@ -1,4 +1,5 @@
-import {Injectable, signal, computed, effect, inject} from '@angular/core';
+import {Injectable, signal, computed, effect, inject, PLATFORM_ID} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import { 
   collection, 
   doc, 
@@ -22,8 +23,9 @@ import {
   createUserWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { initFirebase, db, auth } from '../firebase';
 import { SeederService } from './seeder';
+
 
 export interface Category {
   id: string;
@@ -497,37 +499,42 @@ export class DatastoreService {
   shippingAddress = computed(() => this.userProfile()?.address || '');
 
   seeder = inject(SeederService);
+  private platformId = inject(PLATFORM_ID);
 
   constructor() {
-    this.initAuth();
-    this.initRealtimeSync();
-    this.testConnection();
+    if (isPlatformBrowser(this.platformId)) {
+      initFirebase().then(() => {
+        this.initAuth();
+        this.initRealtimeSync();
+        this.testConnection();
+      });
+      
+      // Auto-seed if empty (only for super-admin or first run)
+      effect(() => {
+        if (this.authReady() && this.userRole() === 'super-admin') {
+          // Wait for sync
+          setTimeout(async () => {
+            if (this.products().length === 0 && this.categories().length === 0) {
+              console.log('No data found, seeding mock data...');
+              this.seeder.seedAll();
+            }
+            try {
+              const layoutDoc = await getDoc(doc(db, 'settings', 'homeLayout'));
+              if (!layoutDoc.exists()) {
+                console.log('Seeding default home layout config...');
+                await setDoc(doc(db, 'settings', 'homeLayout'), { sections: this.homeLayout() });
+              }
+            } catch (err) {
+              console.error('Error auto-seeding home layout:', err);
+            }
+          }, 2000);
+        }
+      });
+    }
     
     // Sync theme class
     effect(() => {
       this.syncThemeClass(this.theme());
-    });
-
-    // Auto-seed if empty (only for super-admin or first run)
-    effect(() => {
-      if (this.authReady() && this.userRole() === 'super-admin') {
-        // Wait for sync
-        setTimeout(async () => {
-          if (this.products().length === 0 && this.categories().length === 0) {
-            console.log('No data found, seeding mock data...');
-            this.seeder.seedAll();
-          }
-          try {
-            const layoutDoc = await getDoc(doc(db, 'settings', 'homeLayout'));
-            if (!layoutDoc.exists()) {
-              console.log('Seeding default home layout config...');
-              await setDoc(doc(db, 'settings', 'homeLayout'), { sections: this.homeLayout() });
-            }
-          } catch (err) {
-            console.error('Error auto-seeding home layout:', err);
-          }
-        }, 2000);
-      }
     });
 
     // Save cart to local storage (still useful for guest persistence)
