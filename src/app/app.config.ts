@@ -2,15 +2,17 @@ import {
   ApplicationConfig,
   provideExperimentalZonelessChangeDetection
 } from '@angular/core';
-import {provideRouter} from '@angular/router';
+import {provideRouter, withComponentInputBinding, withRouterConfig} from '@angular/router';
 import {provideClientHydration, withEventReplay} from '@angular/platform-browser';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
 import {routes} from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideExperimentalZonelessChangeDetection(),
-    provideRouter(routes),
-    provideClientHydration(withEventReplay())
+    provideRouter(routes, withComponentInputBinding(), withRouterConfig({paramsInheritanceStrategy: 'always'})),
+    provideClientHydration(withEventReplay()),
+    provideHttpClient(withFetch())
   ],
 };

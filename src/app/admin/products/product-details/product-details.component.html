@@ -16,7 +16,7 @@
       <!-- Media column -->
       <div class="space-y-4">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1 font-sans">Associated Graphic</span>
-        <app-admin-image-preview [src]="p.images?.[0] || ''" [alt]="p.name" height="240px"></app-admin-image-preview>
+        <app-admin-image-preview [src]="p.images[0]?.url || p.images[0] || ''" [alt]="p.name" height="240px"></app-admin-image-preview>
 
         @if (p.images && p.images.length > 1) {
           <div class="grid grid-cols-3 gap-2">

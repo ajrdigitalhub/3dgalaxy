@@ -25,6 +25,7 @@ import {
 } from 'firebase/auth';
 import { initFirebase, db, auth } from '../firebase';
 import { SeederService } from './seeder';
+import { ApiService } from './api.service';
 
 
 export interface Category {
@@ -111,7 +112,7 @@ export interface Product {
   dealer_price: number;
   stock: number;
   reserved: number;
-  images: string[];
+  images: any[];
   specs: Specification[];
   reviews: Review[];
   qnas: QA[];
@@ -338,158 +339,7 @@ export class DatastoreService {
   socialPosts = signal<SocialPost[]>([]);
   notifications = signal<Campaign[]>([]);
   
-  homeLayout = signal<HomeLayoutSection[]>([
-    {
-      id: "hero-slides",
-      name: "Hero Slider Banner",
-      visible: true,
-      order: 1,
-      config: {
-        title: "Interactive Sliders"
-      }
-    },
-    {
-      id: "quick-nav",
-      name: "Quick Navigation Menu",
-      visible: true,
-      order: 2,
-      config: {
-        title: "QUICK NAVIGATION",
-        linkText: "All Products →",
-        linkUrl: "/products",
-        items: [
-          { id: "3d-printers", name: "3D PRINTERS", icon: "precision_manufacturing" },
-          { id: "materials", name: "MATERIALS", icon: "grain" },
-          { id: "3d-pens", name: "3D PENS", icon: "gesture" },
-          { id: "scanners", name: "3D SCANNERS", icon: "document_scanner" },
-          { id: "laser-engravers", name: "ENGRAVERS", icon: "grain" },
-          { id: "stem-kits", name: "STEM KITS", icon: "school" },
-          { id: "spare-parts", name: "SPARE PARTS", icon: "build" },
-          { id: "brahma-farm", name: "PRINT FARM", icon: "hub" }
-        ]
-      }
-    },
-    {
-      id: "showcase-1",
-      name: "Highlight Card (Bambu Lab A1)",
-      visible: true,
-      order: 3,
-      config: {
-        productId: "prod-3",
-        brand: "BAMBU LAB",
-        name: "A1 Combo",
-        description: "Experience seamless multicolor 3D printing with the Bambu Lab A1. Featuring full auto calibration and active flow rate compensation. with a spacious 256*256*256 mm³ build volume and compatibility with various filaments.",
-        salePrice: 48999,
-        mrp: 55000,
-        badge: "BEST DEAL",
-        image: "https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png"
-      }
-    },
-    {
-      id: "showcase-2",
-      name: "Highlight Card (Creality Sparx)",
-      visible: true,
-      order: 4,
-      config: {
-        productId: "prod-6",
-        brand: "CREALITY",
-        name: "Creality Sparx i7 Combo",
-        description: "The Creality Sparx i7 Combo brings professional grade 3D printing to your workshop with its dual extrusion capability and heated build platform. Engineered for precision and speed, this FDM printer handles complex multi-material projects with ease, delivering consistent layer adhesion and dimensional accuracy.",
-        salePrice: 48999,
-        mrp: 55000,
-        badge: "",
-        image: "https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png"
-      }
-    },
-    {
-      id: "category-view-filament",
-      name: "Filament Showcase Row",
-      visible: true,
-      order: 5,
-      config: {
-        title: "FILAMENT",
-        subtitle: "PREMIUM COMPOUNDED POLYMERS",
-        buttonText: "VIEW ALL",
-        linkUrl: "/products",
-        queryParams: { category: "materials" }
-      }
-    },
-    {
-      id: "category-view-spare-parts",
-      name: "Spare Parts Showcase Row",
-      visible: true,
-      order: 6,
-      config: {
-        title: "SPARE PARTS",
-        subtitle: "PRECISION REPLACEMENT NODES",
-        buttonText: "VIEW ALL",
-        linkUrl: "/products",
-        queryParams: { category: "spare-parts" }
-      }
-    },
-    {
-      id: "category-view-3d-printer",
-      name: "3D Printer Showcase Row",
-      visible: true,
-      order: 7,
-      config: {
-        title: "3D PRINTER",
-        subtitle: "ADDITIVE FABRICATION UNITS",
-        buttonText: "VIEW ALL",
-        linkUrl: "/products",
-        queryParams: { category: "3d-printers" }
-      }
-    },
-    {
-      id: "newsletter",
-      name: "Newsletter Subscription Banner",
-      visible: true,
-      order: 8,
-      config: {
-        title: "JOIN THE MAKER'S COLLECTIVE",
-        description: "Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals."
-      }
-    },
-    {
-      id: "featured-innovations",
-      name: "Featured Innovation Catalog",
-      visible: false,
-      order: 9,
-      config: {
-        title: "Featured Innovations",
-        subtitle: "Precision Catalog"
-      }
-    },
-    {
-      id: "technology-hubs",
-      name: "Technology Category Hubs",
-      visible: false,
-      order: 10,
-      config: {
-        title: "Shop by Technology",
-        subtitle: "The Laboratory"
-      }
-    },
-    {
-      id: "enterprise-solutions",
-      name: "Enterprise Industrial Hub",
-      visible: false,
-      order: 11,
-      config: {
-        title: "Industrial Solutions",
-        subtitle: "Enterprise Protocol"
-      }
-    },
-    {
-      id: "partners-marquee",
-      name: "Authorized Brand Logos",
-      visible: true,
-      order: 12,
-      config: {
-        title: "Authorised Global Partners"
-      }
-    }
-  ]);
+  homeLayout = signal<HomeLayoutSection[]>([]);
   
   // Local UI State
   cart = signal<CartItem[]>([]);
@@ -500,6 +350,7 @@ export class DatastoreService {
 
   seeder = inject(SeederService);
   private platformId = inject(PLATFORM_ID);
+  api = inject(ApiService);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -645,70 +496,48 @@ export class DatastoreService {
   }
 
   private initRealtimeSync() {
-    // Categories
-    onSnapshot(collection(db, 'categories'), (snap) => {
-      this.categories.set(snap.docs.map(d => ({ ...d.data() as Category, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'categories'));
+    // ---- API SYNC BLOCK ----
+    this.api.get<Category[]>('/categories').subscribe({
+      next: (data) => { if (data) this.categories.set(data); console.log("Loaded Categories", data); },
+      error: (e) => console.error(e)
+    });
 
-    // Brands
-    onSnapshot(collection(db, 'brands'), (snap) => {
-      this.brands.set(snap.docs.map(d => ({ ...d.data() as Brand, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'brands'));
+    this.api.get<Brand[]>('/brands').subscribe({
+      next: (data) => { if (data) this.brands.set(data); },
+      error: (e) => console.error(e)
+    });
 
-    // Menu Items
-    onSnapshot(collection(db, 'menuItems'), (snap) => {
-      const items = snap.docs.map(d => ({ ...d.data() as MenuItem, id: d.id }));
-      items.sort((a,b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-      this.menuItems.set(items);
-    }, err => this.handleFirestoreError(err, 'list', 'menuItems'));
+    this.api?.get<{data: Product[]}>('/products').subscribe({
+      next: (res) => { if (res && res.data) this.products.set(res.data); },
+      error: (e) => console.error(e)
+    });
 
-    // Products
-    onSnapshot(collection(db, 'products'), (snap) => {
-      this.products.set(snap.docs.map(d => ({ ...d.data() as Product, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'products'));
+    this.api.get<MenuItem[]>('/menus/tree').subscribe({
+      next: (data) => { if (data) this.menuItems.set(data); },
+      error: (e) => console.error(e)
+    });
 
-    // Orders (Admins see all, customers see theirs)
+    this.api.get<Settings>('/settings').subscribe({
+      next: (data) => { if (data) this.settings.set(data); },
+      error: (e) => console.error(e)
+    });
+
+    this.api.get<any[]>('/homepage').subscribe({
+      next: (data) => { if (Array.isArray(data)) this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isVisible, order: d.sequence, config: d.content }))); },
+      error: (e) => console.error(e)
+    });
+
+    // Orders
     effect(() => {
-      const user = this.currentUser();
-      if (!this.authReady()) return;
-
       const role = this.userRole();
-
-      let q;
-      if (role === 'admin' || role === 'super-admin') {
-        q = query(collection(db, 'orders'), orderBy('date', 'desc'));
-      } else if (user) {
-        q = query(collection(db, 'orders'), where('userId', '==', user.uid), orderBy('date', 'desc'));
-      }
-
-      if (q) {
-        onSnapshot(q, (snap) => {
-          this.orders.set(snap.docs.map(d => ({ ...d.data() as Order, id: d.id })));
-        }, err => this.handleFirestoreError(err, 'list', 'orders'));
-      }
+      if (!this.authReady()) return;
+      this.api.get<Order[]>('/orders').subscribe({
+        next: (data) => { if (data) this.orders.set(data); },
+        error: (e) => console.error(e)
+      });
     });
 
-    // Settings
-    onSnapshot(doc(db, 'settings', 'global'), (snap) => {
-      if (snap.exists()) {
-        this.settings.set(snap.data() as Settings);
-      }
-    }, err => this.handleFirestoreError(err, 'get', 'settings/global'));
-
-    // Home Layout Configurations
-    onSnapshot(doc(db, 'settings', 'homeLayout'), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as { sections: HomeLayoutSection[] };
-        if (data && Array.isArray(data.sections)) {
-          const sorted = [...data.sections].sort((a, b) => (a.order || 0) - (b.order || 0));
-          this.homeLayout.set(sorted);
-        }
-      }
-    }, err => {
-      console.warn('Silent notice: homeLayout rules or missing doc. Default layout loaded as fallback.', err);
-    });
-
-    // blogPosts
+    // blogPosts (mock fallback)
     onSnapshot(collection(db, 'blogPosts'), (snap) => {
       this.blogs.set(snap.docs.map(d => ({ ...d.data() as BlogPost, id: d.id })));
     }, err => this.handleFirestoreError(err, 'list', 'blogPosts'));

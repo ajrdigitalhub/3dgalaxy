@@ -175,7 +175,7 @@ import { AdminPanel } from '../admin';
                         <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100">
                           <td class="py-4">
                             <div class="flex items-center gap-3">
-                              <img [src]="p.images?.[0] || 'https://picsum.photos/100/100'" alt="Product thumbnail" class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800" referrerpolicy="no-referrer">
+                              <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://picsum.photos/100/100'" alt="Product thumbnail" class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800" referrerpolicy="no-referrer">
                               <div>
                                 <p class="font-black uppercase text-zinc-900 dark:text-white">{{ p.name }}</p>
                                 <p class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase">{{ p.brand }} alliance</p>

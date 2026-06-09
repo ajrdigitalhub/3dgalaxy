@@ -1,23 +1,60 @@
-import { Injectable, inject } from '@angular/core';
-import { DatastoreService, Brand } from '../../../services/datastore';
+import { Injectable, inject, signal } from '@angular/core';
+import { Brand } from '../../../services/datastore';
+import { ApiService } from '../../../services/api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BrandService {
-  private ds = inject(DatastoreService);
+  private api = inject(ApiService);
 
-  brands = this.ds.brands;
+  brands = signal<Brand[]>([]);
+
+  constructor() {
+    this.loadBrands();
+  }
+
+  loadBrands() {
+    this.api.get<Brand[]>('/brands').subscribe({
+      next: (data) => {
+        if (data) this.brands.set(data);
+      }
+    });
+  }
 
   addBrand(brand: Omit<Brand, 'id'>) {
-    return this.ds.addBrand(brand);
+    return new Promise((resolve, reject) => {
+      this.api.post<Brand>('/brands', brand).subscribe({
+        next: (created) => {
+          this.loadBrands();
+          resolve(created);
+        },
+        error: reject
+      });
+    });
   }
 
   editBrand(id: string, updated: Partial<Brand>) {
-    return this.ds.editBrand(id, updated);
+    return new Promise((resolve, reject) => {
+      this.api.put<Brand>(`/brands/${id}`, updated).subscribe({
+        next: (updated) => {
+          this.loadBrands();
+          resolve(updated);
+        },
+        error: reject
+      });
+    });
   }
 
   deleteBrand(id: string) {
-    return this.ds.deleteBrand(id);
+    return new Promise<void>((resolve, reject) => {
+      this.api.delete(`/brands/${id}`).subscribe({
+        next: () => {
+          this.loadBrands();
+          resolve();
+        },
+        error: reject
+      });
+    });
   }
 }

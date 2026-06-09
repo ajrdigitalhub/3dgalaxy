@@ -2,11 +2,10 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { CustomerService } from '../../shared/services/customer.service';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-admin-customer-list',
-  imports: [CommonModule, MatIconModule, PageHeaderComponent],
+  imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customer-list.component.html',
   styleUrl: './customer-list.component.scss'

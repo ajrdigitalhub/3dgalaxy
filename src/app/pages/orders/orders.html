@@ -19,9 +19,9 @@
               <span class="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
               <p class="text-[10px] text-blue-400 font-mono tracking-widest uppercase">3D GALAXY REGISTERED MEMBER</p>
             </div>
-            <h2 class="text-xl font-bold">{{ ds.activeUser()?.name }}</h2>
+            <h2 class="text-xl font-bold">{{ ds.activeUser().name }}</h2>
             <div class="text-xs text-neutral-450 space-y-0.5">
-              <p>Email: {{ ds.activeUser()?.email }} | Phone: {{ ds.activeUser()?.phone }}</p>
+              <p>Email: {{ ds.activeUser().email }} | Phone: {{ ds.activeUser().phone }}</p>
               <p class="line-clamp-1">Address: {{ ds.shippingAddress() }}</p>
             </div>
           </div>
@@ -29,7 +29,7 @@
           <!-- Loyalty Rewards Balance badge -->
           <div class="p-4 bg-white/5 border border-white/10 rounded-2xl text-center min-w-[130px]">
             <mat-icon class="text-amber-400 scale-110">stars</mat-icon>
-            <p class="text-2xl font-mono font-black text-blue-400 mt-1">{{ ds.activeUser()?.rewardPoints || 0 }}</p>
+            <p class="text-2xl font-mono font-black text-blue-400 mt-1">{{ ds.activeUser().rewardPoints || 0 }}</p>
             <span class="text-[9px] uppercase font-mono text-neutral-450 tracking-widest">LOYALTY REWARDS POINTS</span>
           </div>
         </div>
@@ -194,7 +194,7 @@
                     </span>
                   </div>
                   <div class="text-left font-semibold text-neutral-700 dark:text-neutral-350 truncate">
-                    {{ ord.items[0]?.name }} 
+                    {{ ord.items[0].name }} 
                     @if (ord.items.length > 1) {
                       <span>(+{{ ord.items.length - 1 }} other items)</span>
                     }

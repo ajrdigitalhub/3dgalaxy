@@ -6,6 +6,9 @@
 
 # Compiled output
 /dist
+/.agents
+/.angular
+/.firebase
 /tmp
 /out-tsc
 /bazel-out
