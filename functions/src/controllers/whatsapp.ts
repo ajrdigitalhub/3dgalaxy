@@ -98,20 +98,8 @@ export const sendWhatsappNotification = async (req: Request, res: Response) => {
       reason = 'Simulated sandbox dispatch. Set WHATSAPP_API_URL and WHATSAPP_API_KEY in server environment variables to unlock real messages.';
     }
 
-    const log = await prisma.whatsappLog.create({
-      data: {
-        recipientNumber,
-        messageContent,
-        status,
-        reason,
-        templateName,
-        parameters: parameters ? JSON.parse(JSON.stringify(parameters)) : undefined
-      }
-    });
-
     return res.status(200).json({
       success: status === 'SENT',
-      logId: log.id,
       status,
       reason,
       content: messageContent
@@ -123,13 +111,5 @@ export const sendWhatsappNotification = async (req: Request, res: Response) => {
 };
 
 export const getWhatsappLogs = async (req: Request, res: Response) => {
-  try {
-    const logs = await prisma.whatsappLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 100
-    });
-    return res.status(200).json(logs);
-  } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to query database logs', details: error.message });
-  }
+  return res.status(501).json({ error: 'WhatsApp logging is not enabled for this deployment' });
 };

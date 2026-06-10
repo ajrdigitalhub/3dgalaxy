@@ -19,9 +19,7 @@ export const getProducts = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Filters formulation
     const filters: any = {};
-
     if (search) {
       filters.OR = [
         { name: { contains: search as string, mode: 'insensitive' } },
@@ -33,31 +31,24 @@ export const getProducts = async (req: Request, res: Response) => {
     if (categoryId) {
       filters.categoryId = categoryId as string;
     }
-
     if (brandId) {
       filters.brandId = brandId as string;
     }
-
     if (minPrice || maxPrice) {
-      filters.salePrice = {};
-      if (minPrice) {
-        filters.salePrice.gte = parseFloat(minPrice as string);
-      }
-      if (maxPrice) {
-        filters.salePrice.lte = parseFloat(maxPrice as string);
-      }
+      filters.basePrice = {};
+      if (minPrice) filters.basePrice.gte = parseFloat(minPrice as string);
+      if (maxPrice) filters.basePrice.lte = parseFloat(maxPrice as string);
     }
 
-    // Sorting formulation
     const order: any = {};
     if (sortBy === 'price') {
-      order.salePrice = sortOrder as string;
+      order.basePrice = sortOrder as string;
     } else {
       order[sortBy as string] = sortOrder as string;
     }
 
-    const total = await prisma.products.count({ where: filters });
-    const items = await prisma.products.findMany({
+    const total = await prisma.product.count({ where: filters });
+    const items = await prisma.product.findMany({
       where: filters,
       include: {
         variants: true,
@@ -94,9 +85,7 @@ export const getProductById = async (req: Request, res: Response) => {
         images: true,
         category: true,
         brand: true,
-        reviews: {
-          include: { customer: true },
-        },
+        reviews: { include: { user: true } },
       },
     });
 
@@ -116,18 +105,17 @@ export const createProduct = async (req: Request, res: Response) => {
     slug,
     sku,
     description,
-    mrp,
+    basePrice,
     salePrice,
     dealerPrice,
-    stock,
     categoryId,
     brandId,
     is360Supported,
     seoTitle,
     seoDescription,
     seoKeywords,
-    variants, // Array: [{name, price, stock, sku}]
-    images,   // Array: [{url, isPrimary}]
+    variants,
+    images,
   } = req.body;
 
   if (!name || !slug || !sku || !categoryId || !brandId) {
@@ -141,35 +129,32 @@ export const createProduct = async (req: Request, res: Response) => {
         slug,
         sku,
         description,
-        mrp: parseFloat(mrp),
-        salePrice: parseFloat(salePrice),
-        dealerPrice: parseFloat(dealerPrice),
-        stock: parseInt(stock, 10),
+        basePrice: parseFloat(basePrice),
+        salePrice: salePrice ? parseFloat(salePrice) : undefined,
+        dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
         categoryId,
         brandId,
-        is360Supported: !!is360Supported,
-        seoTitle,
-        seoDescription,
-        seoKeywords,
-        variants: {
-          create: (variants || []).map((v: any) => ({
-            name: v.name,
-            price: parseFloat(v.price),
-            stock: parseInt(v.stock, 10),
-            sku: v.sku,
-          })),
-        },
-        images: {
-          create: (images || []).map((img: any) => ({
-            url: img.url,
-            isPrimary: !img.isPrimary,
-          })),
-        },
+        isActive: true,
+        isExclusive: false,
+        images: images
+          ? {
+              create: (images || []).map((img: any) => ({
+                url: img.url,
+                altText: img.altText || null,
+              })),
+            }
+          : undefined,
+        variants: variants
+          ? {
+              create: (variants || []).map((v: any) => ({
+                name: v.name,
+                price: parseFloat(v.price),
+                sku: v.sku,
+              })),
+            }
+          : undefined,
       },
-      include: {
-        variants: true,
-        images: true,
-      },
+      include: { variants: true, images: true },
     });
 
     return res.status(201).json(created);
@@ -185,10 +170,9 @@ export const updateProduct = async (req: Request, res: Response) => {
     slug,
     sku,
     description,
-    mrp,
+    basePrice,
     salePrice,
     dealerPrice,
-    stock,
     categoryId,
     brandId,
     is360Supported,
@@ -200,7 +184,6 @@ export const updateProduct = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    // Delete existing child relations before updates to prevent dangling keys
     if (variants) {
       await prisma.productVariant.deleteMany({ where: { productId: id } });
     }
@@ -215,35 +198,30 @@ export const updateProduct = async (req: Request, res: Response) => {
         slug,
         sku,
         description,
-        mrp: mrp ? parseFloat(mrp) : undefined,
+        basePrice: basePrice ? parseFloat(basePrice) : undefined,
         salePrice: salePrice ? parseFloat(salePrice) : undefined,
         dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
-        stock: stock ? parseInt(stock, 10) : undefined,
         categoryId,
         brandId,
-        is360Supported: is360Supported !== undefined ? !!is360Supported : undefined,
-        seoTitle,
-        seoDescription,
-        seoKeywords,
-        variants: variants ? {
-          create: (variants || []).map((v: any) => ({
-            name: v.name,
-            price: parseFloat(v.price),
-            stock: parseInt(v.stock, 10),
-            sku: v.sku,
-          })),
-        } : undefined,
-        images: images ? {
-          create: (images || []).map((i: any) => ({
-            url: i.url,
-            isPrimary: !!i.isPrimary,
-          })),
-        } : undefined,
+        variants: variants
+          ? {
+              create: (variants || []).map((v: any) => ({
+                name: v.name,
+                price: parseFloat(v.price),
+                sku: v.sku,
+              })),
+            }
+          : undefined,
+        images: images
+          ? {
+              create: (images || []).map((img: any) => ({
+                url: img.url,
+                altText: img.altText || null,
+              })),
+            }
+          : undefined,
       },
-      include: {
-        variants: true,
-        images: true,
-      },
+      include: { variants: true, images: true },
     });
 
     return res.status(200).json(updated);
@@ -254,19 +232,17 @@ export const updateProduct = async (req: Request, res: Response) => {
 
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { mode = 'hard' } = req.query; // Support standard and "soft" deletion
+  const { mode = 'hard' } = req.query;
 
   try {
     if (mode === 'soft') {
-      // Toggle inventory stock to zero as a soft flag or configure empty visibility
       const softDeleted = await prisma.product.update({
         where: { id },
-        data: { stock: 0 },
+        data: { isActive: false },
       });
-      return res.status(200).json({ message: 'Soft deleted (inventory zeroed out)', data: softDeleted });
+      return res.status(200).json({ message: 'Soft deleted (visibility disabled)', data: softDeleted });
     }
 
-    // Hard delete deletes deep references automatically due to Cascade onDelete models
     await prisma.product.delete({ where: { id } });
     return res.status(200).json({ message: 'Product SKU permanently deleted' });
   } catch (error: any) {

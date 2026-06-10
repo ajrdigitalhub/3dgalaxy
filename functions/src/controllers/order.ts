@@ -45,7 +45,7 @@ export const getOrderById = async (req: Request, res: Response) => {
 };
 
 export const createOrder = async (req: Request, res: Response) => {
-  const { customerId, items, totalAmount } = req.body; // Items: [{productId, variantId, quantity}]
+  const { customerId, items, totalAmount } = req.body;
   if (!customerId || !items || items.length === 0) {
     return res.status(400).json({ error: 'Customer identifier and checkout items are required' });
   }
@@ -54,29 +54,26 @@ export const createOrder = async (req: Request, res: Response) => {
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `B3D-${Date.now().toString().slice(-6)}-${randomSuffix}`;
 
-    // Verify customer exists
     const customer = await prisma.customer.findUnique({ where: { id: customerId } });
     if (!customer) {
       return res.status(404).json({ error: 'Associated customer profile missing' });
     }
 
-    // Wrap in a transaction to safely handle inventory check & deductions
     const transaction = await prisma.$transaction(async (tx) => {
       let finalTotal = 0;
-      const parsedItems = [];
+      const parsedItems: any[] = [];
 
       for (const it of items) {
         const prod = await tx.product.findUnique({ where: { id: it.productId } });
-        if (!prod || prod.stock < it.quantity) {
-          throw new Error(`Insufficient inventory stock for SKU: ${prod?.name || it.productId}`);
+        if (!prod) {
+          throw new Error(`Product SKU missing: ${it.productId}`);
         }
 
-        let price = prod.salePrice;
-        if (customer.tier === 'DEALER') {
-          price = prod.dealerPrice;
+        let price = prod.salePrice ?? prod.basePrice;
+        if (customer.customerType === 'dealer') {
+          price = prod.dealerPrice ?? price;
         }
 
-        // Handle variant price override if specified
         if (it.variantId) {
           const variant = await tx.productVariant.findUnique({ where: { id: it.variantId } });
           if (variant) {
@@ -84,19 +81,17 @@ export const createOrder = async (req: Request, res: Response) => {
           }
         }
 
-        finalTotal += price * it.quantity;
-
-        // Deduct core asset stock
-        await tx.product.update({
-          where: { id: it.productId },
-          data: { stock: { decrement: it.quantity } },
-        });
+        const unitPrice = Number(price);
+        const quantity = parseInt(it.quantity, 10);
+        const totalPrice = unitPrice * quantity;
+        finalTotal += totalPrice;
 
         parsedItems.push({
           productId: it.productId,
           variantId: it.variantId || null,
-          quantity: it.quantity,
-          price,
+          quantity,
+          unitPrice,
+          totalPrice,
         });
       }
 
@@ -104,16 +99,11 @@ export const createOrder = async (req: Request, res: Response) => {
         data: {
           customerId,
           orderNumber,
-          totalAmount: totalAmount || finalTotal,
+          totalAmount: totalAmount ? parseFloat(totalAmount) : finalTotal,
           status: 'PENDING',
-          paymentStatus: 'UNPAID',
-          items: {
-            create: parsedItems,
-          },
+          items: { create: parsedItems },
         },
-        include: {
-          items: true,
-        },
+        include: { items: true },
       });
 
       return orderEntity;
@@ -127,17 +117,14 @@ export const createOrder = async (req: Request, res: Response) => {
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { status } = req.body; // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+  const { status } = req.body;
 
   if (!status) {
     return res.status(400).json({ error: 'Status attribute represents a required input' });
   }
 
   try {
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { status },
-    });
+    const updated = await prisma.order.update({ where: { id }, data: { status } });
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update order tracking status', details: error.message });
@@ -146,18 +133,23 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
 
 export const updatePaymentStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { paymentStatus } = req.body; // UNPAID, PAID, REFUNDED
+  const { paymentStatus, amount, paymentMethod, transactionId } = req.body;
 
   if (!paymentStatus) {
     return res.status(400).json({ error: 'paymentStatus attribute represents a required input' });
   }
 
   try {
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { paymentStatus },
+    const payment = await prisma.payment.create({
+      data: {
+        orderId: id,
+        paymentMethod: paymentMethod || 'UNKNOWN',
+        transactionId,
+        amount: amount ? parseFloat(amount) : 0,
+        status: paymentStatus,
+      },
     });
-    return res.status(200).json(updated);
+    return res.status(200).json(payment);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to transition payment status', details: error.message });
   }
@@ -165,18 +157,22 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
 export const updateShipmentTracking = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { shipmentCarrier, trackingNumber } = req.body;
+  const { carrier, trackingNumber, status } = req.body;
+
+  if (!carrier || !trackingNumber) {
+    return res.status(400).json({ error: 'carrier and trackingNumber are required' });
+  }
 
   try {
-    const updated = await prisma.order.update({
-      where: { id },
+    const shipment = await prisma.shipment.create({
       data: {
-        shipmentCarrier,
+        orderId: id,
+        carrier,
         trackingNumber,
-        status: shipmentCarrier ? 'SHIPPED' : undefined,
+        status: status || 'SHIPPED',
       },
     });
-    return res.status(200).json(updated);
+    return res.status(200).json(shipment);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to attach shipment registry details', details: error.message });
   }

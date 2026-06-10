@@ -5,6 +5,7 @@
 !.env.example
 
 # Compiled output
+/functions/dist
 /dist
 /.agents
 /.angular
