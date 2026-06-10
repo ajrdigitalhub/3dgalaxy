@@ -16,6 +16,7 @@ export const getDatabaseUrl = () => {
   const user = encodeURIComponent(ENV.PG_USER);
   const password = encodeURIComponent(ENV.PG_PASSWORD);
   const sslMode = ENV.PG_SSL ? 'require' : 'disable';
-  
-  return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}`;
+  // Disable the pg prepared statement cache and enable PgBouncer compatibility
+  // for Supabase / PgBouncer connection pools.
+  return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}&statement_cache_size=0&pgbouncer=true`;
 };

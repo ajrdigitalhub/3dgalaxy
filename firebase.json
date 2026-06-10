@@ -16,7 +16,7 @@
       "npm run build"
     ]
   },
-  "functions": [
+    "functions": [
     {
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
@@ -27,20 +27,8 @@
         "firebase-debug.*.log",
         "*.local"
       ],
-      "predeploy": [],
+      "predeploy": ["npm run build"],
       "source": "functions"
-    },
-    {
-      "source": "3dgalaxy",
-      "codebase": "3dgalaxy",
-      "disallowLegacyRuntimeConfig": true,
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
     }
   ]
 }

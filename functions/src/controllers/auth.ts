@@ -7,7 +7,11 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 const tokenBlocklist = new Set<string>();
 
 const buildFullName = (name?: string) => {
+
+
   if (!name) return { firstName: null, lastName: null };
+
+  
   const [firstName, ...rest] = name.trim().split(' ');
   return { firstName, lastName: rest.join(' ') || null };
 };
