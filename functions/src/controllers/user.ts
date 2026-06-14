@@ -8,7 +8,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
       include: { roles: true },
       orderBy: { createdAt: 'desc' },
     });
-    const sanitized = list.map(u => ({
+    const sanitized = list.map((u: any) => ({
       id: u.id,
       email: u.email,
       firstName: u.firstName,

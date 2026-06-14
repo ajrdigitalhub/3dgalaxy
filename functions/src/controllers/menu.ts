@@ -41,7 +41,7 @@ export const getMenuItemsList = async (req: Request, res: Response) => {
       orderBy: { sortOrder: 'asc' },
     });
     // For frontend list, maybe map title to label too
-    const mapped = list.map(item => ({ ...item, label: item.title }));
+    const mapped = list.map((item: any) => ({ ...item, label: item.title }));
     return res.status(200).json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to access flatter menu links list', details: error.message });

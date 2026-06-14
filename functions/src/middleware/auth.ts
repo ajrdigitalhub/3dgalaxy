@@ -58,7 +58,7 @@ export const authenticateToken = async (
     const firstRole = user.roles?.[0]?.role;
     const roleName = firstRole?.name || 'user';
     const permissions = user.roles?.flatMap(
-      r => r.role?.permissions?.map(rp => rp.permission?.name || '') || []
+      (r: any) => r.role?.permissions?.map((rp: any) => rp.permission?.name || '') || []
     ).filter(Boolean) || [];
 
     req.user = {

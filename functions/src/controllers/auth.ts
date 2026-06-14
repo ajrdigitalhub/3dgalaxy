@@ -144,7 +144,7 @@ export const login = async (req: Request, res: Response) => {
 
     const userRoleName = user.roles?.[0]?.role?.name || 'CUSTOMER';
     const userPermissions = user.roles?.flatMap(
-      r => r.role?.permissions?.map(rp => rp.permission?.name || '') || []
+      (r: any) => r.role?.permissions?.map((rp: any) => rp.permission?.name || '') || []
     ).filter(Boolean) || [];
 
     const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });

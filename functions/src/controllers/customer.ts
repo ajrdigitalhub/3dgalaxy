@@ -12,7 +12,7 @@ export const getCustomers = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const mapped = list.map(c => ({
+    const mapped = list.map((c: any) => ({
       id: c.id,
       userId: c.userId,
       phone: c.phone,
@@ -64,7 +64,7 @@ export const getCustomerById = async (req: Request, res: Response) => {
       addresses: c.addresses,
       orders: c.orders,
       wishlistItems: c.wishlist,
-      reviews: c.reviews.map(r => ({
+      reviews: c.reviews.map((r: any) => ({
         id: r.id,
         customerId: r.customerId,
         productId: r.productId,
@@ -308,7 +308,7 @@ export const getReviews = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const mapped = list.map(r => ({
+    const mapped = list.map((r: any) => ({
       id: r.id,
       productId: r.productId,
       customerId: r.customerId,

@@ -61,7 +61,7 @@ export const createOrder = async (req: Request, res: Response) => {
     }
 
     // Wrap in a transaction to safely handle inventory check & deductions
-    const transaction = await prisma.$transaction(async (tx) => {
+    const transaction = await prisma.$transaction(async (tx: any) => {
       let finalTotal = 0;
       const parsedItems = [];
 
@@ -72,8 +72,9 @@ export const createOrder = async (req: Request, res: Response) => {
         }
 
         let price = prod.salePrice;
-        if (customer.tier === 'DEALER') {
-          price = prod.dealerPrice;
+        // Dealer pricing logic - customerType field in Customer model
+        if (customer.customerType === 'DEALER') {
+          price = prod.dealerPrice || prod.salePrice; // Fallback if dealerPrice not set
         }
 
         // Handle variant price override if specified
@@ -166,10 +167,10 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
     await prisma.shipment.create({
       data: {
         orderId: id,
-        carrierService: shipmentCarrier || 'Unknown',
+        carrier: shipmentCarrier || 'Unknown',
         trackingNumber: trackingNumber || '',
-        shipmentStatus: 'SHIPPED',
-        dispatchedAt: new Date()
+        status: 'SHIPPED',
+        shippedAt: new Date()
       }
     });
 
