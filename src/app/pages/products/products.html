@@ -1,3 +1,15 @@
+@if(loadingService.isLoading()) {
+  <div class="space-y-10 pb-24 p-6">
+    <div class="w-full h-32 rounded-2xl mb-8">
+      <app-skeleton-loader width="w-full" height="h-full" borderRadius="rounded-2xl" />
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+       @for(i of [1,2,3,4,5,6,7,8]; track i) {
+          <app-skeleton-product-card />
+       }
+    </div>
+  </div>
+} @else {
 <div class="space-y-10 animate-fadeIn pb-24 select-none text-neutral-800 dark:text-neutral-100">
 
   <!-- ================= SCREENSHOT 2: GALAXY HUB NAVIGATOR ================= -->
@@ -247,11 +259,24 @@
               <!-- Polished Shimmer Sweep effect -->
               <div class="shimmer-effect"></div>
 
-              <img [src]="p.images[0]" 
-                   class="w-full h-full object-contain transform md:group-hover:scale-105 transition-transform duration-500" 
-                   loading="lazy"
-                   alt="{{p.name}}" 
-                   referrerpolicy="no-referrer">
+              @if (p.images.length > 1) {
+                <img [src]="p.images[0]" 
+                     class="absolute inset-x-0 w-full h-full object-contain p-3 md:p-6 transition-opacity duration-500 md:group-hover:opacity-0" 
+                     loading="lazy"
+                     alt="{{p.name}}" 
+                     referrerpolicy="no-referrer">
+                <img [src]="p.images[1]" 
+                     class="absolute inset-x-0 w-full h-full object-contain p-3 md:p-6 opacity-0 transition-all duration-500 md:group-hover:opacity-100 transform md:group-hover:scale-105" 
+                     loading="lazy"
+                     alt="{{p.name}}" 
+                     referrerpolicy="no-referrer">
+              } @else {
+                <img [src]="p.images[0]" 
+                     class="w-full h-full object-contain transform md:group-hover:scale-105 transition-transform duration-500" 
+                     loading="lazy"
+                     alt="{{p.name}}" 
+                     referrerpolicy="no-referrer">
+              }
               
               <!-- Yellow status warning strip -->
               @if (p.warningText) {
@@ -399,3 +424,5 @@
   }
 
 </div>
+}
+

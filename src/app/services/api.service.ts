@@ -32,7 +32,8 @@ export class ApiService {
   }
 
   get<T>(endpoint: string, params?: any): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}${endpoint}`, { params }).pipe(
+    const headers = this.getHeaders();
+    return this.http.get<T>(`${this.baseUrl}${endpoint}`, { params, headers }).pipe(
       retry({
         count: 3,
         delay: (error, retryCount) => timer(1000 * retryCount)
@@ -43,20 +44,34 @@ export class ApiService {
   }
 
   post<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}${endpoint}`, body).pipe(
+    const headers = this.getHeaders();
+    return this.http.post<T>(`${this.baseUrl}${endpoint}`, body, { headers }).pipe(
       catchError(this.handleError)
     );
   }
 
   put<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}${endpoint}`, body).pipe(
+    const headers = this.getHeaders();
+    return this.http.put<T>(`${this.baseUrl}${endpoint}`, body, { headers }).pipe(
       catchError(this.handleError)
     );
   }
 
   delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}${endpoint}`).pipe(
+    const headers = this.getHeaders();
+    return this.http.delete<T>(`${this.baseUrl}${endpoint}`, { headers }).pipe(
       catchError(this.handleError)
     );
+  }
+
+  private getHeaders() {
+    let headers: any = {};
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    return headers;
   }
 }

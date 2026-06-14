@@ -34,27 +34,18 @@ export const authenticateToken = async (
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: {
-        roles: {
-          include: {
-            role: {
-              include: { permissions: { include: { permission: true } } },
-            },
-          },
-        },
-      },
+      include: { roles: true },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       return res.status(403).json({ error: 'User is inactive or suspended' });
     }
 
-    const roleLink = user.roles?.[0]?.role;
     req.user = {
       id: user.id,
       email: user.email,
-      role: roleLink?.name ?? 'CUSTOMER',
-      permissions: roleLink?.permissions?.map((rp: any) => rp.permission.name) ?? [],
+      role: user.roles?.[0]?.name || 'user',
+      permissions: user.roles?.flatMap(r => r.permissions as string[]) || [],
     };
 
     next();

@@ -1,0 +1,307 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-950 pt-24 pb-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      
+      <!-- Sidebar Navigation -->
+      <div class="lg:w-64 shrink-0">
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sticky top-24">
+          <div class="flex items-center gap-4 mb-6 px-2">
+            <div class="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0">
+              <mat-icon class="text-neutral-500">person</mat-icon>
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-bold text-neutral-900 dark:text-white truncate">{{ profile()?.name || 'User' }}</h3>
+              <p class="text-xs text-neutral-500 truncate">{{ profile()?.email }}</p>
+            </div>
+          </div>
+          <nav class="space-y-1">
+            <button *ngFor="let tab of tabs" 
+                    (click)="switchTab(tab.id)"
+                    [class.bg-blue-50]="activeTab() === tab.id"
+                    [class.text-blue-600]="activeTab() === tab.id"
+                    [class.dark:bg-blue-500_10]="activeTab() === tab.id"
+                    [class.dark:text-blue-400]="activeTab() === tab.id"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <mat-icon class="scale-90" [class.text-blue-600]="activeTab() === tab.id">{{ tab.icon }}</mat-icon>
+              {{ tab.label }}
+            </button>
+            <div class="h-px bg-neutral-200 dark:bg-neutral-800 my-2"></div>
+            <button (click)="logout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+              <mat-icon class="scale-90">logout</mat-icon>
+              Logout
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 min-w-0">
+        
+        <!-- DASHBOARD -->
+        <ng-container *ngIf="activeTab() === 'dashboard'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Dashboard</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
+                <p class="text-sm font-medium text-neutral-500 mb-1">Total Orders</p>
+                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
+              </div>
+              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
+                <p class="text-sm font-medium text-neutral-500 mb-1">Wishlist</p>
+                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
+              </div>
+              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
+                <p class="text-sm font-medium text-neutral-500 mb-1">Reviews</p>
+                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
+              </div>
+            </div>
+            
+            <div class="mt-8">
+              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Recent Orders</h3>
+              <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
+                <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
+                <p class="text-neutral-500 font-medium">No recent orders found.</p>
+                <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- PROFILE SETTINGS -->
+        <ng-container *ngIf="activeTab() === 'profile'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Profile Settings</h2>
+            
+            <div class="flex items-center gap-6 mb-8">
+              <div class="relative w-24 h-24 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-white dark:border-neutral-900 shadow-md">
+                <mat-icon class="text-neutral-500 scale-150">person</mat-icon>
+                <label class="absolute inset-x-0 bottom-0 py-1 bg-black/50 hover:bg-black/70 cursor-pointer text-center text-white transition-colors">
+                  <span class="text-[10px] font-bold uppercase tracking-wider">Edit</span>
+                  <input type="file" class="hidden" accept="image/*" (change)="uploadImage($event)">
+                </label>
+              </div>
+              <div>
+                <h3 class="font-bold text-neutral-900 dark:text-white">Profile Photo</h3>
+                <p class="text-xs text-neutral-500">JPG, GIF or PNG. Max size of 5MB.</p>
+              </div>
+            </div>
+
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-5 max-w-2xl">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">First Name</label>
+                  <input type="text" formControlName="firstName" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Last Name</label>
+                  <input type="text" formControlName="lastName" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                </div>
+              </div>
+              
+              <div class="space-y-1">
+                <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Email Address</label>
+                <input type="email" formControlName="email" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Mobile Number</label>
+                  <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Gender</label>
+                  <select formControlName="gender" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white appearance-none">
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pt-4">
+                <button type="submit" [disabled]="profileForm.invalid" class="px-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </ng-container>
+
+        <!-- SECURITY SETTINGS -->
+        <ng-container *ngIf="activeTab() === 'security'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Security Settings</h2>
+            
+            <div class="max-w-2xl mb-12">
+              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Change Password</h3>
+              <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4">
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Current Password</label>
+                  <input type="password" formControlName="currentPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">New Password</label>
+                  <input type="password" formControlName="newPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <p class="text-[10px] text-neutral-500 mt-1">Must be at least 8 characters long.</p>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Confirm New Password</label>
+                  <input type="password" formControlName="confirmPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                </div>
+                <div class="pt-2">
+                  <button type="submit" [disabled]="passwordForm.invalid" class="px-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">
+                    Update Password
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="max-w-2xl">
+              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Active Sessions</h3>
+              <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
+                <div class="p-4 flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <mat-icon class="text-neutral-400">computer</mat-icon>
+                    <div>
+                      <p class="text-sm font-bold text-neutral-900 dark:text-white">Mac OS • Chrome</p>
+                      <p class="text-xs text-neutral-500">Active now • IP: 192.168.1.1</p>
+                    </div>
+                  </div>
+                  <span class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider">Current</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ORDERS TAB -->
+        <ng-container *ngIf="activeTab() === 'orders'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Orders</h2>
+            
+            <div class="space-y-4">
+              <!-- Example Order Card -->
+              <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
+                <div class="px-6 py-4 bg-white dark:bg-neutral-800/60 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
+                  <div>
+                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Placed</p>
+                    <p class="text-sm text-neutral-900 dark:text-white font-medium">12 Jun 2026</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Total</p>
+                    <p class="text-sm text-neutral-900 dark:text-white font-medium">₹45,999</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order #</p>
+                    <p class="text-sm text-neutral-900 dark:text-white font-mono">ORD-1001-XYZ</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider">Delivered</span>
+                  </div>
+                </div>
+                <div class="px-6 py-5">
+                  <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-1">
+                      <img src="/api/placeholder/100/100" class="w-full h-full object-contain">
+                    </div>
+                    <div class="flex-1">
+                      <h4 class="font-bold text-neutral-900 dark:text-white">Bambu Lab P1S Combo</h4>
+                      <p class="text-sm text-neutral-500 mt-0.5">Quantity: 1</p>
+                    </div>
+                    <button class="px-6 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- WISHLIST TAB -->
+        <ng-container *ngIf="activeTab() === 'wishlist'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Wishlist</h2>
+            <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-12 text-center">
+              <mat-icon class="text-5xl text-red-300 dark:text-red-900 mb-4">favorite_border</mat-icon>
+              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-2">Your wishlist is empty</h3>
+              <p class="text-neutral-500 mb-6 text-sm">Save items you like and they'll appear here.</p>
+              <a routerLink="/products" class="inline-block px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wider text-sm rounded-xl transition-colors">Start Shopping</a>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ADDRESSES TAB -->
+        <ng-container *ngIf="activeTab() === 'addresses'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">Saved Addresses</h2>
+              <button class="px-6 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold text-sm tracking-wider rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-2">
+                <mat-icon class="scale-90">add</mat-icon> Add New
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="border-2 border-blue-500 rounded-xl p-5 relative bg-blue-50 dark:bg-blue-900/10 dark:border-blue-500/50">
+                <span class="absolute top-4 right-4 text-[10px] font-black tracking-widest uppercase px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-md">Default</span>
+                <p class="font-bold text-neutral-900 dark:text-white mb-2">{{ profile()?.name }}</p>
+                <div class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 mb-4">
+                  <p>123 3D Galaxy Drive</p>
+                  <p>Maker Space Suite 42</p>
+                  <p>Tech City, TC 400001</p>
+                  <p>India</p>
+                  <p class="pt-2 text-neutral-500">Phone: {{ profile()?.phone || 'Not adding phone yet' }}</p>
+                </div>
+                <div class="flex items-center gap-4 text-sm font-bold">
+                  <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 uppercase tracking-wider">Edit</button>
+                  <button class="text-red-500 hover:text-red-600 uppercase tracking-wider">Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- NOTIFICATIONS TAB -->
+        <ng-container *ngIf="activeTab() === 'notifications'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Notifications</h2>
+            <div class="divide-y divide-neutral-200 dark:divide-neutral-800">
+              <div class="py-4 flex gap-4">
+                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <mat-icon class="text-blue-600 dark:text-blue-400">local_offer</mat-icon>
+                </div>
+                <div>
+                  <h4 class="font-bold text-neutral-900 dark:text-white">Summer Sale is Live!</h4>
+                  <p class="text-sm text-neutral-500 mt-1">Get up to 20% off on all resin printers. Offer valid till 30th June.</p>
+                  <p class="text-xs text-neutral-400 mt-2 font-medium">Just now</p>
+                </div>
+              </div>
+              <div class="py-4 flex gap-4">
+                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                  <mat-icon class="text-green-600 dark:text-green-400">check_circle</mat-icon>
+                </div>
+                <div>
+                  <h4 class="font-bold text-neutral-900 dark:text-white">Welcome to 3D Galaxy!</h4>
+                  <p class="text-sm text-neutral-500 mt-1">Your account has been successfully created.</p>
+                  <p class="text-xs text-neutral-400 mt-2 font-medium">2 days ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- REVIEWS TAB -->
+        <ng-container *ngIf="activeTab() === 'reviews'">
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Reviews</h2>
+            <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
+              <mat-icon class="text-4xl text-yellow-400 mb-2">star_border</mat-icon>
+              <p class="text-neutral-500 font-medium">You haven't reviewed any products yet.</p>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
+  </div>
+</div>

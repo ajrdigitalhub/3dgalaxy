@@ -57,6 +57,24 @@
   100% { transform: translateX(200%) skewX(-15deg); }
 }
 
+@keyframes shimmerPulse {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  animation: shimmerPulse 1.5s infinite linear;
+  background: #f1f5f9;
+  background: linear-gradient(to right, #f1f5f9 8%, #e2e8f0 18%, #f1f5f9 33%);
+  background-size: 1000px 100%;
+}
+
+.dark .skeleton {
+  background: #1e293b;
+  background: linear-gradient(to right, #1e293b 8%, #334155 18%, #1e293b 33%);
+  background-size: 1000px 100%;
+}
+
 @keyframes textGradientFlow {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

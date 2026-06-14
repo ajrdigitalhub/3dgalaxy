@@ -6,9 +6,18 @@ if (!admin.apps.length) {
     const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
     let credential;
 
-    if (base64ServiceAccount) {
-      const decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
-      credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
+    if (base64ServiceAccount && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+      try {
+        let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
+        // If the decoded string doesn't start with '{', it might be plain JSON
+        if (!decodedServiceAccount.trim().startsWith('{')) {
+          decodedServiceAccount = base64ServiceAccount;
+        }
+        credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
+      } catch (parseError) {
+        console.warn('Invalid Firebase Service Account JSON provided. Storage functionality might fail.');
+        credential = admin.credential.applicationDefault();
+      }
     } else {
       console.warn('Firebase Service Account is missing. Storage functionality might fail.');
       credential = admin.credential.applicationDefault();
@@ -24,8 +33,17 @@ if (!admin.apps.length) {
   }
 }
 
-export const storage = admin.storage();
-const bucket = storage.bucket();
+export let storage: any;
+export let bucket: any;
+
+try {
+  if (admin.apps.length > 0) {
+    storage = admin.storage();
+    bucket = storage.bucket();
+  }
+} catch (e) {
+  console.error("Firebase Storage not available", e);
+}
 
 /**
  * Uploads a file buffer to Firebase Storage and returns the public download URL.

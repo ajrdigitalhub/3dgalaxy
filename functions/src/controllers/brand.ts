@@ -3,10 +3,23 @@ import prisma from '../config/database';
 
 export const getBrands = async (req: Request, res: Response) => {
   try {
-    const list = await prisma.brand.findMany({ orderBy: { name: 'asc' } });
+    const list = await prisma.brand.findMany({
+      orderBy: { name: 'asc' },
+    });
     return res.status(200).json(list);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to access brands catalog', details: error.message });
+  }
+};
+
+export const getBrandBySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  try {
+    const brand = await prisma.brand.findUnique({ where: { slug } });
+    if (!brand) return res.status(404).json({ error: 'Brand not found' });
+    return res.status(200).json(brand);
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to fetch brand', details: error.message });
   }
 };
 
@@ -24,14 +37,14 @@ export const getBrandById = async (req: Request, res: Response) => {
 };
 
 export const createBrand = async (req: Request, res: Response) => {
-  const { name, slug, logo, description } = req.body;
+  const { name, slug, logo, banner, description } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Manufacturer name and brand URL slug represent required inputs' });
   }
 
   try {
     const created = await prisma.brand.create({
-      data: { name, slug, logo, description },
+      data: { name, slug, logo, banner, description },
     });
     return res.status(201).json(created);
   } catch (error: any) {
@@ -41,12 +54,12 @@ export const createBrand = async (req: Request, res: Response) => {
 
 export const updateBrand = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, logo, description } = req.body;
+  const { name, slug, logo, banner, description } = req.body;
 
   try {
     const updated = await prisma.brand.update({
       where: { id },
-      data: { name, slug, logo, description },
+      data: { name, slug, logo, banner, description },
     });
     return res.status(200).json(updated);
   } catch (error: any) {

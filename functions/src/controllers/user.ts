@@ -2,29 +2,21 @@ import { Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import prisma from '../config/database';
 
-const formatFullName = (firstName?: string | null, lastName?: string | null) => {
-  return [firstName, lastName].filter(Boolean).join(' ').trim();
-};
-
-const extractRole = (user: any) => user.roles?.[0]?.role;
-
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const list = await prisma.user.findMany({
-      include: { roles: { include: { role: true } } },
+      include: { roles: true },
       orderBy: { createdAt: 'desc' },
     });
-    const sanitized = list.map(u => {
-      const role = extractRole(u);
-      return {
-        id: u.id,
-        email: u.email,
-        name: formatFullName(u.firstName, u.lastName),
-        role: role?.name ?? 'CUSTOMER',
-        isActive: u.isActive,
-        createdAt: u.createdAt,
-      };
-    });
+    const sanitized = list.map(u => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      roles: u.roles.map((r: any) => r.name),
+      isActive: u.isActive,
+      createdAt: u.createdAt,
+    }));
     return res.status(200).json(sanitized);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve user listing', details: error.message });
@@ -36,17 +28,17 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
     const user = await prisma.user.findUnique({
       where: { id },
-      include: { roles: { include: { role: true } } },
+      include: { roles: true },
     });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const role = extractRole(user);
     return res.status(200).json({
       id: user.id,
       email: user.email,
-      name: formatFullName(user.firstName, user.lastName),
-      role: role?.name ?? 'CUSTOMER',
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles.map((r: any) => r.name),
       isActive: user.isActive,
       createdAt: user.createdAt,
     });
@@ -58,45 +50,33 @@ export const getUserById = async (req: AuthenticatedRequest, res: Response) => {
 export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, roleId, isActive } = req.body;
-    const [firstName, ...rest] = (name || '').trim().split(' ');
-    const lastName = rest.join(' ') || null;
+    const { firstName, lastName, isActive } = req.body;
 
     const updated = await prisma.user.update({
       where: { id },
       data: {
-        firstName: name ? firstName : undefined,
-        lastName: name ? lastName : undefined,
+        firstName,
+        lastName,
         isActive,
-        roles: roleId
-          ? {
-              upsert: {
-                where: { userId_roleId: { userId: id, roleId } },
-                update: {},
-                create: { role: { connect: { id: roleId } } },
-              },
-            }
-          : undefined,
       },
-      include: { roles: { include: { role: true } } },
+      include: { roles: true },
     });
 
+    // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id,
+        userId: req.user?.id || 'system',
         action: 'USER_UPDATE',
-        entityType: 'USER',
-        entityId: updated.id,
-        newData: { email: updated.email, name, isActive },
+        description: `Updated user record payload of user: ${updated.email}`,
       },
     });
 
-    const role = extractRole(updated);
     return res.status(200).json({
       id: updated.id,
       email: updated.email,
-      name: formatFullName(updated.firstName, updated.lastName),
-      role: role?.name ?? 'CUSTOMER',
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      roles: updated.roles.map((r: any) => r.name),
       isActive: updated.isActive,
       createdAt: updated.createdAt,
     });
@@ -115,25 +95,26 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
 
     await prisma.user.delete({ where: { id } });
 
+    // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id,
+        userId: req.user?.id || 'system',
         action: 'USER_DELETE',
-        entityType: 'USER',
-        entityId: target.id,
-        oldData: { email: target.email },
+        description: `Deleted account associated with email: ${target.email}`,
       },
     });
 
     return res.status(200).json({ message: 'User record deleted' });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Soft/hard delete failure', details: error.message });
+    return res.status(550).json({ error: 'Soft/hard delete failure', details: error.message });
   }
 };
 
 export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const roles = await prisma.role.findMany({ orderBy: { name: 'asc' } });
+    const roles = await prisma.role.findMany({
+      orderBy: { name: 'asc' },
+    });
     return res.status(200).json(roles);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to read roles list', details: error.message });
@@ -142,20 +123,21 @@ export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
 
 export const createRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: 'Role name is required' });
+    const { name, permissions } = req.body;
+    if (!name || !permissions) {
+      return res.status(400).json({ error: 'Role name and permissions array are required' });
     }
 
-    const created = await prisma.role.create({ data: { name } });
+    const created = await prisma.role.create({
+      data: { name, permissions },
+    });
 
+    // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id,
+        userId: req.user?.id || 'system',
         action: 'ROLE_CREATE',
-        entityType: 'ROLE',
-        entityId: created.id,
-        newData: { name },
+        description: `Created new user security role: ${name}`,
       },
     });
 
@@ -168,17 +150,19 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
 export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, permissions } = req.body;
 
-    const updated = await prisma.role.update({ where: { id }, data: { name } });
+    const updated = await prisma.role.update({
+      where: { id },
+      data: { name, permissions },
+    });
 
+    // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id,
+        userId: req.user?.id || 'system',
         action: 'ROLE_UPDATE',
-        entityType: 'ROLE',
-        entityId: updated.id,
-        newData: { name: updated.name },
+        description: `Modified access permissions of role: ${updated.name}`,
       },
     });
 

@@ -4,7 +4,9 @@ import {CommonModule} from '@angular/common';
 import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Category} from '../../services/datastore';
+import {LoadingService} from '../../core/services/loading.service';
 import {animate} from 'motion';
+import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 
 interface QuickNavItem {
   id: string;
@@ -13,7 +15,7 @@ interface QuickNavItem {
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.html',
   styleUrl: './home.scss'
@@ -21,6 +23,7 @@ interface QuickNavItem {
 export class Home {
   ds = inject(DatastoreService);
   router = inject(Router);
+  loadingService = inject(LoadingService);
   heroContainer = viewChild<ElementRef>('heroContainer');
 
   searchQuery = signal<string>('');

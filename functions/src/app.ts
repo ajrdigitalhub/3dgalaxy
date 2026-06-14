@@ -16,6 +16,8 @@ import settingsRoutes from './routes/settings';
 import orderRoutes from './routes/order';
 import customerRoutes from './routes/customer';
 import whatsappRoutes from './routes/whatsapp';
+import sitemapRoutes from './routes/sitemap';
+import profileRoutes from './routes/profile';
 
 const app = express();
 
@@ -23,11 +25,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint for Cloud Run / Load Balancer
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 // Serve Static Uploads
 const uploadsPath = path.resolve(__dirname, '../../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
 // API Routing Configurations
+app.use('/', sitemapRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -39,6 +47,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

@@ -1,5 +1,11 @@
-generator client {
+generator clientRoot {
   provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+generator clientServer {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -7,723 +13,819 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Authentication
 model Role {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(50)
-  description     String?           @db.Text
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-  permissions     RolePermission[]
-  users           UserRole[]
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at")
+  permissions RolePermission[]
+  users       UserRole[]
 
   @@map("roles")
 }
 
 model Permission {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  resource        String            @db.VarChar(50)
-  action          String            @db.VarChar(50)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  roles           RolePermission[]
+  id        String           @id @default(uuid())
+  name      String           @unique
+  resource  String
+  action    String
+  createdAt DateTime         @default(now()) @map("created_at")
+  roles     RolePermission[]
 
   @@map("permissions")
 }
 
 model RolePermission {
-  roleId          String            @map("role_id") @db.Uuid
-  permissionId    String            @map("permission_id") @db.Uuid
-  role            Role              @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission      Permission        @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
 }
 
 model User {
-  id              String            @id @default(uuid()) @db.Uuid
-  email           String            @unique @db.VarChar(255)
-  passwordHash    String            @map("password_hash") @db.VarChar(255)
-  firstName       String?           @map("first_name") @db.VarChar(100)
-  lastName        String?           @map("last_name") @db.VarChar(100)
-  isActive        Boolean           @default(true) @map("is_active")
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  roles           UserRole[]
-  refreshTokens   RefreshToken[]
-  auditLogs       AuditLog[]
-  customers       Customer[]
-  productReviews  ProductReview[]
-  orderHistories  OrderStatusHistory[]
-  blogs           Blog[]
-  notifications   Notification[]
+  id             String               @id @default(uuid())
+  email          String               @unique
+  passwordHash   String               @map("password_hash")
+  firstName      String?              @map("first_name")
+  lastName       String?              @map("last_name")
+  profileImage   String?              @map("profile_image")
+  dateOfBirth    DateTime?            @map("date_of_birth")
+  gender         String?
+  lastLogin      DateTime?            @map("last_login")
+  isActive       Boolean              @default(true) @map("is_active")
+  deletedAt      DateTime?            @map("deleted_at")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
+  auditLogs      AuditLog[]
+  blogs          Blog[]
+  customers      Customer[]
+  notifications  Notification[]
+  orderHistories OrderStatusHistory[]
+  productReviews ProductReview[]
+  refreshTokens  RefreshToken[]
+  roles          UserRole[]
 
   @@map("users")
 }
 
 model UserRole {
-  userId          String            @map("user_id") @db.Uuid
-  roleId          String            @map("role_id") @db.Uuid
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role            Role              @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  roleId String @map("role_id")
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
   @@map("user_roles")
 }
 
 model RefreshToken {
-  id              String            @id @default(uuid()) @db.Uuid
-  userId          String            @map("user_id") @db.Uuid
-  token           String            @unique @db.VarChar(255)
-  expiresAt       DateTime          @map("expires_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
 }
 
 model AuditLog {
-  id              String            @id @default(uuid()) @db.Uuid
-  userId          String?           @map("user_id") @db.Uuid
-  action          String            @db.VarChar(100)
-  entityType      String            @map("entity_type") @db.VarChar(100)
-  entityId        String            @map("entity_id") @db.Uuid
-  oldData         Json?             @map("old_data")
-  newData         Json?             @map("new_data")
-  ipAddress       String?           @map("ip_address") @db.VarChar(45)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  oldData    String?  @map("old_data")
+  newData    String?  @map("new_data")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }
 
-// Categories
 model Category {
-  id              String            @id @default(uuid()) @db.Uuid
-  parentId        String?           @map("parent_id") @db.Uuid
-  name            String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  description     String?           @db.Text
-  icon            String?           @db.VarChar(255)
-  image           String?           @db.VarChar(255)
-  banner          String?           @db.VarChar(255)
-  sortOrder       Int               @default(0) @map("sort_order")
-  isActive        Boolean           @default(true) @map("is_active")
-  isFeatured      Boolean           @default(false) @map("is_featured")
-  seoTitle        String?           @map("seo_title") @db.VarChar(255)
-  seoDescription  String?           @map("seo_description") @db.Text
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  parent          Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children        Category[]        @relation("CategoryHierarchy")
-  products        Product[]
-  homepageItems   HomepageSectionItem[]
+  id             String                @id @default(uuid())
+  parentId       String?               @map("parent_id")
+  name           String
+  slug           String                @unique
+  description    String?
+  icon           String?
+  image          String?
+  banner         String?
+  sortOrder      Int                   @default(0) @map("sort_order")
+  isActive       Boolean               @default(true) @map("is_active")
+  isFeatured     Boolean               @default(false) @map("is_featured")
+  seoTitle       String?               @map("seo_title")
+  seoDescription String?               @map("seo_description")
+  deletedAt      DateTime?             @map("deleted_at")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @default(now()) @updatedAt @map("updated_at")
+  parent         Category?             @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[]            @relation("CategoryHierarchy")
+  homepageItems  HomepageSectionItem[]
+  products       Product[]
 
   @@map("categories")
 }
 
-// Brands
 model Brand {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  logo            String?           @db.VarChar(255)
-  description     String?           @db.Text
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  products        Product[]
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  logo        String?   @map("logo_url")
+  banner      String?   @map("banner_url")
+  description String?
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  products    Product[]
 
   @@map("brands")
 }
 
-// Products
 model Product {
-  id              String            @id @default(uuid()) @db.Uuid
-  brandId         String?           @map("brand_id") @db.Uuid
-  categoryId      String?           @map("category_id") @db.Uuid
-  name            String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  sku             String            @unique @db.VarChar(100)
-  description     String?           @db.Text
-  basePrice       Decimal           @map("base_price") @db.Decimal(10, 2)
-  salePrice       Decimal?          @map("sale_price") @db.Decimal(10, 2)
-  dealerPrice     Decimal?          @map("dealer_price") @db.Decimal(10, 2)
-  isActive        Boolean           @default(true) @map("is_active")
-  isExclusive     Boolean           @default(false) @map("is_exclusive")
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  brand           Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  images          ProductImage[]
-  attributeValues ProductAttributeValue[]
-  variants        ProductVariant[]
-  tagMappings     ProductTagMapping[]
-  reviews         ProductReview[]
-  inventory       Inventory[]
-  wishlists       CustomerWishlist[]
-  customerReviews CustomerReview[]
-  orderItems      OrderItem[]
+  id              String                  @id @default(uuid())
+  brandId         String?                 @map("brand_id")
+  categoryId      String?                 @map("category_id")
+  name            String
+  slug            String                  @unique
+  sku             String                  @unique
+  description     String?
+  basePrice       Float                   @map("base_price")
+  salePrice       Float?                  @map("sale_price")
+  dealerPrice     Float?                  @map("dealer_price")
+  isActive        Boolean                 @default(true) @map("is_active")
+  isExclusive     Boolean                 @default(false) @map("is_exclusive")
+  deletedAt       DateTime?               @map("deleted_at")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @default(now()) @updatedAt @map("updated_at")
   cartItems       CartItem[]
+  customerReviews CustomerReview[]
+  wishlists       CustomerWishlist[]
   homepageItems   HomepageSectionItem[]
+  inventory       Inventory[]
+  orderItems      OrderItem[]
+  attributeValues ProductAttributeValue[]
+  downloads       ProductDownload[]
+  faqs            ProductFaq[]
+  features        ProductFeature[]
+  images          ProductImage[]
+  relatedTo       ProductRelated[]        @relation("RelatedToProduct")
+  relatedProducts ProductRelated[]        @relation("ProductToRelated")
+  reviews         ProductReview[]
+  seo             ProductSeo?
+  shipping        ProductShipping?
+  specifications  ProductSpecification[]
+  tagMappings     ProductTagMapping[]
+  variants        ProductVariant[]
+  warranty        ProductWarranty?
+  category        Category?               @relation(fields: [categoryId], references: [id])
+  brand           Brand?                  @relation(fields: [brandId], references: [id])
 
   @@map("products")
 }
 
 model ProductImage {
-  id              String            @id @default(uuid()) @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  url             String            @db.VarChar(255)
-  altText         String?           @map("alt_text") @db.VarChar(255)
-  sortOrder       Int               @default(0) @map("sort_order")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  url       String   @map("image_url")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  altText   String?  @map("alt_text")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
 }
 
-model ProductAttribute {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+model ProductSpecification {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  name      String
+  value     String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  values          ProductAttributeValue[]
+  @@map("product_specifications")
+}
+
+model ProductDownload {
+  id           String   @id @default(uuid())
+  productId    String   @map("product_id")
+  title        String
+  fileUrl      String   @map("file_url")
+  downloadType String   @map("download_type")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_downloads")
+}
+
+model ProductFeature {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  icon        String?
+  title       String
+  description String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_features")
+}
+
+model ProductFaq {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  question  String
+  answer    String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_faqs")
+}
+
+model ProductWarranty {
+  id                  String   @id @default(uuid())
+  productId           String   @unique @map("product_id")
+  warrantyPeriod      String?  @map("warranty_period")
+  warrantyType        String?  @map("warranty_type")
+  warrantyDescription String?  @map("warranty_description")
+  createdAt           DateTime @default(now()) @map("created_at")
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_warranty")
+}
+
+model ProductShipping {
+  id              String   @id @default(uuid())
+  productId       String   @unique @map("product_id")
+  deliveryTime    String?  @map("delivery_time")
+  shippingCharges Float?   @map("shipping_charges")
+  shippingRegions String?  @map("shipping_regions")
+  createdAt       DateTime @default(now()) @map("created_at")
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_shipping")
+}
+
+model ProductRelated {
+  id             String   @id @default(uuid())
+  productId      String   @map("product_id")
+  relatedToId    String   @map("related_to_id")
+  relationType   String   @map("relation_type")
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  relatedProduct Product  @relation("RelatedToProduct", fields: [relatedToId], references: [id], onDelete: Cascade)
+  product        Product  @relation("ProductToRelated", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, relatedToId])
+  @@map("product_related_products")
+}
+
+model ProductSeo {
+  id             String   @id @default(uuid())
+  productId      String   @unique @map("product_id")
+  seoTitle       String?  @map("seo_title")
+  seoDescription String?  @map("seo_description")
+  seoKeywords    String?  @map("seo_keywords")
+  canonicalUrl   String?  @map("canonical_url")
+  openGraphImage String?  @map("open_graph_image")
+  createdAt      DateTime @default(now()) @map("created_at")
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_seo")
+}
+
+model ProductAttribute {
+  id        String                  @id @default(uuid())
+  name      String                  @unique
+  createdAt DateTime                @default(now()) @map("created_at")
+  values    ProductAttributeValue[]
 
   @@map("product_attributes")
 }
 
 model ProductAttributeValue {
-  id              String            @id @default(uuid()) @db.Uuid
-  attributeId     String            @map("attribute_id") @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  value           String            @db.VarChar(255)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  attribute       ProductAttribute  @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id          String           @id @default(uuid())
+  attributeId String           @map("attribute_id")
+  productId   String           @map("product_id")
+  value       String
+  createdAt   DateTime         @default(now()) @map("created_at")
+  product     Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
 
   @@map("product_attribute_values")
 }
 
 model ProductVariant {
-  id              String            @id @default(uuid()) @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  sku             String            @unique @db.VarChar(100)
-  price           Decimal           @db.Decimal(10, 2)
-  name            String            @db.VarChar(255)
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inventory       Inventory[]
-  orderItems      OrderItem[]
-  cartItems       CartItem[]
+  id         String      @id @default(uuid())
+  productId  String      @map("product_id")
+  sku        String      @unique
+  price      Float
+  name       String
+  deletedAt  DateTime?   @map("deleted_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @default(now()) @updatedAt @map("updated_at")
+  cartItems  CartItem[]
+  inventory  Inventory[]
+  orderItems OrderItem[]
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
 }
 
 model ProductTag {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  slug            String            @unique @db.VarChar(100)
-
-  mappings        ProductTagMapping[]
+  id       String              @id @default(uuid())
+  name     String              @unique
+  slug     String              @unique
+  mappings ProductTagMapping[]
 
   @@map("product_tags")
 }
 
 model ProductTagMapping {
-  productId       String            @map("product_id") @db.Uuid
-  tagId           String            @map("tag_id") @db.Uuid
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag             ProductTag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  productId String     @map("product_id")
+  tagId     String     @map("tag_id")
+  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, tagId])
   @@map("product_tag_mapping")
 }
 
 model ProductReview {
-  id              String            @id @default(uuid()) @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  userId          String?           @map("user_id") @db.Uuid
-  rating          Int               // CHECK (rating >= 1 AND rating <= 5)
-  title           String?           @db.VarChar(255)
-  comment         String?           @db.Text
-  isApproved      Boolean           @default(false) @map("is_approved")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  userId     String?  @map("user_id")
+  rating     Int
+  title      String?
+  comment    String?
+  isApproved Boolean  @default(false) @map("is_approved")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  user       User?    @relation(fields: [userId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_reviews")
 }
 
-// Inventory
 model Warehouse {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(255)
-  location        String?           @db.VarChar(255)
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  inventory       Inventory[]
+  id        String      @id @default(uuid())
+  name      String
+  location  String?
+  isActive  Boolean     @default(true) @map("is_active")
+  createdAt DateTime    @default(now()) @map("created_at")
+  inventory Inventory[]
 
   @@map("warehouses")
 }
 
 model Inventory {
-  id              String            @id @default(uuid()) @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  variantId       String?           @map("variant_id") @db.Uuid
-  warehouseId     String            @map("warehouse_id") @db.Uuid
-  quantity        Int               @default(0)
-  reservedQty     Int               @default(0) @map("reserved_quantity")
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  warehouse       Warehouse         @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  transactions    InventoryTransaction[]
+  id           String                 @id @default(uuid())
+  productId    String                 @map("product_id")
+  variantId    String?                @map("variant_id")
+  warehouseId  String                 @map("warehouse_id")
+  quantity     Int                    @default(0)
+  reservedQty  Int                    @default(0) @map("reserved_quantity")
+  updatedAt    DateTime               @default(now()) @updatedAt @map("updated_at")
+  warehouse    Warehouse              @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  variant      ProductVariant?        @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  product      Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  transactions InventoryTransaction[]
 
   @@map("inventory")
 }
 
 model InventoryTransaction {
-  id              String            @id @default(uuid()) @db.Uuid
-  inventoryId     String            @map("inventory_id") @db.Uuid
-  transactionType String            @map("transaction_type") @db.VarChar(50)
-  quantity        Decimal           @db.Decimal(10, 2)
-  referenceId     String?           @map("reference_id") @db.Uuid
-  notes           String?           @db.Text
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  inventory       Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  id              String    @id @default(uuid())
+  inventoryId     String    @map("inventory_id")
+  transactionType String    @map("transaction_type")
+  quantity        Float
+  referenceId     String?   @map("reference_id")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  inventory       Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 
   @@map("inventory_transactions")
 }
 
-// Customers
 model Customer {
-  id              String            @id @default(uuid()) @db.Uuid
-  userId          String            @map("user_id") @db.Uuid
-  phone           String?           @db.VarChar(20)
-  rewardPoints    Int               @default(0) @map("reward_points")
-  customerType    String            @default("retail") @map("customer_type") @db.VarChar(50)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  addresses       CustomerAddress[]
-  wishlist        CustomerWishlist[]
-  reviews         CustomerReview[]
-  orders          Order[]
-  carts           Cart[]
-  couponUsages    CouponUsage[]
+  id            String                 @id @default(uuid())
+  userId        String                 @map("user_id")
+  phone         String?
+  rewardPoints  Int                    @default(0) @map("reward_points")
+  customerType  String                 @default("retail") @map("customer_type")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @default(now()) @updatedAt @map("updated_at")
+  carts         Cart[]
+  couponUsages  CouponUsage[]
+  addresses     CustomerAddress[]
+  notifications CustomerNotification[]
+  reviews       CustomerReview[]
+  sessions      CustomerSession[]
+  wishlist      CustomerWishlist[]
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders        Order[]
 
   @@map("customers")
 }
 
 model CustomerAddress {
-  id              String            @id @default(uuid()) @db.Uuid
-  customerId      String            @map("customer_id") @db.Uuid
-  addressLine1    String            @map("address_line_1") @db.VarChar(255)
-  addressLine2    String?           @map("address_line_2") @db.VarChar(255)
-  city            String            @db.VarChar(100)
-  state           String            @db.VarChar(100)
-  postalCode      String            @map("postal_code") @db.VarChar(20)
-  country         String            @db.VarChar(100)
-  isDefault       Boolean           @default(false) @map("is_default")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  shippingOrders  Order[]           @relation("ShippingAddress")
-  billingOrders   Order[]           @relation("BillingAddress")
+  id             String   @id @default(uuid())
+  customerId     String   @map("customer_id")
+  name           String?
+  phone          String?
+  addressLine1   String   @map("address_line_1")
+  addressLine2   String?  @map("address_line_2")
+  city           String
+  state          String
+  postalCode     String   @map("postal_code")
+  country        String
+  isDefault      Boolean  @default(false) @map("is_default")
+  createdAt      DateTime @default(now()) @map("created_at")
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  billingOrders  Order[]  @relation("BillingAddress")
+  shippingOrders Order[]  @relation("ShippingAddress")
 
   @@map("customer_addresses")
 }
 
-model CustomerWishlist {
-  customerId      String            @map("customer_id") @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+model CustomerNotification {
+  id         String   @id @default(uuid())
+  customerId String   @map("customer_id")
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
-  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@map("customer_notifications")
+}
+
+model CustomerSession {
+  id           String   @id @default(uuid())
+  customerId   String   @map("customer_id")
+  token        String   @unique
+  deviceInfo   String?  @map("device_info")
+  ipAddress    String?  @map("ip_address")
+  isActive     Boolean  @default(true) @map("is_active")
+  lastActivity DateTime @default(now()) @map("last_activity")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_sessions")
+}
+
+model CustomerWishlist {
+  customerId String   @map("customer_id")
+  productId  String   @map("product_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@id([customerId, productId])
   @@map("customer_wishlist")
 }
 
 model CustomerReview {
-  id              String            @id @default(uuid()) @db.Uuid
-  customerId      String            @map("customer_id") @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  rating          Int               // CHECK (rating >= 1 AND rating <= 5)
-  reviewText      String?           @map("review_text") @db.Text
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  customerId String   @map("customer_id")
+  productId  String   @map("product_id")
+  rating     Int
+  reviewText String?  @map("review_text")
+  createdAt  DateTime @default(now()) @map("created_at")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("customer_reviews")
 }
 
-// Orders
 model Order {
-  id              String            @id @default(uuid()) @db.Uuid
-  customerId      String?           @map("customer_id") @db.Uuid
-  orderNumber     String            @unique @map("order_number") @db.VarChar(100)
-  status          String            @default("PENDING") @db.VarChar(50)
-  totalAmount     Decimal           @map("total_amount") @db.Decimal(10, 2)
-  taxAmount       Decimal           @default(0) @map("tax_amount") @db.Decimal(10, 2)
-  shippingAmount  Decimal           @default(0) @map("shipping_amount") @db.Decimal(10, 2)
-  discountAmount  Decimal           @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  shippingAddressId String?         @map("shipping_address_id") @db.Uuid
-  billingAddressId  String?         @map("billing_address_id") @db.Uuid
-  notes           String?           @db.Text
-  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  shippingAddress CustomerAddress?  @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  billingAddress  CustomerAddress?  @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  
-  items           OrderItem[]
-  statusHistory   OrderStatusHistory[]
-  payments        Payment[]
-  shipments       Shipment[]
-  couponUsages    CouponUsage[]
+  id                String               @id @default(uuid())
+  customerId        String?              @map("customer_id")
+  orderNumber       String               @unique @map("order_number")
+  status            String               @default("PENDING")
+  totalAmount       Float                @map("total_amount")
+  taxAmount         Float                @default(0) @map("tax_amount")
+  shippingAmount    Float                @default(0) @map("shipping_amount")
+  discountAmount    Float                @default(0) @map("discount_amount")
+  isManual          Boolean              @default(false) @map("is_manual")
+  shippingAddressId String?              @map("shipping_address_id")
+  billingAddressId  String?              @map("billing_address_id")
+  notes             String?
+  deletedAt         DateTime?            @map("deleted_at")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @default(now()) @updatedAt @map("updated_at")
+  couponUsages      CouponUsage[]
+  items             OrderItem[]
+  statusHistory     OrderStatusHistory[]
+  billingAddress    CustomerAddress?     @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  shippingAddress   CustomerAddress?     @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  customer          Customer?            @relation(fields: [customerId], references: [id])
+  payments          Payment[]
+  shipments         Shipment[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  productId       String?           @map("product_id") @db.Uuid
-  variantId       String?           @map("variant_id") @db.Uuid
-  quantity        Int
-  unitPrice       Decimal           @map("unit_price") @db.Decimal(10, 2)
-  totalPrice      Decimal           @map("total_price") @db.Decimal(10, 2)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
-  variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  id         String          @id @default(uuid())
+  orderId    String          @map("order_id")
+  productId  String?         @map("product_id")
+  variantId  String?         @map("variant_id")
+  quantity   Int
+  unitPrice  Float           @map("unit_price")
+  totalPrice Float           @map("total_price")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+  product    Product?        @relation(fields: [productId], references: [id])
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("order_items")
 }
 
 model OrderStatusHistory {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  status          String            @db.VarChar(50)
-  comments        String?           @db.Text
-  createdBy       String?           @map("created_by") @db.Uuid
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user            User?             @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  status    String
+  comments  String?
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [createdBy], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("order_status_history")
 }
 
 model Payment {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  paymentMethod   String            @map("payment_method") @db.VarChar(100)
-  transactionId   String?           @map("transaction_id") @db.VarChar(255)
-  amount          Decimal           @db.Decimal(10, 2)
-  status          String            @db.VarChar(50)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  paymentMethod String   @map("payment_method")
+  transactionId String?  @map("transaction_id")
+  amount        Float
+  status        String
+  createdAt     DateTime @default(now()) @map("created_at")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
 
 model Shipment {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  carrier         String?           @db.VarChar(100)
-  trackingNumber  String?           @map("tracking_number") @db.VarChar(255)
-  status          String            @db.VarChar(50)
-  shippedAt       DateTime?         @map("shipped_at") @db.Timestamptz
-  deliveredAt     DateTime?         @map("delivered_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  orderId        String    @map("order_id")
+  carrier        String?
+  trackingNumber String?   @map("tracking_number")
+  status         String
+  shippedAt      DateTime? @map("shipped_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("shipments")
 }
 
-// Carts
 model Cart {
-  id              String            @id @default(uuid()) @db.Uuid
-  customerId      String?           @map("customer_id") @db.Uuid
-  sessionId       String?           @map("session_id") @db.VarChar(255)
-  status          String            @default("ACTIVE") @db.VarChar(50)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  items           CartItem[]
+  id         String     @id @default(uuid())
+  customerId String?    @map("customer_id")
+  sessionId  String?    @map("session_id")
+  status     String     @default("ACTIVE")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @updatedAt @map("updated_at")
+  items      CartItem[]
+  customer   Customer?  @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("carts")
 }
 
 model CartItem {
-  id              String            @id @default(uuid()) @db.Uuid
-  cartId          String            @map("cart_id") @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  variantId       String?           @map("variant_id") @db.Uuid
-  quantity        Int
-  addedAt         DateTime          @default(now()) @map("added_at") @db.Timestamptz
-
-  cart            Cart              @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  id        String          @id @default(uuid())
+  cartId    String          @map("cart_id")
+  productId String          @map("product_id")
+  variantId String?         @map("variant_id")
+  quantity  Int
+  addedAt   DateTime        @default(now()) @map("added_at")
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart      Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
   @@map("cart_items")
 }
 
-// Coupons
 model Coupon {
-  id              String            @id @default(uuid()) @db.Uuid
-  code            String            @unique @db.VarChar(50)
-  discountType    String            @map("discount_type") @db.VarChar(50)
-  discountValue   Decimal           @map("discount_value") @db.Decimal(10, 2)
-  minOrderAmount  Decimal?          @map("min_order_amount") @db.Decimal(10, 2)
-  maxDiscountAmt  Decimal?          @map("max_discount_amount") @db.Decimal(10, 2)
-  startDate       DateTime?         @map("start_date") @db.Timestamptz
-  endDate         DateTime?         @map("end_date") @db.Timestamptz
-  usageLimit      Int?              @map("usage_limit")
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  usages          CouponUsage[]
+  id             String        @id @default(uuid())
+  code           String        @unique
+  discountType   String        @map("discount_type")
+  discountValue  Float         @map("discount_value")
+  minOrderAmount Float?        @map("min_order_amount")
+  maxDiscountAmt Float?        @map("max_discount_amount")
+  startDate      DateTime?     @map("start_date")
+  endDate        DateTime?     @map("end_date")
+  usageLimit     Int?          @map("usage_limit")
+  isActive       Boolean       @default(true) @map("is_active")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  usages         CouponUsage[]
 
   @@map("coupons")
 }
 
 model CouponUsage {
-  id              String            @id @default(uuid()) @db.Uuid
-  couponId        String            @map("coupon_id") @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  customerId      String            @map("customer_id") @db.Uuid
-  discountApplied Decimal           @map("discount_applied") @db.Decimal(10, 2)
-  usedAt          DateTime          @default(now()) @map("used_at") @db.Timestamptz
-
-  coupon          Coupon            @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  couponId        String   @map("coupon_id")
+  orderId         String   @map("order_id")
+  customerId      String   @map("customer_id")
+  discountApplied Float    @map("discount_applied")
+  usedAt          DateTime @default(now()) @map("used_at")
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
 
   @@map("coupon_usage")
 }
 
-// Banners
 model Banner {
-  id              String            @id @default(uuid()) @db.Uuid
-  title           String?           @db.VarChar(255)
-  imageUrl        String            @map("image_url") @db.VarChar(255)
-  linkUrl         String?           @map("link_url") @db.VarChar(255)
-  position        String?           @db.VarChar(50)
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  id        String   @id @default(uuid())
+  title     String?
+  imageUrl  String   @map("image_url")
+  linkUrl   String?  @map("link_url")
+  position  String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("banners")
 }
 
-// Homepage Builder
 model HomepageSection {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(100)
-  type            String            @db.VarChar(50)
-  sortOrder       Int               @default(0) @map("sort_order")
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  items           HomepageSectionItem[]
+  id        String                @id @default(uuid())
+  name      String
+  type      String
+  sortOrder Int                   @default(0) @map("sort_order")
+  isActive  Boolean               @default(true) @map("is_active")
+  createdAt DateTime              @default(now()) @map("created_at")
+  items     HomepageSectionItem[]
 
   @@map("homepage_sections")
 }
 
 model HomepageSectionItem {
-  id              String            @id @default(uuid()) @db.Uuid
-  sectionId       String            @map("section_id") @db.Uuid
-  productId       String?           @map("product_id") @db.Uuid
-  categoryId      String?           @map("category_id") @db.Uuid
-  imageUrl        String?           @map("image_url") @db.VarChar(255)
-  title           String?           @db.VarChar(255)
-  subTitle        String?           @map("sub_title") @db.VarChar(255)
-  linkUrl         String?           @map("link_url") @db.VarChar(255)
-  sortOrder       Int               @default(0) @map("sort_order")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  section         HomepageSection   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  product         Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
-  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  id         String          @id @default(uuid())
+  sectionId  String          @map("section_id")
+  productId  String?         @map("product_id")
+  categoryId String?         @map("category_id")
+  imageUrl   String?         @map("image_url")
+  title      String?
+  subTitle   String?         @map("sub_title")
+  linkUrl    String?         @map("link_url")
+  sortOrder  Int             @default(0) @map("sort_order")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  category   Category?       @relation(fields: [categoryId], references: [id])
+  product    Product?        @relation(fields: [productId], references: [id])
+  section    HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@map("homepage_section_items")
 }
 
-// Menu Builder
 model Menu {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(100)
-  location        String            @db.VarChar(50)
-  isActive        Boolean           @default(true) @map("is_active")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  items           MenuItem[]
+  id        String     @id @default(uuid())
+  name      String
+  location  String
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  items     MenuItem[]
 
   @@map("menus")
 }
 
 model MenuItem {
-  id              String            @id @default(uuid()) @db.Uuid
-  menuId          String            @map("menu_id") @db.Uuid
-  parentId        String?           @map("parent_id") @db.Uuid
-  title           String            @db.VarChar(255)
-  url             String?           @db.VarChar(255)
-  sortOrder       Int               @default(0) @map("sort_order")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  menu            Menu              @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  parent          MenuItem?         @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children        MenuItem[]        @relation("MenuHierarchy")
+  id        String     @id @default(uuid())
+  menuId    String     @map("menu_id")
+  parentId  String?    @map("parent_id")
+  title     String
+  url       String?
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  parent    MenuItem?  @relation("MenuHierarchy", fields: [parentId], references: [id])
+  children  MenuItem[] @relation("MenuHierarchy")
+  menu      Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
   @@map("menu_items")
 }
 
-// Theme Settings
 model ThemeSetting {
-  id              String            @id @default(uuid()) @db.Uuid
-  keyName         String            @unique @map("key_name") @db.VarChar(100)
-  value           Json
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  id        String   @id @default(uuid())
+  keyName   String   @unique @map("key_name")
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("theme_settings")
 }
 
-// CMS
 model Page {
-  id              String            @id @default(uuid()) @db.Uuid
-  title           String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  content         String?           @db.Text
-  isPublished     Boolean           @default(false) @map("is_published")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  sections        PageSection[]
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  content     String?
+  isPublished Boolean       @default(false) @map("is_published")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+  sections    PageSection[]
 
   @@map("pages")
 }
 
 model PageSection {
-  id              String            @id @default(uuid()) @db.Uuid
-  pageId          String            @map("page_id") @db.Uuid
-  sectionType     String            @map("section_type") @db.VarChar(50)
-  content         Json?
-  sortOrder       Int               @default(0) @map("sort_order")
-
-  page            Page              @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  id          String  @id @default(uuid())
+  pageId      String  @map("page_id")
+  sectionType String  @map("section_type")
+  content     String?
+  sortOrder   Int     @default(0) @map("sort_order")
+  page        Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@map("page_sections")
 }
 
 model BlogCategory {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  blogs           Blog[]
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  blogs     Blog[]
 
   @@map("blog_categories")
 }
 
 model Blog {
-  id              String            @id @default(uuid()) @db.Uuid
-  categoryId      String?           @map("category_id") @db.Uuid
-  authorId        String?           @map("author_id") @db.Uuid
-  title           String            @db.VarChar(255)
-  slug            String            @unique @db.VarChar(255)
-  content         String            @db.Text
-  imageUrl        String?           @map("image_url") @db.VarChar(255)
-  isPublished     Boolean           @default(false) @map("is_published")
-  publishedAt     DateTime?         @map("published_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  category        BlogCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  author          User?             @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  id          String        @id @default(uuid())
+  categoryId  String?       @map("category_id")
+  authorId    String?       @map("author_id")
+  title       String
+  slug        String        @unique
+  content     String
+  imageUrl    String?       @map("image_url")
+  isPublished Boolean       @default(false) @map("is_published")
+  publishedAt DateTime?     @map("published_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+  author      User?         @relation(fields: [authorId], references: [id])
+  category    BlogCategory? @relation(fields: [categoryId], references: [id])
 
   @@map("blogs")
 }
 
-// Notifications
 model NotificationTemplate {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  channel         String            @db.VarChar(50) // e.g., 'EMAIL', 'WHATSAPP'
-  subject         String?           @db.VarChar(255)
-  body            String            @db.Text
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  notifications   Notification[]
+  id            String         @id @default(uuid())
+  name          String         @unique
+  channel       String
+  subject       String?
+  body          String
+  createdAt     DateTime       @default(now()) @map("created_at")
+  notifications Notification[]
 
   @@map("notification_templates")
 }
 
 model Notification {
-  id              String            @id @default(uuid()) @db.Uuid
-  userId          String?           @map("user_id") @db.Uuid
-  templateId      String?           @map("template_id") @db.Uuid
-  status          String            @default("PENDING") @db.VarChar(50)
-  errorMessage    String?           @map("error_message") @db.Text
-  sentAt          DateTime?         @map("sent_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  template        NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  id           String                @id @default(uuid())
+  userId       String?               @map("user_id")
+  templateId   String?               @map("template_id")
+  status       String                @default("PENDING")
+  errorMessage String?               @map("error_message")
+  sentAt       DateTime?             @map("sent_at")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
+  user         User?                 @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
 
-// Contact
 model ContactRequest {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @db.VarChar(255)
-  email           String            @db.VarChar(255)
-  subject         String?           @db.VarChar(255)
-  message         String            @db.Text
-  status          String            @default("NEW") @db.VarChar(50)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("contact_requests")
 }
 
 model NewsletterSubscriber {
-  id              String            @id @default(uuid()) @db.Uuid
-  email           String            @unique @db.VarChar(255)
-  isActive        Boolean           @default(true) @map("is_active")
-  subscribedAt    DateTime          @default(now()) @map("subscribed_at") @db.Timestamptz
+  id           String   @id @default(uuid())
+  email        String   @unique
+  isActive     Boolean  @default(true) @map("is_active")
+  subscribedAt DateTime @default(now()) @map("subscribed_at")
 
   @@map("newsletter_subscribers")
 }

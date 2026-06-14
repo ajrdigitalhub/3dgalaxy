@@ -1,12 +1,16 @@
 import {Component, ChangeDetectionStrategy, inject, signal, computed} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, DOCUMENT} from '@angular/common';
 import {RouterModule, ActivatedRoute} from '@angular/router';
+import {Title, Meta} from '@angular/platform-browser';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Category} from '../../services/datastore';
+import {LoadingService} from '../../core/services/loading.service';
+import {SkeletonProductCardComponent} from '../../shared/components/skeleton/skeleton-product-card/skeleton-product-card.component';
+import {SkeletonLoaderComponent} from '../../shared/components/skeleton/skeleton-loader/skeleton-loader.component';
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonProductCardComponent, SkeletonLoaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './products.html',
   styleUrl: './products.scss'
@@ -14,6 +18,7 @@ import {DatastoreService, Product, Category} from '../../services/datastore';
 export class Products {
   ds = inject(DatastoreService);
   route = inject(ActivatedRoute);
+  loadingService = inject(LoadingService);
 
   searchQuery = signal<string>('');
   filterCategory = signal<string>('');
@@ -144,7 +149,64 @@ export class Products {
     return cat ? cat.name : '';
   }
 
+  titleService = inject(Title);
+  metaService = inject(Meta);
+  document = inject(DOCUMENT);
+
   constructor() {
+    this.route.params.subscribe(params => {
+       if (params['categorySlug']) {
+          // Find category id from slug
+          const cat = this.ds.categories().find(c => c.slug === params['categorySlug']);
+          if (cat) {
+             this.filterCategory.set(cat.id);
+             this.expandedCategoryIds.update(set => new Set(set).add(cat.id));
+             
+             // Update SEO
+             this.titleService.setTitle(`${cat.name} | 3D Galaxy`);
+             this.metaService.updateTag({ name: 'description', content: `Browse our collection of ${cat.name}. High quality 3D printing supplies.` });
+             this.metaService.updateTag({ property: 'og:title', content: `${cat.name} | 3D Galaxy` });
+             
+             let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
+             if (!link) {
+                 link = this.document.createElement('link');
+                 link.setAttribute('rel', 'canonical');
+                 this.document.head.appendChild(link);
+             }
+             link.setAttribute('href', `https://3dgalaxy.com/category/${cat.slug}`);
+          }
+       } else if (params['brandSlug']) {
+          const b = this.ds.brands().find(br => br.slug === params['brandSlug']);
+          if (b) {
+             this.filterBrand.set(b.name);
+             
+             // Update SEO
+             this.titleService.setTitle(`Buy ${b.name} | 3D Galaxy`);
+             this.metaService.updateTag({ name: 'description', content: `Shop original ${b.name} printers and filaments.` });
+             this.metaService.updateTag({ property: 'og:title', content: `Buy ${b.name} | 3D Galaxy` });
+             
+             let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
+             if (!link) {
+                 link = this.document.createElement('link');
+                 link.setAttribute('rel', 'canonical');
+                 this.document.head.appendChild(link);
+             }
+             link.setAttribute('href', `https://3dgalaxy.com/brand/${b.slug}`);
+          }
+       } else {
+             // Reset SEO
+             this.titleService.setTitle(`All Products | 3D Galaxy`);
+             this.metaService.updateTag({ name: 'description', content: `Browse all high quality 3D printing supplies.` });
+             let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
+             if (!link) {
+                 link = this.document.createElement('link');
+                 link.setAttribute('rel', 'canonical');
+                 this.document.head.appendChild(link);
+             }
+             link.setAttribute('href', `https://3dgalaxy.com/products`);
+       }
+    });
+
     this.route.queryParams.subscribe(params => {
       if (params['category']) {
         const catId = params['category'];

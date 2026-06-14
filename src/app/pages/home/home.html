@@ -1,11 +1,14 @@
+@if(loadingService.isLoading() || ds.homeLayout().length === 0) {
+  <app-skeleton-page />
+} @else {
 <div class="space-y-24 pb-20 select-none text-neutral-800 dark:text-neutral-100 animate-fadeIn">
   
   @for (section of ds.homeLayout(); track section.id) {
     @if (section.visible) {
       
-      @switch (section.id) {
+      @switch (section.type) {
         
-        @case ('hero-slides') {
+        @case ('HERO') {
           <!-- HERO: IMMERSIVE GALAXY STAGE -->
           <section #heroContainer id="hero-section" class="relative min-h-[60vh] lg:min-h-[85vh] w-full overflow-hidden bg-neutral-900 dark:bg-neutral-950 flex items-center group border-b border-neutral-800/10 dark:border-neutral-800/40 touch-pan-y">
             <!-- Animated Nebula/Galaxy Background -->
@@ -105,7 +108,7 @@
           </section>
         }
         
-        @case ('quick-nav') {
+        @case ('CATEGORIES') {
           <!-- QUICK NAVIGATION (Mobile Swipeable Slider) -->
           <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-4 md:space-y-6 text-left">
             <div class="flex items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3 md:pb-5 gap-4">
@@ -123,7 +126,7 @@
             <div class="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
               <!-- We add gap using wrapper so scrolling is correct -->
               <div class="flex gap-3 md:gap-4 md:grid md:grid-cols-4 lg:grid-cols-8 pb-2">
-                @for (item of asArray(section.config['items']); track item.id) {
+                @for (item of ds.categories(); track item.id) {
                   <button (click)="selectFilterCategory(item.id)" 
                           class="group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-4 md:p-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl md:rounded-[1.5rem] transition-all hover:border-[#d65108] hover:scale-105 h-28 w-28 md:h-36 md:w-auto border-b-4 hover:border-b-[#d65108] shadow-sm cursor-pointer">
                     <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:text-[#d65108] transition-colors">
@@ -137,7 +140,7 @@
           </section>
         }
 
-        @case ('showcase-1') {
+        @case ('BEST_SELLERS') {
           <!-- SHOWCASE CARD 1: BAMBU LAB A1 COMBO -->
           <section [id]="section.id" class="max-w-7xl mx-auto px-6">
             <div class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
@@ -307,7 +310,7 @@
           </section>
         }
 
-        @case ('featured-innovations') {
+        @case ('FEATURED_PRODUCTS') {
           <!-- FEATURED: THE PRINTING ELITE -->
           <section id="products-catalog" class="max-w-7xl mx-auto px-6 space-y-10 text-center sm:text-left">
             <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4">
@@ -446,9 +449,9 @@
                     <div class="space-y-3">
                       <h4 class="text-2xl font-black text-white tracking-tight">{{ tech.name }}</h4>
                       <p class="text-neutral-300 text-xs font-normal leading-relaxed">{{ tech.desc }}</p>
-                      <button [routerLink]="['/products']" [queryParams]="{category: tech.id === 'industrial' ? '3d-printers' : tech.id}" class="h-11 w-full bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 select-text cursor-pointer">
+                      <a [routerLink]="['/category', tech.id === 'industrial' ? '3d-printers' : tech.id]" class="flex items-center justify-center h-11 w-full bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 select-text cursor-pointer">
                         EXPLORE STACK
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -490,7 +493,7 @@
           </section>
         }
 
-        @case ('partners-marquee') {
+        @case ('BRANDS') {
           <!-- AUTHORIZED GLOBAL PARTNERS: HORIZONTAL MARQUEE -->
           <section [id]="section.id" class="py-12 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/10">
             <div class="max-w-7xl mx-auto px-6 space-y-6">
@@ -520,6 +523,7 @@
   }
 
 </div>
+}
 
 <style>
   @keyframes scan {

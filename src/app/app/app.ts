@@ -3,17 +3,20 @@ import {RouterOutlet, RouterModule, Router} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Advertisement} from '../services/datastore';
+import {LoadingService} from '../core/services/loading.service';
+import {SkeletonMenuComponent} from '../shared/components/skeleton/skeleton-menu/skeleton-menu.component';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule],
+  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
   public ds = inject(DatastoreService);
   public router = inject(Router);
+  public loadingService = inject(LoadingService);
 
   isHome = signal(true);
 

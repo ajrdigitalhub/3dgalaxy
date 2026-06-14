@@ -1,18 +1,13 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 
-const formatListName = (customer: any) => customer.user ? `${customer.user.firstName ?? ''} ${customer.user.lastName ?? ''}`.trim() : undefined;
-
 export const getCustomers = async (req: Request, res: Response) => {
   try {
     const list = await prisma.customer.findMany({
-      include: { user: true, addresses: true },
+      include: { addresses: true },
       orderBy: { createdAt: 'desc' },
     });
-    return res.status(200).json(list.map((customer) => ({
-      ...customer,
-      name: formatListName(customer),
-    })));
+    return res.status(200).json(list);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find customers listing', details: error.message });
   }
@@ -24,10 +19,9 @@ export const getCustomerById = async (req: Request, res: Response) => {
     const account = await prisma.customer.findUnique({
       where: { id },
       include: {
-        user: true,
         addresses: true,
         orders: true,
-        wishlist: { include: { product: true } },
+        wishlistItems: { include: { product: true } },
         reviews: true,
       },
     });
@@ -43,14 +37,14 @@ export const getCustomerById = async (req: Request, res: Response) => {
 };
 
 export const createCustomer = async (req: Request, res: Response) => {
-  const { userId, phone, customerType } = req.body;
-  if (!userId) {
-    return res.status(400).json({ error: 'Associated user ID is required to create a customer profile' });
+  const { name, email, phone, company, tier } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Mandatory profile parameters email and name are required' });
   }
 
   try {
     const created = await prisma.customer.create({
-      data: { userId, phone, customerType: customerType || 'retail' },
+      data: { name, email, phone, company, tier: tier || 'REGULAR' },
     });
     return res.status(201).json(created);
   } catch (error: any) {
@@ -60,12 +54,12 @@ export const createCustomer = async (req: Request, res: Response) => {
 
 export const updateCustomer = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { phone, customerType } = req.body;
+  const { name, email, phone, company, tier } = req.body;
 
   try {
     const updated = await prisma.customer.update({
       where: { id },
-      data: { phone, customerType },
+      data: { name, email, phone, company, tier },
     });
     return res.status(200).json(updated);
   } catch (error: any) {
@@ -86,35 +80,37 @@ export const deleteCustomer = async (req: Request, res: Response) => {
 // Address Management
 export const manageAddress = async (req: Request, res: Response) => {
   const { customerId } = req.params;
-  const { addressId, addressLine1, addressLine2, city, state, postalCode, country, isDefault } = req.body;
+  const { addressId, type, addressLine1, addressLine2, city, state, zipCode, country, isDefault } = req.body;
 
   try {
     if (isDefault) {
-      await prisma.customerAddress.updateMany({
-        where: { customerId, country },
+      // Clear legacy default flags
+      await prisma.address.updateMany({
+        where: { customerId, type },
         data: { isDefault: false },
       });
     }
 
     const payload = {
       customerId,
+      type: type || 'SHIPPING',
       addressLine1,
       addressLine2,
       city,
       state,
-      postalCode,
+      zipCode,
       country,
       isDefault: !!isDefault,
     };
 
     let address;
     if (addressId) {
-      address = await prisma.customerAddress.update({
+      address = await prisma.address.update({
         where: { id: addressId },
         data: payload,
       });
     } else {
-      address = await prisma.customerAddress.create({ data: payload });
+      address = await prisma.address.create({ data: payload });
     }
 
     return res.status(200).json(address);
@@ -126,7 +122,7 @@ export const manageAddress = async (req: Request, res: Response) => {
 export const deleteAddress = async (req: Request, res: Response) => {
   const { addressId } = req.params;
   try {
-    await prisma.customerAddress.delete({ where: { id: addressId } });
+    await prisma.address.delete({ where: { id: addressId } });
     return res.status(200).json({ message: 'Address card purged success' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Address delete request stalled', details: error.message });
@@ -143,17 +139,19 @@ export const toggleWishlistItem = async (req: Request, res: Response) => {
   }
 
   try {
-    const existing = await prisma.customerWishlist.findUnique({
-      where: { customerId_productId: { customerId, productId } },
+    const existing = await prisma.wishlistItem.findFirst({
+      where: { customerId, productId },
     });
 
     if (existing) {
-      await prisma.customerWishlist.delete({ where: { customerId_productId: { customerId, productId } } });
+      await prisma.wishlistItem.delete({ where: { id: existing.id } });
       return res.status(200).json({ active: false, message: 'Removed from watchlist indexes' });
+    } else {
+      const added = await prisma.wishlistItem.create({
+        data: { customerId, productId },
+      });
+      return res.status(201).json({ active: true, data: added });
     }
-
-    const added = await prisma.customerWishlist.create({ data: { customerId, productId } });
-    return res.status(201).json({ active: true, data: added });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to toggle client watchlist index', details: error.message });
   }
@@ -162,10 +160,10 @@ export const toggleWishlistItem = async (req: Request, res: Response) => {
 // Reviews management
 export const getReviews = async (req: Request, res: Response) => {
   try {
-    const reviews = await prisma.productReview.findMany({
+    const reviews = await prisma.review.findMany({
       include: {
         product: true,
-        user: true,
+        customer: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -182,10 +180,10 @@ export const createReview = async (req: Request, res: Response) => {
   }
 
   try {
-    const review = await prisma.productReview.create({
+    const review = await prisma.review.create({
       data: {
         productId,
-        userId: customerId,
+        customerId,
         rating: parseInt(rating, 10),
         comment,
       },
@@ -201,7 +199,7 @@ export const approveReview = async (req: Request, res: Response) => {
   const { approved } = req.body;
 
   try {
-    const review = await prisma.productReview.update({
+    const review = await prisma.review.update({
       where: { id },
       data: { isApproved: !!approved },
     });

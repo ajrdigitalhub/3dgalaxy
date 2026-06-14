@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import { ENV, getDatabaseUrl } from './env';
 
-// PostgreSQL connection pool module
+// PostgreSQL connection pool module with shorter timeout for Cloud Run
 export const pool = new Pool({
   user: ENV.PG_USER,
   host: ENV.PG_HOST,
@@ -14,17 +14,16 @@ export const pool = new Pool({
 
 // Automatic reconnect handling and error logging
 pool.on('error', (err: Error) => {
-  console.error('Unexpected database error on idle client', err);
+  console.warn('Database pool error:', err.message);
 });
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
+// Global Prisma instance
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    log: ['query', 'error', 'warn'],
+    log: ['error'],
     datasources: {
       db: {
         url: getDatabaseUrl(),
@@ -32,6 +31,8 @@ export const prisma =
     },
   });
 
-if (ENV.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (ENV.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 export default prisma;

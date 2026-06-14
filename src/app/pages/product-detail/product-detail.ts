@@ -1,12 +1,15 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
+import {CommonModule, DOCUMENT} from '@angular/common';
 import {ActivatedRoute, RouterModule} from '@angular/router';
+import {Title, Meta} from '@angular/platform-browser';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Review} from '../../services/datastore';
+import {LoadingService} from '../../core/services/loading.service';
+import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 
 @Component({
   selector: 'app-product-detail',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.scss'
@@ -14,13 +17,14 @@ import {DatastoreService, Product, Review} from '../../services/datastore';
 export class ProductDetail {
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
+  loadingService = inject(LoadingService);
 
   slug = signal<string>('');
   quantity = signal<number>(1);
   activeImage = signal<string>('');
   is360Active = signal<boolean>(false);
   rotationAngle = signal<number>(0);
-  activeTab = signal<string>('description');
+  activeTab = signal<string>('overview');
 
   // Discussions and rating state drafts
   newQuestionText = signal<string>('');
@@ -29,6 +33,39 @@ export class ProductDetail {
 
   product = computed(() => {
     return this.ds.products().find(p => p.slug === this.slug());
+  });
+
+  breadcrumbs = computed(() => {
+    const p = this.product();
+    if (!p) return [];
+    const crumbs = [];
+    const cat = this.ds.categories().find(c => c.id === p.category_id);
+    if (cat) {
+       crumbs.push({ label: cat.name, url: '/category/' + cat.slug });
+    }
+    const brand = this.ds.brands().find(b => b.name === p.brand);
+    if (brand) {
+       crumbs.push({ label: brand.name, url: '/brand/' + brand.slug });
+    }
+    return crumbs;
+  });
+
+  // Derived properties from product if available or fallback
+  productSpecs = computed(() => this.product()?.specifications?.map(s => ({ label: s.name, value: s.value })) || this.product()?.specs || []);
+  productReviews = computed(() => this.product()?.reviews || []);
+  productFeatures = computed(() => this.product()?.features || (this.product() as any)?.features || []);
+  productApplications = computed(() => (this.product() as any)?.applications || []);
+  productIncludes = computed(() => (this.product() as any)?.includes || []);
+  productDownloads = computed(() => this.product()?.downloads || (this.product() as any)?.downloads || []);
+  productFaqs = computed(() => this.product()?.faqs || this.product()?.qnas || []);
+  
+  relatedProducts = computed(() => {
+    const p = this.product();
+    if (!p) return [];
+    if (p.relatedProducts && p.relatedProducts.length > 0) {
+       return p.relatedProducts.map(rp => rp.relatedProduct).slice(0, 4);
+    }
+    return this.ds.products().filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 4);
   });
 
   optionalFilaments = computed(() => {
@@ -40,6 +77,10 @@ export class ProductDetail {
     return r === 'admin' || r === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300;
   });
 
+  titleService = inject(Title);
+  metaService = inject(Meta);
+  document = inject(DOCUMENT);
+
   constructor() {
     this.route.params.subscribe(p => {
       if (p['slug']) {
@@ -50,6 +91,25 @@ export class ProductDetail {
           this.quantity.set(1);
           this.is360Active.set(false);
           this.rotationAngle.set(0);
+
+          // Update SEO
+          const pageTitle = matched.seoTitle || `${matched.brand} ${matched.name} | 3D Galaxy`;
+          const pageDesc = matched.seoDescription || matched.description;
+          this.titleService.setTitle(pageTitle);
+          this.metaService.updateTag({ name: 'description', content: pageDesc });
+          this.metaService.updateTag({ property: 'og:title', content: pageTitle });
+          this.metaService.updateTag({ property: 'og:description', content: pageDesc });
+          if (matched.images && matched.images.length > 0) {
+             this.metaService.updateTag({ property: 'og:image', content: matched.images[0] });
+          }
+
+          let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
+          if (!link) {
+             link = this.document.createElement('link');
+             link.setAttribute('rel', 'canonical');
+             this.document.head.appendChild(link);
+          }
+          link.setAttribute('href', `https://3dgalaxy.com/product/${matched.slug}`);
         }
       }
     });

@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
@@ -19,9 +19,9 @@ import { AdminPanel } from '../admin';
               <p class="text-xs text-zinc-500">Program and configure inventory assets, dealer overrides, and specifications.</p>
             </div>
             @if (!admin.editingProduct()) {
-              <button (click)="admin.startProductEdit({ id: 'new', name: '', slug: '', barcode: '', sku: '', brand: '3D Galaxy', category_id: '', mrp: 1499, sale_price: 1199, dealer_price: 999, stock: 50, reserved: 0, description: '', images: [], specs: [], reviews: [], qnas: [], featured: false, is360Supported: false, tags: [] })" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer">Register SKU</button>
+              <button (click)="startEditNew()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer">Register SKU</button>
             } @else {
-              <button (click)="admin.cancelProductEdit()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer">Back to Hub</button>
+              <button (click)="cancelEdit()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer">Back to Hub</button>
             }
           </div>
 
@@ -33,114 +33,239 @@ import { AdminPanel } from '../admin';
                   {{ admin.editingProduct()?.id === 'new' ? 'Publish New Catalog Asset' : 'Edit Catalog SKU: ' + admin.editingProduct()?.name }}
                 </h3>
                 <div class="flex gap-2">
-                  <button (click)="admin.cancelProductEdit()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-bold">Cancel</button>
+                  <button (click)="cancelEdit()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-bold">Cancel</button>
                   <button (click)="admin.saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer">Save Asset</button>
                 </div>
               </div>
 
-              <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Basic Group -->
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
-                  <input type="text" [value]="admin.pName()" (input)="admin.pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
-                  <input type="text" [value]="admin.pSku()" (input)="admin.pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
+              <!-- Editor Tabs Navigation -->
+              <div class="flex items-center gap-6 px-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 overflow-x-auto hide-scroll pt-4">
+                @for (t of editTabs; track t.id) {
+                  <button (click)="activeEditTab.set(t.id)"
+                    class="shrink-0 pb-3 transition-colors text-[10px] font-black uppercase tracking-widest relative"
+                    [class]="activeEditTab() === t.id ? 'text-blue-500 dark:text-blue-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'">
+                    {{ t.label }}
+                    @if(activeEditTab() === t.id) {
+                      <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 dark:bg-blue-400 animate-fadeIn"></div>
+                    }
+                  </button>
+                }
+              </div>
+
+              <!-- Tab Contents -->
+              <div class="p-6">
+                <!-- General Tab -->
+                <div [class.hidden]="activeEditTab() !== 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                  <!-- Basic Group -->
+                  <div class="space-y-1">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
+                    <input type="text" [value]="admin.pName()" (input)="admin.updateProductName($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">URL Slug Customization</span>
+                    <input type="text" [value]="admin.pSlug()" (input)="admin.pSlug.set($any($event.target).value)" placeholder="bambu-lab-p1s" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none text-blue-500 dark:text-blue-400">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
+                    <input type="text" [value]="admin.pSku()" (input)="admin.pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Linked Category *</span>
+                      <select [value]="admin.pCatId()" (change)="admin.pCatId.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+                        <option value="">Select segment...</option>
+                        @for (c of admin.ds.categories(); track c.id) {
+                          <option [value]="c.id">
+                            @if (c.parent_id) { ↳ } {{ c.name }}
+                          </option>
+                        }
+                      </select>
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
+                      <select [value]="admin.pBrand()" (change)="admin.pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+                        <option value="3D Galaxy">3D Galaxy (Default)</option>
+                        @for (br of admin.ds.brands(); track br.id) {
+                          <option [value]="br.name">{{ br.name }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Prices -->
+                  <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
+                      <input type="number" [value]="admin.pMrp()" (input)="admin.pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
+                      <input type="number" [value]="admin.pSale()" (input)="admin.pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
+                      <input type="number" [value]="admin.pDealer()" (input)="admin.pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none">
+                    </div>
+                  </div>
+
+                  <!-- Stock, Status -->
+                  <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
+                      <input type="number" [value]="admin.pStock()" (input)="admin.pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
+                      <select [value]="admin.pStatus()" (change)="admin.pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white font-bold">
+                        <option value="active">Active Storefront</option>
+                        <option value="draft">Draft (Admin Only)</option>
+                        <option value="out_of_stock">Out of Stock</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-1 col-span-1 md:col-span-2">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
+                    <textarea rows="4" [value]="admin.pDesc()" (input)="admin.pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                  </div>
+                  <div class="space-y-1 col-span-1 md:col-span-2">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
+                    <textarea rows="8" [value]="admin.pLongDesc()" (input)="admin.pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                  </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Linked Category *</span>
-                    <select [value]="admin.pCatId()" (change)="admin.pCatId.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
-                      <option value="">Select segment...</option>
-                      @for (c of admin.ds.categories(); track c.id) {
-                        <option [value]="c.id">
-                          @if (c.parent_id) { ↳ } {{ c.name }}
-                        </option>
+                <!-- Images Tab -->
+                <div [class.hidden]="activeEditTab() !== 'images'" class="space-y-4 animate-fadeIn">
+                  <!-- Image List Block -->
+                  <div class="space-y-3 bg-zinc-50 dark:bg-zinc-950 p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <mat-icon class="text-blue-500 scale-90">collections</mat-icon>
+                        <h4 class="text-xs font-black uppercase tracking-widest text-zinc-900 dark:text-white">Product Gallery</h4>
+                      </div>
+                      <span class="text-[10px] font-bold text-zinc-500">Supports JPG, PNG, WEBP. Max 2MB per file.</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      <!-- Images Loop -->
+                      @for (img of admin.pImages(); track img.url; let i = $index) {
+                        <div class="relative group aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                          <img [src]="img.url" class="w-full h-full object-contain" />
+                          
+                          <!-- Hover Actions -->
+                          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                             <div class="flex items-center justify-between w-full">
+                                <button (click)="admin.setPrimaryImage(i)" title="Make Primary" [class]="img.isPrimary ? 'text-amber-400' : 'text-white hover:text-amber-400'"><mat-icon class="scale-75">star</mat-icon></button>
+                                <button (click)="admin.removeImage(i)" title="Remove" class="text-white hover:text-red-500"><mat-icon class="scale-75">delete</mat-icon></button>
+                             </div>
+                             <div class="flex items-center justify-center gap-2">
+                                <button *ngIf="i > 0" (click)="admin.moveImage(i, -1)" class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40"><mat-icon class="scale-75 -ml-[3px] -mt-[3px]">chevron_left</mat-icon></button>
+                                <button *ngIf="i < admin.pImages().length - 1" (click)="admin.moveImage(i, 1)" class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40"><mat-icon class="scale-75 -ml-[3px] -mt-[3px]">chevron_right</mat-icon></button>
+                             </div>
+                          </div>
+                          
+                          <!-- Primary Badge -->
+                          @if (img.isPrimary) {
+                             <div class="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-bl-lg shadow-sm">Primary</div>
+                          }
+                        </div>
                       }
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
-                    <select [value]="admin.pBrand()" (change)="admin.pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
-                      <option value="3D Galaxy">3D Galaxy (Default)</option>
-                      @for (br of admin.ds.brands(); track br.id) {
-                        <option [value]="br.name">{{ br.name }}</option>
-                      }
-                    </select>
+
+                      <!-- Drag & Drop / File Input Box -->
+                      <label class="aspect-square rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors group">
+                        <mat-icon class="text-zinc-400 group-hover:text-blue-500 mb-2">add_photo_alternate</mat-icon>
+                        <span class="text-[10px] font-bold text-zinc-500 text-center px-2 leading-tight">Drag &amp; Drop<br>or Click</span>
+                        <input type="file" multiple accept="image/jpeg, image/png, image/webp" class="hidden" (change)="handleImageUpload($event)">
+                      </label>
+                    </div>
+                    @if (uploadProgress > 0 && uploadProgress < 100) {
+                       <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 mt-4 overflow-hidden">
+                         <div class="bg-blue-500 h-full rounded-full transition-all duration-300" [style.width]="uploadProgress + '%'"></div>
+                       </div>
+                    }
                   </div>
                 </div>
 
-                <!-- Prices -->
-                <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
-                    <input type="number" [value]="admin.pMrp()" (input)="admin.pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
-                  </div>
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
-                    <input type="number" [value]="admin.pSale()" (input)="admin.pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
-                  </div>
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
-                    <input type="number" [value]="admin.pDealer()" (input)="admin.pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none">
+                <!-- Specifications Tab (JSON Array) -->
+                <div [class.hidden]="activeEditTab() !== 'specifications'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Specifications (JSON Array)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;Build Volume&quot;, &quot;value&quot;: &quot;256 x 256&quot;&#125;]</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('specs')" (input)="setJsonValue('specs', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"name": "Layer Resolution", "value": "0.1mm"}]'></textarea>
                   </div>
                 </div>
 
-                <!-- Stock, Status -->
-                <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
-                    <input type="number" [value]="admin.pStock()" (input)="admin.pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
-                  </div>
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
-                    <select [value]="admin.pStatus()" (change)="admin.pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white font-bold">
-                      <option value="active">Active Storefront</option>
-                      <option value="draft">Draft (Admin Only)</option>
-                      <option value="out_of_stock">Out of Stock</option>
-                    </select>
+                <!-- Features Tab (JSON Array) -->
+                <div [class.hidden]="activeEditTab() !== 'features'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Features (JSON Array)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;title&quot;: &quot;Auto Leveling&quot;, &quot;description&quot;: &quot;...&quot;&#125;]</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('features')" (input)="setJsonValue('features', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"title": "CoreXY Speed", "description": "Up to 500mm/s"}]'></textarea>
                   </div>
                 </div>
 
-                <!-- Image List Block -->
-                <div class="space-y-1 md:col-span-2">
-                  <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Media Images (One Absolute URL link per line)</span>
-                  <textarea rows="3" [value]="admin.pImages()" (input)="admin.pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
+                <!-- FAQs Tab (JSON Array) -->
+                <div [class.hidden]="activeEditTab() !== 'faqs'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">FAQs (JSON Array)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;question&quot;: &quot;Does it support PLA?&quot;, &quot;answer&quot;: &quot;Yes&quot;&#125;]</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('faqs')" (input)="setJsonValue('faqs', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"question": "Warranty?", "answer": "1 Year"}]'></textarea>
+                  </div>
                 </div>
 
-                <!-- Specifications & Full Rich Description -->
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
-                  <textarea rows="4" [value]="admin.pDesc()" (input)="admin.pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
-                  <textarea rows="4" [value]="admin.pLongDesc()" (input)="admin.pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
-                </div>
-
-                <!-- Product Variants JSON -->
-                <div class="space-y-1 md:col-span-2">
-                  <div class="flex justify-between items-center pr-1">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Product Variants (JSON specifications)</span>
-                    <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;With AMS Combo&quot;, &quot;price&quot;: 48000&#125;]</span>
+                <!-- Downloads Tab (JSON Array) -->
+                <div [class.hidden]="activeEditTab() !== 'downloads'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Downloads (JSON Array)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;title&quot;: &quot;Manual&quot;, &quot;fileUrl&quot;: &quot;...&quot;, &quot;type&quot;: &quot;pdf&quot;&#125;]</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('downloads')" (input)="setJsonValue('downloads', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"title": "User Manual PDF", "fileUrl": "#", "type": "pdf"}]'></textarea>
                   </div>
-                  <textarea rows="2" [value]="admin.pVariants()" (input)="admin.pVariants.set($any($event.target).value)" placeholder='[{"name": "Standard Bundle", "price": 21499, "stock": 12}, {"name": "With AMS Combo", "price": 38499, "stock": 8}]' class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
                 </div>
 
-                <!-- Search Optimization Meta Data -->
-                <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="col-span-1 md:col-span-2 pb-1 border-b dark:border-zinc-900">
-                    <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
+                <!-- Related Products Tab (JSON string/array edit) -->
+                <div [class.hidden]="activeEditTab() !== 'related_products'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Related Products (JSON Array of Slugs)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&quot;product-1-slug&quot;, &quot;product-2-slug&quot;]</span>
+                    </div>
+                    <!-- Right now it's just raw JSON editing for speed, full relational UI can be implemented if required -->
+                    <textarea rows="5" [value]="getJsonValue('relatedProducts')" (input)="setJsonValue('relatedProducts', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='["pla-basic", "petg-tough"]'></textarea>
                   </div>
-                  <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Page Title</span>
-                    <input type="text" [value]="admin.pSeoTitle()" (input)="admin.pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                </div>
+
+                <!-- SEO Tab -->
+                <div [class.hidden]="activeEditTab() !== 'seo'" class="space-y-4 animate-fadeIn">
+                  <!-- Search Optimization Meta Data -->
+                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4">
+                    <div class="pb-1 border-b dark:border-zinc-900">
+                      <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Page Title</span>
+                      <input type="text" [value]="admin.pSeoTitle()" (input)="admin.pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Description keywords (Long description excerpt)</span>
+                      <textarea rows="3" [value]="admin.pSeoDescription()" (input)="admin.pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                    </div>
                   </div>
-                  <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Description keywords</span>
-                    <input type="text" [value]="admin.pSeoDescription()" (input)="admin.pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                  <!-- Product Variants JSON (Can stay here or move) -->
+                  <div class="space-y-1 pt-4">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Product Variants (JSON array)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;With AMS Combo&quot;, &quot;price&quot;: 48000&#125;]</span>
+                    </div>
+                    <textarea rows="4" [value]="admin.pVariants()" (input)="admin.pVariants.set($any($event.target).value)" placeholder='[{"name": "Standard Bundle", "price": 21499, "stock": 12}, {"name": "With AMS Combo", "price": 38499, "stock": 8}]' class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
                   </div>
                 </div>
 
@@ -574,4 +699,95 @@ import { AdminPanel } from '../admin';
 })
 export class AdminCatalogTab {
   @Input({ required: true }) admin!: AdminPanel;
+
+  uploadProgress = 0;
+
+  activeEditTab = signal('general');
+
+  editTabs = [
+    { id: 'general', label: 'General' },
+    { id: 'images', label: 'Images' },
+    { id: 'specifications', label: 'Specifications' },
+    { id: 'downloads', label: 'Downloads' },
+    { id: 'features', label: 'Features' },
+    { id: 'faqs', label: 'FAQs' },
+    { id: 'related_products', label: 'Related Products' },
+    { id: 'seo', label: 'SEO' },
+  ];
+
+  startEditNew() {
+    this.activeEditTab.set('general');
+    this.admin.startProductEdit({ id: 'new', name: '', slug: '', barcode: '', sku: '', brand: '3D Galaxy', category_id: '', mrp: 1499, sale_price: 1199, dealer_price: 999, stock: 50, reserved: 0, description: '', images: [], specs: [], reviews: [], qnas: [], featured: false, is360Supported: false, tags: [], downloads: [], features: [], faqs: [], relatedProducts: [] });
+  }
+
+  cancelEdit() {
+    this.admin.cancelProductEdit();
+    this.activeEditTab.set('general');
+  }
+
+  getJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts'): string {
+    const val = this.admin.editingProduct()?.[key];
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    return JSON.stringify(val, null, 2);
+  }
+
+  setJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts', valStr: string) {
+    if (!this.admin.editingProduct()) return;
+    try {
+      if (valStr.trim() === '') {
+        (this.admin.editingProduct() as any)[key] = [];
+      } else {
+        const parsed = JSON.parse(valStr);
+        (this.admin.editingProduct() as any)[key] = parsed;
+      }
+    } catch(e) {
+      // Just store string if invalid JSON during typing
+      (this.admin.editingProduct() as any)[key] = valStr;
+    }
+  }
+
+  async handleImageUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    this.uploadProgress = 10;
+    
+    // Process files locally as base64
+    let images = [...this.admin.pImages()];
+    
+    for (let i = 0; i < input.files.length; i++) {
+        const file = input.files[i];
+        if (file.size > 2 * 1024 * 1024) {
+             alert(`File ${file.name} exceeds 2MB limit.`);
+             continue;
+        }
+        
+        try {
+            const base64Url = await this.readAsBase64(file);
+            images.push({ 
+                url: base64Url, 
+                isPrimary: images.length === 0 // First image is primary if none exist
+            });
+        } catch (e) {
+            console.error('Failed to read file:', e);
+        }
+        
+        this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 80);
+    }
+    
+    this.admin.pImages.set(images);
+    this.uploadProgress = 100;
+    setTimeout(() => this.uploadProgress = 0, 1000);
+    input.value = ''; // Reset input
+  }
+
+  private readAsBase64(file: File): Promise<string> {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+      });
+  }
 }

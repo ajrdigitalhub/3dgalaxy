@@ -50,6 +50,10 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
+    profile_image TEXT,
+    date_of_birth DATE,
+    gender VARCHAR(50),
+    last_login TIMESTAMPTZ,
     is_active BOOLEAN DEFAULT true,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -106,8 +110,11 @@ CREATE TABLE IF NOT EXISTS brands (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,
-    logo VARCHAR(255),
+    logo_url TEXT,
+    banner_url TEXT,
     description TEXT,
+    seo_title VARCHAR(255),
+    seo_description TEXT,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -121,11 +128,21 @@ CREATE TABLE IF NOT EXISTS products (
     slug VARCHAR(255) UNIQUE NOT NULL,
     sku VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
+    short_description TEXT,
+    long_description TEXT,
     base_price DECIMAL(10, 2) NOT NULL,
     sale_price DECIMAL(10, 2),
     dealer_price DECIMAL(10, 2),
     is_active BOOLEAN DEFAULT true,
     is_exclusive BOOLEAN DEFAULT false,
+    featured BOOLEAN DEFAULT false,
+    seo_title VARCHAR(255),
+    seo_description TEXT,
+    seo_keywords TEXT,
+    canonical_url TEXT,
+    og_image TEXT,
+    warranty_period VARCHAR(100),
+    delivery_time VARCHAR(100),
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -134,10 +151,80 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE TABLE IF NOT EXISTS product_images (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    url VARCHAR(255) NOT NULL,
-    alt_text VARCHAR(255),
+    image_url TEXT NOT NULL,
+    alt_text TEXT,
+    is_primary BOOLEAN DEFAULT FALSE,
     sort_order INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_specifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    specification_name VARCHAR(255),
+    specification_value TEXT,
+    sort_order INT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_downloads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    file_url TEXT,
+    file_type VARCHAR(100),
+    sort_order INT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS product_features (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    icon VARCHAR(255),
+    title VARCHAR(255),
+    description TEXT,
+    sort_order INT
+);
+
+CREATE TABLE IF NOT EXISTS product_included_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    item_name VARCHAR(255),
+    sort_order INT
+);
+
+CREATE TABLE IF NOT EXISTS product_faqs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    question TEXT,
+    answer TEXT,
+    sort_order INT
+);
+
+CREATE TABLE IF NOT EXISTS product_related_products (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    related_product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    relation_type VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS product_warranty (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    warranty_title VARCHAR(255),
+    warranty_description TEXT,
+    warranty_period VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS product_shipping (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    delivery_time VARCHAR(100),
+    shipping_cost NUMERIC,
+    shipping_notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS product_attributes (
@@ -182,9 +269,11 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     rating INT CHECK (rating >= 1 AND rating <= 5),
-    title VARCHAR(255),
+    review_title VARCHAR(255),
     comment TEXT,
     is_approved BOOLEAN DEFAULT false,
+    approved BOOLEAN DEFAULT false,
+    is_featured BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -232,6 +321,8 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS customer_addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    name VARCHAR(255),
+    phone VARCHAR(20),
     address_line_1 VARCHAR(255) NOT NULL,
     address_line_2 VARCHAR(255),
     city VARCHAR(100) NOT NULL,
@@ -247,6 +338,28 @@ CREATE TABLE IF NOT EXISTS customer_wishlist (
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (customer_id, product_id)
+);
+
+CREATE TABLE IF NOT EXISTS customer_notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    device_info TEXT,
+    ip_address VARCHAR(45),
+    is_active BOOLEAN DEFAULT true,
+    last_activity TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Sales & Orders
@@ -436,14 +549,19 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 
 -- Categorize Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+CREATE INDEX IF NOT EXISTS idx_product_slug ON products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
-CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_category_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_brand_slug ON brands(slug);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_inventory_product_warehouse ON inventory(product_id, warehouse_id);
 CREATE INDEX IF NOT EXISTS idx_cart_customer_session ON carts(customer_id, session_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_specs_product ON product_specifications(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_faqs_product ON product_faqs(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_downloads_product ON product_downloads(product_id);
 
 
 -- ==============================================================================
@@ -619,3 +737,121 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO warehouses (name, location, is_active) VALUES
 ('Main Fulfillment Center', 'USA HQ', true)
 ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- 8. PRODUCT SEEDS
+-- ==============================================================================
+
+-- Seed Sample Products
+INSERT INTO products (id, name, slug, sku, base_price, sale_price, is_active, short_description) VALUES
+('11111111-1111-1111-1111-111111111111', 'Bambu Lab P1S', 'bambu-lab-p1s', 'BL-P1S-01', 999.00, 899.00, true, 'High-speed CoreXY 3D Printer'),
+('22222222-2222-2222-2222-222222222222', 'Elegoo Mars 4 9K', 'elegoo-mars-4-9k', 'EL-M4-01', 259.00, 249.00, true, 'Desktop Resin 3D Printer')
+ON CONFLICT (slug) DO NOTHING;
+
+-- Product Images
+INSERT INTO product_images (product_id, image_url, sort_order, is_primary) VALUES
+('11111111-1111-1111-1111-111111111111', 'https://picsum.photos/seed/a/800/800', 1, true),
+('11111111-1111-1111-1111-111111111111', 'https://picsum.photos/seed/b/800/800', 2, false),
+('11111111-1111-1111-1111-111111111111', 'https://picsum.photos/seed/c/800/800', 3, false),
+('11111111-1111-1111-1111-111111111111', 'https://picsum.photos/seed/d/800/800', 4, false),
+('11111111-1111-1111-1111-111111111111', 'https://picsum.photos/seed/e/800/800', 5, false),
+('22222222-2222-2222-2222-222222222222', 'https://picsum.photos/seed/f/800/800', 1, true),
+('22222222-2222-2222-2222-222222222222', 'https://picsum.photos/seed/g/800/800', 2, false),
+('22222222-2222-2222-2222-222222222222', 'https://picsum.photos/seed/h/800/800', 3, false),
+('22222222-2222-2222-2222-222222222222', 'https://picsum.photos/seed/i/800/800', 4, false)
+ON CONFLICT DO NOTHING;
+
+-- Product Specifications
+INSERT INTO product_specifications (id, product_id, specification_name, specification_value, sort_order) VALUES
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Build Volume', '256x256x256 mm', 1),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Nozzle Diameter', '0.4 mm', 2),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Print Speed', '500 mm/s', 3),
+(uuid_generate_v4(), '22222222-2222-2222-2222-222222222222', 'Build Volume', '153x77x165 mm', 1),
+(uuid_generate_v4(), '22222222-2222-2222-2222-222222222222', 'Resolution', '9K', 2)
+ON CONFLICT DO NOTHING;
+
+-- Product Downloads
+INSERT INTO product_downloads (id, product_id, title, file_url, file_type, sort_order) VALUES
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Datasheet PDF', 'https://example.com/datasheet.pdf', 'pdf', 1),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'User Manual', 'https://example.com/manual.pdf', 'pdf', 2),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Firmware V1.2', 'https://example.com/firmware.bin', 'bin', 3)
+ON CONFLICT DO NOTHING;
+
+-- Product Features
+INSERT INTO product_features (id, product_id, title, description, icon, sort_order) VALUES
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'High Speed Printing', 'Achieve up to 500mm/s.', 'speed', 1),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'AI Camera Monitoring', 'Spaghetti detection camera.', 'camera', 2),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Multi Color Printing', 'Supports up to 4 colors.', 'palette', 3)
+ON CONFLICT DO NOTHING;
+
+-- Product FAQs
+INSERT INTO product_faqs (id, product_id, question, answer, sort_order) VALUES
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Does it support ABS?', 'Yes, it has an enclosed chamber.', 1),
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', 'Is AMS included?', 'This model does not include AMS, it is sold separately as a combo.', 2)
+ON CONFLICT DO NOTHING;
+
+-- Product Related
+INSERT INTO product_related_products (id, product_id, related_product_id, relation_type) VALUES
+(uuid_generate_v4(), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'related')
+ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- 9. MISSING CMS, MENUS, AND BLOGS TABLES
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS menus (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS menu_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    menu_id UUID NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    url VARCHAR(255),
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    content TEXT,
+    is_published BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS page_sections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    page_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    section_type VARCHAR(100) NOT NULL,
+    content TEXT,
+    sort_order INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS blog_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category_id UUID REFERENCES blog_categories(id) ON DELETE SET NULL,
+    author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    content TEXT NOT NULL,
+    image_url VARCHAR(255),
+    is_published BOOLEAN DEFAULT false,
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);

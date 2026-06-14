@@ -1,4 +1,4 @@
-import {Injectable, signal, computed, effect, inject, PLATFORM_ID} from '@angular/core';
+import {Injectable, signal, computed, effect, inject, PLATFORM_ID, Injector, runInInjectionContext} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import { 
   collection, 
@@ -127,6 +127,16 @@ export interface Product {
   status?: 'active' | 'draft' | 'out_of_stock';
   seoTitle?: string;
   seoDescription?: string;
+  seoKeywords?: string;
+  canonicalUrl?: string;
+  openGraphImage?: string;
+  features?: any[];
+  specifications?: any[];
+  downloads?: any[];
+  faqs?: any[];
+  warranty?: any;
+  shipping?: any;
+  relatedProducts?: any[];
 }
 
 export interface CartItem {
@@ -251,6 +261,7 @@ export interface Settings {
 export interface HomeLayoutSection {
   id: string;
   name: string;
+  type?: string;
   visible: boolean;
   order: number;
   config: Record<string, unknown>;
@@ -295,6 +306,9 @@ export interface UserProfile {
   phone?: string;
   address?: string;
   createdAt?: string;
+  profileImage?: string;
+  dateOfBirth?: string;
+  gender?: string;
 }
 
 export interface Coupon {
@@ -351,6 +365,7 @@ export class DatastoreService {
   seeder = inject(SeederService);
   private platformId = inject(PLATFORM_ID);
   api = inject(ApiService);
+  private injector = inject(Injector);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -507,10 +522,7 @@ export class DatastoreService {
       error: (e) => console.error(e)
     });
 
-    this.api?.get<{data: Product[]}>('/products').subscribe({
-      next: (res) => { if (res && res.data) this.products.set(res.data); },
-      error: (e) => console.error(e)
-    });
+    this.reloadProducts();
 
     this.api.get<MenuItem[]>('/menus/tree').subscribe({
       next: (data) => { if (data) this.menuItems.set(data); },
@@ -523,17 +535,19 @@ export class DatastoreService {
     });
 
     this.api.get<any[]>('/homepage').subscribe({
-      next: (data) => { if (Array.isArray(data)) this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isVisible, order: d.sequence, config: d.content }))); },
+      next: (data) => { if (Array.isArray(data)) this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isActive, order: d.sortOrder, type: d.type, config: d.content || d.config || {} }))); },
       error: (e) => console.error(e)
     });
 
     // Orders
-    effect(() => {
-      const role = this.userRole();
-      if (!this.authReady()) return;
-      this.api.get<Order[]>('/orders').subscribe({
-        next: (data) => { if (data) this.orders.set(data); },
-        error: (e) => console.error(e)
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+        const role = this.userRole();
+        if (!this.authReady()) return;
+        this.api.get<Order[]>('/orders').subscribe({
+          next: (data) => { if (data) this.orders.set(data); },
+          error: (e) => console.error(e)
+        });
       });
     });
 
@@ -558,23 +572,25 @@ export class DatastoreService {
     }, err => this.handleFirestoreError(err, 'list', 'coupons'));
 
     // Quotes
-    effect(() => {
-      const user = this.currentUser();
-      const role = this.userRole();
-      if (!this.authReady()) return;
+    runInInjectionContext(this.injector, () => {
+      effect(() => {
+        const user = this.currentUser();
+        const role = this.userRole();
+        if (!this.authReady()) return;
 
-      let q;
-      if (role === 'admin' || role === 'super-admin') {
-        q = query(collection(db, 'quotes'), orderBy('date', 'desc'));
-      } else if (user && user.email) {
-        q = query(collection(db, 'quotes'), where('customerEmail', '==', user.email), orderBy('date', 'desc'));
-      }
+        let q;
+        if (role === 'admin' || role === 'super-admin') {
+          q = query(collection(db, 'quotes'), orderBy('date', 'desc'));
+        } else if (user && user.email) {
+          q = query(collection(db, 'quotes'), where('customerEmail', '==', user.email), orderBy('date', 'desc'));
+        }
 
-      if (q) {
-        onSnapshot(q, (snap) => {
-          this.quotes.set(snap.docs.map(d => ({ ...d.data() as QuoteRequest, id: d.id })));
-        }, err => this.handleFirestoreError(err, 'list', 'quotes'));
-      }
+        if (q) {
+          onSnapshot(q, (snap) => {
+            this.quotes.set(snap.docs.map(d => ({ ...d.data() as QuoteRequest, id: d.id })));
+          }, err => this.handleFirestoreError(err, 'list', 'quotes'));
+        }
+      });
     });
   }
 
@@ -664,26 +680,110 @@ export class DatastoreService {
     await deleteDoc(doc(db, 'menuItems', id));
   }
 
-  async addProduct(p: Omit<Product, 'id' | 'stock' | 'reserved' | 'reviews' | 'qnas' | 'slug'> & { stock: number }) {
-    const id = `prod-${Date.now()}`;
-    const slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    await setDoc(doc(db, 'products', id), { 
-      ...p, 
-      id, 
-      slug, 
-      reserved: 0,
-      reviews: [],
-      qnas: [],
-      createdAt: new Date().toISOString() 
+  async addProduct(p: Omit<Product, 'id' | 'stock' | 'reserved' | 'reviews' | 'qnas'> & { stock: number }) {
+    const slug = p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    
+    return new Promise((resolve, reject) => {
+      this.api.post('/products', {
+        name: p.name,
+        slug,
+        sku: p.sku || `SKU-${Date.now()}`,
+        description: p.description,
+        long_description: p.long_description,
+        categoryId: p.category_id,
+        brandId: p.brand,
+        mrp: p.mrp,
+        salePrice: p.sale_price,
+        dealerPrice: p.dealer_price,
+        stock: p.stock,
+        is360Supported: p.is360Supported,
+        images: p.images, // Let backend array map handles this
+        variants: p.variants,
+        seoTitle: p.seoTitle,
+        seoDescription: p.seoDescription
+      }).subscribe({
+        next: (res) => {
+           // Reload
+           this.reloadProducts();
+           resolve(res);
+        },
+        error: (e) => reject(e)
+      });
     });
   }
 
   async editProduct(id: string, updated: Partial<Product>) {
-    await updateDoc(doc(db, 'products', id), updated);
+    return new Promise((resolve, reject) => {
+      this.api.put(`/products/${id}`, {
+        name: updated.name,
+        slug: updated.slug || (updated.name ? updated.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined),
+        sku: updated.sku,
+        description: updated.description,
+        long_description: updated.long_description,
+        categoryId: updated.category_id,
+        brandId: updated.brand,
+        mrp: updated.mrp,
+        salePrice: updated.sale_price,
+        dealerPrice: updated.dealer_price,
+        stock: updated.stock,
+        is360Supported: updated.is360Supported,
+        images: updated.images,
+        variants: updated.variants,
+        seoTitle: updated.seoTitle,
+        seoDescription: updated.seoDescription
+      }).subscribe({
+        next: (res) => {
+           this.reloadProducts();
+           resolve(res);
+        },
+        error: (e) => reject(e)
+      });
+    });
   }
 
   async deleteProduct(id: string) {
-    await deleteDoc(doc(db, 'products', id));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/products/${id}`).subscribe({
+        next: () => {
+           this.reloadProducts();
+           resolve(true);
+        },
+        error: (e) => reject(e)
+      });
+    });
+  }
+
+  reloadProducts() {
+    this.api?.get<{data: any[]}>('/products').subscribe({
+      next: (res) => { 
+        if (res && res.data) {
+           this.products.set(res.data.map((p: any) => ({
+             id: p.id,
+             name: p.name,
+             slug: p.slug,
+             sku: p.sku || '',
+             barcode: p.barcode || '',
+             category_id: p.categoryId,
+             brand: p.brand?.name || p.brandId,
+             description: p.description || '',
+             long_description: p.description || '',
+             mrp: p.basePrice || 0,
+             sale_price: p.salePrice || p.basePrice || 0,
+             dealer_price: p.dealerPrice || p.salePrice || p.basePrice || 0,
+             stock: p.stock || 10,
+             reserved: p.reserved || 0,
+             images: p.images && p.images.length ? p.images.sort((a: any, b: any) => a.sortOrder - b.sortOrder).map((i:any)=>i.url) : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
+             specs: p.specs || [],
+             reviews: p.reviews || [],
+             qnas: p.qnas || [],
+             featured: false,
+             is360Supported: false,
+             tags: []
+           })));
+        } 
+      },
+      error: (e) => console.error(e)
+    });
   }
 
   // --- COUPON AND BLOG CRUD ---

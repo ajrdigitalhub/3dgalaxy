@@ -235,8 +235,33 @@ async function main() {
       images: {
         create: [
           { url: 'https://picsum.photos/seed/a1/800/800', altText: 'Bambu Lab A1' },
+          { url: 'https://picsum.photos/seed/a12/800/800', altText: 'A1 Side view' },
         ],
       },
+      specifications: {
+        create: [
+          { name: 'Build Volume', value: '256x256x256 mm' },
+          { name: 'Max Speed', value: '500mm/s' },
+          { name: 'Colors', value: 'Up to 4 with AMS Lite' }
+        ]
+      },
+      downloads: {
+        create: [
+          { title: 'User Manual (PDF)', fileUrl: '#', downloadType: 'manual' },
+          { title: 'Datasheet', fileUrl: '#', downloadType: 'datasheet' }
+        ]
+      },
+      features: {
+        create: [
+          { title: 'Active Flow Rate Compensation', description: 'Real-time extrusion measurement', icon: 'speed' },
+          { title: 'Full Auto Calibration', description: 'Automatic bed leveling and Z-offset', icon: 'settings' }
+        ]
+      },
+      faqs: {
+        create: [
+          { question: 'Does it support ABS?', answer: 'It is an open frame printer, ABS is not recommended without an enclosure.' }
+        ]
+      }
     },
   });
 
@@ -315,8 +340,8 @@ async function main() {
   for (const [key, value] of Object.entries(defaultThemeSettings)) {
     await prisma.themeSetting.upsert({
       where: { keyName: key },
-      update: { value },
-      create: { keyName: key, value },
+      update: { value: JSON.stringify(value) },
+      create: { keyName: key, value: JSON.stringify(value) },
     });
   }
 

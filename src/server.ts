@@ -2,11 +2,25 @@ import express from 'express';
 import {join} from 'node:path';
 import axios from 'axios';
 import { insertWhatsAppLog, fetchWhatsAppLogs, TemplateParams } from './server/queries';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const browserDistFolder = join(process.cwd(), 'dist/applet/browser');
 
 const app = express();
+
+// Proxy API requests to the Decoupled Backend running on PORT 4000
+app.use('/api', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
+app.use('/sitemap.xml', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
 app.use(express.json());
+
 
 const templates: Record<string, (params: TemplateParams) => string> = {
   ACCOUNT_CREATED: (params: TemplateParams) => `Hello ${params['Name'] || params['name'] || 'User'},

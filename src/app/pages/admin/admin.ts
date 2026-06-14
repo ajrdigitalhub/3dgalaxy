@@ -13,6 +13,9 @@ import {
   Order
 } from '../../services/datastore';
 
+import {LoadingService} from '../../core/services/loading.service';
+import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+
 // Subcomponents
 import {AdminDashboardTab} from './components/dashboard-tab';
 import {AdminCatalogTab} from './components/catalog-tab';
@@ -38,6 +41,7 @@ export type AdminTab =
   imports: [
     CommonModule,
     MatIconModule,
+    SkeletonPageComponent,
     AdminDashboardTab,
     AdminCatalogTab,
     AdminSalesTab,
@@ -53,6 +57,7 @@ export type AdminTab =
 })
 export class AdminPanel {
   ds = inject(DatastoreService);
+  loadingService = inject(LoadingService);
 
   activeTab = signal<AdminTab>('dashboard');
 
@@ -231,6 +236,7 @@ export class AdminPanel {
 
   // Product drafting state
   pName = signal<string>('');
+  pSlug = signal<string>('');
   pBrand = signal<string>('3D Galaxy');
   pCatId = signal<string>('');
   pSku = signal<string>('');
@@ -244,7 +250,7 @@ export class AdminPanel {
   pLongDesc = signal<string>('');
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
-  pImages = signal<string>('');
+  pImages = signal<{url: string, isPrimary: boolean}[]>([]);
   pVariants = signal<string>('[]');
   pStatus = signal<'active' | 'draft' | 'out_of_stock'>('active');
 
@@ -710,7 +716,7 @@ export class AdminPanel {
     this.pSale.set(p.sale_price || 0);
     this.pDealer.set(p.dealer_price || 0);
     this.pStock.set(p.stock || 0);
-    this.pImages.set(p.images ? p.images.join('\n') : '');
+    this.pImages.set(p.images && p.images.length ? p.images.map((img: string, i: number) => ({ url: img, isPrimary: i === 0 })) : []);
     this.pVariants.set(p.variants ? JSON.stringify(p.variants, null, 2) : '[]');
     this.pSeoTitle.set(p.seoTitle || '');
     this.pSeoDescription.set(p.seoDescription || '');
@@ -728,11 +734,45 @@ export class AdminPanel {
     this.pSale.set(1199);
     this.pDealer.set(999);
     this.pStock.set(50);
-    this.pImages.set('');
+    this.pImages.set([]);
     this.pVariants.set('[]');
     this.pSeoTitle.set('');
     this.pSeoDescription.set('');
     this.pStatus.set('active');
+  }
+
+  updateProductName(name: string) {
+    this.pName.set(name);
+    // Auto-generate slug if we are creating a new product or if slug matches the old generated slug.
+    if (!this.editingProduct() || this.editingProduct()?.id === 'new') {
+      this.pSlug.set(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+    }
+  }
+
+  // Image management
+  setPrimaryImage(index: number) {
+    const imgs = [...this.pImages()];
+    imgs.forEach(i => i.isPrimary = false);
+    imgs[index].isPrimary = true;
+    this.pImages.set(imgs);
+  }
+
+  removeImage(index: number) {
+    const imgs = [...this.pImages()];
+    const removed = imgs.splice(index, 1)[0];
+    if (removed.isPrimary && imgs.length > 0) {
+      imgs[0].isPrimary = true;
+    }
+    this.pImages.set(imgs);
+  }
+
+  moveImage(index: number, direction: -1 | 1) {
+    const imgs = [...this.pImages()];
+    if (index + direction < 0 || index + direction >= imgs.length) return;
+    const temp = imgs[index];
+    imgs[index] = imgs[index + direction];
+    imgs[index + direction] = temp;
+    this.pImages.set(imgs);
   }
 
   async saveProduct() {
@@ -741,11 +781,11 @@ export class AdminPanel {
 
     const isEdit = this.editingProduct() && this.editingProduct()?.id !== 'new';
     
-    // Parse images from text block
+    // Parse images array
     let imagesArr = ['https://picsum.photos/seed/' + Date.now() + '/800/800'];
-    const textImgs = this.pImages().trim();
-    if (textImgs) {
-      imagesArr = textImgs.split('\n').map(x => x.trim()).filter(Boolean);
+    const currentImgs = this.pImages();
+    if (currentImgs && currentImgs.length > 0) {
+      imagesArr = currentImgs.map(i => i.url);
     } else if (isEdit && this.editingProduct()?.images) {
       imagesArr = this.editingProduct()!.images;
     }
@@ -764,6 +804,7 @@ export class AdminPanel {
 
     const pData: any = {
       name,
+      slug: this.pSlug() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
       brand: this.pBrand() || '3D Galaxy',
       category_id: this.pCatId() || 'materials',
       sku: this.pSku() || 'GLX-SKU-' + Math.floor(1000 + Math.random() * 9000),

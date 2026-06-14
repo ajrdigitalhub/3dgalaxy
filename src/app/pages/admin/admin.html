@@ -137,36 +137,40 @@
       <!-- CONTENT BODY PANEL -->
       <div class="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
 
-        @if (activeTab() === 'dashboard') {
-          <app-admin-dashboard-tab [admin]="this" />
-        }
+        @if (loadingService.isLoading() || ds.products().length === 0) {
+           <app-skeleton-page />
+        } @else {
+          @if (activeTab() === 'dashboard') {
+            <app-admin-dashboard-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'products' || activeTab() === 'categories' || activeTab() === 'collections' || activeTab() === 'brands' || activeTab() === 'inventory') {
-          <app-admin-catalog-tab [admin]="this" />
-        }
+          @if (activeTab() === 'products' || activeTab() === 'categories' || activeTab() === 'collections' || activeTab() === 'brands' || activeTab() === 'inventory') {
+            <app-admin-catalog-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'orders' || activeTab() === 'draft-orders' || activeTab() === 'abandoned-carts' || activeTab() === 'quotes') {
-          <app-admin-sales-tab [admin]="this" />
-        }
+          @if (activeTab() === 'orders' || activeTab() === 'draft-orders' || activeTab() === 'abandoned-carts' || activeTab() === 'quotes') {
+            <app-admin-sales-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'customer-list' || activeTab() === 'customer-groups' || activeTab() === 'reviews') {
-          <app-admin-customers-tab [admin]="this" />
-        }
+          @if (activeTab() === 'customer-list' || activeTab() === 'customer-groups' || activeTab() === 'reviews') {
+            <app-admin-customers-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'pages' || activeTab() === 'blogs' || activeTab() === 'faqs' || activeTab() === 'banners' || activeTab() === 'homepage-builder' || activeTab() === 'menu-builder') {
-          <app-admin-content-tab [admin]="this" />
-        }
+          @if (activeTab() === 'pages' || activeTab() === 'blogs' || activeTab() === 'faqs' || activeTab() === 'banners' || activeTab() === 'homepage-builder' || activeTab() === 'menu-builder') {
+            <app-admin-content-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'coupons' || activeTab() === 'promotions' || activeTab() === 'email-campaigns' || activeTab() === 'push-notifications') {
-          <app-admin-marketing-tab [admin]="this" />
-        }
+          @if (activeTab() === 'coupons' || activeTab() === 'promotions' || activeTab() === 'email-campaigns' || activeTab() === 'push-notifications') {
+            <app-admin-marketing-tab [admin]="this" />
+          }
 
-        @if (activeTab() === 'sales-reports' || activeTab() === 'product-reports' || activeTab() === 'customer-reports') {
-          <app-admin-analytics-tab [admin]="this" />
-        }
+          @if (activeTab() === 'sales-reports' || activeTab() === 'product-reports' || activeTab() === 'customer-reports') {
+            <app-admin-analytics-tab [admin]="this" />
+          }
 
-        @if (activeTab().endsWith('-settings') || activeTab() === 'user-management' || activeTab() === 'roles-permissions') {
-          <app-admin-settings-tab [admin]="this" />
+          @if (activeTab().endsWith('-settings') || activeTab() === 'user-management' || activeTab() === 'roles-permissions') {
+            <app-admin-settings-tab [admin]="this" />
+          }
         }
 
       </div>
