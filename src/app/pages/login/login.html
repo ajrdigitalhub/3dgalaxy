@@ -98,6 +98,7 @@
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
               <label for="signin-password" class="text-[10px] tracking-widest uppercase font-black text-neutral-450 dark:text-neutral-550 block">Password Pin</label>
+              <a routerLink="/forgot-password" class="text-[10px] font-black tracking-widest uppercase text-neutral-450 hover:text-indigo-500 transition-colors">Forgot?</a>
             </div>
             <div class="relative">
               <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-90">lock_open</mat-icon>
@@ -230,12 +231,12 @@
       </div>
 
       <!-- Station Protocol Warning Banner -->
-      <div class="mt-8 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-[10px] uppercase font-bold tracking-wider leading-relaxed">
+      <div class="mt-8 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[10px] uppercase font-bold tracking-wider leading-relaxed">
         <div class="flex items-center gap-1.5 mb-1.5 font-bold">
-          <mat-icon class="scale-50 text-orange-500 -ml-1">info</mat-icon>
-          <span>Firebase Station Alert</span>
+          <mat-icon class="scale-50 text-indigo-500 -ml-1">security</mat-icon>
+          <span>Secured Terminal Access</span>
         </div>
-        To verify new recruits via Email + Password, ensure you have enabled the "Email/Password" provider inside the Firebase Console configuration.
+        This application uses a premium PostgreSQL database with JWT credentials. All sessions are monitored, encrypted, and signed.
       </div>
 
     </div>

@@ -98,12 +98,19 @@ export const sendWhatsappNotification = async (req: Request, res: Response) => {
       reason = 'Simulated sandbox dispatch. Set WHATSAPP_API_URL and WHATSAPP_API_KEY in server environment variables to unlock real messages.';
     }
 
+    // Try to find a user with this mobile number to associate, or fallback to zero UUID
+    const matchedUser = await prisma.user.findFirst({
+      where: { mobile: recipientNumber }
+    });
+
     // Record dispatch to generic audit log since specific whatsappLog model does not exist
     const log = await prisma.auditLog.create({
       data: {
-        userId: 'system',
+        userId: matchedUser?.id || null,
         action: 'WHATSAPP_DISPATCH',
-        description: `Sent ${templateName || 'custom'} to ${recipientNumber}. Status: ${status}`,
+        entityType: 'WhatsApp',
+        entityId: matchedUser?.id || '00000000-0000-0000-0000-000000000000',
+        newData: JSON.stringify(`Sent ${templateName || 'custom'} to ${recipientNumber}. Status: ${status}`),
       }
     });
 

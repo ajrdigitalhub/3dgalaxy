@@ -29,13 +29,13 @@
             <div class="space-y-2 flex flex-col items-center">
               <mat-icon class="scale-125 text-neutral-400 group-hover:text-blue-500 transition-colors">cloud_upload</mat-icon>
               <p class="text-xs font-bold text-neutral-700 dark:text-neutral-300">Drag & drop your 3D model here, or <span class="text-blue-500">browse folders</span></p>
-              <p class="text-[10px] text-neutral-455">Upload a file to start auto-calculating volume matrices</p>
+              <p class="text-[10px] text-neutral-500 dark:text-neutral-400">Upload a file to start auto-calculating volume matrices</p>
             </div>
           </div>
 
           <!-- Real Preset Models Selector for ease of testing -->
-          <div class="space-y-2">
-            <span class="text-xs font-bold text-neutral-500">Or use one of our verified prototype designs for simulation:</span>
+          <div class="space-y-4">
+            <span class="text-xs font-bold text-neutral-500 block">Or use one of our verified prototype designs for simulation:</span>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               @for (sample of demoFiles; track sample.name) {
                 <button (click)="selectDemoFile(sample)" 
@@ -43,8 +43,8 @@
                   <div class="flex items-start gap-2">
                     <mat-icon class="text-xs text-blue-500 scale-90 mt-0.5">architecture</mat-icon>
                     <div>
-                      <h4 class="text-xs font-bold font-mono text-neutral-800 dark:text-neutral-150 line-clamp-1">{{ sample.name }}</h4>
-                      <span class="text-[9px] text-neutral-455 font-mono">{{ sample.volume }} cm³ | {{ sample.presetMaterial }}</span>
+                      <h4 class="text-xs font-bold font-mono text-neutral-800 dark:text-neutral-200 line-clamp-1">{{ sample.name }}</h4>
+                      <span class="text-[9px] text-neutral-500 dark:text-neutral-400 font-mono">{{ sample.volume }} cm³ | {{ sample.presetMaterial }}</span>
                     </div>
                   </div>
                 </button>
@@ -103,7 +103,7 @@
           <div class="space-y-4">
             <div class="space-y-1.5">
               <div class="flex justify-between text-xs">
-                <span class="font-bold text-neutral-600 dark:text-neutral-455">Infill Density:</span>
+                <span class="font-bold text-neutral-600 dark:text-neutral-400">Infill Density:</span>
                 <span class="font-mono font-black text-blue-500">{{ infillPercent() }}%</span>
               </div>
               <input type="range" min="15" max="100" step="5" 
@@ -114,7 +114,7 @@
             </div>
 
             <div class="space-y-1.5">
-              <span class="text-xs font-bold text-neutral-600 dark:text-neutral-455 block">Layer Precision Height:</span>
+              <span class="text-xs font-bold text-neutral-600 dark:text-neutral-400 block">Layer Precision Height:</span>
               <div class="grid grid-cols-4 gap-2">
                 @for (h of [0.05, 0.1, 0.15, 0.2]; track h) {
                   <button (click)="selectLayerHeight(h)"
@@ -136,21 +136,21 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div class="space-y-1">
                 <label for="custName" class="text-[10px] font-bold text-neutral-500">Full Name:</label>
-                <input id="custName" type="text" [value]="custName()" (input)="custName.set($any($event.target).value)" placeholder="Sumit Sharma" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+                <input id="custName" type="text" [value]="custName()" (input)="custName.set($any($event.target).value)" placeholder="Sumit Sharma" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white">
               </div>
               <div class="space-y-1">
                 <label for="custPhone" class="text-[10px] font-bold text-neutral-500">WhatsApp Mobile:</label>
-                <input id="custPhone" type="text" [value]="custPhone()" (input)="custPhone.set($any($event.target).value)" placeholder="9876543210" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+                <input id="custPhone" type="text" [value]="custPhone()" (input)="custPhone.set($any($event.target).value)" placeholder="9876543210" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white">
               </div>
               <div class="space-y-1">
                 <label for="custEmail" class="text-[10px] font-bold text-neutral-500">Email Address:</label>
-                <input id="custEmail" type="text" [value]="custEmail()" (input)="custEmail.set($any($event.target).value)" placeholder="sumit&#64;3dgalaxy.co.in" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-800 dark:text-white">
+                <input id="custEmail" type="text" [value]="custEmail()" (input)="custEmail.set($any($event.target).value)" placeholder="sumit&#64;3dgalaxy.co.in" class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white">
               </div>
             </div>
 
             <div class="space-y-1">
               <label for="notesText" class="text-[10px] font-bold text-neutral-500">Design instructions or specific applications notes (Optional):</label>
-              <textarea id="notesText" rows="2" [value]="notesText()" (input)="notesText.set($any($event.target).value)" placeholder="Requires maximum wall layers for outdoor deployment, thread fits..." class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-205 dark:border-neutral-850 text-xs rounded-lg text-neutral-850 dark:text-white"></textarea>
+              <textarea id="notesText" rows="2" [value]="notesText()" (input)="notesText.set($any($event.target).value)" placeholder="Requires maximum wall layers for outdoor deployment, thread fits..." class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white"></textarea>
             </div>
 
             <button (click)="submitQuotation()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-transform active:scale-98 flex items-center justify-center gap-1.5 shadow-md shadow-emerald-900/10">
@@ -221,7 +221,7 @@
             <span class="text-sm font-bold text-white">Estimated Cost:</span>
             <div class="text-right">
               <p class="text-2xl font-mono font-black text-blue-400">₹{{ estimatedReport().totalCost }}</p>
-              <p class="text-[8px] text-neutral-505 font-mono">*Invoice generated instantly upon admin confirmation</p>
+              <p class="text-[8px] text-neutral-400 font-mono">*Invoice generated instantly upon admin confirmation</p>
             </div>
           </div>
         </div>
@@ -240,16 +240,16 @@
           <span class="text-xs font-bold text-neutral-800 dark:text-white uppercase tracking-wider block">Your Quote Requests ({{ customerQuotes().length }})</span>
           <div class="space-y-3">
             @for (q of customerQuotes(); track q.id) {
-              <div class="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-xl space-y-2">
+              <div class="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl space-y-2">
                 <div class="flex justify-between text-[10px]">
                   <span class="font-mono font-bold text-blue-500">{{ q.quoteNumber }}</span>
                   <span class="text-neutral-400">{{ q.date.split(' ')[0] }}</span>
                 </div>
                 <div>
                   <h4 class="text-xs font-bold text-neutral-800 dark:text-neutral-100 font-mono truncate">{{ q.fileName }}</h4>
-                  <p class="text-[9px] text-neutral-455">{{ q.materialType }} | Color: {{ q.color }}</p>
+                  <p class="text-[9px] text-neutral-500 dark:text-neutral-400">{{ q.materialType }} | Color: {{ q.color }}</p>
                 </div>
-                <div class="flex justify-between items-center pt-1.5 border-t border-neutral-100 dark:border-neutral-800">
+                <div class="flex justify-between items-center pt-1.5 border-t border-neutral-100 dark:border-neutral-850">
                   <div>
                     <span class="text-[8px] text-neutral-400 block font-mono">ESTIMATED PRICE:</span>
                     <span class="text-xs font-bold text-neutral-800 dark:text-neutral-100">₹{{ q.estimatedCost }}</span>
@@ -265,7 +265,7 @@
                     <button (click)="approveQuote(q.id)" class="flex-1 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-extrabold uppercase rounded-md transition-all">
                       Accept Cost
                     </button>
-                    <button (click)="rejectQuote(q.id)" class="py-1 px-2.5 bg-neutral-150 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-500 dark:text-neutral-300 text-[9px] font-bold rounded-md transition-all">
+                    <button (click)="rejectQuote(q.id)" class="py-1 px-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-300 text-[9px] font-bold rounded-md transition-all">
                       Discard
                     </button>
                   </div>

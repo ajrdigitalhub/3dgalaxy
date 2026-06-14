@@ -26,6 +26,8 @@ import {
 import { initFirebase, db, auth } from '../firebase';
 import { SeederService } from './seeder';
 import { ApiService } from './api.service';
+import { of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 
 
 export interface Category {
@@ -355,6 +357,11 @@ export class DatastoreService {
   
   homeLayout = signal<HomeLayoutSection[]>([]);
   
+  homepageLoading = signal<boolean>(true);
+  categoriesLoading = signal<boolean>(true);
+  bannersLoading = signal<boolean>(true);
+  productsLoading = signal<boolean>(true);
+  
   // Local UI State
   cart = signal<CartItem[]>([]);
   activeCouponCode = signal<string>('');
@@ -425,43 +432,99 @@ export class DatastoreService {
   }
 
   private initAuth() {
-    onAuthStateChanged(auth, async (user) => {
-      this.currentUser.set(user);
-      if (user) {
-        // Fetch profile
-        const profileDoc = await getDoc(doc(db, 'users', user.uid));
-        if (profileDoc.exists()) {
-          const data = profileDoc.data() as UserProfile;
-          
-          // Bootstrap upgrade for owner email
-          if (user.email === 'arunjaya1999@gmail.com' && data.role !== 'super-admin') {
-            data.role = 'super-admin';
-            await updateDoc(doc(db, 'users', user.uid), { role: 'super-admin' });
-          }
-
-          this.userProfile.set(data);
-          this.userRole.set(data.role || 'customer');
-        } else {
-          // New user
-          const newProfile = {
-            id: user.uid,
-            name: user.displayName || 'Guest',
-            email: user.email,
-            role: user.email === 'arunjaya1999@gmail.com' ? 'super-admin' : 'customer',
-            rewardPoints: 0,
-            active: true,
-            createdAt: new Date().toISOString()
-          };
-          await setDoc(doc(db, 'users', user.uid), newProfile);
-          this.userProfile.set(newProfile as UserProfile);
-          this.userRole.set(newProfile.role as 'guest' | 'customer' | 'admin' | 'super-admin');
-        }
-      } else {
-        this.userProfile.set(null);
-        this.userRole.set('guest');
-      }
+    if (!isPlatformBrowser(this.platformId)) {
       this.authReady.set(true);
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const refresh = localStorage.getItem('refresh_token');
+
+    if (token) {
+      this.fetchProfileAndSetState().then(success => {
+        if (!success && refresh) {
+          this.refreshJWT(refresh).then(refreshed => {
+            if (refreshed) {
+              this.fetchProfileAndSetState().then(() => {
+                this.authReady.set(true);
+              });
+            } else {
+              this.clearSession();
+              this.authReady.set(true);
+            }
+          });
+        } else {
+          this.authReady.set(true);
+        }
+      }).catch(() => {
+        this.clearSession();
+        this.authReady.set(true);
+      });
+    } else {
+      this.authReady.set(true);
+    }
+  }
+
+  private async fetchProfileAndSetState(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.api.get<{ success: boolean; data: any }>('/profile').subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            const u = res.data;
+            const mappedProfile: UserProfile = {
+              id: u.id,
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+              email: u.email,
+              role: this.mapRole(u.role || (u.roles && u.roles[0]?.role?.name)),
+              active: u.isActive !== false,
+              phone: u.mobile || '',
+              profileImage: u.profileImage || '',
+              createdAt: u.createdAt
+            };
+            this.userProfile.set(mappedProfile);
+            this.userRole.set(mappedProfile.role);
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        },
+        error: () => {
+          resolve(false);
+        }
+      });
     });
+  }
+
+  private mapRole(roleName: string | undefined): 'guest' | 'customer' | 'admin' | 'super-admin' {
+    if (!roleName) return 'customer';
+    const normalized = roleName.toLowerCase().replace(/[^a-z]+/g, '');
+    if (normalized.includes('superadmin')) return 'super-admin';
+    if (normalized.includes('admin')) return 'admin';
+    if (normalized.includes('manager')) return 'admin';
+    return 'customer';
+  }
+
+  private async refreshJWT(refreshTokenStr: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.api.post<{ accessToken: string }>('/auth/refresh-token', { token: refreshTokenStr }).subscribe({
+        next: (res) => {
+          if (res && res.accessToken) {
+            localStorage.setItem('access_token', res.accessToken);
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        },
+        error: () => resolve(false)
+      });
+    });
+  }
+
+  private clearSession() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    this.userProfile.set(null);
+    this.userRole.set('guest');
   }
 
   async loginWithGoogle() {
@@ -470,71 +533,204 @@ export class DatastoreService {
   }
 
   async loginWithEmail(email: string, pass: string) {
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email, pass);
-      return cred.user;
-    } catch (err) {
-      console.error('Email signin error:', err);
-      throw err;
-    }
+    return new Promise<any>((resolve, reject) => {
+      this.api.post<any>('/auth/login', { email, password: pass }).subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            const data = res.data;
+            localStorage.setItem('access_token', data.accessToken);
+            localStorage.setItem('refresh_token', data.refreshToken);
+            
+            const u = data.user;
+            const mappedProfile: UserProfile = {
+              id: u.id,
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+              email: u.email,
+              role: this.mapRole(u.role),
+              active: u.isActive !== false,
+              phone: u.mobile || '',
+              profileImage: u.profileImage || '',
+            };
+            this.userProfile.set(mappedProfile);
+            this.userRole.set(mappedProfile.role);
+            resolve(mappedProfile);
+          } else {
+            reject(new Error('Authentication returned invalid schema'));
+          }
+        },
+        error: (err) => {
+          reject(err);
+        }
+      });
+    });
   }
 
   async registerWithEmail(email: string, pass: string, name: string) {
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const user = cred.user;
-      await updateProfile(user, { displayName: name });
-      
-      const newProfile: UserProfile = {
-        id: user.uid,
-        name: name,
-        email: user.email || email,
-        role: (user.email === 'arunjaya1999@gmail.com') ? 'super-admin' : 'customer',
-        rewardPoints: 0,
-        active: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      await setDoc(doc(db, 'users', user.uid), newProfile);
-      this.userProfile.set(newProfile);
-      this.userRole.set(newProfile.role);
-      
-      return user;
-    } catch (err) {
-      console.error('Email registration error:', err);
-      throw err;
-    }
+    return new Promise<any>((resolve, reject) => {
+      this.api.post<any>('/auth/register', { email, password: pass, name }).subscribe({
+        next: (res) => {
+          const accessToken = res.accessToken || res.data?.accessToken;
+          const refreshToken = res.refreshToken || res.data?.refreshToken;
+          const userObj = res.user || res.data?.user;
+
+          if (accessToken) {
+            localStorage.setItem('access_token', accessToken);
+          }
+          if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+          }
+
+          if (userObj) {
+            const mappedProfile: UserProfile = {
+              id: userObj.id,
+              name: `${userObj.firstName || ''} ${userObj.lastName || ''}`.trim() || userObj.email || name,
+              email: userObj.email,
+              role: this.mapRole(userObj.role),
+              active: true,
+              phone: userObj.mobile || '',
+              profileImage: userObj.profileImage || '',
+            };
+            this.userProfile.set(mappedProfile);
+            this.userRole.set(mappedProfile.role);
+            resolve(mappedProfile);
+          } else {
+            this.loginWithEmail(email, pass).then(resolve).catch(reject);
+          }
+        },
+        error: (err) => {
+          reject(err);
+        }
+      });
+    });
   }
 
   async logout() {
-    return signOut(auth);
+    return new Promise<void>((resolve) => {
+      this.api.post('/auth/logout', {}).subscribe({
+        next: () => {
+          this.clearSession();
+          resolve();
+        },
+        error: () => {
+          this.clearSession();
+          resolve();
+        }
+      });
+    });
+  }
+
+  async forgotPassword(email: string) {
+    return new Promise<any>((resolve, reject) => {
+      this.api.post('/auth/forgot-password', { email }).subscribe({
+        next: (res) => resolve(res),
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async resetPassword(email: string, token: string, pass: string) {
+    return new Promise<any>((resolve, reject) => {
+      this.api.post('/auth/reset-password', { email, token, newPassword: pass }).subscribe({
+        next: (res) => resolve(res),
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async updateProfileDetails(firstName: string, lastName: string, mobile: string, profileImage: string) {
+    return new Promise<any>((resolve, reject) => {
+      this.api.put<any>('/profile', { firstName, lastName, mobile, profileImage }).subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            const u = res.data;
+            const mappedProfile: UserProfile = {
+              id: u.id,
+              name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+              email: u.email,
+              role: this.userRole(),
+              active: u.isActive !== false,
+              phone: u.mobile || '',
+              profileImage: u.profileImage || '',
+              createdAt: u.createdAt
+            };
+            this.userProfile.set(mappedProfile);
+            resolve(mappedProfile);
+          } else {
+            resolve(null);
+          }
+        },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async changeUserPassword(oldPass: string, newPass: string) {
+    return new Promise<any>((resolve, reject) => {
+      this.api.put<any>('/profile/change-password', { oldPassword: oldPass, newPassword: newPass }).subscribe({
+        next: (res) => resolve(res),
+        error: (err) => reject(err)
+      });
+    });
   }
 
   private initRealtimeSync() {
     // ---- API SYNC BLOCK ----
-    this.api.get<Category[]>('/categories').subscribe({
+    this.categoriesLoading.set(true);
+    this.api.get<Category[]>('/categories').pipe(
+      catchError((err) => {
+        console.error('Error loading categories:', err);
+        return of([]);
+      }),
+      finalize(() => {
+        this.categoriesLoading.set(false);
+      })
+    ).subscribe({
       next: (data) => { if (data) this.categories.set(data); console.log("Loaded Categories", data); },
       error: (e) => console.error(e)
     });
 
-    this.api.get<Brand[]>('/brands').subscribe({
+    this.api.get<Brand[]>('/brands').pipe(
+      catchError((err) => {
+        console.error('Error loading brands:', err);
+        return of([]);
+      })
+    ).subscribe({
       next: (data) => { if (data) this.brands.set(data); },
       error: (e) => console.error(e)
     });
 
     this.reloadProducts();
 
-    this.api.get<MenuItem[]>('/menus/tree').subscribe({
+    this.api.get<MenuItem[]>('/menus/tree').pipe(
+      catchError((err) => {
+        console.error('Error loading menus/tree:', err);
+        return of([]);
+      })
+    ).subscribe({
       next: (data) => { if (data) this.menuItems.set(data); },
       error: (e) => console.error(e)
     });
 
-    this.api.get<Settings>('/settings').subscribe({
+    this.api.get<Settings>('/settings').pipe(
+      catchError((err) => {
+        console.error('Error loading settings:', err);
+        return of(null as any);
+      })
+    ).subscribe({
       next: (data) => { if (data) this.settings.set(data); },
       error: (e) => console.error(e)
     });
 
-    this.api.get<any[]>('/homepage').subscribe({
+    this.homepageLoading.set(true);
+    this.api.get<any[]>('/homepage').pipe(
+      catchError((err) => {
+        console.error('Error loading homepage:', err);
+        return of([]);
+      }),
+      finalize(() => {
+        this.homepageLoading.set(false);
+      })
+    ).subscribe({
       next: (data) => { if (Array.isArray(data)) this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isActive, order: d.sortOrder, type: d.type, config: d.content || d.config || {} }))); },
       error: (e) => console.error(e)
     });
@@ -544,7 +740,12 @@ export class DatastoreService {
       effect(() => {
         const role = this.userRole();
         if (!this.authReady()) return;
-        this.api.get<Order[]>('/orders').subscribe({
+        this.api.get<Order[]>('/orders').pipe(
+          catchError((err) => {
+            console.error('Error loading orders:', err);
+            return of([]);
+          })
+        ).subscribe({
           next: (data) => { if (data) this.orders.set(data); },
           error: (e) => console.error(e)
         });
@@ -562,9 +763,14 @@ export class DatastoreService {
     }, err => this.handleFirestoreError(err, 'list', 'socialPosts'));
 
     // Ads
+    this.bannersLoading.set(true);
     onSnapshot(collection(db, 'advertisements'), (snap) => {
       this.advertisements.set(snap.docs.map(d => ({ ...d.data() as Advertisement, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'advertisements'));
+      this.bannersLoading.set(false);
+    }, err => {
+      this.handleFirestoreError(err, 'list', 'advertisements');
+      this.bannersLoading.set(false);
+    });
 
     // Coupons
     onSnapshot(collection(db, 'coupons'), (snap) => {
@@ -754,7 +960,16 @@ export class DatastoreService {
   }
 
   reloadProducts() {
-    this.api?.get<{data: any[]}>('/products').subscribe({
+    this.productsLoading.set(true);
+    this.api?.get<{data: any[]}>('/products').pipe(
+      catchError((err) => {
+        console.error('Error loading products:', err);
+        return of({ data: [] });
+      }),
+      finalize(() => {
+        this.productsLoading.set(false);
+      })
+    ).subscribe({
       next: (res) => { 
         if (res && res.data) {
            this.products.set(res.data.map((p: any) => ({

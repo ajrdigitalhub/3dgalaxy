@@ -52,11 +52,13 @@ model User {
   passwordHash   String               @map("password_hash")
   firstName      String?              @map("first_name")
   lastName       String?              @map("last_name")
+  mobile         String?
   profileImage   String?              @map("profile_image")
   dateOfBirth    DateTime?            @map("date_of_birth")
   gender         String?
   lastLogin      DateTime?            @map("last_login")
   isActive       Boolean              @default(true) @map("is_active")
+  isVerified     Boolean              @default(false) @map("is_verified")
   deletedAt      DateTime?            @map("deleted_at")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @default(now()) @updatedAt @map("updated_at")
@@ -520,7 +522,6 @@ model Order {
   taxAmount         Float                @default(0) @map("tax_amount")
   shippingAmount    Float                @default(0) @map("shipping_amount")
   discountAmount    Float                @default(0) @map("discount_amount")
-  isManual          Boolean              @default(false) @map("is_manual")
   shippingAddressId String?              @map("shipping_address_id")
   billingAddressId  String?              @map("billing_address_id")
   notes             String?

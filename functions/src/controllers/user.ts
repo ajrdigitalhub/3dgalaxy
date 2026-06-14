@@ -65,9 +65,11 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id || 'system',
+        userId: req.user?.id || null,
         action: 'USER_UPDATE',
-        description: `Updated user record payload of user: ${updated.email}`,
+        entityType: 'User',
+        entityId: updated.id,
+        newData: JSON.stringify(`Updated user record payload of user: ${updated.email}`),
       },
     });
 
@@ -98,9 +100,11 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
     // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id || 'system',
+        userId: req.user?.id || null,
         action: 'USER_DELETE',
-        description: `Deleted account associated with email: ${target.email}`,
+        entityType: 'User',
+        entityId: id,
+        newData: JSON.stringify(`Deleted account associated with email: ${target.email}`),
       },
     });
 
@@ -135,9 +139,11 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
     // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id || 'system',
+        userId: req.user?.id || null,
         action: 'ROLE_CREATE',
-        description: `Created new user security role: ${name}`,
+        entityType: 'Role',
+        entityId: created.id,
+        newData: JSON.stringify(`Created new user security role: ${name}`),
       },
     });
 
@@ -160,9 +166,11 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
     // Write audit log
     await prisma.auditLog.create({
       data: {
-        userId: req.user?.id || 'system',
+        userId: req.user?.id || null,
         action: 'ROLE_UPDATE',
-        description: `Modified access permissions of role: ${updated.name}`,
+        entityType: 'Role',
+        entityId: updated.id,
+        newData: JSON.stringify(`Modified access permissions of role: ${updated.name}`),
       },
     });
 

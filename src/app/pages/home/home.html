@@ -1,4 +1,4 @@
-@if(loadingService.isLoading() || ds.homeLayout().length === 0) {
+@if(loading()) {
   <app-skeleton-page />
 } @else {
 <div class="space-y-24 pb-20 select-none text-neutral-800 dark:text-neutral-100 animate-fadeIn">
@@ -123,16 +123,26 @@
               </div>
             </div>
 
-            <div class="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
+            <div class="flex md:block overflow-x-auto md:overflow-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
               <!-- We add gap using wrapper so scrolling is correct -->
-              <div class="flex gap-3 md:gap-4 md:grid md:grid-cols-4 lg:grid-cols-8 pb-2">
+              <div class="flex md:grid gap-3 md:gap-4 md:grid-cols-4 lg:grid-cols-8 pb-2 w-full">
                 @for (item of ds.categories(); track item.id) {
                   <button (click)="selectFilterCategory(item.id)" 
-                          class="group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-4 md:p-6 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl md:rounded-[1.5rem] transition-all hover:border-[#d65108] hover:scale-105 h-28 w-28 md:h-36 md:w-auto border-b-4 hover:border-b-[#d65108] shadow-sm cursor-pointer">
-                    <div class="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:text-[#d65108] transition-colors">
+                          [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-4 md:p-6 bg-white dark:bg-neutral-900 rounded-2xl md:rounded-[1.5rem] transition-all h-28 w-28 md:h-36 md:w-full border-b-4 shadow-sm cursor-pointer ' + 
+                                  (filterCategory() === item.id 
+                                    ? 'border-[#d65108] border-b-[#d65108] bg-orange-500/5 dark:bg-orange-950/15 scale-[1.02] shadow-md' 
+                                    : 'border-neutral-200/50 dark:border-neutral-800/40 hover:border-[#d65108] hover:scale-105 hover:border-b-[#d65108]')"
+                          [attr.aria-label]="'Filter by ' + item.name">
+                    <div [class]="'h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-colors ' + 
+                                (filterCategory() === item.id 
+                                  ? 'bg-orange-500/20 text-[#d65108]' 
+                                  : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-orange-500/10 group-hover:text-[#d65108]')">
                       <mat-icon class="scale-100 md:scale-110">{{ getIcon(item.id) }}</mat-icon>
                     </div>
-                    <span class="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white leading-tight px-1">{{ item.name }}</span>
+                    <span [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
+                                  (filterCategory() === item.id 
+                                    ? 'text-neutral-900 dark:text-white' 
+                                    : 'text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white')">{{ item.name }}</span>
                   </button>
                 }
               </div>

@@ -92,15 +92,33 @@ export class Account {
     this.router.navigate(['/']);
   }
 
-  saveProfile() {
+  async saveProfile() {
     if (this.profileForm.valid) {
-      alert('Profile updated fully customizable in Backend integration.');
+      const { firstName, lastName, phone } = this.profileForm.value;
+      const currentPic = this.profile()?.profileImage || '';
+      try {
+        await this.ds.updateProfileDetails(firstName, lastName, phone, currentPic);
+        alert('Profile details updated successfully!');
+      } catch (err: any) {
+        alert(`Failed to update profile: ${err.message || err}`);
+      }
     }
   }
 
-  changePassword() {
+  async changePassword() {
     if (this.passwordForm.valid) {
-      alert('Password updated fully customizable in Backend integration.');
+      const { currentPassword, newPassword, confirmPassword } = this.passwordForm.value;
+      if (newPassword !== confirmPassword) {
+        alert('New passwords do not match');
+        return;
+      }
+      try {
+        await this.ds.changeUserPassword(currentPassword, newPassword);
+        alert('Password changed successfully!');
+        this.passwordForm.reset();
+      } catch (err: any) {
+        alert(`Failed to change password: ${err.message || err}`);
+      }
     }
   }
 
@@ -112,7 +130,7 @@ export class Account {
       const formData = new FormData();
       formData.append('image', file);
 
-      const token = await this.ds.currentUser()?.getIdToken();
+      const token = localStorage.getItem('access_token');
       
       const res = await fetch('/api/profile/image', {
         method: 'POST',
@@ -126,7 +144,6 @@ export class Account {
       
       const data = await res.json();
       if (data.url) {
-        // Optimistically update profile image
         this.ds.userProfile.update(profile => profile ? { ...profile, profileImage: data.url } : null);
         alert('Profile image uploaded successfully.');
       }

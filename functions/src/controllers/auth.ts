@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-// @ts-nocheck
 import prisma from '../config/database';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token';
 
@@ -30,20 +29,41 @@ export const register = async (req: Request, res: Response) => {
       role = await prisma.role.create({
         data: {
           name: targetRoleName,
-          permissions: ['read:products', 'write:reviews', 'create:orders'],
+          permissions: {
+            create: [
+              { permission: { connectOrCreate: { where: { name: 'read:products' }, create: { name: 'read:products', resource: 'products', action: 'read' } } } },
+              { permission: { connectOrCreate: { where: { name: 'write:reviews' }, create: { name: 'write:reviews', resource: 'reviews', action: 'write' } } } },
+              { permission: { connectOrCreate: { where: { name: 'create:orders' }, create: { name: 'create:orders', resource: 'orders', action: 'create' } } } },
+            ]
+          }
         },
       });
     }
 
+    const nameParts = (name || '').trim().split(/\s+/);
+    const firstName = nameParts[0] || 'User';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     const newUser = await prisma.user.create({
       data: {
         email,
-        password: hashedPassword,
-        name,
-        roleId: role.id,
-        status: 'ACTIVE',
+        passwordHash: hashedPassword,
+        firstName,
+        lastName,
+        isActive: true,
+        roles: {
+          create: {
+            roleId: role.id
+          }
+        }
       },
-      include: { role: true },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
     });
 
     // Write audit log
@@ -51,19 +71,22 @@ export const register = async (req: Request, res: Response) => {
       data: {
         userId: newUser.id,
         action: 'USER_REGISTER',
-        details: `Registered account: ${email}`,
+        entityType: 'User',
+        entityId: newUser.id,
+        newData: JSON.stringify(`Registered account: ${email}`),
       },
     });
 
-    const accessToken = generateAccessToken({ id: newUser.id, email: newUser.email, role: newUser.role.name });
+    const userRoleName = newUser.roles?.[0]?.role?.name || 'CUSTOMER';
+    const accessToken = generateAccessToken({ id: newUser.id, email: newUser.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: newUser.id, email: newUser.email });
 
     return res.status(201).json({
       user: {
         id: newUser.id,
         email: newUser.email,
-        name: newUser.name,
-        role: newUser.role.name,
+        name: `${newUser.firstName} ${newUser.lastName}`.trim(),
+        role: userRoleName,
       },
       accessToken,
       refreshToken,
@@ -82,14 +105,28 @@ export const login = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { role: true },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
     });
 
-    if (!user || user.status !== 'ACTIVE') {
+    if (!user || user.isActive === false) {
       return res.status(401).json({ error: 'Incorrect email or inactive status' });
     }
 
-    const matching = await bcrypt.compare(password, user.password);
+    const matching = await bcrypt.compare(password, user.passwordHash);
     if (!matching) {
       return res.status(401).json({ error: 'Incorrect password' });
     }
@@ -99,23 +136,44 @@ export const login = async (req: Request, res: Response) => {
       data: {
         userId: user.id,
         action: 'USER_LOGIN',
-        details: 'User authenticated successfully',
+        entityType: 'User',
+        entityId: user.id,
+        newData: JSON.stringify('User authenticated successfully'),
       },
     });
 
-    const accessToken = generateAccessToken({ id: user.id, email: user.email, role: user.role.name });
+    const userRoleName = user.roles?.[0]?.role?.name || 'CUSTOMER';
+    const userPermissions = user.roles?.flatMap(
+      r => r.role?.permissions?.map(rp => rp.permission?.name || '') || []
+    ).filter(Boolean) || [];
+
+    const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
 
+    // Update last login timestamp
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
+
     return res.status(200).json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role.name,
-        permissions: user.role.permissions,
-      },
-      accessToken,
-      refreshToken,
+      success: true,
+      message: "Login successful",
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          role: userRoleName,
+          permissions: userPermissions,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          mobile: user.mobile,
+          profileImage: user.profileImage,
+        },
+        accessToken,
+        refreshToken,
+      }
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'Authentication failed', details: error.message });
@@ -145,14 +203,21 @@ export const refreshToken = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: payload.id },
-      include: { role: true },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
     });
 
-    if (!user || user.status !== 'ACTIVE') {
+    if (!user || user.isActive === false) {
       return res.status(403).json({ error: 'User suspended or missing' });
     }
 
-    const accessToken = generateAccessToken({ id: user.id, email: user.email, role: user.role.name });
+    const userRoleName = user.roles?.[0]?.role?.name || 'CUSTOMER';
+    const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
     return res.status(200).json({ accessToken });
   } catch (error: any) {
     return res.status(500).json({ error: 'Token refresh failed', details: error.message });
@@ -180,7 +245,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
       data: {
         userId: user.id,
         action: 'FORGOT_PASSWORD_REQUEST',
-        details: `Reset password OTP requested: ${resetToken}`,
+        entityType: 'User',
+        entityId: user.id,
+        newData: JSON.stringify(`Reset password OTP requested: ${resetToken}`),
       },
     });
 
@@ -212,21 +279,23 @@ export const resetPassword = async (req: Request, res: Response) => {
       take: 1,
     });
 
-    if (recentLogs.length === 0 || !recentLogs[0].details?.includes(token)) {
+    if (recentLogs.length === 0 || !recentLogs[0].newData?.includes(token)) {
       return res.status(400).json({ error: 'Incorrect or expired recovery token' });
     }
 
     const hashed = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashed },
+      data: { passwordHash: hashed },
     });
 
     await prisma.auditLog.create({
       data: {
         userId: user.id,
         action: 'RESET_PASSWORD_CONFIRM',
-        details: 'Password was successfully reset',
+        entityType: 'User',
+        entityId: user.id,
+        newData: JSON.stringify('Password was successfully reset'),
       },
     });
 

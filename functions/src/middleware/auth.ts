@@ -34,18 +34,38 @@ export const authenticateToken = async (
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: { roles: true },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!user || user.isActive === false) {
       return res.status(403).json({ error: 'User is inactive or suspended' });
     }
 
+    const firstRole = user.roles?.[0]?.role;
+    const roleName = firstRole?.name || 'user';
+    const permissions = user.roles?.flatMap(
+      r => r.role?.permissions?.map(rp => rp.permission?.name || '') || []
+    ).filter(Boolean) || [];
+
     req.user = {
       id: user.id,
       email: user.email,
-      role: user.roles?.[0]?.name || 'user',
-      permissions: user.roles?.flatMap(r => r.permissions as string[]) || [],
+      role: roleName,
+      permissions: permissions,
     };
 
     next();

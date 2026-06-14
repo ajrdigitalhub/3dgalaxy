@@ -26,6 +26,12 @@ export class Home {
   loadingService = inject(LoadingService);
   heroContainer = viewChild<ElementRef>('heroContainer');
 
+  loading = computed(() => {
+    if (this.loadingService.isLoading()) return true;
+    if (this.ds.homepageLoading()) return true;
+    return false;
+  });
+
   searchQuery = signal<string>('');
   aiSuggestions = signal<string[]>([]);
   isLoadingAiSuggestion = signal<boolean>(false);

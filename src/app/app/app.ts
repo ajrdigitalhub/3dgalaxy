@@ -18,6 +18,12 @@ export class App {
   public router = inject(Router);
   public loadingService = inject(LoadingService);
 
+  loading = computed(() => {
+    if (this.loadingService.isLoading()) return true;
+    if (this.ds.categoriesLoading()) return true;
+    return false;
+  });
+
   isHome = signal(true);
 
   constructor() {

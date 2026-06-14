@@ -105,7 +105,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
           include: { relatedProduct: true }
         },
         reviews: {
-          include: { customer: true },
+          include: { user: true },
         },
       },
     });
@@ -141,7 +141,7 @@ export const getProductById = async (req: Request, res: Response) => {
           include: { relatedProduct: true }
         },
         reviews: {
-          include: { customer: true },
+          include: { user: true },
         },
       },
     });

@@ -59,6 +59,12 @@ export class AdminPanel {
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
 
+  loading = computed(() => {
+    if (this.loadingService.isLoading()) return true;
+    if (this.ds.productsLoading()) return true;
+    return false;
+  });
+
   activeTab = signal<AdminTab>('dashboard');
 
   // Sidebar Group Collapsed state

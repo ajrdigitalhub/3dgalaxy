@@ -1,6 +1,7 @@
 -- Create Roles
 INSERT INTO roles (id, name, description) VALUES 
-('e2098679-b788-46cb-b1ec-df0bc79db5d4', 'Admin', 'Super Administrator with full access'),
+('e2098679-b788-46cb-b1ec-df0bc79db5d3', 'Super Admin', 'Super Administrator with unrestricted access'),
+('e2098679-b788-46cb-b1ec-df0bc79db5d4', 'Admin', 'Administrator with full access'),
 ('e2098679-b788-46cb-b1ec-df0bc79db5d5', 'Manager', 'Store Manager'),
 ('e2098679-b788-46cb-b1ec-df0bc79db5d6', 'Customer', 'Regular Customer');
 
@@ -10,14 +11,15 @@ INSERT INTO permissions (id, name, resource, action) VALUES
 
 -- Assign Role Permissions
 INSERT INTO role_permissions (role_id, permission_id) VALUES 
+('e2098679-b788-46cb-b1ec-df0bc79db5d3', 'p2098679-b788-46cb-b1ec-df0bc79db5d1'),
 ('e2098679-b788-46cb-b1ec-df0bc79db5d4', 'p2098679-b788-46cb-b1ec-df0bc79db5d1');
 
 -- Admin User
-INSERT INTO users (id, email, password_hash, first_name, last_name) VALUES 
-('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'admin@3dgalaxy.com', '$2b$10$xyz...', 'Super', 'Admin');
+INSERT INTO users (id, email, password_hash, first_name, last_name, is_active) VALUES 
+('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'admin@3dgalaxy.com', '$2b$10$h9W0g8G1mDqI9y2D8d2v2Oe.x9xOOnS8y9iS0f1gXlZl7U8BvH7gY', 'Super', 'Admin', true);
 
 INSERT INTO user_roles (user_id, role_id) VALUES 
-('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'e2098679-b788-46cb-b1ec-df0bc79db5d4');
+('f47ac10b-58cc-4372-a567-0e02b2c3d479', 'e2098679-b788-46cb-b1ec-df0bc79db5d3');
 
 -- Seed Brands
 INSERT INTO brands (id, name, slug) VALUES 

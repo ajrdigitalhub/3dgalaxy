@@ -2,8 +2,15 @@ import express from 'express';
 import Busboy from 'busboy';
 import path from 'path';
 import { bucket } from '../config/firebase'; // Ensure this exists and exports `bucket`
+import { authenticateToken } from '../middleware/auth';
+import { getProfile, updateProfile, changePassword } from '../controllers/profile';
 
 const router = express.Router();
+
+// Profile retrieval and management routes
+router.get('/', authenticateToken, getProfile);
+router.put('/', authenticateToken, updateProfile);
+router.put('/change-password', authenticateToken, changePassword);
 
 router.post('/image', (req: any, res: any) => {
   // If we are using standard express, we might not have req.rawBody unless using raw body parser.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
@@ -11,7 +11,7 @@ import { DatastoreService } from '../../services/datastore';
   imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule],
   templateUrl: './login.html'
 })
-export class Login {
+export class Login implements OnInit {
   public ds = inject(DatastoreService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -49,10 +49,21 @@ export class Login {
     })
   });
 
+  ngOnInit() {
+    if (this.router.url.includes('/register')) {
+      this.isSignUp.set(true);
+    }
+  }
+
   toggleMode() {
     this.isSignUp.update(v => !v);
     this.errorMessage.set('');
     this.successMessage.set('');
+    if (this.isSignUp()) {
+      this.router.navigateByUrl('/register');
+    } else {
+      this.router.navigateByUrl('/login');
+    }
   }
 
   toggleShowPassword() {

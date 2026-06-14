@@ -160,7 +160,7 @@
       </a>
 
       <!-- Global Links (Desktop Only) -->
-      @if(loadingService.isLoading() || ds.categories().length === 0) {
+      @if(loading()) {
         <div class="hidden xl:flex h-full items-center">
           <app-skeleton-menu />
         </div>

@@ -24,6 +24,12 @@ async function main() {
     create: { name: 'Manager', description: 'Store manager access' },
   });
 
+  const customerRole = await prisma.role.upsert({
+    where: { name: 'Customer' },
+    update: {},
+    create: { name: 'Customer', description: 'Customer access' },
+  });
+
   const staffRole = await prisma.role.upsert({
     where: { name: 'Staff' },
     update: {},
@@ -32,7 +38,7 @@ async function main() {
 
   // 2. Super Admin User seeding
   console.log('Registering Super Admin profile info...');
-  const hashedAdminPassword = await bcrypt.hash('12345678', 10);
+  const hashedAdminPassword = await bcrypt.hash('Admin@123', 10);
   const superAdminUser = await prisma.user.upsert({
     where: { email: 'admin@3dgalaxy.com' },
     update: {},

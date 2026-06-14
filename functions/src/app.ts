@@ -25,11 +25,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint for Cloud Run / Load Balancer
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-
 // Serve Static Uploads
 const uploadsPath = path.resolve(__dirname, '../../uploads');
 app.use('/uploads', express.static(uploadsPath));
