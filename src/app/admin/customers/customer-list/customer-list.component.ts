@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { CustomerService } from '../../shared/services/customer.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-customer-list',
@@ -11,6 +12,7 @@ import { CustomerService } from '../../shared/services/customer.service';
   styleUrl: './customer-list.component.scss'
 })
 export class CustomerListComponent {
+  toastService = inject(ToastService);
   customerService = inject(CustomerService);
 
   activeSubTab = signal<'customer-list' | 'customer-groups' | 'reviews'>('customer-list');
@@ -25,20 +27,20 @@ export class CustomerListComponent {
 
   approveReview(id: string) {
     this.customerService.approveReview(id);
-    alert('Review feedback publicly approved and published.');
+    this.toastService.info('Review feedback publicly approved and published.');
   }
 
   rejectReview(id: string) {
     this.customerService.rejectReview(id);
-    alert('Review feedback suppressed from public directory.');
+    this.toastService.info('Review feedback suppressed from public directory.');
   }
 
   postResponse(id: string, text: string) {
     if (!text.trim()) {
-      alert('Write response body text.');
+      this.toastService.info('Write response body text.');
       return;
     }
     this.customerService.saveReviewResponse(id, text.trim());
-    alert('Response published and linked to user rating ticket.');
+    this.toastService.info('Response published and linked to user rating ticket.');
   }
 }

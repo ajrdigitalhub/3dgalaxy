@@ -377,9 +377,45 @@ export class DatastoreService {
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       initFirebase().then(() => {
-        this.initAuth();
+        let firstAuthCheckDone = false;
+        // Monitor Firebase Auth State (e.g. Google Sign-In)
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            this.currentUser.set(user);
+            if (!this.userProfile()) {
+              this.userProfile.set({
+                id: user.uid,
+                name: user.displayName || user.email || 'Google User',
+                email: user.email || '',
+                role: 'customer',
+                active: true,
+                phone: user.phoneNumber || '',
+                profileImage: user.photoURL || '',
+              });
+              this.userRole.set('customer');
+            }
+          } else {
+            if (!localStorage.getItem('access_token')) {
+              this.currentUser.set(null);
+            }
+          }
+
+          if (!firstAuthCheckDone) {
+            firstAuthCheckDone = true;
+            this.initAuth();
+          }
+        });
+
         this.initRealtimeSync();
         this.testConnection();
+      }).catch((err) => {
+        console.error('Firebase failed to initialize:', err);
+        // Fallback / safety recovery to unblock UI loading indicators
+        this.authReady.set(true);
+        this.homepageLoading.set(false);
+        this.categoriesLoading.set(false);
+        this.bannersLoading.set(false);
+        this.productsLoading.set(false);
       });
       
       // Auto-seed if empty (only for super-admin or first run)
@@ -483,6 +519,13 @@ export class DatastoreService {
             };
             this.userProfile.set(mappedProfile);
             this.userRole.set(mappedProfile.role);
+            this.currentUser.set({
+              uid: mappedProfile.id,
+              email: mappedProfile.email,
+              displayName: mappedProfile.name,
+              phoneNumber: mappedProfile.phone,
+              photoURL: mappedProfile.profileImage
+            } as any);
             resolve(true);
           } else {
             resolve(false);
@@ -524,7 +567,9 @@ export class DatastoreService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     this.userProfile.set(null);
+    this.currentUser.set(null);
     this.userRole.set('guest');
+    signOut(auth).catch((err) => console.warn('Firebase signOut non-fatal warning:', err));
   }
 
   async loginWithGoogle() {
@@ -553,6 +598,13 @@ export class DatastoreService {
             };
             this.userProfile.set(mappedProfile);
             this.userRole.set(mappedProfile.role);
+            this.currentUser.set({
+              uid: mappedProfile.id,
+              email: mappedProfile.email,
+              displayName: mappedProfile.name,
+              phoneNumber: mappedProfile.phone,
+              photoURL: mappedProfile.profileImage
+            } as any);
             resolve(mappedProfile);
           } else {
             reject(new Error('Authentication returned invalid schema'));
@@ -592,6 +644,13 @@ export class DatastoreService {
             };
             this.userProfile.set(mappedProfile);
             this.userRole.set(mappedProfile.role);
+            this.currentUser.set({
+              uid: mappedProfile.id,
+              email: mappedProfile.email,
+              displayName: mappedProfile.name,
+              phoneNumber: mappedProfile.phone,
+              photoURL: mappedProfile.profileImage
+            } as any);
             resolve(mappedProfile);
           } else {
             this.loginWithEmail(email, pass).then(resolve).catch(reject);
@@ -731,7 +790,19 @@ export class DatastoreService {
         this.homepageLoading.set(false);
       })
     ).subscribe({
-      next: (data) => { if (Array.isArray(data)) this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isActive, order: d.sortOrder, type: d.type, config: d.content || d.config || {} }))); },
+      next: (data) => { 
+        if (Array.isArray(data) && data.length > 0) {
+          this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isActive, order: d.sortOrder, type: d.type, config: d.content || d.config || {} }))); 
+        } else {
+          this.homeLayout.set([
+            { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
+            { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
+            { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 3, config: {} },
+            { id: 'best-4', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 4, config: {} },
+            { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 5, config: {} }
+          ]);
+        }
+      },
       error: (e) => console.error(e)
     });
 
@@ -806,12 +877,11 @@ export class DatastoreService {
       operationType: op,
       path,
       authInfo: {
-        userId: auth.currentUser?.uid,
-        email: auth.currentUser?.email
+        userId: auth?.currentUser?.uid,
+        email: auth?.currentUser?.email
       }
     };
-    console.error('Firestore Error:', JSON.stringify(errInfo));
-    throw new Error(JSON.stringify(errInfo));
+    console.warn('Firestore Non-Fatal Error:', JSON.stringify(errInfo));
   }
 
   private syncThemeClass(activeTheme: 'light' | 'dark') {

@@ -7,6 +7,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { SearchFilterComponent } from '../../shared/components/search-filter/search-filter.component';
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import { ConfirmationDialogComponent } from '../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-product-list',
@@ -16,6 +17,7 @@ import { ConfirmationDialogComponent } from '../../shared/components/confirmatio
   styleUrl: './product-list.component.scss'
 })
 export class ProductListComponent {
+  toastService = inject(ToastService);
   productService = inject(ProductService);
   private router = inject(Router);
 
@@ -62,9 +64,9 @@ export class ProductListComponent {
     if (id) {
       try {
         await this.productService.deleteProduct(id);
-        alert('Asset removed successfully.');
+        this.toastService.success('Asset removed successfully.');
       } catch (e) {
-        alert('Operation failed.');
+        this.toastService.error('Operation failed.');
       }
     }
     this.closeDeleteDialog();

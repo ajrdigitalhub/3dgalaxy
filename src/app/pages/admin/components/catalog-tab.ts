@@ -1,7 +1,8 @@
-import { Component, Input, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-catalog-tab',
@@ -698,6 +699,7 @@ import { AdminPanel } from '../admin';
   `
 })
 export class AdminCatalogTab {
+  toastService = inject(ToastService);
   @Input({ required: true }) admin!: AdminPanel;
 
   uploadProgress = 0;
@@ -759,7 +761,7 @@ export class AdminCatalogTab {
     for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
         if (file.size > 2 * 1024 * 1024) {
-             alert(`File ${file.name} exceeds 2MB limit.`);
+             this.toastService.info(`File ${file.name} exceeds 2MB limit.`);
              continue;
         }
         

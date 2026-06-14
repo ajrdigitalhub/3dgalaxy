@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { Brand } from '../../../services/datastore';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-brand-list',
@@ -13,6 +14,7 @@ import { Brand } from '../../../services/datastore';
   styleUrl: './brand-list.component.scss'
 })
 export class BrandListComponent {
+  toastService = inject(ToastService);
   brandService = inject(BrandService);
 
   // Form fields
@@ -50,7 +52,7 @@ export class BrandListComponent {
   async saveBrand() {
     const name = this.brandName().trim();
     if (!name) {
-      alert('Brand name is required.');
+      this.toastService.error('Brand name is required.');
       return;
     }
     const slug = this.brandSlug().trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -69,14 +71,14 @@ export class BrandListComponent {
       const editing = this.editingBrand();
       if (editing) {
         await this.brandService.editBrand(editing.id, brandData);
-        alert('Brand updated successfully!');
+        this.toastService.success('Brand updated successfully!');
       } else {
         await this.brandService.addBrand(brandData);
-        alert('Brand added successfully!');
+        this.toastService.success('Brand added successfully!');
       }
       this.cancelBrandEdit();
     } catch {
-      alert('Access Denied: Brand-level authentication token is missing or expired.');
+      this.toastService.error('Access Denied: Brand-level authentication token is missing or expired.');
     }
   }
 
@@ -84,9 +86,9 @@ export class BrandListComponent {
     if (!confirm('Are you sure you want to delete this Brand?')) return;
     try {
       await this.brandService.deleteBrand(id);
-      alert('Brand deleted successfully.');
+      this.toastService.success('Brand deleted successfully.');
     } catch {
-      alert('Operation failed.');
+      this.toastService.error('Operation failed.');
     }
   }
 }

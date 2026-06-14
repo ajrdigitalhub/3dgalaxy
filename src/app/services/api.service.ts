@@ -36,10 +36,14 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}${endpoint}`, { params, headers }).pipe(
       retry({
         count: 3,
-        delay: (error, retryCount) => timer(1000 * retryCount)
+        delay: (error, retryCount) => {
+          if (error && (error.status === 401 || error.status === 403 || error.status === 404)) {
+            return throwError(() => error);
+          }
+          return timer(1000 * retryCount);
+        }
       }),
-      catchError(this.handleError),
-      tap(res => console.log('GET success'))
+      catchError(error => this.handleError(error))
     );
   }
 

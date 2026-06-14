@@ -5,15 +5,18 @@ import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Advertisement} from '../services/datastore';
 import {LoadingService} from '../core/services/loading.service';
 import {SkeletonMenuComponent} from '../shared/components/skeleton/skeleton-menu/skeleton-menu.component';
+import {ToastContainerComponent} from '../shared/components/toast/toast.component';
+import { ToastService } from '../shared/components/toast/toast.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent],
+  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent, ToastContainerComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App {
+  toastService = inject(ToastService);
   public ds = inject(DatastoreService);
   public router = inject(Router);
   public loadingService = inject(LoadingService);
@@ -117,11 +120,11 @@ export class App {
     
     // Notify corresponding mock alerts
     if (role === 'admin') {
-      alert('ADMIN ACCESS LOGGED: Standard dealer discount structures + FDM slicing queue unlocked.');
+      this.toastService.info('ADMIN ACCESS LOGGED: Standard dealer discount structures + FDM slicing queue unlocked.');
     } else if (role === 'customer') {
-      alert('CUSTOMER ACCESS LOGGED: Sumit Sharma profile loaded with active loyalty points balance.');
+      this.toastService.info('CUSTOMER ACCESS LOGGED: Sumit Sharma profile loaded with active loyalty points balance.');
     } else {
-      alert('GUEST MODE LOCKED: Placed orders will run through direct phone notifications tracking.');
+      this.toastService.info('GUEST MODE LOCKED: Placed orders will run through direct phone notifications tracking.');
     }
   }
 
@@ -134,6 +137,6 @@ export class App {
 
   dismissBannerAd() {
     // Fictional dismiss to keep page pristine
-    alert('Notice: Top campaign alert hidden. You can find promo coupons inside checkout cart logs!');
+    this.toastService.warning('Notice: Top campaign alert hidden. You can find promo coupons inside checkout cart logs!');
   }
 }

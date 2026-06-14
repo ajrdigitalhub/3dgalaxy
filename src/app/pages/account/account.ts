@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, UserProfile } from '../../services/datastore';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-account',
@@ -12,12 +13,17 @@ import { DatastoreService, UserProfile } from '../../services/datastore';
   templateUrl: './account.html'
 })
 export class Account {
+  toastService = inject(ToastService);
   router = inject(Router);
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
   fb = inject(FormBuilder);
 
   profile = this.ds.userProfile;
+  myOrders = computed(() => {
+    const userEmail = this.profile()?.email;
+    return this.ds.orders().filter(o => o.customerEmail === userEmail);
+  });
   
   activeTab = signal('dashboard');
   
@@ -98,9 +104,9 @@ export class Account {
       const currentPic = this.profile()?.profileImage || '';
       try {
         await this.ds.updateProfileDetails(firstName, lastName, phone, currentPic);
-        alert('Profile details updated successfully!');
+        this.toastService.success('Profile details updated successfully!');
       } catch (err: any) {
-        alert(`Failed to update profile: ${err.message || err}`);
+        this.toastService.error(`Failed to update profile: ${err.message || err}`);
       }
     }
   }
@@ -109,15 +115,15 @@ export class Account {
     if (this.passwordForm.valid) {
       const { currentPassword, newPassword, confirmPassword } = this.passwordForm.value;
       if (newPassword !== confirmPassword) {
-        alert('New passwords do not match');
+        this.toastService.info('New passwords do not match');
         return;
       }
       try {
         await this.ds.changeUserPassword(currentPassword, newPassword);
-        alert('Password changed successfully!');
+        this.toastService.success('Password changed successfully!');
         this.passwordForm.reset();
       } catch (err: any) {
-        alert(`Failed to change password: ${err.message || err}`);
+        this.toastService.error(`Failed to change password: ${err.message || err}`);
       }
     }
   }
@@ -145,10 +151,10 @@ export class Account {
       const data = await res.json();
       if (data.url) {
         this.ds.userProfile.update(profile => profile ? { ...profile, profileImage: data.url } : null);
-        alert('Profile image uploaded successfully.');
+        this.toastService.success('Profile image uploaded successfully.');
       }
     } catch (e: any) {
-      alert(`Error uploading image: ${e.message}`);
+      this.toastService.error(`Error uploading image: ${e.message}`);
     }
   }
 }

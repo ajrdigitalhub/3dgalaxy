@@ -5,6 +5,7 @@ import { OrderService } from '../../shared/services/order.service';
 import { ProductService } from '../../shared/services/product.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { Order, Product } from '../../../services/datastore';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-order-list',
@@ -14,6 +15,7 @@ import { Order, Product } from '../../../services/datastore';
   styleUrl: './order-list.component.scss'
 })
 export class OrderListComponent {
+  toastService = inject(ToastService);
   orderService = inject(OrderService);
   productService = inject(ProductService);
 
@@ -53,9 +55,9 @@ export class OrderListComponent {
   async updateOrderStatus(orderId: string, status: string) {
     try {
       await this.orderService.updateOrderStatus(orderId, status);
-      alert('Order workflow updated!');
+      this.toastService.info('Order workflow updated!');
     } catch {
-      alert('Failed to update status.');
+      this.toastService.error('Failed to update status.');
     }
   }
 
@@ -102,11 +104,11 @@ export class OrderListComponent {
     const custName = this.draftCustomerName().trim();
     const custEmail = this.draftCustomerEmail().trim();
     if (!custName || !custEmail) {
-      alert('Customer name and email are mandatory for manual Draft Orders.');
+      this.toastService.info('Customer name and email are mandatory for manual Draft Orders.');
       return;
     }
     if (this.draftSelectedItemsList().length === 0) {
-      alert('Please add at least one physical SKU to manual draft.');
+      this.toastService.info('Please add at least one physical SKU to manual draft.');
       return;
     }
 
@@ -141,7 +143,7 @@ export class OrderListComponent {
 
     try {
       this.orderService.orders.update(all => [newOrder, ...all]);
-      alert(`Manual Order ${orderNum} generated successfully!`);
+      this.toastService.success(`Manual Order ${orderNum} generated successfully!`);
       // Reset state
       this.draftCustomerName.set('');
       this.draftCustomerEmail.set('');
@@ -151,14 +153,14 @@ export class OrderListComponent {
       this.draftDiscountPercent.set(0);
       this.setSubTab('orders');
     } catch {
-      alert('Failed: Write permission error. Please authenticate as Super Admin.');
+      this.toastService.error('Failed: Write permission error. Please authenticate as Super Admin.');
     }
   }
 
   // --- Recovery Blasts ---
   sendRecoveryBlast(id: string) {
     this.abandonedCartsList.update(all => all.map(c => c.id === id ? { ...c, recovered: true } : c));
-    alert('Mailing recovery coupon voucher successfully deployed.');
+    this.toastService.success('Mailing recovery coupon voucher successfully deployed.');
   }
 
   // --- Quotes Overrides ---
@@ -172,18 +174,18 @@ export class OrderListComponent {
   async approveEstimate(quoteId: string) {
     try {
       await this.orderService.updateQuoteStatus(quoteId, 'estimated');
-      alert('Estimate published to customer console.');
+      this.toastService.info('Estimate published to customer console.');
     } catch {
-      alert('Error publishing estimate.');
+      this.toastService.error('Error publishing estimate.');
     }
   }
 
   async completeQuoteFab(quoteId: string) {
     try {
       await this.orderService.updateQuoteStatus(quoteId, 'completed');
-      alert('Job marked as completed.');
+      this.toastService.info('Job marked as completed.');
     } catch {
-      alert('Error updating job status.');
+      this.toastService.error('Error updating job status.');
     }
   }
 

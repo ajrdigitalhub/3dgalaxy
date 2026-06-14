@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Order} from '../../services/datastore';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-orders-tracking',
@@ -12,6 +13,7 @@ import {DatastoreService, Order} from '../../services/datastore';
   styleUrl: './orders.scss'
 })
 export class OrdersTracking {
+  toastService = inject(ToastService);
   ds = inject(DatastoreService);
 
   searchPhoneQuery = signal<string>('');
@@ -80,22 +82,22 @@ Grand Net Payable (INR): ₹${ord.grandTotal} (Paid via ${ord.paymentMethod})
 ===================================================
 Thank you for building the future with 3D Galaxy!
     `;
-    alert(pdfData);
+    this.toastService.info(pdfData);
   }
 
   simulateDownload(name: string) {
-    alert(`DOWNLOAD STARTED: Curating download libraries for "${name}" safely inside your browser. Checkout your notifications!`);
+    this.toastService.info(`DOWNLOAD STARTED: Curating download libraries for "${name}" safely inside your browser. Checkout your notifications!`);
   }
 
   submitTicket() {
     const sub = this.ticketSub().trim();
     const desc = this.ticketDesc().trim();
     if (!sub || !desc) {
-      alert('WARNING: Kindly input subject and description details for helpdesk analysis.');
+      this.toastService.warning('WARNING: Kindly input subject and description details for helpdesk analysis.');
       return;
     }
 
-    alert(`SUPPORT TICKET SUBMITTED SUCCESS!\n\nReference Ticket ID: #TICK-${Math.floor(1000 + Math.random() * 9000)}\n\n3D Galaxy tech labs team will analyze your retraction profile and reply on your email: ${this.ds.activeUser().email} inside 6 hours.`);
+    this.toastService.success(`SUPPORT TICKET SUBMITTED SUCCESS!\n\nReference Ticket ID: #TICK-${Math.floor(1000 + Math.random() * 9000)}\n\n3D Galaxy tech labs team will analyze your retraction profile and reply on your email: ${this.ds.activeUser().email} inside 6 hours.`);
     this.ticketSub.set('');
     this.ticketDesc.set('');
   }

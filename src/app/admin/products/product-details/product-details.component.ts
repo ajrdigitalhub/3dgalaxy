@@ -6,6 +6,7 @@ import { ProductService } from '../../shared/services/product.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ImagePreviewComponent } from '../../shared/components/image-preview/image-preview.component';
 import { Product } from '../../../services/datastore';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-product-details',
@@ -15,6 +16,7 @@ import { Product } from '../../../services/datastore';
   styleUrl: './product-details.component.scss'
 })
 export class ProductDetailsComponent implements OnInit {
+  toastService = inject(ToastService);
   productService = inject(ProductService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -58,9 +60,9 @@ export class ProductDetailsComponent implements OnInit {
         ...p,
         stock: targetStock
       });
-      alert('Stock allocation adjusted.');
+      this.toastService.info('Stock allocation adjusted.');
     } catch {
-      alert('Operation failed.');
+      this.toastService.error('Operation failed.');
     }
   }
 

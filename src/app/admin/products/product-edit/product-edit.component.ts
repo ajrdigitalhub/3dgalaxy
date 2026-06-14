@@ -7,6 +7,7 @@ import { CategoryService } from '../../shared/services/category.service';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { Product } from '../../../services/datastore';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-product-edit',
@@ -16,6 +17,7 @@ import { Product } from '../../../services/datastore';
   styleUrl: './product-edit.component.scss'
 })
 export class ProductEditComponent implements OnInit {
+  toastService = inject(ToastService);
   productService = inject(ProductService);
   categoryService = inject(CategoryService);
   brandService = inject(BrandService);
@@ -93,7 +95,7 @@ export class ProductEditComponent implements OnInit {
     const id = this.productId();
     const name = this.pName().trim();
     if (!id || !name) {
-      alert('Name is required.');
+      this.toastService.error('Name is required.');
       return;
     }
 
@@ -114,7 +116,7 @@ export class ProductEditComponent implements OnInit {
         variantsArr = JSON.parse(vText);
       }
     } catch {
-      alert('Invalid Variants JSON. Correct or empty this field.');
+      this.toastService.error('Invalid Variants JSON. Correct or empty this field.');
       return;
     }
 
@@ -141,10 +143,10 @@ export class ProductEditComponent implements OnInit {
 
     try {
       await this.productService.editProduct(id, pData);
-      alert('Product updated successfully!');
+      this.toastService.success('Product updated successfully!');
       this.back();
     } catch {
-      alert('Operation failed. Verify privileges.');
+      this.toastService.error('Operation failed. Verify privileges.');
     }
   }
 

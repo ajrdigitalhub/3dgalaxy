@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-cart-checkout',
@@ -12,6 +13,7 @@ import {DatastoreService} from '../../services/datastore';
   styleUrl: './cart.scss'
 })
 export class CartCheckout {
+  toastService = inject(ToastService);
   ds = inject(DatastoreService);
   router = inject(Router);
 
@@ -77,7 +79,7 @@ export class CartCheckout {
     if (!code) return;
     const ok = this.ds.applyCoupon(code);
     if (!ok) {
-      alert('INVALID COUPON: Coupon code not registered or did not meet minimum spent requirements.');
+      this.toastService.error('INVALID COUPON: Coupon code not registered or did not meet minimum spent requirements.');
     }
   }
 
@@ -93,14 +95,14 @@ export class CartCheckout {
     const address = this.recipientAddress().trim();
 
     if (!name || !phone || !email || !address) {
-      alert('WARNING: Kindly fill out complete recipient details and dispatch address to place order.');
+      this.toastService.warning('WARNING: Kindly fill out complete recipient details and dispatch address to place order.');
       return;
     }
 
     if (this.selectedPayment() === 'Razorpay') {
       const confirmPayment = confirm('🚀 Redirecting to Razorpay Secure Gateway...\n\n(Simulation: Click OK to simulate a successful Card/Netbanking payment verification.)');
       if (!confirmPayment) {
-        alert('Payment cancelled by user.');
+        this.toastService.info('Payment cancelled by user.');
         return;
       }
     }
@@ -115,12 +117,12 @@ export class CartCheckout {
       });
 
       // Notify user with elegant redirect
-      alert(`ORDER PLACED SUCCESSFULLY!\n\nYour order number is: ${order.orderNumber}\nTransaction amount: ₹${order.grandTotal}.\n\nInvoice has been generated.`);
+      this.toastService.success(`ORDER PLACED SUCCESSFULLY!\n\nYour order number is: ${order.orderNumber}\nTransaction amount: ₹${order.grandTotal}.\n\nInvoice has been generated.`);
       
       // Programmatic routing to tracking page
       this.router.navigate(['/orders']);
     } catch {
-      alert('Checkout Failed: Access Denied or Network Error. Ensure you are logged in or try again.');
+      this.toastService.error('Checkout Failed: Access Denied or Network Error. Ensure you are logged in or try again.');
     }
   }
 }

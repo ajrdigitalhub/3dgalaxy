@@ -88,7 +88,7 @@
               <a [routerLink]="['/']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2 hover:text-blue-500 transition-colors">
                 <mat-icon class="text-neutral-400">favorite_border</mat-icon> Wishlist
               </a>
-              <a [routerLink]="['/']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2 hover:text-blue-500 transition-colors">
+              <a [routerLink]="['/account']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2 hover:text-blue-500 transition-colors">
                 <mat-icon class="text-neutral-400">person_outline</mat-icon> Account Details
               </a>
               <a [routerLink]="['/returns']" (click)="isMobileMenuOpen.set(false)" class="flex items-center gap-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2 hover:text-blue-500 transition-colors">
@@ -245,6 +245,9 @@
 
               <!-- Links lists -->
               <div class="space-y-1 py-1 text-[10px] font-black uppercase tracking-widest">
+                <a [routerLink]="['/account']" (click)="isRoleDropdownOpen.set(false)" class="flex items-center gap-2 px-3 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-blue-500 transition-all">
+                  <mat-icon class="scale-75 text-neutral-400">person</mat-icon> Manage Account
+                </a>
                 <a [routerLink]="['/orders']" (click)="isRoleDropdownOpen.set(false)" class="flex items-center gap-2 px-3 py-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900 hover:text-blue-500 transition-all">
                   <mat-icon class="scale-75 text-neutral-400">local_shipping</mat-icon> Track Orders
                 </a>
@@ -465,4 +468,5 @@
     </div>
   </footer>
 
+  <app-toast-container></app-toast-container>
 </div>

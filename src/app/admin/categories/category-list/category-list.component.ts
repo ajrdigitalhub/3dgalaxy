@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { CategoryService } from '../../shared/services/category.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { Category } from '../../../services/datastore';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-category-list',
@@ -13,6 +14,7 @@ import { Category } from '../../../services/datastore';
   styleUrl: './category-list.component.scss'
 })
 export class CategoryListComponent {
+  toastService = inject(ToastService);
   categoryService = inject(CategoryService);
 
   // Form states
@@ -59,7 +61,7 @@ export class CategoryListComponent {
   async saveCategory() {
     const name = this.newCatName().trim();
     if (!name) {
-      alert('Category Name is required.');
+      this.toastService.error('Category Name is required.');
       return;
     }
 
@@ -93,14 +95,14 @@ export class CategoryListComponent {
     try {
       if (editing) {
         await this.categoryService.editCategory(editing.id, catData);
-        alert('Category updated securely!');
+        this.toastService.info('Category updated securely!');
       } else {
         await this.categoryService.addCategory(catData);
-        alert('Category added successfully!');
+        this.toastService.success('Category added successfully!');
       }
       this.cancelCategoryEdit();
     } catch {
-      alert('Access Denied: You do not have permission to modify categories.');
+      this.toastService.error('Access Denied: You do not have permission to modify categories.');
     }
   }
 
@@ -108,9 +110,9 @@ export class CategoryListComponent {
     if (!confirm('Are you sure you want to delete this category?')) return;
     try {
       await this.categoryService.deleteCategory(id);
-      alert('Category removed.');
+      this.toastService.info('Category removed.');
     } catch {
-      alert('Operation failed.');
+      this.toastService.error('Operation failed.');
     }
   }
 }

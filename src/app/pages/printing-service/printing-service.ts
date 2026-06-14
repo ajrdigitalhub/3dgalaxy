@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-printing-service',
@@ -12,6 +13,7 @@ import {DatastoreService} from '../../services/datastore';
   styleUrl: './printing-service.scss'
 })
 export class PrintingService {
+  toastService = inject(ToastService);
   ds = inject(DatastoreService);
 
   // Selector Settings State
@@ -134,9 +136,9 @@ export class PrintingService {
 
       // Clear notes text
       this.notesText.set('');
-      alert('SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list on the right!');
+      this.toastService.success('SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list on the right!');
     } catch {
-      alert('Quotation Submission Failed: Access Denied or Network Error.');
+      this.toastService.error('Quotation Submission Failed: Access Denied or Network Error.');
     }
   }
 
@@ -144,7 +146,7 @@ export class PrintingService {
     try {
       await this.ds.approveQuote(quoteId);
     } catch {
-      alert('Access Denied or Network Error.');
+      this.toastService.error('Access Denied or Network Error.');
     }
   }
 
@@ -152,7 +154,7 @@ export class PrintingService {
     try {
       await this.ds.rejectQuote(quoteId);
     } catch {
-      alert('Access Denied or Network Error.');
+      this.toastService.error('Access Denied or Network Error.');
     }
   }
 }

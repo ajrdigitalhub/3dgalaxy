@@ -6,6 +6,7 @@ import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-product-create',
@@ -15,6 +16,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   styleUrl: './product-create.component.scss'
 })
 export class ProductCreateComponent {
+  toastService = inject(ToastService);
   productService = inject(ProductService);
   categoryService = inject(CategoryService);
   brandService = inject(BrandService);
@@ -40,7 +42,7 @@ export class ProductCreateComponent {
   async saveProduct() {
     const name = this.pName().trim();
     if (!name) {
-      alert('Name is required.');
+      this.toastService.error('Name is required.');
       return;
     }
 
@@ -59,7 +61,7 @@ export class ProductCreateComponent {
         variantsArr = JSON.parse(vText);
       }
     } catch {
-      alert('Invalid Variants JSON. Correct or empty this field.');
+      this.toastService.error('Invalid Variants JSON. Correct or empty this field.');
       return;
     }
 
@@ -90,10 +92,10 @@ export class ProductCreateComponent {
 
     try {
       await this.productService.addProduct(pData);
-      alert('Product created successfully!');
+      this.toastService.success('Product created successfully!');
       this.back();
     } catch {
-      alert('Operation failed. Verify privileges.');
+      this.toastService.error('Operation failed. Verify privileges.');
     }
   }
 

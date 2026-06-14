@@ -25,6 +25,7 @@ import {AdminContentTab} from './components/content-tab';
 import {AdminMarketingTab} from './components/marketing-tab';
 import {AdminAnalyticsTab} from './components/analytics-tab';
 import {AdminSettingsTab} from './components/settings-tab';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 export type AdminTab =
   | 'dashboard'
@@ -56,6 +57,7 @@ export type AdminTab =
   styleUrl: './admin.scss'
 })
 export class AdminPanel {
+  toastService = inject(ToastService);
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
 
@@ -505,7 +507,7 @@ export class AdminPanel {
     try {
       await this.ds.updateOrderStatus(orderId, nextStatus, trackingNumber);
     } catch {
-      alert('FAILED to update order status: Access Denied or Network Error.');
+      this.toastService.error('FAILED to update order status: Access Denied or Network Error.');
     }
   }
 
@@ -540,7 +542,7 @@ export class AdminPanel {
 
   async saveCategory() {
     const name = this.newCatName().trim();
-    if (!name) return alert('Category Name is required.');
+    if (!name) return this.toastService.error('Category Name is required.');
     
     // Calculate display order
     let finalOrder = 1;
@@ -572,14 +574,14 @@ export class AdminPanel {
     try {
       if (this.editingCategory()) {
         await this.ds.editCategory(this.editingCategory()!.id, catData);
-        alert('Category updated securely!');
+        this.toastService.info('Category updated securely!');
       } else {
         await this.ds.addCategory(catData);
-        alert('Category added successfully!');
+        this.toastService.success('Category added successfully!');
       }
       this.cancelCategoryEdit();
     } catch {
-      alert('Access Denied: You do not have permission to modify categories.');
+      this.toastService.error('Access Denied: You do not have permission to modify categories.');
     }
   }
 
@@ -588,7 +590,7 @@ export class AdminPanel {
     try {
       await this.ds.deleteCategory(id);
     } catch {
-      alert('Access Denied: Action restricted.');
+      this.toastService.error('Access Denied: Action restricted.');
     }
   }
 
@@ -617,7 +619,7 @@ export class AdminPanel {
 
   async saveBrand() {
     const name = this.brandName().trim();
-    if (!name) return alert('Brand name is required.');
+    if (!name) return this.toastService.error('Brand name is required.');
     const slug = this.brandSlug().trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     const brandData: any = {
@@ -633,14 +635,14 @@ export class AdminPanel {
     try {
       if (this.editingBrand()) {
         await this.ds.editBrand(this.editingBrand().id, brandData);
-        alert('Brand updated successfully!');
+        this.toastService.success('Brand updated successfully!');
       } else {
         await this.ds.addBrand(brandData);
-        alert('Brand added successfully!');
+        this.toastService.success('Brand added successfully!');
       }
       this.cancelBrandEdit();
     } catch {
-      alert('Access Denied: Brand-level authentication token is missing or expired.');
+      this.toastService.error('Access Denied: Brand-level authentication token is missing or expired.');
     }
   }
 
@@ -648,9 +650,9 @@ export class AdminPanel {
     if (!confirm('Are you sure you want to delete this Brand?')) return;
     try {
       await this.ds.deleteBrand(id);
-      alert('Brand deleted successfully.');
+      this.toastService.success('Brand deleted successfully.');
     } catch {
-      alert('Access Denied: Delete Brand operation failed.');
+      this.toastService.error('Access Denied: Delete Brand operation failed.');
     }
   }
 
@@ -675,7 +677,7 @@ export class AdminPanel {
 
   async saveMenuItem() {
     const label = this.menuLabel().trim();
-    if (!label) return alert('Menu Label is required.');
+    if (!label) return this.toastService.error('Menu Label is required.');
 
     const itemData: any = {
       label,
@@ -688,14 +690,14 @@ export class AdminPanel {
     try {
       if (this.editingMenuItem()) {
         await this.ds.editMenuItem(this.editingMenuItem().id, itemData);
-        alert('Menu Item updated successfully!');
+        this.toastService.success('Menu Item updated successfully!');
       } else {
         await this.ds.addMenuItem(itemData);
-        alert('Menu Item created successfully!');
+        this.toastService.success('Menu Item created successfully!');
       }
       this.cancelMenuItemEdit();
     } catch {
-      alert('Access Denied: Menu builder option failed.');
+      this.toastService.error('Access Denied: Menu builder option failed.');
     }
   }
 
@@ -703,9 +705,9 @@ export class AdminPanel {
     if (!confirm('Are you sure you want to delete this menu item?')) return;
     try {
       await this.ds.deleteMenuItem(id);
-      alert('Menu Item deleted successfully.');
+      this.toastService.success('Menu Item deleted successfully.');
     } catch {
-      alert('Access Denied: Action failed.');
+      this.toastService.error('Access Denied: Action failed.');
     }
   }
 
@@ -783,7 +785,7 @@ export class AdminPanel {
 
   async saveProduct() {
     const name = this.pName().trim();
-    if (!name) return alert('Name is required.');
+    if (!name) return this.toastService.error('Name is required.');
 
     const isEdit = this.editingProduct() && this.editingProduct()?.id !== 'new';
     
@@ -804,7 +806,7 @@ export class AdminPanel {
         variantsArr = JSON.parse(vText);
       }
     } catch {
-      alert('Invalid Variants JSON. Correct or empty this field.');
+      this.toastService.error('Invalid Variants JSON. Correct or empty this field.');
       return;
     }
 
@@ -837,14 +839,14 @@ export class AdminPanel {
     try {
       if (isEdit) {
         await this.ds.editProduct(this.editingProduct()!.id, pData);
-        alert('Product updated successfully!');
+        this.toastService.success('Product updated successfully!');
       } else {
         await this.ds.addProduct(pData);
-        alert('Product created successfully!');
+        this.toastService.success('Product created successfully!');
       }
       this.cancelProductEdit();
     } catch {
-      alert('Save failed: Verify administrator privileges.');
+      this.toastService.error('Save failed: Verify administrator privileges.');
     }
   }
 
@@ -854,7 +856,7 @@ export class AdminPanel {
     try {
       await this.ds.updateProductStock(productId, Math.max(0, p.stock + adjustment));
     } catch {
-      alert('Access Denied.');
+      this.toastService.error('Access Denied.');
     }
   }
 
@@ -883,7 +885,7 @@ export class AdminPanel {
     try {
       await this.ds.updateQuoteStatus(quoteId, status);
     } catch {
-      alert('Access Denied.');
+      this.toastService.error('Access Denied.');
     }
   }
 
@@ -897,18 +899,18 @@ export class AdminPanel {
   async approveEstimate(quoteId: string) {
     try {
       await this.ds.updateQuoteStatus(quoteId, 'estimated');
-      alert('Estimate published to customer console.');
+      this.toastService.info('Estimate published to customer console.');
     } catch {
-      alert('Error publishing estimate.');
+      this.toastService.error('Error publishing estimate.');
     }
   }
 
   async completeQuoteFab(quoteId: string) {
     try {
       await this.ds.updateQuoteStatus(quoteId, 'completed');
-      alert('Job marked as completed.');
+      this.toastService.info('Job marked as completed.');
     } catch {
-      alert('Error updating job status.');
+      this.toastService.error('Error updating job status.');
     }
   }
 
@@ -921,7 +923,7 @@ export class AdminPanel {
     const title = this.newCampTitle().trim();
     const msg = this.newCampMsg().trim();
     if (!title || !msg) {
-      alert('WARNING: Title and message content cannot be blank.');
+      this.toastService.warning('WARNING: Title and message content cannot be blank.');
       return;
     }
 
@@ -956,18 +958,18 @@ export class AdminPanel {
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            alert(`WHATSAPP LIVE DISPATCH SUCCESS:\nContent: "${data.content}"\nStatus: ${data.status}\nLogged securely to Firestore database.`);
+            this.toastService.success(`WHATSAPP LIVE DISPATCH SUCCESS:\nContent: "${data.content}"\nStatus: ${data.status}\nLogged securely to Firestore database.`);
           } else {
-            alert(`WHATSAPP DISPATCH ERROR:\nStatus: ${data.status}\nReason: ${data.reason}`);
+            this.toastService.error(`WHATSAPP DISPATCH ERROR:\nStatus: ${data.status}\nReason: ${data.reason}`);
           }
         })
         .catch(err => {
           console.error(err);
-          alert('Network connection error dispatching WhatsApp message payload.');
+          this.toastService.error('Network connection error dispatching WhatsApp message payload.');
         });
       }
     } else {
-      alert(`SUCCESS: Campaign broadcast completed on type "${type}".`);
+      this.toastService.success(`SUCCESS: Campaign broadcast completed on type "${type}".`);
     }
 
     // Reset drafts
@@ -978,7 +980,7 @@ export class AdminPanel {
   // --- COLLECTIONS & BRANDS MANAGEMENT ---
   createCollection() {
     const name = this.newColName().trim();
-    if (!name) return alert('Collection Name is required.');
+    if (!name) return this.toastService.error('Collection Name is required.');
     this.collectionsList.update(all => [...all, {
       id: 'col-' + Date.now(),
       name,
@@ -988,7 +990,7 @@ export class AdminPanel {
     }]);
     this.newColName.set('');
     this.newColDesc.set('');
-    alert('Collection preset created!');
+    this.toastService.info('Collection preset created!');
   }
 
   toggleCollection(id: string) {
@@ -1001,7 +1003,7 @@ export class AdminPanel {
 
   createBrand() {
     const name = this.newBrandName().trim();
-    if (!name) return alert('Brand Name of manufacturer is required.');
+    if (!name) return this.toastService.error('Brand Name of manufacturer is required.');
     this.brandsList.update(all => [...all, {
       id: 'brand-' + Date.now(),
       name,
@@ -1009,7 +1011,7 @@ export class AdminPanel {
       active: true
     }]);
     this.newBrandName.set('');
-    alert('Manufacturer brand registered!');
+    this.toastService.info('Manufacturer brand registered!');
   }
 
   toggleBrand(id: string) {
@@ -1029,7 +1031,7 @@ export class AdminPanel {
     if (!text.trim()) return;
     this.reviewsList.update(all => all.map(r => r.id === id ? { ...r, response: text } : r));
     this.tempResponseText.update(cur => ({ ...cur, [id]: '' }));
-    alert('Response saved and published.');
+    this.toastService.info('Response saved and published.');
   }
 
   // --- REWARD POINTS CUSTOMIZER ---
@@ -1073,11 +1075,11 @@ export class AdminPanel {
     const custName = this.draftCustomerName().trim();
     const custEmail = this.draftCustomerEmail().trim();
     if (!custName || !custEmail) {
-      alert('Customer name and email are mandatory for manual Draft Orders.');
+      this.toastService.info('Customer name and email are mandatory for manual Draft Orders.');
       return;
     }
     if (this.draftSelectedItemsList().length === 0) {
-      alert('Please add at least one physical SKU to manual draft.');
+      this.toastService.info('Please add at least one physical SKU to manual draft.');
       return;
     }
 
@@ -1112,7 +1114,7 @@ export class AdminPanel {
 
     try {
       await setDoc(doc(db, 'orders', randomId), newOrder);
-      alert(`Manual Order ${orderNum} generated successfully on network database!`);
+      this.toastService.success(`Manual Order ${orderNum} generated successfully on network database!`);
       // Reset state
       this.draftCustomerName.set('');
       this.draftCustomerEmail.set('');
@@ -1122,7 +1124,7 @@ export class AdminPanel {
       this.draftDiscountPercent.set(0);
       this.setActiveTab('orders');
     } catch {
-      alert('Failed: Write permission error. Please authenticate as Super Admin.');
+      this.toastService.error('Failed: Write permission error. Please authenticate as Super Admin.');
     }
   }
 
@@ -1135,13 +1137,13 @@ export class AdminPanel {
 
   sendRecoveryBlast(id: string) {
     this.abandonedCartsList.update(all => all.map(c => c.id === id ? { ...c, recovered: true } : c));
-    alert('SUCCESS: Recovery coupon code dispatched to customer inbox client.');
+    this.toastService.success('SUCCESS: Recovery coupon code dispatched to customer inbox client.');
   }
 
   // --- COUPONS CRUD CONTROLS ---
   async addCouponCustom() {
     const code = this.newCouponCode().trim().toUpperCase();
-    if (!code) return alert('Coupon identifier string cannot be blank.');
+    if (!code) return this.toastService.info('Coupon identifier string cannot be blank.');
     try {
       await this.ds.addCoupon({
         code,
@@ -1149,9 +1151,9 @@ export class AdminPanel {
         minSpent: this.newCouponMinSpent()
       });
       this.newCouponCode.set('');
-      alert(`Coupon ${code} configured on network database!`);
+      this.toastService.info(`Coupon ${code} configured on network database!`);
     } catch {
-      alert('Error creating coupon.');
+      this.toastService.error('Error creating coupon.');
     }
   }
 
@@ -1159,9 +1161,9 @@ export class AdminPanel {
     if (!confirm(`Are you sure you want to delete coupon "${code}"?`)) return;
     try {
       await this.ds.deleteCoupon(code);
-      alert(`Coupon ${code} removed.`);
+      this.toastService.info(`Coupon ${code} removed.`);
     } catch {
-      alert('Error deleting coupon.');
+      this.toastService.error('Error deleting coupon.');
     }
   }
 
@@ -1169,7 +1171,7 @@ export class AdminPanel {
   async publishBlogPost() {
     const title = this.newBlogTitle().trim();
     const content = this.newBlogContent().trim();
-    if (!title || !content) return alert('Title and Content body cannot be blank.');
+    if (!title || !content) return this.toastService.info('Title and Content body cannot be blank.');
     const blog = {
       title,
       slug: title.toLowerCase().replace(/\s+/g, '-'),
@@ -1182,12 +1184,12 @@ export class AdminPanel {
     };
     try {
       await this.ds.addBlogPost(blog);
-      alert('Blog post published!');
+      this.toastService.info('Blog post published!');
       this.newBlogTitle.set('');
       this.newBlogExcerpt.set('');
       this.newBlogContent.set('');
     } catch {
-      alert('Error writing blog entry.');
+      this.toastService.error('Error writing blog entry.');
     }
   }
 
@@ -1195,16 +1197,16 @@ export class AdminPanel {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     try {
       await this.ds.deleteBlogPost(id);
-      alert('Blog destroyed.');
+      this.toastService.info('Blog destroyed.');
     } catch {
-      alert('Error deleting entry.');
+      this.toastService.error('Error deleting entry.');
     }
   }
 
   createFaq() {
     const q = this.newFaqQuestion().trim();
     const a = this.newFaqAnswer().trim();
-    if (!q || !a) return alert('Question and Answer are required.');
+    if (!q || !a) return this.toastService.error('Question and Answer are required.');
     this.faqsList.update(all => [...all, {
       id: 'faq-' + Date.now(),
       question: q,
@@ -1213,7 +1215,7 @@ export class AdminPanel {
     }]);
     this.newFaqQuestion.set('');
     this.newFaqAnswer.set('');
-    alert('FAQ added.');
+    this.toastService.info('FAQ added.');
   }
 
   deleteFaq(faqId: string) {
@@ -1223,7 +1225,7 @@ export class AdminPanel {
   // --- SHIPPING SETTINGS ---
   createShippingZone() {
     const zone = this.newShippingZoneName().trim();
-    if (!zone) return alert('Zone label required.');
+    if (!zone) return this.toastService.error('Zone label required.');
     this.shippingZones.update(all => [...all, {
       id: 'sz-' + Date.now(),
       zone,
@@ -1232,7 +1234,7 @@ export class AdminPanel {
       freeThreshold: 999
     }]);
     this.newShippingZoneName.set('');
-    alert('Shipping zone programmed.');
+    this.toastService.info('Shipping zone programmed.');
   }
 
   deleteShippingZone(id: string) {
@@ -1254,7 +1256,7 @@ export class AdminPanel {
       await this.ds.updateHomeLayout(layout);
     } catch (err) {
       console.error('Failed to update home layout order:', err);
-      alert('Access Denied: You do not have permission to modify system layouts.');
+      this.toastService.error('Access Denied: You do not have permission to modify system layouts.');
     }
   }
 
@@ -1269,7 +1271,7 @@ export class AdminPanel {
       await this.ds.updateHomeLayout(layout);
     } catch (err) {
       console.error('Failed to toggle home layout section:', err);
-      alert('Access Denied: You do not have permission to modify system layouts.');
+      this.toastService.error('Access Denied: You do not have permission to modify system layouts.');
     }
   }
 }

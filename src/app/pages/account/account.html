@@ -44,7 +44,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
                 <p class="text-sm font-medium text-neutral-500 mb-1">Total Orders</p>
-                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
+                <p class="text-3xl font-black text-neutral-900 dark:text-white">{{ myOrders().length }}</p>
               </div>
               <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
                 <p class="text-sm font-medium text-neutral-500 mb-1">Wishlist</p>
@@ -58,11 +58,31 @@
             
             <div class="mt-8">
               <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Recent Orders</h3>
-              <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
-                <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
-                <p class="text-neutral-500 font-medium">No recent orders found.</p>
-                <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
-              </div>
+              <ng-container *ngIf="myOrders().length > 0; else noRecentDash">
+                <div class="space-y-3">
+                  <div *ngFor="let ord of myOrders().slice(0, 3)" class="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-800/20">
+                    <div>
+                      <p class="text-sm font-bold text-neutral-900 dark:text-white">Order {{ ord.orderNumber }}</p>
+                      <p class="text-xs text-neutral-500">{{ ord.date }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-neutral-900 dark:text-white">₹{{ ord.grandTotal }}</p>
+                      <span [ngClass]="{
+                        'text-emerald-600': ord.status === 'delivered',
+                        'text-blue-600': ord.status === 'processing',
+                        'text-yellow-600': ord.status === 'pending'
+                      }" class="text-xs font-bold uppercase tracking-wider">{{ ord.status }}</span>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #noRecentDash>
+                <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
+                  <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
+                  <p class="text-neutral-500 font-medium">No recent orders found.</p>
+                  <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
+                </div>
+              </ng-template>
             </div>
           </div>
         </ng-container>
@@ -181,40 +201,56 @@
             <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Orders</h2>
             
             <div class="space-y-4">
-              <!-- Example Order Card -->
-              <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
-                <div class="px-6 py-4 bg-white dark:bg-neutral-800/60 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
-                  <div>
-                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Placed</p>
-                    <p class="text-sm text-neutral-900 dark:text-white font-medium">12 Jun 2026</p>
+              <ng-container *ngIf="myOrders().length > 0; else noOrders">
+                <div *ngFor="let ord of myOrders()" class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
+                  <div class="px-6 py-4 bg-white dark:bg-neutral-800/60 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
+                    <div>
+                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Placed</p>
+                      <p class="text-sm text-neutral-900 dark:text-white font-medium">{{ ord.date }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Total</p>
+                      <p class="text-sm text-neutral-900 dark:text-white font-medium">₹{{ ord.grandTotal }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order #</p>
+                      <p class="text-sm text-neutral-900 dark:text-white font-mono">{{ ord.orderNumber }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span [ngClass]="{
+                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': ord.status === 'delivered',
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': ord.status === 'processing',
+                        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': ord.status === 'shipped',
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': ord.status === 'pending',
+                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': ord.status === 'cancelled'
+                      }" class="px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider">{{ ord.status }}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Total</p>
-                    <p class="text-sm text-neutral-900 dark:text-white font-medium">₹45,999</p>
-                  </div>
-                  <div>
-                    <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order #</p>
-                    <p class="text-sm text-neutral-900 dark:text-white font-mono">ORD-1001-XYZ</p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider">Delivered</span>
+                  <div class="px-6 py-5">
+                    <div class="flex items-center gap-4">
+                      <div class="w-16 h-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-1 flex items-center justify-center shrink-0">
+                        <mat-icon class="text-3xl text-neutral-400">inventory_2</mat-icon>
+                      </div>
+                      <div class="flex-1">
+                        <h4 class="font-bold text-neutral-900 dark:text-white">{{ ord.items[0].name || 'Items' }}</h4>
+                        <p class="text-sm text-neutral-500 mt-0.5" *ngIf="ord.items.length > 1">+ {{ ord.items.length - 1 }} other items</p>
+                        <p class="text-sm text-neutral-500 mt-0.5" *ngIf="ord.items.length === 1">Quantity: {{ ord.items[0].quantity || 1 }}</p>
+                      </div>
+                      <button routerLink="/orders" class="px-6 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors">
+                        View Details
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div class="px-6 py-5">
-                  <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-1">
-                      <img src="/api/placeholder/100/100" class="w-full h-full object-contain">
-                    </div>
-                    <div class="flex-1">
-                      <h4 class="font-bold text-neutral-900 dark:text-white">Bambu Lab P1S Combo</h4>
-                      <p class="text-sm text-neutral-500 mt-0.5">Quantity: 1</p>
-                    </div>
-                    <button class="px-6 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors">
-                      View Details
-                    </button>
-                  </div>
+              </ng-container>
+              
+              <ng-template #noOrders>
+                <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
+                  <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
+                  <p class="text-neutral-500 font-medium">No recent orders found.</p>
+                  <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
                 </div>
-              </div>
+              </ng-template>
             </div>
           </div>
         </ng-container>
