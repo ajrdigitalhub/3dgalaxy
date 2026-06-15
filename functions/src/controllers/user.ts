@@ -8,7 +8,7 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
       include: { roles: true },
       orderBy: { createdAt: 'desc' },
     });
-    const sanitized = list.map((u: any) => ({
+    const sanitized = list.map(u => ({
       id: u.id,
       email: u.email,
       firstName: u.firstName,
@@ -127,13 +127,13 @@ export const getRoles = async (req: AuthenticatedRequest, res: Response) => {
 
 export const createRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { name, permissions } = req.body;
-    if (!name || !permissions) {
-      return res.status(400).json({ error: 'Role name and permissions array are required' });
+    const { name, description } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Role name is required' });
     }
 
     const created = await prisma.role.create({
-      data: { name, permissions },
+      data: { name, description },
     });
 
     // Write audit log
@@ -156,11 +156,11 @@ export const createRole = async (req: AuthenticatedRequest, res: Response) => {
 export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, permissions } = req.body;
+    const { name, description } = req.body;
 
     const updated = await prisma.role.update({
       where: { id },
-      data: { name, permissions },
+      data: { name, description },
     });
 
     // Write audit log
@@ -170,13 +170,13 @@ export const updateRole = async (req: AuthenticatedRequest, res: Response) => {
         action: 'ROLE_UPDATE',
         entityType: 'Role',
         entityId: updated.id,
-        newData: JSON.stringify(`Modified access permissions of role: ${updated.name}`),
+        newData: JSON.stringify(`Modified role: ${updated.name}`),
       },
     });
 
     return res.status(200).json(updated);
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to update catalog role permissions', details: error.message });
+    return res.status(500).json({ error: 'Failed to update catalog role', details: error.message });
   }
 };
 

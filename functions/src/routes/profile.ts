@@ -1,7 +1,7 @@
 import express from 'express';
 import Busboy from 'busboy';
 import path from 'path';
-import { bucket } from '../config/firebase'; // Ensure this exists and exports `bucket`
+import { getStorageBucket } from '../config/firebase'; // Ensure this exists and exports `bucket`
 import { authenticateToken } from '../middleware/auth';
 import { getProfile, updateProfile, changePassword } from '../controllers/profile';
 
@@ -24,8 +24,9 @@ router.post('/image', (req: any, res: any) => {
 
   busboy.on('file', (name, file, info) => {
     const { filename, mimeType } = info;
+    const currentBucket = getStorageBucket();
     
-    if (!bucket) {
+    if (!currentBucket) {
       console.error('Upload attempted but bucket is not initialized');
       file.resume();
       return;
@@ -35,7 +36,7 @@ router.post('/image', (req: any, res: any) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const newFileName = uniqueSuffix + path.extname(filename);
 
-      const blob = bucket.file(`uploads/${newFileName}`);
+      const blob = currentBucket.file(`uploads/${newFileName}`);
       const blobStream = blob.createWriteStream({
         metadata: { contentType: mimeType },
         resumable: false
@@ -51,7 +52,7 @@ router.post('/image', (req: any, res: any) => {
           // getSignedUrl or just make it public.
           // Since our uploadFileToStorage uses makePublic, let's make it public.
           await blob.makePublic();
-          const url = `https://storage.googleapis.com/${bucket.name}/uploads/${newFileName}`;
+          const url = `https://storage.googleapis.com/${currentBucket.name}/uploads/${newFileName}`;
           resolve({ url, fileName: newFileName });
         } catch (err: any) {
           reject(err);

@@ -260,18 +260,18 @@
               <div class="shimmer-effect"></div>
 
               @if (p.images.length > 1) {
-                <img [src]="p.images[0]" 
+                <img [src]="p.images[0]?.url || p.images[0]" 
                      class="absolute inset-x-0 w-full h-full object-contain p-3 md:p-6 transition-opacity duration-500 md:group-hover:opacity-0" 
                      loading="lazy"
                      alt="{{p.name}}" 
                      referrerpolicy="no-referrer">
-                <img [src]="p.images[1]" 
+                <img [src]="p.images[1]?.url || p.images[1]" 
                      class="absolute inset-x-0 w-full h-full object-contain p-3 md:p-6 opacity-0 transition-all duration-500 md:group-hover:opacity-100 transform md:group-hover:scale-105" 
                      loading="lazy"
                      alt="{{p.name}}" 
                      referrerpolicy="no-referrer">
               } @else {
-                <img [src]="p.images[0]" 
+                <img [src]="p.images[0]?.url || p.images[0]" 
                      class="w-full h-full object-contain transform md:group-hover:scale-105 transition-transform duration-500" 
                      loading="lazy"
                      alt="{{p.name}}" 
@@ -298,7 +298,7 @@
                 </div>
               </div>
               
-              @if (p.mrp > activePrice(p)) {
+              @if (getMrp(p) > activePrice(p)) {
                 <div class="absolute top-2 left-2 md:top-4 md:left-4 px-1.5 py-0.5 md:px-2.5 md:py-1 bg-red-600 text-white text-[7px] md:text-[8px] font-black tracking-wide rounded-sm z-10 shadow-lg shadow-red-600/10 uppercase">
                   SALES
                 </div>
@@ -318,8 +318,8 @@
                 <!-- Pricing text formatting -->
                 <div class="flex flex-wrap items-baseline gap-1 md:gap-2">
                   <span class="text-xs md:text-base font-extrabold text-neutral-900 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-                  @if (p.mrp > activePrice(p)) {
-                    <span class="text-[9px] md:text-xs text-neutral-400 line-through font-medium">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+                  @if (getMrp(p) > activePrice(p)) {
+                    <span class="text-[9px] md:text-xs text-neutral-400 line-through font-medium">{{ getMrp(p) | currency:'INR':'symbol':'1.0-0' }}</span>
                   }
                 </div>
               </div>

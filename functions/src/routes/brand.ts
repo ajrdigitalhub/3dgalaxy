@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getBrands, getBrandById, getBrandBySlug, createBrand, updateBrand, deleteBrand } from '../controllers/brand';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -8,8 +8,8 @@ router.get('/', getBrands);
 router.get('/slug/:slug', getBrandBySlug);
 router.get('/:id', getBrandById);
 
-router.post('/', authenticateToken, requirePermission('write:brands'), createBrand);
-router.put('/:id', authenticateToken, requirePermission('write:brands'), updateBrand);
-router.delete('/:id', authenticateToken, requirePermission('write:brands'), deleteBrand);
+router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createBrand);
+router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateBrand);
+router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager']), deleteBrand);
 
 export default router;

@@ -40,6 +40,7 @@ export class Account {
 
   profileForm: FormGroup;
   passwordForm: FormGroup;
+  activeInvoice = signal<any>(null);
 
   constructor() {
     this.profileForm = this.fb.group({

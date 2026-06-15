@@ -45,12 +45,31 @@ export class ProductCreateComponent {
       this.toastService.error('Name is required.');
       return;
     }
+    const sku = this.pSku().trim();
+    if (!sku) {
+      this.toastService.error('SKU is required.');
+      return;
+    }
+    const catId = this.pCatId().trim();
+    if (!catId) {
+       this.toastService.error('Category is required.');
+       return;
+    }
+    const brandStr = this.pBrand().trim();
+    if (!brandStr) {
+       this.toastService.error('Brand is required.');
+       return;
+    }
 
     // Parse images from line breaks
     let imagesArr = ['https://picsum.photos/seed/' + Date.now() + '/800/800'];
     const textImgs = this.pImages().trim();
     if (textImgs) {
       imagesArr = textImgs.split('\n').map(x => x.trim()).filter(Boolean);
+    }
+    if (imagesArr.length === 0) {
+      this.toastService.error('Please upload at least one valid product image.');
+      return;
     }
 
     // Parse variants JSON block
@@ -67,27 +86,20 @@ export class ProductCreateComponent {
 
     const pData: any = {
       name,
-      brand: this.pBrand() || '3D Galaxy',
-      category_id: this.pCatId() || 'materials',
-      sku: this.pSku() || 'GLX-SKU-' + Math.floor(1000 + Math.random() * 9000),
-      barcode: Date.now().toString(),
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      sku,
+      brandId: brandStr,
+      categoryId: catId,
       mrp: this.pMrp(),
-      sale_price: this.pSale(),
-      dealer_price: this.pDealer(),
+      salePrice: this.pSale(),
+      dealerPrice: this.pDealer(),
       stock: this.pStock(),
       description: this.pDesc(),
-      long_description: this.pLongDesc(),
-      images: imagesArr,
+      images: imagesArr.map((url, i) => ({ url, isPrimary: i === 0, sortOrder: i })),
       variants: variantsArr,
-      status: this.pStatus(),
+      isActive: this.pStatus() === 'active',
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),
-      featured: false,
-      is360Supported: false,
-      tags: [this.pBrand() || '3D Galaxy'],
-      specs: [],
-      reviews: [],
-      qnas: []
     };
 
     try {

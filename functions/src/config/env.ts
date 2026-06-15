@@ -10,7 +10,7 @@ export const ENV = {
   PG_PORT: Number(process.env.PG_PORT || 5432),
   PG_SSL: process.env.PG_SSL === 'true',
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: Number(process.env.PORT || process.env.BACKEND_PORT || 8080),
+  PORT: process.env.BACKEND_PORT || 4000,
 };
 
 export const getDatabaseUrl = () => {

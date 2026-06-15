@@ -24,7 +24,6 @@ import { AdminPanel } from '../admin';
           <button (click)="admin.setActiveTab('shipping-settings')" [class.bg-zinc-100]="admin.activeTab() === 'shipping-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'shipping-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">local_shipping</mat-icon> Logistical rates</button>
           <button (click)="admin.setActiveTab('tax-settings')" [class.bg-zinc-100]="admin.activeTab() === 'tax-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'tax-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">percent</mat-icon> Tax codes</button>
           <button (click)="admin.setActiveTab('user-management')" [class.bg-zinc-100]="admin.activeTab() === 'user-management'" [class.dark:bg-zinc-800]="admin.activeTab() === 'user-management'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">badge</mat-icon> Team Staff</button>
-          <button (click)="admin.setActiveTab('roles-permissions')" [class.bg-zinc-100]="admin.activeTab() === 'roles-permissions'" [class.dark:bg-zinc-800]="admin.activeTab() === 'roles-permissions'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">gavel</mat-icon> Permissions</button>
         </div>
 
         <!-- ACTIVE DETAILS RIGHT CARD -->
@@ -163,23 +162,6 @@ import { AdminPanel } from '../admin';
                     <span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-500 border border-blue-500/15 rounded text-[8px] font-black uppercase tracking-widest">{{ user.role }}</span>
                   </div>
                 }
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB ROLES & Clearance PERMISSIONS -->
-          @if (admin.activeTab() === 'roles-permissions') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Clearance Level matrix</h3>
-              <div class="space-y-3 text-xs">
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-2">
-                  <h4 class="font-black text-blue-500 uppercase tracking-wider leading-none">Super Administrator clearance</h4>
-                  <p class="text-[10px] text-zinc-400 font-medium">Total physical overrides access configured. Full read/write key privileges unlocked.</p>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 rounded-xl space-y-2">
-                  <h4 class="font-black text-indigo-500 uppercase tracking-wider leading-none">Editor / Logistics clearances</h4>
-                  <p class="text-[10px] text-zinc-400 font-medium">Restricted write privileges. Blocks structural DB catalog deletions and firewall settings.</p>
-                </div>
               </div>
             </div>
           }

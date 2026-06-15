@@ -99,8 +99,7 @@ export class AdminComponent {
         { id: 'payment-settings', label: 'Payment Settings', icon: 'payment', route: 'settings/payment-settings' },
         { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping', route: 'settings/shipping-settings' },
         { id: 'tax-settings', label: 'Tax Settings', icon: 'percent', route: 'settings/tax-settings' },
-        { id: 'user-management', label: 'User Management', icon: 'settings/user-management', route: 'settings/user-management' },
-        { id: 'roles-permissions', label: 'Roles & Permissions', icon: 'gavel', route: 'settings/roles-permissions' }
+        { id: 'user-management', label: 'User Management', icon: 'settings/user-management', route: 'settings/user-management' }
       ]
     }
   ];

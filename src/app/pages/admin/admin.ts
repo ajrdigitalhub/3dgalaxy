@@ -35,7 +35,7 @@ export type AdminTab =
   | 'pages' | 'blogs' | 'faqs' | 'banners' | 'homepage-builder' | 'menu-builder'
   | 'coupons' | 'promotions' | 'email-campaigns' | 'push-notifications'
   | 'sales-reports' | 'product-reports' | 'customer-reports'
-  | 'store-settings' | 'theme-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'roles-permissions';
+  | 'store-settings' | 'theme-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management';
 
 @Component({
   selector: 'app-admin-panel',
@@ -151,8 +151,7 @@ export class AdminPanel {
         { id: 'payment-settings' as const, label: 'Payment Settings', icon: 'payment' },
         { id: 'shipping-settings' as const, label: 'Shipping Settings', icon: 'local_shipping' },
         { id: 'tax-settings' as const, label: 'Tax Settings', icon: 'percent' },
-        { id: 'user-management' as const, label: 'User Management', icon: 'badge' },
-        { id: 'roles-permissions' as const, label: 'Roles & Permissions', icon: 'gavel' }
+        { id: 'user-management' as const, label: 'User Management', icon: 'badge' }
       ]
     }
   ];

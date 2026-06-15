@@ -168,7 +168,7 @@
             <app-admin-analytics-tab [admin]="this" />
           }
 
-          @if (activeTab().endsWith('-settings') || activeTab() === 'user-management' || activeTab() === 'roles-permissions') {
+          @if (activeTab().endsWith('-settings') || activeTab() === 'user-management') {
             <app-admin-settings-tab [admin]="this" />
           }
         }

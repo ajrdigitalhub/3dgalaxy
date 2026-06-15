@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
-import { onRequest } from 'firebase-functions/v2/https'; // Native Gen 2 Wrapper
 
 import { ENV } from './config/env';
 
@@ -26,12 +25,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint for Cloud Run - responds immediately
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', message: '3D Galaxy API Engine is running' });
-});
-
-// Serve Static Uploads safely
+// Serve Static Uploads
 const uploadsPath = path.resolve(__dirname, '../../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
@@ -142,32 +136,11 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Primary Central Error Handling Matrix
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('SERVER PIPELINE ERROR OCCURRED:', err);
+  console.error('SERVER PIELINE ERROR OCCURRED:', err);
   res.status(err.status || 500).json({
     error: err.message || 'Severe server-side breakdown. Action halted.',
-    details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    details: ENV.NODE_ENV === 'development' ? err.stack : undefined,
   });
 });
-
-// =================================================================
-//  CRITICAL FIREBASE DEPLOYMENT LAYER (Gen 2 Cloud Run Configuration)
-// =================================================================
-
-// 1. Export the function with memory, timeout, and CORS adjustments natively
-// export const api = onRequest({ 
-//   cors: true,
-//   memory: "512MiB",       // Prisma requires slightly more overhead to warm up
-//   timeoutSeconds: 60,     // Grants the container plenty of time to pass health checks
-// }, app);
-
-// 2. Fallback Standalone server layer (For local mock development)
-// if (!process.env.FUNCTIONS_EMULATOR && !process.env.K_SERVICE) {
-//   const PORT = process.env.PORT || 8080;
-//   app.listen(PORT, () => {
-//     console.log(`===================================================`);
-//     console.log(`🚀 [LOCAL MOCK] Server listening on http://localhost:${PORT}`);
-//     console.log(`===================================================`);
-//   });
-// }
 
 export default app;

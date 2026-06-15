@@ -1,72 +1,64 @@
 import * as admin from 'firebase-admin';
 
-// Check if Firebase is already initialized
-if (!admin.apps.length) {
-  try {
-    const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
-    let credential;
+let storageInstance: any = null;
+let bucketInstance: any = null;
+let initialized = false;
 
-    if (base64ServiceAccount && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+export const getFirebaseAdmin = () => {
+  if (!initialized) {
+    if (!admin.apps.length) {
       try {
-        let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
-        // If the decoded string doesn't start with '{', it might be plain JSON
-        if (!decodedServiceAccount.trim().startsWith('{')) {
-          decodedServiceAccount = base64ServiceAccount;
+        const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
+        let credential;
+
+        if (base64ServiceAccount && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+          try {
+            let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
+            if (!decodedServiceAccount.trim().startsWith('{')) {
+              decodedServiceAccount = base64ServiceAccount;
+            }
+            credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
+          } catch (parseError) {
+            console.warn('Invalid Firebase Service Account JSON provided.');
+          }
         }
-        credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
-      } catch (parseError) {
-        console.warn('Invalid Firebase Service Account JSON provided. Storage functionality might fail.');
-        credential = admin.credential.applicationDefault();
+
+        admin.initializeApp({
+          credential,
+          storageBucket: process.env.APP_FIREBASE_STORAGE_BUCKET,
+        });
+        console.log('Firebase Admin SDK initialized successfully.');
+      } catch (error) {
+        console.error('Failed to initialize Firebase Admin:', error);
       }
-    } else {
-      console.warn('Firebase Service Account is missing. Storage functionality might fail.');
-      credential = admin.credential.applicationDefault();
     }
-
-    admin.initializeApp({
-      credential,
-      storageBucket: process.env.APP_FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin SDK initialized successfully.');
-  } catch (error) {
-    console.error('Failed to initialize Firebase Admin:', error);
+    initialized = true;
   }
-}
+  return admin;
+};
 
-export let storage: any;
-export let bucket: any;
-
-try {
-  if (admin.apps.length > 0) {
-    storage = admin.storage();
-    bucket = storage.bucket();
+export const getStorageBucket = () => {
+  if (!bucketInstance) {
+    const fbAdmin = getFirebaseAdmin();
+    if (fbAdmin.apps.length > 0) {
+      storageInstance = fbAdmin.storage();
+      bucketInstance = storageInstance.bucket();
+    }
   }
-} catch (e) {
-  console.error("Firebase Storage not available", e);
-}
+  return bucketInstance;
+};
 
-/**
- * Uploads a file buffer to Firebase Storage and returns the public download URL.
- * @param fileBuffer The file content buffer
- * @param destination The destination path in the bucket
- * @param mimeType The file's MIME type
- * @returns {Promise<string>} The public download URL
- */
 export const uploadFileToStorage = async (
   fileBuffer: Buffer,
   destination: string,
   mimeType: string
 ): Promise<string> => {
-  const file = bucket.file(destination);
-
-  await file.save(fileBuffer, {
-    metadata: {
-      contentType: mimeType,
-    },
-  });
-
-  // Make the file publicly accessible
+  const b = getStorageBucket();
+  if (!b) throw new Error("Firebase Storage is not initialized properly.");
+  
+  const file = b.file(destination);
+  await file.save(fileBuffer, { metadata: { contentType: mimeType } });
   await file.makePublic();
-
-  return `https://storage.googleapis.com/${bucket.name}/${destination}`;
+  return `https://storage.googleapis.com/${b.name}/${destination}`;
 };
+

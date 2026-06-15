@@ -12,7 +12,7 @@ import {
   createReview,
   approveReview,
 } from '../controllers/customer';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -22,16 +22,16 @@ router.post('/reviews', createReview);
 
 router.use(authenticateToken);
 
-router.get('/', requirePermission('read:users'), getCustomers);
-router.get('/:id', requirePermission('read:users'), getCustomerById);
-router.post('/', requirePermission('write:users'), createCustomer);
-router.put('/:id', requirePermission('write:users'), updateCustomer);
-router.delete('/:id', requirePermission('write:users'), deleteCustomer);
+router.get('/', requireRole(['Admin', 'Manager']), getCustomers);
+router.get('/:id', requireRole(['Admin', 'Manager']), getCustomerById);
+router.post('/', requireRole(['Admin']), createCustomer);
+router.put('/:id', requireRole(['Admin', 'Manager']), updateCustomer);
+router.delete('/:id', requireRole(['Admin']), deleteCustomer);
 
 router.post('/:customerId/address', manageAddress);
 router.delete('/address/:addressId', deleteAddress);
 router.post('/:customerId/wishlist', toggleWishlistItem);
 
-router.put('/reviews/:id/approve', requirePermission('write:reviews'), approveReview);
+router.put('/reviews/:id/approve', requireRole(['Admin', 'Manager']), approveReview);
 
 export default router;

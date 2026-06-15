@@ -28,15 +28,15 @@
             </div>
           </div>
         </td>
-        <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ p.category_id }}</td>
+        <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ p.categoryId || p.category_id || p.category?.name }}</td>
         <td class="py-4 font-mono text-zinc-500 text-[10px] uppercase">{{ p.sku }}</td>
         <td class="py-4">
           <span [class]="p.stock > 10 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase select-none">
             {{ p.stock }} units
           </span>
         </td>
-        <td class="py-4 font-mono font-bold">₹{{ p.sale_price | number }}</td>
-        <td class="py-4 font-mono text-emerald-500 font-bold">₹{{ p.dealer_price | number }}</td>
+        <td class="py-4 font-mono font-bold">₹{{ (p.salePrice || p.sale_price) | number }}</td>
+        <td class="py-4 font-mono text-emerald-500 font-bold">₹{{ (p.dealerPrice || p.dealer_price) | number }}</td>
         <td class="py-4 text-right">
           <div class="inline-flex gap-2">
             <button (click)="viewProductDetails(p.id)" class="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer border-none bg-none">

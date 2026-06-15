@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 import {
   getUsers,
   getUserById,
@@ -16,14 +16,14 @@ const router = Router();
 // Secure all access using universal JWT validation
 router.use(authenticateToken);
 
-router.get('/', requirePermission('read:users'), getUsers);
-router.get('/audit-logs', requirePermission('read:logs'), getAuditLogs);
-router.get('/roles', requirePermission('read:roles'), getRoles);
-router.post('/roles', requirePermission('write:roles'), createRole);
-router.put('/roles/:id', requirePermission('write:roles'), updateRole);
+router.get('/', requireRole(['Admin']), getUsers);
+router.get('/audit-logs', requireRole(['Admin']), getAuditLogs);
+router.get('/roles', requireRole(['Admin']), getRoles);
+router.post('/roles', requireRole(['Admin']), createRole);
+router.put('/roles/:id', requireRole(['Admin']), updateRole);
 
-router.get('/:id', requirePermission('read:users'), getUserById);
-router.put('/:id', requirePermission('write:users'), updateUser);
-router.delete('/:id', requirePermission('write:users'), deleteUser);
+router.get('/:id', requireRole(['Admin']), getUserById);
+router.put('/:id', requireRole(['Admin']), updateUser);
+router.delete('/:id', requireRole(['Admin']), deleteUser);
 
 export default router;

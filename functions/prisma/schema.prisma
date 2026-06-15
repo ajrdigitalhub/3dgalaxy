@@ -19,31 +19,9 @@ model Role {
   description String?
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at")
-  permissions RolePermission[]
   users       UserRole[]
 
   @@map("roles")
-}
-
-model Permission {
-  id        String           @id @default(uuid())
-  name      String           @unique
-  resource  String
-  action    String
-  createdAt DateTime         @default(now()) @map("created_at")
-  roles     RolePermission[]
-
-  @@map("permissions")
-}
-
-model RolePermission {
-  roleId       String     @map("role_id")
-  permissionId String     @map("permission_id")
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@id([roleId, permissionId])
-  @@map("role_permissions")
 }
 
 model User {

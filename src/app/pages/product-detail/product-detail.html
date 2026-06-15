@@ -25,9 +25,9 @@
           
           <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
           <div class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible">
-            @for (img of p.images; track img) {
-              <div [class]="(activeImage() === img || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:group-hover:scale-150 md:transition-transform md:duration-500 md:cursor-zoom-in' : 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:hidden'">
-                <img [src]="img" 
+            @for (img of p.images; track img?.url || img || $index) {
+              <div [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:group-hover:scale-150 md:transition-transform md:duration-500 md:cursor-zoom-in' : 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:hidden'">
+                <img [src]="getImageUrl(img)" 
                   class="max-h-full w-full object-contain md:pointer-events-auto"
                   loading="lazy"
                   alt="{{ p.name }}"
@@ -50,10 +50,10 @@
 
         <!-- Thumbnails (Hidden on purely mobile screens since it's swipeable) -->
         <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
-          @for (img of p.images; track img) {
+          @for (img of p.images; track img?.url || img || $index) {
             <button (click)="selectImage(img)" 
-                    [class]="activeImage() === img && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 transition-all'">
-              <img [src]="img" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
+                    [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 transition-all'">
+              <img [src]="getImageUrl(img)" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
             </button>
           }
           @if (p.is360Supported) {
@@ -117,8 +117,8 @@
           <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-end gap-3 sm:gap-4">
               <span class="text-4xl sm:text-5xl font-black text-neutral-950 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-              @if (p.mrp > activePrice(p)) {
-                <span class="text-lg sm:text-2xl line-through text-neutral-400 font-bold decoration-2 mb-1">{{ p.mrp | currency:'INR':'symbol':'1.0-0' }}</span>
+              @if (getMrp(p) > activePrice(p)) {
+                <span class="text-lg sm:text-2xl line-through text-neutral-400 font-bold decoration-2 mb-1">{{ getMrp(p) | currency:'INR':'symbol':'1.0-0' }}</span>
                 <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-1 rounded-md mb-1.5">-{{ mrpDiscountPercent(p) }}% OFF</span>
               }
             </div>
@@ -135,7 +135,7 @@
               <button (click)="addToCart(p)" class="flex-1 h-14 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 lg:gap-3 whitespace-nowrap px-4 lg:px-6">
                 <mat-icon class="scale-100">shopping_cart</mat-icon> Add To Cart
               </button>
-              <button class="flex-1 lg:flex-none h-14 px-4 lg:px-8 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap">
+              <button (click)="buyNow(p)" class="flex-1 lg:flex-none h-14 px-4 lg:px-8 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap">
                 Buy Now
               </button>
             </div>
@@ -345,7 +345,7 @@
             @for (rp of relatedProducts(); track rp.id) {
                <a [routerLink]="['/product', rp.slug]" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-orange-200 transition-all flex flex-col h-full">
                   <div class="relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4">
-                     <img [src]="rp.images[0]" class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform" />
+                     <img [src]="getImageUrl(rp.images?.[0])" class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform" />
                   </div>
                   <div class="flex flex-col flex-1">
                      <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2">{{ rp.brand }}</span>

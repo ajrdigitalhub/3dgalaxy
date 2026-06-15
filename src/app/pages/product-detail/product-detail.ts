@@ -1,6 +1,6 @@
 import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
 import {CommonModule, DOCUMENT} from '@angular/common';
-import {ActivatedRoute, RouterModule} from '@angular/router';
+import {ActivatedRoute, RouterModule, Router} from '@angular/router';
 import {Title, Meta} from '@angular/platform-browser';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Review} from '../../services/datastore';
@@ -81,26 +81,45 @@ export class ProductDetail {
   metaService = inject(Meta);
   document = inject(DOCUMENT);
 
+  activePrice(p: any): number {
+    return this.isDealerActive() ? (p.dealerPrice || p.dealer_price) : (p.salePrice || p.sale_price);
+  }
+
+  mrpDiscountPercent(p: any): number {
+    const sale = this.activePrice(p);
+    const mrp = p.mrp || p.basePrice || p.sale_price || p.salePrice || 1;
+    return Math.round(((mrp - sale) / mrp) * 100);
+  }
+
+  getMrp(p: any): number {
+    return p.mrp || p.basePrice;
+  }
+
+  getImageUrl(img: any): string {
+    return typeof img === 'string' ? img : img?.url || '';
+  }
+
   constructor() {
     this.route.params.subscribe(p => {
       if (p['slug']) {
         this.slug.set(p['slug']);
         const matched = this.ds.products().find(x => x.slug === p['slug']);
         if (matched) {
-          this.activeImage.set(matched.images[0]);
+          const firstImg = matched.images && matched.images.length > 0 ? this.getImageUrl(matched.images[0]) : '';
+          this.activeImage.set(firstImg);
           this.quantity.set(1);
           this.is360Active.set(false);
           this.rotationAngle.set(0);
 
           // Update SEO
-          const pageTitle = matched.seoTitle || `${matched.brand} ${matched.name} | 3D Galaxy`;
-          const pageDesc = matched.seoDescription || matched.description;
+          const pageTitle = (matched as any).seoTitle || `${matched.brand} ${matched.name} | 3D Galaxy`;
+          const pageDesc = (matched as any).seoDescription || matched.description;
           this.titleService.setTitle(pageTitle);
           this.metaService.updateTag({ name: 'description', content: pageDesc });
           this.metaService.updateTag({ property: 'og:title', content: pageTitle });
           this.metaService.updateTag({ property: 'og:description', content: pageDesc });
-          if (matched.images && matched.images.length > 0) {
-             this.metaService.updateTag({ property: 'og:image', content: matched.images[0] });
+          if (firstImg) {
+             this.metaService.updateTag({ property: 'og:image', content: firstImg });
           }
 
           let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
@@ -113,15 +132,6 @@ export class ProductDetail {
         }
       }
     });
-  }
-
-  activePrice(p: Product): number {
-    return this.isDealerActive() ? p.dealer_price : p.sale_price;
-  }
-
-  mrpDiscountPercent(p: Product): number {
-    const sale = this.activePrice(p);
-    return Math.round(((p.mrp - sale) / p.mrp) * 100);
   }
 
   adjustQty(diff: number) {
@@ -165,6 +175,12 @@ export class ProductDetail {
 
   addToCart(p: Product) {
     this.ds.addToCart(p, this.quantity());
+  }
+
+  router = inject(Router);
+
+  buyNow(p: Product) {
+    this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity() } });
   }
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION

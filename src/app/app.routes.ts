@@ -10,7 +10,9 @@ import {Login} from './pages/login/login';
 import {Account} from './pages/account/account';
 import {ForgotPassword} from './pages/forgot-password/forgot-password';
 import {ResetPassword} from './pages/reset-password/reset-password';
-import {authGuard, adminGuard} from './core/guards/auth.guard';
+import {authGuard, roleGuard} from './core/guards/auth.guard';
+import {CheckoutComponent} from './pages/checkout/checkout';
+import {OrderSuccessComponent} from './pages/checkout/order-success';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -20,11 +22,13 @@ export const routes: Routes = [
   { path: 'product/:slug', component: ProductDetail },
   { path: 'slicer', component: PrintingService },
   { path: 'cart', component: CartCheckout },
-  { path: 'orders', component: OrdersTracking },
+  { path: 'checkout', component: CheckoutComponent, canActivate: [authGuard] },
+  { path: 'order-success', component: OrderSuccessComponent, canActivate: [authGuard] },
+  { path: 'orders', component: OrdersTracking, canActivate: [authGuard] },
   { path: 'account', component: Account, canActivate: [authGuard] },
   { path: 'account/:tab', component: Account, canActivate: [authGuard] },
   { path: 'profile', component: Account, canActivate: [authGuard] },
-  { path: 'admin', component: AdminPanel, canActivate: [adminGuard] },
+  { path: 'admin', component: AdminPanel, canActivate: [roleGuard], data: { roles: ['Admin', 'Manager', 'Super Admin', 'admin', 'super-admin'] } },
   { path: 'login', component: Login },
   { path: 'register', component: Login },
   { path: 'forgot-password', component: ForgotPassword },

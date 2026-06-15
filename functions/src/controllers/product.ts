@@ -168,70 +168,110 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 
   try {
-    const created = await prisma.product.create({
-      data: {
-        name, slug, sku, description,
-        basePrice: parseFloat(mrp) || 0,
-        salePrice: parseFloat(salePrice) || 0,
-        dealerPrice: parseFloat(dealerPrice) || 0,
-        categoryId: categoryId || null,
-        brandId: brandId || null,
-        seo: {
-          create: { seoTitle, seoDescription, seoKeywords }
+    const validImages = (images || []).filter((img: any) => img?.url?.trim());
+    const validVariants = (variants || []).filter((v: any) => v?.name && v?.sku);
+    const validSpecs = (specifications || []).filter((s: any) => s?.name && s?.value);
+    const validDownloads = (downloads || []).filter((d: any) => d?.title && d?.fileUrl);
+    const validFeatures = (features || []).filter((f: any) => f?.title);
+    const validFaqs = (faqs || []).filter((f: any) => f?.question && f?.answer);
+
+    // Ensure categoryId and brandId are actual UUIDs. If they are not (e.g. they are names or slugs), we should ideally look them up.
+    // For now, if they are provided, we will assume they are IDs or handle gracefully if Prisma fails.
+    let resolvedCategoryId = categoryId || null;
+    let resolvedBrandId = brandId || null;
+
+    if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
+      const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
+      if (cat) resolvedCategoryId = cat.id;
+    }
+
+    if (resolvedBrandId && !resolvedBrandId.includes('-')) {
+      const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
+      if (brand) resolvedBrandId = brand.id;
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      return tx.product.create({
+        data: {
+          name, slug, sku, description,
+          basePrice: parseFloat(mrp) || 0,
+          salePrice: parseFloat(salePrice) || 0,
+          dealerPrice: parseFloat(dealerPrice) || 0,
+          categoryId: resolvedCategoryId,
+          brandId: resolvedBrandId,
+          seo: {
+            create: { seoTitle, seoDescription, seoKeywords }
+          },
+          ...(validVariants.length > 0 && {
+            variants: {
+              create: validVariants.map((v: any) => ({
+                name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
+              })),
+            }
+          }),
+          ...(validImages.length > 0 && {
+            images: {
+              create: validImages.map((img: any, idx: number) => ({
+                url: img.url, isPrimary: !!img.isPrimary, sortOrder: img.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validSpecs.length > 0 && {
+            specifications: {
+              create: validSpecs.map((s: any, idx: number) => ({
+                name: s.name, value: s.value, sortOrder: s.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validDownloads.length > 0 && {
+            downloads: {
+              create: validDownloads.map((d: any, idx: number) => ({
+                title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validFeatures.length > 0 && {
+            features: {
+              create: validFeatures.map((f: any, idx: number) => ({
+                icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validFaqs.length > 0 && {
+            faqs: {
+              create: validFaqs.map((f: any, idx: number) => ({
+                question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
+              })),
+            }
+          }),
+          ...(warranty?.warrantyPeriod && {
+            warranty: {
+              create: {
+                warrantyPeriod: warranty.warrantyPeriod,
+                warrantyType: warranty.warrantyType,
+                warrantyDescription: warranty.warrantyDescription
+              }
+            }
+          }),
+          ...(shipping?.deliveryTime && {
+            shipping: {
+              create: {
+                deliveryTime: shipping.deliveryTime,
+                shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
+                shippingRegions: shipping.shippingRegions
+              }
+            }
+          }),
         },
-        variants: variants ? {
-          create: variants.map((v: any) => ({
-            name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
-          })),
-        } : undefined,
-        images: images ? {
-          create: images.map((img: any, idx: number) => ({
-            url: img.url, isPrimary: !!img.isPrimary, sortOrder: img.sortOrder || idx
-          })),
-        } : undefined,
-        specifications: specifications ? {
-          create: specifications.map((s: any, idx: number) => ({
-            name: s.name, value: s.value, sortOrder: s.sortOrder || idx
-          })),
-        } : undefined,
-        downloads: downloads ? {
-          create: downloads.map((d: any, idx: number) => ({
-            title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
-          })),
-        } : undefined,
-        features: features ? {
-          create: features.map((f: any, idx: number) => ({
-            icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
-          })),
-        } : undefined,
-        faqs: faqs ? {
-          create: faqs.map((f: any, idx: number) => ({
-            question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
-          })),
-        } : undefined,
-        warranty: warranty ? {
-          create: {
-            warrantyPeriod: warranty.warrantyPeriod,
-            warrantyType: warranty.warrantyType,
-            warrantyDescription: warranty.warrantyDescription
-          }
-        } : undefined,
-        shipping: shipping ? {
-          create: {
-            deliveryTime: shipping.deliveryTime,
-            shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-            shippingRegions: shipping.shippingRegions
-          }
-        } : undefined,
-      },
-      include: {
-        variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
-      },
+        include: {
+          variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
+        },
+      });
     });
 
     return res.status(201).json({ success: true, message: 'Success', data: created });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to record Product SKU', details: error.message });
+    return res.status(500).json({ success: false, error: 'Failed to record Product SKU', message: error.message });
   }
 };
 
@@ -244,96 +284,134 @@ export const updateProduct = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    // Delete existing child relations before updates to prevent dangling keys
-    if (variants) await prisma.productVariant.deleteMany({ where: { productId: id } });
-    if (images) await prisma.productImage.deleteMany({ where: { productId: id } });
-    if (specifications) await prisma.productSpecification.deleteMany({ where: { productId: id } });
-    if (downloads) await prisma.productDownload.deleteMany({ where: { productId: id } });
-    if (features) await prisma.productFeature.deleteMany({ where: { productId: id } });
-    if (faqs) await prisma.productFaq.deleteMany({ where: { productId: id } });
+    const validImages = (images || []).filter((img: any) => img?.url?.trim());
+    const validVariants = (variants || []).filter((v: any) => v?.name && v?.sku);
+    const validSpecs = (specifications || []).filter((s: any) => s?.name && s?.value);
+    const validDownloads = (downloads || []).filter((d: any) => d?.title && d?.fileUrl);
+    const validFeatures = (features || []).filter((f: any) => f?.title);
+    const validFaqs = (faqs || []).filter((f: any) => f?.question && f?.answer);
 
-    const updated = await prisma.product.update({
-      where: { id },
-      data: {
-        name, slug, sku, description,
-        basePrice: mrp ? parseFloat(mrp) : undefined,
-        salePrice: salePrice ? parseFloat(salePrice) : undefined,
-        dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
-        categoryId: categoryId || undefined,
-        brandId: brandId || undefined,
-        seo: {
-          upsert: {
-            create: { seoTitle, seoDescription, seoKeywords },
-            update: { seoTitle, seoDescription, seoKeywords }
-          }
+    let resolvedCategoryId = categoryId || undefined;
+    let resolvedBrandId = brandId || undefined;
+
+    if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
+      const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
+      if (cat) resolvedCategoryId = cat.id;
+    }
+
+    if (resolvedBrandId && !resolvedBrandId.includes('-')) {
+      const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
+      if (brand) resolvedBrandId = brand.id;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      // Delete existing child relations before updates to prevent dangling keys
+      if (variants) await tx.productVariant.deleteMany({ where: { productId: id } });
+      if (images) await tx.productImage.deleteMany({ where: { productId: id } });
+      if (specifications) await tx.productSpecification.deleteMany({ where: { productId: id } });
+      if (downloads) await tx.productDownload.deleteMany({ where: { productId: id } });
+      if (features) await tx.productFeature.deleteMany({ where: { productId: id } });
+      if (faqs) await tx.productFaq.deleteMany({ where: { productId: id } });
+
+      return tx.product.update({
+        where: { id },
+        data: {
+          name, slug, sku, description,
+          basePrice: mrp ? parseFloat(mrp) : undefined,
+          salePrice: salePrice ? parseFloat(salePrice) : undefined,
+          dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
+          categoryId: resolvedCategoryId,
+          brandId: resolvedBrandId,
+          seo: {
+            upsert: {
+              create: { seoTitle, seoDescription, seoKeywords },
+              update: { seoTitle, seoDescription, seoKeywords }
+            }
+          },
+          ...(validVariants.length > 0 && {
+            variants: {
+              create: validVariants.map((v: any) => ({
+                name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
+              })),
+            }
+          }),
+          ...(validImages.length > 0 && {
+            images: {
+              create: validImages.map((i: any, idx: number) => ({
+                url: i.url, isPrimary: !!i.isPrimary, sortOrder: i.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validSpecs.length > 0 && {
+            specifications: {
+              create: validSpecs.map((s: any, idx: number) => ({
+                name: s.name, value: s.value, sortOrder: s.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validDownloads.length > 0 && {
+            downloads: {
+              create: validDownloads.map((d: any, idx: number) => ({
+                title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validFeatures.length > 0 && {
+            features: {
+              create: validFeatures.map((f: any, idx: number) => ({
+                icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
+              })),
+            }
+          }),
+          ...(validFaqs.length > 0 && {
+            faqs: {
+              create: validFaqs.map((f: any, idx: number) => ({
+                question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
+              })),
+            }
+          }),
+          ...(warranty?.warrantyPeriod && {
+            warranty: {
+              upsert: {
+                create: {
+                  warrantyPeriod: warranty.warrantyPeriod,
+                  warrantyType: warranty.warrantyType,
+                  warrantyDescription: warranty.warrantyDescription
+                },
+                update: {
+                  warrantyPeriod: warranty.warrantyPeriod,
+                  warrantyType: warranty.warrantyType,
+                  warrantyDescription: warranty.warrantyDescription
+                }
+              }
+            }
+          }),
+          ...(shipping?.deliveryTime && {
+            shipping: {
+              upsert: {
+                create: {
+                  deliveryTime: shipping.deliveryTime,
+                  shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
+                  shippingRegions: shipping.shippingRegions
+                },
+                update: {
+                  deliveryTime: shipping.deliveryTime,
+                  shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
+                  shippingRegions: shipping.shippingRegions
+                }
+              }
+            }
+          }),
         },
-        variants: variants ? {
-          create: variants.map((v: any) => ({
-            name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
-          })),
-        } : undefined,
-        images: images ? {
-          create: images.map((i: any, idx: number) => ({
-            url: i.url, isPrimary: !!i.isPrimary, sortOrder: i.sortOrder || idx
-          })),
-        } : undefined,
-        specifications: specifications ? {
-          create: specifications.map((s: any, idx: number) => ({
-            name: s.name, value: s.value, sortOrder: s.sortOrder || idx
-          })),
-        } : undefined,
-        downloads: downloads ? {
-          create: downloads.map((d: any, idx: number) => ({
-            title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
-          })),
-        } : undefined,
-        features: features ? {
-          create: features.map((f: any, idx: number) => ({
-            icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
-          })),
-        } : undefined,
-        faqs: faqs ? {
-          create: faqs.map((f: any, idx: number) => ({
-            question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
-          })),
-        } : undefined,
-        warranty: warranty ? {
-          upsert: {
-            create: {
-              warrantyPeriod: warranty.warrantyPeriod,
-              warrantyType: warranty.warrantyType,
-              warrantyDescription: warranty.warrantyDescription
-            },
-            update: {
-              warrantyPeriod: warranty.warrantyPeriod,
-              warrantyType: warranty.warrantyType,
-              warrantyDescription: warranty.warrantyDescription
-            }
-          }
-        } : undefined,
-        shipping: shipping ? {
-          upsert: {
-            create: {
-              deliveryTime: shipping.deliveryTime,
-              shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-              shippingRegions: shipping.shippingRegions
-            },
-            update: {
-              deliveryTime: shipping.deliveryTime,
-              shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-              shippingRegions: shipping.shippingRegions
-            }
-          }
-        } : undefined,
-      },
-      include: {
-        variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
-      },
+        include: {
+          variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
+        },
+      });
     });
 
     return res.status(200).json({ success: true, message: 'Success', data: updated });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to apply product SKU updates', details: error.message });
+    return res.status(500).json({ success: false, error: 'Failed to apply product SKU updates', message: error.message });
   }
 };
 

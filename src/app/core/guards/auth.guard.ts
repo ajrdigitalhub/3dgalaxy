@@ -27,7 +27,7 @@ export const authGuard: CanActivateFn = async (route, state) => {
   return false;
 };
 
-export const adminGuard: CanActivateFn = async (route, state) => {
+export const roleGuard: CanActivateFn = async (route, state) => {
   const router = inject(Router);
   const ds = inject(DatastoreService);
 
@@ -43,12 +43,29 @@ export const adminGuard: CanActivateFn = async (route, state) => {
     });
   }
 
+  const profile = ds.userProfile();
   const role = ds.userRole();
-  if (ds.userProfile() && (role === 'admin' || role === 'super-admin')) {
-    return true;
+
+  if (!profile) {
+    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    return false;
   }
 
-  // Redirect to home page
-  router.navigate(['/']);
-  return false;
+  const allowedRoles = (route.data && route.data['roles']) as string[] | undefined;
+
+  if (allowedRoles) {
+    // Map internal lowercase role names to requested format if needed
+    // or just check if it matches.
+    const normalizedRole = role === 'super-admin' ? 'Super Admin' : (role.charAt(0).toUpperCase() + role.slice(1));
+    
+    // Super Admin has all access
+    if (normalizedRole === 'Super Admin' || allowedRoles.includes(normalizedRole) || allowedRoles.includes(role)) {
+      return true;
+    }
+
+    router.navigate(['/']);
+    return false;
+  }
+
+  return true; // No roles defined, so it's unrestricted after auth
 };

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getProducts, getProductById, getProductBySlug, createProduct, updateProduct, deleteProduct } from '../controllers/product';
 import { getProductImages, uploadProductImages, uploadProductImagesBySlug, deleteProductImage, setPrimaryImage, reorderImages } from '../controllers/productImage';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -9,16 +9,16 @@ router.get('/', getProducts);
 router.get('/slug/:slug', getProductBySlug);
 router.get('/:id', getProductById);
 
-router.post('/', authenticateToken, requirePermission('write:products'), createProduct);
-router.put('/:id', authenticateToken, requirePermission('write:products'), updateProduct);
-router.delete('/:id', authenticateToken, requirePermission('write:products'), deleteProduct);
+router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createProduct);
+router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateProduct);
+router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager']), deleteProduct);
 
 // Image routes
 router.get('/:productId/images', getProductImages);
-router.post('/slug/:slug/images', authenticateToken, requirePermission('write:products'), uploadProductImagesBySlug);
-router.post('/:productId/images', authenticateToken, requirePermission('write:products'), uploadProductImages);
-router.delete('/images/:imageId', authenticateToken, requirePermission('write:products'), deleteProductImage);
-router.put('/images/:imageId/primary', authenticateToken, requirePermission('write:products'), setPrimaryImage);
-router.put('/:productId/images/reorder', authenticateToken, requirePermission('write:products'), reorderImages);
+router.post('/slug/:slug/images', authenticateToken, requireRole(['Admin', 'Manager']), uploadProductImagesBySlug);
+router.post('/:productId/images', authenticateToken, requireRole(['Admin', 'Manager']), uploadProductImages);
+router.delete('/images/:imageId', authenticateToken, requireRole(['Admin', 'Manager']), deleteProductImage);
+router.put('/images/:imageId/primary', authenticateToken, requireRole(['Admin', 'Manager']), setPrimaryImage);
+router.put('/:productId/images/reorder', authenticateToken, requireRole(['Admin', 'Manager']), reorderImages);
 
 export default router;

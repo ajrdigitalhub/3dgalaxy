@@ -2,6 +2,8 @@ import {Component, ChangeDetectionStrategy, inject, signal, computed} from '@ang
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
+import {HttpClient} from '@angular/common/http';
+import { ApiService } from '../../services/api.service';
 import {DatastoreService, Order} from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
@@ -24,10 +26,7 @@ export class OrdersTracking {
   ticketSub = signal<string>('');
   ticketDesc = signal<string>('');
 
-  memberOrders = computed(() => {
-    const userEmail = this.ds.activeUser().email;
-    return this.ds.orders().filter(o => o.customerEmail === userEmail);
-  });
+  memberOrders = signal<any[]>([]);
 
   tracedOrders = computed(() => {
     const phone = this.searchPhoneQuery().trim();
@@ -35,11 +34,40 @@ export class OrdersTracking {
     return this.ds.orders().filter(o => o.customerPhone.includes(phone));
   });
 
+  http = inject(HttpClient);
+  api = inject(ApiService);
+
   constructor() {
     // If registered role preexists, default values
     const r = this.ds.userRole();
     if (r !== 'guest') {
       this.searchPhoneQuery.set(this.ds.activeUser()?.phone || '');
+      this.fetchMyOrders();
+    }
+  }
+
+  async fetchMyOrders() {
+    try {
+      const orders = await this.api.get<any[]>('/orders/my-orders').toPromise();
+      if (orders) {
+         this.memberOrders.set(orders.map(o => ({
+           id: o.id,
+           orderNumber: o.orderNumber,
+           date: new Date(o.createdAt).toLocaleDateString(),
+           status: o.status ? o.status.toLowerCase() : 'pending',
+           items: o.items.map((i: any) => ({
+              productId: i.productId,
+              name: i.product?.name || 'Product',
+              quantity: i.quantity,
+              price: i.price
+           })),
+           grandTotal: o.totalAmount,
+           trackingNumber: null,
+           paymentMethod: o.payments && o.payments.length > 0 ? o.payments[0].method : 'Unknown'
+         })));
+      }
+    } catch (e) {
+      console.error('Error fetching orders', e);
     }
   }
 

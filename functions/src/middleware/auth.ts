@@ -9,7 +9,6 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     role: string;
-    permissions: string[];
   };
 }
 
@@ -37,15 +36,7 @@ export const authenticateToken = async (
       include: {
         roles: {
           include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
+            role: true
           }
         }
       },
@@ -56,16 +47,12 @@ export const authenticateToken = async (
     }
 
     const firstRole = user.roles?.[0]?.role;
-    const roleName = firstRole?.name || 'user';
-    const permissions = user.roles?.flatMap(
-      (r: any) => r.role?.permissions?.map((rp: any) => rp.permission?.name || '') || []
-    ).filter(Boolean) || [];
+    const roleName = firstRole?.name || 'Customer';
 
     req.user = {
       id: user.id,
       email: user.email,
       role: roleName,
-      permissions: permissions,
     };
 
     next();
@@ -74,23 +61,19 @@ export const authenticateToken = async (
   }
 };
 
-export const requirePermission = (permission: string) => {
+export const requireRole = (allowedRoles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized navigation' });
     }
 
-    const { role, permissions } = req.user;
+    const { role } = req.user;
 
-    // Admin has all permissions automatically
-    if (role === 'ADMIN') {
+    // Super Admin has all access
+    if (role === 'Super Admin' || allowedRoles.includes(role)) {
       return next();
     }
 
-    if (permissions && permissions.includes(permission)) {
-      return next();
-    }
-
-    return res.status(403).json({ error: 'Insufficient permissions for this operational endpoint' });
+    return res.status(403).json({ error: 'Insufficient role access' });
   };
 };

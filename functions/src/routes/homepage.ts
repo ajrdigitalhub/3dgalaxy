@@ -6,15 +6,15 @@ import {
   updateHomepageSection,
   deleteHomepageSection,
 } from '../controllers/homepage';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
 router.get('/', getFrontendLayout);
-router.get('/admin', authenticateToken, requirePermission('read:homepage'), getHomepageSections);
+router.get('/admin', authenticateToken, requireRole(['Admin']), getHomepageSections);
 
-router.post('/', authenticateToken, requirePermission('write:homepage'), createHomepageSection);
-router.put('/:id', authenticateToken, requirePermission('write:homepage'), updateHomepageSection);
-router.delete('/:id', authenticateToken, requirePermission('write:homepage'), deleteHomepageSection);
+router.post('/', authenticateToken, requireRole(['Admin']), createHomepageSection);
+router.put('/:id', authenticateToken, requireRole(['Admin']), updateHomepageSection);
+router.delete('/:id', authenticateToken, requireRole(['Admin']), deleteHomepageSection);
 
 export default router;

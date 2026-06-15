@@ -23,19 +23,12 @@ export const register = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Find or create the role
-    const targetRoleName = roleName || 'CUSTOMER';
+    const targetRoleName = roleName || 'Customer';
     let role = await prisma.role.findUnique({ where: { name: targetRoleName } });
     if (!role) {
       role = await prisma.role.create({
         data: {
           name: targetRoleName,
-          permissions: {
-            create: [
-              { permission: { connectOrCreate: { where: { name: 'read:products' }, create: { name: 'read:products', resource: 'products', action: 'read' } } } },
-              { permission: { connectOrCreate: { where: { name: 'write:reviews' }, create: { name: 'write:reviews', resource: 'reviews', action: 'write' } } } },
-              { permission: { connectOrCreate: { where: { name: 'create:orders' }, create: { name: 'create:orders', resource: 'orders', action: 'create' } } } },
-            ]
-          }
         },
       });
     }
@@ -77,19 +70,22 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    const userRoleName = newUser.roles?.[0]?.role?.name || 'CUSTOMER';
+    const userRoleName = newUser.roles?.[0]?.role?.name || 'Customer';
     const accessToken = generateAccessToken({ id: newUser.id, email: newUser.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: newUser.id, email: newUser.email });
 
     return res.status(201).json({
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: `${newUser.firstName} ${newUser.lastName}`.trim(),
-        role: userRoleName,
-      },
-      accessToken,
-      refreshToken,
+      success: true,
+      data: {
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: `${newUser.firstName} ${newUser.lastName}`.trim(),
+          role: userRoleName,
+        },
+        accessToken,
+        refreshToken,
+      }
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'Registration failed', details: error.message });
@@ -108,15 +104,7 @@ export const login = async (req: Request, res: Response) => {
       include: {
         roles: {
           include: {
-            role: {
-              include: {
-                permissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
+            role: true
           }
         }
       },
@@ -142,10 +130,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    const userRoleName = user.roles?.[0]?.role?.name || 'CUSTOMER';
-    const userPermissions = user.roles?.flatMap(
-      (r: any) => r.role?.permissions?.map((rp: any) => rp.permission?.name || '') || []
-    ).filter(Boolean) || [];
+    const userRoleName = user.roles?.[0]?.role?.name || 'Customer';
 
     const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
@@ -165,7 +150,6 @@ export const login = async (req: Request, res: Response) => {
           email: user.email,
           name: `${user.firstName} ${user.lastName}`.trim(),
           role: userRoleName,
-          permissions: userPermissions,
           firstName: user.firstName,
           lastName: user.lastName,
           mobile: user.mobile,
@@ -216,7 +200,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'User suspended or missing' });
     }
 
-    const userRoleName = user.roles?.[0]?.role?.name || 'CUSTOMER';
+    const userRoleName = user.roles?.[0]?.role?.name || 'Customer';
     const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
     return res.status(200).json({ accessToken });
   } catch (error: any) {

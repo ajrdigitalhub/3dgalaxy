@@ -2,8 +2,8 @@
   "name": "functions",
   "version": "1.0.0",
   "description": "Customizable B2B 3D Fabricator Storefront Backend",
-"scripts": {
-  "dev": "npx prisma generate && ts-node-dev --respawn --transpile-only src/server.ts",
+  "scripts": {
+    "dev": "npx prisma generate && ts-node-dev --respawn --transpile-only src/server.ts",
 "build": "npx prisma generate && npx esbuild src/app.ts --bundle --platform=node --target=node24 --format=cjs --outfile=dist/server.js --external:express --external:axios --external:firebase-admin --external:@prisma/client",
     "gcp-build": "npx prisma generate",
       "serve": "npm run build && firebase emulators:start --only functions",
@@ -11,10 +11,10 @@
   "start": "npm run shell",
   "deploy": "firebase deploy --only functions",
   "logs": "firebase functions:log",
-  "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev",
-  "prisma:seed": "ts-node prisma/seed.ts"
-},
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts"
+  },
     "engines": {
     "node": "24"
   },

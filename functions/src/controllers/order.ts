@@ -5,7 +5,11 @@ export const getOrders = async (req: Request, res: Response) => {
   try {
     const list = await prisma.order.findMany({
       include: {
-        customer: true,
+        customer: {
+          include: { user: true }
+        },
+        shippingAddress: true,
+        statusHistory: true,
         items: {
           include: { product: true },
         },
@@ -18,24 +22,66 @@ export const getOrders = async (req: Request, res: Response) => {
   }
 };
 
-export const getOrderById = async (req: Request, res: Response) => {
-  const { id } = req.params;
+export const getMyOrders = async (req: any, res: Response) => {
+  const userId = req.user?.id;
   try {
+    const customer = await prisma.customer.findFirst({ where: { userId } });
+    if (!customer) {
+      return res.status(200).json([]);
+    }
+
+    const list = await prisma.order.findMany({
+      where: { customerId: customer.id },
+      include: {
+        items: {
+          include: { product: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.status(200).json(list);
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to retrieve your orders', details: error.message });
+  }
+};
+
+export const getOrderById = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+  try {
+    let orderWhere: any;
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) {
+      orderWhere = { orderNumber: id };
+    } else {
+      orderWhere = { id };
+    }
+
     const order = await prisma.order.findUnique({
-      where: { id },
+      where: orderWhere,
       include: {
         customer: true,
+        shippingAddress: true,
+        billingAddress: true,
         items: {
           include: {
             product: true,
             variant: true,
           },
         },
+        statusHistory: true,
+        payments: true,
       },
     });
 
     if (!order) {
       return res.status(404).json({ error: 'Order reference does not exist' });
+    }
+
+    if (userRole !== 'Admin' && userRole !== 'Manager') {
+      if (order.customer?.userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
     }
 
     return res.status(200).json(order);
@@ -44,52 +90,78 @@ export const getOrderById = async (req: Request, res: Response) => {
   }
 };
 
-export const createOrder = async (req: Request, res: Response) => {
-  const { customerId, items, totalAmount } = req.body; // Items: [{productId, variantId, quantity}]
-  if (!customerId || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Customer identifier and checkout items are required' });
+export const createOrder = async (req: any, res: Response) => {
+  const { items, shippingAddress, billingAddress, paymentMethod } = req.body;
+  const userId = req.user?.id; // from auth middleware
+
+  if (!userId || !items || items.length === 0 || !shippingAddress || !paymentMethod) {
+    return res.status(400).json({ error: 'Missing required checkout information' });
   }
 
   try {
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const orderNumber = `B3D-${Date.now().toString().slice(-6)}-${randomSuffix}`;
+    const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
 
-    // Verify customer exists
-    const customer = await prisma.customer.findUnique({ where: { id: customerId } });
+    // Get or create customer for the user
+    let customer = await prisma.customer.findFirst({ where: { userId } });
     if (!customer) {
-      return res.status(404).json({ error: 'Associated customer profile missing' });
+      customer = await prisma.customer.create({
+        data: {
+          userId,
+          customerType: 'retail'
+        }
+      });
     }
 
-    // Wrap in a transaction to safely handle inventory check & deductions
-    const transaction = await prisma.$transaction(async (tx: any) => {
-      let finalTotal = 0;
+    const transaction = await prisma.$transaction(async (tx) => {
+      // 1. Create Addresses
+      const shipAddr = await tx.customerAddress.create({
+        data: {
+          customerId: customer.id,
+          addressLine1: shippingAddress.addressLine1,
+          addressLine2: shippingAddress.addressLine2,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postalCode: shippingAddress.pincode,
+          country: shippingAddress.country || 'India',
+          isDefault: true
+        }
+      });
+
+      let billAddrId = shipAddr.id;
+      if (billingAddress && billingAddress.addressLine1 !== shippingAddress.addressLine1) {
+        const billAddr = await tx.customerAddress.create({
+          data: {
+            customerId: customer.id,
+            addressLine1: billingAddress.addressLine1,
+            addressLine2: billingAddress.addressLine2,
+            city: billingAddress.city,
+            state: billingAddress.state,
+            postalCode: billingAddress.pincode,
+            country: billingAddress.country || 'India',
+            isDefault: false
+          }
+        });
+        billAddrId = billAddr.id;
+      }
+
+      // 2. Process Items and calculate totals
+      let subtotal = 0;
       const parsedItems = [];
 
       for (const it of items) {
         const prod = await tx.product.findUnique({ where: { id: it.productId } });
-        if (!prod || prod.stock < it.quantity) {
-          throw new Error(`Insufficient inventory stock for SKU: ${prod?.name || it.productId}`);
-        }
+        if (!prod) throw new Error(`Product not found: ${it.productId}`);
 
-        let price = prod.salePrice;
-        // Dealer pricing logic - customerType field in Customer model
-        if (customer.customerType === 'DEALER') {
-          price = prod.dealerPrice || prod.salePrice; // Fallback if dealerPrice not set
-        }
+        let price = prod.salePrice || prod.basePrice;
+        if (customer.customerType === 'DEALER') price = prod.dealerPrice || prod.basePrice;
 
-        // Handle variant price override if specified
         if (it.variantId) {
           const variant = await tx.productVariant.findUnique({ where: { id: it.variantId } });
-          if (variant) {
-            price = variant.price;
-          }
+          if (variant) price = variant.price;
         }
 
-        finalTotal += price * it.quantity;
-
-        // Deduct core asset stock using inventory (Not required for this simple mock but let's avoid product.stock)
-        // Note: product stock field was removed in favor of relational Inventory tracking.
-        
+        subtotal += price * it.quantity;
         parsedItems.push({
           productId: it.productId,
           variantId: it.variantId || null,
@@ -99,19 +171,32 @@ export const createOrder = async (req: Request, res: Response) => {
         });
       }
 
+      const shippingAmount = subtotal > 1000 ? 0 : 99;
+      const taxAmount = subtotal * 0.18; // 18% GST example
+      const discountAmount = 0;
+      const totalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
+
+      // 3. Create Order
       const orderEntity = await tx.order.create({
         data: {
-          customerId,
+          customerId: customer.id,
           orderNumber,
-          totalAmount: totalAmount || finalTotal,
-          status: 'PENDING',
-          items: {
-            create: parsedItems,
+          totalAmount,
+          taxAmount,
+          shippingAmount,
+          discountAmount,
+          status: 'Pending',
+          shippingAddressId: shipAddr.id,
+          billingAddressId: billAddrId,
+          items: { create: parsedItems },
+          statusHistory: { 
+            create: [{ status: 'Pending', comments: 'Order created', createdBy: userId }] 
           },
+          payments: {
+            create: [{ paymentMethod, amount: totalAmount, status: 'Pending' }]
+          }
         },
-        include: {
-          items: true,
-        },
+        include: { items: true, payments: true }
       });
 
       return orderEntity;
@@ -119,11 +204,11 @@ export const createOrder = async (req: Request, res: Response) => {
 
     return res.status(201).json(transaction);
   } catch (error: any) {
-    return res.status(500).json({ error: 'Checkout command transaction reverted', details: error.message });
+    return res.status(500).json({ error: 'Checkout processing failed', details: error.message });
   }
 };
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req: any, res: Response) => {
   const { id } = req.params;
   const { status } = req.body; // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
 
@@ -134,7 +219,16 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const updated = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: { 
+        status, 
+        statusHistory: {
+          create: {
+            status,
+            comments: `Status updated to ${status}`,
+            createdBy: req.user?.id
+          }
+        }
+      },
     });
     return res.status(200).json(updated);
   } catch (error: any) {

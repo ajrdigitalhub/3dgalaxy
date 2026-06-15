@@ -73,22 +73,27 @@ export class ProductEditComponent implements OnInit {
     }, { allowSignalWrites: true });
   }
 
-  fillForm(p: Product) {
+  fillForm(p: any) {
     this.pName.set(p.name || '');
     this.pSku.set(p.sku || '');
-    this.pCatId.set(p.category_id || '');
-    this.pBrand.set(p.brand || '3D Galaxy');
-    this.pMrp.set(p.mrp || 1499);
-    this.pSale.set(p.sale_price || 1199);
-    this.pDealer.set(p.dealer_price || 999);
+    this.pCatId.set(p.categoryId || p.category_id || p.category?.slug || '');
+    this.pBrand.set(p.brandId || p.brand?.slug || p.brand || '3d-galaxy');
+    this.pMrp.set(p.mrp || p.basePrice || 1499);
+    this.pSale.set(p.salePrice || p.sale_price || 1199);
+    this.pDealer.set(p.dealerPrice || p.dealer_price || 999);
     this.pStock.set(p.stock || 50);
-    this.pStatus.set(p.status || 'active');
-    this.pImages.set((p.images || []).join('\n'));
+    this.pStatus.set(p.isActive === false ? 'draft' : (p.status || 'active'));
+    
+    // Map objects to strings for textarea
+    const imgs = p.images || [];
+    const urls = imgs.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean);
+    this.pImages.set(urls.join('\n'));
+    
     this.pDesc.set(p.description || '');
     this.pLongDesc.set(p.long_description || '');
     this.pVariants.set(JSON.stringify(p.variants || [], null, 2));
-    this.pSeoTitle.set(p.seoTitle || '');
-    this.pSeoDescription.set(p.seoDescription || '');
+    this.pSeoTitle.set(p.seoTitle || p.seo?.seoTitle || '');
+    this.pSeoDescription.set(p.seoDescription || p.seo?.seoDescription || '');
   }
 
   async saveProduct() {
@@ -98,14 +103,35 @@ export class ProductEditComponent implements OnInit {
       this.toastService.error('Name is required.');
       return;
     }
+    const sku = this.pSku().trim();
+    if (!sku) {
+      this.toastService.error('SKU is required.');
+      return;
+    }
+    const catId = this.pCatId().trim();
+    if (!catId) {
+       this.toastService.error('Category is required.');
+       return;
+    }
+    const brandStr = this.pBrand().trim();
+    if (!brandStr) {
+       this.toastService.error('Brand is required.');
+       return;
+    }
 
     // Parse images from line breaks
-    let imagesArr = ['https://picsum.photos/seed/' + Date.now() + '/800/800'];
+    let imagesArr: any[] = [];
     const textImgs = this.pImages().trim();
     if (textImgs) {
       imagesArr = textImgs.split('\n').map(x => x.trim()).filter(Boolean);
     } else if (this.currentProduct()?.images) {
-      imagesArr = this.currentProduct()!.images;
+      const origImgs = this.currentProduct()!.images;
+      imagesArr = origImgs.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean);
+    }
+
+    if (imagesArr.length === 0) {
+      this.toastService.error('Please upload at least one valid product image.');
+      return;
     }
 
     // Parse variants JSON block
@@ -120,25 +146,22 @@ export class ProductEditComponent implements OnInit {
       return;
     }
 
-    const pData: Partial<Product> = {
+    const pData: Partial<Product> | any = {
       name,
-      brand: this.pBrand() || '3D Galaxy',
-      category_id: this.pCatId() || 'materials',
-      sku: this.pSku() || 'GLX-SKU-' + Math.floor(1000 + Math.random() * 9000),
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      sku,
+      brandId: brandStr,
+      categoryId: catId,
       mrp: this.pMrp(),
-      sale_price: this.pSale(),
-      dealer_price: this.pDealer(),
+      salePrice: this.pSale(),
+      dealerPrice: this.pDealer(),
       stock: this.pStock(),
       description: this.pDesc(),
-      long_description: this.pLongDesc(),
-      images: imagesArr,
+      images: imagesArr.map((url, i) => ({ url, isPrimary: i === 0, sortOrder: i })),
       variants: variantsArr,
-      status: this.pStatus() as 'active' | 'draft' | 'out_of_stock',
+      isActive: this.pStatus() === 'active',
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),
-      featured: this.currentProduct()?.featured || false,
-      is360Supported: this.currentProduct()?.is360Supported || false,
-      tags: [this.pBrand() || '3D Galaxy']
     };
 
     try {

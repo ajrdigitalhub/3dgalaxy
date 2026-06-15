@@ -105,13 +105,19 @@ export interface Product {
   sku: string;
   barcode: string;
   category_id: string;
+  categoryId?: string;
+  category?: any;
   subcategory_id?: string;
   brand: string;
+  brandId?: string;
   description: string;
   long_description?: string;
   mrp: number;
+  basePrice?: number;
   sale_price: number;
+  salePrice?: number;
   dealer_price: number;
+  dealerPrice?: number;
   stock: number;
   reserved: number;
   images: any[];
@@ -119,6 +125,7 @@ export interface Product {
   reviews: Review[];
   qnas: QA[];
   featured: boolean;
+  isActive?: boolean;
   is360Supported: boolean;
   tags: string[];
   isExclusive?: boolean;
@@ -132,13 +139,16 @@ export interface Product {
   seoKeywords?: string;
   canonicalUrl?: string;
   openGraphImage?: string;
+  seo?: any;
   features?: any[];
   specifications?: any[];
   downloads?: any[];
   faqs?: any[];
   warranty?: any;
   shipping?: any;
-  relatedProducts?: any[];
+  relatedProducts?: { relatedProduct: any }[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {
@@ -980,7 +990,7 @@ export class DatastoreService {
       }).subscribe({
         next: (res) => {
            // Reload
-           this.reloadProducts();
+           this.reloadProducts(false);
            resolve(res);
         },
         error: (e) => reject(e)
@@ -1009,7 +1019,7 @@ export class DatastoreService {
         seoDescription: updated.seoDescription
       }).subscribe({
         next: (res) => {
-           this.reloadProducts();
+           this.reloadProducts(false);
            resolve(res);
         },
         error: (e) => reject(e)
@@ -1021,7 +1031,7 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.delete(`/products/${id}`).subscribe({
         next: () => {
-           this.reloadProducts();
+           this.reloadProducts(false);
            resolve(true);
         },
         error: (e) => reject(e)
@@ -1029,8 +1039,10 @@ export class DatastoreService {
     });
   }
 
-  reloadProducts() {
-    this.productsLoading.set(true);
+  reloadProducts(showLoader = true) {
+    if (showLoader) {
+      this.productsLoading.set(true);
+    }
     this.api?.get<{data: any[]}>('/products').pipe(
       catchError((err) => {
         console.error('Error loading products:', err);

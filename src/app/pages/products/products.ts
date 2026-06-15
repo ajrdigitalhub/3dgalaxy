@@ -79,13 +79,18 @@ export class Products {
     return r === 'admin' || r === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300;
   });
 
-  activePrice(p: Product): number {
-    return this.isDealerPriceActive() ? p.dealer_price : p.sale_price;
+  activePrice(p: any): number {
+    return this.isDealerPriceActive() ? (p.dealerPrice || p.dealer_price) : (p.salePrice || p.sale_price);
   }
 
-  mrpDiscountPercent(p: Product): number {
+  mrpDiscountPercent(p: any): number {
     const sale = this.activePrice(p);
-    return Math.round(((p.mrp - sale) / p.mrp) * 100);
+    const mrp = p.mrp || p.basePrice || p.sale_price || p.salePrice || 1;
+    return Math.round(((mrp - sale) / mrp) * 100);
+  }
+
+  getMrp(p: any): number {
+    return p.mrp || p.basePrice;
   }
 
   // Tree Structure Helpers

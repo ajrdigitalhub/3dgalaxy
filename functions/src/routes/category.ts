@@ -10,7 +10,7 @@ import {
   updateCategory,
   deleteCategory,
 } from '../controllers/category';
-import { authenticateToken, requirePermission } from '../middleware/auth';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -21,8 +21,8 @@ router.get('/breadcrumbs/slug/:slug', getBreadcrumbsBySlug);
 router.get('/breadcrumbs/:id', getBreadcrumbs);
 router.get('/children/:parentId', getDirectChildren);
 
-router.post('/', authenticateToken, requirePermission('write:categories'), createCategory);
-router.put('/:id', authenticateToken, requirePermission('write:categories'), updateCategory);
-router.delete('/:id', authenticateToken, requirePermission('write:categories'), deleteCategory);
+router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createCategory);
+router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateCategory);
+router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager']), deleteCategory);
 
 export default router;
