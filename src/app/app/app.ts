@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import {ChangeDetectionStrategy, Component, inject, computed, signal} from '@angular/core';
 import {RouterOutlet, RouterModule, Router} from '@angular/router';
 import {CommonModule} from '@angular/common';
@@ -51,10 +52,97 @@ export class App {
     'stem-kits': 'school'
   };
 
+  private http = inject(HttpClient);
+
   searchQuery = signal('');
   isSearchFocused = signal(false);
+  suggestions = signal<any>({ products: [], categories: [], brands: [], services: [] });
+  isSearching = signal(false);
+  recentSearches = signal<string[]>([]);
+  popularSearches = signal<string[]>(['Bambu Lab A1', 'PETG Filament', 'Resin 3D Printer', 'Nozzle 0.4mm']);
+  
+  selectedIndex = signal(-1);
 
-  // Mobile UI triggers
+  private searchTimeout: any;
+
+  onSearchFocus() {
+    this.isSearchFocused.set(true);
+    this.selectedIndex.set(-1);
+    if (!this.recentSearches().length) {
+       this.fetchRecentSearches();
+    }
+  }
+
+  handleSearchKeydown(event: KeyboardEvent) {
+      if (!this.isSearchFocused()) return;
+      const suggs = this.suggestions();
+      const itemsLength = suggs.products.length + suggs.categories.length + suggs.brands.length + suggs.services.length;
+
+      if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.selectedIndex.update(i => (i + 1 >= itemsLength ? 0 : i + 1));
+      } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.selectedIndex.update(i => (i <= 0 ? itemsLength - 1 : i - 1));
+      } else if (event.key === 'Enter') {
+          event.preventDefault();
+          if (this.selectedIndex() >= 0 && itemsLength > 0) {
+              const allItems = [...suggs.products, ...suggs.categories, ...suggs.brands, ...suggs.services];
+              const selectedItem = allItems[this.selectedIndex()];
+              if (selectedItem) {
+                  this.router.navigateByUrl(selectedItem.url);
+                  this.isSearchFocused.set(false);
+                  this.isMobileSearchOpen.set(false);
+                  return;
+              }
+          }
+          this.submitSearch(); // Fallback if nothing selected or empty index
+      } else if (event.key === 'Escape') {
+          this.isSearchFocused.set(false);
+          this.isMobileSearchOpen.set(false);
+      }
+  }
+
+  fetchRecentSearches() {
+    this.http.get<any>('/api/search/recent').subscribe(res => {
+        if (res.success) this.recentSearches.set(res.data);
+    });
+  }
+
+  onSearch(q: string) {
+    this.searchQuery.set(q);
+    if (q.length < 2) {
+       this.suggestions.set({ products: [], categories: [], brands: [], services: [] });
+       return;
+    }
+    
+    this.isSearching.set(true);
+    clearTimeout(this.searchTimeout);
+    
+    this.searchTimeout = setTimeout(() => {
+       this.http.get<any>(`/api/search/suggestions?q=${encodeURIComponent(q)}`).subscribe({
+         next: res => {
+             if (res.success) {
+                if (res.data.products) res.data.products.forEach((p: any) => p.url = `/product/${p.slug}`);
+                if (res.data.categories) res.data.categories.forEach((c: any) => c.url = `/category/${c.slug}`);
+                if (res.data.brands) res.data.brands.forEach((b: any) => b.url = `/brand/${b.slug}`);
+                this.suggestions.set(res.data);
+             }
+             this.isSearching.set(false);
+         },
+         error: () => this.isSearching.set(false)
+       });
+    }, 300);
+  }
+  
+  submitSearch(q?: string) {
+    const query = q || this.searchQuery();
+    if (query) {
+      this.isSearchFocused.set(false);
+      this.isMobileSearchOpen.set(false);
+      this.router.navigate(['/search'], { queryParams: { q: query }});
+    }
+  }
   isMobileMenuOpen = signal(false);
   isMobileSearchOpen = signal(false);
   isRoleDropdownOpen = signal<boolean>(false);
@@ -89,11 +177,6 @@ export class App {
 
   getMenuItemChildren(parentId: string) {
     return this.ds.menuItems().filter(m => m.parentId === parentId);
-  }
-
-  onSearch(q: string) {
-    this.searchQuery.set(q);
-    // Real implementation would route to products with search param
   }
 
   toggleTheme() {

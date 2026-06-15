@@ -5,6 +5,8 @@ import {Title, Meta} from '@angular/platform-browser';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Review} from '../../services/datastore';
 import {LoadingService} from '../../core/services/loading.service';
+import {ApiService} from '../../services/api.service';
+import {ToastService} from '../../shared/components/toast/toast.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 
 @Component({
@@ -18,6 +20,9 @@ export class ProductDetail {
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
+  api = inject(ApiService);
+  toastService = inject(ToastService);
+  router = inject(Router);
 
   slug = signal<string>('');
   quantity = signal<number>(1);
@@ -25,6 +30,28 @@ export class ProductDetail {
   is360Active = signal<boolean>(false);
   rotationAngle = signal<number>(0);
   activeTab = signal<string>('overview');
+  wishlistIds = signal<Set<string>>(new Set());
+
+  // Variant Logic
+  selectedOptions = signal<Record<string, string>>({}); // { optionId: valueId }
+  selectedVariant = computed(() => {
+      const p = this.product();
+      if (!p || !p.variants || p.variants.length === 0) return null;
+      const opts = this.selectedOptions();
+      // Match variant based on selected options
+      const matched = p.variants.find(v => {
+          return v.options?.every(vo => opts[vo.optionValue.optionId] === vo.optionValueId);
+      });
+      return matched || p.variants[0];
+  });
+
+  galleryImages = computed(() => {
+      const v = this.selectedVariant();
+      if (v && v.images && v.images.length > 0) {
+          return v.images;
+      }
+      return this.product()?.images || [];
+  });
 
   // Discussions and rating state drafts
   newQuestionText = signal<string>('');
@@ -82,21 +109,49 @@ export class ProductDetail {
   document = inject(DOCUMENT);
 
   activePrice(p: any): number {
-    return this.isDealerActive() ? (p.dealerPrice || p.dealer_price) : (p.salePrice || p.sale_price);
+    const variant = this.selectedVariant();
+    const dealerPrice = variant ? (variant.price) : (p.dealerPrice || p.dealer_price); // dealer fallback or variant price
+    const salePrice = variant ? (variant.salePrice || variant.price) : (p.salePrice || p.sale_price);
+
+    return this.isDealerActive() ? dealerPrice : salePrice;
   }
 
   mrpDiscountPercent(p: any): number {
     const sale = this.activePrice(p);
-    const mrp = p.mrp || p.basePrice || p.sale_price || p.salePrice || 1;
+    const mrp = this.getMrp(p);
     return Math.round(((mrp - sale) / mrp) * 100);
   }
 
   getMrp(p: any): number {
-    return p.mrp || p.basePrice;
+    const variant = this.selectedVariant();
+    if (variant) return variant.price;
+    return p.mrp || p.basePrice || p.sale_price || 0;
   }
 
   getImageUrl(img: any): string {
     return typeof img === 'string' ? img : img?.url || '';
+  }
+
+  selectOption(optionId: string, valueId: string) {
+      this.selectedOptions.update(opts => ({...opts, [optionId]: valueId}));
+      
+      // Update variant images if variant matches
+      const variant = this.selectedVariant();
+      if (variant) {
+          if (variant.images && variant.images.length > 0) {
+              this.activeImage.set(this.getImageUrl(variant.images[0]));
+          }
+          this.router.navigate([], {
+              queryParams: { variant: variant.id },
+              queryParamsHandling: 'merge',
+              replaceUrl: true
+          });
+      }
+  }
+
+  getOptionValueName(values: any[], selectedId: string): string {
+     const val = values.find(v => v.id === selectedId);
+     return val ? (val.displayValue || val.value) : '';
   }
 
   constructor() {
@@ -110,6 +165,27 @@ export class ProductDetail {
           this.quantity.set(1);
           this.is360Active.set(false);
           this.rotationAngle.set(0);
+
+          // Build default options based on URL variant tracking or default variant
+          const queryParams = this.route.snapshot.queryParams;
+          const initialVariantId = queryParams['variant'];
+          
+          let targetVariant = matched.variants?.find((v: any) => v.id === initialVariantId);
+          if (!targetVariant && matched.variants && matched.variants.length > 0) {
+              targetVariant = matched.variants[0];
+          }
+
+          if (targetVariant && targetVariant.options) {
+             const opts: Record<string, string> = {};
+             targetVariant.options.forEach((vo: any) => {
+                 opts[vo.optionValue.optionId] = vo.optionValueId;
+             });
+             this.selectedOptions.set(opts);
+             
+             if (targetVariant.images && targetVariant.images.length > 0) {
+                 this.activeImage.set(this.getImageUrl(targetVariant.images[0]));
+             }
+          }
 
           // Update SEO
           const pageTitle = (matched as any).seoTitle || `${matched.brand} ${matched.name} | 3D Galaxy`;
@@ -174,13 +250,55 @@ export class ProductDetail {
   }
 
   addToCart(p: Product) {
-    this.ds.addToCart(p, this.quantity());
+    this.ds.addToCart(p, this.quantity(), this.selectedVariant() || undefined);
   }
 
-  router = inject(Router);
+  async ngOnInit() {
+    await this.loadWishlist();
+  }
+
+  async loadWishlist() {
+    if (this.ds.userRole() !== 'guest') {
+      try {
+        const res: any = await this.api.get('/wishlist').toPromise();
+        if (res?.success && res.data) {
+          const ids = new Set<string>();
+          // Handle response array
+          res.data.forEach((i: any) => ids.add(i.productId));
+          this.wishlistIds.set(ids);
+        }
+      } catch(e) {}
+    }
+  }
+
+  async toggleWishlist(productId: string) {
+    if (this.ds.userRole() === 'guest') {
+      this.toastService.info('Please log in to manage your wishlist');
+      this.router.navigate(['/login']);
+      return;
+    }
+    const current = this.wishlistIds();
+    try {
+      if (current.has(productId)) {
+        await this.api.delete(`/wishlist/${productId}`).toPromise();
+        const newSet = new Set(current);
+        newSet.delete(productId);
+        this.wishlistIds.set(newSet);
+        this.toastService.success('Removed from Wishlist');
+      } else {
+        await this.api.post('/wishlist', { productId }).toPromise();
+        const newSet = new Set(current);
+        newSet.add(productId);
+        this.wishlistIds.set(newSet);
+        this.toastService.success('Added to Wishlist');
+      }
+    } catch(e) {
+      this.toastService.error('Wishlist action failed');
+    }
+  }
 
   buyNow(p: Product) {
-    this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity() } });
+    this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity(), variant: this.selectedVariant() || undefined } });
   }
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION

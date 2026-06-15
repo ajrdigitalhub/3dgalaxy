@@ -56,8 +56,21 @@ export class CheckoutComponent {
   grandTotal = computed(() => this.subtotal() + this.shipping() + this.tax() - this.discount());
 
   paymentMethod = signal('COD');
+  availableGateways = signal<any[]>([]);
 
   constructor() {
+    this.http.get<any>('/api/settings/payment-gateways').subscribe({
+      next: (res) => {
+        if (res.success) {
+          const actives = res.data.filter((g: any) => g.isEnabled);
+          this.availableGateways.set(actives);
+          if (actives.length > 0) {
+            this.paymentMethod.set(actives[0].gatewayCode);
+          }
+        }
+      }
+    });
+
     effect(() => {
       // Initialize with active user profile details
       const user = this.ds.activeUser();
@@ -116,15 +129,71 @@ export class CheckoutComponent {
         pincode: this.accPin(),
         country: this.accCountry()
       },
-      paymentMethod: this.paymentMethod()
+      paymentMethod: 'COD' // initial order creation is default 'COD' unless handled differently by API. Actually backend maps `paymentMethod` directly. Let's pass what user selected.
     };
+    payload.paymentMethod = this.paymentMethod();
 
     try {
       this.loading.startLoading();
       const res = await this.api.post<any>('/orders', payload).toPromise();
-      this.loading.stopLoading();
-      this.toast.success('Order placed successfully!');
-      this.router.navigate(['/order-success'], { state: { order: res[1] || res } });
+      const orderData = res[1] || res; // depending on interceptor
+      
+      if (this.paymentMethod() === 'RAZORPAY') {
+        const rzRes = await this.http.post<any>('/api/payments/razorpay/create-order', { orderId: orderData.id }).toPromise();
+        
+        if (rzRes && rzRes.success) {
+          const rzInfo = rzRes.data;
+          const gateway = this.availableGateways().find(g => g.gatewayCode === 'RAZORPAY');
+          
+          const options = {
+            key: gateway.keyId,
+            amount: rzInfo.amount,
+            currency: 'INR',
+            name: this.ds.settings()?.appName || '3D Galaxy',
+            description: `Order ${orderData.orderNumber}`,
+            order_id: rzInfo.razorpayOrderId,
+            handler: async (response: any) => {
+              try {
+                this.loading.startLoading();
+                await this.http.post('/api/payments/razorpay/verify', {
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                }).toPromise();
+                this.loading.stopLoading();
+                this.toast.success('Payment successful!');
+                this.router.navigate(['/order-success'], { state: { order: orderData } });
+              } catch (err: any) {
+                this.loading.stopLoading();
+                this.toast.error('Payment verification failed.');
+                this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
+              }
+            },
+            prefill: {
+              name: this.name(),
+              email: this.email(),
+              contact: this.phone()
+            },
+            theme: { color: this.ds.settings()?.primaryColor || '#d65108' }
+          };
+          
+          const rzp = new (window as any).Razorpay(options);
+          rzp.on('payment.failed', (response: any) => {
+              this.loading.stopLoading();
+              this.toast.error(response.error.description);
+              this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
+          });
+          this.loading.stopLoading();
+          rzp.open();
+        } else {
+           this.loading.stopLoading();
+           this.toast.error('Razorpay initialization failed.');
+        }
+      } else {
+        this.loading.stopLoading();
+        this.toast.success('Order placed successfully!');
+        this.router.navigate(['/order-success'], { state: { order: orderData } });
+      }
     } catch (e: any) {
       this.loading.stopLoading();
       this.toast.error('Order placement failed: ' + (e?.error?.error || e.message));

@@ -1,5 +1,6 @@
 import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {HttpClient} from '@angular/common/http';
 import {MatIconModule} from '@angular/material/icon';
 import {doc, setDoc} from 'firebase/firestore';
 import {db} from '../../firebase';
@@ -60,6 +61,7 @@ export class AdminPanel {
   toastService = inject(ToastService);
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
+  http = inject(HttpClient);
 
   loading = computed(() => {
     if (this.loadingService.isLoading()) return true;
@@ -258,7 +260,8 @@ export class AdminPanel {
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
   pImages = signal<{url: string, isPrimary: boolean}[]>([]);
-  pVariants = signal<string>('[]');
+  pOptions = signal<{ id?: string, name: string, values: string[] }[]>([]);
+  pVariants = signal<any[]>([]);
   pStatus = signal<'active' | 'draft' | 'out_of_stock'>('active');
 
   // Marketing campaign drafts
@@ -350,12 +353,29 @@ export class AdminPanel {
   newBlogTags = signal('3D Printing, Technology');
 
   // Payment settings state
-  paymentGateways = signal([
-    { id: 'razorpay', name: 'Razorpay PG', enabled: true, mode: 'sandbox' },
-    { id: 'stripe', name: 'Stripe Global', enabled: true, mode: 'live' },
-    { id: 'paypal', name: 'PayPal Express', enabled: false, mode: 'sandbox' },
-    { id: 'cod', name: 'Cash on Delivery', enabled: true, limit: 30000 }
-  ]);
+  paymentGateways = signal<any[]>([]);
+
+  fetchPaymentGateways() {
+    this.http.get<any>('/api/settings/payment-gateways').subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.paymentGateways.set(res.data);
+        }
+      }
+    });
+  }
+
+  updatePaymentGateway(id: string, updates: any) {
+    this.http.put(`/api/settings/payment-gateways/${id}`, updates).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.fetchPaymentGateways();
+          this.toastService.success('Payment gateway updated');
+        }
+      },
+      error: () => this.toastService.error('Failed to update gateway')
+    });
+  }
 
   // Shipping logistical configs
   shippingZones = signal([
@@ -403,6 +423,7 @@ export class AdminPanel {
   }
 
   constructor() {
+    this.fetchPaymentGateways();
     // Sync local signals with database settings
     effect(() => {
       const s = this.ds.settings();
@@ -472,12 +493,15 @@ export class AdminPanel {
   }
 
   getStatusStyle(status: string) {
-    switch (status) {
-      case 'delivered': return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15';
-      case 'processing': return 'bg-blue-600/10 text-blue-400 border border-blue-500/15';
-      case 'shipped': return 'bg-purple-500/10 text-purple-400 border border-purple-500/15';
-      case 'pending': return 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/15';
-      default: return 'bg-red-500/10 text-red-400 border border-red-500/15';
+    if (!status) return 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/15';
+    switch (status.toLowerCase()) {
+      case 'delivered': return 'bg-emerald-500/10 text-emerald-400 dark:text-emerald-300 border border-emerald-500/15 dark:border-emerald-500/20';
+      case 'packed': 
+      case 'processing': return 'bg-blue-600/10 text-blue-500 dark:text-blue-400 border border-blue-500/15 dark:border-blue-500/20';
+      case 'shipped': return 'bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/15 dark:border-purple-500/20';
+      case 'pending': 
+      case 'confirmed': return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/15 dark:border-yellow-500/20';
+      default: return 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/15 dark:border-red-500/20';
     }
   }
 
@@ -724,7 +748,16 @@ export class AdminPanel {
     this.pDealer.set(p.dealer_price || 0);
     this.pStock.set(p.stock || 0);
     this.pImages.set(p.images && p.images.length ? p.images.map((img: string, i: number) => ({ url: img, isPrimary: i === 0 })) : []);
-    this.pVariants.set(p.variants ? JSON.stringify(p.variants, null, 2) : '[]');
+    
+    // Parse options for the UI
+    const restoredOptions = p.options?.map((o: any) => ({
+       id: o.id,
+       name: o.name,
+       values: o.values ? o.values.map((v: any) => v.value) : []
+    })) || [];
+    this.pOptions.set(restoredOptions);
+    this.pVariants.set(p.variants ? JSON.parse(JSON.stringify(p.variants)) : []);
+    
     this.pSeoTitle.set(p.seoTitle || '');
     this.pSeoDescription.set(p.seoDescription || '');
     this.pStatus.set(p.status || 'active');
@@ -742,7 +775,8 @@ export class AdminPanel {
     this.pDealer.set(999);
     this.pStock.set(50);
     this.pImages.set([]);
-    this.pVariants.set('[]');
+    this.pOptions.set([]);
+    this.pVariants.set([]);
     this.pSeoTitle.set('');
     this.pSeoDescription.set('');
     this.pStatus.set('active');
@@ -762,6 +796,66 @@ export class AdminPanel {
     imgs.forEach(i => i.isPrimary = false);
     imgs[index].isPrimary = true;
     this.pImages.set(imgs);
+  }
+
+  // --- OPTIONS & VARIANTS LOGIC ---
+  addOption() {
+      const opts = [...this.pOptions(), { name: '', values: [] }];
+      this.pOptions.set(opts);
+  }
+  removeOption(index: number) {
+      const opts = [...this.pOptions()];
+      opts.splice(index, 1);
+      this.pOptions.set(opts);
+  }
+  updateOption() {
+      this.pOptions.set([...this.pOptions()]);
+  }
+  getOptionValuesString(opt: any): string {
+      return opt.values ? opt.values.join(', ') : '';
+  }
+  setOptionValuesString(opt: any, valueStr: string) {
+      opt.values = valueStr.split(',').map((s: string) => s.trim()).filter((s: string) => s);
+      this.updateOption();
+  }
+  generateVariants() {
+      // Cartesian product logic
+      const opts = this.pOptions().filter(o => o.name && o.values.length > 0);
+      if (opts.length === 0) return;
+      
+      const cartesian = (a: any[], b: any[]) => [].concat(...a.map((d: any) => b.map((e: any) => [].concat(d, e))) as any);
+      const cartesianProduct = (a: any[], b?: any[], ...c: any[]): any[] => {
+          if (!b) return a.map(x => [x]);
+          const d = cartesian(a, b);
+          if (c.length === 0) return d;
+          return cartesianProduct(d, c[0], ...c.slice(1));
+      };
+
+      const valuesArr = opts.map(o => o.values);
+      const combinations: any[] = cartesianProduct(valuesArr[0], ...valuesArr.slice(1));
+
+      const existingVariants = this.pVariants();
+      const newVariants = combinations.map(combo => {
+          const comboStr = Array.isArray(combo) ? combo.join(' - ') : combo;
+          const comboArray = Array.isArray(combo) ? combo : [combo];
+          // Try to preserve existing variant properties
+          const existing = existingVariants.find(v => v.name === comboStr);
+          return existing || {
+              id: 'new-' + Math.random().toString(36).substring(2, 9),
+              name: comboStr,
+              sku: this.pSku() ? `${this.pSku()}-${comboArray.join('-')}`.toUpperCase().replace(/\s+/g,'-') : '',
+              price: this.pSale(),
+              stock: this.pStock(),
+              weight: 0,
+              optionsData: opts.map((opt, idx) => ({ optionName: opt.name, valueStr: comboArray[idx] })) // Tracking mapping
+          };
+      });
+      this.pVariants.set(newVariants);
+  }
+  removeVariant(index: number) {
+      const variants = [...this.pVariants()];
+      variants.splice(index, 1);
+      this.pVariants.set(variants);
   }
 
   removeImage(index: number) {
@@ -798,16 +892,16 @@ export class AdminPanel {
     }
 
     // Parse variants from JSON block
-    let variantsArr = [];
-    try {
-      const vText = this.pVariants().trim();
-      if (vText) {
-        variantsArr = JSON.parse(vText);
-      }
-    } catch {
-      this.toastService.error('Invalid Variants JSON. Correct or empty this field.');
-      return;
-    }
+    let variantsArr = this.pVariants();
+    let optionsArr = this.pOptions().map((o: any, idx: number) => ({
+        name: o.name,
+        sortOrder: idx,
+        values: o.values.map((v: string, vidx: number) => ({
+            value: v,
+            displayValue: v,
+            sortOrder: vidx
+        }))
+    }));
 
     const pData: any = {
       name,
@@ -824,6 +918,7 @@ export class AdminPanel {
       long_description: this.pLongDesc(),
       images: imagesArr,
       variants: variantsArr,
+      options: optionsArr,
       status: this.pStatus(),
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),

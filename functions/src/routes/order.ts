@@ -7,6 +7,7 @@ import {
   updatePaymentStatus,
   updateShipmentTracking,
   getMyOrders,
+  addOrderNotes
 } from '../controllers/order';
 import { authenticateToken, requireRole } from '../middleware/auth';
 
@@ -22,5 +23,6 @@ router.post('/', createOrder);
 router.put('/:id/status', requireRole(['Admin', 'Manager']), updateOrderStatus);
 router.put('/:id/payment', requireRole(['Admin', 'Manager']), updatePaymentStatus);
 router.put('/:id/shipment', requireRole(['Admin', 'Manager']), updateShipmentTracking);
+router.post('/:id/notes', requireRole(['Admin', 'Manager']), addOrderNotes);
 
 export default router;

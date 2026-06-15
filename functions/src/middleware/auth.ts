@@ -70,7 +70,7 @@ export const requireRole = (allowedRoles: string[]) => {
     const { role } = req.user;
 
     // Super Admin has all access
-    if (role === 'Super Admin' || allowedRoles.includes(role)) {
+    if (role === 'SuperAdmin' || allowedRoles.includes(role)) {
       return next();
     }
 

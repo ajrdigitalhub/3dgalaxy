@@ -1,12 +1,13 @@
 import { Component, Input, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-catalog-tab',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -184,6 +185,91 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 mt-4 overflow-hidden">
                          <div class="bg-blue-500 h-full rounded-full transition-all duration-300" [style.width]="uploadProgress + '%'"></div>
                        </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Variants Tab -->
+                <div [class.hidden]="activeEditTab() !== 'variants'" class="space-y-6 animate-fadeIn">
+                  <!-- Options Management -->
+                  <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                       <h4 class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider">Product Options</h4>
+                       <button (click)="admin.addOption()" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] uppercase font-black tracking-wider rounded border-none cursor-pointer flex items-center gap-1"><mat-icon class="scale-75 text-sm">add</mat-icon> Add Option</button>
+                    </div>
+                    
+                    @if (admin.pOptions().length === 0) {
+                        <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No options configured. Add options like Size, Color, or Material to generate variants.</div>
+                    } @else {
+                        <div class="space-y-4">
+                          @for (opt of admin.pOptions(); track opt.id; let i = $index) {
+                            <div class="p-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative">
+                               <button (click)="admin.removeOption(i)" class="absolute top-3 right-3 text-red-500 hover:text-red-600 bg-none border-none cursor-pointer"><mat-icon class="scale-75">close</mat-icon></button>
+                               <div class="w-1/2">
+                                  <label class="text-[9px] font-black tracking-widest uppercase text-zinc-400">Option Name</label>
+                                  <input type="text" [(ngModel)]="opt.name" (ngModelChange)="admin.updateOption()" placeholder="e.g. Color, Size" class="w-full px-3 py-2 text-xs font-bold font-mono bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded outline-none">
+                               </div>
+                               <div>
+                                  <label class="text-[9px] font-black tracking-widest uppercase text-zinc-400">Values (Comma-separated)</label>
+                                  <input type="text" [value]="admin.getOptionValuesString(opt)" (blur)="admin.setOptionValuesString(opt, $any($event.target).value)" placeholder="e.g. Red, Blue, Green / 1kg, 3kg" class="w-full px-3 py-2 text-xs font-bold font-mono bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded outline-none">
+                               </div>
+                            </div>
+                          }
+                          <div class="pt-4 flex justify-end gap-3">
+                             <button (click)="admin.generateVariants()" class="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-black uppercase text-xs tracking-wider rounded-lg border-none cursor-pointer">Generate Variant Combinations</button>
+                          </div>
+                        </div>
+                    }
+                  </div>
+
+                  <!-- Variants Grid -->
+                  <div class="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                    <div class="flex items-center justify-between">
+                       <h4 class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider">Combinations ({{ admin.pVariants().length }})</h4>
+                    </div>
+
+                    @if (admin.pVariants().length === 0) {
+                        <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No variants generated yet.</div>
+                    } @else {
+                        <div class="overflow-x-auto max-h-[500px]">
+                           <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                              <thead class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-black tracking-widest uppercase sticky top-0 z-10">
+                                 <tr>
+                                    <th class="p-3">Variant</th>
+                                    <th class="p-3 w-32">SKU</th>
+                                    <th class="p-3 w-24">Price</th>
+                                    <th class="p-3 w-24">Stock</th>
+                                    <th class="p-3 w-24">Weight</th>
+                                    <th class="p-3 w-16">Action</th>
+                                 </tr>
+                              </thead>
+                              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                                 @for (variant of admin.pVariants(); track variant.id || $index; let vIdx = $index) {
+                                    <tr>
+                                       <td class="p-3 font-bold text-zinc-900 dark:text-white">{{ variant.name }}</td>
+                                       <td class="p-2">
+                                          <input type="text" [(ngModel)]="variant.sku" class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500">
+                                       </td>
+                                       <td class="p-2">
+                                          <input type="number" [(ngModel)]="variant.price" class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500">
+                                       </td>
+                                       <td class="p-2">
+                                          <input type="number" [(ngModel)]="variant.stock" class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500">
+                                       </td>
+                                       <td class="p-2">
+                                          <input type="number" [(ngModel)]="variant.weight" class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500">
+                                       </td>
+                                       <td class="p-2 text-center">
+                                          <div class="flex items-center justify-center gap-2">
+                                             <button (click)="openVariantImageModal(vIdx)" class="flex items-center text-[10px] font-bold text-blue-500 hover:text-blue-600 bg-transparent border-none cursor-pointer"><mat-icon class="scale-75 mr-1">image</mat-icon> Manage</button>
+                                             <button (click)="admin.removeVariant(vIdx)" class="text-red-400 hover:text-red-600 bg-transparent border-none cursor-pointer"><mat-icon class="scale-75">delete</mat-icon></button>
+                                          </div>
+                                       </td>
+                                    </tr>
+                                 }
+                              </tbody>
+                           </table>
+                        </div>
                     }
                   </div>
                 </div>
@@ -695,6 +781,64 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           </div>
         </div>
       }
+      
+      <!-- Variant Image Management Modal -->
+      @if (activeVariantForImages() !== null) {
+        <div class="fixed inset-0 z-50 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm flex items-center justify-center p-4">
+           <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+              <div class="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                 <div>
+                    <h3 class="text-lg font-black uppercase tracking-tight">Variant Images</h3>
+                    <p class="text-xs text-zinc-500 font-mono mt-1">Editing images for {{ admin.pVariants()[activeVariantForImages()!]?.name }}</p>
+                 </div>
+                 <button (click)="activeVariantForImages.set(null)" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 bg-transparent border-none cursor-pointer"><mat-icon>close</mat-icon></button>
+              </div>
+              
+              <div class="p-6 overflow-y-auto space-y-6">
+                 <div>
+                    <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Upload Image</label>
+                    <div class="border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-8 flex flex-col items-center justify-center relative hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                        <input type="file" multiple accept="image/jpeg, image/png, image/webp" class="absolute inset-0 opacity-0 cursor-pointer" (change)="handleVariantImageUpload($event)">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center shrink-0 mb-3 group-hover:scale-110 transition-transform">
+                          <mat-icon>cloud_upload</mat-icon>
+                        </div>
+                        <div class="text-xs font-bold text-zinc-900 dark:text-white uppercase">Drop photos here or click to browse</div>
+                        <div class="text-[10px] text-zinc-500 mt-1">JPEG, PNG, WebP up to 2MB</div>
+                        @if (uploadProgress > 0) {
+                          <div class="absolute inset-x-4 bottom-4 h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                             <div class="h-full bg-blue-500 transition-all duration-300" [style.width.%]="uploadProgress"></div>
+                          </div>
+                        }
+                    </div>
+                 </div>
+
+                 @if ((admin.pVariants()[activeVariantForImages()!]?.images || []).length > 0) {
+                     <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Current Images</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           @for (img of admin.pVariants()[activeVariantForImages()!]?.images || []; track $index; let imgIdx = $index) {
+                              <div class="relative group border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden aspect-square bg-zinc-50 dark:bg-zinc-900">
+                                 <img [src]="img.url" class="absolute inset-0 w-full h-full object-cover">
+                                 <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button (click)="removeVariantImage(imgIdx)" class="h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center border-none cursor-pointer"><mat-icon class="scale-75">delete</mat-icon></button>
+                                 </div>
+                                 @if (imgIdx === 0) {
+                                     <div class="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black uppercase rounded shadow-sm">Primary</div>
+                                 }
+                              </div>
+                           }
+                        </div>
+                     </div>
+                 } @else {
+                     <div class="text-center p-8 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-400 text-xs font-bold">No images uploaded for this variant yet.</div>
+                 }
+              </div>
+              <div class="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex justify-end">
+                 <button (click)="activeVariantForImages.set(null)" class="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-black uppercase tracking-widest border-none cursor-pointer">Done</button>
+              </div>
+           </div>
+        </div>
+      }
     </div>
   `
 })
@@ -703,11 +847,68 @@ export class AdminCatalogTab {
   @Input({ required: true }) admin!: AdminPanel;
 
   uploadProgress = 0;
+  
+  activeVariantForImages = signal<number | null>(null);
+
+  openVariantImageModal(variantIdx: number) {
+      this.activeVariantForImages.set(variantIdx);
+  }
+
+  removeVariantImage(imgIdx: number) {
+      const vIdx = this.activeVariantForImages();
+      if (vIdx === null) return;
+      const variants = [...this.admin.pVariants()];
+      const variant = variants[vIdx];
+      if (variant && variant.images) {
+          variant.images.splice(imgIdx, 1);
+          this.admin.pVariants.set(variants);
+      }
+  }
+
+  async handleVariantImageUpload(event: Event) {
+      const input = event.target as HTMLInputElement;
+      if (!input.files || input.files.length === 0) return;
+
+      const vIdx = this.activeVariantForImages();
+      if (vIdx === null) return;
+      
+      this.uploadProgress = 10;
+      
+      const variants = [...this.admin.pVariants()];
+      const variant = variants[vIdx];
+      if (!variant.images) variant.images = [];
+      
+      for (let i = 0; i < input.files.length; i++) {
+          const file = input.files[i];
+          if (file.size > 2 * 1024 * 1024) {
+               this.toastService.info(`File ${file.name} exceeds 2MB limit.`);
+               continue;
+          }
+          
+          try {
+              const base64Url = await this.readAsBase64(file);
+              variant.images.push({ 
+                  url: base64Url, 
+                  isPrimary: variant.images.length === 0 // First image is primary if none exist
+              });
+          } catch (e) {
+              console.error('Failed to read file:', e);
+          }
+          
+          this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 80);
+      }
+      
+      this.admin.pVariants.set(variants);
+      this.uploadProgress = 100;
+      setTimeout(() => this.uploadProgress = 0, 1000);
+      input.value = ''; // Reset input
+  }
 
   activeEditTab = signal('general');
 
   editTabs = [
     { id: 'general', label: 'General' },
+    { id: 'variants', label: 'Variants' },
     { id: 'images', label: 'Images' },
     { id: 'specifications', label: 'Specifications' },
     { id: 'downloads', label: 'Downloads' },

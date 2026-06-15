@@ -8,6 +8,7 @@ import { ENV } from './config/env';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import categoryRoutes from './routes/category';
+import variantImageRoutes from './routes/variantImage';
 import brandRoutes from './routes/brand';
 import productRoutes from './routes/product';
 import homepageRoutes from './routes/homepage';
@@ -18,6 +19,10 @@ import customerRoutes from './routes/customer';
 import whatsappRoutes from './routes/whatsapp';
 import sitemapRoutes from './routes/sitemap';
 import profileRoutes from './routes/profile';
+import wishlistRoutes from './routes/wishlist';
+
+import paymentRoutes from './routes/payment';
+import webhookRoutes from './routes/webhook';
 
 const app = express();
 
@@ -34,6 +39,7 @@ app.use('/', sitemapRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', variantImageRoutes); // Since some endpoints start with /variants or /product-variant-images
 app.use('/api/brands', brandRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/homepage', homepageRoutes);
@@ -43,6 +49,12 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/payments', paymentRoutes);
+import searchRoutes from './routes/search';
+
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/search', searchRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

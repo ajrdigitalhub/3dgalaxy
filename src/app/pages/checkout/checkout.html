@@ -63,23 +63,27 @@
         <h2 class="text-lg font-black uppercase tracking-widest text-[#d65108] mb-6 flex items-center gap-2"><mat-icon>payment</mat-icon> Payment Method</h2>
         
         <div class="space-y-4">
-          <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all border-[#d65108] bg-orange-50 dark:bg-[#d65108]/10">
-            <input type="radio" value="COD" [(ngModel)]="paymentMethod" class="w-5 h-5 text-[#d65108] focus:ring-[#d65108]">
-            <div class="flex-1">
-              <span class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider block">Cash on Delivery (COD)</span>
-              <span class="text-xs text-neutral-500">Pay when your order arrives</span>
-            </div>
-            <mat-icon class="text-[#d65108]">local_shipping</mat-icon>
-          </label>
-          
-          <label class="flex items-center gap-4 p-4 rounded-xl border-2 border-neutral-200 dark:border-neutral-800 opacity-50 cursor-not-allowed">
-            <input type="radio" value="Razorpay" [disabled]="true" class="w-5 h-5">
-            <div class="flex-1">
-              <span class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider block">Razorpay / Online</span>
-              <span class="text-xs text-neutral-500">Coming soon...</span>
-            </div>
-            <mat-icon>credit_card</mat-icon>
-          </label>
+          @for (method of availableGateways(); track method.gatewayCode) {
+            <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all" 
+              [class]="paymentMethod() === method.gatewayCode ? 'border-[#d65108] bg-orange-50 dark:bg-[#d65108]/10' : 'border-neutral-200 dark:border-neutral-800'">
+              <input type="radio" [value]="method.gatewayCode" [(ngModel)]="paymentMethod" class="w-5 h-5 text-[#d65108] focus:ring-[#d65108]">
+              <div class="flex-1">
+                <span class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider block">{{ method.displayName }}</span>
+                <span class="text-xs text-neutral-500">{{ method.description || 'Secure Gateway' }}</span>
+              </div>
+              @if (method.gatewayCode === 'COD') {
+                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">local_shipping</mat-icon>
+              } @else if (method.gatewayCode === 'RAZORPAY') {
+                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">credit_card</mat-icon>
+              } @else {
+                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">account_balance</mat-icon>
+              }
+            </label>
+          }
+
+          @if (availableGateways().length === 0) {
+             <div class="p-4 text-center text-sm font-bold text-red-500">No payment methods currently available.</div>
+          }
         </div>
       </div>
     </div>
@@ -93,15 +97,20 @@
           @for (item of checkoutItems(); track item.product.id) {
             <div class="flex gap-4 items-start">
               <div class="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden shrink-0">
-                <img [src]="item.product.images[0]?.url || item.product.images[0]" class="w-full h-full object-cover">
+                <img [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]" class="w-full h-full object-cover">
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{item.product.name}}</h3>
+                <h3 class="text-sm font-bold text-neutral-900 dark:text-white truncate">
+                    {{item.product.name}}
+                    @if (item.variant) {
+                        <span class="text-neutral-400 font-medium"> - {{ item.variant.name }}</span>
+                    }
+                </h3>
                 <p class="text-xs text-neutral-500">Qty: {{item.quantity}}</p>
-                <div class="font-black mt-1">{{getPrice(item.product) | currency:'INR':'symbol':'1.0-0'}}</div>
+                <div class="font-black mt-1">{{ds.getItemPrice(item) | currency:'INR':'symbol':'1.0-0'}}</div>
               </div>
               <div class="font-bold text-sm text-neutral-900 dark:text-white">
-                {{(getPrice(item.product) * item.quantity) | currency:'INR':'symbol':'1.0-0'}}
+                {{(ds.getItemPrice(item) * item.quantity) | currency:'INR':'symbol':'1.0-0'}}
               </div>
             </div>
           }

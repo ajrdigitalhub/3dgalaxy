@@ -110,6 +110,7 @@ model Category {
   homepageItems  HomepageSectionItem[]
   products       Product[]
 
+  @@index([name])
   @@map("categories")
 }
 
@@ -125,6 +126,7 @@ model Brand {
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
   products    Product[]
 
+  @@index([name])
   @@map("brands")
 }
 
@@ -163,10 +165,13 @@ model Product {
   specifications  ProductSpecification[]
   tagMappings     ProductTagMapping[]
   variants        ProductVariant[]
+  options         ProductOption[]
   warranty        ProductWarranty?
   category        Category?               @relation(fields: [categoryId], references: [id])
   brand           Brand?                  @relation(fields: [brandId], references: [id])
 
+  @@index([name])
+  @@index([slug])
   @@map("products")
 }
 
@@ -307,20 +312,79 @@ model ProductAttributeValue {
 }
 
 model ProductVariant {
-  id         String      @id @default(uuid())
-  productId  String      @map("product_id")
-  sku        String      @unique
-  price      Float
-  name       String
-  deletedAt  DateTime?   @map("deleted_at")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @default(now()) @updatedAt @map("updated_at")
-  cartItems  CartItem[]
-  inventory  Inventory[]
-  orderItems OrderItem[]
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id          String      @id @default(uuid())
+  productId   String      @map("product_id")
+  sku         String      @unique
+  price       Float
+  salePrice   Float?      @map("sale_price")
+  stock       Int         @default(0)
+  weight      Float?
+  isDefault   Boolean     @default(false) @map("is_default")
+  isActive    Boolean     @default(true) @map("is_active")
+  variantSlug String?     @map("variant_slug")
+  name        String
+  deletedAt   DateTime?   @map("deleted_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
+  cartItems   CartItem[]
+  inventory   Inventory[]
+  orderItems  OrderItem[]
+  options     ProductVariantOption[]
+  images      ProductVariantImage[]
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
+}
+
+model ProductOption {
+  id          String   @id @default(uuid())
+  productId   String   @map("product_id")
+  name        String
+  displayType String   @default("select") @map("display_type")
+  sortOrder   Int      @default(0) @map("sort_order")
+  
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values      ProductOptionValue[]
+
+  @@map("product_options")
+}
+
+model ProductOptionValue {
+  id            String   @id @default(uuid())
+  optionId      String   @map("option_id")
+  value         String
+  displayValue  String?  @map("display_value")
+  colorCode     String?  @map("color_code")
+  imageUrl      String?  @map("image_url")
+  sortOrder     Int      @default(0) @map("sort_order")
+
+  option        ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants      ProductVariantOption[]
+
+  @@map("product_option_values")
+}
+
+model ProductVariantOption {
+  variantId     String  @map("variant_id")
+  optionValueId String  @map("option_value_id")
+
+  variant       ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue   ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, optionValueId])
+  @@map("product_variant_options")
+}
+
+model ProductVariantImage {
+  id         String   @id @default(uuid())
+  variantId  String   @map("variant_id")
+  imageUrl   String   @map("image_url")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  sortOrder  Int      @default(0) @map("sort_order")
+
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@map("product_variant_images")
 }
 
 model ProductTag {
@@ -548,28 +612,72 @@ model OrderStatusHistory {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  orderId       String   @map("order_id")
-  paymentMethod String   @map("payment_method")
-  transactionId String?  @map("transaction_id")
-  amount        Float
-  status        String
-  createdAt     DateTime @default(now()) @map("created_at")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id               String    @id @default(uuid())
+  orderId          String    @map("order_id")
+  paymentMethod    String    @map("payment_method")
+  transactionId    String?   @map("transaction_id")
+  gatewayOrderId   String?   @map("gateway_order_id")
+  gatewayPaymentId String?   @map("gateway_payment_id")
+  gatewayResponse  String?   @map("gateway_response")
+  amount           Float
+  status           String
+  paidAt           DateTime? @map("paid_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
 
+model SearchLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  searchTerm  String   @map("search_term")
+  resultCount Int      @map("result_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("search_logs")
+}
+
+model SearchSettings {
+  id                     String   @id @default("default")
+  enableSuggestions      Boolean  @default(true) @map("enable_suggestions")
+  enableRecent           Boolean  @default(true) @map("enable_recent")
+  enableAnalytics        Boolean  @default(true) @map("enable_analytics")
+  resultsPerPage         Int      @default(20) @map("results_per_page")
+
+  @@map("search_settings")
+}
+
+model PaymentGateway {
+  id             String   @id @default(uuid())
+  name           String
+  gatewayCode    String   @unique @map("gateway_code")
+  isEnabled      Boolean  @default(false) @map("is_enabled")
+  isTestMode     Boolean  @default(true) @map("is_test_mode")
+  keyId          String?  @map("key_id")
+  keySecret      String?  @map("key_secret")
+  webhookSecret  String?  @map("webhook_secret")
+  displayName    String?  @map("display_name")
+  description    String?
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("payment_gateways")
+}
+
 model Shipment {
-  id             String    @id @default(uuid())
-  orderId        String    @map("order_id")
-  carrier        String?
-  trackingNumber String?   @map("tracking_number")
-  status         String
-  shippedAt      DateTime? @map("shipped_at")
-  deliveredAt    DateTime? @map("delivered_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                String    @id @default(uuid())
+  orderId           String    @map("order_id")
+  carrier           String?
+  trackingNumber    String?   @map("tracking_number")
+  trackingUrl       String?   @map("tracking_url")
+  status            String
+  estimatedDelivery DateTime? @map("estimated_delivery")
+  shippedAt         DateTime? @map("shipped_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("shipments")
 }

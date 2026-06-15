@@ -1,0 +1,272 @@
+@if (loading()) {
+  <div class="p-8 flex items-center justify-center animate-pulse">
+    <div class="h-8 w-8 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+  </div>
+} @else if (error()) {
+  <div class="p-8 text-center text-red-500 font-mono font-black border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 rounded-2xl m-4">
+    {{ error() }}
+  </div>
+} @else if (order()) {
+  <div class="max-w-6xl mx-auto p-4 md:p-8 space-y-6 print:p-0 print:m-0 animate-fadeIn">
+    <!-- Header Controls -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
+      <div class="flex items-center gap-4">
+        <button (click)="location.back()" class="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-600 dark:text-white transition-colors cursor-pointer">
+          <mat-icon class="align-middle">arrow_back</mat-icon>
+        </button>
+        <div>
+          <h1 class="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+            {{ order().orderNumber }}
+            <span class="px-2 py-1 bg-zinc-100 dark:bg-zinc-900 border dark:border-zinc-800 rounded-md text-[10px] tracking-widest text-zinc-500 font-mono">{{ order().status }}</span>
+          </h1>
+          <p class="text-xs text-zinc-500 font-bold uppercase mt-1">{{ order().createdAt | date:'medium' }}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button (click)="printInvoice()" class="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border dark:border-zinc-800 rounded-xl text-xs font-black uppercase text-zinc-900 dark:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-sm">
+          <mat-icon class="text-[18px] leading-none">local_printshop</mat-icon> Print Invoice
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Left Column: Products & Payments -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Ordered Products -->
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 print:border-none print:p-0">
+          <h2 class="text-sm font-black uppercase mb-4 border-b dark:border-zinc-800 pb-2">Line Items</h2>
+          <div class="space-y-4">
+            @for (item of order().items; track item.id) {
+              <div class="flex items-center gap-4">
+                <div class="h-16 w-16 min-w-16 bg-zinc-100 dark:bg-zinc-900 rounded-xl flex items-center justify-center overflow-hidden border dark:border-zinc-800">
+                  @if (item.product?.images?.[0]?.url) {
+                    <img [src]="item.product.images[0].url" [alt]="item.product.name" class="h-full w-full object-cover">
+                  } @else {
+                    <mat-icon class="text-zinc-300">inventory_2</mat-icon>
+                  }
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-bold text-sm uppercase"><a [routerLink]="['/product', item.product?.slug]" class="hover:text-blue-500 transition-colors">{{ item.product?.name }}</a></h3>
+                  <div class="text-[10px] text-zinc-500 font-mono tracking-wider">
+                    SKU: {{ item.product?.sku }}
+                    @if (item.variant) { | {{ item.variant.name }} }
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-black font-mono">₹{{ item.unitPrice | number }}</div>
+                  <div class="text-[10px] text-zinc-400 font-black">x {{ item.quantity }}</div>
+                </div>
+                <div class="w-24 text-right font-black font-mono text-zinc-900 dark:text-white">
+                  ₹{{ item.totalPrice | number }}
+                </div>
+              </div>
+            }
+          </div>
+          
+          <div class="mt-6 pt-4 border-t dark:border-zinc-800">
+            <!-- Order Summary Matrix -->
+            <div class="flex justify-end pr-0">
+              <div class="w-full max-w-[280px] space-y-2 text-xs font-mono">
+                <div class="flex justify-between text-zinc-500">
+                  <span>Subtotal:</span>
+                  <span>₹{{ order().totalAmount - order().shippingAmount - order().taxAmount + order().discountAmount | number }}</span>
+                </div>
+                <div class="flex justify-between text-zinc-500">
+                  <span>Shipping:</span>
+                  <span>₹{{ order().shippingAmount | number }}</span>
+                </div>
+                <div class="flex justify-between text-zinc-500">
+                  <span>Tax:</span>
+                  <span>₹{{ order().taxAmount | number }}</span>
+                </div>
+                @if (order().discountAmount > 0) {
+                  <div class="flex justify-between text-emerald-500">
+                    <span>Discount:</span>
+                    <span>-₹{{ order().discountAmount | number }}</span>
+                  </div>
+                }
+                <div class="flex justify-between py-2 border-t dark:border-zinc-800 font-black text-sm text-zinc-900 dark:text-white mt-2">
+                  <span>Grand Total:</span>
+                  <span>₹{{ order().totalAmount | number }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 print:border-none print:p-0">
+          <div class="flex items-center justify-between border-b dark:border-zinc-800 pb-2 mb-4">
+             <h2 class="text-sm font-black uppercase">Payment Intel</h2>
+             @if (order().payments?.[0]) {
+               <span class="px-2 py-0.5 border text-[10px] font-black rounded-md tracking-wider" 
+                 [class.border-emerald-500]="order().payments[0].status === 'Paid' || order().payments[0].status === 'PAID'"
+                 [class.text-emerald-500]="order().payments[0].status === 'Paid' || order().payments[0].status === 'PAID'"
+                 [class.border-zinc-400]="order().payments[0].status !== 'Paid' && order().payments[0].status !== 'PAID'"
+                 [class.text-zinc-500]="order().payments[0].status !== 'Paid' && order().payments[0].status !== 'PAID'">
+                 {{ order().payments[0].status }}
+               </span>
+             }
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+            @if (order().payments?.length > 0) {
+              <div>
+                <span class="block text-zinc-400 font-black uppercase font-sans text-[10px] mb-1">Gateway Method</span>
+                {{ order().payments[0].paymentMethod }}
+              </div>
+              <div>
+                <span class="block text-zinc-400 font-black uppercase font-sans text-[10px] mb-1">Transaction Ref</span>
+                {{ order().payments[0].transactionId || 'None' }}
+              </div>
+              
+              <div class="col-span-2 pt-2 print:hidden flex items-center gap-2">
+                <select #pmtStatus [value]="order().payments[0].status" class="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border dark:border-zinc-800 outline-none rounded-lg text-xs font-black uppercase cursor-pointer">
+                  <option value="Pending">Pending Auth</option>
+                  <option value="Paid">Cleared / Paid</option>
+                  <option value="Failed">Failed / Declined</option>
+                  <option value="Refunded">Refunded Matrix</option>
+                </select>
+                <button (click)="updatePaymentStatus(pmtStatus.value)" [disabled]="paymentUpdating()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase transition-colors cursor-pointer disabled:opacity-50">
+                  Update Payment
+                </button>
+              </div>
+            } @else {
+              <div class="text-zinc-500">No payment records found.</div>
+            }
+          </div>
+        </div>
+
+        <!-- Shipment Hub -->
+        <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-6 print:border-none print:p-0">
+          <h2 class="text-sm font-black uppercase mb-4 border-b border-emerald-200/50 dark:border-emerald-900/50 pb-2 text-emerald-800 dark:text-emerald-400">Logistics & Shipment Details</h2>
+          
+          @if (order().shipments?.length > 0) {
+            <div class="space-y-4">
+              @for (ship of order().shipments; track ship.id) {
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span class="block text-emerald-600/70 dark:text-emerald-400/60 font-black uppercase font-sans text-[10px] mb-1">Courier Alliance</span>
+                    <span class="font-bold">{{ ship.carrier || 'N/A' }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-emerald-600/70 dark:text-emerald-400/60 font-black uppercase font-sans text-[10px] mb-1">Waybill tracking code</span>
+                    <span class="font-mono font-black">{{ ship.trackingNumber || 'N/A' }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-emerald-600/70 dark:text-emerald-400/60 font-black uppercase font-sans text-[10px] mb-1">Status</span>
+                    <span class="font-bold uppercase">{{ ship.status }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-emerald-600/70 dark:text-emerald-400/60 font-black uppercase font-sans text-[10px] mb-1">Est Delivery</span>
+                    <span>{{ ship.estimatedDelivery ? (ship.estimatedDelivery | date:'shortDate') : 'Unknown' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+             <div class="flex flex-col sm:flex-row gap-3 pt-2 print:hidden">
+               <input #carrier placeholder="Courier Name..." class="w-full sm:w-1/3 px-3 py-2 bg-white dark:bg-zinc-950 border border-emerald-200 dark:border-emerald-900 rounded-lg text-xs font-bold outline-none uppercase placeholder:normal-case">
+               <input #tracking placeholder="AWB Tracking ID..." class="w-full sm:w-1/3 px-3 py-2 bg-white dark:bg-zinc-950 border border-emerald-200 dark:border-emerald-900 rounded-lg text-xs font-mono font-bold outline-none placeholder:font-sans placeholder:font-bold">
+               <button (click)="updateShipment(carrier.value, tracking.value, '', '')" [disabled]="shipmentUpdating()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50 min-w-[124px]">
+                 Dispatch
+               </button>
+             </div>
+          }
+        </div>
+      </div>
+
+      <!-- Right Column: Customer & Logs -->
+      <div class="space-y-6">
+        
+        <!-- Status Action Card -->
+        <div class="bg-zinc-900 text-white border border-zinc-800 rounded-2xl p-6 shadow-2xl print:hidden">
+          <h2 class="text-sm font-black uppercase border-b border-zinc-800 pb-2 mb-4 text-blue-400">Order Stage Matrix</h2>
+          <select #ordStatus [value]="order().status" class="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs font-black uppercase tracking-widest outline-none mb-4 cursor-pointer text-white">
+            <option value="Pending">Pending Receipt</option>
+            <option value="Confirmed">Confirmed Check</option>
+            <option value="Processing">Processing Operations</option>
+            <option value="Packed">Packed</option>
+            <option value="Shipped">Shipped Transit</option>
+            <option value="Delivered">Delivered Node</option>
+            <option value="Cancelled">Cancelled Alert</option>
+            <option value="Returned">Returned Protocol</option>
+            <option value="Refunded">Refunded Protocol</option>
+          </select>
+          <button (click)="updateOrderStatus(ordStatus.value)" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all shadow-md shadow-blue-500/10 disabled:opacity-50">
+            Commit Status
+          </button>
+        </div>
+
+        <!-- Customer Identity -->
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 print:border-none print:p-0">
+          <h2 class="text-sm font-black uppercase mb-4 border-b dark:border-zinc-800 pb-2">Civilian Coordinates</h2>
+          @if (order().customer) {
+            <div class="space-y-4">
+              <div>
+                <p class="font-black uppercase tracking-wider text-sm">{{ order().customer.user?.firstName }} {{ order().customer.user?.lastName }}</p>
+                <a [href]="'mailto:' + order().customer.user?.email" class="text-blue-500 hover:underline text-xs">{{ order().customer.user?.email }}</a>
+              </div>
+              <div class="text-xs font-mono space-y-1">
+                @if (order().customer.phone || order().customer.user?.mobile) {
+                  <p class="text-zinc-600 dark:text-zinc-400">{{ order().customer.phone || order().customer.user?.mobile }}</p>
+                }
+                <p class="text-zinc-500">Tier: <span class="font-black uppercase">{{ order().customer.customerType }}</span></p>
+                <p class="text-zinc-500">Active Since: {{ order().customer.createdAt | date:'LLLL yyyy' }}</p>
+              </div>
+            </div>
+          } @else {
+            <p class="text-xs text-zinc-500">Guest Checkout Session</p>
+          }
+        </div>
+
+        <!-- Delivery Vector -->
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 print:border-none print:p-0">
+          <h2 class="text-sm font-black uppercase mb-4 border-b dark:border-zinc-800 pb-2 flex items-center gap-2"><mat-icon class="text-sm">location_on</mat-icon> Shipping Payload</h2>
+          @if (order().shippingAddress) {
+            <div class="text-xs leading-5">
+              <p class="font-bold uppercase text-zinc-900 dark:text-white">{{ order().shippingAddress.name || order().customer?.user?.firstName }}</p>
+              <p class="text-zinc-600 dark:text-zinc-400">{{ order().shippingAddress.addressLine1 }}</p>
+              @if (order().shippingAddress.addressLine2) { <p class="text-zinc-600 dark:text-zinc-400">{{ order().shippingAddress.addressLine2 }}</p> }
+              <p class="text-zinc-600 dark:text-zinc-400 font-mono">{{ order().shippingAddress.city }}, {{ order().shippingAddress.state }} {{ order().shippingAddress.postalCode }}</p>
+              <p class="text-zinc-500 uppercase tracking-widest mt-1">{{ order().shippingAddress.country }}</p>
+              @if (order().shippingAddress.phone) {
+                <p class="mt-2 text-zinc-400 font-mono flex items-center gap-1.5"><mat-icon class="text-[14px]">phone</mat-icon> {{ order().shippingAddress.phone }}</p>
+              }
+            </div>
+          } @else {
+            <p class="text-xs text-zinc-500 italic">No destination coordinates located.</p>
+          }
+        </div>
+
+        <!-- Internal Notes -->
+        <div class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 print:hidden">
+          <h2 class="text-sm font-black uppercase mb-4 border-b dark:border-zinc-800 pb-2">Encrypted Logs</h2>
+          
+          <div class="space-y-4 mb-4">
+            @for (note of order().statusHistory; track note.id) {
+              <div class="text-xs">
+                <p class="text-[9px] text-zinc-400 font-mono font-bold">{{ note.createdAt | date:'short' }}</p>
+                <div class="pl-2 border-l-2 border-zinc-200 dark:border-zinc-800 mt-1">
+                  <span class="font-black tracking-widest uppercase text-[10px] px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-900 rounded-sm mb-1 inline-block">{{ note.status }}</span>
+                  <p class="text-zinc-700 dark:text-zinc-300">{{ note.comments }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="mt-4 pt-4 border-t dark:border-zinc-800">
+            <textarea #internalNote placeholder="Append encrypted operations log..." rows="3" class="w-full bg-zinc-50 dark:bg-zinc-900 border dark:border-zinc-800 rounded-xl px-3 py-2 text-xs outline-none mb-2 font-mono placeholder:font-sans"></textarea>
+            <button (click)="addNote(internalNote.value); internalNote.value = ''" [disabled]="noteAdding()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer transition-colors disabled:opacity-50">
+              Inject Log
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+}

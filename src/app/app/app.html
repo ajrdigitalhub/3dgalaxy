@@ -180,15 +180,122 @@
 
       <!-- Advanced Search Command Line (Desktop) -->
       <div class="flex-1 max-w-xl relative group hidden md:block mx-4">
-        <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-blue-500 transition-colors">search</mat-icon>
+        <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-[#d65108] transition-colors z-10">search</mat-icon>
         <input type="text" 
                [value]="searchQuery()"
                (input)="onSearch($any($event.target).value)"
+               (focus)="onSearchFocus()"
+               (blur)="isSearchFocused.set(false)"
+               (keydown)="handleSearchKeydown($event)"
                placeholder='Search for "Filaments", "Bambu Lab"...' 
-               class="w-full h-11 pl-12 pr-4 bg-neutral-100 dark:bg-neutral-900 border border-transparent focus:border-blue-500 rounded-xl text-sm font-bold text-neutral-800 dark:text-white outline-none transition-all placeholder:text-neutral-500">
-        <div class="absolute right-3 top-1/2 -translate-y-1/2 hidden xl:block">
+               class="w-full h-11 pl-12 pr-4 bg-neutral-100 dark:bg-neutral-900 border border-transparent focus:border-[#d65108] rounded-xl text-sm font-bold text-neutral-800 dark:text-white outline-none transition-all placeholder:text-neutral-500 relative z-10">
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 hidden xl:block z-10">
           <span class="px-1.5 py-0.5 border border-neutral-300 dark:border-neutral-700 rounded text-[9px] font-bold text-neutral-400">⌘K</span>
         </div>
+
+        <!-- Search Suggestions Dropdown -->
+        @if (isSearchFocused() && searchQuery().length > 1) {
+          <div class="absolute top-14 left-0 right-0 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-xl rounded-2xl z-50 animate-fadeIn overflow-hidden flex flex-col max-h-[70vh]" (mousedown)="$event.preventDefault()">
+            
+            @if (isSearching()) {
+              <div class="p-8 text-center text-neutral-400">
+                <mat-icon class="animate-spin mb-2">sync</mat-icon>
+                <div class="text-[10px] font-bold uppercase tracking-widest">Searching Catalog...</div>
+              </div>
+            } @else if (suggestions().products.length === 0 && suggestions().categories.length === 0 && suggestions().brands.length === 0) {
+              <div class="p-8 text-center text-neutral-500">
+                <div class="text-xs font-bold">No exact matches found.</div>
+                <button (click)="submitSearch()" class="mt-4 text-[10px] font-black uppercase text-[#d65108] hover:underline">See All Search Results →</button>
+              </div>
+            } @else {
+              <div class="overflow-y-auto px-4 py-4 space-y-6">
+                <!-- Products -->
+                @if (suggestions().products.length > 0) {
+                  <div>
+                    <h4 class="text-[9px] font-black uppercase tracking-widest text-[#d65108] mb-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">Products</h4>
+                    <div class="space-y-1">
+                      @for (p of suggestions().products; track p.id; let idx = $index) {
+                        <a [routerLink]="['/product', p.slug]" (click)="isSearchFocused.set(false)" [class.bg-neutral-50]="idx === selectedIndex()" [class.dark:bg-neutral-900]="idx === selectedIndex()" class="flex items-center gap-3 p-2 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-xl transition-colors group cursor-pointer">
+                           <div class="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden shrink-0">
+                             @if (p.image) { <img [src]="p.image" referrerpolicy="no-referrer" class="w-full h-full object-cover"> }
+                             @else { <mat-icon class="scale-75 text-neutral-400 h-full w-full flex items-center justify-center">image</mat-icon> }
+                           </div>
+                           <div class="flex-1 min-w-0">
+                              <div class="text-xs font-bold text-neutral-900 dark:text-white truncate group-hover:text-[#d65108] transition-colors">{{ p.name }}</div>
+                           </div>
+                           <div class="shrink-0 text-xs font-bold text-neutral-900 dark:text-white">
+                              {{ (p.salePrice || p.price) | currency:'INR':'symbol':'1.0-0' }}
+                           </div>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Categories -->
+                @if (suggestions().categories.length > 0) {
+                  <div>
+                    <h4 class="text-[9px] font-black uppercase tracking-widest text-[#d65108] mb-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">Categories</h4>
+                    <div class="flex flex-wrap gap-2">
+                       @for (c of suggestions().categories; track c.id) {
+                         <a [routerLink]="['/products']" [queryParams]="{category: c.slug}" (click)="isSearchFocused.set(false)" class="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg text-[10px] font-bold text-neutral-700 dark:text-neutral-300 hover:text-white hover:bg-[#d65108] transition-colors">
+                           {{ c.name }}
+                         </a>
+                       }
+                    </div>
+                  </div>
+                }
+
+                <!-- Brands -->
+                @if (suggestions().brands.length > 0) {
+                  <div>
+                    <h4 class="text-[9px] font-black uppercase tracking-widest text-[#d65108] mb-3 pb-2 border-b border-neutral-100 dark:border-neutral-800">Brands</h4>
+                    <div class="flex flex-wrap gap-2">
+                       @for (b of suggestions().brands; track b.id) {
+                         <a [routerLink]="['/products']" [queryParams]="{brand: b.slug}" (click)="isSearchFocused.set(false)" class="px-3 py-1.5 border border-neutral-200 dark:border-neutral-800 rounded-lg text-[10px] text-neutral-900 dark:text-white font-black hover:border-neutral-400 transition-colors uppercase tracking-wider">
+                           {{ b.name }}
+                         </a>
+                       }
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="p-3 bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 text-center">
+                 <button (click)="submitSearch()" class="text-[10px] font-black uppercase text-blue-500 hover:text-blue-600 transition-colors">View All Match Results →</button>
+              </div>
+            }
+          </div>
+        } @else if (isSearchFocused() && searchQuery().length < 2) {
+          <!-- Recent & Popular Searches Dropdown -->
+          <div class="absolute top-14 left-0 right-0 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-xl rounded-2xl z-50 animate-fadeIn overflow-hidden" (mousedown)="$event.preventDefault()">
+             <div class="p-4 grid grid-cols-2 gap-4">
+                @if (recentSearches().length > 0) {
+                    <div>
+                       <h4 class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">Recent Searches</h4>
+                       <div class="space-y-1">
+                         @for (term of recentSearches(); track term) {
+                            <button (click)="submitSearch(term)" class="w-full text-left flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-xl transition-colors group">
+                               <mat-icon class="scale-75 text-neutral-400">history</mat-icon>
+                               <span class="text-xs font-bold text-neutral-700 dark:text-neutral-300 group-hover:text-[#d65108]">{{ term }}</span>
+                            </button>
+                         }
+                       </div>
+                    </div>
+                }
+                <div>
+                   <h4 class="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-2">Popular Searches</h4>
+                   <div class="flex flex-wrap gap-2">
+                     @for (term of popularSearches(); track term) {
+                        <button (click)="submitSearch(term)" class="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg flex items-center gap-2 hover:text-[#d65108] transition-colors focus:ring-2 focus:ring-[#d65108] outline-none">
+                            <mat-icon class="text-[14px] w-[14px] h-[14px] text-neutral-400">trending_up</mat-icon>
+                            <span class="text-[10px] font-bold text-neutral-700 dark:text-neutral-300">{{ term }}</span>
+                        </button>
+                     }
+                   </div>
+                </div>
+             </div>
+          </div>
+        }
       </div>
 
       <!-- User Utilities (Mobile & Desktop) -->
@@ -293,23 +400,113 @@
         <div class="flex-1 relative">
           <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">search</mat-icon>
           <input type="text" 
+                 #mobileSearchInput
                  autofocus
                  [value]="searchQuery()"
                  (input)="onSearch($any($event.target).value)"
-                 placeholder='Search...' 
+                 (focus)="onSearchFocus()"
+                 (keydown)="handleSearchKeydown($event)"
+                 placeholder='Search products, categories...' 
                  class="w-full h-12 pl-10 pr-4 bg-neutral-100 dark:bg-neutral-900 border-none rounded-xl text-base font-bold text-neutral-800 dark:text-white outline-none">
         </div>
         <button (click)="isMobileSearchOpen.set(false)" class="h-12 w-12 flex shrink-0 items-center justify-center text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-xl transition-all">
           <mat-icon>close</mat-icon>
         </button>
       </div>
-      <div class="p-6 overflow-y-auto">
-        <h4 class="text-xs font-black uppercase text-neutral-400 mb-4 tracking-wider">Trending Highlights</h4>
-        <div class="flex flex-wrap gap-2">
-          <button (click)="onSearch('Bambu Lab'); isMobileSearchOpen.set(false)" class="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 text-sm font-semibold rounded-lg">Bambu Lab</button>
-          <button (click)="onSearch('PLA Filament'); isMobileSearchOpen.set(false)" class="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 text-sm font-semibold rounded-lg">PLA Filament</button>
-          <button (click)="onSearch('Resin'); isMobileSearchOpen.set(false)" class="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 text-sm font-semibold rounded-lg">Resin</button>
-        </div>
+      <div class="flex-1 overflow-y-auto">
+        <!-- Search Results for Mobile -->
+        @if (searchQuery().length > 1) {
+            @if (isSearching()) {
+              <div class="p-12 text-center text-neutral-400">
+                <mat-icon class="animate-spin mb-2">sync</mat-icon>
+                <div class="text-xs font-bold uppercase tracking-widest">Searching...</div>
+              </div>
+            } @else if (suggestions().products.length === 0 && suggestions().categories.length === 0 && suggestions().brands.length === 0) {
+              <div class="p-12 text-center text-neutral-500">
+                <div class="text-sm font-bold">No exact matches found.</div>
+                <button (click)="submitSearch()" class="mt-4 text-xs font-black uppercase text-[#d65108] hover:underline">View Search Results Page →</button>
+              </div>
+            } @else {
+              <div class="px-4 py-6 space-y-8">
+                <!-- Products -->
+                @if (suggestions().products.length > 0) {
+                  <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-[#d65108] mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">Products</h4>
+                    <div class="space-y-3">
+                      @for (p of suggestions().products; track p.id; let idx = $index) {
+                        <a [routerLink]="['/product', p.slug]" (click)="isMobileSearchOpen.set(false)" [class.bg-neutral-100]="idx === selectedIndex()" [class.dark:bg-neutral-800]="idx === selectedIndex()" class="flex items-center gap-3 p-2 bg-neutral-50 dark:bg-neutral-900 rounded-xl transition-colors">
+                           <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden shrink-0">
+                             @if (p.image) { <img [src]="p.image" referrerpolicy="no-referrer" class="w-full h-full object-cover"> }
+                             @else { <mat-icon class="scale-75 text-neutral-400 h-full w-full flex items-center justify-center">image</mat-icon> }
+                           </div>
+                           <div class="flex-1 min-w-0">
+                              <div class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{ p.name }}</div>
+                              <div class="text-xs font-bold text-[#d65108] pt-0.5">{{ (p.salePrice || p.price) | currency:'INR':'symbol':'1.0-0' }}</div>
+                           </div>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Categories -->
+                @if (suggestions().categories.length > 0) {
+                  <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-[#d65108] mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">Categories</h4>
+                    <div class="flex flex-wrap gap-2">
+                       @for (c of suggestions().categories; track c.id) {
+                         <a [routerLink]="['/products']" [queryParams]="{category: c.slug}" (click)="isMobileSearchOpen.set(false)" class="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 rounded-xl text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                           {{ c.name }}
+                         </a>
+                       }
+                    </div>
+                  </div>
+                }
+
+                <!-- Brands -->
+                @if (suggestions().brands.length > 0) {
+                  <div>
+                    <h4 class="text-xs font-black uppercase tracking-widest text-[#d65108] mb-4 pb-2 border-b border-neutral-100 dark:border-neutral-800">Brands</h4>
+                    <div class="flex flex-wrap gap-2">
+                       @for (b of suggestions().brands; track b.id) {
+                         <a [routerLink]="['/products']" [queryParams]="{brand: b.slug}" (click)="isMobileSearchOpen.set(false)" class="px-4 py-2 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs text-neutral-900 dark:text-white font-black uppercase tracking-wider">
+                           {{ b.name }}
+                         </a>
+                       }
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="p-6 bg-neutral-50 dark:bg-neutral-950 mt-4 border-t border-neutral-200 dark:border-neutral-800 text-center">
+                 <button (click)="submitSearch()" class="text-xs w-full py-4 bg-[#d65108] text-white rounded-xl font-black uppercase">View All Results</button>
+              </div>
+            }
+        } @else {
+          <!-- Trending / Recent -->
+          <div class="p-6">
+            @if (recentSearches().length > 0) {
+              <h4 class="text-xs font-black uppercase text-neutral-400 mb-4 tracking-wider">Recent Searches</h4>
+              <div class="flex flex-col gap-1 mb-8">
+                @for (term of recentSearches(); track term) {
+                   <button (click)="submitSearch(term)" class="flex items-center gap-3 py-3 w-full border-b border-neutral-100 dark:border-neutral-900">
+                      <mat-icon class="scale-75 text-neutral-400">history</mat-icon>
+                      <span class="text-sm font-bold text-neutral-700 dark:text-neutral-300">{{ term }}</span>
+                   </button>
+                }
+              </div>
+            }
+          
+            <h4 class="text-xs font-black uppercase text-neutral-400 mb-4 tracking-wider">Popular Searches</h4>
+            <div class="flex flex-wrap gap-2">
+              @for (term of popularSearches(); track term) {
+                <button (click)="submitSearch(term)" class="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 flex items-center gap-2 text-sm font-semibold rounded-lg text-neutral-700 dark:text-neutral-300">
+                   <mat-icon class="text-[16px] w-[16px] h-[16px] text-[#d65108]">trending_up</mat-icon>
+                   {{ term }}
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
   }

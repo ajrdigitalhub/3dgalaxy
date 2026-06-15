@@ -60,17 +60,26 @@ export const getOrderById = async (req: any, res: Response) => {
     const order = await prisma.order.findUnique({
       where: orderWhere,
       include: {
-        customer: true,
+        customer: {
+          include: { user: true }
+        },
         shippingAddress: true,
         billingAddress: true,
         items: {
           include: {
-            product: true,
+            product: {
+              include: { images: true }
+            },
             variant: true,
           },
         },
-        statusHistory: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' }
+        },
         payments: true,
+        shipments: {
+          orderBy: { createdAt: 'desc' }
+        }
       },
     });
 
@@ -210,15 +219,20 @@ export const createOrder = async (req: any, res: Response) => {
 
 export const updateOrderStatus = async (req: any, res: Response) => {
   const { id } = req.params;
-  const { status } = req.body; // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+  const { status } = req.body; 
 
   if (!status) {
     return res.status(400).json({ error: 'Status attribute represents a required input' });
   }
 
   try {
+    let orderWhere: any = { id };
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    const existing = await prisma.order.findUnique({ where: orderWhere });
+    if (!existing) return res.status(404).json({ error: 'Not found' });
+
     const updated = await prisma.order.update({
-      where: { id },
+      where: { id: existing.id },
       data: { 
         status, 
         statusHistory: {
@@ -238,15 +252,35 @@ export const updateOrderStatus = async (req: any, res: Response) => {
 
 export const updatePaymentStatus = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { paymentStatus } = req.body; // USED AS PAYMENT STATUS STRING OR LOGIC
+  const { paymentStatus } = req.body;
 
   if (!paymentStatus) {
     return res.status(400).json({ error: 'paymentStatus attribute represents a required input' });
   }
 
   try {
-    // Usually updates Payment record, just return 200 for now.
-    return res.status(200).json({ message: 'Payment status handled' });
+    let orderWhere: any = { id };
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    const order = await prisma.order.findUnique({ where: orderWhere, include: { payments: true } });
+    if (!order) return res.status(404).json({ error: 'Not found' });
+
+    if (order.payments && order.payments.length > 0) {
+      await prisma.payment.update({
+        where: { id: order.payments[0].id },
+        data: { status: paymentStatus }
+      });
+    } else {
+      await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          amount: order.totalAmount,
+          paymentMethod: 'UNKNOWN',
+          status: paymentStatus
+        }
+      });
+    }
+
+    return res.status(200).json({ message: 'Payment status updated' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to transition payment status', details: error.message });
   }
@@ -254,28 +288,59 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
 export const updateShipmentTracking = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { shipmentCarrier, trackingNumber } = req.body;
+  const { shipmentCarrier, trackingNumber, trackingUrl, estimatedDeliveryDate } = req.body;
 
   try {
-    // Add shipment record
+    let orderWhere: any = { id };
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    const order = await prisma.order.findUnique({ where: orderWhere });
+    if (!order) return res.status(404).json({ error: 'Not found' });
+
     await prisma.shipment.create({
       data: {
-        orderId: id,
+        orderId: order.id,
         carrier: shipmentCarrier || 'Unknown',
         trackingNumber: trackingNumber || '',
+        trackingUrl: trackingUrl || null,
+        estimatedDelivery: estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null,
         status: 'SHIPPED',
         shippedAt: new Date()
       }
     });
 
     const updated = await prisma.order.update({
-      where: { id },
+      where: { id: order.id },
       data: {
-        status: shipmentCarrier ? 'SHIPPED' : undefined,
+        status: 'SHIPPED',
       },
     });
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to attach shipment registry details', details: error.message });
+  }
+};
+
+export const addOrderNotes = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+
+  try {
+    let orderWhere: any = { id };
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    const order = await prisma.order.findUnique({ where: orderWhere });
+    if (!order) return res.status(404).json({ error: 'Not found' });
+
+    await prisma.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        status: order.status,
+        comments: `Admin Note: ${notes}`,
+        createdBy: req.user?.id
+      }
+    });
+
+    return res.status(200).json({ message: 'Note added successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to add order notes', details: error.message });
   }
 };

@@ -62,8 +62,8 @@ export class CartCheckout {
     }
   }
 
-  changeQty(id: string, qty: number) {
-    this.ds.updateCartQty(id, qty);
+  changeQty(id: string, qty: number, variantId?: string) {
+    this.ds.updateCartQty(id, qty, variantId);
   }
 
   setPaymentMethod(m: string) {

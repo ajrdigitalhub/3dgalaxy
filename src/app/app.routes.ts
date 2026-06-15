@@ -17,6 +17,7 @@ import {OrderSuccessComponent} from './pages/checkout/order-success';
 export const routes: Routes = [
   { path: '', component: Home },
   { path: 'products', component: Products },
+  { path: 'search', loadComponent: () => import('./pages/search/search').then(m => m.SearchComponent) },
   { path: 'category/:categorySlug', component: Products },
   { path: 'brand/:brandSlug', component: Products },
   { path: 'product/:slug', component: ProductDetail },
@@ -29,6 +30,7 @@ export const routes: Routes = [
   { path: 'account/:tab', component: Account, canActivate: [authGuard] },
   { path: 'profile', component: Account, canActivate: [authGuard] },
   { path: 'admin', component: AdminPanel, canActivate: [roleGuard], data: { roles: ['Admin', 'Manager', 'Super Admin', 'admin', 'super-admin'] } },
+  { path: 'admin/orders/:orderNumber', loadComponent: () => import('./pages/admin/components/order-details/order-details').then(m => m.OrderDetailsComponent), canActivate: [roleGuard], data: { roles: ['Admin', 'Manager', 'super-admin', 'admin'] } },
   { path: 'login', component: Login },
   { path: 'register', component: Login },
   { path: 'forgot-password', component: ForgotPassword },

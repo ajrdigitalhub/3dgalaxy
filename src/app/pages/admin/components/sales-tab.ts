@@ -1,11 +1,12 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 import { AdminPanel } from '../admin';
 
 @Component({
   selector: 'app-admin-sales-tab',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -48,12 +49,24 @@ import { AdminPanel } from '../admin';
                     <td class="py-4 font-mono font-medium">{{ o.items.length }} SKU(s)</td>
                     <td class="py-4 font-mono font-black text-zinc-800 dark:text-white">₹{{ o.grandTotal | number }}</td>
                     <td class="py-4 text-right">
-                      <div class="inline-flex gap-1.5 align-middle">
-                        <select [value]="o.status" (change)="admin.updateOrderStatus(o.id, $any($event.target).value)" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
-                          <option value="pending">Pending Auth</option>
-                          <option value="processing">Processing Job</option>
-                          <option value="shipped">Courier Dispatched</option>
-                          <option value="completed">Fulfillment OK</option>
+                      <div class="inline-flex gap-1.5 align-middle items-center">
+                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-2">
+                          <mat-icon class="text-[14px] leading-none">visibility</mat-icon> Details
+                        </a>
+                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors" title="Invoice">
+                          <mat-icon class="scale-75">receipt_long</mat-icon>
+                        </a>
+                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors mr-2" title="Shipment">
+                          <mat-icon class="scale-75">local_shipping</mat-icon>
+                        </a>
+                        <select [value]="o.status" (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
+                          <option value="Pending">Pending Auth</option>
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Processing">Processing Job</option>
+                          <option value="Packed">Packed</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
                         </select>
                       </div>
                     </td>

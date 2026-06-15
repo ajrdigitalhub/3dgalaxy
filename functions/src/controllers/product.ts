@@ -90,7 +90,8 @@ export const getProductBySlug = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { slug },
       include: {
-        variants: true,
+        options: { include: { values: true } },
+        variants: { include: { options: true, images: true } },
         images: true,
         category: true,
         brand: true,
@@ -126,7 +127,8 @@ export const getProductById = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { id },
       include: {
-        variants: true,
+        options: { include: { values: true } },
+        variants: { include: { options: true, images: true } },
         images: true,
         category: true,
         brand: true,
@@ -160,7 +162,7 @@ export const createProduct = async (req: Request, res: Response) => {
   const {
     name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
     categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, images, specifications, downloads, features, faqs, warranty, shipping
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping
   } = req.body;
 
   if (!name || !slug || !sku) {
@@ -183,32 +185,27 @@ export const createProduct = async (req: Request, res: Response) => {
     if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
       const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
       if (cat) resolvedCategoryId = cat.id;
+      else resolvedCategoryId = null;
     }
 
     if (resolvedBrandId && !resolvedBrandId.includes('-')) {
       const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
       if (brand) resolvedBrandId = brand.id;
+      else resolvedBrandId = null;
     }
 
     const created = await prisma.$transaction(async (tx) => {
-      return tx.product.create({
+      const p = await tx.product.create({
         data: {
           name, slug, sku, description,
           basePrice: parseFloat(mrp) || 0,
           salePrice: parseFloat(salePrice) || 0,
           dealerPrice: parseFloat(dealerPrice) || 0,
-          categoryId: resolvedCategoryId,
-          brandId: resolvedBrandId,
+          categoryId: resolvedCategoryId || null,
+          brandId: resolvedBrandId || null,
           seo: {
             create: { seoTitle, seoDescription, seoKeywords }
           },
-          ...(validVariants.length > 0 && {
-            variants: {
-              create: validVariants.map((v: any) => ({
-                name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
-              })),
-            }
-          }),
           ...(validImages.length > 0 && {
             images: {
               create: validImages.map((img: any, idx: number) => ({
@@ -262,11 +259,81 @@ export const createProduct = async (req: Request, res: Response) => {
               }
             }
           }),
-        },
-        include: {
-          variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
-        },
+        }
       });
+
+      // Handle Options and Variants correctly via deep mappings
+      const validOptions = (options || []).filter((o: any) => o?.name && o?.values?.length > 0);
+      const optionValueMapping: Record<string, string> = {}; // Hash map
+
+      if (validOptions.length > 0) {
+          for (const opt of validOptions) {
+              const createdOpt = await tx.productOption.create({
+                  data: {
+                      productId: p.id,
+                      name: opt.name,
+                      sortOrder: opt.sortOrder || 0,
+                      displayType: 'select',
+                      values: {
+                          create: opt.values.map((v: any, vId: number) => ({
+                              value: v.value,
+                              displayValue: v.displayValue || v.value,
+                              sortOrder: v.sortOrder || vId
+                          }))
+                      }
+                  },
+                  include: { values: true }
+              });
+
+              for (const v of createdOpt.values) {
+                  optionValueMapping[`${opt.name}:${v.value}`] = v.id;
+              }
+          }
+      }
+
+      if (validVariants.length > 0) {
+          for (const v of validVariants) {
+              const createdVariant = await tx.productVariant.create({
+                  data: {
+                      productId: p.id,
+                      name: v.name,
+                      sku: v.sku,
+                      price: parseFloat(v.price) || 0,
+                      stock: v.stock || 0,
+                      weight: v.weight || 0,
+                  }
+              });
+
+              if (v.optionsData && Array.isArray(v.optionsData)) {
+                  for (const od of v.optionsData) {
+                      const valId = optionValueMapping[`${od.optionName}:${od.valueStr}`];
+                      if (valId) {
+                          await tx.productVariantOption.create({
+                              data: {
+                                  variantId: createdVariant.id,
+                                  optionValueId: valId
+                              }
+                          });
+                      }
+                  }
+              }
+
+              if (v.images && Array.isArray(v.images)) {
+                  for (const img of v.images) {
+                      await tx.productVariantImage.create({
+                          data: {
+                              variantId: createdVariant.id,
+                              imageUrl: img.url || img.imageUrl,
+                              isPrimary: !!img.isPrimary,
+                              sortOrder: img.sortOrder || 0
+                          }
+                      });
+                  }
+              }
+          }
+      }
+
+      return tx.product.findUnique({ where: { id: p.id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
     });
 
     return res.status(201).json({ success: true, message: 'Success', data: created });
@@ -280,7 +347,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   const {
     name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
     categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, images, specifications, downloads, features, faqs, warranty, shipping
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping
   } = req.body;
 
   try {
@@ -297,15 +364,18 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
       const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
       if (cat) resolvedCategoryId = cat.id;
+      else resolvedCategoryId = undefined;
     }
 
     if (resolvedBrandId && !resolvedBrandId.includes('-')) {
       const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
       if (brand) resolvedBrandId = brand.id;
+      else resolvedBrandId = undefined;
     }
 
     const updated = await prisma.$transaction(async (tx) => {
       // Delete existing child relations before updates to prevent dangling keys
+      if (options) await tx.productOption.deleteMany({ where: { productId: id } }); // this cascades to option values and variant options
       if (variants) await tx.productVariant.deleteMany({ where: { productId: id } });
       if (images) await tx.productImage.deleteMany({ where: { productId: id } });
       if (specifications) await tx.productSpecification.deleteMany({ where: { productId: id } });
@@ -313,28 +383,21 @@ export const updateProduct = async (req: Request, res: Response) => {
       if (features) await tx.productFeature.deleteMany({ where: { productId: id } });
       if (faqs) await tx.productFaq.deleteMany({ where: { productId: id } });
 
-      return tx.product.update({
+      const p = await tx.product.update({
         where: { id },
         data: {
           name, slug, sku, description,
           basePrice: mrp ? parseFloat(mrp) : undefined,
           salePrice: salePrice ? parseFloat(salePrice) : undefined,
           dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
-          categoryId: resolvedCategoryId,
-          brandId: resolvedBrandId,
+          categoryId: resolvedCategoryId || null,
+          brandId: resolvedBrandId || null,
           seo: {
             upsert: {
               create: { seoTitle, seoDescription, seoKeywords },
               update: { seoTitle, seoDescription, seoKeywords }
             }
           },
-          ...(validVariants.length > 0 && {
-            variants: {
-              create: validVariants.map((v: any) => ({
-                name: v.name, price: parseFloat(v.price) || 0, sku: v.sku,
-              })),
-            }
-          }),
           ...(validImages.length > 0 && {
             images: {
               create: validImages.map((i: any, idx: number) => ({
@@ -402,11 +465,81 @@ export const updateProduct = async (req: Request, res: Response) => {
               }
             }
           }),
-        },
-        include: {
-          variants: true, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true
-        },
+        }
       });
+
+      // Handle Options and Variants correctly via deep mappings
+      const validOptions = (options || []).filter((o: any) => o?.name && o?.values?.length > 0);
+      const optionValueMapping: Record<string, string> = {}; // Hash map
+
+      if (validOptions.length > 0) {
+          for (const opt of validOptions) {
+              const createdOpt = await tx.productOption.create({
+                  data: {
+                      productId: id,
+                      name: opt.name,
+                      sortOrder: opt.sortOrder || 0,
+                      displayType: 'select',
+                      values: {
+                          create: opt.values.map((v: any, vId: number) => ({
+                              value: v.value,
+                              displayValue: v.displayValue || v.value,
+                              sortOrder: v.sortOrder || vId
+                          }))
+                      }
+                  },
+                  include: { values: true }
+              });
+
+              for (const v of createdOpt.values) {
+                  optionValueMapping[`${opt.name}:${v.value}`] = v.id;
+              }
+          }
+      }
+
+      if (validVariants.length > 0) {
+          for (const v of validVariants) {
+              const createdVariant = await tx.productVariant.create({
+                  data: {
+                      productId: id,
+                      name: v.name,
+                      sku: v.sku,
+                      price: parseFloat(v.price) || 0,
+                      stock: v.stock || 0,
+                      weight: v.weight || 0,
+                  }
+              });
+
+              if (v.optionsData && Array.isArray(v.optionsData)) {
+                  for (const od of v.optionsData) {
+                      const valId = optionValueMapping[`${od.optionName}:${od.valueStr}`];
+                      if (valId) {
+                          await tx.productVariantOption.create({
+                              data: {
+                                  variantId: createdVariant.id,
+                                  optionValueId: valId
+                              }
+                          });
+                      }
+                  }
+              }
+
+              if (v.images && Array.isArray(v.images)) {
+                  for (const img of v.images) {
+                      await tx.productVariantImage.create({
+                          data: {
+                              variantId: createdVariant.id,
+                              imageUrl: img.url || img.imageUrl,
+                              isPrimary: !!img.isPrimary,
+                              sortOrder: img.sortOrder || 0
+                          }
+                      });
+                  }
+              }
+          }
+      }
+
+      return tx.product.findUnique({ where: { id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
     });
 
     return res.status(200).json({ success: true, message: 'Success', data: updated });

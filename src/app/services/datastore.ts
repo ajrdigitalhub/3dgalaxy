@@ -1,5 +1,6 @@
 import {Injectable, signal, computed, effect, inject, PLATFORM_ID, Injector, runInInjectionContext} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { 
   collection, 
   doc, 
@@ -68,13 +69,6 @@ export interface MenuItem {
   sortOrder: number;
 }
 
-export interface ProductVariant {
-  id?: string;
-  name: string;
-  price: number;
-  stock: number;
-}
-
 export interface Specification {
   label: string;
   value: string;
@@ -96,6 +90,21 @@ export interface QA {
   askedBy: string;
   answeredBy?: string;
   date: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  sku: string;
+  price: number;
+  salePrice?: number | null;
+  stock: number;
+  weight?: number | null;
+  isDefault: boolean;
+  isActive: boolean;
+  name: string;
+  images?: any[];
+  options?: any[];
 }
 
 export interface Product {
@@ -132,6 +141,7 @@ export interface Product {
   warningText?: string;
   avgRating?: number;
   ratingCount?: number;
+  options?: any[];
   variants?: ProductVariant[];
   status?: 'active' | 'draft' | 'out_of_stock';
   seoTitle?: string;
@@ -153,6 +163,7 @@ export interface Product {
 
 export interface CartItem {
   product: Product;
+  variant?: ProductVariant;
   quantity: number;
   selectedPriceType: 'sale' | 'dealer';
 }
@@ -821,13 +832,24 @@ export class DatastoreService {
       effect(() => {
         const role = this.userRole();
         if (!this.authReady()) return;
+        if (role !== 'admin' && role !== 'super-admin') return;
         this.api.get<Order[]>('/orders').pipe(
           catchError((err) => {
             console.error('Error loading orders:', err);
             return of([]);
           })
         ).subscribe({
-          next: (data) => { if (data) this.orders.set(data); },
+          next: (data: any) => { 
+            if (data) {
+              this.orders.set(data.map((o: any) => ({
+                ...o,
+                customerName: o.customer?.user?.name || o.customer?.user?.firstName || 'Guest',
+                customerPhone: o.customer?.user?.phone || 'N/A',
+                status: o.status ? o.status.toLowerCase() : 'pending',
+                grandTotal: o.totalAmount,
+              })));
+            }
+          },
           error: (e) => console.error(e)
         });
       });
@@ -913,57 +935,99 @@ export class DatastoreService {
 
   // --- CRUD OPERATIONS ---
   
+  reloadCategories() {
+    this.api.get<Category[]>('/categories').subscribe(data => { if (data) this.categories.set(data); });
+  }
+
+  reloadBrands() {
+    this.api.get<Brand[]>('/brands').subscribe(data => { if (data) this.brands.set(data); });
+  }
+
+  reloadMenus() {
+    this.api.get<MenuItem[]>('/menus/tree').subscribe(data => { if (data) this.menuItems.set(data); });
+  }
+
   async addCategory(cat: Omit<Category, 'id'>) {
-    const id = cat.slug || `cat-${Date.now()}`;
-    const pId = cat.parent_id || cat.parentId || null;
-    await setDoc(doc(db, 'categories', id), { 
-      ...cat, 
-      id,
-      parent_id: pId,
-      parentId: pId
+    return new Promise((resolve, reject) => {
+      this.api.post('/categories', cat).subscribe({
+        next: (res) => { this.reloadCategories(); resolve(res); },
+        error: (err) => reject(err)
+      });
     });
   }
 
   async editCategory(id: string, updated: Partial<Category>) {
-    const pId = ('parent_id' in updated) ? updated.parent_id : (('parentId' in updated) ? updated.parentId : undefined);
-    const mod: any = { ...updated };
-    if (pId !== undefined) {
-      mod.parent_id = pId;
-      mod.parentId = pId;
-    }
-    await updateDoc(doc(db, 'categories', id), mod);
+    return new Promise((resolve, reject) => {
+      this.api.put(`/categories/${id}`, updated).subscribe({
+        next: (res) => { this.reloadCategories(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async deleteCategory(id: string) {
-    await deleteDoc(doc(db, 'categories', id));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/categories/${id}`).subscribe({
+        next: (res) => { this.reloadCategories(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   // --- BRAND CRUD ---
   async addBrand(brand: Omit<Brand, 'id'>) {
-    const id = brand.slug || `brand-${Date.now()}`;
-    await setDoc(doc(db, 'brands', id), { ...brand, id });
+    return new Promise((resolve, reject) => {
+      this.api.post('/brands', brand).subscribe({
+        next: (res) => { this.reloadBrands(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async editBrand(id: string, updated: Partial<Brand>) {
-    await updateDoc(doc(db, 'brands', id), updated);
+    return new Promise((resolve, reject) => {
+      this.api.put(`/brands/${id}`, updated).subscribe({
+        next: (res) => { this.reloadBrands(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async deleteBrand(id: string) {
-    await deleteDoc(doc(db, 'brands', id));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/brands/${id}`).subscribe({
+        next: (res) => { this.reloadBrands(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   // --- MENU ITEM CRUD ---
   async addMenuItem(item: Omit<MenuItem, 'id'>) {
-    const id = `menu-${Date.now()}`;
-    await setDoc(doc(db, 'menuItems', id), { ...item, id });
+    return new Promise((resolve, reject) => {
+      this.api.post('/menus', item).subscribe({
+        next: (res) => { this.reloadMenus(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async editMenuItem(id: string, updated: Partial<MenuItem>) {
-    await updateDoc(doc(db, 'menuItems', id), updated);
+    return new Promise((resolve, reject) => {
+      this.api.put(`/menus/${id}`, updated).subscribe({
+        next: (res) => { this.reloadMenus(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async deleteMenuItem(id: string) {
-    await deleteDoc(doc(db, 'menuItems', id));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/menus/${id}`).subscribe({
+        next: (res) => { this.reloadMenus(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async addProduct(p: Omit<Product, 'id' | 'stock' | 'reserved' | 'reviews' | 'qnas'> & { stock: number }) {
@@ -985,6 +1049,7 @@ export class DatastoreService {
         is360Supported: p.is360Supported,
         images: p.images, // Let backend array map handles this
         variants: p.variants,
+        options: p.options,
         seoTitle: p.seoTitle,
         seoDescription: p.seoDescription
       }).subscribe({
@@ -1015,6 +1080,7 @@ export class DatastoreService {
         is360Supported: updated.is360Supported,
         images: updated.images,
         variants: updated.variants,
+        options: updated.options,
         seoTitle: updated.seoTitle,
         seoDescription: updated.seoDescription
       }).subscribe({
@@ -1128,26 +1194,45 @@ export class DatastoreService {
   });
 
   // --- CART OPERATIONS ---
-  addToCart(product: Product, quantity = 1) {
+  addToCart(product: Product, quantity = 1, variant?: ProductVariant) {
     this.cart.update(items => {
-      const existing = items.find(i => i.product.id === product.id);
+      const isVariantMatch = (i: CartItem) => {
+         if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
+         return i.product.id === product.id;
+      };
+      
+      const existing = items.find(isVariantMatch);
       if (existing) {
-        return items.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i);
+        return items.map(i => isVariantMatch(i) ? { ...i, quantity: i.quantity + quantity } : i);
       }
       const role = this.userRole();
       const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
-      return [...items, { product, quantity, selectedPriceType: priceType }];
+      return [...items, { product, variant, quantity, selectedPriceType: priceType }];
     });
     this.recalcDiscount();
   }
 
-  updateCartQty(productId: string, qty: number) {
+  updateCartQty(productId: string, qty: number, variantId?: string) {
     if (qty <= 0) {
-      this.cart.update(items => items.filter(i => i.product.id !== productId));
+      this.cart.update(items => items.filter(i => {
+           if (variantId) return !(i.product.id === productId && i.variant?.id === variantId);
+           return i.product.id !== productId;
+      }));
     } else {
-      this.cart.update(items => items.map(i => i.product.id === productId ? { ...i, quantity: qty } : i));
+      this.cart.update(items => items.map(i => {
+           const match = variantId ? (i.product.id === productId && i.variant?.id === variantId) : (i.product.id === productId);
+           return match ? { ...i, quantity: qty } : i;
+      }));
     }
     this.recalcDiscount();
+  }
+
+  getItemPrice(item: CartItem): number {
+      let price = item.selectedPriceType === 'dealer' ? item.product.dealer_price : item.product.sale_price;
+      if (item.variant) {
+         price = item.variant.salePrice || item.variant.price || price;
+      }
+      return price;
   }
 
   applyCoupon(code: string): boolean {
@@ -1171,13 +1256,19 @@ export class DatastoreService {
 
   cartSubtotal = computed(() => {
     return this.cart().reduce((sum, item) => {
-      const price = item.selectedPriceType === 'dealer' ? item.product.dealer_price : item.product.sale_price;
+      let price = item.selectedPriceType === 'dealer' ? item.product.dealer_price : item.product.sale_price;
+      if (item.variant) {
+         price = item.variant.salePrice || item.variant.price || price;
+      }
       return sum + (price * item.quantity);
     }, 0);
   });
 
   cartMRPtotal = computed(() => {
-    return this.cart().reduce((sum, item) => sum + (item.product.mrp * item.quantity), 0);
+    return this.cart().reduce((sum, item) => {
+       const mrp = item.variant?.price || item.product.mrp;
+       return sum + (mrp * item.quantity)
+    }, 0);
   });
 
   cartShipping = computed(() => {
@@ -1402,8 +1493,19 @@ export class DatastoreService {
     }
   }
 
+  http = inject(HttpClient);
+
   async updateOrderStatus(orderId: string, status: string, trackingNumber?: string) {
-    await updateDoc(doc(db, 'orders', orderId), { status, trackingNumber });
+    return new Promise((resolve, reject) => {
+      this.http.put(`/api/orders/${orderId}/status`, { status }).subscribe({
+        next: () => {
+          // Refresh orders or optimistically update
+          this.orders.update(ords => ords.map(o => o.id === orderId || o.orderNumber === orderId ? { ...o, status: status as any } : o));
+          resolve(true);
+        },
+        error: (err: any) => reject(err)
+      });
+    });
   }
 
   async updateQuoteStatus(quoteId: string, status: string) {

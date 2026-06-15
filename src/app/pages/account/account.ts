@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, UserProfile } from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-account',
@@ -19,11 +20,11 @@ export class Account {
   ds = inject(DatastoreService);
   fb = inject(FormBuilder);
 
+  api = inject(ApiService);
+
   profile = this.ds.userProfile;
-  myOrders = computed(() => {
-    const userEmail = this.profile()?.email;
-    return this.ds.orders().filter(o => o.customerEmail === userEmail);
-  });
+  myOrders = signal<any[]>([]);
+  wishlist = signal<any[]>([]);
   
   activeTab = signal('dashboard');
   
@@ -75,6 +76,8 @@ export class Account {
   }
 
   ngOnInit() {
+    this.fetchMyOrders();
+    this.fetchWishlist();
     this.route.url.subscribe(url => {
       const path = url.length > 0 ? url[url.length - 1].path : 'dashboard';
       if (this.tabs.some(t => t.id === path)) {
@@ -83,6 +86,65 @@ export class Account {
         this.activeTab.set('dashboard');
       }
     });
+  }
+
+  async fetchMyOrders() {
+    try {
+      const resp = await this.api.get<any[]>('/orders/my-orders').toPromise();
+      if (resp) {
+        this.myOrders.set(resp.map(o => ({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          date: new Date(o.createdAt).toLocaleDateString(),
+          status: o.status ? o.status.toLowerCase() : 'pending',
+          items: o.items.map((i: any) => ({
+            productId: i.productId,
+            name: i.product?.name || 'Product',
+            quantity: i.quantity,
+            price: i.unitPrice || i.price
+          })),
+          grandTotal: o.totalAmount,
+          subtotal: o.totalAmount - o.taxAmount - o.shippingAmount + o.discountAmount,
+          tax: o.taxAmount,
+          shippingFee: o.shippingAmount,
+          discount: o.discountAmount,
+          trackingNumber: null,
+          paymentMethod: o.payments && o.payments.length > 0 ? o.payments[0].paymentMethod : 'Unknown',
+          shippingAddress: 'See details in actual invoice'
+        })));
+      }
+    } catch(e) {
+      this.toastService.warning('Failed to load orders');
+    }
+  }
+
+  async fetchWishlist() {
+    try {
+      const resp: any = await this.api.get('/wishlist').toPromise();
+      if (resp?.success) {
+        this.wishlist.set(resp.data);
+      }
+    } catch (e) {
+      this.toastService.warning('Failed to load wishlist');
+    }
+  }
+
+  async removeFromWishlist(productId: string) {
+    try {
+      const resp: any = await this.api.delete(`/wishlist/${productId}`).toPromise();
+      if (resp?.success) {
+        this.toastService.success('Removed from wishlist');
+        this.wishlist.update(items => items.filter(i => i.productId !== productId));
+      }
+    } catch(e) {
+      this.toastService.error('Failed to remove from wishlist');
+    }
+  }
+
+  addToCartFromWishlist(item: any) {
+    this.ds.addToCart(item.product);
+    this.removeFromWishlist(item.productId);
+    this.router.navigate(['/cart']);
   }
 
   switchTab(tabId: string) {

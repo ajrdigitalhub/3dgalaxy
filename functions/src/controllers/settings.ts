@@ -32,6 +32,50 @@ export const getThemeSettings = async (req: Request, res: Response) => {
   }
 };
 
+export const getPaymentGateways = async (req: Request, res: Response) => {
+  try {
+    let gateways = await prisma.paymentGateway.findMany({ orderBy: { sortOrder: 'asc' } });
+    if (gateways.length === 0) {
+      // Seed initially
+      await prisma.paymentGateway.createMany({
+        data: [
+          { name: 'Razorpay', gatewayCode: 'RAZORPAY', isEnabled: false, isTestMode: true, displayName: 'Razorpay (Cards / UPI / NetBanking)' },
+          { name: 'Cash On Delivery', gatewayCode: 'COD', isEnabled: true, isTestMode: false, displayName: 'Cash on Delivery (COD)' },
+          { name: 'Bank Transfer', gatewayCode: 'BANK_TRANSFER', isEnabled: false, isTestMode: false, displayName: 'Direct Bank Transfer' }
+        ]
+      });
+      gateways = await prisma.paymentGateway.findMany({ orderBy: { sortOrder: 'asc' } });
+    }
+    return res.status(200).json({ success: true, data: gateways });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to find payment gateways', details: error.message });
+  }
+};
+
+export const updatePaymentGateway = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { isEnabled, isTestMode, keyId, keySecret, webhookSecret, displayName, description, sortOrder } = req.body;
+
+  try {
+    const updated = await prisma.paymentGateway.update({
+      where: { id },
+      data: {
+        isEnabled,
+        isTestMode,
+        keyId,
+        keySecret,
+        webhookSecret,
+        displayName,
+        description,
+        sortOrder
+      }
+    });
+
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to update payment gateway', details: error.message });
+  }
+};
 export const updateThemeSettings = async (req: Request, res: Response) => {
   const { logo, favicon, primaryColor, secondaryColor, typography, headerConfig, footerConfig, homepageConfig } = req.body;
 
