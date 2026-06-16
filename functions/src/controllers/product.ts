@@ -1,6 +1,31 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 
+const safeParseArray = (val: any): any[] => {
+  if (!val) return [];
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(val) ? val : [];
+};
+
+const safeParseObject = (val: any): any => {
+  if (!val) return null;
+  if (typeof val === 'string') {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return null;
+    }
+  }
+  return val;
+};
+
 export const getProducts = async (req: Request, res: Response) => {
   try {
     const {
@@ -170,12 +195,22 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 
   try {
-    const validImages = (images || []).filter((img: any) => img?.url?.trim());
-    const validVariants = (variants || []).filter((v: any) => v?.name && v?.sku);
-    const validSpecs = (specifications || []).filter((s: any) => s?.name && s?.value);
-    const validDownloads = (downloads || []).filter((d: any) => d?.title && d?.fileUrl);
-    const validFeatures = (features || []).filter((f: any) => f?.title);
-    const validFaqs = (faqs || []).filter((f: any) => f?.question && f?.answer);
+    const parsedImages = safeParseArray(images);
+    const parsedVariants = safeParseArray(variants);
+    const parsedSpecs = safeParseArray(specifications);
+    const parsedDownloads = safeParseArray(downloads);
+    const parsedFeatures = safeParseArray(features);
+    const parsedFaqs = safeParseArray(faqs);
+    const parsedOptions = safeParseArray(options);
+    const parsedWarranty = safeParseObject(warranty);
+    const parsedShipping = safeParseObject(shipping);
+
+    const validImages = parsedImages.filter((img: any) => img?.url?.trim());
+    const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
+    const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
+    const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);
+    const validFeatures = parsedFeatures.filter((f: any) => f?.title);
+    const validFaqs = parsedFaqs.filter((f: any) => f?.question && f?.answer);
 
     // Ensure categoryId and brandId are actual UUIDs. If they are not (e.g. they are names or slugs), we should ideally look them up.
     // For now, if they are provided, we will assume they are IDs or handle gracefully if Prisma fails.
@@ -241,21 +276,21 @@ export const createProduct = async (req: Request, res: Response) => {
               })),
             }
           }),
-          ...(warranty?.warrantyPeriod && {
+          ...(parsedWarranty?.warrantyPeriod && {
             warranty: {
               create: {
-                warrantyPeriod: warranty.warrantyPeriod,
-                warrantyType: warranty.warrantyType,
-                warrantyDescription: warranty.warrantyDescription
+                warrantyPeriod: parsedWarranty.warrantyPeriod,
+                warrantyType: parsedWarranty.warrantyType,
+                warrantyDescription: parsedWarranty.warrantyDescription
               }
             }
           }),
-          ...(shipping?.deliveryTime && {
+          ...(parsedShipping?.deliveryTime && {
             shipping: {
               create: {
-                deliveryTime: shipping.deliveryTime,
-                shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-                shippingRegions: shipping.shippingRegions
+                deliveryTime: parsedShipping.deliveryTime,
+                shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
+                shippingRegions: parsedShipping.shippingRegions
               }
             }
           }),
@@ -263,7 +298,7 @@ export const createProduct = async (req: Request, res: Response) => {
       });
 
       // Handle Options and Variants correctly via deep mappings
-      const validOptions = (options || []).filter((o: any) => o?.name && o?.values?.length > 0);
+      const validOptions = parsedOptions.filter((o: any) => o?.name && o?.values?.length > 0);
       const optionValueMapping: Record<string, string> = {}; // Hash map
 
       if (validOptions.length > 0) {
@@ -334,6 +369,8 @@ export const createProduct = async (req: Request, res: Response) => {
       }
 
       return tx.product.findUnique({ where: { id: p.id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
+    }, {
+      timeout: 30000
     });
 
     return res.status(201).json({ success: true, message: 'Success', data: created });
@@ -351,12 +388,22 @@ export const updateProduct = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    const validImages = (images || []).filter((img: any) => img?.url?.trim());
-    const validVariants = (variants || []).filter((v: any) => v?.name && v?.sku);
-    const validSpecs = (specifications || []).filter((s: any) => s?.name && s?.value);
-    const validDownloads = (downloads || []).filter((d: any) => d?.title && d?.fileUrl);
-    const validFeatures = (features || []).filter((f: any) => f?.title);
-    const validFaqs = (faqs || []).filter((f: any) => f?.question && f?.answer);
+    const parsedImages = safeParseArray(images);
+    const parsedVariants = safeParseArray(variants);
+    const parsedSpecs = safeParseArray(specifications);
+    const parsedDownloads = safeParseArray(downloads);
+    const parsedFeatures = safeParseArray(features);
+    const parsedFaqs = safeParseArray(faqs);
+    const parsedOptions = safeParseArray(options);
+    const parsedWarranty = safeParseObject(warranty);
+    const parsedShipping = safeParseObject(shipping);
+
+    const validImages = parsedImages.filter((img: any) => img?.url?.trim());
+    const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
+    const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
+    const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);
+    const validFeatures = parsedFeatures.filter((f: any) => f?.title);
+    const validFaqs = parsedFaqs.filter((f: any) => f?.question && f?.answer);
 
     let resolvedCategoryId = categoryId || undefined;
     let resolvedBrandId = brandId || undefined;
@@ -433,34 +480,34 @@ export const updateProduct = async (req: Request, res: Response) => {
               })),
             }
           }),
-          ...(warranty?.warrantyPeriod && {
+          ...(parsedWarranty?.warrantyPeriod && {
             warranty: {
               upsert: {
                 create: {
-                  warrantyPeriod: warranty.warrantyPeriod,
-                  warrantyType: warranty.warrantyType,
-                  warrantyDescription: warranty.warrantyDescription
+                  warrantyPeriod: parsedWarranty.warrantyPeriod,
+                  warrantyType: parsedWarranty.warrantyType,
+                  warrantyDescription: parsedWarranty.warrantyDescription
                 },
                 update: {
-                  warrantyPeriod: warranty.warrantyPeriod,
-                  warrantyType: warranty.warrantyType,
-                  warrantyDescription: warranty.warrantyDescription
+                  warrantyPeriod: parsedWarranty.warrantyPeriod,
+                  warrantyType: parsedWarranty.warrantyType,
+                  warrantyDescription: parsedWarranty.warrantyDescription
                 }
               }
             }
           }),
-          ...(shipping?.deliveryTime && {
+          ...(parsedShipping?.deliveryTime && {
             shipping: {
               upsert: {
                 create: {
-                  deliveryTime: shipping.deliveryTime,
-                  shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-                  shippingRegions: shipping.shippingRegions
+                  deliveryTime: parsedShipping.deliveryTime,
+                  shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
+                  shippingRegions: parsedShipping.shippingRegions
                 },
                 update: {
-                  deliveryTime: shipping.deliveryTime,
-                  shippingCharges: shipping.shippingCharges ? parseFloat(shipping.shippingCharges) : undefined,
-                  shippingRegions: shipping.shippingRegions
+                  deliveryTime: parsedShipping.deliveryTime,
+                  shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
+                  shippingRegions: parsedShipping.shippingRegions
                 }
               }
             }
@@ -469,7 +516,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       });
 
       // Handle Options and Variants correctly via deep mappings
-      const validOptions = (options || []).filter((o: any) => o?.name && o?.values?.length > 0);
+      const validOptions = parsedOptions.filter((o: any) => o?.name && o?.values?.length > 0);
       const optionValueMapping: Record<string, string> = {}; // Hash map
 
       if (validOptions.length > 0) {
@@ -540,6 +587,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       }
 
       return tx.product.findUnique({ where: { id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
+    }, {
+      timeout: 30000
     });
 
     return res.status(200).json({ success: true, message: 'Success', data: updated });

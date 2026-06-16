@@ -55,12 +55,23 @@ export const createMenuItem = async (req: Request, res: Response) => {
   }
 
   try {
+    let activeMenuId = menuId;
+    if (!activeMenuId) {
+      let main = await prisma.menu.findFirst();
+      if (!main) {
+        main = await prisma.menu.create({
+          data: { name: 'Header Main Menu', location: 'HEADER' }
+        });
+      }
+      activeMenuId = main.id;
+    }
+
     const created = await prisma.menuItem.create({
       data: {
         title: label,
         url,
         parentId: parentId || null,
-        menuId: menuId || undefined,
+        menuId: activeMenuId,
         sortOrder: parseInt(sortOrder || '0', 10),
       },
     });

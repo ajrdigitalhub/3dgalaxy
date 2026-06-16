@@ -68,9 +68,19 @@ export const requireRole = (allowedRoles: string[]) => {
     }
 
     const { role } = req.user;
+    if (!role) {
+      return res.status(403).json({ error: 'Insufficient role access' });
+    }
 
-    // Super Admin has all access
-    if (role === 'SuperAdmin' || allowedRoles.includes(role)) {
+    const normalizedUserRole = role.toLowerCase().replace(/[\s\-_]/g, '');
+    const normalizedAllowedRoles = allowedRoles.map(r => r.toLowerCase().replace(/[\s\-_]/g, ''));
+
+    // Super Admin or Admin always gets full access, or if the role is allowed
+    if (
+      normalizedUserRole === 'superadmin' ||
+      normalizedUserRole === 'admin' ||
+      normalizedAllowedRoles.includes(normalizedUserRole)
+    ) {
       return next();
     }
 

@@ -74,14 +74,12 @@
                   
                   <!-- Action click triggers -->
                   <div class="flex gap-1.5">
-                    <button (click)="openInvoiceSimulation(ord)" class="px-4 py-2 bg-neutral-150 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-700 dark:text-neutral-300 font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1">
-                      <mat-icon class="text-sm scale-90">receipt</mat-icon> PDF Invoice
+                    <a [routerLink]="['/orders', ord.orderNumber]" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1">
+                      <mat-icon class="text-xs scale-90">location_searching</mat-icon> Track & Details
+                    </a>
+                    <button (click)="openInvoiceSimulation(ord)" class="px-4 py-2 bg-neutral-150 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-700 dark:text-neutral-300 font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 flex-1">
+                      <mat-icon class="text-xs scale-90">receipt</mat-icon> PDF Invoice
                     </button>
-                    @if (ord.trackingNumber) {
-                      <a target="_blank" href="https://www.delhivery.com/" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1">
-                        <mat-icon class="text-sm scale-90">location_searching</mat-icon> Track Package
-                      </a>
-                    }
                   </div>
                 </div>
               </div>
@@ -200,8 +198,13 @@
                     }
                   </div>
                   <div class="flex justify-between items-baseline pt-1.5 border-t border-neutral-200/50 dark:border-neutral-800/50 text-[10px]">
-                    <span class="text-neutral-500">Method: {{ ord.paymentMethod }}</span>
-                    <span class="font-bold font-mono">Total Paid: ₹{{ ord.grandTotal }}</span>
+                    <span class="text-neutral-500 font-medium">Method: {{ ord.paymentMethod }}</span>
+                    <span class="font-bold font-mono text-neutral-800 dark:text-neutral-200">Total Paid: ₹{{ ord.grandTotal }}</span>
+                  </div>
+                  <div class="pt-2 border-t border-dashed border-neutral-150 dark:border-neutral-850 flex justify-end">
+                    <a [routerLink]="['/orders', ord.orderNumber]" class="text-[9px] uppercase tracking-wide text-blue-500 font-black hover:underline flex items-center gap-0.5">
+                      Timeline & invoice details <mat-icon class="scale-50 translate-y-[2px]">chevron_right</mat-icon>
+                    </a>
                   </div>
                 </div>
               }

@@ -135,6 +135,19 @@ export const login = async (req: Request, res: Response) => {
     const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
 
+    // Store Refresh Token in DB
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+    await prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: user.id,
+        expiresAt,
+        deviceInfo: req.headers['user-agent'] || 'Unknown Device',
+        ipAddress: req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1',
+      }
+    });
+
     // Update last login timestamp
     await prisma.user.update({
       where: { id: user.id },
@@ -157,6 +170,7 @@ export const login = async (req: Request, res: Response) => {
         },
         accessToken,
         refreshToken,
+        expiresIn: 900
       }
     });
   } catch (error: any) {
@@ -165,46 +179,115 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.body.refreshToken || req.body.token;
   if (token) {
-    tokenBlocklist.add(token);
+    try {
+      await prisma.refreshToken.update({
+        where: { token },
+        data: { revoked: true }
+      });
+    } catch (err) {
+      // ignore
+    }
   }
-  return res.status(200).json({ message: 'Successfully logged out' });
+
+  const authHeader = req.headers['authorization'];
+  const accessToken = authHeader && authHeader.split(' ')[1];
+  if (accessToken) {
+    tokenBlocklist.add(accessToken);
+  }
+
+  return res.status(200).json({ success: true, message: 'Successfully logged out' });
+};
+
+export const logoutAll = async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized navigation' });
+    }
+    await prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { revoked: true }
+    });
+    return res.status(200).json({ success: true, message: 'Logged out of all devices successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to logout from all devices', details: error.message });
+  }
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
-  const { token } = req.body;
+  const token = req.body.refreshToken || req.body.token;
   if (!token) {
-    return res.status(400).json({ error: 'Refresh token mandatory' });
-  }
-
-  const payload = verifyRefreshToken(token);
-  if (!payload) {
-    return res.status(403).json({ error: 'Expired or damaged refresh token' });
+    return res.status(400).json({ success: false, error: 'Refresh token mandatory' });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: payload.id },
+    // 1. Verify JWT signature
+    const payload = verifyRefreshToken(token);
+    if (!payload) {
+      return res.status(401).json({ success: false, error: 'Session expired. Please login again.' });
+    }
+
+    // 2. Validate token exists in database and is not revoked / expired
+    const dbToken = await prisma.refreshToken.findUnique({
+      where: { token },
       include: {
-        roles: {
+        user: {
           include: {
-            role: true
+            roles: {
+              include: {
+                role: true
+              }
+            }
           }
         }
-      },
+      }
     });
 
+    if (!dbToken || dbToken.revoked || dbToken.expiresAt < new Date()) {
+      return res.status(401).json({ success: false, error: 'Session expired. Please login again.' });
+    }
+
+    const { user } = dbToken;
     if (!user || user.isActive === false) {
-      return res.status(403).json({ error: 'User suspended or missing' });
+      return res.status(401).json({ success: false, error: 'User is inactive or suspended' });
     }
 
     const userRoleName = user.roles?.[0]?.role?.name || 'Customer';
+
+    // 3. Mark old token as revoked (rotation)
+    await prisma.refreshToken.update({
+      where: { id: dbToken.id },
+      data: { revoked: true }
+    });
+
+    // 4. Generate new tokens
     const accessToken = generateAccessToken({ id: user.id, email: user.email, role: userRoleName });
-    return res.status(200).json({ accessToken });
+    const newRefreshToken = generateRefreshToken({ id: user.id, email: user.email });
+
+    // 5. Store new Refresh Token in DB
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+    await prisma.refreshToken.create({
+      data: {
+        token: newRefreshToken,
+        userId: user.id,
+        expiresAt,
+        deviceInfo: req.headers['user-agent'] || 'Unknown Device',
+        ipAddress: req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1',
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        accessToken,
+        refreshToken: newRefreshToken,
+      }
+    });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Token refresh failed', details: error.message });
+    return res.status(401).json({ success: false, error: 'Session expired. Please login again.', details: error.message });
   }
 };
 

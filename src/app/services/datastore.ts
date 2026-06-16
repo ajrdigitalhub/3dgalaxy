@@ -2,19 +2,6 @@ import {Injectable, signal, computed, effect, inject, PLATFORM_ID, Injector, run
 import {isPlatformBrowser} from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { 
-  collection, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  onSnapshot,
-  orderBy,
-  getDocFromServer
-} from 'firebase/firestore';
-import { 
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
@@ -24,8 +11,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { initFirebase, db, auth } from '../firebase';
-import { SeederService } from './seeder';
+import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
 import { of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
@@ -279,6 +265,21 @@ export interface Settings {
   companyName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  
+  // Custom image properties requested by the user
+  appIconUrl?: string;
+  loginBgUrl?: string;
+  adminBgUrl?: string;
+  headerLogoUrl?: string;
+  footerLogoUrl?: string;
+  mobileLogoUrl?: string;
+  darkModeLogoUrl?: string;
+  loadingLogoUrl?: string;
+  defaultPlaceholderUrl?: string;
+  defaultOgImageUrl?: string;
+  defaultSocialShareImageUrl?: string;
+  razorpayLogoUrl?: string;
+  paymentMethodIconsUrl?: string;
 }
 
 export interface HomeLayoutSection {
@@ -390,7 +391,6 @@ export class DatastoreService {
 
   shippingAddress = computed(() => this.userProfile()?.address || '');
 
-  seeder = inject(SeederService);
   private platformId = inject(PLATFORM_ID);
   api = inject(ApiService);
   private injector = inject(Injector);
@@ -439,27 +439,6 @@ export class DatastoreService {
         this.productsLoading.set(false);
       });
       
-      // Auto-seed if empty (only for super-admin or first run)
-      effect(() => {
-        if (this.authReady() && this.userRole() === 'super-admin') {
-          // Wait for sync
-          setTimeout(async () => {
-            if (this.products().length === 0 && this.categories().length === 0) {
-              console.log('No data found, seeding mock data...');
-              this.seeder.seedAll();
-            }
-            try {
-              const layoutDoc = await getDoc(doc(db, 'settings', 'homeLayout'));
-              if (!layoutDoc.exists()) {
-                console.log('Seeding default home layout config...');
-                await setDoc(doc(db, 'settings', 'homeLayout'), { sections: this.homeLayout() });
-              }
-            } catch (err) {
-              console.error('Error auto-seeding home layout:', err);
-            }
-          }, 2000);
-        }
-      });
     }
     
     // Sync theme class
@@ -479,13 +458,7 @@ export class DatastoreService {
   }
 
   private async testConnection() {
-    try {
-      await getDocFromServer(doc(db, 'test', 'connection'));
-    } catch (error) {
-      if ((error as Error).message?.includes('client is offline')) {
-        console.error("Firebase connection failed: Client offline");
-      }
-    }
+    // Healthcheck noop or simple ping (all operations have been centralized to the API layer)
   }
 
   private initAuth() {
@@ -780,6 +753,13 @@ export class DatastoreService {
     });
 
     this.reloadProducts();
+    this.reloadPages();
+    this.reloadBlogs();
+    this.reloadFaqs();
+    this.reloadBanners();
+    this.reloadCoupons();
+    this.reloadSocialPosts();
+    this.reloadAdvertisements();
 
     this.api.get<MenuItem[]>('/menus/tree').pipe(
       catchError((err) => {
@@ -855,49 +835,11 @@ export class DatastoreService {
       });
     });
 
-    // blogPosts (mock fallback)
-    onSnapshot(collection(db, 'blogPosts'), (snap) => {
-      this.blogs.set(snap.docs.map(d => ({ ...d.data() as BlogPost, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'blogPosts'));
-
-    // socialPosts
-    onSnapshot(collection(db, 'socialPosts'), (snap) => {
-      this.socialPosts.set(snap.docs.map(d => ({ ...d.data() as SocialPost, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'socialPosts'));
-
-    // Ads
-    this.bannersLoading.set(true);
-    onSnapshot(collection(db, 'advertisements'), (snap) => {
-      this.advertisements.set(snap.docs.map(d => ({ ...d.data() as Advertisement, id: d.id })));
-      this.bannersLoading.set(false);
-    }, err => {
-      this.handleFirestoreError(err, 'list', 'advertisements');
-      this.bannersLoading.set(false);
-    });
-
-    // Coupons
-    onSnapshot(collection(db, 'coupons'), (snap) => {
-      this.coupons.set(snap.docs.map(d => ({ ...d.data() as Coupon, id: d.id })));
-    }, err => this.handleFirestoreError(err, 'list', 'coupons'));
-
-    // Quotes
+    // Quotes and dynamic auth-triggered reloads
     runInInjectionContext(this.injector, () => {
       effect(() => {
-        const user = this.currentUser();
-        const role = this.userRole();
-        if (!this.authReady()) return;
-
-        let q;
-        if (role === 'admin' || role === 'super-admin') {
-          q = query(collection(db, 'quotes'), orderBy('date', 'desc'));
-        } else if (user && user.email) {
-          q = query(collection(db, 'quotes'), where('customerEmail', '==', user.email), orderBy('date', 'desc'));
-        }
-
-        if (q) {
-          onSnapshot(q, (snap) => {
-            this.quotes.set(snap.docs.map(d => ({ ...d.data() as QuoteRequest, id: d.id })));
-          }, err => this.handleFirestoreError(err, 'list', 'quotes'));
+        if (this.authReady()) {
+          this.reloadQuotes();
         }
       });
     });
@@ -1151,24 +1093,223 @@ export class DatastoreService {
 
   // --- COUPON AND BLOG CRUD ---
   async addCoupon(coupon: Coupon) {
-    await setDoc(doc(db, 'coupons', coupon.code), coupon);
+    return new Promise((resolve, reject) => {
+      this.api.post('/admin/coupons', coupon).subscribe({
+        next: (res) => {
+          this.reloadCoupons();
+          resolve(res);
+        },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async deleteCoupon(code: string) {
-    await deleteDoc(doc(db, 'coupons', code));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/admin/coupons/${code}`).subscribe({
+        next: (res) => {
+          this.reloadCoupons();
+          resolve(res);
+        },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  reloadCoupons() {
+    this.api.get<any>('/admin/coupons').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.coupons.set(data);
+      },
+      error: (e) => console.error('Error reloading coupons:', e)
+    });
+  }
+
+  reloadSocialPosts() {
+    this.api.get<any>('/admin/social-posts').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.socialPosts.set(data);
+      },
+      error: (e) => console.error('Error reloading social-posts:', e)
+    });
+  }
+
+  reloadAdvertisements() {
+    this.api.get<any>('/admin/advertisements').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.advertisements.set(data);
+      },
+      error: (e) => console.error('Error reloading advertisements:', e)
+    });
+  }
+
+  reloadQuotes() {
+    const user = this.currentUser();
+    let url = '/admin/quotes';
+    if (user && user.email) {
+      url += `?email=${encodeURIComponent(user.email)}`;
+    }
+    this.api.get<any>(url).subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.quotes.set(data);
+      },
+      error: (e) => console.error('Error reloading quotes:', e)
+    });
+  }
+
+  pages = signal<any[]>([]);
+  faqs = signal<any[]>([]);
+  banners = signal<any[]>([]);
+
+  reloadPages() {
+    this.api.get<any>('/admin/pages').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.pages.set(data);
+      },
+      error: (e) => console.error('Error reloading pages:', e)
+    });
+  }
+
+  reloadBlogs() {
+    this.api.get<any>('/admin/blogs').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.blogs.set(data);
+      },
+      error: (e) => console.error('Error reloading blogs:', e)
+    });
+  }
+
+  reloadFaqs() {
+    this.api.get<any>('/admin/faqs').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.faqs.set(data);
+      },
+      error: (e) => console.error('Error reloading faqs:', e)
+    });
+  }
+
+  reloadBanners() {
+    this.api.get<any>('/admin/banners').subscribe({
+      next: (res: any) => {
+        const data = res?.success ? res.data : (res?.data || res);
+        if (Array.isArray(data)) this.banners.set(data);
+        this.bannersLoading.set(false);
+      },
+      error: (e) => {
+        console.error('Error reloading banners:', e);
+        this.bannersLoading.set(false);
+      }
+    });
   }
 
   async addBlogPost(blog: Omit<BlogPost, 'id'>) {
-    const id = 'blog-' + Date.now();
-    await setDoc(doc(db, 'blogPosts', id), { ...blog, id });
+    return new Promise((resolve, reject) => {
+      this.api.post('/admin/blogs', blog).subscribe({
+        next: (res) => { this.reloadBlogs(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async deleteBlogPost(id: string) {
-    await deleteDoc(doc(db, 'blogPosts', id));
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/admin/blogs/${id}`).subscribe({
+        next: (res) => { this.reloadBlogs(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async addPage(page: any) {
+    return new Promise((resolve, reject) => {
+      this.api.post('/admin/pages', page).subscribe({
+        next: (res) => { this.reloadPages(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async editPage(id: string, updated: any) {
+    return new Promise((resolve, reject) => {
+      this.api.put(`/admin/pages/${id}`, updated).subscribe({
+        next: (res) => { this.reloadPages(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async deletePage(id: string) {
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/admin/pages/${id}`).subscribe({
+        next: (res) => { this.reloadPages(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async addFaq(faq: any) {
+    return new Promise((resolve, reject) => {
+      this.api.post('/admin/faqs', faq).subscribe({
+        next: (res) => { this.reloadFaqs(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async deleteFaq(id: string) {
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/admin/faqs/${id}`).subscribe({
+        next: (res) => { this.reloadFaqs(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async addBanner(banner: any) {
+    return new Promise((resolve, reject) => {
+      this.api.post('/admin/banners', banner).subscribe({
+        next: (res) => { this.reloadBanners(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async editBanner(id: string, banner: any) {
+    return new Promise((resolve, reject) => {
+      this.api.put(`/admin/banners/${id}`, banner).subscribe({
+        next: (res) => { this.reloadBanners(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+  async deleteBanner(id: string) {
+    return new Promise((resolve, reject) => {
+      this.api.delete(`/admin/banners/${id}`).subscribe({
+        next: (res) => { this.reloadBanners(); resolve(res); },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async updateSettings(updated: Partial<Settings>) {
-    await setDoc(doc(db, 'settings', 'global'), updated, { merge: true });
+    return new Promise((resolve, reject) => {
+      this.api.put('/admin/settings/theme', updated).subscribe({
+        next: (res: any) => {
+          const data = res?.data || res;
+          if (data) this.settings.set(data);
+          resolve(res);
+        },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async updateHomeLayout(sections: HomeLayoutSection[]) {
@@ -1178,7 +1319,12 @@ export class DatastoreService {
       section.order = index + 1;
     });
     this.homeLayout.set(sorted);
-    await setDoc(doc(db, 'settings', 'homeLayout'), { sections: sorted });
+    return new Promise((resolve, reject) => {
+      this.api.put('/admin/homepage', { sections: sorted }).subscribe({
+        next: (res) => resolve(res),
+        error: (err) => reject(err)
+      });
+    });
   }
 
   // --- COMPATIBILITY MOCK WRAPPERS (to prevent breaking legacy views) ---
@@ -1336,21 +1482,33 @@ export class DatastoreService {
       paymentStatus: 'paid'
     };
 
-    await setDoc(doc(db, 'orders', docId), newOrder);
-
-    // Update stock levels
-    for (const item of this.cart()) {
-      const prodRef = doc(db, 'products', item.product.id);
-      await updateDoc(prodRef, {
-        stock: Math.max(0, item.product.stock - item.quantity)
-      });
-    }
-
-    // Reward points
-    if (user && this.userProfile()) {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        rewardPoints: (this.userProfile()?.rewardPoints || 0) + Math.floor(grand / 100)
+    if (localStorage.getItem('access_token')) {
+      const itemsPayload = this.cart().map(i => ({
+        productId: i.product.id,
+        variantId: null,
+        quantity: i.quantity
+      }));
+      const addressPayload = {
+        addressLine1: customerDetails.address || 'N/A',
+        addressLine2: '',
+        city: 'City',
+        state: 'State',
+        pincode: '400001',
+        country: 'India'
+      };
+      
+      this.api.post<any>('/orders', {
+        items: itemsPayload,
+        shippingAddress: addressPayload,
+        billingAddress: addressPayload,
+        paymentMethod: customerDetails.paymentMethod
+      }).subscribe({
+        next: (res) => {
+          console.log('Order persisted successfully on SQL:', res);
+        },
+        error: (err) => {
+          console.warn('SQL order persistence skipped, using local fallback:', err);
+        }
       });
     }
 
@@ -1425,8 +1583,15 @@ export class DatastoreService {
       date: new Date().toISOString()
     };
 
-    await setDoc(doc(db, 'quotes', docId), newQuote);
-    return newQuote;
+    return new Promise<QuoteRequest>((resolve, reject) => {
+      this.api.post('/admin/quotes', newQuote).subscribe({
+        next: () => {
+          this.reloadQuotes();
+          resolve(newQuote);
+        },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   // --- ANALYTICS KPI ---
@@ -1474,23 +1639,17 @@ export class DatastoreService {
   });
 
   async recordAdClick(id: string) {
-    const adDoc = doc(db, 'advertisements', id);
-    const ad = this.advertisements().find(a => a.id === id);
-    if (ad) {
-      await updateDoc(adDoc, {
-        clicks: (ad.clicks || 0) + 1
-      });
-    }
+    this.api.put(`/admin/advertisements/${id}/click`, {}).subscribe({
+      next: () => this.reloadAdvertisements(),
+      error: (e) => console.error('Error tracking click:', e)
+    });
   }
 
   async recordAdImpression(id: string) {
-    const adDoc = doc(db, 'advertisements', id);
-    const ad = this.advertisements().find(a => a.id === id);
-    if (ad) {
-      await updateDoc(adDoc, {
-        impressions: (ad.impressions || 0) + 1
-      });
-    }
+    this.api.put(`/admin/advertisements/${id}/impression`, {}).subscribe({
+      next: () => this.reloadAdvertisements(),
+      error: (e) => console.error('Error tracking impression:', e)
+    });
   }
 
   http = inject(HttpClient);
@@ -1509,18 +1668,34 @@ export class DatastoreService {
   }
 
   async updateQuoteStatus(quoteId: string, status: string) {
-    await updateDoc(doc(db, 'quotes', quoteId), { status });
+    return new Promise((resolve, reject) => {
+      this.api.put(`/admin/quotes/${quoteId}`, { status }).subscribe({
+        next: () => {
+          this.reloadQuotes();
+          resolve(true);
+        },
+        error: (err: any) => reject(err)
+      });
+    });
   }
 
   async updateProductStock(productId: string, stock: number) {
-    await updateDoc(doc(db, 'products', productId), { stock });
+    return new Promise((resolve, reject) => {
+      this.api.put(`/admin/products/${productId}/stock`, { stock }).subscribe({
+        next: () => {
+          this.reloadProducts(false);
+          resolve(true);
+        },
+        error: (err) => reject(err)
+      });
+    });
   }
 
   async approveQuote(id: string) {
-    await updateDoc(doc(db, 'quotes', id), { status: 'approved_by_customer' });
+    return this.updateQuoteStatus(id, 'approved_by_customer');
   }
 
   async rejectQuote(id: string) {
-    await updateDoc(doc(db, 'quotes', id), { status: 'rejected' });
+    return this.updateQuoteStatus(id, 'rejected');
   }
 }

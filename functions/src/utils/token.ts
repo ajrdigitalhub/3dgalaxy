@@ -8,7 +8,7 @@ export const generateAccessToken = (payload: { id: string; email: string; role: 
 };
 
 export const generateRefreshToken = (payload: { id: string; email: string }) => {
-  return jwt.sign(payload, REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, REFRESH_SECRET, { expiresIn: '30d' });
 };
 
 export const verifyRefreshToken = (token: string) => {

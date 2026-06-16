@@ -1,0 +1,415 @@
+<div class="rich-text-editor-container flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden transition-all shadow-sm"
+     [class.fixed]="isFullscreen()" 
+     [class.inset-0]="isFullscreen()" 
+     [class.z-50]="isFullscreen()"
+     [class.h-full]="isFullscreen()"
+     [class.w-full]="isFullscreen()">
+  
+  <!-- EDITOR LABEL / BANNER -->
+  @if (label && !isFullscreen()) {
+    <div class="px-4 py-2 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-150 dark:border-zinc-850 flex items-center justify-between">
+      <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ label }}</span>
+      <span class="text-[9px] font-mono bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 px-1.5 py-0.5 rounded uppercase font-bold">Rich HTML System</span>
+    </div>
+  }
+
+  <!-- TOOLBAR GRID -->
+  <div class="p-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-md flex flex-wrap items-center gap-1.5 select-none relative z-10">
+    
+    <!-- HEADINGS DROP-DOWN -->
+    <div class="relative">
+      <button (click)="showFontDropdown.set(!showFontDropdown())" 
+              class="h-8 px-2.5 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all dark:text-zinc-200">
+        <span>Headings</span>
+        <mat-icon class="text-xs transition-transform duration-200" [class.rotate-180]="showFontDropdown()">arrow_drop_down</mat-icon>
+      </button>
+      
+      @if (showFontDropdown()) {
+        <div class="absolute left-0 mt-1.5 w-44 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl py-1 z-30 animate-fade-in">
+          <button (click)="execCommand('formatBlock', 'p'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Paragraph</button>
+          <button (click)="execCommand('formatBlock', 'h1'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-sm font-bold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 1</button>
+          <button (click)="execCommand('formatBlock', 'h2'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-sm font-semibold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 2</button>
+          <button (click)="execCommand('formatBlock', 'h3'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-xs font-bold text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 3</button>
+          <button (click)="execCommand('formatBlock', 'h4'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 4</button>
+          <button (click)="execCommand('formatBlock', 'h5'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 5</button>
+          <button (click)="execCommand('formatBlock', 'h6'); showFontDropdown.set(false)" class="w-full text-left px-3 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">Heading 6</button>
+        </div>
+      }
+    </div>
+
+    <!-- INLINE TEXT STYLES -->
+    <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-0.5"></div>
+
+    <button type="button" (click)="toggleFormat('bold')" [class.active-btn]="isBold()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Bold">
+      <mat-icon class="text-base font-black">format_bold</mat-icon>
+    </button>
+    <button type="button" (click)="toggleFormat('italic')" [class.active-btn]="isItalic()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Italic">
+      <mat-icon class="text-base">format_italic</mat-icon>
+    </button>
+    <button type="button" (click)="toggleFormat('underline')" [class.active-btn]="isUnderline()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Underline">
+      <mat-icon class="text-base">format_underlined</mat-icon>
+    </button>
+    <button type="button" (click)="toggleFormat('strikeThrough')" [class.active-btn]="isStrikeThrough()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Strikethrough">
+      <mat-icon class="text-base">strikethrough_s</mat-icon>
+    </button>
+
+    <!-- FONT COLOR PICKER -->
+    <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-0.5"></div>
+
+    <div class="relative">
+      <button (click)="showColorDropdown.set(!showColorDropdown()); showBgColorDropdown.set(false)" 
+              class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center cursor-pointer transition-all text-zinc-700 dark:text-zinc-200" title="Text Color">
+        <mat-icon class="text-base">format_color_text</mat-icon>
+      </button>
+      @if (showColorDropdown()) {
+        <div class="absolute left-0 mt-1.5 p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl w-[210px] grid grid-cols-5 gap-1 z-30">
+          @for (c of colorPalette; track c) {
+            <div (click)="changeColor(c)" [style.background-color]="c" class="h-6 w-6 rounded-md cursor-pointer border border-zinc-300 dark:border-zinc-700 hover:scale-110 transition-transform shadow-xs"></div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- BACKGROUND COLOR PICKER -->
+    <div class="relative">
+      <button (click)="showBgColorDropdown.set(!showBgColorDropdown()); showColorDropdown.set(false)" 
+              class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center cursor-pointer transition-all text-zinc-700 dark:text-zinc-200" title="Background Highlight">
+        <mat-icon class="text-base">format_color_fill</mat-icon>
+      </button>
+      @if (showBgColorDropdown()) {
+        <div class="absolute left-0 mt-1.5 p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl w-[210px] grid grid-cols-5 gap-1 z-30">
+          @for (c of colorPalette; track c) {
+            <div (click)="changeBgColor(c)" [style.background-color]="c" class="h-6 w-6 rounded-md cursor-pointer border border-zinc-300 dark:border-zinc-700 hover:scale-110 transition-transform shadow-xs"></div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- LIST TYPES -->
+    <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-0.5"></div>
+
+    <button type="button" (click)="execCommand('insertOrderedList')"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Ordered List">
+      <mat-icon class="text-base">format_list_numbered</mat-icon>
+    </button>
+    <button type="button" (click)="execCommand('insertUnorderedList')"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Unordered List">
+      <mat-icon class="text-base">format_list_bulleted</mat-icon>
+    </button>
+
+    <!-- CONTENT ADVANCED BLOCKS -->
+    <button type="button" (click)="insertBlockquote()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Blockquote">
+      <mat-icon class="text-base">format_quote</mat-icon>
+    </button>
+    <button type="button" (click)="insertCodeBlock()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Code Block">
+      <mat-icon class="text-base">code</mat-icon>
+    </button>
+    <button type="button" (click)="insertHorizontalLine()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Horizontal Ruler Line">
+      <mat-icon class="text-base">horizontal_rule</mat-icon>
+    </button>
+
+    <!-- COMPLEX WEB INJECTABLES (Hyperlinks, Tables, Media uploads) -->
+    <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-0.5"></div>
+
+    <button type="button" (click)="openLinkModal()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Insert Link">
+      <mat-icon class="text-base">link</mat-icon>
+    </button>
+    <button type="button" (click)="execCommand('unlink')"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Remove Link">
+      <mat-icon class="text-base">link_off</mat-icon>
+    </button>
+    
+    <button type="button" (click)="triggerImageUpload()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Upload and Embed Image">
+      <mat-icon class="text-base">image</mat-icon>
+    </button>
+    
+    <button type="button" (click)="showVideoModal.set(true)"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Embed Video (YouTube, Vimeo)">
+      <mat-icon class="text-base">video_library</mat-icon>
+    </button>
+
+    <button type="button" (click)="showTableModal.set(true)"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Insert Grid Grid Table">
+      <mat-icon class="text-base">table_chart</mat-icon>
+    </button>
+
+    <!-- REVERSIBILITY / HISTORY -->
+    <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800 mx-0.5"></div>
+
+    <button type="button" (click)="execCommand('undo')"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Undo">
+      <mat-icon class="text-base">undo</mat-icon>
+    </button>
+    <button type="button" (click)="execCommand('redo')"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Redo">
+      <mat-icon class="text-base">redo</mat-icon>
+    </button>
+
+    <!-- RIGHT CONTROLS: SOURCE VIEW & FULLSCREEN -->
+    <div class="flex-grow"></div>
+    
+    <button type="button" (click)="toggleSourceView()" [class.active-btn]="isSourceView()"
+            class="h-8 px-2.5 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer text-zinc-700 dark:text-zinc-300 transition-all" title="Raw Code View">
+      <mat-icon class="text-sm">html</mat-icon>
+      <span>{{ isSourceView() ? 'Edit WYSIWYG' : 'HTML Code' }}</span>
+    </button>
+
+    <button type="button" (click)="toggleFullscreen()" [class.active-btn]="isFullscreen()"
+            class="h-8 w-8 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-zinc-650 dark:text-zinc-350 cursor-pointer transition-all" title="Maximize Fullscreen">
+      <mat-icon class="text-base">{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- MAIN CANVAS STAGE -->
+  <div class="flex-grow min-h-[220px] h-full flex flex-col relative bg-zinc-50/20 dark:bg-zinc-950/20">
+    
+    <!-- WYSIWYG STAGE -->
+    <div #editorArea 
+         contenteditable="true" 
+         (input)="onEditorInput($event)"
+         (click)="onSelectionChange()"
+         (keyup)="onSelectionChange()"
+         [class.hidden]="isSourceView()"
+         [attr.placeholder]="placeholder"
+         class="rich-text-stage p-5 flex-grow overflow-y-auto outline-none prose prose-zinc dark:prose-invert max-w-none text-xs text-zinc-800 dark:text-zinc-300 select-text leading-relaxed bg-white dark:bg-zinc-950"
+         style="min-height: 200px;">
+    </div>
+
+    <!-- DIRECT SOURCE EDITOR STAGE (TEXTAREA) -->
+    <textarea [value]="htmlContent()"
+              (input)="onSourceChange($event)"
+              [class.hidden]="!isSourceView()"
+              class="w-full p-5 flex-grow resize-none font-mono text-xs text-emerald-400 dark:text-emerald-500 bg-zinc-950 border-none outline-none leading-relaxed"
+              style="min-height: 200px;"
+              placeholder="Paste or write raw, pristine static HTML structure here...">
+    </textarea>
+  </div>
+
+  <!-- STATUS FOOTER BAR -->
+  <div class="px-4 py-1.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-between text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+    <div class="flex items-center gap-3">
+      <span>Words: <strong class="text-zinc-700 dark:text-zinc-300 font-bold">{{ wordCount() }}</strong></span>
+      <span class="h-3 w-[1px] bg-zinc-200 dark:bg-zinc-800"></span>
+      <span>Characters: <strong class="text-zinc-700 dark:text-zinc-300 font-bold">{{ charCount() }}</strong></span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+      <span class="uppercase text-[9px] tracking-wider font-bold">Autosave Engine Online</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- 1. DIALOG: HYPERLINK MODAL -->
+<!-- ============================================ -->
+@if (showLinkModal()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center gap-2 text-zinc-900 dark:text-white pb-1 border-b dark:border-zinc-800">
+        <mat-icon class="text-lg">link</mat-icon>
+        <span class="text-xs font-black uppercase tracking-wider">Configure Hyperlink</span>
+      </div>
+      
+      <div class="space-y-3.5">
+        <div class="space-y-1">
+          <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Link Label</label>
+          <input type="text" [value]="linkLabel()" (input)="linkLabel.set($any($event.target).value)"
+                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs dark:text-white"
+                 placeholder="e.g. Visit Homepage">
+        </div>
+        <div class="space-y-1">
+          <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Destination URL</label>
+          <input type="text" [value]="linkUrl()" (input)="linkUrl.set($any($event.target).value)"
+                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs dark:text-white"
+                 placeholder="e.g. https://google.com">
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button (click)="showLinkModal.set(false)" class="px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl text-[10px] font-black uppercase cursor-pointer border-none dark:text-zinc-200">Cancel</button>
+        <button (click)="insertLink()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/15 cursor-pointer border-none">Insert</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- 2. DIALOG: VIDEO EMBED MODAL -->
+<!-- ============================================ -->
+@if (showVideoModal()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center gap-2 text-zinc-900 dark:text-white pb-1 border-b dark:border-zinc-800">
+        <mat-icon class="text-lg">video_library</mat-icon>
+        <span class="text-xs font-black uppercase tracking-wider">Embed Online Streaming Media</span>
+      </div>
+      
+      <div class="space-y-3.5">
+        <p class="text-[10px] text-zinc-400">Insert any standard YouTube, YouTube Short, Vimeo, or raw video url. We will automatically frame it beautifully.</p>
+        <div class="space-y-1">
+          <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Video URL</label>
+          <input type="text" [value]="videoUrl()" (input)="videoUrl.set($any($event.target).value)"
+                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs dark:text-white"
+                 placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button (click)="showVideoModal.set(false)" class="px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl text-[10px] font-black uppercase cursor-pointer border-none dark:text-zinc-200">Cancel</button>
+        <button (click)="insertVideo()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/15 cursor-pointer border-none">Embed</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- 3. DIALOG: TABLE CREATE MODAL -->
+<!-- ============================================ -->
+@if (showTableModal()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center gap-2 text-zinc-900 dark:text-white pb-1 border-b dark:border-zinc-800">
+        <mat-icon class="text-lg">grid_on</mat-icon>
+        <span class="text-xs font-black uppercase tracking-wider">Dynamic Grid Table</span>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-3 pb-2">
+        <div class="space-y-1">
+          <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Row Count</label>
+          <input type="number" [value]="tableRows()" (input)="tableRows.set($any($event.target).value)"
+                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs dark:text-white"
+                 min="1" max="20">
+        </div>
+        <div class="space-y-1">
+          <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Column Count</label>
+          <input type="number" [value]="tableCols()" (input)="tableCols.set($any($event.target).value)"
+                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs dark:text-white"
+                 min="1" max="20">
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button (click)="showTableModal.set(false)" class="px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl text-[10px] font-black uppercase cursor-pointer border-none dark:text-zinc-200">Cancel</button>
+        <button (click)="insertTable()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/15 cursor-pointer border-none">Create Grid</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- 4. DIALOG: INTEGRATED IMAGE IMPORT MODAL -->
+<!-- ============================================ -->
+@if (showImageModal()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between pb-2 border-b dark:border-zinc-800 text-zinc-900 dark:text-white">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-lg text-blue-500">image</mat-icon>
+          <span class="text-xs font-black uppercase tracking-wider">Embed Editor Image Asset</span>
+        </div>
+        <button (click)="showImageModal.set(false)" class="text-zinc-400 hover:text-zinc-650 bg-transparent border-none cursor-pointer"><mat-icon class="scale-75">close</mat-icon></button>
+      </div>
+
+      <!-- Mode Toggle Switch -->
+      <div class="flex items-center space-x-3 bg-zinc-100 dark:bg-zinc-950 p-1 rounded-xl w-fit">
+        <button 
+          type="button"
+          (click)="editorImageMode.set('upload')"
+          [class]="editorImageMode() === 'upload' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-400'"
+          class="px-3.5 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all duration-200 cursor-pointer border-none flex items-center gap-1"
+        >
+          <mat-icon class="scale-75">cloud_upload</mat-icon>
+          Upload File
+        </button>
+        <button 
+          type="button"
+          (click)="editorImageMode.set('url')"
+          [class]="editorImageMode() === 'url' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-400'"
+          class="px-3.5 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all duration-200 cursor-pointer border-none flex items-center gap-1"
+        >
+          <mat-icon class="scale-75">link</mat-icon>
+          Image URL
+        </button>
+      </div>
+
+      <!-- TAB content 1: Direct File upload with Firebase progress -->
+      @if (editorImageMode() === 'upload') {
+        <div class="space-y-3">
+          <div 
+            class="relative border-2 border-dashed border-zinc-200 dark:border-zinc-850 rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all bg-zinc-50/20 dark:bg-zinc-950/20"
+            (click)="rteFileInput.click()"
+          >
+            <input 
+              type="file" 
+              #rteFileInput 
+              accept="image/*" 
+              (change)="onImageFileSelected($event)" 
+              class="hidden"
+            >
+            
+            @if (editorImageUploading()) {
+              <div class="flex flex-col items-center space-y-2 py-4">
+                <div class="relative w-10 h-10 flex items-center justify-center">
+                  <div class="absolute inset-0 border-3 border-zinc-100 dark:border-zinc-900 rounded-full"></div>
+                  <div class="absolute inset-0 border-3 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+                  <span class="text-[9px] font-black text-blue-500">{{ editorImageProgress() }}%</span>
+                </div>
+                <span class="text-[9px] font-black uppercase text-blue-500 animate-pulse">Uploading to Firebase Storage</span>
+              </div>
+            } @else {
+              <div class="h-8 w-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-400 mb-2">
+                <mat-icon>cloud_upload</mat-icon>
+              </div>
+              <span class="text-[10px] font-black uppercase text-zinc-900 dark:text-white">Choose Image or Drag File Inline</span>
+              <p class="text-[8px] text-zinc-400 mt-1 uppercase font-semibold">JPG, PNG, WEBP, SVG (Max 10MB)</p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB content 2: Direct Image URL insertion -->
+      @if (editorImageMode() === 'url') {
+        <div class="space-y-3">
+          <div class="space-y-1">
+            <label class="text-[9px] font-mono text-zinc-500 uppercase font-black">Image Resource Link</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+                <mat-icon class="scale-75">link</mat-icon>
+              </span>
+              <input 
+                type="text" 
+                [value]="editorImageUrl()" 
+                (input)="editorImageUrl.set($any($event.target).value)"
+                placeholder="https://example.com/media/banner.jpg" 
+                class="w-full pl-9 pr-4 py-2 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-805 rounded-xl outline-none font-medium text-zinc-900 dark:text-white"
+              >
+            </div>
+          </div>
+
+          @if (editorImageUrl().trim()) {
+            <div class="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-850 p-2 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center max-h-32">
+              <img [src]="editorImageUrl()" alt="External asset preview" class="max-h-24 rounded object-contain" referrerpolicy="no-referrer">
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Actions footer bar -->
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button (click)="showImageModal.set(false)" class="px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl text-[10px] font-black uppercase cursor-pointer border-none dark:text-zinc-200">Cancel</button>
+        @if (editorImageMode() === 'url') {
+          <button (click)="insertImageUrl()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/15 cursor-pointer border-none">Insert URL</button>
+        }
+      </div>
+    </div>
+  </div>
+}

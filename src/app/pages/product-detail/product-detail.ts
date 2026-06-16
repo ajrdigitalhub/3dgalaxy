@@ -1,7 +1,7 @@
 import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
 import {CommonModule, DOCUMENT} from '@angular/common';
 import {ActivatedRoute, RouterModule, Router} from '@angular/router';
-import {Title, Meta} from '@angular/platform-browser';
+import {Title, Meta, DomSanitizer} from '@angular/platform-browser';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService, Product, Review} from '../../services/datastore';
 import {LoadingService} from '../../core/services/loading.service';
@@ -17,12 +17,18 @@ import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-p
   styleUrl: './product-detail.scss'
 })
 export class ProductDetail {
+  private sanitizer = inject(DomSanitizer);
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
   api = inject(ApiService);
   toastService = inject(ToastService);
   router = inject(Router);
+
+  safeHtml(html: string) {
+    if (!html) return '';
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
 
   slug = signal<string>('');
   quantity = signal<number>(1);

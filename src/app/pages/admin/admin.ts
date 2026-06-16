@@ -2,8 +2,6 @@ import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} fr
 import {CommonModule} from '@angular/common';
 import {HttpClient} from '@angular/common/http';
 import {MatIconModule} from '@angular/material/icon';
-import {doc, setDoc} from 'firebase/firestore';
-import {db} from '../../firebase';
 import {
   DatastoreService,
   Advertisement,
@@ -36,7 +34,7 @@ export type AdminTab =
   | 'pages' | 'blogs' | 'faqs' | 'banners' | 'homepage-builder' | 'menu-builder'
   | 'coupons' | 'promotions' | 'email-campaigns' | 'push-notifications'
   | 'sales-reports' | 'product-reports' | 'customer-reports'
-  | 'store-settings' | 'theme-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management';
+  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions';
 
 @Component({
   selector: 'app-admin-panel',
@@ -153,7 +151,8 @@ export class AdminPanel {
         { id: 'payment-settings' as const, label: 'Payment Settings', icon: 'payment' },
         { id: 'shipping-settings' as const, label: 'Shipping Settings', icon: 'local_shipping' },
         { id: 'tax-settings' as const, label: 'Tax Settings', icon: 'percent' },
-        { id: 'user-management' as const, label: 'User Management', icon: 'badge' }
+        { id: 'user-management' as const, label: 'User Management', icon: 'badge' },
+        { id: 'active-sessions' as const, label: 'Active Sessions', icon: 'security' }
       ]
     }
   ];
@@ -191,6 +190,26 @@ export class AdminPanel {
   searchVisibility = signal(true);
   megaMenuEnabled = signal(true);
   announcementBar = signal('⚡ Free Delivery on orders above ₹999!');
+
+  // Custom branding/image settings signals requested by the user
+  logoUrl = signal('https://picsum.photos/seed/logo/200/50');
+  faviconUrl = signal('https://picsum.photos/seed/favicon/32/32');
+  appIconUrl = signal('https://picsum.photos/seed/icon/512/512');
+  loginBgUrl = signal('https://picsum.photos/seed/login/1920/1080');
+  adminBgUrl = signal('https://picsum.photos/seed/admin/1920/1080');
+
+  headerLogoUrl = signal('https://picsum.photos/seed/hlogo/200/50');
+  footerLogoUrl = signal('https://picsum.photos/seed/flogo/200/50');
+  mobileLogoUrl = signal('https://picsum.photos/seed/mlogo/100/50');
+  darkModeLogoUrl = signal('https://picsum.photos/seed/dmlogo/200/50');
+  loadingLogoUrl = signal('https://picsum.photos/seed/loading/200/200');
+  defaultPlaceholderUrl = signal('https://picsum.photos/seed/placeholder/400/400');
+
+  defaultOgImageUrl = signal('https://picsum.photos/seed/og/1200/630');
+  defaultSocialShareImageUrl = signal('https://picsum.photos/seed/social/1200/630');
+
+  razorpayLogoUrl = signal('https://picsum.photos/seed/razorpay/200/50');
+  paymentMethodIconsUrl = signal('https://picsum.photos/seed/payments/400/100');
 
   // Dashboard signals
   revenueTrend = signal([10, 15, 8, 25, 30, 22, 35, 40]);
@@ -269,12 +288,17 @@ export class AdminPanel {
   newCampType = signal<'email' | 'whatsapp' | 'push'>('push');
   newCampMsg = signal<string>('');
 
+  newPageTitle = signal('');
+  newPageSlug = signal('');
+  newPageContent = signal('');
+
+  newBannerTitle = signal('');
+  newBannerImageUrl = signal('');
+  newBannerLinkUrl = signal('');
+  newBannerPosition = signal('Main Carousel');
+
   // Banner carousels campaigns
-  bannerCampaigns = signal([
-    { id: 'b1', name: 'Summer Hot Deals 3D Filament', type: 'Hero Slider', status: 'Published', device: 'Desktop & Mobile', activeHours: '24 Hours', cta: 'Shop Sale' },
-    { id: 'b2', name: 'Authorized Creality Launch Promo', type: 'Category Banner', status: 'Published', device: 'Desktop Only', activeHours: 'Scheduled', cta: 'Explore' },
-    { id: 'b3', name: 'Free Brass Nozzle Pack on orders over ₹3000', type: 'Sticky Banner', status: 'Draft', device: 'All Platforms', activeHours: 'Manual Override', cta: 'Grab Code' }
-  ]);
+  bannerCampaigns = computed(() => this.ds.banners());
 
   // Collections state
   collectionsList = signal([
@@ -330,11 +354,7 @@ export class AdminPanel {
   draftDiscountPercent = signal(0);
 
   // FAQ moderation state
-  faqsList = signal([
-    { id: 'f1', question: 'How do I claim B2B dealer rates?', answer: 'Register your account with GST identifier and submit validation keys under workspace profiles.', category: 'Pricing & B2B' },
-    { id: 'f2', question: 'What is the physical build limit of the Brahma cloud cluster?', answer: 'The individual cluster units support FDM parameters up to 256x256x256mm and custom resin volume matrices.', category: 'Brahma 3D Farm' },
-    { id: 'f3', question: 'Is Cash on Delivery available for high-end industrial systems?', answer: 'No, COD is restricted to a maximum basket value of ₹30,000. Enterprise units require electronic clearance.', category: 'Shipping & Billing' }
-  ]);
+  faqsList = computed(() => this.ds.faqs());
   newFaqQuestion = signal('');
   newFaqAnswer = signal('');
   newFaqCategory = signal('Pricing & B2B');
@@ -374,6 +394,38 @@ export class AdminPanel {
         }
       },
       error: () => this.toastService.error('Failed to update gateway')
+    });
+  }
+
+  // Active User Sessions
+  activeUserSessions = signal<any[]>([]);
+
+  fetchUserSessions() {
+    this.http.get<any>('/api/admin/sessions').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.activeUserSessions.set(res.sessions || []);
+        }
+      },
+      error: () => {
+        this.toastService.error('Failed to grab active sessions');
+      }
+    });
+  }
+
+  terminateUserSession(id: string) {
+    this.http.post<any>(`/api/admin/sessions/${id}/terminate`, {}).subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.toastService.success('Session terminated successfully');
+          this.fetchUserSessions();
+        } else {
+          this.toastService.error(res.message || 'Failed to terminate session');
+        }
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Error terminating session');
+      }
     });
   }
 
@@ -424,6 +476,7 @@ export class AdminPanel {
 
   constructor() {
     this.fetchPaymentGateways();
+    this.fetchUserSessions();
     // Sync local signals with database settings
     effect(() => {
       const s = this.ds.settings();
@@ -434,6 +487,26 @@ export class AdminPanel {
         this.accentColor.set(s.accentColor || '#10b981');
         this.borderRadius.set(s.borderRadius ?? 20);
         this.fontFamily.set(s.fontFamily || 'Inter');
+
+        // Custom branding/image settings fields
+        this.logoUrl.set(s.logoUrl || 'https://picsum.photos/seed/logo/200/50');
+        this.faviconUrl.set(s.faviconUrl || 'https://picsum.photos/seed/favicon/32/32');
+        this.appIconUrl.set(s.appIconUrl || 'https://picsum.photos/seed/icon/512/512');
+        this.loginBgUrl.set(s.loginBgUrl || 'https://picsum.photos/seed/login/1920/1080');
+        this.adminBgUrl.set(s.adminBgUrl || 'https://picsum.photos/seed/admin/1920/1080');
+
+        this.headerLogoUrl.set(s.headerLogoUrl || 'https://picsum.photos/seed/hlogo/200/50');
+        this.footerLogoUrl.set(s.footerLogoUrl || 'https://picsum.photos/seed/flogo/200/50');
+        this.mobileLogoUrl.set(s.mobileLogoUrl || 'https://picsum.photos/seed/mlogo/100/50');
+        this.darkModeLogoUrl.set(s.darkModeLogoUrl || 'https://picsum.photos/seed/dmlogo/200/50');
+        this.loadingLogoUrl.set(s.loadingLogoUrl || 'https://picsum.photos/seed/loading/200/200');
+        this.defaultPlaceholderUrl.set(s.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400');
+
+        this.defaultOgImageUrl.set(s.defaultOgImageUrl || 'https://picsum.photos/seed/og/1200/630');
+        this.defaultSocialShareImageUrl.set(s.defaultSocialShareImageUrl || 'https://picsum.photos/seed/social/1200/630');
+
+        this.razorpayLogoUrl.set(s.razorpayLogoUrl || 'https://picsum.photos/seed/razorpay/200/50');
+        this.paymentMethodIconsUrl.set(s.paymentMethodIconsUrl || 'https://picsum.photos/seed/payments/400/100');
       }
     });
 
@@ -963,7 +1036,26 @@ export class AdminPanel {
         secondaryColor: this.secondaryColor(),
         accentColor: this.accentColor(),
         borderRadius: this.borderRadius(),
-        fontFamily: this.fontFamily()
+        fontFamily: this.fontFamily(),
+        
+        logoUrl: this.logoUrl(),
+        faviconUrl: this.faviconUrl(),
+        appIconUrl: this.appIconUrl(),
+        loginBgUrl: this.loginBgUrl(),
+        adminBgUrl: this.adminBgUrl(),
+
+        headerLogoUrl: this.headerLogoUrl(),
+        footerLogoUrl: this.footerLogoUrl(),
+        mobileLogoUrl: this.mobileLogoUrl(),
+        darkModeLogoUrl: this.darkModeLogoUrl(),
+        loadingLogoUrl: this.loadingLogoUrl(),
+        defaultPlaceholderUrl: this.defaultPlaceholderUrl(),
+
+        defaultOgImageUrl: this.defaultOgImageUrl(),
+        defaultSocialShareImageUrl: this.defaultSocialShareImageUrl(),
+
+        razorpayLogoUrl: this.razorpayLogoUrl(),
+        paymentMethodIconsUrl: this.paymentMethodIconsUrl()
       });
       this.saveStatus.set('success');
     } catch {
@@ -1206,20 +1298,44 @@ export class AdminPanel {
       paymentStatus: 'unpaid'
     };
 
-    try {
-      await setDoc(doc(db, 'orders', randomId), newOrder);
-      this.toastService.success(`Manual Order ${orderNum} generated successfully on network database!`);
-      // Reset state
-      this.draftCustomerName.set('');
-      this.draftCustomerEmail.set('');
-      this.draftCustomerPhone.set('');
-      this.draftAddress.set('');
-      this.draftSelectedItemsList.set([]);
-      this.draftDiscountPercent.set(0);
-      this.setActiveTab('orders');
-    } catch {
-      this.toastService.error('Failed: Write permission error. Please authenticate as Super Admin.');
-    }
+    this.ds.api.post('/orders', {
+      items: this.draftSelectedItemsList().map(i => ({
+        productId: i.product.id,
+        variantId: null,
+        quantity: i.qty
+      })),
+      shippingAddress: {
+        addressLine1: this.draftAddress().trim() || 'Custom Order Warehouse Pickup',
+        addressLine2: '',
+        city: 'City',
+        state: 'State',
+        pincode: '400001',
+        country: 'India'
+      },
+      billingAddress: {
+        addressLine1: this.draftAddress().trim() || 'Custom Order Warehouse Pickup',
+        addressLine2: '',
+        city: 'City',
+        state: 'State',
+        pincode: '400001',
+        country: 'India'
+      },
+      paymentMethod: 'Manual Draft Pay Link'
+    }).subscribe({
+      next: () => {
+        this.toastService.success(`Manual Order ${orderNum} generated successfully on network database!`);
+        this.draftCustomerName.set('');
+        this.draftCustomerEmail.set('');
+        this.draftCustomerPhone.set('');
+        this.draftAddress.set('');
+        this.draftSelectedItemsList.set([]);
+        this.draftDiscountPercent.set(0);
+        this.setActiveTab('orders');
+      },
+      error: () => {
+        this.toastService.error('Failed to generate manual order on backend database.');
+      }
+    });
   }
 
   // --- ABANDONED CARTS CLUSTER Blasts ---
@@ -1297,23 +1413,90 @@ export class AdminPanel {
     }
   }
 
-  createFaq() {
+  async createFaq() {
     const q = this.newFaqQuestion().trim();
     const a = this.newFaqAnswer().trim();
     if (!q || !a) return this.toastService.error('Question and Answer are required.');
-    this.faqsList.update(all => [...all, {
-      id: 'faq-' + Date.now(),
-      question: q,
-      answer: a,
-      category: this.newFaqCategory()
-    }]);
-    this.newFaqQuestion.set('');
-    this.newFaqAnswer.set('');
-    this.toastService.info('FAQ added.');
+    try {
+      await this.ds.addFaq({
+        question: q,
+        answer: a,
+        category: this.newFaqCategory()
+      });
+      this.newFaqQuestion.set('');
+      this.newFaqAnswer.set('');
+      this.toastService.info('FAQ added.');
+    } catch {
+      this.toastService.error('Error creating FAQ item.');
+    }
   }
 
-  deleteFaq(faqId: string) {
-    this.faqsList.update(all => all.filter(f => f.id !== faqId));
+  async deleteFaq(faqId: string) {
+    if (!confirm('Are you sure you want to delete this FAQ?')) return;
+    try {
+      await this.ds.deleteFaq(faqId);
+      this.toastService.info('FAQ destroyed.');
+    } catch {
+      this.toastService.error('Failed to delete FAQ.');
+    }
+  }
+
+  async publishCMSPage() {
+    const title = this.newPageTitle().trim();
+    const content = this.newPageContent().trim();
+    if (!title || !content) return this.toastService.error('Title and Content body are required.');
+    const slug = this.newPageSlug().trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    try {
+      await this.ds.addPage({ title, slug, content, isPublished: true });
+      this.newPageTitle.set('');
+      this.newPageSlug.set('');
+      this.newPageContent.set('');
+      this.toastService.info('CMS Page published!');
+    } catch {
+      this.toastService.error('Error creating CMS page.');
+    }
+  }
+
+  async deletePage(id: string) {
+    if (!confirm('Are you sure you want to delete this page?')) return;
+    try {
+      await this.ds.deletePage(id);
+      this.toastService.info('CMS Page removed.');
+    } catch {
+      this.toastService.error('Error deleting page.');
+    }
+  }
+
+  async publishBanner() {
+    const title = this.newBannerTitle().trim();
+    const imageUrl = this.newBannerImageUrl().trim();
+    const linkUrl = this.newBannerLinkUrl().trim();
+    if (!title) return this.toastService.error('Banner campaign title required.');
+    try {
+      await this.ds.addBanner({
+        title,
+        imageUrl,
+        linkUrl,
+        position: this.newBannerPosition(),
+        isActive: true
+      });
+      this.newBannerTitle.set('');
+      this.newBannerImageUrl.set('');
+      this.newBannerLinkUrl.set('');
+      this.toastService.info('Banner campaign programmed!');
+    } catch {
+      this.toastService.error('Failed to schedule campaign banner.');
+    }
+  }
+
+  async deleteBanner(id: string) {
+    if (!confirm('Are you sure you want to delete this campaign banner?')) return;
+    try {
+      await this.ds.deleteBanner(id);
+      this.toastService.info('Promo banner decommissioned.');
+    } catch {
+      this.toastService.error('Error deleting banner.');
+    }
   }
 
   // --- SHIPPING SETTINGS ---

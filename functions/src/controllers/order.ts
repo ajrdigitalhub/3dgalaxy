@@ -68,9 +68,20 @@ export const getOrderById = async (req: any, res: Response) => {
         items: {
           include: {
             product: {
-              include: { images: true }
+              include: { 
+                images: true,
+                inventory: {
+                  include: { warehouse: true }
+                }
+              }
             },
-            variant: true,
+            variant: {
+              include: {
+                inventory: {
+                  include: { warehouse: true }
+                }
+              }
+            },
           },
         },
         statusHistory: {
@@ -342,5 +353,48 @@ export const addOrderNotes = async (req: any, res: Response) => {
     return res.status(200).json({ message: 'Note added successfully' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to add order notes', details: error.message });
+  }
+};
+
+export const resendOrderNotification = async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    let orderWhere: any = { id };
+    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    const order = await prisma.order.findUnique({
+      where: orderWhere,
+      include: { customer: { include: { user: true } } }
+    });
+    if (!order) return res.status(404).json({ error: 'Order reference does not exist' });
+
+    const userId = order.customer?.userId;
+    if (userId) {
+      let template = await prisma.notificationTemplate.findFirst({
+        where: { name: 'Order Update' }
+      });
+      if (!template) {
+        template = await prisma.notificationTemplate.create({
+          data: {
+            name: 'Order Update',
+            channel: 'EMAIL',
+            subject: 'Order Status Update',
+            body: 'Your order status has been updated. Please check the website for more details.'
+          }
+        });
+      }
+
+      await prisma.notification.create({
+        data: {
+          userId,
+          templateId: template.id,
+          status: 'SENT',
+          sentAt: new Date()
+        }
+      });
+    }
+
+    return res.status(200).json({ success: true, message: 'Order notification resent successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to resend notification', details: error.message });
   }
 };

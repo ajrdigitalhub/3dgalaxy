@@ -56,6 +56,23 @@ async function main() {
     },
   });
 
+  // Seed a sample Refresh Token for debugging/development sessions
+  console.log('Seeding sample refresh tokens...');
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+  await prisma.refreshToken.upsert({
+    where: { token: 'mock-refresh-token-super-admin-dev-2026' },
+    update: {},
+    create: {
+      token: 'mock-refresh-token-super-admin-dev-2026',
+      userId: superAdminUser.id,
+      expiresAt,
+      deviceInfo: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
+      ipAddress: '127.0.0.1',
+      revoked: false
+    }
+  });
+
   // 3. Brands seeding
   console.log('Creating Brands...');
   const brands = [

@@ -9,6 +9,7 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import categoryRoutes from './routes/category';
 import variantImageRoutes from './routes/variantImage';
+import adminRoutes from './routes/admin';
 import brandRoutes from './routes/brand';
 import productRoutes from './routes/product';
 import homepageRoutes from './routes/homepage';
@@ -39,6 +40,7 @@ app.use('/', sitemapRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/admin', variantImageRoutes); // Since some endpoints start with /variants or /product-variant-images
 app.use('/api/brands', brandRoutes);
 app.use('/api/products', productRoutes);

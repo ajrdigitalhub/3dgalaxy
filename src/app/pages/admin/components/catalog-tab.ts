@@ -2,12 +2,17 @@ import { Component, Input, ChangeDetectionStrategy, signal, inject } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { AdminPanel } from '../admin';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+
+import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
 
 @Component({
   selector: 'app-admin-catalog-tab',
-  imports: [CommonModule, FormsModule, MatIconModule],
+  imports: [CommonModule, FormsModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -128,12 +133,10 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   </div>
                   
                   <div class="space-y-1 col-span-1 md:col-span-2">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
-                    <textarea rows="4" [value]="admin.pDesc()" (input)="admin.pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                    <app-rich-text-editor label="Quick Bullet Highlight Specs" placeholder="Enter technical bullet highlights..." [value]="admin.pDesc()" (valueChange)="admin.pDesc.set($event)"></app-rich-text-editor>
                   </div>
                   <div class="space-y-1 col-span-1 md:col-span-2">
-                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
-                    <textarea rows="8" [value]="admin.pLongDesc()" (input)="admin.pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                    <app-rich-text-editor label="Long description / Overview page" placeholder="Enter detailed comprehensive description paragraph..." [value]="admin.pLongDesc()" (valueChange)="admin.pLongDesc.set($event)"></app-rich-text-editor>
                   </div>
                 </div>
 
@@ -551,19 +554,16 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   </div>
 
                   <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-white/75 uppercase pl-1">Segment Description</span>
-                    <input type="text" [value]="admin.newCatDesc()" (input)="admin.newCatDesc.set($any($event.target).value)" placeholder="Short explanatory copy..." class="w-full px-4 py-2 bg-white text-zinc-900 rounded-xl text-xs outline-none">
+                    <app-rich-text-editor label="Segment Description" placeholder="Short explanatory copy..." [value]="admin.newCatDesc()" (valueChange)="admin.newCatDesc.set($event)"></app-rich-text-editor>
                   </div>
 
                   <!-- Extra Shopify Layout details -->
                   <div class="grid grid-cols-2 gap-2 text-zinc-900">
                     <div class="space-y-1">
-                      <span class="block text-[9px] font-black text-white/75 uppercase">Image Grid URL</span>
-                      <input type="text" [value]="admin.catImage()" (input)="admin.catImage.set($any($event.target).value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-white rounded-lg text-xs outline-none">
+                      <app-image-picker label="Image Grid" [value]="admin.catImage()" (valueChange)="admin.catImage.set($event)"></app-image-picker>
                     </div>
                     <div class="space-y-1">
-                      <span class="block text-[9px] font-black text-white/75 uppercase">Banner Overlay URL</span>
-                      <input type="text" [value]="admin.catBanner()" (input)="admin.catBanner.set($any($event.target).value)" placeholder="https://..." class="w-full px-3 py-1.5 bg-white rounded-lg text-xs outline-none">
+                      <app-image-picker label="Banner Overlay" [value]="admin.catBanner()" (valueChange)="admin.catBanner.set($event)"></app-image-picker>
                     </div>
                   </div>
 
@@ -717,13 +717,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Manufacturing Territory (Country)</span>
                   <input type="text" [value]="admin.brandCountry()" (input)="admin.brandCountry.set($any($event.target).value)" placeholder="e.g. Shenzhen HQ" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
                 </div>
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Logo URL (PNG/SVG)</span>
-                  <input type="text" [value]="admin.brandLogo()" (input)="admin.brandLogo.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+                <div class="space-y-1 border-b dark:border-zinc-800 pb-2">
+                  <app-image-picker label="Logo Branding" [value]="admin.brandLogo()" (valueChange)="admin.brandLogo.set($event)"></app-image-picker>
                 </div>
                 <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Alliance Banner Description</span>
-                  <textarea rows="2" [value]="admin.brandDesc()" (input)="admin.brandDesc.set($any($event.target).value)" placeholder="Exquisite summaries of machinery tools..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                  <app-rich-text-editor label="Alliance Banner Description" placeholder="Exquisite summaries of machinery tools..." [value]="admin.brandDesc()" (valueChange)="admin.brandDesc.set($event)"></app-rich-text-editor>
                 </div>
                 
                 <div class="flex items-center gap-1.5 pt-2">
@@ -844,6 +842,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 })
 export class AdminCatalogTab {
   toastService = inject(ToastService);
+  http = inject(HttpClient);
   @Input({ required: true }) admin!: AdminPanel;
 
   uploadProgress = 0;
@@ -880,22 +879,30 @@ export class AdminCatalogTab {
       
       for (let i = 0; i < input.files.length; i++) {
           const file = input.files[i];
-          if (file.size > 2 * 1024 * 1024) {
-               this.toastService.info(`File ${file.name} exceeds 2MB limit.`);
+          if (file.size > 10 * 1024 * 1024) {
+               this.toastService.error(`File ${file.name} exceeds 10MB limit.`);
                continue;
           }
           
           try {
-              const base64Url = await this.readAsBase64(file);
-              variant.images.push({ 
-                  url: base64Url, 
-                  isPrimary: variant.images.length === 0 // First image is primary if none exist
-              });
+              const formData = new FormData();
+              formData.append('image', file);
+              const res = await firstValueFrom(this.http.post<any>('/api/admin/upload-image', formData));
+              if (res && res.success && res.url) {
+                  variant.images.push({ 
+                      url: res.url, 
+                      isPrimary: variant.images.length === 0
+                  });
+                  this.toastService.success('Variant Image Uploaded Successfully');
+              } else {
+                  this.toastService.error('Upload Failed');
+              }
           } catch (e) {
-              console.error('Failed to read file:', e);
+              console.error('Failed to upload file:', e);
+              this.toastService.error('Upload Failed');
           }
           
-          this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 80);
+          this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 90);
       }
       
       this.admin.pVariants.set(variants);
@@ -956,27 +963,34 @@ export class AdminCatalogTab {
 
     this.uploadProgress = 10;
     
-    // Process files locally as base64
     let images = [...this.admin.pImages()];
     
     for (let i = 0; i < input.files.length; i++) {
         const file = input.files[i];
-        if (file.size > 2 * 1024 * 1024) {
-             this.toastService.info(`File ${file.name} exceeds 2MB limit.`);
+        if (file.size > 10 * 1024 * 1024) {
+             this.toastService.error(`File ${file.name} exceeds 10MB limit.`);
              continue;
         }
         
         try {
-            const base64Url = await this.readAsBase64(file);
-            images.push({ 
-                url: base64Url, 
-                isPrimary: images.length === 0 // First image is primary if none exist
-            });
+            const formData = new FormData();
+            formData.append('image', file);
+            const res = await firstValueFrom(this.http.post<any>('/api/admin/upload-image', formData));
+            if (res && res.success && res.url) {
+                images.push({ 
+                    url: res.url, 
+                    isPrimary: images.length === 0
+                });
+                this.toastService.success('Image Uploaded Successfully');
+            } else {
+                this.toastService.error('Upload Failed');
+            }
         } catch (e) {
-            console.error('Failed to read file:', e);
+            console.error('Failed to upload file:', e);
+            this.toastService.error('Upload Failed');
         }
         
-        this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 80);
+        this.uploadProgress = Math.floor(10 + ((i + 1) / input.files.length) * 90);
     }
     
     this.admin.pImages.set(images);

@@ -45,13 +45,39 @@ export const createHomepageSection = async (req: Request, res: Response) => {
   }
 };
 
+function toValidUuid(id: string): string {
+  if (!id) return '00000000-0000-0000-0000-000000000000';
+  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  if (uuidRegex.test(id)) {
+    return id.toLowerCase();
+  }
+  const idMap: { [key: string]: string } = {
+    'hero-1': '11111111-1111-1111-1111-111111111111',
+    'cat-2': '22222222-2222-2222-2222-222222222222',
+    'feat-3': '33333333-3333-3333-3333-333333333333',
+    'best-4': '44444444-4444-4444-4444-444444444444',
+    'brands-5': '55555555-5555-5555-5555-555555555555'
+  };
+  if (idMap[id]) {
+    return idMap[id];
+  }
+  let clean = id.replace(/[^a-fA-F0-9]/g, '');
+  if (clean.length < 32) {
+    clean = clean.padEnd(32, '0');
+  } else {
+    clean = clean.slice(0, 32);
+  }
+  return `${clean.slice(0, 8)}-${clean.slice(8, 12)}-${clean.slice(12, 16)}-${clean.slice(16, 20)}-${clean.slice(20)}`.toLowerCase();
+}
+
 export const updateHomepageSection = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const mappedId = toValidUuid(id);
   const { name, type, sequence, isVisible } = req.body;
 
   try {
     const updated = await prisma.homepageSection.update({
-      where: { id },
+      where: { id: mappedId },
       data: {
         name,
         type,
@@ -67,8 +93,9 @@ export const updateHomepageSection = async (req: Request, res: Response) => {
 
 export const deleteHomepageSection = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const mappedId = toValidUuid(id);
   try {
-    await prisma.homepageSection.delete({ where: { id } });
+    await prisma.homepageSection.delete({ where: { id: mappedId } });
     return res.status(200).json({ message: 'Homepage layout section successfully deleted' });
   } catch (error: any) {
     return res.status(500).json({ error: 'layout section deletion command halted', details: error.message });

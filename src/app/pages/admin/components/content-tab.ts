@@ -2,10 +2,12 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
+import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
+import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
 
 @Component({
   selector: 'app-admin-content-tab',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
@@ -18,22 +20,49 @@ import { AdminPanel } from '../admin';
             <p class="text-xs text-zinc-500">Formulate informational pages, legal terms, and support disclosures.</p>
           </div>
 
-          <div class="space-y-3">
-            @for (p of ['Home Store Front', 'About 3D Galaxy Labs', 'Delivery & Assembly SLA', 'Terms of Fabrication Support', 'Brahma Cloud Policies']; track p) {
-              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl flex justify-between items-center transition-all hover:border-blue-500/20 shadow-xs">
-                <div class="flex items-center gap-4">
-                  <div class="h-10 w-10 bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-850 flex items-center justify-center text-zinc-400"><mat-icon>article</mat-icon></div>
-                  <div>
-                    <h4 class="text-xs font-black uppercase text-zinc-900 dark:text-white">{{ p }}</h4>
-                    <p class="text-[9px] text-zinc-400 uppercase font-mono mt-0.5 font-bold">SEO Status: Programmed &middot; Index: Public</p>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-3">
+              @for (p of admin.ds.pages(); track p.id) {
+                <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl flex justify-between items-center transition-all hover:border-blue-500/20 shadow-xs">
+                  <div class="flex items-center gap-4">
+                    <div class="h-10 w-10 bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-850 flex items-center justify-center text-zinc-400">
+                      <mat-icon>article</mat-icon>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-black uppercase text-zinc-900 dark:text-white">{{ p.title }}</h4>
+                      <p class="text-[9px] text-zinc-400 uppercase font-mono mt-0.5 font-bold">SEO URL: /page/{{ p.slug }} &middot; Status: {{ p.isPublished ? 'LIVE' : 'DRAFT' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button (click)="admin.deletePage(p.id)" class="text-red-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none">
+                      <mat-icon class="text-base">delete_outline</mat-icon>
+                    </button>
                   </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black tracking-widest">LIVE</span>
-                  <mat-icon class="text-zinc-400">chevron_right</mat-icon>
+              }
+              @if (admin.ds.pages().length === 0) {
+                <div class="p-8 text-center text-zinc-400 text-xs font-bold uppercase tracking-widest bg-zinc-50/50 dark:bg-zinc-950/20 border border-dashed dark:border-zinc-800 rounded-2xl">
+                  No Pages Registered. Add one on the right.
                 </div>
+              }
+            </div>
+
+            <!-- CREATE PAGE -->
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-4 text-zinc-900 dark:text-white">
+              <h3 class="text-xs font-black uppercase pb-2 border-b dark:border-zinc-800">Add Informative Page</h3>
+              <div class="space-y-1">
+                <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Page Title</span>
+                <input type="text" [value]="admin.newPageTitle()" (input)="admin.newPageTitle.set($any($event.target).value)" placeholder="e.g. Warranty Policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
-            }
+              <div class="space-y-1">
+                <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">URL Slug</span>
+                <input type="text" [value]="admin.newPageSlug()" (input)="admin.newPageSlug.set($any($event.target).value)" placeholder="e.g. warranty-policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+              </div>
+              <div class="space-y-1">
+                <app-rich-text-editor label="Page Details" placeholder="Enter page contents..." [value]="admin.newPageContent()" (valueChange)="admin.newPageContent.set($event)"></app-rich-text-editor>
+              </div>
+              <button (click)="admin.publishCMSPage()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 border-none transition-colors">Publish Page</button>
+            </div>
           </div>
         </div>
       }
@@ -60,9 +89,11 @@ import { AdminPanel } from '../admin';
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Article Excerpt</span>
                   <input type="text" [value]="admin.newBlogExcerpt()" (input)="admin.newBlogExcerpt.set($any($event.target).value)" placeholder="Short newsletter hook..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-semibold outline-none text-zinc-900 dark:text-white">
                 </div>
+                <div class="space-y-3">
+                  <app-image-picker label="Cover Image" [value]="admin.newBlogImage()" (valueChange)="admin.newBlogImage.set($event)"></app-image-picker>
+                </div>
                 <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Article Content</span>
-                  <textarea rows="4" [value]="admin.newBlogContent()" (input)="admin.newBlogContent.set($any($event.target).value)" placeholder="Markdown supported details..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                  <app-rich-text-editor label="Article Content" placeholder="Markdown supported details..." [value]="admin.newBlogContent()" (valueChange)="admin.newBlogContent.set($event)"></app-rich-text-editor>
                 </div>
                 <button (click)="admin.publishBlogPost()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] uppercase font-black tracking-wider rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-500/10 border-none">Register Entry</button>
               </div>
@@ -73,19 +104,26 @@ import { AdminPanel } from '../admin';
               @for (b of admin.ds.blogs(); track b.id) {
                 <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl flex gap-4">
                   <div class="h-16 w-24 shrink-0 bg-zinc-100 dark:bg-zinc-950 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                    <img [src]="b.imageUrl" alt="Blog cover" class="w-full h-full object-cover">
+                    <img [src]="b.imageUrl || 'https://picsum.photos/seed/tech/800/500'" alt="Blog cover" class="w-full h-full object-cover">
                   </div>
                   <div class="flex-1 min-w-0 space-y-1">
                     <div class="flex justify-between items-start font-bold">
                       <h4 class="text-xs font-black uppercase text-zinc-900 dark:text-white truncate">{{ b.title }}</h4>
-                      <button (click)="admin.deleteBlog(b.id)" class="text-red-400 hover:text-red-500 cursor-pointer"><mat-icon class="text-base">delete_outline</mat-icon></button>
+                      <button (click)="admin.deleteBlog(b.id)" class="text-red-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none">
+                        <mat-icon class="text-base">delete_outline</mat-icon>
+                      </button>
                     </div>
                     <p class="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">{{ b.excerpt }}</p>
                     <div class="flex justify-between text-[8px] font-mono text-zinc-550 uppercase tracking-widest pt-1.5 border-t dark:border-zinc-800">
-                      <span>By {{ b.author }}</span>
+                      <span>By {{ b.author || 'Galaxy Admin' }}</span>
                       <span>Published: {{ b.date }}</span>
                     </div>
                   </div>
+                </div>
+              }
+              @if (admin.ds.blogs().length === 0) {
+                <div class="p-8 text-center text-zinc-400 text-xs font-semibold uppercase bg-zinc-50/50 dark:bg-zinc-950/20 border border-dashed dark:border-zinc-800 rounded-2xl">
+                  No blogs cataloged. Click Register Entry on the left.
                 </div>
               }
             </div>
@@ -107,10 +145,17 @@ import { AdminPanel } from '../admin';
                 <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl space-y-2 relative group max-w-3xl">
                   <div class="flex items-center justify-between">
                     <span class="text-[9px] font-black text-blue-500 uppercase tracking-wider">{{ f.category }}</span>
-                    <button (click)="admin.deleteFaq(f.id)" class="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"><mat-icon class="text-base">delete_outline</mat-icon></button>
+                    <button (click)="admin.deleteFaq(f.id)" class="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer bg-transparent border-none outline-none">
+                      <mat-icon class="text-base">delete_outline</mat-icon>
+                    </button>
                   </div>
                   <h4 class="text-xs font-black text-zinc-950 dark:text-white">Q: {{ f.question }}</h4>
                   <p class="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-350">A: {{ f.answer }}</p>
+                </div>
+              }
+              @if (admin.faqsList().length === 0) {
+                <div class="p-8 text-center text-zinc-400 text-xs font-semibold uppercase bg-zinc-50/50 dark:bg-zinc-950/20 border border-dashed dark:border-zinc-800 rounded-2xl">
+                  No FAQ modules recorded. Register one on the right.
                 </div>
               }
             </div>
@@ -134,7 +179,7 @@ import { AdminPanel } from '../admin';
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Technical Answer Description</span>
                 <textarea rows="3" [value]="admin.newFaqAnswer()" (input)="admin.newFaqAnswer.set($any($event.target).value)" placeholder="Enter responses details..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
               </div>
-              <button (click)="admin.createFaq()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 border-none">Program FAQ</button>
+              <button (click)="admin.createFaq()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 border-none transition-colors">Program FAQ</button>
             </div>
           </div>
         </div>
@@ -148,23 +193,59 @@ import { AdminPanel } from '../admin';
             <p class="text-xs text-zinc-500">Arrange and prioritize homepage carousels and promotional popups.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            @for (b of admin.bannerCampaigns(); track b.id) {
-              <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl flex flex-col justify-between h-44 shadow-xs relative">
-                <div>
-                  <div class="flex justify-between items-center text-[8px] font-black text-blue-500 uppercase tracking-widest">
-                    <span>{{ b.type }}</span>
-                    <span [class]="b.status === 'Published' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-450'" class="px-1.5 py-0.5 rounded-md">{{ b.status }}</span>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              @for (b of admin.bannerCampaigns(); track b.id) {
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl flex flex-col justify-between h-44 shadow-xs relative">
+                  <div>
+                    <div class="flex justify-between items-center text-[8px] font-black text-blue-500 uppercase tracking-widest">
+                      <span>{{ b.position || 'Hero Slider' }}</span>
+                      <span [class]="b.isActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-orange-500/10 text-orange-500'" class="px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase">{{ b.isActive ? 'Published' : 'Draft' }}</span>
+                    </div>
+                    <h4 class="text-xs font-black uppercase text-zinc-950 dark:text-white mt-1.5 leading-snug truncate">{{ b.title }}</h4>
+                    <p class="text-[9px] font-mono text-zinc-400 mt-1 uppercase font-bold text-zinc-400">Target action: {{ b.linkUrl }}</p>
                   </div>
-                  <h4 class="text-xs font-black uppercase text-zinc-950 dark:text-white mt-1.5 leading-snug">{{ b.name }}</h4>
-                  <p class="text-[9px] font-mono text-zinc-4 w-full mt-1 uppercase font-bold text-zinc-400">Target: {{ b.device }} &middot; Time: {{ b.activeHours }}</p>
+                  <div class="flex items-center justify-between pt-3 border-t dark:border-zinc-800">
+                    <div class="h-10 w-20 bg-zinc-100 dark:bg-zinc-950 rounded-lg overflow-hidden border">
+                      <img [src]="b.imageUrl || 'https://picsum.photos/seed/promo/400/200'" class="w-full h-full object-cover">
+                    </div>
+                    <button (click)="admin.deleteBanner(b.id)" class="text-red-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none">
+                      <mat-icon class="text-base">delete_outline</mat-icon>
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t dark:border-zinc-800">
-                  <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1">CTA Action: {{ b.cta }}</span>
-                  <mat-icon class="text-zinc-400 text-base">arrow_forward</mat-icon>
+              }
+              @if (admin.bannerCampaigns().length === 0) {
+                <div class="md:col-span-2 p-8 text-center text-zinc-400 text-xs font-semibold uppercase bg-zinc-50/50 dark:bg-zinc-950/20 border border-dashed dark:border-zinc-800 rounded-2xl">
+                  No promotional banners published. Configure on the right.
                 </div>
+              }
+            </div>
+
+            <!-- CREATE BANNER -->
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-4 text-zinc-900 dark:text-white">
+              <h3 class="text-xs font-black uppercase pb-2 border-b dark:border-zinc-800">Add Campaign Banner</h3>
+              <div class="space-y-1">
+                <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Banner Title</span>
+                <input type="text" [value]="admin.newBannerTitle()" (input)="admin.newBannerTitle.set($any($event.target).value)" placeholder="e.g. Summer TPU Deals" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
-            }
+              <div class="space-y-1">
+                <app-image-picker label="Banner Image" [value]="admin.newBannerImageUrl()" (valueChange)="admin.newBannerImageUrl.set($event)"></app-image-picker>
+              </div>
+              <div class="space-y-1">
+                <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Target CTA Action Route</span>
+                <input type="text" [value]="admin.newBannerLinkUrl()" (input)="admin.newBannerLinkUrl.set($any($event.target).value)" placeholder="e.g. /category/filaments" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+              </div>
+              <div class="space-y-1">
+                <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Carousel Display Position</span>
+                <select [value]="admin.newBannerPosition()" (change)="admin.newBannerPosition.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+                  <option value="Main Carousel">Main Carousel</option>
+                  <option value="Category Banner">Category Banner</option>
+                  <option value="Footer Banner">Footer Banner</option>
+                </select>
+              </div>
+              <button (click)="admin.publishBanner()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 border-none transition-colors">Publish Banner</button>
+            </div>
           </div>
         </div>
       }

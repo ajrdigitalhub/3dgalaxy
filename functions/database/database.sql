@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
+    revoked BOOLEAN DEFAULT false,
+    device_info TEXT,
+    ip_address VARCHAR(45),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -466,7 +469,9 @@ CREATE TABLE IF NOT EXISTS shipments (
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     carrier VARCHAR(100),
     tracking_number VARCHAR(255),
+    tracking_url TEXT,
     status VARCHAR(50) NOT NULL,
+    estimated_delivery TIMESTAMPTZ,
     shipped_at TIMESTAMPTZ,
     delivered_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
