@@ -161,9 +161,15 @@
               <button (click)="adjustQty(1)" class="h-full w-12 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg flex items-center justify-center transition-all text-neutral-500"><mat-icon class="scale-75">add</mat-icon></button>
             </div>
             <div class="flex flex-1 gap-3 sm:gap-4 w-full lg:w-auto">
-              <button (click)="addToCart(p)" class="flex-1 h-14 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 lg:gap-3 whitespace-nowrap px-4 lg:px-6">
-                <mat-icon class="scale-100">shopping_cart</mat-icon> Add To Cart
-              </button>
+              <app-loading-button
+                [loading]="isAddingToCart()"
+                text="Add To Cart"
+                loadingText="Adding..."
+                icon="shopping_cart"
+                btnClass="flex-1 h-14 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2 lg:gap-3 whitespace-nowrap px-4 lg:px-6 cursor-pointer"
+                (btnClick)="addToCart(p)"
+              >
+              </app-loading-button>
               <button (click)="buyNow(p)" class="flex-1 lg:flex-none h-14 px-4 lg:px-8 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl shadow-lg transition-all flex items-center justify-center whitespace-nowrap">
                 Buy Now
               </button>
@@ -409,9 +415,15 @@
           <span class="w-8 text-center text-sm font-black">{{ quantity() }}</span>
           <button (click)="adjustQty(1)" class="h-10 w-10 flex items-center justify-center font-bold" aria-label="Increase quantity"><mat-icon class="scale-75">add</mat-icon></button>
         </div>
-        <button (click)="addToCart(p)" class="flex-1 h-12 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#d65108]/20 flex items-center justify-center gap-2">
-          <mat-icon class="scale-90">shopping_cart</mat-icon> ADD
-        </button>
+        <app-loading-button
+          [loading]="isAddingToCart()"
+          text="ADD"
+          loadingText="Adding..."
+          icon="shopping_cart"
+          btnClass="flex-1 h-12 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#d65108]/20 flex items-center justify-center gap-2 cursor-pointer"
+          (btnClick)="addToCart(p)"
+        >
+        </app-loading-button>
       </div>
     </div>
   </div>

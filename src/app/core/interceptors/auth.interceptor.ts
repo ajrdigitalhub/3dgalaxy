@@ -3,6 +3,7 @@ import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, throwError } from 'rxjs';
 import { catchError, filter, take, switchMap } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
 let isRefreshing = false;
@@ -10,13 +11,24 @@ const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const http = inject(HttpClient);
+  const router = inject(Router);
 
   // Skip adding Bearer token or refreshing for auth endpoints themselves
   if (req.url.includes('/auth/login') || req.url.includes('/auth/refresh-token') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh')) {
     return next(req);
   }
 
-  return next(req).pipe(
+  let authReq = req;
+  if (typeof window !== 'undefined') {
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken) {
+      authReq = req.clone({
+        headers: req.headers.set('Authorization', `Bearer ${accessToken}`)
+      });
+    }
+  }
+
+  return next(authReq).pipe(
     catchError((error) => {
       if (error instanceof HttpErrorResponse && error.status === 401) {
         if (typeof window !== 'undefined') {
@@ -50,13 +62,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     });
                     return next(retryReq);
                   } else {
-                    handleLogout();
+                    handleLogout(router);
                     return throwError(() => error);
                   }
                 }),
                 catchError((refreshError) => {
                   isRefreshing = false;
-                  handleLogout();
+                  handleLogout(router);
                   return throwError(() => refreshError);
                 })
               );
@@ -74,7 +86,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
               );
             }
           } else {
-            handleLogout();
+            // NO REFRESH TOKEN: They were already guest or logged out. Do NOT reload or auto-redirect loops!
+            // Just remove any dangling access_token quietly.
+            localStorage.removeItem('access_token');
           }
         }
       }
@@ -83,11 +97,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   );
 };
 
-function handleLogout() {
+function handleLogout(router?: Router) {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    // Break out of stale session context
-    window.location.reload();
+    if (router) {
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        router.navigate(['/login']);
+      }
+    }
   }
 }

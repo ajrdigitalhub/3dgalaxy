@@ -1,4 +1,4 @@
-import {Component, computed, effect, inject, signal} from '@angular/core';
+import {Component, computed, effect, inject, signal, HostListener} from '@angular/core';
 import {CommonModule, Location} from '@angular/common';
 import {Router} from '@angular/router';
 import {FormsModule} from '@angular/forms';
@@ -8,10 +8,11 @@ import {LoadingService} from '../../core/services/loading.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from '../../services/api.service';
+import {LoadingButton} from '../../shared/components/loading-button/loading-button';
 
 @Component({
   selector: 'app-checkout',
-  imports: [CommonModule, MatIconModule, FormsModule],
+  imports: [CommonModule, MatIconModule, FormsModule, LoadingButton],
   templateUrl: './checkout.html'
 })
 export class CheckoutComponent {
@@ -22,6 +23,17 @@ export class CheckoutComponent {
   toast = inject(ToastService);
   http = inject(HttpClient);
   api = inject(ApiService);
+
+  isSubmitting = signal(false);
+
+  @HostListener('window:beforeunload', ['$event'])
+  unloadNotification($event: any): string | undefined {
+    if (this.isSubmitting()) {
+      $event.returnValue = 'Operation is in progress. Are you sure you want to leave?';
+      return 'Operation is in progress. Are you sure you want to leave?';
+    }
+    return undefined;
+  }
 
   checkoutItems = signal<any[]>([]);
 
@@ -105,6 +117,10 @@ export class CheckoutComponent {
   }
 
   async placeOrder() {
+    if (this.isSubmitting()) {
+      return;
+    }
+
     if (!this.isLoggedIn()) {
       this.toast.error('Please login to place an order.');
       this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
@@ -115,6 +131,8 @@ export class CheckoutComponent {
       this.toast.error('Please fill all required address and contact details.');
       return;
     }
+
+    this.isSubmitting.set(true);
 
     const payload = {
       items: this.checkoutItems().map(ci => ({
@@ -167,6 +185,13 @@ export class CheckoutComponent {
                 this.loading.stopLoading();
                 this.toast.error('Payment verification failed.');
                 this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
+              } finally {
+                this.isSubmitting.set(false);
+              }
+            },
+            modal: {
+              ondismiss: () => {
+                this.isSubmitting.set(false);
               }
             },
             prefill: {
@@ -181,6 +206,7 @@ export class CheckoutComponent {
           rzp.on('payment.failed', (response: any) => {
               this.loading.stopLoading();
               this.toast.error(response.error.description);
+              this.isSubmitting.set(false);
               this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
           });
           this.loading.stopLoading();
@@ -188,15 +214,18 @@ export class CheckoutComponent {
         } else {
            this.loading.stopLoading();
            this.toast.error('Razorpay initialization failed.');
+           this.isSubmitting.set(false);
         }
       } else {
         this.loading.stopLoading();
         this.toast.success('Order placed successfully!');
+        this.isSubmitting.set(false);
         this.router.navigate(['/order-success'], { state: { order: orderData } });
       }
     } catch (e: any) {
       this.loading.stopLoading();
       this.toast.error('Order placement failed: ' + (e?.error?.error || e.message));
+      this.isSubmitting.set(false);
     }
   }
 }

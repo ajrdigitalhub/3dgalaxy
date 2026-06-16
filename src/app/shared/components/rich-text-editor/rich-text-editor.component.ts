@@ -1,4 +1,4 @@
-import { Component, forwardRef, inject, signal, viewChild, ElementRef, OnInit, OnDestroy, HostListener, Input, Output, EventEmitter } from '@angular/core';
+import { Component, forwardRef, inject, signal, viewChild, ElementRef, OnInit, OnDestroy, HostListener, Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +19,7 @@ import { ToastService } from '../toast/toast.service';
     }
   ]
 })
-export class RichTextEditorComponent implements ControlValueAccessor, OnInit, OnDestroy {
+export class RichTextEditorComponent implements ControlValueAccessor, OnInit, OnDestroy, AfterViewInit {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
 
@@ -101,6 +101,14 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
 
   ngOnDestroy() {
     // Cleanup lifecycle
+  }
+
+  ngAfterViewInit() {
+    const editor = this.editorArea()?.nativeElement;
+    if (editor && this.htmlContent()) {
+      editor.innerHTML = this.htmlContent();
+    }
+    this.updateStats();
   }
 
   // --- COMPONENT VALUE MANAGEMENT ---

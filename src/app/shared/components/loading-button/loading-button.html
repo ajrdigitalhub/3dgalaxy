@@ -1,0 +1,18 @@
+<button
+  [type]="type"
+  [disabled]="loading || disabled"
+  [class]="btnClass"
+  [class.opacity-70]="loading || disabled"
+  [class.pointer-events-none]="loading || disabled"
+  (click)="onClick($event)"
+>
+  @if (loading) {
+    <div class="spinner"></div>
+    <span class="font-bold flex items-center gap-1">{{ loadingText }}</span>
+  } @else {
+    @if (icon) {
+      <mat-icon class="text-sm scale-75">{{ icon }}</mat-icon>
+    }
+    <span class="font-bold">{{ text }}</span>
+  }
+</button>

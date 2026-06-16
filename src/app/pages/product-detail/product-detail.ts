@@ -8,10 +8,11 @@ import {LoadingService} from '../../core/services/loading.service';
 import {ApiService} from '../../services/api.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+import {LoadingButton} from '../../shared/components/loading-button/loading-button';
 
 @Component({
   selector: 'app-product-detail',
-  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent, LoadingButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.scss'
@@ -24,6 +25,9 @@ export class ProductDetail {
   api = inject(ApiService);
   toastService = inject(ToastService);
   router = inject(Router);
+
+  isAddingToCart = signal(false);
+  isSubmittingReview = signal(false);
 
   safeHtml(html: string) {
     if (!html) return '';
@@ -256,7 +260,14 @@ export class ProductDetail {
   }
 
   addToCart(p: Product) {
+    if (this.isAddingToCart()) return;
+    this.isAddingToCart.set(true);
     this.ds.addToCart(p, this.quantity(), this.selectedVariant() || undefined);
+    
+    setTimeout(() => {
+      this.isAddingToCart.set(false);
+      this.toastService.success(`${p.name} added to cart!`);
+    }, 600);
   }
 
   async ngOnInit() {
@@ -356,8 +367,11 @@ export class ProductDetail {
   }
 
   submitReview(productId: string) {
+    if (this.isSubmittingReview()) return;
     const text = this.draftComment().trim();
     if (!text) return;
+
+    this.isSubmittingReview.set(true);
 
     this.ds.products.update(all => {
       return all.map(p => {
@@ -376,7 +390,11 @@ export class ProductDetail {
       });
     });
 
-    this.draftComment.set('');
-    this.draftStars.set(5);
+    setTimeout(() => {
+      this.draftComment.set('');
+      this.draftStars.set(5);
+      this.isSubmittingReview.set(false);
+      this.toastService.success('Thank you! Your verified review was added.');
+    }, 600);
   }
 }

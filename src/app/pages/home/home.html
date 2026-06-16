@@ -392,7 +392,7 @@
                     <!-- Polished Shimmer Sweep effect -->
                     <div class="shimmer-effect"></div>
 
-                    <img [src]="p.images[0]" 
+                    <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/400x400?text=No+Image'" 
                          class="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" 
                          alt="{{p.name}}" 
                          referrerpolicy="no-referrer">

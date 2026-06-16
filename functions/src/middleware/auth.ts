@@ -57,7 +57,7 @@ export const authenticateToken = async (
 
     next();
   } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired access token' });
+    return res.status(401).json({ error: 'Invalid or expired access token' });
   }
 };
 

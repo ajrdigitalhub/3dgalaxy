@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     rating INT CHECK (rating >= 1 AND rating <= 5),
-    review_title VARCHAR(255),
+    title VARCHAR(255),
     comment TEXT,
     is_approved BOOLEAN DEFAULT false,
     approved BOOLEAN DEFAULT false,

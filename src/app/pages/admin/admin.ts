@@ -226,6 +226,20 @@ export class AdminPanel {
   isSaving = signal(false);
   saveStatus = signal<'idle' | 'success' | 'error'>('idle');
 
+  // Specific Action Protection Loader Signals
+  isSavingCategory = signal(false);
+  isDeletingCategory = signal(false);
+  isSavingBrand = signal(false);
+  isDeletingBrand = signal(false);
+  isSavingProduct = signal(false);
+  isDeletingProduct = signal(false);
+  isUpdatingOrderStatus = signal(false);
+  isSavingSettings = signal(false);
+  isSavingBanner = signal(false);
+  isDeletingBanner = signal(false);
+  isSavingUser = signal(false);
+  isDeletingUser = signal(false);
+
   // Auth UI state
   loginLoading = signal(false);
   loginError = signal<string | null>(null);
@@ -375,6 +389,57 @@ export class AdminPanel {
   // Payment settings state
   paymentGateways = signal<any[]>([]);
 
+  dashboardStats = signal<any>(null);
+
+  fetchDashboardStats() {
+    this.ds.api.get<any>('/admin/dashboard').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.dashboardStats.set(res.data);
+        }
+      },
+      error: (err: any) => console.error('Dashboard Stats Error:', err)
+    });
+  }
+
+  fetchCRMLists() {
+    this.ds.api.get<any>('/admin/customers').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.customersList.set(res.data);
+        }
+      },
+      error: (err: any) => console.error('Customers Load Error:', err)
+    });
+
+    this.ds.api.get<any>('/admin/abandoned-carts').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.abandonedCartsList.set(res.data);
+        }
+      },
+      error: (err: any) => console.error('Carts Load Error:', err)
+    });
+
+    this.ds.api.get<any>('/admin/reviews').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.reviewsList.set(res.data);
+        }
+      },
+      error: (err: any) => console.error('Reviews Load Error:', err)
+    });
+
+    this.ds.api.get<any>('/admin/notifications').subscribe({
+      next: (res: any) => {
+        if (res && res.success) {
+          this.ds.notifications.set(res.data);
+        }
+      },
+      error: (err: any) => console.error('Notifications Load Error:', err)
+    });
+  }
+
   fetchPaymentGateways() {
     this.http.get<any>('/api/settings/payment-gateways').subscribe({
       next: (res: any) => {
@@ -477,6 +542,8 @@ export class AdminPanel {
   constructor() {
     this.fetchPaymentGateways();
     this.fetchUserSessions();
+    this.fetchDashboardStats();
+    this.fetchCRMLists();
     // Sync local signals with database settings
     effect(() => {
       const s = this.ds.settings();
@@ -592,6 +659,7 @@ export class AdminPanel {
   }
 
   async updateOrderStatus(orderId: string, nextStatus: string) {
+    if (this.isUpdatingOrderStatus()) return;
     const order = this.ds.orders().find(o => o.id === orderId);
     if (!order) return;
 
@@ -600,10 +668,13 @@ export class AdminPanel {
       trackingNumber = 'TRACK-' + Math.floor(100000 + Math.random() * 900000);
     }
 
+    this.isUpdatingOrderStatus.set(true);
     try {
       await this.ds.updateOrderStatus(orderId, nextStatus, trackingNumber);
     } catch {
       this.toastService.error('FAILED to update order status: Access Denied or Network Error.');
+    } finally {
+      this.isUpdatingOrderStatus.set(false);
     }
   }
 
@@ -637,6 +708,7 @@ export class AdminPanel {
   }
 
   async saveCategory() {
+    if (this.isSavingCategory()) return;
     const name = this.newCatName().trim();
     if (!name) return this.toastService.error('Category Name is required.');
     
@@ -667,6 +739,7 @@ export class AdminPanel {
       seoDescription: this.catSeoDescription().trim()
     };
 
+    this.isSavingCategory.set(true);
     try {
       if (this.editingCategory()) {
         await this.ds.editCategory(this.editingCategory()!.id, catData);
@@ -678,15 +751,21 @@ export class AdminPanel {
       this.cancelCategoryEdit();
     } catch {
       this.toastService.error('Access Denied: You do not have permission to modify categories.');
+    } finally {
+      this.isSavingCategory.set(false);
     }
   }
 
   async deleteCategory(id: string) {
+    if (this.isDeletingCategory()) return;
     if (!confirm('Are you sure you want to delete this category?')) return;
+    this.isDeletingCategory.set(true);
     try {
       await this.ds.deleteCategory(id);
     } catch {
       this.toastService.error('Access Denied: Action restricted.');
+    } finally {
+      this.isDeletingCategory.set(false);
     }
   }
 
@@ -714,6 +793,7 @@ export class AdminPanel {
   }
 
   async saveBrand() {
+    if (this.isSavingBrand()) return;
     const name = this.brandName().trim();
     if (!name) return this.toastService.error('Brand name is required.');
     const slug = this.brandSlug().trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -728,6 +808,7 @@ export class AdminPanel {
       active: this.brandActive()
     };
 
+    this.isSavingBrand.set(true);
     try {
       if (this.editingBrand()) {
         await this.ds.editBrand(this.editingBrand().id, brandData);
@@ -739,16 +820,22 @@ export class AdminPanel {
       this.cancelBrandEdit();
     } catch {
       this.toastService.error('Access Denied: Brand-level authentication token is missing or expired.');
+    } finally {
+      this.isSavingBrand.set(false);
     }
   }
 
   async deleteBrand(id: string) {
+    if (this.isDeletingBrand()) return;
     if (!confirm('Are you sure you want to delete this Brand?')) return;
+    this.isDeletingBrand.set(true);
     try {
       await this.ds.deleteBrand(id);
       this.toastService.success('Brand deleted successfully.');
     } catch {
       this.toastService.error('Access Denied: Delete Brand operation failed.');
+    } finally {
+      this.isDeletingBrand.set(false);
     }
   }
 
@@ -950,6 +1037,7 @@ export class AdminPanel {
   }
 
   async saveProduct() {
+    if (this.isSavingProduct()) return;
     const name = this.pName().trim();
     if (!name) return this.toastService.error('Name is required.');
 
@@ -998,11 +1086,18 @@ export class AdminPanel {
       featured: isEdit ? (this.editingProduct()?.featured || false) : false,
       is360Supported: isEdit ? (this.editingProduct()?.is360Supported || false) : false,
       tags: [this.pBrand() || '3D Galaxy'],
-      specs: isEdit ? (this.editingProduct()?.specs || []) : [],
+      specs: this.editingProduct()?.specs || [],
+      specifications: this.editingProduct()?.specs || [],
+      downloads: this.editingProduct()?.downloads || [],
+      features: this.editingProduct()?.features || [],
+      faqs: this.editingProduct()?.faqs || [],
+      warranty: this.editingProduct()?.warranty || null,
+      shipping: this.editingProduct()?.shipping || null,
       reviews: isEdit ? (this.editingProduct()?.reviews || []) : [],
       qnas: isEdit ? (this.editingProduct()?.qnas || []) : []
     };
 
+    this.isSavingProduct.set(true);
     try {
       if (isEdit) {
         await this.ds.editProduct(this.editingProduct()!.id, pData);
@@ -1014,6 +1109,22 @@ export class AdminPanel {
       this.cancelProductEdit();
     } catch {
       this.toastService.error('Save failed: Verify administrator privileges.');
+    } finally {
+      this.isSavingProduct.set(false);
+    }
+  }
+
+  async deleteProduct(id: string) {
+    if (this.isDeletingProduct()) return;
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    this.isDeletingProduct.set(true);
+    try {
+      await this.ds.deleteProduct(id);
+      this.toastService.success('Product deleted successfully.');
+    } catch {
+      this.toastService.error('Access Denied: Delete Product operation failed.');
+    } finally {
+      this.isDeletingProduct.set(false);
     }
   }
 
@@ -1028,7 +1139,9 @@ export class AdminPanel {
   }
 
   async saveGlobalConfig() {
+    if (this.isSaving() || this.isSavingSettings()) return;
     this.isSaving.set(true);
+    this.isSavingSettings.set(true);
     try {
       await this.ds.updateSettings({
         appName: this.storeName(),
@@ -1062,6 +1175,7 @@ export class AdminPanel {
       this.saveStatus.set('error');
     } finally {
       this.isSaving.set(false);
+      this.isSavingSettings.set(false);
       setTimeout(() => this.saveStatus.set('idle'), 3000);
     }
   }
@@ -1468,10 +1582,12 @@ export class AdminPanel {
   }
 
   async publishBanner() {
+    if (this.isSavingBanner()) return;
     const title = this.newBannerTitle().trim();
     const imageUrl = this.newBannerImageUrl().trim();
     const linkUrl = this.newBannerLinkUrl().trim();
     if (!title) return this.toastService.error('Banner campaign title required.');
+    this.isSavingBanner.set(true);
     try {
       await this.ds.addBanner({
         title,
@@ -1486,16 +1602,22 @@ export class AdminPanel {
       this.toastService.info('Banner campaign programmed!');
     } catch {
       this.toastService.error('Failed to schedule campaign banner.');
+    } finally {
+      this.isSavingBanner.set(false);
     }
   }
 
   async deleteBanner(id: string) {
+    if (this.isDeletingBanner()) return;
     if (!confirm('Are you sure you want to delete this campaign banner?')) return;
+    this.isDeletingBanner.set(true);
     try {
       await this.ds.deleteBanner(id);
       this.toastService.info('Promo banner decommissioned.');
     } catch {
       this.toastService.error('Error deleting banner.');
+    } finally {
+      this.isDeletingBanner.set(false);
     }
   }
 

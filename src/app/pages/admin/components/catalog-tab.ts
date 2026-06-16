@@ -9,10 +9,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 
 import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
+import { LoadingButton } from '../../../shared/components/loading-button/loading-button';
 
 @Component({
   selector: 'app-admin-catalog-tab',
-  imports: [CommonModule, FormsModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent, LoadingButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -41,7 +42,13 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                 </h3>
                 <div class="flex gap-2">
                   <button (click)="cancelEdit()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-bold">Cancel</button>
-                  <button (click)="admin.saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer">Save Asset</button>
+                  <app-loading-button
+                    text="Save Asset"
+                    loadingText="Saving..."
+                    [loading]="admin.isSavingProduct()"
+                    btnClass="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px]"
+                    (btnClick)="admin.saveProduct()"
+                  ></app-loading-button>
                 </div>
               </div>
 
@@ -321,6 +328,28 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                   </div>
                 </div>
 
+                <!-- Warranty Tab (JSON Object) -->
+                <div [class.hidden]="activeEditTab() !== 'warranty'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Warranty Period & Terms (JSON Object)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: &#123;&quot;warrantyPeriod&quot;: &quot;1 Year&quot;, &quot;warrantyType&quot;: &quot;Manufacturer&quot;, &quot;warrantyDescription&quot;: &quot;...&quot;&#125;</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('warranty')" (input)="setJsonValue('warranty', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='{"warrantyPeriod": "1 Year Parts & Service", "warrantyType": "On-Site / Carry In", "warrantyDescription": "Covers mechanical faults under regular operating conditions. Excludes nozzle wear."}'></textarea>
+                  </div>
+                </div>
+
+                <!-- Shipping Tab (JSON Object) -->
+                <div [class.hidden]="activeEditTab() !== 'shipping'" class="space-y-4 animate-fadeIn">
+                   <div class="space-y-1">
+                    <div class="flex justify-between items-center pr-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Shipping & Freight Charges (JSON Object)</span>
+                      <span class="text-[9px] text-zinc-500 font-mono">Form: &#123;&quot;deliveryTime&quot;: &quot;3-5 Days&quot;, &quot;shippingCharges&quot;: 500, &quot;shippingRegions&quot;: &quot;All India&quot;&#125;</span>
+                    </div>
+                    <textarea rows="10" [value]="getJsonValue('shipping')" (input)="setJsonValue('shipping', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='{"deliveryTime": "Immediate Dispatch / 3-5 transit business days", "shippingCharges": 499, "shippingRegions": "All Tier 1 and Tier 2 Industrial zones India-wide"}'></textarea>
+                  </div>
+                </div>
+
                 <!-- Related Products Tab (JSON string/array edit) -->
                 <div [class.hidden]="activeEditTab() !== 'related_products'" class="space-y-4 animate-fadeIn">
                    <div class="space-y-1">
@@ -411,7 +440,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                               <button (click)="admin.startProductEdit(p)" class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer">
                                 <mat-icon class="text-base">edit</mat-icon>
                               </button>
-                              <button (click)="admin.ds.deleteProduct(p.id)" class="text-red-400 hover:text-red-600 p-1 cursor-pointer">
+                              <button (click)="admin.deleteProduct(p.id)" [disabled]="admin.isDeletingProduct()" class="text-red-400 hover:text-red-600 p-1 cursor-pointer disabled:opacity-40">
                                 <mat-icon class="text-base">delete_outline</mat-icon>
                               </button>
                             </div>
@@ -921,6 +950,8 @@ export class AdminCatalogTab {
     { id: 'downloads', label: 'Downloads' },
     { id: 'features', label: 'Features' },
     { id: 'faqs', label: 'FAQs' },
+    { id: 'warranty', label: 'Warranty & Support' },
+    { id: 'shipping', label: 'Shipping & Delivery' },
     { id: 'related_products', label: 'Related Products' },
     { id: 'seo', label: 'SEO' },
   ];
@@ -935,18 +966,18 @@ export class AdminCatalogTab {
     this.activeEditTab.set('general');
   }
 
-  getJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts'): string {
+  getJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts' | 'warranty' | 'shipping'): string {
     const val = this.admin.editingProduct()?.[key];
     if (!val) return '';
     if (typeof val === 'string') return val;
     return JSON.stringify(val, null, 2);
   }
 
-  setJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts', valStr: string) {
+  setJsonValue(key: 'specs' | 'features' | 'faqs' | 'downloads' | 'relatedProducts' | 'warranty' | 'shipping', valStr: string) {
     if (!this.admin.editingProduct()) return;
     try {
       if (valStr.trim() === '') {
-        (this.admin.editingProduct() as any)[key] = [];
+        (this.admin.editingProduct() as any)[key] = null;
       } else {
         const parsed = JSON.parse(valStr);
         (this.admin.editingProduct() as any)[key] = parsed;

@@ -4,11 +4,12 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService } from '../../services/datastore';
+import { LoadingButton } from '../../shared/components/loading-button/loading-button';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-login',
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, LoadingButton],
   templateUrl: './login.html'
 })
 export class Login implements OnInit {
@@ -71,6 +72,9 @@ export class Login implements OnInit {
   }
 
   async onSubmit() {
+    if (this.loading()) {
+      return;
+    }
     this.errorMessage.set('');
     this.successMessage.set('');
 
@@ -112,6 +116,9 @@ export class Login implements OnInit {
   }
 
   async onGoogleSignIn() {
+    if (this.loading()) {
+      return;
+    }
     this.errorMessage.set('');
     this.successMessage.set('');
     this.loading.set(true);

@@ -193,6 +193,16 @@ import { AdminPanel } from '../admin';
                       }
                     </td>
                   </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="py-12 text-center">
+                      <div class="flex flex-col items-center justify-center space-y-2 py-4">
+                        <mat-icon class="text-zinc-300 dark:text-zinc-700 text-3xl">shopping_cart</mat-icon>
+                        <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Data Available</h4>
+                        <p class="text-[10px] text-zinc-500">There are no abandoned baskets waiting for recovery blasts.</p>
+                      </div>
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>

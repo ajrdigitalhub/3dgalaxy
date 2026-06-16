@@ -543,10 +543,15 @@ export class DatastoreService {
 
   private async refreshJWT(refreshTokenStr: string): Promise<boolean> {
     return new Promise((resolve) => {
-      this.api.post<{ accessToken: string }>('/auth/refresh-token', { token: refreshTokenStr }).subscribe({
+      this.api.post<any>('/auth/refresh-token', { token: refreshTokenStr }).subscribe({
         next: (res) => {
-          if (res && res.accessToken) {
-            localStorage.setItem('access_token', res.accessToken);
+          const accessToken = res?.accessToken || res?.data?.accessToken;
+          const refreshToken = res?.refreshToken || res?.data?.refreshToken;
+          if (accessToken) {
+            localStorage.setItem('access_token', accessToken);
+            if (refreshToken) {
+              localStorage.setItem('refresh_token', refreshToken);
+            }
             resolve(true);
           } else {
             resolve(false);
@@ -993,7 +998,13 @@ export class DatastoreService {
         variants: p.variants,
         options: p.options,
         seoTitle: p.seoTitle,
-        seoDescription: p.seoDescription
+        seoDescription: p.seoDescription,
+        specifications: p.specifications || (p as any).specs || [],
+        downloads: p.downloads || [],
+        features: p.features || [],
+        faqs: p.faqs || [],
+        warranty: p.warranty || null,
+        shipping: p.shipping || null
       }).subscribe({
         next: (res) => {
            // Reload
@@ -1024,7 +1035,13 @@ export class DatastoreService {
         variants: updated.variants,
         options: updated.options,
         seoTitle: updated.seoTitle,
-        seoDescription: updated.seoDescription
+        seoDescription: updated.seoDescription,
+        specifications: updated.specifications || (updated as any).specs || [],
+        downloads: updated.downloads || [],
+        features: updated.features || [],
+        faqs: updated.faqs || [],
+        warranty: updated.warranty || null,
+        shipping: updated.shipping || null
       }).subscribe({
         next: (res) => {
            this.reloadProducts(false);
@@ -1071,18 +1088,26 @@ export class DatastoreService {
              category_id: p.categoryId,
              brand: p.brand?.name || p.brandId,
              description: p.description || '',
-             long_description: p.description || '',
+             long_description: p.long_description || p.description || '',
              mrp: p.basePrice || 0,
              sale_price: p.salePrice || p.basePrice || 0,
              dealer_price: p.dealerPrice || p.salePrice || p.basePrice || 0,
              stock: p.stock || 10,
              reserved: p.reserved || 0,
              images: p.images && p.images.length ? p.images.sort((a: any, b: any) => a.sortOrder - b.sortOrder).map((i:any)=>i.url) : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
-             specs: p.specs || [],
+             specs: p.specifications && p.specifications.length ? p.specifications.map((s: any) => ({ name: s.name, value: s.value })) : (p.specs || []),
+             specifications: p.specifications || [],
+             downloads: p.downloads || [],
+             features: p.features || [],
+             faqs: p.faqs || [],
+             warranty: p.warranty || null,
+             shipping: p.shipping || null,
+             seoTitle: p.seo?.seoTitle || '',
+             seoDescription: p.seo?.seoDescription || '',
              reviews: p.reviews || [],
              qnas: p.qnas || [],
              featured: false,
-             is360Supported: false,
+             is360Supported: p.is360Supported || false,
              tags: []
            })));
         } 

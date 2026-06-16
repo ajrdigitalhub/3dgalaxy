@@ -17,6 +17,6 @@ export const appConfig: ApplicationConfig = {
     provideExperimentalZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding(), withRouterConfig({paramsInheritanceStrategy: 'always'})),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([apiUrlInterceptor, authInterceptor, loadingInterceptor, errorInterceptor]))
+    provideHttpClient(withFetch(), withInterceptors([apiUrlInterceptor, errorInterceptor, authInterceptor, loadingInterceptor]))
   ],
 };

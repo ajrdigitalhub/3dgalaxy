@@ -86,7 +86,11 @@ export const getProducts = async (req: Request, res: Response) => {
       where: filters,
       include: {
         variants: true,
-        images: true,
+        images: {
+          orderBy: {
+            sortOrder: 'asc'
+          }
+        },
         category: true,
         brand: true,
       },
@@ -205,7 +209,18 @@ export const createProduct = async (req: Request, res: Response) => {
     const parsedWarranty = safeParseObject(warranty);
     const parsedShipping = safeParseObject(shipping);
 
-    const validImages = parsedImages.filter((img: any) => img?.url?.trim());
+    const validImages = parsedImages.map((img: any) => {
+      if (!img) return null;
+      if (typeof img === 'string') {
+        return { url: img, isPrimary: false, sortOrder: 0 };
+      }
+      return {
+        url: img.url || img.imageUrl || '',
+        isPrimary: !!img.isPrimary,
+        sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
+      };
+    }).filter((img: any) => img && img.url.trim().length > 0) as any[];
+
     const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
     const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
     const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);
@@ -398,7 +413,18 @@ export const updateProduct = async (req: Request, res: Response) => {
     const parsedWarranty = safeParseObject(warranty);
     const parsedShipping = safeParseObject(shipping);
 
-    const validImages = parsedImages.filter((img: any) => img?.url?.trim());
+    const validImages = parsedImages.map((img: any) => {
+      if (!img) return null;
+      if (typeof img === 'string') {
+        return { url: img, isPrimary: false, sortOrder: 0 };
+      }
+      return {
+        url: img.url || img.imageUrl || '',
+        isPrimary: !!img.isPrimary,
+        sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
+      };
+    }).filter((img: any) => img && img.url.trim().length > 0) as any[];
+
     const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
     const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
     const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);

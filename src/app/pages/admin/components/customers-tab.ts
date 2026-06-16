@@ -48,6 +48,16 @@ import { AdminPanel } from '../admin';
                       </div>
                     </td>
                   </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="py-12 text-center">
+                      <div class="flex flex-col items-center justify-center space-y-2">
+                        <mat-icon class="text-zinc-300 dark:text-zinc-700 text-3xl">people_outline</mat-icon>
+                        <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Data Available</h4>
+                        <p class="text-[10px] text-zinc-500">There are no active customer profiles registered in your system yet.</p>
+                      </div>
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -123,6 +133,14 @@ import { AdminPanel } from '../admin';
                     <button (click)="admin.approveReview(r.id)" class="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg text-[9px] font-black uppercase cursor-pointer hover:bg-emerald-500 hover:text-white transition-colors">Approve</button>
                     <button (click)="admin.rejectReview(r.id)" class="px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg text-[9px] font-black uppercase cursor-pointer hover:bg-red-500 hover:text-white transition-colors">Reject</button>
                   </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="p-8 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-200 dark:border-zinc-850 rounded-2xl text-center space-y-2">
+                <div class="flex flex-col items-center justify-center space-y-2 py-6">
+                  <mat-icon class="text-zinc-300 dark:text-zinc-700 text-3xl">rate_review</mat-icon>
+                  <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Data Available</h4>
+                  <p class="text-[10px] text-zinc-500">There are no feedback submissions or system ratings awaiting moderation.</p>
                 </div>
               </div>
             }

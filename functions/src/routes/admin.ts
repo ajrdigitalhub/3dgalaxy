@@ -846,4 +846,227 @@ router.post('/sessions/:id/terminate', adminGuard, async (req: Request, res: Res
   }
 });
 
+// --- LIVE DB-DRIVEN DASHBOARD, CUSTOMERS, CARTS, REVIEWS, WISHLIST, NOTIFICATIONS ---
+
+// 1. Overview Dashboard Stats
+router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const totalProducts = await prisma.product.count();
+    const totalOrders = await prisma.order.count();
+    const totalCustomers = await prisma.customer.count();
+    
+    const revenueAgg = await prisma.order.aggregate({
+      where: {
+        status: { notIn: ['cancelled', 'CANCELLED'] }
+      },
+      _sum: {
+        totalAmount: true
+      }
+    });
+    const totalRevenue = revenueAgg._sum.totalAmount || 0;
+    
+    const abandonedCarts = await prisma.cart.count({
+      where: {
+        status: 'ACTIVE',
+        items: { some: {} }
+      }
+    });
+    
+    const pendingOrders = await prisma.order.count({
+      where: {
+        status: { in: ['pending', 'PENDING'] }
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalProducts,
+        totalOrders,
+        totalCustomers,
+        totalRevenue,
+        abandonedCarts,
+        pendingOrders
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 2. Customers List
+router.get('/customers', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const customers = await prisma.customer.findMany({
+      include: {
+        user: true,
+        orders: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    const formatted = customers.map(c => {
+      const name = c.user.firstName ? `${c.user.firstName} ${c.user.lastName || ''}`.trim() : (c.user.email || 'N/A');
+      return {
+        id: c.id,
+        name,
+        email: c.user.email,
+        mobile: c.phone || c.user.mobile || 'N/A',
+        ordersCount: c.orders.length,
+        status: c.user.isActive ? 'Active' : 'Inactive',
+        createdDate: c.createdAt.toISOString().split('T')[0]
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 3. Abandoned Carts List
+router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const carts = await prisma.cart.findMany({
+      where: {
+        status: 'ACTIVE',
+        items: { some: {} }
+      },
+      include: {
+        customer: {
+          include: {
+            user: true
+          }
+        },
+        items: {
+          include: {
+            product: true,
+            variant: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      }
+    });
+
+    const formatted = carts.map(cart => {
+      const customerName = cart.customer?.user?.firstName ? `${cart.customer.user.firstName} ${cart.customer.user.lastName || ''}`.trim() : (cart.customer?.user?.email || 'Guest Customer');
+      const email = cart.customer?.user?.email || 'N/A';
+      const phone = cart.customer?.phone || cart.customer?.user?.mobile || 'N/A';
+      
+      const itemsText = cart.items.map(i => `${i.product.name}${i.variant ? ' (' + i.variant.name + ')' : ''} x ${i.quantity}`).join(', ');
+      
+      const cartValue = cart.items.reduce((total, i) => {
+        const price = i.variant?.salePrice || i.product.salePrice || 0;
+        return total + (price * i.quantity);
+      }, 0);
+
+      return {
+        id: cart.id,
+        customer: customerName,
+        email,
+        phone,
+        items: itemsText || 'No items',
+        cartValue,
+        date: cart.updatedAt.toISOString().split('T')[0],
+        recovered: false
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 4. Reviews List
+router.get('/reviews', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const reviews = await prisma.productReview.findMany({
+      include: {
+        user: true,
+        product: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const formatted = reviews.map(r => {
+      const userName = r.user ? (r.user.firstName ? `${r.user.firstName} ${r.user.lastName || ''}`.trim() : r.user.email) : 'Guest';
+      return {
+        id: r.id,
+        productName: r.product.name,
+        userName,
+        rating: r.rating,
+        comment: r.comment || '',
+        date: r.createdAt.toISOString().split('T')[0],
+        status: r.isApproved ? 'Approved' : 'Pending',
+        response: ''
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 5. Wishlist List
+router.get('/wishlist', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const wishlist = await prisma.customerWishlist.findMany({
+      include: {
+        customer: {
+          include: { user: true }
+        },
+        product: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const formatted = wishlist.map(w => {
+      const customerName = w.customer.user.firstName ? `${w.customer.user.firstName} ${w.customer.user.lastName || ''}`.trim() : w.customer.user.email;
+      return {
+        id: `${w.customerId}-${w.productId}`,
+        customerName,
+        productName: w.product.name,
+        date: w.createdAt.toISOString().split('T')[0]
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6. Notifications List
+router.get('/notifications', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const list = await prisma.notification.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: true }
+    });
+    
+    const formatted = list.map(n => ({
+      id: n.id,
+      title: n.title,
+      message: n.message,
+      type: n.type || 'Campaign',
+      sentTo: n.user?.email || 'All Users',
+      createdAt: n.createdAt.toISOString().split('T')[0]
+    }));
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (err: any) {
+    return res.status(550).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

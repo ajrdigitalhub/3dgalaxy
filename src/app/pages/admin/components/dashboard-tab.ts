@@ -25,23 +25,45 @@ import { AdminPanel } from '../admin';
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl shadow-xs space-y-2">
           <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Gross Sales</p>
-          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">₹{{ admin.kpi().totalSales | number }}</h3>
+          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">₹{{ (admin.dashboardStats()?.totalRevenue || admin.kpi().totalSales) | number }}</h3>
           <span class="text-[8px] text-emerald-500 uppercase font-bold">+18% vs Last Cycle</span>
         </div>
         <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl shadow-xs space-y-2">
           <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Fulfilled Orders</p>
-          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">{{ admin.ds.orders().length }}</h3>
+          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.totalOrders ?? admin.ds.orders().length }}</h3>
           <span class="text-[8px] text-blue-400 uppercase font-bold">100% cloud sync</span>
         </div>
         <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl shadow-xs space-y-2">
-          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Conversion Ratio</p>
-          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">{{ admin.kpi().conversionRate }}%</h3>
-          <span class="text-[8px] text-zinc-400 uppercase font-bold">Stable Session Yield</span>
+          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Total Products</p>
+          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.totalProducts ?? admin.ds.products().length }}</h3>
+          <span class="text-[8px] text-blue-400 uppercase font-bold">In Local Schema</span>
         </div>
         <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl shadow-xs space-y-2">
-          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Stock Alerts</p>
-          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white" [class.text-red-500]="admin.inventoryAlerts() > 0">{{ admin.inventoryAlerts() }}</h3>
-          <span class="text-[8px] uppercase font-bold" [class.text-red-400]="admin.inventoryAlerts() > 0">SKUs below Buffer Limit</span>
+          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Active Customers</p>
+          <h3 class="text-xl font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.totalCustomers ?? admin.customersList().length }}</h3>
+          <span class="text-[8px] uppercase font-bold text-zinc-400">Total Registered</span>
+        </div>
+      </div>
+
+      <!-- SECONDARY KPI STRAPS FOR ACTION ITEMS -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="block text-[9px] font-black uppercase text-amber-500 tracking-wider">Active Abandoned Carts</span>
+            <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.abandonedCarts ?? admin.abandonedCartsList().length }} Baskets</span>
+          </div>
+          <div class="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+            <mat-icon>remove_shopping_cart</mat-icon>
+          </div>
+        </div>
+        <div class="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="block text-[9px] font-black uppercase text-orange-500 tracking-wider">Awaiting Pending Orders</span>
+            <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.pendingOrders ?? 0 }} Orders</span>
+          </div>
+          <div class="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+            <mat-icon>pending_actions</mat-icon>
+          </div>
         </div>
       </div>
 

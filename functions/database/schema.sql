@@ -46,6 +46,9 @@ CREATE TABLE refresh_tokens (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(255) NOT NULL UNIQUE,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked BOOLEAN DEFAULT false,
+    device_info TEXT,
+    ip_address VARCHAR(45),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -292,7 +295,9 @@ CREATE TABLE shipments (
     order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
     carrier VARCHAR(100),
     tracking_number VARCHAR(255),
+    tracking_url TEXT,
     status VARCHAR(50) NOT NULL,
+    estimated_delivery TIMESTAMP WITH TIME ZONE,
     shipped_at TIMESTAMP WITH TIME ZONE,
     delivered_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
