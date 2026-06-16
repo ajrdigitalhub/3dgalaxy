@@ -4,10 +4,11 @@ import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { AppButton } from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-printing-service',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, AppButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './printing-service.html',
   styleUrl: './printing-service.scss'
@@ -116,8 +117,11 @@ export class PrintingService {
     this.layerHeight.set(v);
   }
 
+  isSubmitting = signal(false);
+
   async submitQuotation() {
-    if (!this.selectedFileName()) return;
+    if (!this.selectedFileName() || this.isSubmitting()) return;
+    this.isSubmitting.set(true);
     
     try {
       await this.ds.submitQuotation({
@@ -139,6 +143,8 @@ export class PrintingService {
       this.toastService.success('SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list on the right!');
     } catch {
       this.toastService.error('Quotation Submission Failed: Access Denied or Network Error.');
+    } finally {
+      this.isSubmitting.set(false);
     }
   }
 

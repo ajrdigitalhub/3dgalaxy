@@ -28,7 +28,7 @@
            aria-label="Close menu"></div>
       
       <!-- Drawer Content -->
-      <div class="absolute inset-y-0 left-0 w-[85%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl flex flex-col animate-slide-in-left">
+      <div class="mobile-menu-drawer absolute inset-y-0 left-0 w-[85%] max-w-sm bg-white dark:bg-neutral-950 shadow-2xl flex flex-col animate-slide-in-left">
         <!-- Drawer Header -->
         <div class="p-4 border-b border-neutral-100 dark:border-neutral-900 flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -122,7 +122,7 @@
     <div class="max-w-7xl mx-auto px-4 lg:px-8 h-14 sm:h-18 flex items-center justify-between gap-2 sm:gap-6">
       
       <!-- Mobile Menu Toggle -->
-      <button (click)="isMobileMenuOpen.set(true)" class="xl:hidden h-10 w-10 flex shrink-0 items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-lg transition-all active:scale-95">
+      <button (click)="isMobileMenuOpen.set(true)" class="mobile-menu-trigger xl:hidden h-10 w-10 flex shrink-0 items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-lg transition-all active:scale-95">
         <mat-icon>menu</mat-icon>
       </button>
 
@@ -180,7 +180,7 @@
       }
 
       <!-- Advanced Search Command Line (Desktop) -->
-      <div class="flex-1 max-w-xl relative group hidden md:block mx-4">
+      <div class="search-container flex-1 max-w-xl relative group hidden md:block mx-4">
         <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-[#d65108] transition-colors z-10">search</mat-icon>
         <input type="text" 
                [value]="searchQuery()"
@@ -312,7 +312,7 @@
         </button>
 
         <!-- Profile & Account Multi-Mode Dropdown -->
-        <div class="relative">
+        <div class="relative role-dropdown-container">
           @if (ds.currentUser(); as user) {
             <button (click)="toggleRoleDropdown()" class="h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl sm:border border-indigo-200/50 dark:border-indigo-900/40 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer relative shadow-sm">
               {{ (ds.userProfile()?.name || user.displayName || user.email || 'U').substring(0, 2).toUpperCase() }}

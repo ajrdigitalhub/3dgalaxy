@@ -411,7 +411,7 @@ router.delete('/faqs/:id', adminGuard, async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 router.get('/banners', adminGuard, async (req: Request, res: Response) => {
   try {
-    const list = await prisma.banner.findMany({ orderBy: { createdAt: 'desc' } });
+    const list = await prisma.banner.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] });
     return res.status(200).json({ success: true, data: list });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: 'Banners fetch failure', details: err.message });
@@ -420,7 +420,7 @@ router.get('/banners', adminGuard, async (req: Request, res: Response) => {
 
 router.post('/banners', adminGuard, async (req: Request, res: Response) => {
   try {
-    const { title, imageUrl, linkUrl, position, isActive } = req.body;
+    const { title, imageUrl, linkUrl, position, isActive, sortOrder } = req.body;
     if (!imageUrl) return res.status(400).json({ success: false, error: 'Image URL is required' });
     const banner = await prisma.banner.create({
       data: {
@@ -428,6 +428,7 @@ router.post('/banners', adminGuard, async (req: Request, res: Response) => {
         imageUrl,
         linkUrl: linkUrl || '/',
         position: position || 'Main Carousel',
+        sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
         isActive: isActive !== undefined ? !!isActive : true,
       },
     });
@@ -440,7 +441,7 @@ router.post('/banners', adminGuard, async (req: Request, res: Response) => {
 router.put('/banners/:id', adminGuard, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, imageUrl, linkUrl, position, isActive } = req.body;
+    const { title, imageUrl, linkUrl, position, isActive, sortOrder } = req.body;
     const updated = await prisma.banner.update({
       where: { id },
       data: {
@@ -448,6 +449,7 @@ router.put('/banners/:id', adminGuard, async (req: Request, res: Response) => {
         imageUrl,
         linkUrl,
         position,
+        sortOrder: typeof sortOrder === 'number' ? sortOrder : undefined,
         isActive: isActive !== undefined ? !!isActive : undefined,
       },
     });

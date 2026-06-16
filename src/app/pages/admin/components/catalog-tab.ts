@@ -9,11 +9,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { RichTextEditorComponent } from '../../../shared/components/rich-text-editor/rich-text-editor.component';
 
 import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
-import { LoadingButton } from '../../../shared/components/loading-button/loading-button';
+import { AppButton } from '../../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-admin-catalog-tab',
-  imports: [CommonModule, FormsModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent, LoadingButton],
+  imports: [CommonModule, FormsModule, MatIconModule, RichTextEditorComponent, ImagePickerComponent, AppButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -42,13 +42,13 @@ import { LoadingButton } from '../../../shared/components/loading-button/loading
                 </h3>
                 <div class="flex gap-2">
                   <button (click)="cancelEdit()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-bold">Cancel</button>
-                  <app-loading-button
+                  <app-button
                     text="Save Asset"
                     loadingText="Saving..."
                     [loading]="admin.isSavingProduct()"
-                    btnClass="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px]"
+                    variant="primary"
                     (btnClick)="admin.saveProduct()"
-                  ></app-loading-button>
+                  ></app-button>
                 </div>
               </div>
 

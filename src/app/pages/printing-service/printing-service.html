@@ -153,10 +153,14 @@
               <textarea id="notesText" rows="2" [value]="notesText()" (input)="notesText.set($any($event.target).value)" placeholder="Requires maximum wall layers for outdoor deployment, thread fits..." class="w-full p-2 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white"></textarea>
             </div>
 
-            <button (click)="submitQuotation()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-transform active:scale-98 flex items-center justify-center gap-1.5 shadow-md shadow-emerald-900/10">
-              <mat-icon class="scale-90">check_circle</mat-icon>
-              Submit Printable Quote Request
-            </button>
+            <app-button
+              (btnClick)="submitQuotation()"
+              [loading]="isSubmitting()"
+              text="Submit Printable Quote Request"
+              loadingText="Submitting..."
+              icon="check_circle"
+              btnClass="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-transform active:scale-98 flex items-center justify-center gap-1.5 shadow-md shadow-emerald-900/10">
+            </app-button>
           </div>
         } @else {
           <div class="p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl text-center text-xs text-yellow-600 dark:text-yellow-400">

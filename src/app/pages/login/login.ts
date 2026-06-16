@@ -4,14 +4,14 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService } from '../../services/datastore';
-import { LoadingButton } from '../../shared/components/loading-button/loading-button';
+import { AppButton } from '../../shared/components/app-button/app-button';
 
 import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-login',
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, LoadingButton],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, AppButton],
   templateUrl: './login.html'
 })
 export class Login implements OnInit {

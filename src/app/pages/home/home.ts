@@ -40,41 +40,44 @@ export class Home {
 
   // Slider State
   currentSlide = signal(0);
-  slides = [
-    {
-      id: 1,
-      title: 'Galaxy Core Ecosystem',
-      titleHighlight: 'The Future of Manufacturing',
-      desc: 'Deploy high-performance 3D printers, precision resins, and industrial filaments across your entire lab with a single unified platform.',
-      image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
-      badge: '3D Galaxy Enterprise',
-      badgeIcon: 'rocket_launch',
-      link: '/products',
-      btnText: 'Shop Ecosystem'
-    },
-    {
-      id: 2,
-      title: 'Precision Metrology',
-      titleHighlight: 'Every Layer Redefined',
-      desc: 'Industrial-grade SLA and FDM solutions for engineering parts with +/- 0.01mm tolerances. From prototyping to production.',
-      image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=2000',
-      badge: 'Advanced Services',
-      badgeIcon: 'precision_manufacturing',
-      link: '/printing-service',
-      btnText: 'Start Project'
-    },
-    {
-      id: 3,
-      title: 'Next-Gen Academy',
-      titleHighlight: 'Master the Machine',
-      desc: 'Join the industry largest training hub. Certification programs for industrial design, slicer optimization, and maintenance.',
-      image: 'https://images.unsplash.com/photo-1544391459-7f329976378e?auto=format&fit=crop&q=80&w=2000',
-      badge: 'Learning Hub',
-      badgeIcon: 'school',
-      link: '/admin',
-      btnText: 'Join Academy'
+  slides = computed(() => {
+    const banners = this.ds.banners().filter(b => b.isActive && b.position === 'Main Carousel');
+    if (banners.length === 0) {
+       // fallback placeholder if no banners
+       return [{
+         id: 1,
+         title: '3D Galaxy Storefront',
+         titleHighlight: 'The Future of Manufacturing',
+         desc: 'Check out our latest products and deals on 3D Printers, Filaments and more.',
+         image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
+         badge: 'Welcome',
+         badgeIcon: 'rocket_launch',
+         link: '/products',
+         btnText: 'Shop Ecosystem'
+       }];
     }
-  ];
+    
+    return banners.map((b, i) => {
+      // Split the title into title and highlight if it has a dash or something,
+      // But let's just make the first half title and second half titleHighlight
+      const words = (b.title || '').split(' ');
+      const half = Math.ceil(words.length / 2);
+      const title = words.slice(0, half).join(' ');
+      const highlight = words.slice(half).join(' ');
+
+      return {
+        id: b.id || i,
+        title: title || 'Promo Event',
+        titleHighlight: highlight,
+        desc: '', 
+        image: b.imageUrl,
+        badge: 'Featured',
+        badgeIcon: 'bolt',
+        link: b.linkUrl || '/products',
+        btnText: 'Explore Now'
+      };
+    });
+  });
 
   technologies = [
     { id: 'fdm', icon: 'animation', name: 'FDM Printing', desc: 'Desktop & industrial fused deposition modeling for rapid prototyping.', image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=800' },
@@ -229,12 +232,12 @@ export class Home {
   }
 
   nextSlide() {
-    this.currentSlide.update(c => (c + 1) % this.slides.length);
+    this.currentSlide.update(c => (c + 1) % this.slides().length);
     this.animateSlide('next');
   }
 
   prevSlide() {
-    this.currentSlide.update(c => (c - 1 + this.slides.length) % this.slides.length);
+    this.currentSlide.update(c => (c - 1 + this.slides().length) % this.slides().length);
     this.animateSlide('prev');
   }
 

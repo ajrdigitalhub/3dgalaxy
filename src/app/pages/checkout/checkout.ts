@@ -8,11 +8,11 @@ import {LoadingService} from '../../core/services/loading.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from '../../services/api.service';
-import {LoadingButton} from '../../shared/components/loading-button/loading-button';
+import {AppButton} from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-checkout',
-  imports: [CommonModule, MatIconModule, FormsModule, LoadingButton],
+  imports: [CommonModule, MatIconModule, FormsModule, AppButton],
   templateUrl: './checkout.html'
 })
 export class CheckoutComponent {

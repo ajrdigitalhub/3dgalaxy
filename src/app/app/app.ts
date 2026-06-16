@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, inject, computed, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, computed, signal, HostListener, ElementRef} from '@angular/core';
 import {RouterOutlet, RouterModule, Router, NavigationEnd} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
@@ -9,6 +9,7 @@ import { SkeletonMenuComponent } from '../shared/components/skeleton/skeleton-me
 import { ToastContainerComponent } from '../shared/components/toast/toast.component';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
+import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +22,7 @@ export class App {
   toastService = inject(ToastService);
   public ds = inject(DatastoreService);
   public sessionService = inject(SessionService);
+  public themeService = inject(ThemeService);
   public router = inject(Router);
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
@@ -38,6 +40,12 @@ export class App {
     this.router.events.subscribe((val) => {
       if (val instanceof NavigationEnd) {
         this.currentUrl.set(val.url);
+        // Auto close dropdowns on navigation
+        this.isRoleDropdownOpen.set(false);
+        this.isBellOpen.set(false);
+        this.isSearchFocused.set(false);
+        this.isMobileSearchOpen.set(false);
+        this.isMobileMenuOpen.set(false);
       }
       const urlPath = this.router.url.split('?')[0];
       this.isHome.set(urlPath === '/' || urlPath === '/home');
@@ -157,6 +165,42 @@ export class App {
   isMobileSearchOpen = signal(false);
   isRoleDropdownOpen = signal<boolean>(false);
   isBellOpen = signal<boolean>(false);
+
+  private eRef = inject(ElementRef);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    
+    // Close role dropdown if clicked outside
+    if (this.isRoleDropdownOpen() && !target.closest('.role-dropdown-container')) {
+      this.isRoleDropdownOpen.set(false);
+    }
+    
+    // Close bell if clicked outside
+    if (this.isBellOpen() && !target.closest('.bell-dropdown-container')) {
+      this.isBellOpen.set(false);
+    }
+    
+    // Close search if clicked outside
+    if (this.isSearchFocused() && !target.closest('.search-container')) {
+      this.isSearchFocused.set(false);
+    }
+
+    // Close mobile menu if clicked outside
+    if (this.isMobileMenuOpen() && !target.closest('.mobile-menu-drawer') && !target.closest('.mobile-menu-trigger')) {
+      this.isMobileMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: KeyboardEvent) {
+    this.isRoleDropdownOpen.set(false);
+    this.isBellOpen.set(false);
+    this.isSearchFocused.set(false);
+    this.isMobileSearchOpen.set(false);
+    this.isMobileMenuOpen.set(false);
+  }
 
   // Compute Active Advertisements
   topAd = computed(() => {

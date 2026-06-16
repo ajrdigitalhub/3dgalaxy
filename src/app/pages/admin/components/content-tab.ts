@@ -195,7 +195,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-              @for (b of admin.bannerCampaigns(); track b.id) {
+              @for (b of admin.bannerCampaigns(); track b.id; let idx = $index) {
                 <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl flex flex-col justify-between h-44 shadow-xs relative">
                   <div>
                     <div class="flex justify-between items-center text-[8px] font-black text-blue-500 uppercase tracking-widest">
@@ -209,9 +209,18 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                     <div class="h-10 w-20 bg-zinc-100 dark:bg-zinc-950 rounded-lg overflow-hidden border">
                       <img [src]="b.imageUrl || 'https://picsum.photos/seed/promo/400/200'" class="w-full h-full object-cover">
                     </div>
-                    <button (click)="admin.deleteBanner(b.id)" class="text-red-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none">
-                      <mat-icon class="text-base">delete_outline</mat-icon>
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <div class="flex flex-col gap-0.5">
+                         <button (click)="admin.moveBanner(idx, 'up')" [disabled]="idx === 0" class="h-5 w-5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 flex items-center justify-center cursor-pointer border-none disabled:opacity-30"><mat-icon class="text-[14px]">keyboard_arrow_up</mat-icon></button>
+                         <button (click)="admin.moveBanner(idx, 'down')" [disabled]="idx === admin.bannerCampaigns().length - 1" class="h-5 w-5 rounded bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 flex items-center justify-center cursor-pointer border-none disabled:opacity-30"><mat-icon class="text-[14px]">keyboard_arrow_down</mat-icon></button>
+                      </div>
+                      <button (click)="admin.toggleBannerStatus(b)" [class]="b.isActive ? 'text-orange-500 hover:bg-orange-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-[9px] font-black uppercase cursor-pointer border-none mr-2 transition-colors">
+                        {{ b.isActive ? 'Disable' : 'Publish' }}
+                      </button>
+                      <button (click)="admin.deleteBanner(b.id)" class="text-red-400 hover:text-red-500 cursor-pointer bg-transparent border-none outline-none">
+                        <mat-icon class="text-base">delete_outline</mat-icon>
+                      </button>
+                    </div>
                   </div>
                 </div>
               }

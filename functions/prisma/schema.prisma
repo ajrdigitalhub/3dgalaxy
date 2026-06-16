@@ -757,6 +757,7 @@ model Banner {
   imageUrl  String   @map("image_url")
   linkUrl   String?  @map("link_url")
   position  String?
+  sortOrder Int      @default(0) @map("sort_order")
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
 

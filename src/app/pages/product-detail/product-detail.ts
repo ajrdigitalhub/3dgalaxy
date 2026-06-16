@@ -8,11 +8,11 @@ import {LoadingService} from '../../core/services/loading.service';
 import {ApiService} from '../../services/api.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
-import {LoadingButton} from '../../shared/components/loading-button/loading-button';
+import {AppButton} from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-product-detail',
-  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent, LoadingButton],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent, AppButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.scss'

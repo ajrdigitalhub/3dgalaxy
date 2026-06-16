@@ -9,11 +9,26 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-theme-primary: var(--primary-color, #00f2fe);
+  --color-theme-secondary: var(--secondary-color, #4facfe);
+
   --animate-slide-in-left: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --animate-fadeIn: fadeIn 0.5s ease-out forwards;
   --animate-slideDown: slideDown 0.3s ease-out forwards;
+  --animate-slideUp: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   --animate-spin-slow: spinSlow 20s infinite linear;
   --animate-float-bubble: floatBubble 6s infinite ease-in-out;
+}
+
+.bg-theme-gradient {
+  background: linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #00f2fe), var(--secondary-color, #4facfe));
+}
+
+.text-theme-gradient {
+  background: linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #00f2fe), var(--secondary-color, #4facfe));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 @keyframes slideInLeft {
@@ -29,6 +44,11 @@
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); max-height: 0; }
   to { opacity: 1; transform: translateY(0); max-height: 1000px; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {

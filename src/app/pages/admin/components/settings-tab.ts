@@ -1,8 +1,9 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-admin-settings-tab',
@@ -77,7 +78,10 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
           <!-- SUB-TAB THEME SETTINGS -->
           @if (admin.activeTab() === 'theme-settings') {
             <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Branding aesthetic Customizer</h3>
+              <div class="pt-4 pb-2 border-b dark:border-zinc-800 flex items-center justify-between">
+                <h3 class="text-xs font-black uppercase">Branding aesthetic Customizer</h3>
+                <button (click)="previewTheme()" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[9px] font-black uppercase transition-colors cursor-pointer tracking-wider">Live Preview</button>
+              </div>
               
               <!-- Aesthetic variables -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -92,6 +96,10 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                     <span class="text-[10px] font-black uppercase text-zinc-500">Secondary Accent Palette</span>
                     <input type="color" [value]="admin.secondaryColor()" (input)="admin.secondaryColor.set($any($event.target).value)" class="w-7 h-7 rounded-sm border-none bg-transparent cursor-pointer">
                   </div>
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Gradient Pattern Angle (e.g. 135deg, 90deg, to right)</span>
+                  <input type="text" [value]="admin.gradientAngle()" (input)="admin.gradientAngle.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none uppercase">
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Typography</span>
@@ -399,4 +407,14 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
 })
 export class AdminSettingsTab {
   @Input({ required: true }) admin!: AdminPanel;
+  private themeService = inject(ThemeService);
+
+  previewTheme() {
+    this.themeService.updateLivePreview({
+      primaryColor: this.admin.primaryColor(),
+      secondaryColor: this.admin.secondaryColor(),
+      gradientAngle: this.admin.gradientAngle(),
+      radius: this.admin.borderRadius() + 'px'
+    });
+  }
 }

@@ -184,6 +184,7 @@ export class AdminPanel {
   // Theme Settings signals
   primaryColor = signal('#2563eb');
   secondaryColor = signal('#4f46e5');
+  gradientAngle = signal('135deg');
   accentColor = signal('#10b981');
   borderRadius = signal(20);
   fontFamily = signal('Inter');
@@ -358,11 +359,7 @@ export class AdminPanel {
   ]);
 
   // Reviews Moderation Feed
-  reviewsList = signal([
-    { id: 'r1', productName: 'Bambu Lab A1 Mini', userName: 'Rajesh K.', rating: 5, comment: 'Phenomenal speed! Best printer for desktop prototypes.', date: '2026-05-20', status: 'Approved', response: '' },
-    { id: 'r2', productName: 'Carbon Fiber PLA Core Filament', userName: 'Vikram S.', rating: 4, comment: 'Extremely rigid and strong print quality. Make sure to use hardened steel nozzle.', date: '2026-05-28', status: 'Pending', response: '' },
-    { id: 'r3', productName: 'Creality Ender 3 V3 KE', userName: 'Amit P.', rating: 2, comment: 'Extruder clogged on day 3. Fine after clearance but frustrating.', date: '2026-06-01', status: 'Pending', response: '' }
-  ]);
+  reviewsList = signal<any[]>([]);
   tempResponseText = signal<Record<string, string>>({});
 
   // Draft Orders Builder signals
@@ -591,6 +588,7 @@ export class AdminPanel {
         this.storeName.set(s.appName || '3D Galaxy Industrial');
         this.primaryColor.set(s.primaryColor || '#2563eb');
         this.secondaryColor.set(s.secondaryColor || '#4f46e5');
+        this.gradientAngle.set(s.gradientAngle || '135deg');
         this.accentColor.set(s.accentColor || '#10b981');
         this.borderRadius.set(s.borderRadius ?? 20);
         this.fontFamily.set(s.fontFamily || 'Inter');
@@ -1187,6 +1185,7 @@ export class AdminPanel {
         appName: this.storeName(),
         primaryColor: this.primaryColor(),
         secondaryColor: this.secondaryColor(),
+        gradientAngle: this.gradientAngle(),
         accentColor: this.accentColor(),
         borderRadius: this.borderRadius(),
         fontFamily: this.fontFamily(),
@@ -1493,11 +1492,7 @@ export class AdminPanel {
   }
 
   // --- ABANDONED CARTS CLUSTER Blasts ---
-  abandonedCartsList = signal([
-    { id: 'ab1', email: 'vicky.sharma@outlook.com', phone: '+91 99120 44556', items: 'Bambu Lab A1 Mini (1), Core Filament Spool (2)', cartValue: 24500, date: '2026-06-05', customer: 'Vicky Sharma', recovered: false },
-    { id: 'ab2', email: 'pankaj.mehta@mfg-hub.in', phone: '+91 88990 11223', items: 'Articulated PLA Toy (10)', cartValue: 7990, date: '2026-06-04', customer: 'Pankaj Mehta', recovered: false },
-    { id: 'ab3', email: 'shubham_maker@gmail.com', phone: '+91 70123 99887', items: 'Creality Ender 3 V3 (1)', cartValue: 19999, date: '2026-06-02', customer: 'Shubham Singh', recovered: true }
-  ]);
+  abandonedCartsList = signal<any[]>([]);
 
   sendRecoveryBlast(id: string) {
     this.abandonedCartsList.update(all => all.map(c => c.id === id ? { ...c, recovered: true } : c));
@@ -1658,6 +1653,46 @@ export class AdminPanel {
       this.toastService.error('Error deleting banner.');
     } finally {
       this.isDeletingBanner.set(false);
+    }
+  }
+
+  async moveBanner(index: number, direction: 'up' | 'down') {
+    const banners = [...this.bannerCampaigns()];
+    if (direction === 'up' && index > 0) {
+      const temp = banners[index];
+      banners[index] = banners[index - 1];
+      banners[index - 1] = temp;
+    } else if (direction === 'down' && index < banners.length - 1) {
+      const temp = banners[index];
+      banners[index] = banners[index + 1];
+      banners[index + 1] = temp;
+    } else {
+      return;
+    }
+    
+    // Create optimistic update
+    const previous = this.ds.banners();
+    this.ds.banners.set(banners);
+    
+    try {
+      // Send updates to the server setting sortOrder = current index
+      for (let i = 0; i < banners.length; i++) {
+        await this.ds.editBanner(banners[i].id, { sortOrder: i });
+      }
+      this.toastService.success('Banner order updated.');
+    } catch {
+      this.toastService.error('Failed to update banner order.');
+      this.ds.banners.set(previous); // Revert
+    }
+  }
+
+  async toggleBannerStatus(banner: any) {
+    const isActive = !banner.isActive;
+    try {
+      await this.ds.editBanner(banner.id, { isActive });
+      this.toastService.info(isActive ? 'Banner published.' : 'Banner paused.');
+    } catch {
+      this.toastService.error('Error updating banner status.');
     }
   }
 

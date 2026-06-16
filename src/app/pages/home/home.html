@@ -17,7 +17,7 @@
               <div class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[500px] lg:h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.15),transparent_70%)] blur-[80px] lg:blur-[100px]"></div>
               <div class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.12),transparent_70%)] blur-[90px] lg:blur-[120px]"></div>
               
-              <img [src]="slides[currentSlide()].image" 
+              <img [src]="slides()[currentSlide()].image" 
                    class="absolute inset-0 w-full h-full object-cover lg:object-contain opacity-25 lg:opacity-15 mix-blend-screen transition-opacity duration-700" 
                    loading="eager"
                    alt="Galaxy Bg"
@@ -30,23 +30,23 @@
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                 <div class="space-y-6 lg:space-y-8 max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
                   <div class="hero-anim inline-flex items-center gap-2 lg:gap-3 px-4 py-1.5 lg:px-5 lg:py-2 bg-white/5 border border-white/10 backdrop-blur-3xl rounded-full text-neutral-200 text-[10px] lg:text-xs font-black uppercase tracking-[0.2em] lg:tracking-[0.3em]">
-                    <mat-icon class="text-orange-500 scale-75 lg:scale-90">{{ slides[currentSlide()].badgeIcon }}</mat-icon>
-                    {{ slides[currentSlide()].badge }}
+                    <mat-icon class="text-orange-500 scale-75 lg:scale-90">{{ slides()[currentSlide()].badgeIcon }}</mat-icon>
+                    {{ slides()[currentSlide()].badge }}
                   </div>
 
                   <div class="hero-anim space-y-3 lg:space-y-4">
-                    <h2 class="text-white/40 text-[10px] lg:text-sm font-black tracking-[0.2em] lg:tracking-[0.25em] uppercase font-display">{{ slides[currentSlide()].title }}</h2>
+                    <h2 class="text-white/40 text-[10px] lg:text-sm font-black tracking-[0.2em] lg:tracking-[0.25em] uppercase font-display">{{ slides()[currentSlide()].title }}</h2>
                     <h1 class="text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter text-white leading-[1.1] lg:leading-[1.05] font-display">
-                      {{ slides[currentSlide()].titleHighlight }}
+                      {{ slides()[currentSlide()].titleHighlight }}
                     </h1>
                   </div>
 
                   <p class="hero-anim text-neutral-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
-                    {{ slides[currentSlide()].desc }}
+                    {{ slides()[currentSlide()].desc }}
                   </p>
 
                   <div class="hero-anim flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2 lg:pt-4">
-                    <a [routerLink]="[slides[currentSlide()].link]" class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto">
+                    <a [routerLink]="[slides()[currentSlide()].link]" class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto">
                       Shop Now <mat-icon class="transition-transform group-hover/btn:translate-x-1">arrow_forward</mat-icon>
                     </a>
                     <button (click)="scrollToProducts()" class="hidden md:flex h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 items-center justify-center gap-3 backdrop-blur-xl">
@@ -61,7 +61,7 @@
                     <div class="absolute -inset-10 bg-orange-500/10 blur-[100px] rounded-full animate-pulse"></div>
                     <!-- Glass Print Box Mockup -->
                     <div class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group/card transition-all duration-1000 [transform:perspective(1000px)_rotateY(-5deg)] hover:[transform:perspective(1000px)_rotateY(0deg)]">
-                      <img [src]="slides[currentSlide()].image" 
+                      <img [src]="slides()[currentSlide()].image" 
                            class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105" 
                            alt="Centerpiece"
                            referrerpolicy="no-referrer" loading="lazy">
@@ -97,7 +97,7 @@
             <div class="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20 px-4 py-2 md:px-6 md:py-3 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
               <button (click)="prevSlide()" class="text-white/40 hover:text-white transition-colors" aria-label="Previous Slide"><mat-icon class="scale-90">chevron_left</mat-icon></button>
               <div class="flex gap-2">
-                @for (s of slides; track s.id; let idx = $index) {
+                @for (s of slides(); track s.id; let idx = $index) {
                   <button (click)="setSlide(idx)" 
                           [attr.aria-label]="'Navigate to slide ' + (idx + 1)"
                           [class]="currentSlide() === idx ? 'h-1.5 w-6 md:w-8 bg-orange-500 rounded-full transition-all duration-500' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>

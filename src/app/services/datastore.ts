@@ -257,6 +257,8 @@ export interface Settings {
   appName: string;
   primaryColor: string;
   secondaryColor: string;
+  gradientAngle?: string;
+  radius?: string;
   accentColor: string;
   borderRadius: number;
   fontFamily: string;
