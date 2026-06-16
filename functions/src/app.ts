@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import compression from 'compression';
 
 import { ENV } from './config/env';
 
@@ -27,7 +28,17 @@ import webhookRoutes from './routes/webhook';
 
 const app = express();
 
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[API_LOG] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
 // Middleware
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 

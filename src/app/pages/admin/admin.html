@@ -4,7 +4,8 @@
     @if (ds.userRole() === 'admin' || ds.userRole() === 'super-admin') {
       
       <!-- COLLAPSED/FLYOUT SHOPIFY-STYLE LEFT SIDEBAR -->
-      <aside class="w-full lg:w-64 bg-zinc-900 text-zinc-400 border-r border-white/5 flex flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40">
+      <!-- Desktop Sidebar -->
+      <aside class="hidden lg:flex w-64 bg-zinc-900 text-zinc-400 border-r border-white/5 flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40">
         <div class="p-6 border-b border-white/5 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
@@ -66,6 +67,75 @@
         </div>
       </aside>
 
+      <!-- Mobile/Tablet Drawer Sidebar -->
+      @if (isAdminSidebarOpen()) {
+        <div class="fixed inset-0 z-50 lg:hidden flex">
+          <!-- Backdrop -->
+          <div class="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm" (click)="isAdminSidebarOpen.set(false)" (keydown.escape)="isAdminSidebarOpen.set(false)" role="button" tabindex="-1"></div>
+          
+          <!-- Drawer -->
+          <aside class="relative w-72 max-w-[85%] bg-zinc-900 text-zinc-400 flex flex-col h-full shadow-2xl z-50 animate-slide-in-left">
+            <div class="p-6 border-b border-white/5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <mat-icon class="text-white text-lg">rocket_launch</mat-icon>
+                </div>
+                <div>
+                  <h2 class="text-sm font-black tracking-tight text-white uppercase leading-none">Console</h2>
+                  <span class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest">3D GALAXY OS</span>
+                </div>
+              </div>
+              <button (click)="isAdminSidebarOpen.set(false)" class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white cursor-pointer">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            
+            <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth">
+              @for (grp of sidebarMenu; track grp.group) {
+                <div class="space-y-0.5">
+                  <button (click)="toggleGroup(grp.group)" class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
+                    <span>{{ grp.group }}</span>
+                    <mat-icon class="text-xs transition-transform duration-200" [class.rotate-180]="!collapsedGroups()[grp.group]">expand_more</mat-icon>
+                  </button>
+
+                  @if (!collapsedGroups()[grp.group]) {
+                    <div class="space-y-0.5 pl-1 transition-all">
+                      @for (item of grp.items; track item.id) {
+                        <button (click)="setActiveTab(item.id); isAdminSidebarOpen.set(false)"
+                                [class]="activeTab() === item.id 
+                                  ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
+                                  : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'">
+                          <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
+                          <span class="truncate">{{ item.label }}</span>
+                          @if (item.id === 'orders' && ds.orders().length > 0) {
+                            <span class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md">{{ ds.orders().length }}</span>
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </nav>
+            
+            <div class="p-4 border-t border-white/5 bg-zinc-950/40">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white uppercase">
+                  {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-black text-white truncate">{{ ds.userProfile()?.name || 'Administrator' }}</p>
+                  <p class="text-[9px] text-zinc-500 truncate uppercase tracking-widest">{{ ds.userRole() }} Node</p>
+                </div>
+                <button (click)="logout(); isAdminSidebarOpen.set(false)" class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer">
+                  <mat-icon class="text-base">logout</mat-icon>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      }
+
     } @else {
       <!-- RESTRICTED COVER SCREEN -->
       <div class="flex-1 flex items-center justify-center p-8 bg-zinc-950 text-white">
@@ -115,6 +185,9 @@
       <!-- TOP STATUS BAR -->
       <header class="h-16 px-6 lg:px-8 border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
         <div class="flex items-center gap-3">
+          <button (click)="isAdminSidebarOpen.set(true)" class="lg:hidden h-10 w-10 flex shrink-0 items-center justify-center text-zinc-650 dark:text-zinc-300 hover:bg-neutral-150/50 dark:hover:bg-zinc-900 rounded-lg cursor-pointer">
+            <mat-icon>menu</mat-icon>
+          </button>
           <div class="flex items-center gap-1.5 text-zinc-400 text-xs uppercase font-mono font-black">
             <span>{{ activeTab() }}</span>
             <mat-icon class="text-sm">chevron_right</mat-icon>

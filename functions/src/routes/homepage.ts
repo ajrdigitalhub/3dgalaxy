@@ -7,10 +7,11 @@ import {
   deleteHomepageSection,
 } from '../controllers/homepage';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
-router.get('/', getFrontendLayout);
+router.get('/', cacheMiddleware(300), getFrontendLayout);
 router.get('/admin', authenticateToken, requireRole(['Admin']), getHomepageSections);
 
 router.post('/', authenticateToken, requireRole(['Admin']), createHomepageSection);

@@ -11,15 +11,16 @@ import {
   deleteCategory,
 } from '../controllers/category';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
-router.get('/', getCategories);
-router.get('/tree', getCategoriesTree);
-router.get('/slug/:slug', getCategoryBySlug);
-router.get('/breadcrumbs/slug/:slug', getBreadcrumbsBySlug);
-router.get('/breadcrumbs/:id', getBreadcrumbs);
-router.get('/children/:parentId', getDirectChildren);
+router.get('/', cacheMiddleware(1800), getCategories);
+router.get('/tree', cacheMiddleware(1800), getCategoriesTree);
+router.get('/slug/:slug', cacheMiddleware(1800), getCategoryBySlug);
+router.get('/breadcrumbs/slug/:slug', cacheMiddleware(1800), getBreadcrumbsBySlug);
+router.get('/breadcrumbs/:id', cacheMiddleware(1800), getBreadcrumbs);
+router.get('/children/:parentId', cacheMiddleware(1800), getDirectChildren);
 
 router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createCategory);
 router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateCategory);

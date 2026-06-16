@@ -27,7 +27,8 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
           <button (click)="admin.setActiveTab('shipping-settings')" [class.bg-zinc-100]="admin.activeTab() === 'shipping-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'shipping-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">local_shipping</mat-icon> Logistical rates</button>
           <button (click)="admin.setActiveTab('tax-settings')" [class.bg-zinc-100]="admin.activeTab() === 'tax-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'tax-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">percent</mat-icon> Tax codes</button>
           <button (click)="admin.setActiveTab('user-management')" [class.bg-zinc-100]="admin.activeTab() === 'user-management'" [class.dark:bg-zinc-800]="admin.activeTab() === 'user-management'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">badge</mat-icon> Team Staff</button>
-          <button (click)="admin.setActiveTab('active-sessions')" [class.bg-zinc-100]="admin.activeTab() === 'active-sessions'" [class.dark:bg-zinc-800]="admin.activeTab() === 'active-sessions'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">security</mat-icon> Active Sessions</button>
+          <button (click)="admin.setActiveTab('active-sessions')" [class.bg-zinc-100]="admin.activeTab() === 'active-sessions'" [class.dark:bg-zinc-800]="admin.activeTab() === 'active-sessions'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">monitor</mat-icon> Active Sessions</button>
+          <button (click)="admin.setActiveTab('security-settings')" [class.bg-zinc-100]="admin.activeTab() === 'security-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'security-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">admin_panel_settings</mat-icon> Security Settings</button>
         </div>
 
         <!-- ACTIVE DETAILS RIGHT CARD -->
@@ -286,6 +287,49 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                     <span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-500 border border-blue-500/15 rounded text-[8px] font-black uppercase tracking-widest">{{ user.role }}</span>
                   </div>
                 }
+              </div>
+            </div>
+          }
+
+          <!-- SUB-TAB SECURITY SETTINGS -->
+          @if (admin.activeTab() === 'security-settings') {
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
+              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Session Management & Security</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Idle Timeout Enabled -->
+                <div class="md:col-span-2">
+                  <label class="flex items-center gap-2 cursor-pointer w-fit p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-850 transition-colors">
+                    <input type="checkbox" [checked]="admin.enableIdleTimeout()" (change)="admin.enableIdleTimeout.set($any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Idle Timeout</span>
+                  </label>
+                </div>
+
+                <!-- Session Timeout -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Session Timeout (Minutes)</span>
+                  <input type="number" [value]="admin.sessionTimeout()" (input)="admin.sessionTimeout.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Idle Warning Time -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Idle Warning Time (Minutes)</span>
+                  <input type="number" [value]="admin.idleWarningTime()" (input)="admin.idleWarningTime.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none focus:border-blue-500">
+                </div>
+
+                <!-- Warning Popup Enabled -->
+                <div class="md:col-span-2">
+                  <label class="flex items-center gap-2 cursor-pointer w-fit p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-850 transition-colors">
+                    <input type="checkbox" [checked]="admin.enableSessionWarningPopup()" (change)="admin.enableSessionWarningPopup.set($any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Session Warning Popup</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="pt-2">
+                <button (click)="admin.saveSecuritySettings()" [disabled]="admin.isSavingSettings()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-colors cursor-pointer shadow-sm shadow-blue-500/10 disabled:opacity-50">
+                  Save Security Policies
+                </button>
               </div>
             </div>
           }

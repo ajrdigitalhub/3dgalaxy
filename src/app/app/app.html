@@ -1,6 +1,7 @@
 <!-- DYNAMIC CORPORATE MASTER PLATFORM SHELL -->
 <div [class]="ds.theme() === 'dark' ? 'dark bg-neutral-950 text-neutral-100 min-h-screen font-sans selection:bg-blue-500/30 transition-all duration-300' : 'bg-neutral-50 text-neutral-900 min-h-screen font-sans selection:bg-blue-500/20 transition-all duration-300'">
   
+  @if (!isAuthRoute()) {
   <!-- INTERACTIVE TOP MARKETING SLIDER BANNER -->
   @if (topAd(); as ad) {
     <div class="bg-linear-to-r from-fuchsia-600 via-purple-600 to-cyan-500 text-white text-xs py-2 px-4 shadow-sm relative overflow-hidden select-none">
@@ -518,11 +519,42 @@
     </div>
   }
 
+  }
+  
   <!-- MAIN VIEWPORT ROUTER OUTLET SLOT -->
-  <main [class]="isHome() ? 'w-full relative min-h-[60vh]' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative min-h-[60vh]'">
+  <main [class]="isHome() || isAuthRoute() ? 'w-full relative min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative min-h-[60vh]'">
     <router-outlet />
   </main>
 
+  <!-- SESSION IDLE WARNING POPUP -->
+  @if (sessionService.showWarning()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center">
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"></div>
+      
+      <!-- Modal Content -->
+      <div class="relative bg-white dark:bg-neutral-900 w-[90%] max-w-sm rounded-2xl shadow-2xl p-6 md:p-8 animate-fadeIn text-center flex flex-col items-center">
+        <div class="w-16 h-16 bg-amber-50 dark:bg-amber-500/10 rounded-full flex items-center justify-center text-amber-500 mb-4">
+          <mat-icon class="scale-[1.5]">lock_clock</mat-icon>
+        </div>
+        <h3 class="font-black text-neutral-900 dark:text-white text-lg mb-2">Session Expiring Soon</h3>
+        <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-6 leading-relaxed">
+          You've been idle for a while. For your security, you will be logged out automatically in <span class="font-black text-[#d65108]">{{ sessionService.countdown() }} seconds</span>.
+        </p>
+        
+        <div class="w-full flex items-center gap-3">
+          <button (click)="sessionService.logout()" class="flex-1 h-12 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+            Log Out Now
+          </button>
+          <button (click)="sessionService.continueSession()" class="flex-1 h-12 bg-linear-to-r from-fuchsia-600 via-purple-600 to-cyan-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:opacity-90 shadow-lg shadow-purple-500/20 active:scale-95 transition-all">
+            Continue Working
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!isAuthRoute()) {
   <!-- FOOTER SPOTS AND ADVERTISEMENT LOGO CODES -->
   <footer class="border-t border-neutral-200 dark:border-neutral-900 bg-white dark:bg-neutral-950/40 select-none text-left py-8 sm:py-12 text-[10px] sm:text-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
@@ -664,6 +696,7 @@
       </div>
     </div>
   </footer>
+  }
 
   <app-toast-container></app-toast-container>
 </div>

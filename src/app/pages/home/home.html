@@ -336,7 +336,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
               @for (p of featuredProducts(); track p.id) {
                 <div class="group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(214,81,8,0.12)] min-h-[440px] hover:-translate-y-2 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-500 ease-out p-4 pb-6 flex flex-col relative text-left overflow-hidden">
                   
@@ -395,6 +395,7 @@
                     <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/400x400?text=No+Image'" 
                          class="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-500" 
                          alt="{{p.name}}" 
+                         loading="lazy"
                          referrerpolicy="no-referrer">
                     @if (p.warningText) {
                       <div class="absolute bottom-0 left-0 right-0 bg-[#ffd700] text-neutral-900 text-[9px] font-black tracking-widest uppercase py-1.5 text-center z-10">
@@ -446,7 +447,7 @@
               <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical manufacturing criteria.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               @for (tech of technologies; track tech.id) {
                 <div class="relative group h-[420px] rounded-[2rem] overflow-hidden border border-neutral-200 dark:border-neutral-800/40 bg-neutral-100 dark:bg-neutral-900">
                   <img [src]="tech.image" [alt]="tech.name" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" referrerpolicy="no-referrer">

@@ -851,32 +851,39 @@ router.post('/sessions/:id/terminate', adminGuard, async (req: Request, res: Res
 // 1. Overview Dashboard Stats
 router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
   try {
-    const totalProducts = await prisma.product.count();
-    const totalOrders = await prisma.order.count();
-    const totalCustomers = await prisma.customer.count();
-    
-    const revenueAgg = await prisma.order.aggregate({
-      where: {
-        status: { notIn: ['cancelled', 'CANCELLED'] }
-      },
-      _sum: {
-        totalAmount: true
-      }
-    });
+    const [
+      totalProducts,
+      totalOrders,
+      totalCustomers,
+      revenueAgg,
+      abandonedCarts,
+      pendingOrders
+    ] = await Promise.all([
+      prisma.product.count(),
+      prisma.order.count(),
+      prisma.customer.count(),
+      prisma.order.aggregate({
+        where: {
+          status: { notIn: ['cancelled', 'CANCELLED'] }
+        },
+        _sum: {
+          totalAmount: true
+        }
+      }),
+      prisma.cart.count({
+        where: {
+          status: 'ACTIVE',
+          items: { some: {} }
+        }
+      }),
+      prisma.order.count({
+        where: {
+          status: { in: ['pending', 'PENDING'] }
+        }
+      })
+    ]);
+
     const totalRevenue = revenueAgg._sum.totalAmount || 0;
-    
-    const abandonedCarts = await prisma.cart.count({
-      where: {
-        status: 'ACTIVE',
-        items: { some: {} }
-      }
-    });
-    
-    const pendingOrders = await prisma.order.count({
-      where: {
-        status: { in: ['pending', 'PENDING'] }
-      }
-    });
 
     return res.status(200).json({
       success: true,

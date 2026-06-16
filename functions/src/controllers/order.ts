@@ -3,20 +3,29 @@ import prisma from '../config/database';
 
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const list = await prisma.order.findMany({
-      include: {
-        customer: {
-          include: { user: true }
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limitNum = parseInt(req.query.limit as string, 10) || 20;
+    const skip = (page - 1) * limitNum;
+
+    const [total, list] = await Promise.all([
+      prisma.order.count(),
+      prisma.order.findMany({
+        skip,
+        take: limitNum,
+        include: {
+          customer: {
+            include: { user: true }
+          },
+          shippingAddress: true,
+          statusHistory: true,
+          items: {
+            include: { product: true },
+          },
         },
-        shippingAddress: true,
-        statusHistory: true,
-        items: {
-          include: { product: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return res.status(200).json(list);
+        orderBy: { createdAt: 'desc' },
+      })
+    ]);
+    return res.status(200).json({ total, page, limit: limitNum, data: list });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find orders index', details: error.message });
   }
@@ -27,19 +36,28 @@ export const getMyOrders = async (req: any, res: Response) => {
   try {
     const customer = await prisma.customer.findFirst({ where: { userId } });
     if (!customer) {
-      return res.status(200).json([]);
+      return res.status(200).json({ total: 0, data: [] });
     }
 
-    const list = await prisma.order.findMany({
-      where: { customerId: customer.id },
-      include: {
-        items: {
-          include: { product: true },
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const limitNum = parseInt(req.query.limit as string, 10) || 20;
+    const skip = (page - 1) * limitNum;
+
+    const [total, list] = await Promise.all([
+      prisma.order.count({ where: { customerId: customer.id } }),
+      prisma.order.findMany({
+        skip,
+        take: limitNum,
+        where: { customerId: customer.id },
+        include: {
+          items: {
+            include: { product: true },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return res.status(200).json(list);
+        orderBy: { createdAt: 'desc' },
+      })
+    ]);
+    return res.status(200).json({ total, page, limit: limitNum, data: list });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve your orders', details: error.message });
   }

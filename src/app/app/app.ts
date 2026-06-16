@@ -1,13 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import {ChangeDetectionStrategy, Component, inject, computed, signal} from '@angular/core';
-import {RouterOutlet, RouterModule, Router} from '@angular/router';
+import {RouterOutlet, RouterModule, Router, NavigationEnd} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
-import {DatastoreService, Advertisement} from '../services/datastore';
-import {LoadingService} from '../core/services/loading.service';
-import {SkeletonMenuComponent} from '../shared/components/skeleton/skeleton-menu/skeleton-menu.component';
-import {ToastContainerComponent} from '../shared/components/toast/toast.component';
+import { DatastoreService, Advertisement } from '../services/datastore';
+import { LoadingService } from '../core/services/loading.service';
+import { SkeletonMenuComponent } from '../shared/components/skeleton/skeleton-menu/skeleton-menu.component';
+import { ToastContainerComponent } from '../shared/components/toast/toast.component';
 import { ToastService } from '../shared/components/toast/toast.service';
+import { SessionService } from '../core/services/session.service';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,7 +20,9 @@ import { ToastService } from '../shared/components/toast/toast.service';
 export class App {
   toastService = inject(ToastService);
   public ds = inject(DatastoreService);
+  public sessionService = inject(SessionService);
   public router = inject(Router);
+  public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
 
   loading = computed(() => {
@@ -32,7 +35,10 @@ export class App {
 
   constructor() {
     // Keep isHome updated with active path
-    this.router.events.subscribe(() => {
+    this.router.events.subscribe((val) => {
+      if (val instanceof NavigationEnd) {
+        this.currentUrl.set(val.url);
+      }
       const urlPath = this.router.url.split('?')[0];
       this.isHome.set(urlPath === '/' || urlPath === '/home');
     });
@@ -143,6 +149,10 @@ export class App {
       this.router.navigate(['/search'], { queryParams: { q: query }});
     }
   }
+  isAuthRoute = computed(() => {
+    return ['/login', '/register', '/forgot-password', '/reset-password'].some(r => this.currentUrl().includes(r));
+  });
+
   isMobileMenuOpen = signal(false);
   isMobileSearchOpen = signal(false);
   isRoleDropdownOpen = signal<boolean>(false);

@@ -120,17 +120,17 @@
                 <div class="space-y-3">
                   <h4 class="text-xs font-black uppercase text-neutral-900 dark:text-white tracking-widest">{{ opt.name }}: <span class="text-neutral-500 ml-2 font-medium">{{ getOptionValueName(opt.values, selectedOptions()[opt.id]) }}</span></h4>
                   
-                  <div class="flex flex-wrap gap-3">
+                  <div class="flex overflow-x-auto gap-3 pb-2 hide-scroll -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none]">
                     @for (val of opt.values; track val.id) {
                       @if (opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour') {
                         <button (click)="selectOption(opt.id, val.id)"
                                 [style.backgroundColor]="val.colorCode || val.value | lowercase"
-                                [class]="selectedOptions()[opt.id] === val.id ? 'h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md transition-all' : 'h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 transition-transform'"></button>
+                                [class]="selectedOptions()[opt.id] === val.id ? 'shrink-0 h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md transition-all' : 'shrink-0 h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 transition-transform'"></button>
                       } @else {
                         <button (click)="selectOption(opt.id, val.id)" 
                                 [class]="selectedOptions()[opt.id] === val.id ? 
-                                         'px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md transition-all' : 
-                                         'px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm'">
+                                         'shrink-0 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md transition-all' : 
+                                         'shrink-0 px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm'">
                           {{ val.value }}
                         </button>
                       }
@@ -376,7 +376,7 @@
             </div>
          </div>
          
-         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             @for (rp of relatedProducts(); track rp.id) {
                <a [routerLink]="['/product', rp.slug]" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-orange-200 transition-all flex flex-col h-full">
                   <div class="relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4">

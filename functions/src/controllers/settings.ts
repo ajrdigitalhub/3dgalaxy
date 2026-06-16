@@ -76,6 +76,63 @@ export const updatePaymentGateway = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, error: 'Failed to update payment gateway', details: error.message });
   }
 };
+
+export const getSecuritySettings = async (req: Request, res: Response) => {
+  try {
+    let settingRecord = await prisma.themeSetting.findUnique({
+      where: { keyName: 'security-settings' },
+    });
+
+    if (!settingRecord) {
+      settingRecord = await prisma.themeSetting.create({
+        data: {
+          keyName: 'security-settings',
+          value: JSON.stringify({
+             sessionTimeout: 30,
+             idleWarningTime: 25,
+             enableIdleTimeout: true,
+             enableSessionWarningPopup: true,
+          })
+        },
+      });
+    }
+
+    return res.status(200).json(JSON.parse(settingRecord.value));
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to get security settings', details: error.message });
+  }
+};
+
+export const updateSecuritySettings = async (req: Request, res: Response) => {
+  const { sessionTimeout, idleWarningTime, enableIdleTimeout, enableSessionWarningPopup } = req.body;
+
+  try {
+    const updated = await prisma.themeSetting.upsert({
+      where: { keyName: 'security-settings' },
+      update: {
+        value: JSON.stringify({
+          sessionTimeout: sessionTimeout ?? 30,
+          idleWarningTime: idleWarningTime ?? 25,
+          enableIdleTimeout: enableIdleTimeout ?? true,
+          enableSessionWarningPopup: enableSessionWarningPopup ?? true,
+        })
+      },
+      create: {
+        keyName: 'security-settings',
+        value: JSON.stringify({
+          sessionTimeout: sessionTimeout ?? 30,
+          idleWarningTime: idleWarningTime ?? 25,
+          enableIdleTimeout: enableIdleTimeout ?? true,
+          enableSessionWarningPopup: enableSessionWarningPopup ?? true,
+        })
+      },
+    });
+
+    return res.status(200).json(JSON.parse(updated.value));
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to update security settings', details: error.message });
+  }
+};
 export const updateThemeSettings = async (req: Request, res: Response) => {
   const { logo, favicon, primaryColor, secondaryColor, typography, headerConfig, footerConfig, homepageConfig } = req.body;
 

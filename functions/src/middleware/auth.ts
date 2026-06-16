@@ -31,28 +31,10 @@ export const authenticateToken = async (
       role: string;
     };
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      include: {
-        roles: {
-          include: {
-            role: true
-          }
-        }
-      },
-    });
-
-    if (!user || user.isActive === false) {
-      return res.status(403).json({ error: 'User is inactive or suspended' });
-    }
-
-    const firstRole = user.roles?.[0]?.role;
-    const roleName = firstRole?.name || 'Customer';
-
     req.user = {
-      id: user.id,
-      email: user.email,
-      role: roleName,
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role || 'Customer',
     };
 
     next();

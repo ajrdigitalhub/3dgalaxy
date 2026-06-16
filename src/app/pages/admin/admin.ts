@@ -34,7 +34,7 @@ export type AdminTab =
   | 'pages' | 'blogs' | 'faqs' | 'banners' | 'homepage-builder' | 'menu-builder'
   | 'coupons' | 'promotions' | 'email-campaigns' | 'push-notifications'
   | 'sales-reports' | 'product-reports' | 'customer-reports'
-  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions';
+  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions' | 'security-settings';
 
 @Component({
   selector: 'app-admin-panel',
@@ -68,6 +68,7 @@ export class AdminPanel {
   });
 
   activeTab = signal<AdminTab>('dashboard');
+  isAdminSidebarOpen = signal(false);
 
   // Sidebar Group Collapsed state
   collapsedGroups = signal<Record<string, boolean>>({
@@ -152,7 +153,8 @@ export class AdminPanel {
         { id: 'shipping-settings' as const, label: 'Shipping Settings', icon: 'local_shipping' },
         { id: 'tax-settings' as const, label: 'Tax Settings', icon: 'percent' },
         { id: 'user-management' as const, label: 'User Management', icon: 'badge' },
-        { id: 'active-sessions' as const, label: 'Active Sessions', icon: 'security' }
+        { id: 'active-sessions' as const, label: 'Active Sessions', icon: 'security' },
+        { id: 'security-settings' as const, label: 'Security Settings', icon: 'admin_panel_settings' }
       ]
     }
   ];
@@ -210,6 +212,12 @@ export class AdminPanel {
 
   razorpayLogoUrl = signal('https://picsum.photos/seed/razorpay/200/50');
   paymentMethodIconsUrl = signal('https://picsum.photos/seed/payments/400/100');
+
+  // Security Session Settings
+  sessionTimeout = signal<number>(30);
+  idleWarningTime = signal<number>(25);
+  enableIdleTimeout = signal<boolean>(true);
+  enableSessionWarningPopup = signal<boolean>(true);
 
   // Dashboard signals
   revenueTrend = signal([10, 15, 8, 25, 30, 22, 35, 40]);
@@ -440,6 +448,37 @@ export class AdminPanel {
     });
   }
 
+  fetchSecuritySettings() {
+    this.ds.api.get<any>('/settings/security').subscribe({
+      next: (res) => {
+        if (res) {
+          this.sessionTimeout.set(Number(res.sessionTimeout) || 30);
+          this.idleWarningTime.set(Number(res.idleWarningTime) || 25);
+          this.enableIdleTimeout.set(res.enableIdleTimeout !== false);
+          this.enableSessionWarningPopup.set(res.enableSessionWarningPopup !== false);
+        }
+      },
+      error: (err) => console.error('Failed to load security settings', err)
+    });
+  }
+
+  async saveSecuritySettings() {
+    this.isSavingSettings.set(true);
+    try {
+      await this.ds.api.put('/settings/security', {
+        sessionTimeout: this.sessionTimeout(),
+        idleWarningTime: this.idleWarningTime(),
+        enableIdleTimeout: this.enableIdleTimeout(),
+        enableSessionWarningPopup: this.enableSessionWarningPopup()
+      }).toPromise();
+      this.toastService.success('Security settings saved');
+    } catch {
+      this.toastService.error('Failed to save security settings');
+    } finally {
+      this.isSavingSettings.set(false);
+    }
+  }
+
   fetchPaymentGateways() {
     this.http.get<any>('/api/settings/payment-gateways').subscribe({
       next: (res: any) => {
@@ -541,6 +580,7 @@ export class AdminPanel {
 
   constructor() {
     this.fetchPaymentGateways();
+    this.fetchSecuritySettings();
     this.fetchUserSessions();
     this.fetchDashboardStats();
     this.fetchCRMLists();

@@ -95,3 +95,54 @@
 .animate-float-bubble {
   animation: floatBubble 6s infinite ease-in-out;
 }
+
+@layer base {
+  html {
+    font-size: 14px; /* small in mobile view */
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 15px;
+    }
+  }
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  
+  body {
+    @apply h-full antialiased;
+    /* Optional base text size if not relying entirely on rems */
+    font-size: 1rem; 
+  }
+  
+  button, 
+  a.btn {
+    @apply min-h-[44px];
+  }
+
+  h1 {
+    font-size: clamp(20px, 4vw, 42px);
+    line-height: clamp(28px, 5vw, 50px);
+  }
+  
+  h2 {
+    font-size: clamp(16px, 3.5vw, 32px);
+    line-height: clamp(24px, 4.5vw, 40px);
+  }
+  
+  h3 {
+    font-size: clamp(14px, 3vw, 24px);
+    line-height: clamp(20px, 4vw, 32px);
+  }
+}
+
+@layer utilities {
+  .max-w-7xl {
+    max-width: 1440px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}

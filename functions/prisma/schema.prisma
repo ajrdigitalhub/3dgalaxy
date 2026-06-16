@@ -73,6 +73,7 @@ model RefreshToken {
   createdAt  DateTime @default(now()) @map("created_at")
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("refresh_tokens")
 }
 
@@ -114,6 +115,7 @@ model Category {
   products       Product[]
 
   @@index([name])
+  @@index([parentId])
   @@map("categories")
 }
 
@@ -175,6 +177,8 @@ model Product {
 
   @@index([name])
   @@index([slug])
+  @@index([categoryId])
+  @@index([brandId])
   @@map("products")
 }
 
@@ -188,6 +192,7 @@ model ProductImage {
   createdAt DateTime @default(now()) @map("created_at")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_images")
 }
 
@@ -336,6 +341,7 @@ model ProductVariant {
   images      ProductVariantImage[]
   product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_variants")
 }
 
@@ -542,6 +548,7 @@ model CustomerWishlist {
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@id([customerId, productId])
+  @@index([customerId])
   @@map("customer_wishlist")
 }
 
@@ -582,6 +589,7 @@ model Order {
   payments          Payment[]
   shipments         Shipment[]
 
+  @@index([customerId])
   @@map("orders")
 }
 

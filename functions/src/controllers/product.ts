@@ -84,15 +84,31 @@ export const getProducts = async (req: Request, res: Response) => {
     const total = await prisma.product.count({ where: filters });
     const items = await prisma.product.findMany({
       where: filters,
-      include: {
-        variants: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        sku: true,
+        basePrice: true,
+        salePrice: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
         images: {
-          orderBy: {
-            sortOrder: 'asc'
-          }
+          take: 1,
+          orderBy: { sortOrder: 'asc' },
+          select: { id: true, url: true, isPrimary: true, altText: true }
         },
-        category: true,
-        brand: true,
+        category: {
+          select: { id: true, name: true, slug: true }
+        },
+        brand: {
+          select: { id: true, name: true, slug: true }
+        },
+        variants: {
+            take: 1,
+            select: { id: true, stock: true, price: true, salePrice: true }
+        }
       },
       orderBy: order,
       skip,
