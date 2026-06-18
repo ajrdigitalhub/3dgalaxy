@@ -591,7 +591,7 @@ model Order {
   guestName         String?              @map("guest_name")
   guestEmail        String?              @map("guest_email")
   guestPhone        String?              @map("guest_phone")
-  guestAddress      String?              @map("guest_address")
+  guestAddress      Json?                @map("guest_address")
   guestSessionId    String?              @map("guest_session_id")
 
   @@index([customerId])
@@ -869,9 +869,54 @@ model NewsletterSubscriber {
 model Setting {
   id          String   @id @default(uuid())
   settingKey  String   @unique @map("setting_key")
-  settingData String   @map("setting_data")
+  settingData Json     @map("setting_data")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String   @map("image_url")
+  linkUrl     String?  @map("link_url")
+  type        String   @default("HERO") // HERO, PROMOTIONAL, CATEGORY, BRAND
+  position    Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+model Faq {
+  id           String   @id @default(uuid())
+  question     String
+  answer       String
+  category     String?
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("faqs")
+}
+
+model Advertisement {
+  id          String   @id @default(uuid())
+  title       String
+  position    String
+  mediaUrl    String   @map("media_url")
+  targetUrl   String   @map("target_url")
+  status      String   @default("active")
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("advertisements")
 }

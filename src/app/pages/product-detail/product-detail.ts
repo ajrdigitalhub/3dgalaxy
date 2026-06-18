@@ -49,8 +49,8 @@ export class ProductDetail {
       if (!p || !p.variants || p.variants.length === 0) return null;
       const opts = this.selectedOptions();
       // Match variant based on selected options
-      const matched = p.variants.find(v => {
-          return v.options?.every(vo => opts[vo.optionValue.optionId] === vo.optionValueId);
+      const matched = p.variants.find((v: any) => {
+          return v.options?.every((vo: any) => opts[vo.optionValue.optionId] === vo.optionValueId);
       });
       return matched || p.variants[0];
   });
@@ -68,8 +68,11 @@ export class ProductDetail {
   draftStars = signal<number>(5);
   draftComment = signal<string>('');
 
+  fetchedProduct = signal<any>(null);
+
   product = computed(() => {
-    return this.ds.products().find(p => p.slug === this.slug());
+    // Return fetched details if available, else structural outline
+    return this.fetchedProduct() || this.ds.products().find(p => p.slug === this.slug());
   });
 
   breadcrumbs = computed(() => {
@@ -88,7 +91,7 @@ export class ProductDetail {
   });
 
   // Derived properties from product if available or fallback
-  productSpecs = computed(() => this.product()?.specifications?.map(s => ({ label: s.name, value: s.value })) || this.product()?.specs || []);
+  productSpecs = computed(() => this.product()?.specifications?.map((s: any) => ({ label: s.name, value: s.value })) || this.product()?.specs || []);
   productReviews = computed(() => this.product()?.reviews || []);
   productFeatures = computed(() => this.product()?.features || (this.product() as any)?.features || []);
   productApplications = computed(() => (this.product() as any)?.applications || []);
@@ -100,7 +103,7 @@ export class ProductDetail {
     const p = this.product();
     if (!p) return [];
     if (p.relatedProducts && p.relatedProducts.length > 0) {
-       return p.relatedProducts.map(rp => rp.relatedProduct).slice(0, 4);
+       return p.relatedProducts.map((rp: any) => rp.relatedProduct).slice(0, 4);
     }
     return this.ds.products().filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 4);
   });
@@ -167,8 +170,22 @@ export class ProductDetail {
   constructor() {
     this.route.params.subscribe(p => {
       if (p['slug']) {
-        this.slug.set(p['slug']);
-        const matched = this.ds.products().find(x => x.slug === p['slug']);
+        const slugStr = p['slug'];
+        this.slug.set(slugStr);
+        
+        // Fetch detailed product data
+        fetch(`/api/products/slug/${slugStr}`)
+          .then(res => res.json())
+          .then(detailedProd => {
+            if (detailedProd && !detailedProd.error) {
+               // Reconstruct flat object for existing frontend properties mapped to it
+               const merged = { ...detailedProd.product, images: detailedProd.images, variants: detailedProd.variants, reviews: detailedProd.reviews, relatedProducts: detailedProd.relatedProducts };
+               this.fetchedProduct.set(merged);
+            }
+          })
+          .catch(err => console.error("Could not fetch product details:", err));
+
+        const matched = this.ds.products().find(x => x.slug === slugStr);
         if (matched) {
           const firstImg = matched.images && matched.images.length > 0 ? this.getImageUrl(matched.images[0]) : '';
           this.activeImage.set(firstImg);

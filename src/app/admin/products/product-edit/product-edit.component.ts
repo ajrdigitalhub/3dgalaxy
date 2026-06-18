@@ -43,37 +43,51 @@ export class ProductEditComponent implements OnInit {
   pVariants = signal<string>('[]');
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
+  
+  pSpecifications = signal<any[]>([]);
+  pDownloads = signal<any[]>([]);
+  pFeatures = signal<any[]>([]);
+  pFaqs = signal<any[]>([]);
+  pWarranty = signal<any>(null);
+  pShipping = signal<any>(null);
+  pRelatedProducts = signal<any[]>([]);
+
+  isLoading = signal<boolean>(false);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     this.productId.set(id);
 
     if (id) {
-      // Find product
-      const found = this.productService.products().find(p => p.id === id);
-      if (found) {
-        this.currentProduct.set(found);
-        this.fillForm(found);
-      }
+      this.isLoading.set(true);
+      fetch(`/api/admin/products/${id}/details`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
+      })
+      .then(r => r.json())
+      .then(found => {
+        this.isLoading.set(false);
+        if (found && !found.error) {
+          this.currentProduct.set(found);
+          this.fillForm(found);
+        } else {
+          this.toastService.error('Failed to load product details');
+        }
+      })
+      .catch(e => {
+        this.isLoading.set(false);
+        this.toastService.error('Error fetching product details');
+      });
     }
   }
 
   constructor() {
-    // Re-evaluate form values if list initializes late
-    effect(() => {
-      const id = this.productId();
-      const products = this.productService.products();
-      if (id && products.length > 0 && !this.currentProduct()) {
-        const found = products.find(p => p.id === id);
-        if (found) {
-          this.currentProduct.set(found);
-          this.fillForm(found);
-        }
-      }
-    }, { allowSignalWrites: true });
+    // Removed effect that overwrote details from lightweight catalog
   }
 
-  fillForm(p: any) {
+  fillForm(data: any) {
+    const p = data.product || data;
     this.pName.set(p.name || '');
     this.pSku.set(p.sku || '');
     this.pCatId.set(p.categoryId || p.category_id || p.category?.slug || '');
@@ -85,15 +99,28 @@ export class ProductEditComponent implements OnInit {
     this.pStatus.set(p.isActive === false ? 'draft' : (p.status || 'active'));
     
     // Map objects to strings for textarea
-    const imgs = p.images || [];
+    const imgs = data.images || p.images || [];
     const urls = imgs.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean);
     this.pImages.set(urls.join('\n'));
     
     this.pDesc.set(p.description || '');
     this.pLongDesc.set(p.long_description || '');
-    this.pVariants.set(JSON.stringify(p.variants || [], null, 2));
-    this.pSeoTitle.set(p.seoTitle || p.seo?.seoTitle || '');
-    this.pSeoDescription.set(p.seoDescription || p.seo?.seoDescription || '');
+    
+    // Check if variants came separately in detailed payload
+    const variantsList = data.variants || p.variants || [];
+    this.pVariants.set(JSON.stringify(variantsList, null, 2));
+
+    const seoData = data.seo || p.seo || {};
+    this.pSeoTitle.set(p.seoTitle || seoData.title || seoData.seoTitle || '');
+    this.pSeoDescription.set(p.seoDescription || seoData.description || seoData.seoDescription || '');
+
+    this.pSpecifications.set(data.specifications || p.specifications || []);
+    this.pDownloads.set(data.downloads || p.downloads || []);
+    this.pFeatures.set(data.features || p.features || []);
+    this.pFaqs.set(data.faqs || p.faqs || []);
+    this.pWarranty.set(data.warranty || p.warranty || null);
+    this.pShipping.set(data.shipping || p.shipping || null);
+    this.pRelatedProducts.set(data.relatedProducts || p.relatedProducts || []);
   }
 
   async saveProduct() {
@@ -162,6 +189,13 @@ export class ProductEditComponent implements OnInit {
       isActive: this.pStatus() === 'active',
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),
+      specifications: this.pSpecifications(),
+      downloads: this.pDownloads(),
+      features: this.pFeatures(),
+      faqs: this.pFaqs(),
+      warranty: this.pWarranty(),
+      shipping: this.pShipping(),
+      relatedProducts: this.pRelatedProducts(),
     };
 
     try {

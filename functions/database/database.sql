@@ -930,3 +930,41 @@ CREATE TABLE IF NOT EXISTS settings (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS faqs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    category VARCHAR(100),
+    display_order INTEGER DEFAULT 0,
+    is_published BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS advertisements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    media_url TEXT NOT NULL,
+    target_url TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    clicks INTEGER DEFAULT 0,
+    impressions INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS banners (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    image_url TEXT NOT NULL,
+    link_url TEXT,
+    type VARCHAR(50) DEFAULT 'HERO',
+    position INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);

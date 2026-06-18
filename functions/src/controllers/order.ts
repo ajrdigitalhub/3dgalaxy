@@ -255,7 +255,7 @@ export const createOrder = async (req: any, res: Response) => {
           guestName: isGuest ? guestName : null,
           guestEmail: isGuest ? guestEmail : null,
           guestPhone: isGuest ? guestPhone : null,
-          guestAddress: isGuest ? JSON.stringify(shippingAddress) : null,
+          guestAddress: isGuest ? (shippingAddress || null) : null,
           guestSessionId: isGuest ? guestSessionId : null,
           orderNumber,
           totalAmount,

@@ -62,7 +62,7 @@ export const getSettingsService = async () => {
 
   if (record && record.settingData) {
     try {
-      settingsCache = JSON.parse(record.settingData);
+      settingsCache = typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData as any;
     } catch (e) {
       // IF invalid JSON, replace with defaultSettings.
       settingsCache = { ...defaultSettings };
@@ -87,12 +87,12 @@ export const updateSettingsService = async (payload: any) => {
 
   const updatedRecord = await prisma.setting.upsert({
     where: { settingKey: 'app_settings' },
-    update: { settingData: JSON.stringify(newSettings) },
-    create: { settingKey: 'app_settings', settingData: JSON.stringify(newSettings) }
+    update: { settingData: newSettings },
+    create: { settingKey: 'app_settings', settingData: newSettings }
   });
 
   try {
-     settingsCache = JSON.parse(updatedRecord.settingData);
+     settingsCache = typeof updatedRecord.settingData === 'string' ? JSON.parse(updatedRecord.settingData) : updatedRecord.settingData as any;
   } catch (e) {
      settingsCache = newSettings;
   }

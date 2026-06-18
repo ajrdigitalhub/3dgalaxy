@@ -160,7 +160,15 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    return res.status(200).json(item);
+    const { images, variants, reviews, relatedProducts, ...productFields } = item;
+
+    return res.status(200).json({
+      product: productFields,
+      images: images || [],
+      variants: variants || [],
+      reviews: reviews || [],
+      relatedProducts: relatedProducts || []
+    });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch product', details: error.message });
   }
@@ -197,7 +205,23 @@ export const getProductById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product SKU does not exist' });
     }
 
-    return res.status(200).json(item);
+    const { images, variants, reviews, relatedProducts, specifications, downloads, features, faqs, warranty, shipping, seo, ...productFields } = item;
+
+    return res.status(200).json({
+      product: productFields,
+      images: images || [],
+      variants: variants || [],
+      variantImages: variants?.flatMap(v => v.images) || [],
+      reviews: reviews || [],
+      relatedProducts: relatedProducts || [],
+      specifications: specifications || [],
+      downloads: downloads || [],
+      features: features || [],
+      faqs: faqs || [],
+      warranty: warranty || null,
+      shipping: shipping || null,
+      seo: seo || null
+    });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to read individual product SKU', details: error.message });
   }

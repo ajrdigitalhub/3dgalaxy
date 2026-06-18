@@ -64,7 +64,7 @@ async function getSetting(keyName: string, defaultValue: any) {
     return defaultValue;
   }
   try {
-    return JSON.parse(record.settingData);
+    return typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData;
   } catch {
     return record.settingData;
   }
@@ -417,10 +417,10 @@ router.get('/social-posts', async (req: Request, res: Response) => {
 // ADVERTISEMENTS ENDPOINTS
 router.get('/advertisements', async (req: Request, res: Response) => {
   try {
-    const list = await getSetting('advertisements-list', [
-      { id: 'ad1', title: 'Industrial Brahma Printing Cluster Service', position: 'top-banner', mediaUrl: 'https://picsum.photos/seed/adbanner/1920/220', targetUrl: '/pages/brahma-3d-printing-service', status: 'active', clicks: 212, impressions: 5320 },
-      { id: 'ad2', title: 'Unlock B2B Distributor Rates', position: 'footer', mediaUrl: 'https://picsum.photos/seed/footerad/1920/180', targetUrl: '/profile', status: 'active', clicks: 88, impressions: 4210 }
-    ]);
+    const list = await prisma.advertisement.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' }
+    });
     return res.status(200).json({ success: true, data: list });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
@@ -430,12 +430,13 @@ router.get('/advertisements', async (req: Request, res: Response) => {
 router.put('/advertisements/:id/click', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const current = await getSetting('advertisements-list', []);
-    const idx = current.findIndex((ad: any) => ad.id === id);
-    if (idx !== -1) {
-      current[idx].clicks = (current[idx].clicks || 0) + 1;
-      await saveSetting('advertisements-list', current);
-      return res.status(200).json({ success: true, data: current[idx] });
+    const advertisement = await prisma.advertisement.findUnique({ where: { id } });
+    if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
+      const updated = await prisma.advertisement.update({
+        where: { id },
+        data: { clicks: { increment: 1 } }
+      });
+      return res.status(200).json({ success: true, data: updated });
     }
     return res.status(404).json({ success: false, error: 'Advertisement not found' });
   } catch (err: any) {
@@ -443,15 +444,17 @@ router.put('/advertisements/:id/click', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/advertisements/:id/impression', async (req: Request, res: Response) => {
+router.post('/advertisements/:id/impression', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const current = await getSetting('advertisements-list', []);
-    const idx = current.findIndex((ad: any) => ad.id === id);
-    if (idx !== -1) {
-      current[idx].impressions = (current[idx].impressions || 0) + 1;
-      await saveSetting('advertisements-list', current);
-      return res.status(200).json({ success: true, data: current[idx] });
+    const { id: advertisementId } = req.params;
+    console.log("Advertisement ID:", advertisementId);
+    const advertisement = await prisma.advertisement.findUnique({ where: { id: advertisementId } });
+    if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
+      const updated = await prisma.advertisement.update({
+        where: { id: advertisementId },
+        data: { impressions: { increment: 1 } }
+      });
+      return res.status(200).json({ success: true, data: updated });
     }
     return res.status(404).json({ success: false, error: 'Advertisement not found' });
   } catch (err: any) {
@@ -474,13 +477,16 @@ router.post('/social-posts', adminGuard, async (req: Request, res: Response) => 
 
 router.post('/advertisements', adminGuard, async (req: Request, res: Response) => {
   try {
-    const newItem = req.body;
-    newItem.id = 'ad-' + Date.now();
-    newItem.clicks = 0;
-    newItem.impressions = 0;
-    const current = await getSetting('advertisements-list', []);
-    current.push(newItem);
-    await saveSetting('advertisements-list', current);
+    const { title, position, mediaUrl, targetUrl, status } = req.body;
+    const newItem = await prisma.advertisement.create({
+      data: {
+        title,
+        position,
+        mediaUrl,
+        targetUrl,
+        status: status || 'active'
+      }
+    });
     return res.status(201).json({ success: true, data: newItem });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
@@ -736,14 +742,14 @@ router.get('/notifications', adminGuard, async (req: Request, res: Response) => 
   try {
     const list = await prisma.notification.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { user: true }
+      include: { user: true, template: true }
     });
     
     const formatted = list.map(n => ({
       id: n.id,
-      title: n.title,
-      message: n.message,
-      type: n.type || 'Campaign',
+      title: n.template?.subject || 'Notification',
+      message: n.template?.body || '',
+      type: n.template?.channel || 'Campaign',
       sentTo: n.user?.email || 'All Users',
       createdAt: n.createdAt.toISOString().split('T')[0]
     }));
