@@ -55,6 +55,11 @@ export class Login implements OnInit {
     if (this.router.url.includes('/register')) {
       this.isSignUp.set(true);
     }
+    const emailParam = this.route.snapshot.queryParams['email'];
+    if (emailParam) {
+      this.registerForm.patchValue({ email: emailParam });
+      this.loginForm.patchValue({ email: emailParam });
+    }
   }
 
   toggleMode() {

@@ -9,6 +9,7 @@ import {ToastService} from '../../shared/components/toast/toast.service';
 import {HttpClient} from '@angular/common/http';
 import {ApiService} from '../../services/api.service';
 import {AppButton} from '../../shared/components/app-button/app-button';
+import {SettingsService} from '../../core/services/settings.service';
 
 @Component({
   selector: 'app-checkout',
@@ -23,8 +24,10 @@ export class CheckoutComponent {
   toast = inject(ToastService);
   http = inject(HttpClient);
   api = inject(ApiService);
+  settingsService = inject(SettingsService);
 
   isSubmitting = signal(false);
+  showAuthModal = signal(false);
 
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification($event: any): string | undefined {
@@ -71,25 +74,38 @@ export class CheckoutComponent {
   availableGateways = signal<any[]>([]);
 
   constructor() {
-    this.http.get<any>('/api/settings/payment-gateways').subscribe({
-      next: (res) => {
-        if (res.success) {
-          const actives = res.data.filter((g: any) => g.isEnabled);
-          this.availableGateways.set(actives);
-          if (actives.length > 0) {
-            this.paymentMethod.set(actives[0].gatewayCode);
-          }
-        }
-      }
-    });
+    effect(() => {
+       const paySettings = this.settingsService.payment();
+       const actives = [];
+       if (paySettings?.razorpayEnabled) {
+          actives.push({ gatewayCode: 'RAZORPAY', displayName: 'Razorpay', keyId: paySettings.razorpayKeyId });
+       }
+       if (paySettings?.codEnabled) {
+          actives.push({ gatewayCode: 'COD', displayName: 'Cash on Delivery (COD)' });
+       }
+       this.availableGateways.set(actives);
+       if (actives.length > 0) {
+         this.paymentMethod.set(actives[0].gatewayCode);
+       }
+    }, { allowSignalWrites: true });
 
     effect(() => {
       // Initialize with active user profile details
-      const user = this.ds.activeUser();
+      const user = this.ds.userProfile();
       if (user) {
         this.name.set((user as any).firstName ? ((user as any).firstName + ' ' + ((user as any).lastName || '')) : user.name);
         this.email.set(user.email);
         if (user.phone) this.phone.set(user.phone);
+      } else {
+        this.name.set('');
+        this.email.set('');
+        this.phone.set('');
+        // Prompt for option popup if guest
+        setTimeout(() => {
+          if (!this.isLoggedIn()) {
+            this.showAuthModal.set(true);
+          }
+        }, 300);
       }
     }, {allowSignalWrites: true});
 
@@ -97,17 +113,26 @@ export class CheckoutComponent {
     if (state && state.product) {
        this.checkoutItems.set([{ product: state.product, quantity: state.quantity || 1 }]);
     } else {
-       // if no state, try to look at cart or redirect
-       setTimeout(() => {
-         if (this.checkoutItems().length === 0) {
-           this.toast.error('No items to checkout. Redirecting to home.');
-           this.router.navigate(['/']);
-         }
-       }, 500);
+        // if no state, retrieve from cart or redirect
+        setTimeout(() => {
+          if (this.checkoutItems().length === 0) {
+            const cartItems = this.ds.cart();
+            if (cartItems && cartItems.length > 0) {
+              this.checkoutItems.set(cartItems);
+            } else {
+              this.toast.error('No items to checkout. Redirecting to home.');
+              this.router.navigate(['/']);
+            }
+          }
+        }, 500);
     }
   }
 
-  isLoggedIn = computed(() => !!this.ds.activeUser());
+  isLoggedIn = computed(() => !!this.ds.userProfile());
+
+  continueAsGuest() {
+    this.showAuthModal.set(false);
+  }
 
   getPrice(p: any) {
     const role = this.ds.userRole();
@@ -121,35 +146,45 @@ export class CheckoutComponent {
       return;
     }
 
-    if (!this.isLoggedIn()) {
-      this.toast.error('Please login to place an order.');
-      this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+    if (!this.accAddr1() || !this.accCity() || !this.accState() || !this.accPin() || !this.name() || !this.phone() || !this.email()) {
+      this.toast.error('Please fill all required address and contact details.');
       return;
     }
 
-    if (!this.accAddr1() || !this.accCity() || !this.accState() || !this.accPin() || !this.name() || !this.phone()) {
-      this.toast.error('Please fill all required address and contact details.');
+    const emailStr = this.email()?.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailStr)) {
+      this.toast.error('Please enter a valid email address.');
       return;
     }
 
     this.isSubmitting.set(true);
 
-    const payload = {
+    const payload: any = {
       items: this.checkoutItems().map(ci => ({
         productId: ci.product.id,
         quantity: ci.quantity
       })),
       shippingAddress: {
         addressLine1: this.accAddr1(),
-        addressLine2: this.accAddr2(),
+        addressLine2: this.accAddr2() || '',
         city: this.accCity(),
         state: this.accState(),
         pincode: this.accPin(),
-        country: this.accCountry()
+        country: this.accCountry() || 'India'
       },
-      paymentMethod: 'COD' // initial order creation is default 'COD' unless handled differently by API. Actually backend maps `paymentMethod` directly. Let's pass what user selected.
+      paymentMethod: this.paymentMethod()
     };
-    payload.paymentMethod = this.paymentMethod();
+
+    if (!this.isLoggedIn()) {
+      payload.customerType = 'GUEST';
+      payload.guestName = this.name();
+      payload.guestEmail = this.email();
+      payload.guestPhone = this.phone();
+      payload.guestSessionId = this.ds.guestSessionId();
+    } else {
+      payload.customerType = 'REGISTERED';
+    }
 
     try {
       this.loading.startLoading();
@@ -180,10 +215,12 @@ export class CheckoutComponent {
                 }).toPromise();
                 this.loading.stopLoading();
                 this.toast.success('Payment successful!');
+                this.ds.cart.set([]);
                 this.router.navigate(['/order-success'], { state: { order: orderData } });
               } catch (err: any) {
                 this.loading.stopLoading();
                 this.toast.error('Payment verification failed.');
+                this.ds.cart.set([]);
                 this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
               } finally {
                 this.isSubmitting.set(false);
@@ -207,6 +244,7 @@ export class CheckoutComponent {
               this.loading.stopLoading();
               this.toast.error(response.error.description);
               this.isSubmitting.set(false);
+              this.ds.cart.set([]);
               this.router.navigate(['/order-success'], { state: { order: orderData, paymentFailed: true } });
           });
           this.loading.stopLoading();
@@ -220,6 +258,7 @@ export class CheckoutComponent {
         this.loading.stopLoading();
         this.toast.success('Order placed successfully!');
         this.isSubmitting.set(false);
+        this.ds.cart.set([]);
         this.router.navigate(['/order-success'], { state: { order: orderData } });
       }
     } catch (e: any) {

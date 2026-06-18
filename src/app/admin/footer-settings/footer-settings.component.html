@@ -1,0 +1,623 @@
+<div class="space-y-6">
+  <!-- HEADER PANEL -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight text-zinc-900 dark:text-white uppercase">Footer Configuration</h1>
+      <p class="text-xs text-zinc-400 font-medium">Control the global footer content, company statistics, trust ribbons, and links configurations in real time.</p>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <button (click)="loadFooterData()" class="h-10 px-4 flex items-center gap-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors cursor-pointer border-none">
+        <mat-icon class="text-base">refresh</mat-icon>
+        Sync Data
+      </button>
+      <button (click)="saveGeneralSettings()" class="h-10 px-5 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-blue-500/10 cursor-pointer border-none">
+        <mat-icon class="text-base">save</mat-icon>
+        Save General Settings
+      </button>
+    </div>
+  </div>
+
+  @if (footerLoading()) {
+    <div class="py-12 text-center flex flex-col items-center justify-center gap-3">
+      <div class="h-8 w-8 border-3 border-zinc-300 border-t-blue-600 rounded-full animate-spin"></div>
+      <p class="text-xs text-zinc-400 font-mono uppercase tracking-widest">Querying database settings...</p>
+    </div>
+  } @else {
+    <!-- TAB CONFIGURATION ROW -->
+    <div class="flex flex-wrap gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+      <button (click)="activeTab.set('company')" 
+              [class]="activeTab() === 'company' ? 'bg-zinc-900 dark:bg-zinc-800 text-white font-black' : 'hover:bg-zinc-200 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-bold'"
+              class="px-4 py-2 text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none transition-all flex items-center gap-2">
+        <mat-icon class="text-base">business</mat-icon>
+        Company & Mobile
+      </button>
+      
+      <button (click)="activeTab.set('groups')" 
+              [class]="activeTab() === 'groups' ? 'bg-zinc-900 dark:bg-zinc-800 text-white font-black' : 'hover:bg-zinc-200 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-bold'"
+              class="px-4 py-2 text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none transition-all flex items-center gap-2">
+        <mat-icon class="text-base">lan</mat-icon>
+        Link Groups ({{ groups().length }})
+      </button>
+      
+      <button (click)="activeTab.set('newsletter')" 
+              [class]="activeTab() === 'newsletter' ? 'bg-zinc-900 dark:bg-zinc-800 text-white font-black' : 'hover:bg-zinc-200 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-bold'"
+              class="px-4 py-2 text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none transition-all flex items-center gap-2">
+        <mat-icon class="text-base">mark_as_unread</mat-icon>
+        Newsletter & Socials
+      </button>
+      
+      <button (click)="activeTab.set('payments')" 
+              [class]="activeTab() === 'payments' ? 'bg-zinc-900 dark:bg-zinc-800 text-white font-black' : 'hover:bg-zinc-200 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 font-bold'"
+              class="px-4 py-2 text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none transition-all flex items-center gap-2">
+        <mat-icon class="text-base">verified</mat-icon>
+        Trust & Custom Branding
+      </button>
+    </div>
+
+    <!-- TAB CONTENT BOXES -->
+    <div class="space-y-8">
+      
+      <!-- TAB 1: COMPANY INFO -->
+      @if (activeTab() === 'company') {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn">
+          <!-- Left Column Fields form -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs space-y-6">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+                  <mat-icon class="text-base text-blue-500">info</mat-icon>
+                  Corporate Profile Settings
+                </h3>
+              </div>
+              <form [formGroup]="companyForm" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1.5 col-span-2">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Company Legal Name</label>
+                    <input type="text" formControlName="companyName" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. 3D Galaxy India">
+                  </div>
+                  
+                  <div class="space-y-1.5 col-span-2">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Logo image Path or External URL</label>
+                    <div class="flex gap-2">
+                      <input type="text" formControlName="companyLogo" class="flex-1 px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="URL prefix or absolute path...">
+                      <label class="px-4 h-11 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold uppercase rounded-xl flex items-center justify-center cursor-pointer transition-colors border-none shrink-0">
+                        <mat-icon class="mr-1.5 text-base">cloud_upload</mat-icon>
+                        Choose File
+                        <input type="file" #fileIn (change)="triggerLogoSimulatedUrl(fileIn)" class="hidden" accept="image/*">
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5 col-span-2">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Footer Short Description</label>
+                    <textarea formControlName="footerDescription" rows="4" class="w-full p-4 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium leading-relaxed" placeholder="A direct introductory pitch displayed in the footer first column..."></textarea>
+                  </div>
+
+                  <div class="space-y-1.5 col-span-2">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Corporate Address</label>
+                    <input type="text" formControlName="address" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="Physical location of company headquarters...">
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Main Phone Contact</label>
+                    <input type="text" formControlName="phone" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">General Corporate Email</label>
+                    <input type="email" formControlName="email" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Support Help Desk Email</label>
+                    <input type="email" formControlName="supportEmail" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Working Office Hours</label>
+                    <input type="text" formControlName="workingHours" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Mon - Sat: 9:00 AM - 6:00 PM">
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right Column Mobile configurations -->
+          <div class="space-y-6">
+            <div class="bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs space-y-6">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                  <mat-icon class="text-base text-purple-500">cell_tower</mat-icon>
+                  Mobile Layout Config
+                </h3>
+              </div>
+              <form [formGroup]="mobileForm" class="space-y-5">
+                <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Enable Mobile Footer</p>
+                    <span class="text-[9px] text-zinc-500">Render streamlined bottom layouts</span>
+                  </div>
+                  <input type="checkbox" formControlName="enableMobileFooter" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Mobile Footer Subtext</label>
+                  <input type="text" formControlName="mobileFooterText" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="Centered small text on smartphones...">
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Mobile Custom Quick Links</label>
+                  <textarea formControlName="mobileFooterLinks" rows="3" class="w-full p-4 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="Format: Label|/route, Label2|/route2"></textarea>
+                  <span class="text-[9px] text-zinc-500 leading-relaxed block">Comma-separated format. Example: <code class="font-bold">Contact Us|/contact,Privacy Policy|/legal/privacy</code></span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 2: LINK GROUPS & LINKS -->
+      @if (activeTab() === 'groups') {
+        <div class="space-y-6 animate-fadeIn">
+          <div class="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-900 pb-3">
+            <div>
+              <h2 class="text-sm font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-200">Footer Groups Hierarchy</h2>
+              <p class="text-[10px] text-zinc-400">Add nested folders. Create columns representing link groups & manage nested anchors.</p>
+            </div>
+            <button (click)="openGroupCreate()" class="h-10 px-4 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border-none shadow-md shadow-blue-500/10">
+              <mat-icon class="text-base">add_circle</mat-icon>
+              Add New Group
+            </button>
+          </div>
+
+          <!-- Collapsible grid or groups card list -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (grp of groups(); track grp.id) {
+              <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4">
+                
+                <div>
+                  <div class="flex justify-between items-start border-b border-zinc-100 dark:border-zinc-800/60 pb-3">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-zinc-800 dark:text-white font-sans font-black uppercase text-[11px] tracking-wider">{{ grp.title }}</span>
+                        @if (!grp.isActive) {
+                          <span class="px-1.5 py-0.5 text-[8px] bg-amber-500/10 text-amber-500 rounded font-black uppercase tracking-widest">Draft</span>
+                        }
+                      </div>
+                      <span class="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Weight/Sort Order: {{ grp.sortOrder }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <button (click)="openGroupEdit(grp)" class="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors cursor-pointer border-none bg-none">
+                        <mat-icon class="text-sm">edit</mat-icon>
+                      </button>
+                      <button (click)="deleteGroup(grp.id)" class="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-red-500 rounded-lg transition-colors cursor-pointer border-none bg-none">
+                        <mat-icon class="text-sm">delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Internal Nested Links List -->
+                  <div class="mt-4 space-y-2">
+                    <p class="text-[9px] font-black uppercase tracking-widest text-zinc-500">Navigation Anchors</p>
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      @let childLinks = links();
+                      @for (lnk of childLinks; track lnk.id) {
+                        @if (lnk.groupId === grp.id) {
+                          <div class="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-850 rounded-xl text-[10px]">
+                            <div class="flex items-center gap-2 min-w-0">
+                              <span class="truncate font-bold text-zinc-700 dark:text-zinc-300" [class.line-through]="!lnk.isActive">{{ lnk.title }}</span>
+                              @if (lnk.openInNewTab) {
+                                <mat-icon class="text-[10px] h-3 w-3 text-zinc-400">open_in_new</mat-icon>
+                              }
+                            </div>
+
+                            <div class="flex items-center gap-1 shrink-0">
+                              <button (click)="openLinkEdit(lnk)" class="p-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-blue-500 rounded cursor-pointer border-none bg-none">
+                                <mat-icon class="text-xs">edit</mat-icon>
+                              </button>
+                              <button (click)="deleteLink(lnk.id)" class="p-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-red-500 rounded cursor-pointer border-none bg-none">
+                                <mat-icon class="text-xs">delete_outline</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      } @empty {
+                        <p class="text-[9px] text-zinc-400 italic">No anchors added yet.</p>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 flex justify-end">
+                  <button (click)="openLinkCreate(grp.id)" class="px-2.5 h-7 flex items-center gap-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-zinc-800 dark:text-white font-black text-[9px] uppercase tracking-wider rounded-lg transition-all cursor-pointer border-none">
+                    <mat-icon class="text-xs">add</mat-icon>
+                    Add Anchor
+                  </button>
+                </div>
+
+              </div>
+            } @empty {
+              <div class="col-span-full py-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl">
+                <mat-icon class="text-zinc-300 text-6xl">list_alt</mat-icon>
+                <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300 mt-2">No columns declared</h3>
+                <p class="text-[10px] text-zinc-400 mt-1 max-w-sm mx-auto">Create a footer group column structure to hold lists of customer-facing redirects and pages.</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- TAB 3: NEWSLETTER & SOCIALS -->
+      @if (activeTab() === 'newsletter') {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
+          <!-- Newsletter setup card -->
+          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-6 md:p-8 space-y-6">
+            <div>
+              <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                <mat-icon class="text-base text-indigo-500">mail</mat-icon>
+                Newsletter Aggregators Config
+              </h3>
+            </div>
+            
+            <form [formGroup]="newsletterForm" class="space-y-4">
+              <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Newsletter Subscription Block</p>
+                  <span class="text-[9px] text-zinc-500">Inject dynamic email capture fields in footer</span>
+                </div>
+                <input type="checkbox" formControlName="enabled" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Newsletter Row Title</label>
+                <input type="text" formControlName="title" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Stay Connected">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Short Row Description</label>
+                <input type="text" formControlName="description" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Sign up to receive news about our printers...">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Subscribe Action Button Label</label>
+                <input type="text" formControlName="buttonText" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Subscribe">
+              </div>
+            </form>
+          </div>
+
+          <!-- Social links list card -->
+          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-6 md:p-8 space-y-6">
+            <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
+              <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                <mat-icon class="text-base text-cyan-500">share</mat-icon>
+                Social Media Coordinates
+              </h3>
+              <button (click)="openSocialCreate()" class="px-2.5 h-7 flex items-center gap-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-zinc-800 dark:text-white font-black text-[9px] uppercase tracking-wider rounded-lg transition-all cursor-pointer border-none">
+                <mat-icon class="text-xs">add</mat-icon>
+                Add Handles
+              </button>
+            </div>
+
+            <div class="space-y-3.5 max-h-72 overflow-y-auto pr-1">
+              @for (soc of socialLinks(); track soc.id) {
+                <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-lg">🌍</span>
+                    <div class="min-w-0 leading-tight">
+                      <div class="flex items-center gap-2">
+                        <p class="text-[11px] font-black text-zinc-800 dark:text-white uppercase tracking-wider">{{ soc.platform }}</p>
+                        @if (!soc.isActive) {
+                          <span class="text-[8px] bg-amber-500/10 text-amber-500 px-1 py-0.2 rounded font-black uppercase">Draft</span>
+                        }
+                      </div>
+                      <span class="text-[9px] text-zinc-400 truncate block font-mono">{{ soc.url }}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button (click)="openSocialEdit(soc)" class="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors cursor-pointer border-none bg-none">
+                      <mat-icon class="text-sm">edit</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              } @empty {
+                <p class="text-xs text-zinc-400 italic">No social media links configured.</p>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 4: TRUST & BRANDING -->
+      @if (activeTab() === 'payments') {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
+          
+          <!-- AJR Branding & Copyright elements -->
+          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-6 md:p-8 space-y-6">
+            <div>
+              <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                <mat-icon class="text-base text-yellow-500">copyright</mat-icon>
+                Copyright, Licenses & Developer Credit
+              </h3>
+            </div>
+
+            <form [formGroup]="copyrightForm" class="space-y-4">
+              <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl col-span-2">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Enable Developer Branding Credit</p>
+                  <span class="text-[9px] text-zinc-500">Show "Developed By AJR Digital Hub" at footer base</span>
+                </div>
+                <input type="checkbox" formControlName="enableBranding" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Copyright Banner Text</label>
+                <input type="text" formControlName="copyrightText" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. © 2026 3D Galaxy India. All Rights Reserved.">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Copyright Secondary Subtext</label>
+                <input type="text" formControlName="poweredByText" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Powered by Galaxy Engine">
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Developer Credit Label Text</label>
+                <input type="text" formControlName="developedByText" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Developed by AJR Digital Hub">
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Animation Style Preset</label>
+                  <select formControlName="animationType" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white">
+                    <option value="Gradient Flow">Gradient Flow</option>
+                    <option value="Flip Hover">Flip Hover</option>
+                    <option value="Pulse Glow">Pulse Glow</option>
+                    <option value="Glow">Classic Aura Glow</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Interactive Glow Aura</label>
+                  <div class="flex items-center h-11 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl justify-between">
+                    <span class="text-[9px] text-zinc-500">Glow Active</span>
+                    <input type="checkbox" formControlName="glowEffect" class="h-4.5 w-4.5 rounded text-blue-600 focus:ring-blue-500">
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Developer Destination Link</label>
+                <input type="text" formControlName="brandUrl" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="E.g. https://ajrdigitalhub.com">
+              </div>
+            </form>
+          </div>
+
+          <!-- Trust ribbon integrations & payments -->
+          <div class="space-y-6">
+            
+            <!-- Trust Badges Checkbox list -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-6 md:p-8 space-y-4">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                  <mat-icon class="text-base text-emerald-500">gavel</mat-icon>
+                  Active Ribbon Badges
+                </h3>
+              </div>
+
+              <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                @for (bdg of trustBadges(); track bdg.id) {
+                  <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+                    <div class="flex items-center gap-2.5">
+                      <mat-icon class="text-emerald-500">{{ bdg.iconUrl || 'verified_user' }}</mat-icon>
+                      <div class="leading-tight">
+                        <p class="text-[10px] font-black text-zinc-800 dark:text-white uppercase tracking-wider">{{ bdg.title }}</p>
+                        <span class="text-[9px] text-zinc-400 capitalize block font-mono">{{ bdg.description || 'Verified service badge' }}</span>
+                      </div>
+                    </div>
+
+                    <input type="checkbox" 
+                           [checked]="bdg.isActive" 
+                           (change)="onBadgeStatusChange(bdg, checkboxRef.checked)" #checkboxRef
+                           class="h-5 w-5 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-500">
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Payment gateway visualizers -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-2xl p-6 md:p-8 space-y-4">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                  <mat-icon class="text-base text-purple-500">payment</mat-icon>
+                  Checkouts Supported Gateways
+                </h3>
+              </div>
+
+              <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                @for (pay of paymentIcons(); track pay.id) {
+                  <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+                    <div class="flex items-center gap-2.5">
+                      <span class="text-lg">💳</span>
+                      <div class="leading-tight">
+                        <p class="text-[10px] font-black text-zinc-800 dark:text-white uppercase tracking-wider">{{ pay.name }}</p>
+                        <span class="text-[9px] text-zinc-400 truncate block font-mono">{{ pay.imageUrl || 'Native card icon representation' }}</span>
+                      </div>
+                    </div>
+
+                    <input type="checkbox" 
+                           [checked]="pay.isActive" 
+                           (change)="onPaymentIconStatusChange(pay, payCheck.checked)" #payCheck
+                           class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+                  </div>
+                }
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+</div>
+
+<!-- ================= DIALOG / FORM LAYER FOR CREATE/EDIT ================= -->
+
+<!-- DIALOG 1: LINK GROUP FORM -->
+@if (groupFormVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn">
+    <!-- Backdrop overlay -->
+    <div (click)="groupFormVisible.set(false)" class="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs"></div>
+    
+    <!-- Modal panel body -->
+    <div class="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 relative max-h-[90vh] overflow-y-auto space-y-4 text-zinc-800 dark:text-zinc-100">
+      <h3 class="font-black text-sm uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800 pb-2 flex items-center gap-1.5 text-zinc-900 dark:text-white">
+        <mat-icon class="text-lg text-blue-500">edit_note</mat-icon>
+        {{ groupFormTitle() }}
+      </h3>
+
+      <div class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Group Name/Column Title</label>
+          <input type="text" [value]="groupTitleValue()" (input)="groupTitleValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. Quick Links">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Sort Weight (Ascending)</label>
+          <input type="number" [value]="groupSortValue()" (input)="groupSortValue.set(+$any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Is Group Column Active</p>
+            <span class="text-[9px] text-zinc-500">Toggling off conceals the entire column</span>
+          </div>
+          <input type="checkbox" [checked]="groupActiveValue()" (change)="groupActiveValue.set($any($event.target).checked)" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+        <button (click)="groupFormVisible.set(false)" class="h-10 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer border-none transition-colors">Cancel</button>
+        <button (click)="saveGroup()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl cursor-pointer border-none shadow-md shadow-blue-500/10">Save Group Settings</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- DIALOG 2: LINK ELEMENT FORM -->
+@if (linkFormVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn">
+    <!-- Backdrop overlay -->
+    <div (click)="linkFormVisible.set(false)" class="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs"></div>
+    
+    <!-- Modal panel body -->
+    <div class="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 relative max-h-[90vh] overflow-y-auto space-y-4 text-zinc-800 dark:text-zinc-100">
+      <h3 class="font-black text-sm uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800 pb-2 flex items-center gap-1.5 text-zinc-900 dark:text-white">
+        <mat-icon class="text-lg text-blue-500">link</mat-icon>
+        {{ activeEditLinkId() ? 'Edit Anchor Settings' : 'Create Anchor Settings' }}
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Target parent column -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Destination Parent Group</label>
+          <select [ngModel]="linkGroupIdValue()" (ngModelChange)="linkGroupIdValue.set($event)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white">
+            @for (g of groups(); track g.id) {
+              <option [value]="g.id">{{ g.title }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Anchor Display Label</label>
+          <input type="text" [value]="linkTitleValue()" (input)="linkTitleValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. About Us">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Destination URL/Route Path</label>
+          <input type="text" [value]="linkUrlValue()" (input)="linkUrlValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="E.g. /about or https://google.com">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Sort Weight (Ascending)</label>
+          <input type="number" [value]="linkSortValue()" (input)="linkSortValue.set(+$any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Open In New Window/Tab</p>
+            <span class="text-[9px] text-zinc-500">Forces target="_blank" execution</span>
+          </div>
+          <input type="checkbox" [checked]="linkOpenNewTabValue()" (change)="linkOpenNewTabValue.set($any($event.target).checked)" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Is Anchor Active</p>
+            <span class="text-[9px] text-zinc-500">Draft blocks visibility on frontends</span>
+          </div>
+          <input type="checkbox" [checked]="linkActiveValue()" (change)="linkActiveValue.set($any($event.target).checked)" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+        <button (click)="linkFormVisible.set(false)" class="h-10 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer border-none transition-colors">Cancel</button>
+        <button (click)="saveLink()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl cursor-pointer border-none shadow-md shadow-blue-500/10">Save Anchor</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- DIALOG 3: SOCIAL MEDIA HANDLE FORM -->
+@if (socialFormVisible()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center animate-fadeIn">
+    <!-- Backdrop overlay -->
+    <div (click)="socialFormVisible.set(false)" class="absolute inset-0 bg-neutral-950/75 backdrop-blur-xs"></div>
+    
+    <!-- Modal panel body -->
+    <div class="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 relative max-h-[90vh] overflow-y-auto space-y-4 text-zinc-800 dark:text-zinc-100">
+      <h3 class="font-black text-sm uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800 pb-2 flex items-center gap-1.5 text-zinc-900 dark:text-white">
+        <mat-icon class="text-lg text-blue-500">share</mat-icon>
+        Social Handle Settings
+      </h3>
+
+      <div class="space-y-4">
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Platform/Network Name</label>
+          <input type="text" [value]="socialPlatformValue()" (input)="socialPlatformValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium" placeholder="E.g. GitHub or LinkedIn">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Direct Handle Link URL</label>
+          <input type="text" [value]="socialUrlValue()" (input)="socialUrlValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="E.g. https://instagram.com/3dgalaxy">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Material Icon Token / SVG representer</label>
+          <input type="text" [value]="socialIconValue()" (input)="socialIconValue.set($any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-mono" placeholder="E.g. facebook or support_agent">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black uppercase tracking-wider text-zinc-500">Sort Weight (Ascending)</label>
+          <input type="number" [value]="socialSortValue()" (input)="socialSortValue.set(+$any($event.target).value)" class="w-full px-4 h-11 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-white font-medium">
+        </div>
+
+        <div class="flex items-center justify-between p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/60 rounded-xl">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">Is Handle Live</p>
+            <span class="text-[9px] text-zinc-500">Show/Hide from social links group</span>
+          </div>
+          <input type="checkbox" [checked]="socialActiveValue()" (change)="socialActiveValue.set($any($event.target).checked)" class="h-5 w-5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+        <button (click)="socialFormVisible.set(false)" class="h-10 px-4 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer border-none transition-colors">Cancel</button>
+        <button (click)="saveSocial()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-xl cursor-pointer border-none shadow-md shadow-blue-500/10">Save Handle</button>
+      </div>
+    </div>
+  </div>
+}

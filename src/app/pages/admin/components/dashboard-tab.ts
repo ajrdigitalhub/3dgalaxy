@@ -46,7 +46,7 @@ import { AdminPanel } from '../admin';
       </div>
 
       <!-- SECONDARY KPI STRAPS FOR ACTION ITEMS -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
           <div class="space-y-1">
             <span class="block text-[9px] font-black uppercase text-amber-500 tracking-wider">Active Abandoned Carts</span>
@@ -59,10 +59,19 @@ import { AdminPanel } from '../admin';
         <div class="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
           <div class="space-y-1">
             <span class="block text-[9px] font-black uppercase text-orange-500 tracking-wider">Awaiting Pending Orders</span>
-            <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.pendingOrders ?? 0 }} Orders</span>
+            <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.pendingOrders ?? getPendingOrdersCount() }} Orders</span>
           </div>
           <div class="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
             <mat-icon>pending_actions</mat-icon>
+          </div>
+        </div>
+        <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center justify-between">
+          <div class="space-y-1">
+            <span class="block text-[9px] font-black uppercase text-purple-600 dark:text-purple-400 tracking-wider">Guest Checkout Sales</span>
+            <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ getGuestOrdersCount() }} Orders (₹{{ getGuestSalesTotal() | number:'1.0-0' }})</span>
+          </div>
+          <div class="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500">
+            <mat-icon>account_circle</mat-icon>
           </div>
         </div>
       </div>
@@ -116,4 +125,18 @@ import { AdminPanel } from '../admin';
 })
 export class AdminDashboardTab {
   @Input({ required: true }) admin!: AdminPanel;
+
+  getPendingOrdersCount(): number {
+    return this.admin.ds.orders().filter((o: any) => o.status === 'Pending').length;
+  }
+
+  getGuestOrdersCount(): number {
+    return this.admin.ds.orders().filter((o: any) => o.customerType === 'GUEST').length;
+  }
+
+  getGuestSalesTotal(): number {
+    return this.admin.ds.orders()
+      .filter((o: any) => o.customerType === 'GUEST')
+      .reduce((acc: number, o: any) => acc + (o.grandTotal || o.totalAmount || 0), 0);
+  }
 }

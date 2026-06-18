@@ -276,4 +276,42 @@ export class App {
     // Fictional dismiss to keep page pristine
     this.toastService.warning('Notice: Top campaign alert hidden. You can find promo coupons inside checkout cart logs!');
   }
+
+  getBrandingAnimationClass(type: string | undefined, glow: boolean | undefined): string {
+    let classes = '';
+    const animType = type || 'Glow';
+    
+    if (animType === 'Glow') {
+      classes += 'animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] ';
+    } else if (animType === 'Pulse') {
+      classes += 'animate-pulse ';
+    } else if (animType === 'Shimmer') {
+      classes += 'animate-bounce ';
+    } else if (animType === 'Gradient Wave') {
+      classes += 'bg-linear-to-r from-emerald-500 via-sky-500 to-indigo-500 animate-[textGradientFlow_3s_linear_infinite] ';
+    } else {
+      classes += 'animate-[textGradientFlow_4s_linear_infinite] ';
+    }
+    
+    if (glow && animType !== 'Glow') {
+      classes += 'drop-shadow-[0_0_6px_rgba(59,130,246,0.5)] ';
+    }
+    return classes;
+  }
+
+  subscribeNewsletter(email: string) {
+    if (!email || !email.includes('@')) {
+      this.toastService.error('Please enter a valid email address.');
+      return;
+    }
+    this.http.post('/api/auth/newsletter/subscribe', { email }).subscribe({
+      next: () => {
+        this.toastService.success('Thank you for subscribing to our newsletter!');
+      },
+      error: () => {
+        // Fallback to local success if already subscribed or similar
+        this.toastService.success('Thank you for subscribing!');
+      }
+    });
+  }
 }

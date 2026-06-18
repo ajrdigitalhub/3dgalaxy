@@ -250,14 +250,18 @@
             <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-455 uppercase">SHIPPING DISPATCH DESTINATION</h3>
             <div class="text-xs text-neutral-650 dark:text-neutral-300 space-y-1.5 leading-relaxed font-mono">
               <p class="font-extrabold text-neutral-950 dark:text-white">
-                {{ ord.shippingAddress?.fullName || (ord.customer?.user?.first_name + ' ' + ord.customer?.user?.last_name) }}
+                {{ ord.guestName || ord.shippingAddress?.fullName || (ord.customer?.user?.first_name + ' ' + ord.customer?.user?.last_name) }}
               </p>
-              <p>{{ ord.shippingAddress?.addressLine1 }}</p>
-              @if (ord.shippingAddress?.addressLine2) {
-                <p>{{ ord.shippingAddress?.addressLine2 }}</p>
+              @if (ord.guestAddress) {
+                <p>{{ ord.guestAddress }}</p>
+              } @else {
+                <p>{{ ord.shippingAddress?.addressLine1 }}</p>
+                @if (ord.shippingAddress?.addressLine2) {
+                  <p>{{ ord.shippingAddress?.addressLine2 }}</p>
+                }
+                <p>{{ ord.shippingAddress?.city }}, {{ ord.shippingAddress?.state }} - {{ ord.shippingAddress?.postalCode }}</p>
               }
-              <p>{{ ord.shippingAddress?.city }}, {{ ord.shippingAddress?.state }} - {{ ord.shippingAddress?.postalCode }}</p>
-              <p class="text-neutral-450 pt-1 font-mono text-[11px]">Phone contacts: {{ ord.shippingAddress?.phone || ord.customer?.user?.mobile || 'Not provided' }}</p>
+              <p class="text-neutral-450 pt-1 font-mono text-[11px]">Phone contacts: {{ ord.guestPhone || ord.shippingAddress?.phone || ord.customer?.user?.mobile || 'Not provided' }}</p>
             </div>
           </div>
 
@@ -294,13 +298,20 @@
           <!-- Profile details -->
           <div class="text-xs space-y-2 border-b border-white/5 pb-4 text-left">
             <h4 class="text-sm font-black text-white">
-              {{ ord.customer?.user?.first_name || 'Guest User' }} {{ ord.customer?.user?.last_name || '' }}
+              {{ ord.guestName || ord.customer?.user?.first_name || 'Guest User' }} {{ ord.guestName ? '' : (ord.customer?.user?.last_name || '') }}
             </h4>
             <div class="space-y-1 font-mono text-[11px] text-neutral-400">
-              <p><span class="text-neutral-500 uppercase font-semibold">EMAIL:</span> {{ ord.customer?.user?.email }}</p>
-              <p><span class="text-neutral-500 uppercase font-semibold">MOBILE:</span> {{ ord.customer?.user?.mobile || ord.customer?.phone || ord.shippingAddress?.phone || 'Not logged' }}</p>
+              <p class="flex items-center gap-2"><span class="text-neutral-500 uppercase font-semibold">ACCOUNT:</span>
+                @if (ord.customerType === 'GUEST') {
+                  <span class="px-1.5 py-0.5 bg-orange-600 text-white text-[7px] font-black rounded tracking-wider">GUEST Checkout</span>
+                } @else {
+                  <span class="px-1.5 py-0.5 bg-blue-600 text-white text-[7px] font-black rounded tracking-wider">Registered Member</span>
+                }
+              </p>
+              <p><span class="text-neutral-500 uppercase font-semibold">EMAIL:</span> {{ ord.guestEmail || ord.customer?.user?.email }}</p>
+              <p><span class="text-neutral-500 uppercase font-semibold">MOBILE:</span> {{ ord.guestPhone || ord.customer?.user?.mobile || ord.customer?.phone || ord.shippingAddress?.phone || 'Not logged' }}</p>
               <p><span class="text-neutral-500 uppercase font-semibold">LOYALTY SCORE:</span> <strong class="text-blue-400">{{ ord.customer?.rewardPoints || 0 }} pts</strong></p>
-              <p><span class="text-neutral-500 uppercase font-semibold">GROUP TIER:</span> <strong class="text-amber-400 uppercase">{{ ord.customer?.customerType || 'Retail' }}</strong></p>
+              <p><span class="text-neutral-500 uppercase font-semibold">GROUP TIER:</span> <strong class="text-amber-400 uppercase">{{ ord.customerType || 'RETAIL' }}</strong></p>
             </div>
           </div>
 

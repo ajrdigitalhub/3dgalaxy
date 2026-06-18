@@ -423,6 +423,12 @@ CREATE TABLE IF NOT EXISTS orders (
     discount_amount DECIMAL(10, 2) DEFAULT 0,
     shipping_address_id UUID REFERENCES customer_addresses(id),
     billing_address_id UUID REFERENCES customer_addresses(id),
+    customer_type VARCHAR(20) DEFAULT 'REGISTERED',
+    guest_name VARCHAR(255),
+    guest_email VARCHAR(255),
+    guest_phone VARCHAR(50),
+    guest_address JSONB,
+    guest_session_id VARCHAR(255),
     notes TEXT,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -521,45 +527,9 @@ CREATE TABLE IF NOT EXISTS coupon_usage (
 );
 
 -- CMS & Frontend configuration
-CREATE TABLE IF NOT EXISTS banners (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    title VARCHAR(255),
-    image_url VARCHAR(255) NOT NULL,
-    link_url VARCHAR(255),
-    position VARCHAR(50),
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE IF NOT EXISTS homepage_sections (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    sort_order INT DEFAULT 0,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE IF NOT EXISTS homepage_section_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    section_id UUID NOT NULL REFERENCES homepage_sections(id) ON DELETE CASCADE,
-    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    image_url VARCHAR(255),
-    title VARCHAR(255),
-    sub_title VARCHAR(255),
-    link_url VARCHAR(255),
-    sort_order INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE IF NOT EXISTS theme_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    key_name VARCHAR(100) UNIQUE NOT NULL,
-    value JSONB NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Notification & Comms
 CREATE TABLE IF NOT EXISTS notification_templates (
@@ -940,26 +910,23 @@ CREATE TABLE IF NOT EXISTS search_logs (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS search_settings (
-    id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
-    enable_suggestions BOOLEAN DEFAULT TRUE,
-    enable_recent BOOLEAN DEFAULT TRUE,
-    enable_analytics BOOLEAN DEFAULT TRUE,
-    results_per_page INT DEFAULT 20
-);
 
-CREATE TABLE IF NOT EXISTS payment_gateways (
+
+-- ==============================================================================
+-- 10. NEW FOOTER CONFIGURATION TABLES
+-- ==============================================================================
+
+
+
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    gateway_code VARCHAR(100) UNIQUE NOT NULL,
-    is_enabled BOOLEAN DEFAULT FALSE,
-    is_test_mode BOOLEAN DEFAULT TRUE,
-    key_id VARCHAR(255),
-    key_secret VARCHAR(255),
-    webhook_secret VARCHAR(255),
-    display_name VARCHAR(255),
-    description TEXT,
-    sort_order INT DEFAULT 0,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_data JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

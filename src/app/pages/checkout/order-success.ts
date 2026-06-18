@@ -36,12 +36,31 @@ import {DatastoreService} from '../../services/datastore';
               <span class="text-sm font-black text-neutral-900 dark:text-white">3-5 Business Days</span>
             </div>
           </div>
+
+          <!-- Register options for Guests -->
+          @if (isGuest) {
+            <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-6 text-center space-y-3 mb-8">
+              <h3 class="font-black text-sm uppercase tracking-wider text-indigo-700 dark:text-indigo-400">⚡ Save Time On Your Next Order</h3>
+              <p class="text-xs text-neutral-600 dark:text-neutral-400">
+                Register an account with address synchronization. We will automatically link this order (<strong>{{order.guestEmail}}</strong>) for tracking!
+              </p>
+              <button (click)="navigateToRegister()" class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md">
+                <mat-icon class="text-sm">person_add</mat-icon> Create Account
+              </button>
+            </div>
+          }
         }
 
         <div class="flex flex-col gap-3">
-          <a routerLink="/orders" class="w-full py-4 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all shadow-xl block cursor-pointer">
-            Track Order
-          </a>
+          @if (!isGuest) {
+            <a routerLink="/orders" class="w-full py-4 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all shadow-xl block cursor-pointer">
+              Track Order
+            </a>
+          } @else {
+            <a routerLink="/order-tracking" class="w-full py-4 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all shadow-xl block cursor-pointer">
+              Track Guest Order
+            </a>
+          }
           <a routerLink="/" class="w-full py-4 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all block cursor-pointer">
             Continue Shopping
           </a>
@@ -56,6 +75,7 @@ export class OrderSuccessComponent {
   ds = inject(DatastoreService);
   order: any;
   customerName = '';
+  isGuest = false;
 
   constructor() {
     const state = this.location.getState() as any;
@@ -64,9 +84,17 @@ export class OrderSuccessComponent {
     } else {
       this.router.navigate(['/']);
     }
+    
     const u = this.ds.activeUser();
     if (u) {
       this.customerName = (u as any).firstName ? `${(u as any).firstName} ${(u as any).lastName || ''}` : u.name;
+    } else if (this.order) {
+      this.customerName = this.order.guestName || this.order.customerName || 'Guest Customer';
+      this.isGuest = true;
     }
+  }
+
+  navigateToRegister() {
+    this.router.navigate(['/register'], { queryParams: { email: this.order?.guestEmail } });
   }
 }

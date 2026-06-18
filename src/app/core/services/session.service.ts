@@ -1,12 +1,14 @@
 import { inject, Injectable, signal, NgZone, effect } from '@angular/core';
 import { DatastoreService } from '../../services/datastore';
 import { Router } from '@angular/router';
+import { SettingsService } from './settings.service';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private ds = inject(DatastoreService);
   private router = inject(Router);
   private zone = inject(NgZone);
+  private settingsService = inject(SettingsService);
 
   showWarning = signal<boolean>(false);
   countdown = signal<number>(0);
@@ -37,18 +39,16 @@ export class SessionService {
   }
 
   fetchConfig() {
-    this.ds.api.get<any>('/settings/security').subscribe({
-      next: (res) => {
-        this.config = {
-          sessionTimeout: Number(res.sessionTimeout) || 30,
-          idleWarningTime: Number(res.idleWarningTime) || 25,
-          enableIdleTimeout: res.enableIdleTimeout !== false,
-          enableSessionWarningPopup: res.enableSessionWarningPopup !== false,
-        };
-        this.resetTimer();
-      },
-      error: (err) => console.error('Failed to load session settings', err)
-    });
+    this.settingsService.loadSettings().then(() => {
+      const res = this.settingsService.security() || {};
+      this.config = {
+        sessionTimeout: Number(res.sessionTimeout) || 30,
+        idleWarningTime: Number(res.idleWarningTime) || 25,
+        enableIdleTimeout: res.enableIdleTimeout !== false,
+        enableSessionWarningPopup: res.enableSessionWarningPopup !== false,
+      };
+      this.resetTimer();
+    }).catch((err) => console.error('Failed to load session settings', err));
   }
 
   private setupListeners() {

@@ -8,23 +8,32 @@ import {
   updateShipmentTracking,
   getMyOrders,
   addOrderNotes,
-  resendOrderNotification
+  resendOrderNotification,
+  trackOrder
 } from '../controllers/order';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, optionalAuthenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
 
-router.use(authenticateToken);
+// Guest Tracking endpoint (no auth needed)
+router.post('/track', trackOrder);
 
-router.get('/my-orders', getMyOrders);
-router.get('/', requireRole(['Admin', 'Manager']), getOrders);
-router.get('/:id', getOrderById);
+// Authenticated customer my-orders
+router.get('/my-orders', authenticateToken, getMyOrders);
 
-router.post('/', createOrder);
-router.put('/:id/status', requireRole(['Admin', 'Manager']), updateOrderStatus);
-router.put('/:id/payment', requireRole(['Admin', 'Manager']), updatePaymentStatus);
-router.put('/:id/shipment', requireRole(['Admin', 'Manager']), updateShipmentTracking);
-router.post('/:id/notes', requireRole(['Admin', 'Manager']), addOrderNotes);
-router.post('/:id/resend-notification', requireRole(['Admin', 'Manager']), resendOrderNotification);
+// Admin-only order index list
+router.get('/', authenticateToken, requireRole(['Admin', 'Manager']), getOrders);
+
+// Order detail by ID (optional auth to support guest viewers)
+router.get('/:id', optionalAuthenticateToken, getOrderById);
+
+// Order creation (optional auth to support guest checkout)
+router.post('/', optionalAuthenticateToken, createOrder);
+
+router.put('/:id/status', authenticateToken, requireRole(['Admin', 'Manager']), updateOrderStatus);
+router.put('/:id/payment', authenticateToken, requireRole(['Admin', 'Manager']), updatePaymentStatus);
+router.put('/:id/shipment', authenticateToken, requireRole(['Admin', 'Manager']), updateShipmentTracking);
+router.post('/:id/notes', authenticateToken, requireRole(['Admin', 'Manager']), addOrderNotes);
+router.post('/:id/resend-notification', authenticateToken, requireRole(['Admin', 'Manager']), resendOrderNotification);
 
 export default router;

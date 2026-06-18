@@ -7,6 +7,7 @@ import {DatastoreService, Product, Category} from '../../services/datastore';
 import {LoadingService} from '../../core/services/loading.service';
 import {animate} from 'motion';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+import {SettingsService} from '../../core/services/settings.service';
 
 interface QuickNavItem {
   id: string;
@@ -24,6 +25,7 @@ export class Home {
   ds = inject(DatastoreService);
   router = inject(Router);
   loadingService = inject(LoadingService);
+  settingsService = inject(SettingsService);
   heroContainer = viewChild<ElementRef>('heroContainer');
 
   loading = computed(() => {
@@ -41,7 +43,7 @@ export class Home {
   // Slider State
   currentSlide = signal(0);
   slides = computed(() => {
-    const banners = this.ds.banners().filter(b => b.isActive && b.position === 'Main Carousel');
+    const banners = this.settingsService.getHeroSlides() || [];
     if (banners.length === 0) {
        // fallback placeholder if no banners
        return [{

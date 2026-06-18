@@ -11,6 +11,7 @@ import {
   Campaign,
   Order
 } from '../../services/datastore';
+import {SettingsService} from '../../core/services/settings.service';
 
 import {LoadingService} from '../../core/services/loading.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
@@ -60,6 +61,7 @@ export class AdminPanel {
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
   http = inject(HttpClient);
+  settingsService = inject(SettingsService);
 
   loading = computed(() => {
     if (this.loadingService.isLoading()) return true;
@@ -304,6 +306,13 @@ export class AdminPanel {
   pImages = signal<{url: string, isPrimary: boolean}[]>([]);
   pOptions = signal<{ id?: string, name: string, values: string[] }[]>([]);
   pVariants = signal<any[]>([]);
+  pSpecs = signal<{name: string, value: string}[]>([]);
+  pFeatures = signal<{title: string, description: string}[]>([]);
+  pFaqs = signal<{question: string, answer: string}[]>([]);
+  pDownloads = signal<{title: string, fileUrl: string}[]>([]);
+  pWarranty = signal<{warrantyPeriod: string, warrantyDescription: string}>({warrantyPeriod: '', warrantyDescription: ''});
+  pShipping = signal<{deliveryTime: string, shippingCharges: number, shippingRegions: string}>({deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+  pRelatedIds = signal<string[]>([]);
   pStatus = signal<'active' | 'draft' | 'out_of_stock'>('active');
 
   // Marketing campaign drafts
@@ -446,28 +455,26 @@ export class AdminPanel {
   }
 
   fetchSecuritySettings() {
-    this.ds.api.get<any>('/settings/security').subscribe({
-      next: (res) => {
-        if (res) {
-          this.sessionTimeout.set(Number(res.sessionTimeout) || 30);
-          this.idleWarningTime.set(Number(res.idleWarningTime) || 25);
-          this.enableIdleTimeout.set(res.enableIdleTimeout !== false);
-          this.enableSessionWarningPopup.set(res.enableSessionWarningPopup !== false);
-        }
-      },
-      error: (err) => console.error('Failed to load security settings', err)
-    });
+    this.settingsService.loadSettings().then(() => {
+      const res = this.settingsService.security() || {};
+      this.sessionTimeout.set(Number(res.sessionTimeout) || 30);
+      this.idleWarningTime.set(Number(res.idleWarningTime) || 25);
+      this.enableIdleTimeout.set(res.enableIdleTimeout !== false);
+      this.enableSessionWarningPopup.set(res.enableSessionWarningPopup !== false);
+    }).catch(err => console.error('Failed to load security settings', err));
   }
 
   async saveSecuritySettings() {
     this.isSavingSettings.set(true);
     try {
-      await this.ds.api.put('/settings/security', {
-        sessionTimeout: this.sessionTimeout(),
-        idleWarningTime: this.idleWarningTime(),
-        enableIdleTimeout: this.enableIdleTimeout(),
-        enableSessionWarningPopup: this.enableSessionWarningPopup()
-      }).toPromise();
+      await this.settingsService.saveSettings({
+        security: {
+          sessionTimeout: this.sessionTimeout(),
+          idleWarningTime: this.idleWarningTime(),
+          enableIdleTimeout: this.enableIdleTimeout(),
+          enableSessionWarningPopup: this.enableSessionWarningPopup()
+        }
+      });
       this.toastService.success('Security settings saved');
     } catch {
       this.toastService.error('Failed to save security settings');
@@ -477,24 +484,30 @@ export class AdminPanel {
   }
 
   fetchPaymentGateways() {
-    this.http.get<any>('/api/settings/payment-gateways').subscribe({
-      next: (res: any) => {
-        if (res.success) {
-          this.paymentGateways.set(res.data);
-        }
-      }
-    });
+    this.settingsService.loadSettings().then(() => {
+      const gateways = this.settingsService.payment()?.gateways || [];
+      this.paymentGateways.set(gateways);
+    }).catch(err => console.error('Failed to load payment gateways', err));
   }
 
   updatePaymentGateway(id: string, updates: any) {
-    this.http.put(`/api/settings/payment-gateways/${id}`, updates).subscribe({
-      next: (res: any) => {
-        if (res.success) {
-          this.fetchPaymentGateways();
-          this.toastService.success('Payment gateway updated');
-        }
-      },
-      error: () => this.toastService.error('Failed to update gateway')
+    const currentGateways = [...this.paymentGateways()];
+    const idx = currentGateways.findIndex((g: any) => g.id === id);
+    if (idx >= 0) {
+      currentGateways[idx] = { ...currentGateways[idx], ...updates };
+    } else {
+      currentGateways.push({ id, ...updates });
+    }
+
+    this.settingsService.saveSettings({
+      payment: {
+        gateways: currentGateways
+      }
+    }).then(() => {
+      this.fetchPaymentGateways();
+      this.toastService.success('Payment gateway updated');
+    }).catch(() => {
+      this.toastService.error('Failed to update gateway');
     });
   }
 
@@ -956,8 +969,15 @@ export class AdminPanel {
     this.pOptions.set(restoredOptions);
     this.pVariants.set(p.variants ? JSON.parse(JSON.stringify(p.variants)) : []);
     
-    this.pSeoTitle.set(p.seoTitle || '');
-    this.pSeoDescription.set(p.seoDescription || '');
+    this.pSeoTitle.set(p.seo?.seoTitle || p.seoTitle || '');
+    this.pSeoDescription.set(p.seo?.seoDescription || p.seoDescription || '');
+    this.pSpecs.set(p.specifications || p.specs || []);
+    this.pFeatures.set(p.features || []);
+    this.pFaqs.set(p.faqs || []);
+    this.pDownloads.set(p.downloads || []);
+    this.pWarranty.set(p.warranty || {warrantyPeriod: '', warrantyDescription: ''});
+    this.pShipping.set(p.shipping || {deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+    this.pRelatedIds.set(p.relatedProducts?.map((rp: any) => typeof rp === 'string' ? rp : rp.relatedToId) || []);
     this.pStatus.set(p.status || 'active');
   }
 
@@ -977,6 +997,13 @@ export class AdminPanel {
     this.pVariants.set([]);
     this.pSeoTitle.set('');
     this.pSeoDescription.set('');
+    this.pSpecs.set([]);
+    this.pFeatures.set([]);
+    this.pFaqs.set([]);
+    this.pDownloads.set([]);
+    this.pWarranty.set({warrantyPeriod: '', warrantyDescription: ''});
+    this.pShipping.set({deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+    this.pRelatedIds.set([]);
     this.pStatus.set('active');
   }
 
@@ -987,6 +1014,34 @@ export class AdminPanel {
       this.pSlug.set(name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
     }
   }
+
+  // Array mutators
+  addSpec() { this.pSpecs.update(x => [...x, {name: '', value: ''}]); }
+  removeSpec(idx: number) { this.pSpecs.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
+  updateSpec(idx: number, field: 'name' | 'value', val: string) { this.pSpecs.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
+
+  addFeature() { this.pFeatures.update(x => [...x, {title: '', description: ''}]); }
+  removeFeature(idx: number) { this.pFeatures.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
+  updateFeature(idx: number, field: 'title' | 'description', val: string) { this.pFeatures.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
+
+  addDownload() { this.pDownloads.update(x => [...x, {title: '', fileUrl: ''}]); }
+  removeDownload(idx: number) { this.pDownloads.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
+  updateDownload(idx: number, field: 'title' | 'fileUrl', val: string) { this.pDownloads.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
+
+  addFaq() { this.pFaqs.update(x => [...x, {question: '', answer: ''}]); }
+  removeFaq(idx: number) { this.pFaqs.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
+  updateFaq(idx: number, field: 'question' | 'answer', val: string) { this.pFaqs.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
+
+  updateWarrantyPeriod(val: string) { this.pWarranty.update(w => ({ ...w, warrantyPeriod: val })); }
+  updateWarrantyDesc(val: string) { this.pWarranty.update(w => ({ ...w, warrantyDescription: val })); }
+
+  updateShippingTime(val: string) { this.pShipping.update(s => ({ ...s, deliveryTime: val })); }
+  updateShippingCharges(val: string) { this.pShipping.update(s => ({ ...s, shippingCharges: parseFloat(val) || 0 })); }
+  updateShippingRegions(val: string) { this.pShipping.update(s => ({ ...s, shippingRegions: val })); }
+
+  addRelatedProduct(productId: string) { if (productId && !this.pRelatedIds().includes(productId)) { this.pRelatedIds.update(x => [...x, productId]); } }
+  removeRelatedProduct(productId: string) { this.pRelatedIds.update(x => x.filter(id => id !== productId)); }
+  setRelatedIds(val: string) { this.pRelatedIds.set(val.split(',').map(s => s.trim()).filter(s => s)); }
 
   // Image management
   setPrimaryImage(index: number) {
@@ -1124,13 +1179,14 @@ export class AdminPanel {
       featured: isEdit ? (this.editingProduct()?.featured || false) : false,
       is360Supported: isEdit ? (this.editingProduct()?.is360Supported || false) : false,
       tags: [this.pBrand() || '3D Galaxy'],
-      specs: this.editingProduct()?.specs || [],
-      specifications: this.editingProduct()?.specs || [],
-      downloads: this.editingProduct()?.downloads || [],
-      features: this.editingProduct()?.features || [],
-      faqs: this.editingProduct()?.faqs || [],
-      warranty: this.editingProduct()?.warranty || null,
-      shipping: this.editingProduct()?.shipping || null,
+      specs: this.pSpecs(),
+      specifications: this.pSpecs(),
+      downloads: this.pDownloads(),
+      features: this.pFeatures(),
+      faqs: this.pFaqs(),
+      warranty: this.pWarranty(),
+      shipping: this.pShipping(),
+      relatedProducts: this.pRelatedIds(),
       reviews: isEdit ? (this.editingProduct()?.reviews || []) : [],
       qnas: isEdit ? (this.editingProduct()?.qnas || []) : []
     };

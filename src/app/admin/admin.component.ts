@@ -73,7 +73,8 @@ export class AdminComponent {
         { id: 'faqs', label: 'FAQs', icon: 'quiz', route: 'content/faqs' },
         { id: 'banners', label: 'Banners', icon: 'view_carousel', route: 'content/banners' },
         { id: 'menu-builder', label: 'Menu Builder', icon: 'menu', route: 'content/menu-builder' },
-        { id: 'homepage-builder', label: 'Homepage Builder', icon: 'design_services', route: 'content/homepage-builder' }
+        { id: 'homepage-builder', label: 'Homepage Builder', icon: 'design_services', route: 'content/homepage-builder' },
+        { id: 'footer-builder', label: 'Footer Configuration', icon: 'settings_input_component', route: 'content/footer-settings' }
       ]
     },
     {

@@ -5,8 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-button',
   imports: [CommonModule, MatIconModule],
-  templateUrl: './app-button.html',
-  // styleUrls: ['./app-button.scss']
+  templateUrl: './app-button.html'
 })
 export class AppButton {
   @Input() loading: boolean = false;

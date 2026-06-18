@@ -38,8 +38,15 @@ import { AdminPanel } from '../admin';
                       <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-850 uppercase">{{ o.orderNumber }}</span>
                     </td>
                     <td class="py-4">
-                      <p class="font-black text-zinc-900 dark:text-white uppercase">{{ o.customerName }}</p>
-                      <span class="text-[10px] text-zinc-400 font-mono">{{ o.customerPhone }}</span>
+                      <p class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2">
+                        {{ o.guestName || o.customerName }}
+                        @if (o.customerType === 'GUEST') {
+                          <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none">GUEST</span>
+                        } @else {
+                          <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none">REG</span>
+                        }
+                      </p>
+                      <span class="text-[10px] text-zinc-400 font-mono">{{ o.guestPhone || o.customerPhone }}</span>
                     </td>
                     <td class="py-4">
                       <span [class]="admin.getStatusStyle(o.status)" class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider border">

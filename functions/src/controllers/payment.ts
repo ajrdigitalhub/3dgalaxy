@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const createRazorpayOrder = async (req: Request, res: Response) => {
   const { orderId } = req.body;
@@ -12,14 +13,16 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
     const order = await prisma.order.findUnique({ where: orderWhere });
     if (!order) return res.status(404).json({ success: false, error: 'Order not found' });
 
-    const gateway = await prisma.paymentGateway.findUnique({ where: { gatewayCode: 'RAZORPAY' } });
-    if (!gateway || !gateway.isEnabled || !gateway.keyId || !gateway.keySecret) {
+    const settings = await getSettingsService();
+    const paymentSettings = settings.payment;
+
+    if (!paymentSettings || !paymentSettings.razorpayEnabled || !paymentSettings.razorpayKeyId || !paymentSettings.razorpayKeySecret) {
       return res.status(400).json({ success: false, error: 'Razorpay is not enabled or properly configured' });
     }
 
     const instance = new Razorpay({
-      key_id: gateway.keyId,
-      key_secret: gateway.keySecret,
+      key_id: paymentSettings.razorpayKeyId,
+      key_secret: paymentSettings.razorpayKeySecret,
     });
 
     const options = {
@@ -50,13 +53,15 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
 
   try {
-    const gateway = await prisma.paymentGateway.findUnique({ where: { gatewayCode: 'RAZORPAY' } });
-    if (!gateway || !gateway.keySecret) {
+    const settings = await getSettingsService();
+    const paymentSettings = settings.payment;
+
+    if (!paymentSettings || !paymentSettings.razorpayKeySecret) {
       return res.status(400).json({ success: false, error: 'Razorpay configuration error' });
     }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto.createHmac('sha256', gateway.keySecret).update(body.toString()).digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', paymentSettings.razorpayKeySecret).update(body.toString()).digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({ success: false, error: 'Invalid payment signature' });
@@ -100,12 +105,14 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
 
 export const handleRazorpayWebhook = async (req: Request, res: Response) => {
   try {
-    const gateway = await prisma.paymentGateway.findUnique({ where: { gatewayCode: 'RAZORPAY' } });
-    if (!gateway || !gateway.webhookSecret) {
+    const settings = await getSettingsService();
+    const paymentSettings = settings.payment;
+
+    if (!paymentSettings || !paymentSettings.razorpayWebhookSecret) {
       return res.status(400).json({ success: false, error: 'Webhook secret not configured' });
     }
 
-    const shasum = crypto.createHmac('sha256', gateway.webhookSecret);
+    const shasum = crypto.createHmac('sha256', paymentSettings.razorpayWebhookSecret);
     shasum.update(JSON.stringify(req.body));
     const digest = shasum.digest('hex');
 

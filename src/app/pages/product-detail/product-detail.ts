@@ -368,6 +368,11 @@ export class ProductDetail {
 
   submitReview(productId: string) {
     if (this.isSubmittingReview()) return;
+    if (!this.ds.activeUser()) {
+      this.toastService.error('Please log in to write a review.');
+      this.router.navigate(['/login']);
+      return;
+    }
     const text = this.draftComment().trim();
     if (!text) return;
 

@@ -284,81 +284,160 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                   </div>
                 </div>
 
-                <!-- Specifications Tab (JSON Array) -->
+                <!-- Specifications Tab -->
                 <div [class.hidden]="activeEditTab() !== 'specifications'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Specifications (JSON Array)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;Build Volume&quot;, &quot;value&quot;: &quot;256 x 256&quot;&#125;]</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('specs')" (input)="setJsonValue('specs', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"name": "Layer Resolution", "value": "0.1mm"}]'></textarea>
+                  <div class="flex justify-between items-center pr-1 border-b pb-2 dark:border-zinc-800">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Specifications</span>
+                    <button (click)="admin.addSpec()" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"><mat-icon class="scale-75">add</mat-icon> Add Row</button>
                   </div>
+                  @if (admin.pSpecs().length === 0) {
+                      <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No specifications added.</div>
+                  } @else {
+                      <div class="space-y-2">
+                        @for (spec of admin.pSpecs(); track $index; let i = $index) {
+                          <div class="flex items-center gap-2">
+                             <input type="text" [value]="spec.name" (input)="admin.updateSpec(i, 'name', $any($event.target).value)" placeholder="Specification Name (e.g., Build Volume)" class="w-1/3 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                             <input type="text" [value]="spec.value" (input)="admin.updateSpec(i, 'value', $any($event.target).value)" placeholder="Value (e.g., 256 x 256)" class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                             <button (click)="admin.removeSpec(i)" class="text-red-400 hover:text-red-500 p-2 cursor-pointer bg-red-50 dark:bg-red-950 rounded-lg"><mat-icon class="scale-75">delete</mat-icon></button>
+                          </div>
+                        }
+                      </div>
+                  }
                 </div>
 
-                <!-- Features Tab (JSON Array) -->
+                <!-- Features Tab -->
                 <div [class.hidden]="activeEditTab() !== 'features'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Features (JSON Array)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;title&quot;: &quot;Auto Leveling&quot;, &quot;description&quot;: &quot;...&quot;&#125;]</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('features')" (input)="setJsonValue('features', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"title": "CoreXY Speed", "description": "Up to 500mm/s"}]'></textarea>
+                  <div class="flex justify-between items-center pr-1 border-b pb-2 dark:border-zinc-800">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Features List</span>
+                    <button (click)="admin.addFeature()" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"><mat-icon class="scale-75">add</mat-icon> Add Row</button>
                   </div>
+                  @if (admin.pFeatures().length === 0) {
+                      <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No features added.</div>
+                  } @else {
+                      <div class="space-y-2">
+                        @for (feat of admin.pFeatures(); track $index; let i = $index) {
+                          <div class="flex items-start gap-2 bg-zinc-50 dark:bg-zinc-900/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                             <div class="flex-1 space-y-2">
+                               <input type="text" [value]="feat.title" (input)="admin.updateFeature(i, 'title', $any($event.target).value)" placeholder="Feature Title" class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                               <textarea rows="2" [value]="feat.description" (input)="admin.updateFeature(i, 'description', $any($event.target).value)" placeholder="Description..." class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                             </div>
+                             <button (click)="admin.removeFeature(i)" class="text-red-400 hover:text-red-500 mt-1 p-2 cursor-pointer bg-red-50 dark:bg-red-950 rounded-lg"><mat-icon class="scale-75">delete</mat-icon></button>
+                          </div>
+                        }
+                      </div>
+                  }
                 </div>
 
-                <!-- FAQs Tab (JSON Array) -->
+                <!-- FAQs Tab -->
                 <div [class.hidden]="activeEditTab() !== 'faqs'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">FAQs (JSON Array)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;question&quot;: &quot;Does it support PLA?&quot;, &quot;answer&quot;: &quot;Yes&quot;&#125;]</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('faqs')" (input)="setJsonValue('faqs', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"question": "Warranty?", "answer": "1 Year"}]'></textarea>
+                  <div class="flex justify-between items-center pr-1 border-b pb-2 dark:border-zinc-800">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">FAQs</span>
+                    <button (click)="admin.addFaq()" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"><mat-icon class="scale-75">add</mat-icon> Add Row</button>
                   </div>
+                  @if (admin.pFaqs().length === 0) {
+                      <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No FAQs added.</div>
+                  } @else {
+                      <div class="space-y-2">
+                        @for (faq of admin.pFaqs(); track $index; let i = $index) {
+                          <div class="flex items-start gap-2 bg-zinc-50 dark:bg-zinc-900/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                             <div class="flex-1 space-y-2">
+                               <input type="text" [value]="faq.question" (input)="admin.updateFaq(i, 'question', $any($event.target).value)" placeholder="Question?" class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                               <textarea rows="2" [value]="faq.answer" (input)="admin.updateFaq(i, 'answer', $any($event.target).value)" placeholder="Answer..." class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                             </div>
+                             <button (click)="admin.removeFaq(i)" class="text-red-400 hover:text-red-500 mt-1 p-2 cursor-pointer bg-red-50 dark:bg-red-950 rounded-lg"><mat-icon class="scale-75">delete</mat-icon></button>
+                          </div>
+                        }
+                      </div>
+                  }
                 </div>
 
-                <!-- Downloads Tab (JSON Array) -->
+                <!-- Downloads Tab -->
                 <div [class.hidden]="activeEditTab() !== 'downloads'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Downloads (JSON Array)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;title&quot;: &quot;Manual&quot;, &quot;fileUrl&quot;: &quot;...&quot;, &quot;type&quot;: &quot;pdf&quot;&#125;]</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('downloads')" (input)="setJsonValue('downloads', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='[{"title": "User Manual PDF", "fileUrl": "#", "type": "pdf"}]'></textarea>
+                  <div class="flex justify-between items-center pr-1 border-b pb-2 dark:border-zinc-800">
+                    <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Downloads & Manuals</span>
+                    <button (click)="admin.addDownload()" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"><mat-icon class="scale-75">add</mat-icon> Add Row</button>
                   </div>
+                  @if (admin.pDownloads().length === 0) {
+                      <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No downloads added.</div>
+                  } @else {
+                      <div class="space-y-2">
+                        @for (dl of admin.pDownloads(); track $index; let i = $index) {
+                          <div class="flex items-center gap-2">
+                             <input type="text" [value]="dl.title" (input)="admin.updateDownload(i, 'title', $any($event.target).value)" placeholder="Document Title (e.g. User Manual)" class="w-1/3 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                             <input type="text" [value]="dl.fileUrl" (input)="admin.updateDownload(i, 'fileUrl', $any($event.target).value)" placeholder="File URL (https://...)" class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                             <button (click)="admin.removeDownload(i)" class="text-red-400 hover:text-red-500 p-2 cursor-pointer bg-red-50 dark:bg-red-950 rounded-lg"><mat-icon class="scale-75">delete</mat-icon></button>
+                          </div>
+                        }
+                      </div>
+                  }
                 </div>
 
-                <!-- Warranty Tab (JSON Object) -->
+                <!-- Warranty Tab -->
                 <div [class.hidden]="activeEditTab() !== 'warranty'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Warranty Period & Terms (JSON Object)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: &#123;&quot;warrantyPeriod&quot;: &quot;1 Year&quot;, &quot;warrantyType&quot;: &quot;Manufacturer&quot;, &quot;warrantyDescription&quot;: &quot;...&quot;&#125;</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('warranty')" (input)="setJsonValue('warranty', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='{"warrantyPeriod": "1 Year Parts & Service", "warrantyType": "On-Site / Carry In", "warrantyDescription": "Covers mechanical faults under regular operating conditions. Excludes nozzle wear."}'></textarea>
+                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4">
+                     <div class="space-y-1">
+                       <span class="block text-[9px] font-black text-zinc-400 uppercase">Warranty Period</span>
+                       <input type="text" [value]="admin.pWarranty().warrantyPeriod" (input)="admin.updateWarrantyPeriod($any($event.target).value)" placeholder="e.g. 1 Year Parts & Service" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                     </div>
+                     <div class="space-y-1">
+                       <span class="block text-[9px] font-black text-zinc-400 uppercase">Warranty Description & Terms</span>
+                       <textarea rows="4" [value]="admin.pWarranty().warrantyDescription" (input)="admin.updateWarrantyDesc($any($event.target).value)" placeholder="Covers mechanical faults under regular operating conditions..." class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                     </div>
                   </div>
                 </div>
 
-                <!-- Shipping Tab (JSON Object) -->
+                <!-- Shipping Tab -->
                 <div [class.hidden]="activeEditTab() !== 'shipping'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Shipping & Freight Charges (JSON Object)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: &#123;&quot;deliveryTime&quot;: &quot;3-5 Days&quot;, &quot;shippingCharges&quot;: 500, &quot;shippingRegions&quot;: &quot;All India&quot;&#125;</span>
-                    </div>
-                    <textarea rows="10" [value]="getJsonValue('shipping')" (input)="setJsonValue('shipping', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='{"deliveryTime": "Immediate Dispatch / 3-5 transit business days", "shippingCharges": 499, "shippingRegions": "All Tier 1 and Tier 2 Industrial zones India-wide"}'></textarea>
+                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4">
+                     <div class="space-y-1">
+                       <span class="block text-[9px] font-black text-zinc-400 uppercase">Delivery Time Estimation</span>
+                       <input type="text" [value]="admin.pShipping().deliveryTime" (input)="admin.updateShippingTime($any($event.target).value)" placeholder="e.g. Dispatch in 24 hrs, 3-5 transit days" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                     </div>
+                     <div class="grid grid-cols-2 gap-4">
+                       <div class="space-y-1">
+                         <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Charges (₹)</span>
+                         <input type="number" [value]="admin.pShipping().shippingCharges" (input)="admin.updateShippingCharges($any($event.target).value)" placeholder="e.g. 499" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                       </div>
+                       <div class="space-y-1">
+                         <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Regions</span>
+                         <input type="text" [value]="admin.pShipping().shippingRegions" (input)="admin.updateShippingRegions($any($event.target).value)" placeholder="e.g. Pan India / Selected Zones" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                       </div>
+                     </div>
                   </div>
                 </div>
 
-                <!-- Related Products Tab (JSON string/array edit) -->
+                <!-- Related Products Tab -->
                 <div [class.hidden]="activeEditTab() !== 'related_products'" class="space-y-4 animate-fadeIn">
-                   <div class="space-y-1">
-                    <div class="flex justify-between items-center pr-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Related Products (JSON Array of Slugs)</span>
-                      <span class="text-[9px] text-zinc-500 font-mono">Form: [&quot;product-1-slug&quot;, &quot;product-2-slug&quot;]</span>
-                    </div>
-                    <!-- Right now it's just raw JSON editing for speed, full relational UI can be implemented if required -->
-                    <textarea rows="5" [value]="getJsonValue('relatedProducts')" (input)="setJsonValue('relatedProducts', $any($event.target).value)" class="w-full px-4 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white" placeholder='["pla-basic", "petg-tough"]'></textarea>
+                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4">
+                     <div class="pb-1 border-b dark:border-zinc-900 flex justify-between items-center">
+                       <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Related Products</span>
+                     </div>
+                     <div class="space-y-3">
+                       <div class="flex gap-2">
+                         <select #newRelatedSelect class="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                           <option value="">Select a product to relate...</option>
+                           @for (p of admin.ds.products(); track p.id) {
+                              @if (p.id !== admin.editingProduct()?.id && !admin.pRelatedIds().includes(p.id)) {
+                                 <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+                              }
+                           }
+                         </select>
+                         <button (click)="admin.addRelatedProduct(newRelatedSelect.value); newRelatedSelect.value=''" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold uppercase rounded-lg border-none cursor-pointer text-nowrap">Add Related</button>
+                       </div>
+                       
+                       @if (admin.pRelatedIds().length > 0) {
+                         <div class="space-y-2 mt-4">
+                            @for (rId of admin.pRelatedIds(); track rId) {
+                               <div class="flex items-center justify-between p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+                                  <span class="text-xs font-bold text-zinc-900 dark:text-white">{{ getProductName(rId) }}</span>
+                                  <button (click)="admin.removeRelatedProduct(rId)" class="text-red-400 hover:text-red-600 bg-transparent border-none p-1 cursor-pointer"><mat-icon class="scale-75">close</mat-icon></button>
+                               </div>
+                            }
+                         </div>
+                       } @else {
+                         <div class="p-4 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">No related products.</div>
+                       }
+                     </div>
                   </div>
                 </div>
 
@@ -379,7 +458,7 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                     </div>
                   </div>
                   <!-- Product Variants JSON (Can stay here or move) -->
-                  <div class="space-y-1 pt-4">
+                  <div class="space-y-1 pt-4 hidden">
                     <div class="flex justify-between items-center pr-1">
                       <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Product Variants (JSON array)</span>
                       <span class="text-[9px] text-zinc-500 font-mono">Form: [&#123;&quot;name&quot;: &quot;With AMS Combo&quot;, &quot;price&quot;: 48000&#125;]</span>
@@ -959,6 +1038,10 @@ export class AdminCatalogTab {
   startEditNew() {
     this.activeEditTab.set('general');
     this.admin.startProductEdit({ id: 'new', name: '', slug: '', barcode: '', sku: '', brand: '3D Galaxy', category_id: '', mrp: 1499, sale_price: 1199, dealer_price: 999, stock: 50, reserved: 0, description: '', images: [], specs: [], reviews: [], qnas: [], featured: false, is360Supported: false, tags: [], downloads: [], features: [], faqs: [], relatedProducts: [] });
+  }
+
+  getProductName(id: string): string {
+    return this.admin.ds.products().find((p: any) => p.id === id)?.name || id;
   }
 
   cancelEdit() {

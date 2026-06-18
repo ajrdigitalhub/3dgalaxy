@@ -18,7 +18,7 @@
           </div>
           <div class="space-y-2">
             <label class="text-xs font-bold text-neutral-500 uppercase">Email *</label>
-            <input type="email" [(ngModel)]="email" disabled class="w-full bg-neutral-100 dark:bg-neutral-950/50 text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm cursor-not-allowed">
+            <input type="email" [(ngModel)]="email" [readonly]="isLoggedIn()" [class.bg-neutral-100]="isLoggedIn()" [class.text-neutral-400]="isLoggedIn()" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
           </div>
           <div class="space-y-2 sm:col-span-2">
             <label class="text-xs font-bold text-neutral-500 uppercase">Mobile Number *</label>
@@ -142,4 +142,52 @@
       </div>
     </div>
   </div>
+
+  <!-- Checkout Options Modal -->
+  @if (showAuthModal()) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800 max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
+        <!-- Brand glow backgrounds -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#d65108]/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-600/15 rounded-full blur-2xl"></div>
+
+        <div class="relative z-10 space-y-6">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-orange-50 dark:bg-orange-950/30 text-[#d65108] rounded-full flex items-center justify-center mx-auto mb-4">
+              <mat-icon class="scale-125">shopping_bag</mat-icon>
+            </div>
+            <h2 class="text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">Checkout Options</h2>
+            <p class="text-sm text-neutral-500 mt-1">Please choose how to proceed with your purchase.</p>
+          </div>
+
+          <div class="border-t border-b border-neutral-100 dark:border-neutral-800 py-6 space-y-3">
+            <h3 class="text-xs font-black text-[#d65108] uppercase tracking-widest text-center mb-2">Benefits of Login:</h3>
+            <ul class="space-y-2 text-sm font-bold text-neutral-700 dark:text-neutral-300">
+              <li class="flex items-center gap-3">
+                <mat-icon class="text-emerald-500">check_circle</mat-icon> Track Orders
+              </li>
+              <li class="flex items-center gap-3">
+                <mat-icon class="text-emerald-500">check_circle</mat-icon> Faster Checkout
+              </li>
+              <li class="flex items-center gap-3">
+                <mat-icon class="text-emerald-500">check_circle</mat-icon> Save Addresses
+              </li>
+              <li class="flex items-center gap-3">
+                <mat-icon class="text-emerald-500">check_circle</mat-icon> Wishlist Sync
+              </li>
+            </ul>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <button (click)="continueAsGuest()" class="w-full bg-[#d65108] hover:bg-orange-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+              Continue as Guest <mat-icon>arrow_forward</mat-icon>
+            </button>
+            <button (click)="router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } })" class="w-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest cursor-pointer">
+              Login / Register
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>

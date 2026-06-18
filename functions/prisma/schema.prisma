@@ -111,7 +111,6 @@ model Category {
   updatedAt      DateTime              @default(now()) @updatedAt @map("updated_at")
   parent         Category?             @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children       Category[]            @relation("CategoryHierarchy")
-  homepageItems  HomepageSectionItem[]
   products       Product[]
 
   @@index([name])
@@ -154,7 +153,6 @@ model Product {
   cartItems       CartItem[]
   customerReviews CustomerReview[]
   wishlists       CustomerWishlist[]
-  homepageItems   HomepageSectionItem[]
   inventory       Inventory[]
   orderItems      OrderItem[]
   attributeValues ProductAttributeValue[]
@@ -589,6 +587,13 @@ model Order {
   payments          Payment[]
   shipments         Shipment[]
 
+  customerType      String               @default("REGISTERED") @map("customer_type")
+  guestName         String?              @map("guest_name")
+  guestEmail        String?              @map("guest_email")
+  guestPhone        String?              @map("guest_phone")
+  guestAddress      String?              @map("guest_address")
+  guestSessionId    String?              @map("guest_session_id")
+
   @@index([customerId])
   @@map("orders")
 }
@@ -649,33 +654,7 @@ model SearchLog {
   @@map("search_logs")
 }
 
-model SearchSettings {
-  id                     String   @id @default("default")
-  enableSuggestions      Boolean  @default(true) @map("enable_suggestions")
-  enableRecent           Boolean  @default(true) @map("enable_recent")
-  enableAnalytics        Boolean  @default(true) @map("enable_analytics")
-  resultsPerPage         Int      @default(20) @map("results_per_page")
 
-  @@map("search_settings")
-}
-
-model PaymentGateway {
-  id             String   @id @default(uuid())
-  name           String
-  gatewayCode    String   @unique @map("gateway_code")
-  isEnabled      Boolean  @default(false) @map("is_enabled")
-  isTestMode     Boolean  @default(true) @map("is_test_mode")
-  keyId          String?  @map("key_id")
-  keySecret      String?  @map("key_secret")
-  webhookSecret  String?  @map("webhook_secret")
-  displayName    String?  @map("display_name")
-  description    String?
-  sortOrder      Int      @default(0) @map("sort_order")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  @@map("payment_gateways")
-}
 
 model Shipment {
   id                String    @id @default(uuid())
@@ -751,48 +730,8 @@ model CouponUsage {
   @@map("coupon_usage")
 }
 
-model Banner {
-  id        String   @id @default(uuid())
-  title     String?
-  imageUrl  String   @map("image_url")
-  linkUrl   String?  @map("link_url")
-  position  String?
-  sortOrder Int      @default(0) @map("sort_order")
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("banners")
-}
 
-model HomepageSection {
-  id        String                @id @default(uuid())
-  name      String
-  type      String
-  sortOrder Int                   @default(0) @map("sort_order")
-  isActive  Boolean               @default(true) @map("is_active")
-  createdAt DateTime              @default(now()) @map("created_at")
-  items     HomepageSectionItem[]
-
-  @@map("homepage_sections")
-}
-
-model HomepageSectionItem {
-  id         String          @id @default(uuid())
-  sectionId  String          @map("section_id")
-  productId  String?         @map("product_id")
-  categoryId String?         @map("category_id")
-  imageUrl   String?         @map("image_url")
-  title      String?
-  subTitle   String?         @map("sub_title")
-  linkUrl    String?         @map("link_url")
-  sortOrder  Int             @default(0) @map("sort_order")
-  createdAt  DateTime        @default(now()) @map("created_at")
-  category   Category?       @relation(fields: [categoryId], references: [id])
-  product    Product?        @relation(fields: [productId], references: [id])
-  section    HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-
-  @@map("homepage_section_items")
-}
 
 model Menu {
   id        String     @id @default(uuid())
@@ -820,15 +759,6 @@ model MenuItem {
   @@map("menu_items")
 }
 
-model ThemeSetting {
-  id        String   @id @default(uuid())
-  keyName   String   @unique @map("key_name")
-  value     String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("theme_settings")
-}
 
 model Page {
   id          String        @id @default(uuid())
@@ -927,4 +857,21 @@ model NewsletterSubscriber {
   subscribedAt DateTime @default(now()) @map("subscribed_at")
 
   @@map("newsletter_subscribers")
+}
+
+
+
+
+
+
+
+
+model Setting {
+  id          String   @id @default(uuid())
+  settingKey  String   @unique @map("setting_key")
+  settingData String   @map("setting_data")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("settings")
 }

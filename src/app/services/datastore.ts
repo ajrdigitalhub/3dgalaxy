@@ -181,6 +181,12 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'paid' | 'unpaid' | 'refunded';
   trackingNumber?: string;
+  customerType?: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  guestAddress?: string;
+  guestSessionId?: string;
 }
 
 export interface QuoteRequest {
@@ -390,6 +396,10 @@ export class DatastoreService {
   cart = signal<CartItem[]>([]);
   activeCouponCode = signal<string>('');
   couponDiscountAmount = signal<number>(0);
+  guestSessionId = signal<string>('');
+  
+  footerData = signal<any>(null);
+  footerLoading = signal<boolean>(true);
 
   shippingAddress = computed(() => this.userProfile()?.address || '');
 
@@ -399,6 +409,14 @@ export class DatastoreService {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      let guestId = localStorage.getItem('guest_session_id');
+      if (!guestId) {
+        const rand = Math.random().toString(16).substring(2, 10);
+        guestId = `guest_${rand}`;
+        localStorage.setItem('guest_session_id', guestId);
+      }
+      this.guestSessionId.set(guestId);
+
       initFirebase().then(() => {
         let firstAuthCheckDone = false;
         // Monitor Firebase Auth State (e.g. Google Sign-In)
@@ -767,6 +785,7 @@ export class DatastoreService {
     this.reloadCoupons();
     this.reloadSocialPosts();
     this.reloadAdvertisements();
+    this.reloadFooter();
 
     this.api.get<MenuItem[]>('/menus/tree').pipe(
       catchError((err) => {
@@ -778,31 +797,16 @@ export class DatastoreService {
       error: (e) => console.error(e)
     });
 
-    this.api.get<Settings>('/settings').pipe(
+    this.api.get<any>('/settings').pipe(
       catchError((err) => {
         console.error('Error loading settings:', err);
         return of(null as any);
       })
     ).subscribe({
-      next: (data) => { if (data) this.settings.set(data); },
-      error: (e) => console.error(e)
-    });
-
-    this.homepageLoading.set(true);
-    this.api.get<any[]>('/homepage').pipe(
-      catchError((err) => {
-        console.error('Error loading homepage:', err);
-        return of([]);
-      }),
-      finalize(() => {
-        this.homepageLoading.set(false);
-      })
-    ).subscribe({
-      next: (data) => { 
-        if (Array.isArray(data) && data.length > 0) {
-          this.homeLayout.set(data.map(d => ({ ...d, id: d.id, name: d.name, visible: d.isActive, order: d.sortOrder, type: d.type, config: d.content || d.config || {} }))); 
-        } else {
-          this.homeLayout.set([
+      next: (res) => { 
+        if (res && res.data) {
+          if (res.data.theme) this.settings.set(res.data.theme);
+          if (res.data.homepage) this.homeLayout.set(res.data.homepage.sections || [
             { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
             { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
             { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 3, config: {} },
@@ -813,6 +817,15 @@ export class DatastoreService {
       },
       error: (e) => console.error(e)
     });
+
+    this.homepageLoading.set(false);
+    this.homeLayout.set([
+      { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
+      { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
+      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 3, config: {} },
+      { id: 'best-4', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 4, config: {} },
+      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 5, config: {} }
+    ]);
 
     // Orders
     runInInjectionContext(this.injector, () => {
@@ -895,6 +908,8 @@ export class DatastoreService {
   reloadMenus() {
     this.api.get<MenuItem[]>('/menus/tree').subscribe(data => { if (data) this.menuItems.set(data); });
   }
+
+  // reloadFooter removed
 
   async addCategory(cat: Omit<Category, 'id'>) {
     return new Promise((resolve, reject) => {
@@ -1222,18 +1237,12 @@ export class DatastoreService {
     });
   }
 
+  reloadFooter() {
+    this.footerLoading.set(false);
+  }
+
   reloadBanners() {
-    this.api.get<any>('/admin/banners').subscribe({
-      next: (res: any) => {
-        const data = res?.success ? res.data : (res?.data || res);
-        if (Array.isArray(data)) this.banners.set(data);
-        this.bannersLoading.set(false);
-      },
-      error: (e) => {
-        console.error('Error reloading banners:', e);
-        this.bannersLoading.set(false);
-      }
-    });
+    this.bannersLoading.set(false);
   }
 
   async addBlogPost(blog: Omit<BlogPost, 'id'>) {
@@ -1328,9 +1337,9 @@ export class DatastoreService {
 
   async updateSettings(updated: Partial<Settings>) {
     return new Promise((resolve, reject) => {
-      this.api.put('/admin/settings/theme', updated).subscribe({
+      this.api.put('/admin/settings', { theme: updated }).subscribe({
         next: (res: any) => {
-          const data = res?.data || res;
+          const data = res?.data?.theme || res;
           if (data) this.settings.set(data);
           resolve(res);
         },
@@ -1347,7 +1356,7 @@ export class DatastoreService {
     });
     this.homeLayout.set(sorted);
     return new Promise((resolve, reject) => {
-      this.api.put('/admin/homepage', { sections: sorted }).subscribe({
+      this.api.put('/admin/settings', { homepage: { sections: sorted } }).subscribe({
         next: (res) => resolve(res),
         error: (err) => reject(err)
       });

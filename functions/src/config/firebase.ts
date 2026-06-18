@@ -11,15 +11,19 @@ export const getFirebaseAdmin = () => {
         const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
         let credential;
 
-        if (base64ServiceAccount && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+        if (base64ServiceAccount && base64ServiceAccount.trim() !== '' && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
           try {
             let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
             if (!decodedServiceAccount.trim().startsWith('{')) {
-              decodedServiceAccount = base64ServiceAccount;
+              if (base64ServiceAccount.trim().startsWith('{')) {
+                decodedServiceAccount = base64ServiceAccount;
+              } else {
+                throw new Error('Not a JSON format');
+              }
             }
             credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
           } catch (parseError) {
-            console.warn('Invalid Firebase Service Account JSON provided.');
+            console.warn('Invalid Firebase Service Account JSON provided:', parseError instanceof Error ? parseError.message : parseError);
           }
         }
 

@@ -117,8 +117,15 @@ export const getOrderById = async (req: any, res: Response) => {
     }
 
     if (userRole !== 'Admin' && userRole !== 'Manager') {
-      if (order.customer?.userId !== userId) {
-        return res.status(403).json({ error: 'Forbidden' });
+      if (order.customerType === 'GUEST') {
+        const reqSessionId = req.headers['x-guest-session-id'] || req.query.guestSessionId;
+        if (order.guestSessionId !== reqSessionId) {
+          return res.status(403).json({ error: 'Forbidden: Guest session mismatch' });
+        }
+      } else {
+        if (order.customer?.userId !== userId) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
       }
     }
 
@@ -129,58 +136,77 @@ export const getOrderById = async (req: any, res: Response) => {
 };
 
 export const createOrder = async (req: any, res: Response) => {
-  const { items, shippingAddress, billingAddress, paymentMethod } = req.body;
+  const { customerType, guestName, guestEmail, guestPhone, guestSessionId, items, shippingAddress, billingAddress, paymentMethod } = req.body;
   const userId = req.user?.id; // from auth middleware
 
-  if (!userId || !items || items.length === 0 || !shippingAddress || !paymentMethod) {
-    return res.status(400).json({ error: 'Missing required checkout information' });
+  const isGuest = customerType === 'GUEST' || !userId;
+
+  if (isGuest) {
+    if (!items || items.length === 0 || !shippingAddress || !paymentMethod || !guestName || !guestEmail || !guestPhone) {
+      return res.status(400).json({ error: 'Missing required guest checkout information' });
+    }
+  } else {
+    if (!items || items.length === 0 || !shippingAddress || !paymentMethod) {
+      return res.status(400).json({ error: 'Missing required checkout information' });
+    }
   }
 
   try {
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
 
-    // Get or create customer for the user
-    let customer = await prisma.customer.findFirst({ where: { userId } });
-    if (!customer) {
-      customer = await prisma.customer.create({
-        data: {
-          userId,
-          customerType: 'retail'
-        }
-      });
-    }
-
     const transaction = await prisma.$transaction(async (tx) => {
-      // 1. Create Addresses
-      const shipAddr = await tx.customerAddress.create({
-        data: {
-          customerId: customer.id,
-          addressLine1: shippingAddress.addressLine1,
-          addressLine2: shippingAddress.addressLine2,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          postalCode: shippingAddress.pincode,
-          country: shippingAddress.country || 'India',
-          isDefault: true
-        }
-      });
+      let customerId: string | null = null;
+      let shippingAddressId: string | null = null;
+      let billingAddressId: string | null = null;
 
-      let billAddrId = shipAddr.id;
-      if (billingAddress && billingAddress.addressLine1 !== shippingAddress.addressLine1) {
-        const billAddr = await tx.customerAddress.create({
+      if (!isGuest) {
+        // Get or create customer for the user
+        let customer = await prisma.customer.findFirst({ where: { userId } });
+        if (!customer) {
+          customer = await prisma.customer.create({
+            data: {
+              userId,
+              customerType: 'retail'
+            }
+          });
+        }
+        customerId = customer.id;
+
+        // Create Address
+        const shipAddr = await tx.customerAddress.create({
           data: {
             customerId: customer.id,
-            addressLine1: billingAddress.addressLine1,
-            addressLine2: billingAddress.addressLine2,
-            city: billingAddress.city,
-            state: billingAddress.state,
-            postalCode: billingAddress.pincode,
-            country: billingAddress.country || 'India',
-            isDefault: false
+            addressLine1: shippingAddress.addressLine1 || shippingAddress.address || 'N/A',
+            addressLine2: shippingAddress.addressLine2 || '',
+            city: shippingAddress.city || 'N/A',
+            state: shippingAddress.state || 'N/A',
+            postalCode: shippingAddress.postalCode || shippingAddress.pincode || 'N/A',
+            country: shippingAddress.country || 'India',
+            isDefault: true
           }
         });
-        billAddrId = billAddr.id;
+        shippingAddressId = shipAddr.id;
+
+        billingAddressId = shipAddr.id;
+        if (billingAddress && (billingAddress.addressLine1 || billingAddress.address)) {
+          const billingAddrInput = billingAddress.addressLine1 || billingAddress.address;
+          if (billingAddrInput !== (shippingAddress.addressLine1 || shippingAddress.address)) {
+            const billAddr = await tx.customerAddress.create({
+              data: {
+                customerId: customer.id,
+                addressLine1: billingAddress.addressLine1 || billingAddress.address || 'N/A',
+                addressLine2: billingAddress.addressLine2 || '',
+                city: billingAddress.city || 'N/A',
+                state: billingAddress.state || 'N/A',
+                postalCode: billingAddress.postalCode || billingAddress.pincode || 'N/A',
+                country: billingAddress.country || 'India',
+                isDefault: false
+              }
+            });
+            billingAddressId = billAddr.id;
+          }
+        }
       }
 
       // 2. Process Items and calculate totals
@@ -192,7 +218,14 @@ export const createOrder = async (req: any, res: Response) => {
         if (!prod) throw new Error(`Product not found: ${it.productId}`);
 
         let price = prod.salePrice || prod.basePrice;
-        if (customer.customerType === 'DEALER') price = prod.dealerPrice || prod.basePrice;
+        
+        // Check dealer price if registered user has user type DEALER
+        if (!isGuest && customerId) {
+          const customerDb = await tx.customer.findUnique({ where: { id: customerId } });
+          if (customerDb && customerDb.customerType === 'DEALER') {
+            price = prod.dealerPrice || prod.basePrice;
+          }
+        }
 
         if (it.variantId) {
           const variant = await tx.productVariant.findUnique({ where: { id: it.variantId } });
@@ -217,18 +250,24 @@ export const createOrder = async (req: any, res: Response) => {
       // 3. Create Order
       const orderEntity = await tx.order.create({
         data: {
-          customerId: customer.id,
+          customerId,
+          customerType: isGuest ? 'GUEST' : 'REGISTERED',
+          guestName: isGuest ? guestName : null,
+          guestEmail: isGuest ? guestEmail : null,
+          guestPhone: isGuest ? guestPhone : null,
+          guestAddress: isGuest ? JSON.stringify(shippingAddress) : null,
+          guestSessionId: isGuest ? guestSessionId : null,
           orderNumber,
           totalAmount,
           taxAmount,
           shippingAmount,
           discountAmount,
           status: 'Pending',
-          shippingAddressId: shipAddr.id,
-          billingAddressId: billAddrId,
+          shippingAddressId,
+          billingAddressId,
           items: { create: parsedItems },
           statusHistory: { 
-            create: [{ status: 'Pending', comments: 'Order created', createdBy: userId }] 
+            create: [{ status: 'Pending', comments: isGuest ? 'Guest Order created' : 'Order created', createdBy: userId || 'GUEST' }] 
           },
           payments: {
             create: [{ paymentMethod, amount: totalAmount, status: 'Pending' }]
@@ -243,6 +282,56 @@ export const createOrder = async (req: any, res: Response) => {
     return res.status(201).json(transaction);
   } catch (error: any) {
     return res.status(500).json({ error: 'Checkout processing failed', details: error.message });
+  }
+};
+
+export const trackOrder = async (req: Request, res: Response) => {
+  const { orderNumber, email } = req.body;
+
+  if (!orderNumber || !email) {
+    return res.status(400).json({ error: 'Order Number and Email are required for tracking' });
+  }
+
+  try {
+    const order = await prisma.order.findFirst({
+      where: {
+        orderNumber: orderNumber.trim(),
+        OR: [
+          { guestEmail: email.trim() },
+          { customer: { user: { email: email.trim() } } }
+        ]
+      },
+      include: {
+        customer: {
+          include: { user: true }
+        },
+        shippingAddress: true,
+        billingAddress: true,
+        items: {
+          include: {
+            product: {
+              include: { images: true }
+            },
+            variant: true
+          }
+        },
+        statusHistory: {
+          orderBy: { createdAt: 'desc' }
+        },
+        payments: true,
+        shipments: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'No order found matching the provided Number and Email' });
+    }
+
+    return res.status(200).json(order);
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to track order', details: error.message });
   }
 };
 

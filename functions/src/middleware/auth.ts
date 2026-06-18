@@ -43,6 +43,36 @@ export const authenticateToken = async (
   }
 };
 
+export const optionalAuthenticateToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      id: string;
+      email: string;
+      role: string;
+    };
+
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role || 'Customer',
+    };
+  } catch (error) {
+    // Just proceed as guest if expired token
+  }
+  next();
+};
+
 export const requireRole = (allowedRoles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {

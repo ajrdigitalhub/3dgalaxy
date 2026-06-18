@@ -37,6 +37,10 @@ const routes: Routes = [
         loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
       },
       {
+        path: 'content/footer-settings',
+        loadComponent: () => import('./footer-settings/footer-settings.component').then(m => m.FooterSettingsComponent)
+      },
+      {
         path: 'marketing',
         loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
       },

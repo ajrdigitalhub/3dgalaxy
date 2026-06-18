@@ -59,192 +59,35 @@ router.post('/delete-image', adminGuard, async (req: Request, res: Response) => 
 
 // Helper to get or create ThemeSetting key-value pair
 async function getSetting(keyName: string, defaultValue: any) {
-  const record = await prisma.themeSetting.findUnique({ where: { keyName } });
+  const record = await prisma.setting.findUnique({ where: { settingKey: keyName } });
   if (!record) {
     return defaultValue;
   }
   try {
-    return JSON.parse(record.value);
+    return JSON.parse(record.settingData);
   } catch {
-    return record.value;
+    return record.settingData;
   }
 }
 
 async function saveSetting(keyName: string, data: any) {
   const valueStr = typeof data === 'string' ? data : JSON.stringify(data);
-  await prisma.themeSetting.upsert({
-    where: { keyName },
-    update: { value: valueStr },
-    create: { keyName, value: valueStr },
+  await prisma.setting.upsert({
+    where: { settingKey: keyName },
+    update: { settingData: valueStr },
+    create: { settingKey: keyName, settingData: valueStr },
   });
 }
 
 // -------------------------------------------------------------
-// 1. STORE SETTINGS CORES
-// -------------------------------------------------------------
-router.get('/settings/store', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const store = await getSetting('store-settings', {
-      storeName: '3D Galaxy India',
-      storeEmail: 'support@3dgalaxy.co.in',
-      storePhone: '+91 99999 55555',
-      storeAddress: 'Enclave Road, Sector 3, Delhi, India',
-      currency: 'INR',
-      timezone: 'IST',
-    });
-    return res.status(200).json({ success: true, data: store });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Database access failure', details: err.message });
-  }
-});
-
-router.put('/settings/store', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const storeData = req.body;
-    await saveSetting('store-settings', storeData);
-    return res.status(200).json({ success: true, message: 'Store settings synchronized successfully' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Save failure', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
-// 2. THEME SETTINGS CORES
-// -------------------------------------------------------------
-router.get('/settings/theme', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const theme = await getSetting('global-settings', {
-      primaryColor: '#2563eb',
-      secondaryColor: '#4f46e5',
-      accentColor: '#10b981',
-      borderRadius: 20,
-      fontFamily: 'Inter',
-      logoUrl: 'https://picsum.photos/seed/galaxy/200/50',
-      faviconUrl: 'https://picsum.photos/seed/galaxy/32/32',
-    });
-    return res.status(200).json({ success: true, data: theme });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Theme fetch failure', details: err.message });
-  }
-});
-
-router.put('/settings/theme', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const themeData = req.body;
-    await saveSetting('global-settings', themeData);
-    return res.status(200).json({ success: true, message: 'Theme settings updated', data: themeData });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Theme save failure', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
-// 3. PAYMENT SETTINGS CORES
-// -------------------------------------------------------------
-router.get('/settings/payment', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const gateways = await prisma.paymentGateway.findMany({
-      orderBy: { sortOrder: 'asc' },
-    });
-    return res.status(200).json({ success: true, data: gateways });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed to yield payment gateways', details: err.message });
-  }
-});
-
-router.put('/settings/payment', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { gateways } = req.body;
-    if (Array.isArray(gateways)) {
-      for (const gw of gateways) {
-        await prisma.paymentGateway.upsert({
-          where: { gatewayCode: gw.gatewayCode },
-          update: {
-            isEnabled: !!gw.isEnabled,
-            isTestMode: gw.isTestMode !== undefined ? !!gw.isTestMode : true,
-            keyId: gw.keyId || null,
-            keySecret: gw.keySecret || null,
-            displayName: gw.displayName || gw.name,
-          },
-          create: {
-            name: gw.name || gw.displayName || gw.gatewayCode,
-            gatewayCode: gw.gatewayCode,
-            isEnabled: !!gw.isEnabled,
-            isTestMode: gw.isTestMode !== undefined ? !!gw.isTestMode : true,
-            keyId: gw.keyId || null,
-            keySecret: gw.keySecret || null,
-          }
-        });
-      }
-    }
-    return res.status(200).json({ success: true, message: 'Payment gateway configuration updated' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Payment save failure', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
-// 4. SHIPPING SETTINGS CORES
-// -------------------------------------------------------------
-router.get('/settings/shipping', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const config = await getSetting('shipping-settings', {
-      freeShippingThreshold: 999,
-      flatRate: 80,
-      zones: [
-        { id: 'sz1', zone: 'Domestic (All India Enclave)', courier: 'BlueDart Cluster', baseRate: 80, freeThreshold: 999 },
-        { id: 'sz2', zone: 'International Express', courier: 'DHL Logistics', baseRate: 1500, freeThreshold: 20000 }
-      ],
-    });
-    return res.status(200).json({ success: true, data: config });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed to locate shipping settings', details: err.message });
-  }
-});
-
-router.put('/settings/shipping', adminGuard, async (req: Request, res: Response) => {
-  try {
-    await saveSetting('shipping-settings', req.body);
-    return res.status(200).json({ success: true, message: 'Shipping settings registered' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Shipping settings sync failure', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
-// 5. TAX SETTINGS CORES
-// -------------------------------------------------------------
-router.get('/settings/tax', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const tax = await getSetting('tax-settings', {
-      defaultTaxRate: 18,
-      taxRules: [
-        { id: 'tr1', state: 'Delhi NCR', rate: 18, active: true },
-        { id: 'tr2', state: 'Maharashtra', rate: 18, active: true },
-        { id: 'tr3', state: 'Karnataka', rate: 18, active: true },
-      ],
-    });
-    return res.status(200).json({ success: true, data: tax });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed to access tax rules', details: err.message });
-  }
-});
-
-router.put('/settings/tax', adminGuard, async (req: Request, res: Response) => {
-  try {
-    await saveSetting('tax-settings', req.body);
-    return res.status(200).json({ success: true, message: 'Tax parameters cataloged' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Tax parameter change write failure', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
 // 6. CMS PAGES OPERATIONS
 // -------------------------------------------------------------
-router.get('/pages', adminGuard, async (req: Request, res: Response) => {
+router.get('/pages', async (req: Request, res: Response) => {
   try {
-    const list = await prisma.page.findMany({ orderBy: { title: 'asc' } });
+    const user = await lenientAuth(req);
+    const isPrivileged = user && (user.role === 'Admin' || user.role === 'Super Admin' || user.role === 'Manager');
+    const condition = isPrivileged ? {} : { isPublished: true };
+    const list = await prisma.page.findMany({ where: condition, orderBy: { title: 'asc' } });
     return res.status(200).json({ success: true, data: list });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: 'Query failed', details: err.message });
@@ -301,9 +144,12 @@ router.delete('/pages/:id', adminGuard, async (req: Request, res: Response) => {
 // -------------------------------------------------------------
 // 7. CMS BLOGS OPERATIONS
 // -------------------------------------------------------------
-router.get('/blogs', adminGuard, async (req: Request, res: Response) => {
+router.get('/blogs', async (req: Request, res: Response) => {
   try {
-    const list = await prisma.blog.findMany({ orderBy: { createdAt: 'desc' } });
+    const user = await lenientAuth(req);
+    const isPrivileged = user && (user.role === 'Admin' || user.role === 'Super Admin' || user.role === 'Manager');
+    const condition = isPrivileged ? {} : { isPublished: true };
+    const list = await prisma.blog.findMany({ where: condition, orderBy: { createdAt: 'desc' } });
     return res.status(200).json({ success: true, data: list });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: 'Blogs query failed', details: err.message });
@@ -360,211 +206,41 @@ router.delete('/blogs/:id', adminGuard, async (req: Request, res: Response) => {
   }
 });
 
+
 // -------------------------------------------------------------
 // 8. CMS FAQS OPERATIONS
 // -------------------------------------------------------------
-router.get('/faqs', adminGuard, async (req: Request, res: Response) => {
+router.get('/faqs', async (req: Request, res: Response) => {
   try {
-    const list = await getSetting('faq-settings', [
-      { id: 'f1', category: 'Pricing & B2B', question: 'Do you offer custom SLA pricing constructs?', answer: 'Yes, we offer dynamic B2B custom discounts based on custom bulk volume tiers.' },
-      { id: 'f2', category: 'Brahma 3D Farm', question: 'How is printing telemetry synchronized?', answer: 'Our hardware modules communicate directly over secure live WebSockets to the monitor telemetry cluster.' }
-    ]);
+    const user = await lenientAuth(req);
+    const isPrivileged = user && (user.role === 'Admin' || user.role === 'Super Admin' || user.role === 'Manager');
+    const condition = isPrivileged ? {} : { isPublished: true };
+    const list = await prisma.faq.findMany({ where: condition, orderBy: { displayOrder: 'asc' } });
     return res.status(200).json({ success: true, data: list });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Faqs query failed', details: err.message });
+    return res.status(500).json({ success: false, error: 'FAQS query failed', details: err.message });
   }
 });
 
 router.post('/faqs', adminGuard, async (req: Request, res: Response) => {
   try {
-    const { category, question, answer } = req.body;
-    if (!question || !answer) return res.status(400).json({ success: false, error: 'Question and answer required' });
-    const current = await getSetting('faq-settings', []);
-    const newItem = {
-      id: 'faq-' + Date.now(),
-      category: category || 'Pricing & B2B',
-      question,
-      answer,
-    };
-    current.push(newItem);
-    await saveSetting('faq-settings', current);
-    return res.status(201).json({ success: true, data: newItem });
+    const { question, answer, category, displayOrder } = req.body;
+    const created = await prisma.faq.create({
+      data: { question, answer, category, displayOrder: displayOrder || 1 }
+    });
+    return res.status(201).json({ success: true, data: created });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'FAQ appending failed', details: err.message });
+    return res.status(500).json({ success: false, error: 'FAQ creation failed' });
   }
 });
 
 router.delete('/faqs/:id', adminGuard, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const current = await getSetting('faq-settings', []);
-    const filtered = current.filter((f: any) => f.id !== id);
-    await saveSetting('faq-settings', filtered);
-    return res.status(200).json({ success: true, message: 'FAQ successfully deleted' });
+    await prisma.faq.delete({ where: { id } });
+    return res.status(200).json({ success: true, message: 'FAQ removed' });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed to edit FAQs list', details: err.message });
-  }
-});
-
-// -------------------------------------------------------------
-// 9. CMS BANNERS OPERATIONS
-// -------------------------------------------------------------
-router.get('/banners', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const list = await prisma.banner.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }] });
-    return res.status(200).json({ success: true, data: list });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Banners fetch failure', details: err.message });
-  }
-});
-
-router.post('/banners', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { title, imageUrl, linkUrl, position, isActive, sortOrder } = req.body;
-    if (!imageUrl) return res.status(400).json({ success: false, error: 'Image URL is required' });
-    const banner = await prisma.banner.create({
-      data: {
-        title: title || 'Hero Promo Banner',
-        imageUrl,
-        linkUrl: linkUrl || '/',
-        position: position || 'Main Carousel',
-        sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
-        isActive: isActive !== undefined ? !!isActive : true,
-      },
-    });
-    return res.status(201).json({ success: true, data: banner });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Promo Banner registration failed', details: err.message });
-  }
-});
-
-router.put('/banners/:id', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { title, imageUrl, linkUrl, position, isActive, sortOrder } = req.body;
-    const updated = await prisma.banner.update({
-      where: { id },
-      data: {
-        title,
-        imageUrl,
-        linkUrl,
-        position,
-        sortOrder: typeof sortOrder === 'number' ? sortOrder : undefined,
-        isActive: isActive !== undefined ? !!isActive : undefined,
-      },
-    });
-    return res.status(200).json({ success: true, data: updated });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Promo Banner alterations failed', details: err.message });
-  }
-});
-
-router.delete('/banners/:id', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    await prisma.banner.delete({ where: { id } });
-    return res.status(200).json({ success: true, message: 'Promo Banner successfully erased' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Banner deletion command halted', details: err.message });
-  }
-});
-
-// Helper to ensure a string id is mapped to a valid deterministic UUID structure
-function toValidUuid(id: string): string {
-  if (!id) return '00000000-0000-0000-0000-000000000000';
-  const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-  if (uuidRegex.test(id)) {
-    return id.toLowerCase();
-  }
-  const idMap: { [key: string]: string } = {
-    'hero-1': '11111111-1111-1111-1111-111111111111',
-    'cat-2': '22222222-2222-2222-2222-222222222222',
-    'feat-3': '33333333-3333-3333-3333-333333333333',
-    'best-4': '44444444-4444-4444-4444-444444444444',
-    'brands-5': '55555555-5555-5555-5555-555555555555'
-  };
-  if (idMap[id]) {
-    return idMap[id];
-  }
-  let clean = id.replace(/[^a-fA-F0-9]/g, '');
-  if (clean.length < 32) {
-    clean = clean.padEnd(32, '0');
-  } else {
-    clean = clean.slice(0, 32);
-  }
-  return `${clean.slice(0, 8)}-${clean.slice(8, 12)}-${clean.slice(12, 16)}-${clean.slice(16, 20)}-${clean.slice(20)}`.toLowerCase();
-}
-
-// -------------------------------------------------------------
-// 10. DYNAMIC HOMEPAGE BUILDER (SECTIONS ORDER)
-// -------------------------------------------------------------
-router.get('/homepage', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const sections = await prisma.homepageSection.findMany({
-      orderBy: { sortOrder: 'asc' },
-    });
-    return res.status(200).json({ success: true, data: sections });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed to access layout configurations', details: err.message });
-  }
-});
-
-router.put('/homepage', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { sections } = req.body;
-    if (Array.isArray(sections)) {
-      for (const sec of sections) {
-        const mappedId = toValidUuid(sec.id);
-        await prisma.homepageSection.upsert({
-          where: { id: mappedId },
-          update: {
-            name: sec.name,
-            type: sec.type,
-            sortOrder: parseInt(sec.order || sec.sortOrder || '0', 10),
-            isActive: sec.visible !== undefined ? !!sec.visible : (sec.isActive !== undefined ? !!sec.isActive : true),
-          },
-          create: {
-            id: mappedId,
-            name: sec.name,
-            type: sec.type || 'HERO',
-            sortOrder: parseInt(sec.order || sec.sortOrder || '0', 10),
-            isActive: sec.visible !== undefined ? !!sec.visible : (sec.isActive !== undefined ? !!sec.isActive : true),
-          }
-        });
-      }
-    }
-    return res.status(200).json({ success: true, message: 'Homepage layout section mapped successfully' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Sections update failure', details: err.message });
-  }
-});
-
-router.post('/homepage/sections', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { name, type, order, visible } = req.body;
-    const count = await prisma.homepageSection.count();
-    const created = await prisma.homepageSection.create({
-      data: {
-        name: name || 'Custom Section',
-        type: type || 'HERO',
-        sortOrder: order !== undefined ? parseInt(order, 10) : count + 1,
-        isActive: visible !== undefined ? !!visible : true,
-      },
-    });
-    return res.status(201).json({ success: true, data: created });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Failed' });
-  }
-});
-
-router.delete('/homepage/sections/:id', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const mappedId = toValidUuid(id);
-    await prisma.homepageSection.delete({ where: { id: mappedId } });
-    return res.status(200).json({ success: true, message: 'Successfully deleted structural sequence' });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: 'Purge failed' });
+    return res.status(500).json({ success: false, error: 'Deletion failed' });
   }
 });
 

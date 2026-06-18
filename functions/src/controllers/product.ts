@@ -207,7 +207,7 @@ export const createProduct = async (req: Request, res: Response) => {
   const {
     name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
     categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts
   } = req.body;
 
   if (!name || !slug || !sku) {
@@ -224,6 +224,7 @@ export const createProduct = async (req: Request, res: Response) => {
     const parsedOptions = safeParseArray(options);
     const parsedWarranty = safeParseObject(warranty);
     const parsedShipping = safeParseObject(shipping);
+    const parsedRelatedProducts = safeParseArray(relatedProducts).filter(rid => typeof rid === 'string' && rid);
 
     const validImages = parsedImages.map((img: any) => {
       if (!img) return null;
@@ -399,7 +400,20 @@ export const createProduct = async (req: Request, res: Response) => {
           }
       }
 
-      return tx.product.findUnique({ where: { id: p.id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
+      if (parsedRelatedProducts.length > 0) {
+        for (const [idx, rId] of parsedRelatedProducts.entries()) {
+           await tx.productRelated.create({
+              data: {
+                 productId: p.id,
+                 relatedToId: rId as string,
+                 relationType: 'cross-sell',
+                 sortOrder: idx
+              }
+           }).catch(() => {});
+        }
+      }
+
+      return tx.product.findUnique({ where: { id: p.id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true, relatedProducts: true }});
     }, {
       timeout: 30000
     });
@@ -415,7 +429,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   const {
     name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
     categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts
   } = req.body;
 
   try {
@@ -428,6 +442,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     const parsedOptions = safeParseArray(options);
     const parsedWarranty = safeParseObject(warranty);
     const parsedShipping = safeParseObject(shipping);
+    const parsedRelatedProducts = safeParseArray(relatedProducts).filter(rid => typeof rid === 'string' && rid);
 
     const validImages = parsedImages.map((img: any) => {
       if (!img) return null;
@@ -628,7 +643,21 @@ export const updateProduct = async (req: Request, res: Response) => {
           }
       }
 
-      return tx.product.findUnique({ where: { id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true }});
+      if (parsedRelatedProducts.length > 0) {
+        await tx.productRelated.deleteMany({ where: { productId: id } });
+        for (const [idx, rId] of parsedRelatedProducts.entries()) {
+           await tx.productRelated.create({
+              data: {
+                 productId: id,
+                 relatedToId: rId as string,
+                 relationType: 'cross-sell',
+                 sortOrder: idx
+              }
+           }).catch(() => {}); // Catch unique constraint violations if accidentally passed duplicate
+        }
+      }
+
+      return tx.product.findUnique({ where: { id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true, relatedProducts: true }});
     }, {
       timeout: 30000
     });
