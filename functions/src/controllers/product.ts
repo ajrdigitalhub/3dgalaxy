@@ -1,5 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { sysCache } from '../config/cache';
+
+export const clearProductCache = () => {
+  sysCache.clearPattern('products_list_');
+  sysCache.clearPattern('products_slug_');
+  sysCache.clearPattern('products_id_');
+};
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -28,6 +35,12 @@ const safeParseObject = (val: any): any => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
+    const cacheKey = 'products_list_' + JSON.stringify(req.query);
+    const cachedResponse = sysCache.get(cacheKey);
+    if (cachedResponse) {
+      return res.status(200).json(cachedResponse);
+    }
+
     const {
       page = '1',
       limit = '12',
@@ -88,26 +101,12 @@ export const getProducts = async (req: Request, res: Response) => {
         id: true,
         name: true,
         slug: true,
-        sku: true,
         basePrice: true,
         salePrice: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
         images: {
           take: 1,
           orderBy: { sortOrder: 'asc' },
-          select: { id: true, url: true, isPrimary: true, altText: true }
-        },
-        category: {
-          select: { id: true, name: true, slug: true }
-        },
-        brand: {
-          select: { id: true, name: true, slug: true }
-        },
-        variants: {
-            take: 1,
-            select: { id: true, stock: true, price: true, salePrice: true }
+          select: { url: true }
         }
       },
       orderBy: order,
@@ -115,15 +114,29 @@ export const getProducts = async (req: Request, res: Response) => {
       take: limitNum,
     });
 
-    return res.status(200).json({
+    const mappedData = items.map(p => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.basePrice,
+      salePrice: p.salePrice,
+      thumbnail: p.images[0]?.url || ''
+    }));
+
+    const finalResponse = {
       meta: {
         total,
         page: pageNum,
         limit: limitNum,
         totalPages: Math.ceil(total / limitNum),
       },
-      data: items,
-    });
+      data: mappedData,
+    };
+
+    // Product Cache: 5 Minute Cache (300 seconds)
+    sysCache.set(cacheKey, finalResponse, 300);
+
+    return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find products in catalog', details: error.message });
   }
@@ -132,6 +145,12 @@ export const getProducts = async (req: Request, res: Response) => {
 export const getProductBySlug = async (req: Request, res: Response) => {
   const { slug } = req.params;
   try {
+    const cacheKey = 'products_slug_' + slug;
+    const cachedResponse = sysCache.get(cacheKey);
+    if (cachedResponse) {
+      return res.status(200).json(cachedResponse);
+    }
+
     const item = await prisma.product.findUnique({
       where: { slug },
       include: {
@@ -160,15 +179,41 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const { images, variants, reviews, relatedProducts, ...productFields } = item;
+    const {
+      images,
+      variants,
+      reviews,
+      relatedProducts,
+      specifications,
+      downloads,
+      features,
+      faqs,
+      warranty,
+      shipping,
+      seo,
+      ...productFields
+    } = item;
 
-    return res.status(200).json({
+    const finalResponse = {
       product: productFields,
       images: images || [],
       variants: variants || [],
+      variantImages: variants?.flatMap(v => v.images) || [],
       reviews: reviews || [],
-      relatedProducts: relatedProducts || []
-    });
+      relatedProducts: relatedProducts || [],
+      specifications: specifications || [],
+      downloads: downloads || [],
+      features: features || [],
+      faqs: faqs || [],
+      warranty: warranty || null,
+      shipping: shipping || null,
+      seo: seo || null
+    };
+
+    // Product Cache: 5 Minute Cache (300 seconds)
+    sysCache.set(cacheKey, finalResponse, 300);
+
+    return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch product', details: error.message });
   }
@@ -177,6 +222,12 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
+    const cacheKey = 'products_id_' + id;
+    const cachedResponse = sysCache.get(cacheKey);
+    if (cachedResponse) {
+      return res.status(200).json(cachedResponse);
+    }
+
     const item = await prisma.product.findUnique({
       where: { id },
       include: {
@@ -205,9 +256,22 @@ export const getProductById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product SKU does not exist' });
     }
 
-    const { images, variants, reviews, relatedProducts, specifications, downloads, features, faqs, warranty, shipping, seo, ...productFields } = item;
+    const {
+      images,
+      variants,
+      reviews,
+      relatedProducts,
+      specifications,
+      downloads,
+      features,
+      faqs,
+      warranty,
+      shipping,
+      seo,
+      ...productFields
+    } = item;
 
-    return res.status(200).json({
+    const finalResponse = {
       product: productFields,
       images: images || [],
       variants: variants || [],
@@ -221,7 +285,12 @@ export const getProductById = async (req: Request, res: Response) => {
       warranty: warranty || null,
       shipping: shipping || null,
       seo: seo || null
-    });
+    };
+
+    // Product Cache: 5 Minute Cache (300 seconds)
+    sysCache.set(cacheKey, finalResponse, 300);
+
+    return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to read individual product SKU', details: error.message });
   }
@@ -442,6 +511,7 @@ export const createProduct = async (req: Request, res: Response) => {
       timeout: 30000
     });
 
+    clearProductCache();
     return res.status(201).json({ success: true, message: 'Success', data: created });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to record Product SKU', message: error.message });
@@ -686,6 +756,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       timeout: 30000
     });
 
+    clearProductCache();
     return res.status(200).json({ success: true, message: 'Success', data: updated });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to apply product SKU updates', message: error.message });
@@ -703,11 +774,13 @@ export const deleteProduct = async (req: Request, res: Response) => {
         where: { id },
         data: { isActive: false },
       });
+      clearProductCache();
       return res.status(200).json({ message: 'Soft deleted', data: softDeleted });
     }
 
     // Hard delete deletes deep references automatically due to Cascade onDelete models
     await prisma.product.delete({ where: { id } });
+    clearProductCache();
     return res.status(200).json({ message: 'Product SKU permanently deleted' });
   } catch (error: any) {
     return res.status(500).json({ error: 'SKU deletion command failed', details: error.message });

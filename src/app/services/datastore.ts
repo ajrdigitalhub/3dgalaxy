@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
+import { SettingsService } from '../core/services/settings.service';
 import { of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 
@@ -405,6 +406,7 @@ export class DatastoreService {
 
   private platformId = inject(PLATFORM_ID);
   api = inject(ApiService);
+  settingsService = inject(SettingsService);
   private injector = inject(Injector);
 
   constructor() {
@@ -1204,8 +1206,8 @@ export class DatastoreService {
   }
 
   pages = signal<any[]>([]);
-  faqs = signal<any[]>([]);
-  banners = signal<any[]>([]);
+  faqs = computed(() => this.settingsService.faqs());
+  banners = computed(() => this.settingsService.banners());
 
   reloadPages() {
     this.api.get<any>('/admin/pages').subscribe({
@@ -1228,13 +1230,7 @@ export class DatastoreService {
   }
 
   reloadFaqs() {
-    this.api.get<any>('/admin/faqs').subscribe({
-      next: (res: any) => {
-        const data = res?.success ? res.data : (res?.data || res);
-        if (Array.isArray(data)) this.faqs.set(data);
-      },
-      error: (e) => console.error('Error reloading faqs:', e)
-    });
+    this.settingsService.loadSettings(true);
   }
 
   reloadFooter() {
@@ -1242,6 +1238,7 @@ export class DatastoreService {
   }
 
   reloadBanners() {
+    this.settingsService.loadSettings(true);
     this.bannersLoading.set(false);
   }
 
@@ -1291,48 +1288,33 @@ export class DatastoreService {
   }
 
   async addFaq(faq: any) {
-    return new Promise((resolve, reject) => {
-      this.api.post('/admin/faqs', faq).subscribe({
-        next: (res) => { this.reloadFaqs(); resolve(res); },
-        error: (err) => reject(err)
-      });
-    });
+    const currentSettings = this.settingsService.getSettings();
+    const faqs = [...(currentSettings.faqs || []), { ...faq, id: faq.id || 'faq-' + Date.now() }];
+    return this.settingsService.saveSettings({ faqs });
   }
 
   async deleteFaq(id: string) {
-    return new Promise((resolve, reject) => {
-      this.api.delete(`/admin/faqs/${id}`).subscribe({
-        next: (res) => { this.reloadFaqs(); resolve(res); },
-        error: (err) => reject(err)
-      });
-    });
+    const currentSettings = this.settingsService.getSettings();
+    const faqs = (currentSettings.faqs || []).filter((f: any) => f.id !== id);
+    return this.settingsService.saveSettings({ faqs });
   }
 
   async addBanner(banner: any) {
-    return new Promise((resolve, reject) => {
-      this.api.post('/admin/banners', banner).subscribe({
-        next: (res) => { this.reloadBanners(); resolve(res); },
-        error: (err) => reject(err)
-      });
-    });
+    const currentSettings = this.settingsService.getSettings();
+    const banners = [...(currentSettings.banners || []), { ...banner, id: banner.id || 'ban-' + Date.now() }];
+    return this.settingsService.saveSettings({ banners });
   }
 
   async editBanner(id: string, banner: any) {
-    return new Promise((resolve, reject) => {
-      this.api.put(`/admin/banners/${id}`, banner).subscribe({
-        next: (res) => { this.reloadBanners(); resolve(res); },
-        error: (err) => reject(err)
-      });
-    });
+    const currentSettings = this.settingsService.getSettings();
+    const banners = (currentSettings.banners || []).map((b: any) => b.id === id ? { ...b, ...banner } : b);
+    return this.settingsService.saveSettings({ banners });
   }
 
   async deleteBanner(id: string) {
-    return new Promise((resolve, reject) => {
-      this.api.delete(`/admin/banners/${id}`).subscribe({
-        next: (res) => { this.reloadBanners(); resolve(res); },
-        error: (err) => reject(err)
-      });
-    });
+    const currentSettings = this.settingsService.getSettings();
+    const banners = (currentSettings.banners || []).filter((b: any) => b.id !== id);
+    return this.settingsService.saveSettings({ banners });
   }
 
   async updateSettings(updated: Partial<Settings>) {

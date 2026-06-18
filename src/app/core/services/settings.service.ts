@@ -12,15 +12,39 @@ export class SettingsService {
   public settingsData = signal<any>({});
   public isLoaded = signal(false);
 
-  // Easy accessors
+  // Easy accessors for all required 23 categories
+  public siteName = signal<string>('3D Galaxy');
+  public logoUrl = signal<string>('');
+  public currency = signal<string>('₹');
   public theme = signal<any>({});
   public heroSlides = signal<any[]>([]);
+  public promoBanners = signal<any[]>([]);
+  public advertisements = signal<any[]>([]);
+  public banners = signal<any[]>([]);
   public footer = signal<any>({});
-  public homepage = signal<any>({});
-  public payment = signal<any>({});
-  public security = signal<any>({});
+  public aboutPage = signal<any>({});
   public contact = signal<any>({});
-  public socialMedia = signal<any>({});
+  public socialLinks = signal<any>({});
+  public emailSettings = signal<any>({});
+  public whatsappSettings = signal<any>({});
+  public shippingSettings = signal<any>({});
+  public payment = signal<any>({});
+  public paymentGatewaySettings = signal<any>({});
+  public newsletterSettings = signal<any>({});
+  public chatbotSettings = signal<any>({});
+  public homepage = signal<any>({});
+  public homepageSections = signal<any>({});
+  public productPageSettings = signal<any>({});
+  public tourSettings = signal<any>({});
+  public colorPresets = signal<any[]>([]);
+  public managedFonts = signal<any[]>([]);
+  public tickerTexts = signal<any[]>([]);
+  public faqs = signal<any[]>([]);
+  public services = signal<any[]>([]);
+  public companyInfo = signal<any>({});
+  public themeSettings = signal<any>({});
+  public gradientSettings = signal<any>({});
+  public security = signal<any>({});
 
   async loadSettings(force = false) {
     if (this.isLoaded() && !force) return;
@@ -28,19 +52,45 @@ export class SettingsService {
     try {
       const resp = await firstValueFrom(this.http.get<any>('/api/settings'));
       if (resp && resp.data) {
-        this.settingsData.set(resp.data);
+        const d = resp.data;
+        this.settingsData.set(d);
         
-        // Update sub-signals
-        if (resp.data.theme) this.theme.set(resp.data.theme);
-        if (resp.data.heroSlides) this.heroSlides.set(resp.data.heroSlides);
-        if (resp.data.footer) this.footer.set(resp.data.footer);
-        if (resp.data.homepage) this.homepage.set(resp.data.homepage);
-        if (resp.data.payment) this.payment.set(resp.data.payment);
-        if (resp.data.security) this.security.set(resp.data.security);
-        if (resp.data.contact) this.contact.set(resp.data.contact);
-        if (resp.data.socialMedia) this.socialMedia.set(resp.data.socialMedia);
+        // Update all sub-signals
+        if (d.siteName !== undefined) this.siteName.set(d.siteName);
+        if (d.logoUrl !== undefined) this.logoUrl.set(d.logoUrl);
+        if (d.currency !== undefined) this.currency.set(d.currency);
+        if (d.theme) this.theme.set(d.theme);
+        if (d.heroSlides) this.heroSlides.set(d.heroSlides);
+        if (d.promoBanners) this.promoBanners.set(d.promoBanners);
+        if (d.advertisements) this.advertisements.set(d.advertisements);
+        if (d.footer) this.footer.set(d.footer);
+        if (d.aboutPage) this.aboutPage.set(d.aboutPage);
+        if (d.contact) this.contact.set(d.contact);
+        if (d.socialLinks) this.socialLinks.set(d.socialLinks);
+        if (d.emailSettings) this.emailSettings.set(d.emailSettings);
+        if (d.whatsappSettings) this.whatsappSettings.set(d.whatsappSettings);
+        if (d.shippingSettings) this.shippingSettings.set(d.shippingSettings);
+        if (d.paymentGatewaySettings) this.paymentGatewaySettings.set(d.paymentGatewaySettings);
+        if (d.newsletterSettings) this.newsletterSettings.set(d.newsletterSettings);
+        if (d.chatbotSettings) this.chatbotSettings.set(d.chatbotSettings);
+        if (d.homepageSections) this.homepageSections.set(d.homepageSections);
+        if (d.productPageSettings) this.productPageSettings.set(d.productPageSettings);
+        if (d.tourSettings) this.tourSettings.set(d.tourSettings);
+        if (d.colorPresets) this.colorPresets.set(d.colorPresets);
+        if (d.managedFonts) this.managedFonts.set(d.managedFonts);
+        if (d.tickerTexts) this.tickerTexts.set(d.tickerTexts);
+        if (d.faqs) this.faqs.set(d.faqs);
+        if (d.services) this.services.set(d.services);
+        if (d.companyInfo) this.companyInfo.set(d.companyInfo);
+        if (d.gradientSettings) this.gradientSettings.set(d.gradientSettings);
+        if (d.security) this.security.set(d.security);
 
-        this.applyTheme(resp.data.theme);
+        // Compatibility signals
+        if (d.banners) this.banners.set(d.banners);
+        if (d.paymentGatewaySettings) this.payment.set(d.paymentGatewaySettings);
+        if (d.homepageSections) this.homepage.set(d.homepageSections);
+
+        this.applyTheme(d.theme);
       }
       this.isLoaded.set(true);
     } catch (e) {
@@ -103,5 +153,13 @@ export class SettingsService {
 
   getSecuritySettings() {
     return this.security();
+  }
+
+  getBanners() {
+    return this.banners();
+  }
+
+  getFaqs() {
+    return this.faqs();
   }
 }

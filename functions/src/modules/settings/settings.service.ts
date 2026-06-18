@@ -1,10 +1,20 @@
 import prisma from '../../config/database';
-
-let settingsCache: any = null;
-let cacheTimestamp: number = 0;
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+import { sysCache } from '../../config/cache';
 
 const defaultSettings = {
+  siteName: "3D Galaxy",
+  logoUrl: "",
+  currency: "₹",
+  footer: {
+    description: '',
+    groups: [],
+    socialLinks: [],
+    paymentIcons: [],
+    trustBadges: []
+  },
+  heroSlides: [],
+  promoBanners: [],
+  advertisements: [],
   theme: {
     primaryColor: '#2563EB',
     secondaryColor: '#7C3AED',
@@ -13,14 +23,45 @@ const defaultSettings = {
     logo: '',
     favicon: ''
   },
-  heroSlides: [],
-  footer: {
-    description: '',
-    groups: [],
-    socialLinks: [],
-    paymentIcons: [],
-    trustBadges: []
+  gradientSettings: {},
+  socialLinks: {
+    facebook: '',
+    instagram: '',
+    linkedin: '',
+    youtube: ''
   },
+  aboutPage: {},
+  contact: {
+    phone: '',
+    email: '',
+    address: ''
+  },
+  paymentGatewaySettings: {
+    razorpayEnabled: true,
+    razorpayKeyId: '',
+    codEnabled: true
+  },
+  shippingSettings: {},
+  whatsappSettings: {},
+  emailSettings: {},
+  newsletterSettings: {},
+  chatbotSettings: {},
+  homePageSections: {
+    featuredCategories: [],
+    featuredProducts: [],
+    bestSellers: [],
+    brands: []
+  },
+  productPageSettings: {},
+  tourSettings: {},
+  colorPresets: [],
+  managedFonts: [],
+  tickerTexts: [],
+  faqs: [],
+  services: [],
+  companyInfo: {},
+
+  // Legacy fields for high backward-compatibility
   homepage: {
     featuredCategories: [],
     featuredProducts: [],
@@ -37,11 +78,6 @@ const defaultSettings = {
     warningBeforeLogout: 5,
     enableIdleLogout: true
   },
-  contact: {
-    phone: '',
-    email: '',
-    address: ''
-  },
   socialMedia: {
     facebook: '',
     instagram: '',
@@ -51,34 +87,35 @@ const defaultSettings = {
 };
 
 export const getSettingsService = async () => {
-  const now = Date.now();
-  if (settingsCache && now - cacheTimestamp < CACHE_TTL) {
-    return settingsCache;
+  const cached = sysCache.get('app_settings');
+  if (cached) {
+    return cached;
   }
 
   const record = await prisma.setting.findUnique({
     where: { settingKey: 'app_settings' }
   });
 
+  let settingsObj: any = null;
   if (record && record.settingData) {
     try {
-      settingsCache = typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData as any;
+      settingsObj = typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData as any;
     } catch (e) {
-      // IF invalid JSON, replace with defaultSettings.
-      settingsCache = { ...defaultSettings };
+      settingsObj = { ...defaultSettings };
     }
   } else {
-    settingsCache = { ...defaultSettings };
+    settingsObj = { ...defaultSettings };
     await prisma.setting.create({
       data: {
         settingKey: 'app_settings',
-        settingData: JSON.stringify(settingsCache)
+        settingData: settingsObj
       }
     });
   }
 
-  cacheTimestamp = now;
-  return settingsCache;
+  // CENTRAL CACHE: 30 minutes (1800 seconds)
+  sysCache.set('app_settings', settingsObj, 1800);
+  return settingsObj;
 };
 
 export const updateSettingsService = async (payload: any) => {
@@ -91,12 +128,17 @@ export const updateSettingsService = async (payload: any) => {
     create: { settingKey: 'app_settings', settingData: newSettings }
   });
 
+  let finalSettingsObj: any = null;
   try {
-     settingsCache = typeof updatedRecord.settingData === 'string' ? JSON.parse(updatedRecord.settingData) : updatedRecord.settingData as any;
+     finalSettingsObj = typeof updatedRecord.settingData === 'string' ? JSON.parse(updatedRecord.settingData) : updatedRecord.settingData as any;
   } catch (e) {
-     settingsCache = newSettings;
+     finalSettingsObj = newSettings;
   }
-  cacheTimestamp = Date.now();
+
+  // Clear cache and replace
+  sysCache.del('app_settings');
+  sysCache.set('app_settings', finalSettingsObj, 1800);
   
-  return settingsCache;
+  return finalSettingsObj;
 };
+

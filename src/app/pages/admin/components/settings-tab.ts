@@ -1,9 +1,10 @@
-import { Component, Input, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
 import { ThemeService } from '../../../core/services/theme.service';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-settings-tab',
@@ -12,409 +13,720 @@ import { ThemeService } from '../../../core/services/theme.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
-      <div>
-        <h1 class="text-xl font-black uppercase">Shopify System configuration</h1>
-        <p class="text-xs text-zinc-500">Formulate gateways, brand styling parameters, logos, and security sessions.</p>
+      <!-- HEADER ROW WITH SAVING CONTROLS -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between border-b dark:border-zinc-800 pb-5 gap-4">
+        <div>
+          <h1 class="text-xl font-black uppercase text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <mat-icon class="text-blue-600">admin_panel_settings</mat-icon>
+            System Core Configurator
+          </h1>
+          <p class="text-xs text-zinc-500">Formulate and manage gateways, typography, brand assets, and services globally.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (isSaving()) {
+            <span class="text-xs text-zinc-400 font-black uppercase tracking-wider flex items-center gap-1.5 leading-none animate-pulse">
+              <mat-icon class="animate-spin text-sm text-yellow-500">rotate_right</mat-icon> Syncing Database...
+            </span>
+          }
+          <button 
+            (click)="saveAllSettings()" 
+            [disabled]="isSaving()" 
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer shadow-sm shadow-blue-500/20 disabled:opacity-50 active:scale-95 flex items-center gap-1.5"
+            id="save-all-settings-btn"
+          >
+            <mat-icon class="text-sm">save</mat-icon>
+            Save All Configurations
+          </button>
+        </div>
       </div>
 
       <!-- TABBED SUB-BOARD LAYOUT -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- SUB-LINKS LEFT -->
-        <div class="flex flex-col gap-1 inline-flex lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 pr-4">
-          <button (click)="admin.setActiveTab('store-settings')" [class.bg-zinc-100]="admin.activeTab() === 'store-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'store-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">store</mat-icon> Store core</button>
-          <button (click)="admin.setActiveTab('theme-settings')" [class.bg-zinc-100]="admin.activeTab() === 'theme-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'theme-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">palette</mat-icon> Visual Theme</button>
-          <button (click)="admin.setActiveTab('seo-settings')" [class.bg-zinc-100]="admin.activeTab() === 'seo-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'seo-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">travel_explore</mat-icon> SEO Configuration</button>
-          <button (click)="admin.setActiveTab('payment-settings')" [class.bg-zinc-100]="admin.activeTab() === 'payment-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'payment-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">payment</mat-icon> Payment PGs</button>
-          <button (click)="admin.setActiveTab('shipping-settings')" [class.bg-zinc-100]="admin.activeTab() === 'shipping-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'shipping-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">local_shipping</mat-icon> Logistical rates</button>
-          <button (click)="admin.setActiveTab('tax-settings')" [class.bg-zinc-100]="admin.activeTab() === 'tax-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'tax-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">percent</mat-icon> Tax codes</button>
-          <button (click)="admin.setActiveTab('user-management')" [class.bg-zinc-100]="admin.activeTab() === 'user-management'" [class.dark:bg-zinc-800]="admin.activeTab() === 'user-management'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">badge</mat-icon> Team Staff</button>
-          <button (click)="admin.setActiveTab('active-sessions')" [class.bg-zinc-100]="admin.activeTab() === 'active-sessions'" [class.dark:bg-zinc-800]="admin.activeTab() === 'active-sessions'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">monitor</mat-icon> Active Sessions</button>
-          <button (click)="admin.setActiveTab('security-settings')" [class.bg-zinc-100]="admin.activeTab() === 'security-settings'" [class.dark:bg-zinc-800]="admin.activeTab() === 'security-settings'" class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-xs font-black uppercase select-none transition-colors cursor-pointer"><mat-icon class="text-base">admin_panel_settings</mat-icon> Security Settings</button>
+        
+        <!-- SUB-LINKS LEFT (23 DISTINCT DYNAMIC MODULES) -->
+        <div class="flex flex-col gap-1 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 pr-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
+          @for (tab of subTabs; track tab.name) {
+            <button 
+              (click)="activeSubTab.set(tab.name)" 
+              [class.bg-blue-50]="activeSubTab() === tab.name"
+              [class.text-blue-600]="activeSubTab() === tab.name"
+              [class.dark:bg-zinc-800]="activeSubTab() === tab.name"
+              [class.dark:text-blue-400]="activeSubTab() === tab.name"
+              [class.border-l-4]="activeSubTab() === tab.name"
+              [class.border-blue-600]="activeSubTab() === tab.name"
+              class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded text-[11px] font-black uppercase select-none transition-all cursor-pointer text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+            >
+              <mat-icon class="text-base">{{ tab.icon }}</mat-icon> 
+              {{ tab.name }}
+            </button>
+          }
         </div>
 
-        <!-- ACTIVE DETAILS RIGHT CARD -->
+        <!-- ACTIVE DETAILS RIGHT CANVAS -->
         <div class="lg:col-span-3 space-y-6">
-          <!-- SUB-TAB STORE SETTINGS -->
-          @if (admin.activeTab() === 'store-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Organizational Store Details</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Legal Store Brand Name</span>
-                  <input type="text" [value]="admin.storeName()" (input)="admin.storeName.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none">
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Logistics support Endpoint (Email)</span>
-                  <input type="email" [value]="admin.storeSupportEmail()" (input)="admin.storeSupportEmail.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none">
-                </div>
-              </div>
-
-              <!-- General Settings Images requested by the user -->
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pt-4 pb-2">Store General Visual Assets</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Store Logo" [value]="admin.logoUrl()" (valueChange)="admin.logoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Store Favicon" [value]="admin.faviconUrl()" (valueChange)="admin.faviconUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="App Icon" [value]="admin.appIconUrl()" (valueChange)="admin.appIconUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Login Background Image" [value]="admin.loginBgUrl()" (valueChange)="admin.loginBgUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="col-span-1 sm:col-span-2 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Admin Portal Background Image" [value]="admin.adminBgUrl()" (valueChange)="admin.adminBgUrl.set($event)"></app-image-picker>
-                </div>
-              </div>
-
-              <div class="pt-2">
-                <button (click)="admin.saveGlobalConfig()" [disabled]="admin.isSaving()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-colors cursor-pointer shadow-sm shadow-blue-500/10 disabled:opacity-50">Save Store configurations</button>
-              </div>
+          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xs space-y-6">
+            
+            <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
+              <h2 class="text-sm font-black uppercase tracking-wider text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                <mat-icon class="text-blue-500 text-lg">settings_applications</mat-icon>
+                {{ activeSubTab() }} Settings
+              </h2>
+              <span class="text-[9px] px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-extrabold uppercase rounded-full">ACTIVE PANEL</span>
             </div>
-          }
 
-          <!-- SUB-TAB THEME SETTINGS -->
-          @if (admin.activeTab() === 'theme-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <div class="pt-4 pb-2 border-b dark:border-zinc-800 flex items-center justify-between">
-                <h3 class="text-xs font-black uppercase">Branding aesthetic Customizer</h3>
-                <button (click)="previewTheme()" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[9px] font-black uppercase transition-colors cursor-pointer tracking-wider">Live Preview</button>
+            <!-- 1. GENERAL -->
+            @if (activeSubTab() === 'General') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Site/Store Name</span>
+                    <input type="text" [value]="draft().siteName || ''" (input)="setVal('siteName', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Default Store Currency Symbol</span>
+                    <input type="text" [value]="draft().currency || '₹'" (input)="setVal('currency', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">System Logo Web Resource</span>
+                  <app-image-picker [value]="draft().logoUrl || ''" (valueChange)="setVal('logoUrl', $event)"></app-image-picker>
+                </div>
+                <!-- Company Info -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Company/Store Description</span>
+                  <textarea rows="3" [value]="draft().companyInfo?.description || ''" (input)="setNested('companyInfo', 'description', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"></textarea>
+                </div>
               </div>
-              
-              <!-- Aesthetic variables -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
-                    <span class="text-[10px] font-black uppercase text-zinc-500">Primary Color palette</span>
-                    <input type="color" [value]="admin.primaryColor()" (input)="admin.primaryColor.set($any($event.target).value)" class="w-7 h-7 rounded-sm border-none bg-transparent cursor-pointer">
+            }
+
+            <!-- 2. THEME -->
+            @if (activeSubTab() === 'Theme') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                    <span class="text-[10px] font-black uppercase text-zinc-500">Primary Color Palette</span>
+                    <input type="color" [value]="draft().theme?.primaryColor || '#2563EB'" (input)="setNested('theme', 'primaryColor', $any($event.target).value)" class="w-7 h-7 rounded border-none bg-transparent cursor-pointer">
                   </div>
-                </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center p-3.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                  <div class="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl">
                     <span class="text-[10px] font-black uppercase text-zinc-500">Secondary Accent Palette</span>
-                    <input type="color" [value]="admin.secondaryColor()" (input)="admin.secondaryColor.set($any($event.target).value)" class="w-7 h-7 rounded-sm border-none bg-transparent cursor-pointer">
+                    <input type="color" [value]="draft().theme?.secondaryColor || '#7C3AED'" (input)="setNested('theme', 'secondaryColor', $any($event.target).value)" class="w-7 h-7 rounded border-none bg-transparent cursor-pointer">
                   </div>
                 </div>
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Gradient Pattern Angle (e.g. 135deg, 90deg, to right)</span>
-                  <input type="text" [value]="admin.gradientAngle()" (input)="admin.gradientAngle.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none uppercase">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                  <app-image-picker label="Header Logo" [value]="draft().theme?.logo || ''" (valueChange)="setNested('theme', 'logo', $event)"></app-image-picker>
+                  <app-image-picker label="Store Favicon" [value]="draft().theme?.favicon || ''" (valueChange)="setNested('theme', 'favicon', $event)"></app-image-picker>
                 </div>
+              </div>
+            }
+
+            <!-- 3. TYPOGRAPHY -->
+            @if (activeSubTab() === 'Typography') {
+              <div class="space-y-4">
                 <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Typography</span>
-                  <select [value]="admin.fontFamily()" (change)="admin.fontFamily.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none cursor-pointer">
-                    <option>Inter</option>
-                    <option>Space Grotesk</option>
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Primary Typography Family</span>
+                  <select [value]="draft().theme?.fontFamily || 'Inter'" (change)="setNested('theme', 'fontFamily', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                    <option value="Inter">Inter (Swiss Modernist Sans)</option>
+                    <option value="Space Grotesk">Space Grotesk (Tech Editorial)</option>
+                    <option value="JetBrains Mono">JetBrains Mono (Console Brutalist)</option>
+                    <option value="Playfair Display">Playfair Display (Premium Editorial)</option>
                   </select>
                 </div>
                 <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Corner border-radius: {{ admin.borderRadius() }}px</span>
-                  <input type="range" min="0" max="30" [value]="admin.borderRadius()" (input)="admin.borderRadius.set(+$any($event.target).value)" class="w-full h-1 bg-zinc-200 dark:bg-zinc-800 outline-none accent-blue-600 cursor-pointer">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Headings Accent Font</span>
+                  <input type="text" [value]="draft().theme?.headingsFont || 'Space Grotesk'" (input)="setNested('theme', 'headingsFont', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
                 </div>
               </div>
+            }
 
-              <!-- Theme Settings Logos requested by the user -->
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pt-4 pb-2">Visual Theme Branding Images</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Header Logo" [value]="admin.headerLogoUrl()" (valueChange)="admin.headerLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Footer Logo" [value]="admin.footerLogoUrl()" (valueChange)="admin.footerLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Mobile Menu Logo" [value]="admin.mobileLogoUrl()" (valueChange)="admin.mobileLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Dark Mode Header Logo" [value]="admin.darkModeLogoUrl()" (valueChange)="admin.darkModeLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Loading Spinner/Logo Screen" [value]="admin.loadingLogoUrl()" (valueChange)="admin.loadingLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Default Product Image Placeholder" [value]="admin.defaultPlaceholderUrl()" (valueChange)="admin.defaultPlaceholderUrl.set($event)"></app-image-picker>
-                </div>
-              </div>
-
-              <div class="pt-2">
-                <button (click)="admin.saveGlobalConfig()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer shadow-sm shadow-blue-500/10">Save theme visual parameters</button>
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB SEO SETTINGS -->
-          @if (admin.activeTab() === 'seo-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Global SEO Configuration</h3>
-              <p class="text-[11px] text-zinc-500 leading-relaxed">Tune fallback metadata and dynamic sharing assets distributed during external link crawls.</p>
-              
-              <!-- SEO Settings Images requested by the user -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Default Open Graph Image (1200x630)" [value]="admin.defaultOgImageUrl()" (valueChange)="admin.defaultOgImageUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-100 dark:border-zinc-850 rounded-xl">
-                  <app-image-picker label="Default Social Share Banner (Web/WhatsApp)" [value]="admin.defaultSocialShareImageUrl()" (valueChange)="admin.defaultSocialShareImageUrl.set($event)"></app-image-picker>
-                </div>
-              </div>
-
-              <div class="pt-2">
-                <button (click)="admin.saveGlobalConfig()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer shadow-sm shadow-blue-500/10">Synchronize SEO configuration</button>
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB PAYMENT SETTINGS -->
-          @if (admin.activeTab() === 'payment-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Integrated payment Gateways</h3>
-              
-              <!-- Payment Settings Logos requested by the user -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border border-zinc-100 dark:border-zinc-850 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/20">
-                <div class="space-y-1">
-                  <app-image-picker label="Razorpay Gateway Branding Logo" [value]="admin.razorpayLogoUrl()" (valueChange)="admin.razorpayLogoUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="space-y-1">
-                  <app-image-picker label="Checkout Footer Payment Method Icons" [value]="admin.paymentMethodIconsUrl()" (valueChange)="admin.paymentMethodIconsUrl.set($event)"></app-image-picker>
-                </div>
-                <div class="col-span-1 sm:col-span-2 pt-2">
-                  <button (click)="admin.saveGlobalConfig()" class="px-3.5 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-lg text-[9px] uppercase font-black cursor-pointer shadow-sm">Save payment brand graphics</button>
-                </div>
-              </div>
-
-              <div class="space-y-6">
-                @for (g of admin.paymentGateways(); track g.id) {
-                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4 text-xs">
-                    <div class="flex justify-between items-center border-b dark:border-zinc-800 pb-3">
-                      <div>
-                        <h4 class="font-black uppercase text-zinc-900 dark:text-white leading-none">{{ g.name }}</h4>
-                        <span class="text-[9px] text-zinc-400 uppercase mt-1 inline-block">{{ g.description || 'No description' }}</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <label class="flex items-center gap-1.5 cursor-pointer">
-                          <input type="checkbox" [checked]="g.isEnabled" (change)="admin.updatePaymentGateway(g.id, { isEnabled: $any($event.target).checked })" class="rounded text-blue-600 focus:ring-blue-500 cursor-pointer w-3.5 h-3.5 bg-zinc-100 border-zinc-300 dark:border-zinc-600 dark:bg-zinc-700">
-                          <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300 select-none">Enabled</span>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <!-- Test Mode -->
-                      <div class="col-span-1 md:col-span-2">
-                        <label class="flex items-center gap-1.5 cursor-pointer w-fit p-2 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800">
-                          <input type="checkbox" [checked]="g.isTestMode" (change)="admin.updatePaymentGateway(g.id, { isTestMode: $any($event.target).checked })" class="rounded text-orange-500 focus:ring-orange-500 cursor-pointer w-3.5 h-3.5 bg-zinc-100 border-zinc-300 dark:border-zinc-600 dark:bg-zinc-700">
-                          <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300 select-none">Test Mode</span>
-                        </label>
-                      </div>
-                      <!-- Config Keys -->
-                      @if (g.gatewayCode !== 'COD' && g.gatewayCode !== 'BANK_TRANSFER') {
-                        <div class="space-y-1">
-                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Key ID</span>
-                          <input type="text" [value]="g.keyId || ''" #keyIdInput class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
-                        </div>
-                        <div class="space-y-1">
-                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Key Secret</span>
-                          <input type="password" [value]="g.keySecret || ''" #keySecInput class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
-                        </div>
-                        <div class="space-y-1 md:col-span-2">
-                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Webhook Secret</span>
-                          <input type="password" [value]="g.webhookSecret || ''" #webhookSecInput class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
-                        </div>
-                        <div class="md:col-span-2 text-right">
-                          <button (click)="admin.updatePaymentGateway(g.id, { keyId: keyIdInput.value, keySecret: keySecInput.value, webhookSecret: webhookSecInput.value })" class="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-white rounded-lg text-[9px] font-black uppercase cursor-pointer transition-colors shadow-sm">Save config</button>
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB SHIPPING SETTINGS -->
-          @if (admin.activeTab() === 'shipping-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Logistics Zoning & delivery rates</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- FORMS -->
-                <div class="space-y-3.5">
-                  <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Zone Region</span>
-                    <input type="text" [value]="admin.newShippingZoneName()" (input)="admin.newShippingZoneName.set($any($event.target).value)" placeholder="e.g. South Hub Bangalore" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-semibold outline-none">
-                  </div>
-                  <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Base rating Courier Cost (INR)</span>
-                    <input type="number" [value]="admin.newShippingBaseRate()" (input)="admin.newShippingBaseRate.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none">
-                  </div>
-                  <button (click)="admin.createShippingZone()" class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] uppercase font-black cursor-pointer hover:bg-blue-500">Register Logistics</button>
-                </div>
-
-                <!-- LIST -->
-                <div class="space-y-2 max-h-50 overflow-y-auto p-2 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                  @for (z of admin.shippingZones(); track z.id) {
-                    <div class="p-3 bg-zinc-50 dark:bg-zinc-955 rounded-xl flex justify-between items-center text-xs">
-                      <div>
-                        <h4 class="font-black uppercase text-zinc-900 dark:text-white">{{ z.zone }}</h4>
-                        <p class="text-[10px] text-zinc-400 tracking-wider">Courier: {{ z.courier }} / Rate: ₹{{ z.baseRate }}</p>
-                      </div>
-                      <button (click)="admin.deleteShippingZone(z.id)" class="text-red-400 cursor-pointer hover:text-red-500 transition-colors"><mat-icon class="text-sm">close</mat-icon></button>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB TAX SETTINGS -->
-          @if (admin.activeTab() === 'tax-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">National tax overrides (GST/VAT)</h3>
-              <div class="space-y-1.5 max-w-sm">
-                <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Standard Global GST override Percentage (%)</span>
-                <input type="number" [value]="admin.taxRate()" (input)="admin.taxRate.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none">
-              </div>
-              <button (click)="admin.saveGlobalConfig()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer">Authorize coding override</button>
-            </div>
-          }
-
-          <!-- SUB-TAB USER MANAGEMENT -->
-          @if (admin.activeTab() === 'user-management') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Team Logistics Staff directory</h3>
-              <div class="space-y-3">
-                @for (user of admin.systemPersonnel(); track user.uid) {
-                  <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl flex justify-between items-center text-xs">
-                    <div class="flex items-center gap-3">
-                      <div class="h-8 w-8 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center font-black text-xs uppercase">{{ user.name.slice(0,2) }}</div>
-                      <div>
-                        <h4 class="font-black uppercase text-zinc-900 dark:text-white leading-none">{{ user.name }}</h4>
-                        <p class="text-[10px] text-zinc-400 mt-1 font-mono font-bold">{{ user.email }}</p>
-                      </div>
-                    </div>
-                    <span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-500 border border-blue-500/15 rounded text-[8px] font-black uppercase tracking-widest">{{ user.role }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB SECURITY SETTINGS -->
-          @if (admin.activeTab() === 'security-settings') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-6 shadow-xs">
-              <h3 class="text-xs font-black uppercase border-b dark:border-zinc-800 pb-2">Session Management & Security</h3>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Idle Timeout Enabled -->
-                <div class="md:col-span-2">
-                  <label class="flex items-center gap-2 cursor-pointer w-fit p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-850 transition-colors">
-                    <input type="checkbox" [checked]="admin.enableIdleTimeout()" (change)="admin.enableIdleTimeout.set($any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
-                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Idle Timeout</span>
-                  </label>
-                </div>
-
-                <!-- Session Timeout -->
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Session Timeout (Minutes)</span>
-                  <input type="number" [value]="admin.sessionTimeout()" (input)="admin.sessionTimeout.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none focus:border-blue-500">
-                </div>
-
-                <!-- Idle Warning Time -->
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Idle Warning Time (Minutes)</span>
-                  <input type="number" [value]="admin.idleWarningTime()" (input)="admin.idleWarningTime.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none focus:border-blue-500">
-                </div>
-
-                <!-- Warning Popup Enabled -->
-                <div class="md:col-span-2">
-                  <label class="flex items-center gap-2 cursor-pointer w-fit p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-850 transition-colors">
-                    <input type="checkbox" [checked]="admin.enableSessionWarningPopup()" (change)="admin.enableSessionWarningPopup.set($any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
-                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Session Warning Popup</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="pt-2">
-                <button (click)="admin.saveSecuritySettings()" [disabled]="admin.isSavingSettings()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-colors cursor-pointer shadow-sm shadow-blue-500/10 disabled:opacity-50">
-                  Save Security Policies
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- SUB-TAB ACTIVE SESSIONS -->
-          @if (admin.activeTab() === 'active-sessions') {
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl space-y-6 shadow-xs">
-              <div class="flex justify-between items-center border-b dark:border-zinc-800 pb-3">
-                <div>
-                  <h3 class="text-xs font-black uppercase">Active Security Sessions</h3>
-                  <p class="text-[10px] text-zinc-500 mt-1">Monitored active client authentications & device hardware signatures.</p>
-                </div>
-                <button (click)="admin.fetchUserSessions()" class="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg transition-colors cursor-pointer flex items-center justify-center border-none">
-                  <mat-icon class="text-sm">refresh</mat-icon>
-                </button>
-              </div>
-
+            <!-- 4. FONTS -->
+            @if (activeSubTab() === 'Fonts') {
               <div class="space-y-4">
-                @if (admin.activeUserSessions().length === 0) {
-                  <p class="text-xs text-zinc-500 italic py-4">No active user sessions found.</p>
-                } @else {
-                  @for (s of admin.activeUserSessions(); track s.id) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-705">
-                      <div class="flex items-start gap-3">
-                        <div class="h-10 w-10 min-w-10 rounded-xl bg-orange-600/10 text-orange-500 flex items-center justify-center font-black text-xs uppercase shadow-xs">
-                          <mat-icon>devices</mat-icon>
+                <p class="text-xs text-zinc-500">Define external typography loads to load on application viewport load.</p>
+                @for (font of draft().managedFonts || []; track $index) {
+                  <div class="flex items-center gap-2">
+                    <input type="text" [value]="font" (input)="updateArrayItem('managedFonts', $index, $any($event.target).value)" class="flex-1 px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                    <button (click)="removeArrayItem('managedFonts', $index)" class="p-2 text-red-500 hover:bg-zinc-100 rounded-xl transition-all cursor-pointer flex items-center justify-center"><mat-icon class="text-sm">delete</mat-icon></button>
+                  </div>
+                }
+                <button (click)="appendArrayItem('managedFonts', 'Inter')" class="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase rounded-lg transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add</mat-icon> Include Font</button>
+              </div>
+            }
+
+            <!-- 5. COLOR PRESETS -->
+            @if (activeSubTab() === 'Color Presets') {
+              <div class="space-y-4">
+                <p class="text-xs text-zinc-500">Maintain custom hex presets list for rapid template rendering alterations.</p>
+                <div class="grid grid-cols-2 gap-2">
+                  @for (preset of draft().colorPresets || []; track $index) {
+                    <div class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                      <input type="color" [value]="preset" (input)="updateArrayItem('colorPresets', $index, $any($event.target).value)" class="w-6 h-6 rounded cursor-pointer border-none bg-transparent">
+                      <input type="text" [value]="preset" (input)="updateArrayItem('colorPresets', $index, $any($event.target).value)" class="flex-1 px-2 py-1 bg-transparent border-none text-xs font-mono font-bold outline-none leading-none">
+                      <button (click)="removeArrayItem('colorPresets', $index)" class="p-1 text-red-500 hover:bg-zinc-100 rounded cursor-pointer flex items-center justify-center"><mat-icon class="text-xs text-[14px]">close</mat-icon></button>
+                    </div>
+                  }
+                </div>
+                <button (click)="appendArrayItem('colorPresets', '#3B82F6')" class="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase rounded-lg transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">palette</mat-icon> Add Color Preset</button>
+              </div>
+            }
+
+            <!-- 6. HERO SLIDES -->
+            @if (activeSubTab() === 'Hero Slides') {
+              <div class="space-y-5">
+                <p class="text-xs text-zinc-500">Provide high-contrast sliders for your central hero carousel.</p>
+                <div class="space-y-4">
+                  @for (slide of draft().heroSlides || []; track $index) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative">
+                      <div class="absolute top-2 right-2">
+                        <button (click)="removeArrayItem('heroSlides', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"><mat-icon class="text-base">delete</mat-icon></button>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Title</span>
+                          <input type="text" [value]="slide.title" (input)="updateSlideField($index, 'title', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
                         </div>
                         <div class="space-y-1">
-                          <div class="flex items-center gap-2">
-                            <h4 class="font-black uppercase text-zinc-900 dark:text-white leading-none">
-                              {{ s.user?.firstName || 'User' }} {{ s.user?.lastName || '' }}
-                            </h4>
-                            <span class="text-[9px] font-mono bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-600 dark:text-zinc-400 font-bold">
-                              {{ s.ipAddress || 'Unknown IP' }}
-                            </span>
-                          </div>
-                          <p class="text-[10px] text-zinc-400 font-mono font-bold">{{ s.user?.email || 'Unknown Email' }}</p>
-                          <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-zinc-500">
-                            <span class="flex items-center gap-1">
-                              <mat-icon class="text-xs text-[12px] h-3 w-3">computer</mat-icon>
-                              {{ s.deviceInfo || 'Generic Device/Browser' }}
-                            </span>
-                            <span class="flex items-center gap-1">
-                              <mat-icon class="text-xs text-[12px] h-3 w-3">schedule</mat-icon>
-                              Expires: {{ s.expiresAt | date:'short' }}
-                            </span>
-                          </div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Subheading</span>
+                          <input type="text" [value]="slide.subtitle" (input)="updateSlideField($index, 'subtitle', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Target Redirect Link URL</span>
+                          <input type="text" [value]="slide.linkUrl" (input)="updateSlideField($index, 'linkUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
                         </div>
                       </div>
-                      
-                      <div class="w-full md:w-auto flex items-center justify-end">
-                        <button (click)="admin.terminateUserSession(s.id)" class="w-full md:w-auto px-3.5 py-2 hover:bg-red-600 hover:text-white dark:hover:bg-red-600/20 text-red-500 border border-red-500/15 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5">
-                          <mat-icon class="text-sm">logout</mat-icon>
-                          Terminate
-                        </button>
+                      <app-image-picker label="Slide Image Resource (Desktop/Responsive Layout)" [value]="slide.imageUrl" (valueChange)="updateSlideField($index, 'imageUrl', $event)"></app-image-picker>
+                    </div>
+                  }
+                </div>
+                <button (click)="addHeroSlide()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add_to_photos</mat-icon> Insert Slide Frame</button>
+              </div>
+            }
+
+            <!-- 7. PROMO BANNERS -->
+            @if (activeSubTab() === 'Promo Banners') {
+              <div class="space-y-5">
+                <p class="text-xs text-zinc-500">Organize flash promotional banners placed across store sections.</p>
+                <div class="space-y-4">
+                  @for (banner of draft().promoBanners || []; track $index) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative">
+                      <div class="absolute top-2 right-2">
+                        <button (click)="removeArrayItem('promoBanners', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl cursor-pointer flex items-center justify-center"><mat-icon class="text-base">delete</mat-icon></button>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Tagline / Title</span>
+                          <input type="text" [value]="banner.title || ''" (input)="updatePromoBannerField($index, 'title', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Discount Markdown</span>
+                          <input type="text" [value]="banner.discountText || ''" (input)="updatePromoBannerField($index, 'discountText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Destination URL</span>
+                          <input type="text" [value]="banner.linkUrl || ''" (input)="updatePromoBannerField($index, 'linkUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                      </div>
+                      <app-image-picker label="Banner Graphic Wallpaper URL" [value]="banner.imageUrl || ''" (valueChange)="updatePromoBannerField($index, 'imageUrl', $event)"></app-image-picker>
+                    </div>
+                  }
+                </div>
+                <button (click)="addPromoBanner()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add</mat-icon> Insert Promo Banner</button>
+              </div>
+            }
+
+            <!-- 8. ADVERTISEMENTS -->
+            @if (activeSubTab() === 'Advertisements') {
+              <div class="space-y-5">
+                <p class="text-xs text-zinc-500">Provide third-party/internal advertisements for secondary grid placeholders.</p>
+                <div class="space-y-4">
+                  @for (ad of draft().advertisements || []; track $index) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative">
+                      <div class="absolute top-2 right-2">
+                        <button (click)="removeArrayItem('advertisements', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl cursor-pointer flex items-center justify-center"><mat-icon class="text-base">delete</mat-icon></button>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Ad Headline</span>
+                          <input type="text" [value]="ad.title || ''" (input)="updateAdField($index, 'title', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Ad Clickthrough URL</span>
+                          <input type="text" [value]="ad.linkUrl || ''" (input)="updateAdField($index, 'linkUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                      </div>
+                      <app-image-picker label="Ad Visual Banner asset" [value]="ad.imageUrl || ''" (valueChange)="updateAdField($index, 'imageUrl', $event)"></app-image-picker>
+                    </div>
+                  }
+                </div>
+                <button (click)="addAd()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add</mat-icon> Insert Advertisement frame</button>
+              </div>
+            }
+
+            <!-- 9. HOMEPAGE SECTIONS -->
+            @if (activeSubTab() === 'Homepage Sections') {
+              <div class="space-y-4">
+                <p class="text-xs text-zinc-500">Pick catalog item ids to populate featured sections dynamically on the user store index.</p>
+                <div class="space-y-4 border border-zinc-100 dark:border-zinc-800 p-4 rounded-xl">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Featured Category slugs (JSON / Comma Separated)</span>
+                    <input type="text" [value]="draft().homePageSections?.featuredCategories?.join(', ') || ''" (input)="setArrayFromCsv('homePageSections', 'featuredCategories', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Featured Products ID list</span>
+                    <input type="text" [value]="draft().homePageSections?.featuredProducts?.join(', ') || ''" (input)="setArrayFromCsv('homePageSections', 'featuredProducts', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Best Selling Items ID list</span>
+                    <input type="text" [value]="draft().homePageSections?.bestSellers?.join(', ') || ''" (input)="setArrayFromCsv('homePageSections', 'bestSellers', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 10. FOOTER -->
+            @if (activeSubTab() === 'Footer') {
+              <div class="space-y-4">
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Footer Legal Corporate Copywrite Text</span>
+                  <input type="text" [value]="draft().footer?.description || ''" (input)="setNested('footer', 'description', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <app-image-picker label="Footer Branding Logo Icon" [value]="draft().footer?.footerLogoUrl || ''" (valueChange)="setNested('footer', 'footerLogoUrl', $event)"></app-image-picker>
+                  <app-image-picker label="Payment Modes Trust Badge Image" [value]="draft().footer?.paymentIconsUrl || ''" (valueChange)="setNested('footer', 'paymentIconsUrl', $event)"></app-image-picker>
+                </div>
+              </div>
+            }
+
+            <!-- 11. ABOUT PAGE -->
+            @if (activeSubTab() === 'About Page') {
+              <div class="space-y-4">
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Hero Mission Headline</span>
+                  <input type="text" [value]="draft().aboutPage?.headline || ''" (input)="setNested('aboutPage', 'headline', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Core Content Story Body</span>
+                  <textarea rows="4" [value]="draft().aboutPage?.bodyText || ''" (input)="setNested('aboutPage', 'bodyText', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"></textarea>
+                </div>
+              </div>
+            }
+
+            <!-- 12. CONTACT -->
+            @if (activeSubTab() === 'Contact') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Sales Support Hotline</span>
+                    <input type="text" [value]="draft().contact?.phone || ''" (input)="setNested('contact', 'phone', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Core Escalations Mailbox (Email)</span>
+                    <input type="text" [value]="draft().contact?.email || ''" (input)="setNested('contact', 'email', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Central HQ Physical Address Coordinates</span>
+                  <input type="text" [value]="draft().contact?.address || ''" (input)="setNested('contact', 'address', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                </div>
+              </div>
+            }
+
+            <!-- 13. SOCIAL LINKS -->
+            @if (activeSubTab() === 'Social Links') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Facebook URL</span>
+                    <input type="text" [value]="draft().socialLinks?.facebook || ''" (input)="setNested('socialLinks', 'facebook', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Instagram Handles Link</span>
+                    <input type="text" [value]="draft().socialLinks?.instagram || ''" (input)="setNested('socialLinks', 'instagram', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">LinkedIn Profile</span>
+                    <input type="text" [value]="draft().socialLinks?.linkedin || ''" (input)="setNested('socialLinks', 'linkedin', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">YouTube Broadcast Channel</span>
+                    <input type="text" [value]="draft().socialLinks?.youtube || ''" (input)="setNested('socialLinks', 'youtube', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 14. EMAIL SETTINGS -->
+            @if (activeSubTab() === 'Email Settings') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SMTP Outgoing Server</span>
+                    <input type="text" [value]="draft().emailSettings?.smtpHost || 'smtp.gmail.com'" (input)="setNested('emailSettings', 'smtpHost', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SMTP Port (SSL/TLS Default)</span>
+                    <input type="number" [value]="draft().emailSettings?.smtpPort || 465" (input)="setNested('emailSettings', 'smtpPort', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SMTP Username</span>
+                    <input type="text" [value]="draft().emailSettings?.smtpUser || ''" (input)="setNested('emailSettings', 'smtpUser', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">SMTP Auth Token/Pass</span>
+                    <input type="password" [value]="draft().emailSettings?.smtpPass || ''" (input)="setNested('emailSettings', 'smtpPass', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 15. WHATSAPP SETTINGS -->
+            @if (activeSubTab() === 'WhatsApp Settings') {
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                  <input type="checkbox" [checked]="draft().whatsappSettings?.automationEnabled" (change)="setNested('whatsappSettings', 'automationEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Automated WhatsApp Tracking Updates</span>
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Enterprise WhatsApp Broadcast Number</span>
+                  <input type="text" [value]="draft().whatsappSettings?.whatsappNumber || ''" (input)="setNested('whatsappSettings', 'whatsappNumber', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Dispatched Shipment Welcome API Message Template</span>
+                  <textarea rows="3" [value]="draft().whatsappSettings?.welcomeTemplate || ''" (input)="setNested('whatsappSettings', 'welcomeTemplate', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"></textarea>
+                </div>
+              </div>
+            }
+
+            <!-- 16. SHIPPING -->
+            @if (activeSubTab() === 'Shipping') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Global Minimum Threshold for Free Delivery (₹)</span>
+                    <input type="number" [value]="draft().shippingSettings?.freeShippingMinSpent || 999" (input)="setNested('shippingSettings', 'freeShippingMinSpent', +$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Base Rate for Express Deliveries</span>
+                    <input type="number" [value]="draft().shippingSettings?.fixedCourierRate || 120" (input)="setNested('shippingSettings', 'fixedCourierRate', +$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 17. PAYMENT GATEWAY -->
+            @if (activeSubTab() === 'Payment Gateway') {
+              <div class="space-y-4">
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                  <div class="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-lg">
+                    <input type="checkbox" [checked]="draft().paymentGatewaySettings?.razorpayEnabled" (change)="setNested('paymentGatewaySettings', 'razorpayEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Integrate Razorpay PG Checkout Payment</span>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Razorpay Key ID</span>
+                    <input type="text" [value]="draft().paymentGatewaySettings?.razorpayKeyId || ''" (input)="setNested('paymentGatewaySettings', 'razorpayKeyId', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                  </div>
+                </div>
+
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                  <div class="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-lg">
+                    <input type="checkbox" [checked]="draft().paymentGatewaySettings?.codEnabled" (change)="setNested('paymentGatewaySettings', 'codEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Cash on Delivery (COD) Option</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 18. NEWSLETTER -->
+            @if (activeSubTab() === 'Newsletter') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Newsletter Automated Signup Promo Discount Code</span>
+                    <input type="text" [value]="draft().newsletterSettings?.welcomePromoCode || 'NEWSLETTER10'" (input)="setNested('newsletterSettings', 'welcomePromoCode', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Discount Code flat Value (INR)</span>
+                    <input type="number" [value]="draft().newsletterSettings?.subscriptionDiscount || 150" (input)="setNested('newsletterSettings', 'subscriptionDiscount', +$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 19. CHATBOT -->
+            @if (activeSubTab() === 'Chatbot') {
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                  <input type="checkbox" [checked]="draft().chatbotSettings?.chatbotEnabled" (change)="setNested('chatbotSettings', 'chatbotEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Chatbot Assistant</span>
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Welcome Greeting Message</span>
+                  <input type="text" [value]="draft().chatbotSettings?.welcomeMessage || 'Hello! Warm greetings from 3D Galaxy AI Assistant.'" (input)="setNested('chatbotSettings', 'welcomeMessage', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                </div>
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">AI System prompt Instructions</span>
+                  <textarea rows="4" [value]="draft().chatbotSettings?.systemPrompt || ''" (input)="setNested('chatbotSettings', 'systemPrompt', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"></textarea>
+                </div>
+              </div>
+            }
+
+            <!-- 20. PRODUCT PAGE -->
+            @if (activeSubTab() === 'Product Page') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                    <input type="checkbox" [checked]="draft().productPageSettings?.enableReviews" (change)="setNested('productPageSettings', 'enableReviews', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable User review panel</span>
+                  </div>
+                  <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                    <input type="checkbox" [checked]="draft().productPageSettings?.showInventoryCounter" (change)="setNested('productPageSettings', 'showInventoryCounter', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Display low Stock warning counter</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- 21. TOUR SETTINGS -->
+            @if (activeSubTab() === 'Tour Settings') {
+              <div class="space-y-4">
+                <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                  <input type="checkbox" [checked]="draft().tourSettings?.tourEnabled" (change)="setNested('tourSettings', 'tourEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Activate Walkthrough onboarding Overlay</span>
+                </div>
+              </div>
+            }
+
+            <!-- 22. FAQ -->
+            @if (activeSubTab() === 'FAQ') {
+              <div class="space-y-4">
+                <p class="text-xs text-zinc-500">Provide direct Frequently Asked Questions dynamically shown in the customer HELP center.</p>
+                <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                  @for (faq of draft().faqs || []; track $index) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative">
+                      <div class="absolute top-2 right-2">
+                        <button (click)="removeArrayItem('faqs', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1 rounded-lg transition-all cursor-pointer"><mat-icon class="text-sm">delete</mat-icon></button>
+                      </div>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Question Title</span>
+                          <input type="text" [value]="faq.question || ''" (input)="updateFaqField($index, 'question', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Topic Category</span>
+                          <input type="text" [value]="faq.category || 'General'" (input)="updateFaqField($index, 'category', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                      </div>
+                      <div class="space-y-1 pr-8">
+                        <span class="block text-[8px] font-black text-zinc-400 uppercase">Resolved Answer Text</span>
+                        <textarea rows="2" [value]="faq.answer || ''" (input)="updateFaqField($index, 'answer', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"></textarea>
                       </div>
                     </div>
                   }
-                }
+                </div>
+                <button (click)="addFaq()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add_circle</mat-icon> Create FAQ Node</button>
               </div>
-            </div>
-          }
+            }
+
+            <!-- 23. SERVICES -->
+            @if (activeSubTab() === 'Services') {
+              <div class="space-y-4">
+                <p class="text-xs text-zinc-500">Formulate high-trust offering badges displayed as marketing blocks on the root checkout viewports.</p>
+                <div class="space-y-4">
+                  @for (srv of draft().services || []; track $index) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative">
+                      <div class="absolute top-2 right-2">
+                        <button (click)="removeArrayItem('services', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1 rounded-lg cursor-pointer"><mat-icon class="text-sm">delete</mat-icon></button>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pr-8">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Service title (Headline)</span>
+                          <input type="text" [value]="srv.title || ''" (input)="updateServiceField($index, 'title', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Service Description / Slogan</span>
+                          <input type="text" [value]="srv.description || ''" (input)="updateServiceField($index, 'description', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Icon Tag name (Material Icon)</span>
+                          <input type="text" [value]="srv.icon || 'star'" (input)="updateServiceField($index, 'icon', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+                <button (click)="addService()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add_box</mat-icon> Insert Offer badge</button>
+              </div>
+            }
+
+          </div>
         </div>
+
       </div>
     </div>
-  `
+  `,
+  styles: [
+    '.scrollbar-thin::-webkit-scrollbar { width: 4px; }',
+    '.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }',
+    '.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.2); border-radius: 2px; }'
+  ]
 })
 export class AdminSettingsTab {
   @Input({ required: true }) admin!: AdminPanel;
   private themeService = inject(ThemeService);
+  private toastService = inject(ToastService);
 
-  previewTheme() {
-    this.themeService.updateLivePreview({
-      primaryColor: this.admin.primaryColor(),
-      secondaryColor: this.admin.secondaryColor(),
-      gradientAngle: this.admin.gradientAngle(),
-      radius: this.admin.borderRadius() + 'px'
+  activeSubTab = signal<string>('General');
+  draft = signal<any>({});
+  isSaving = signal<boolean>(false);
+
+  subTabs = [
+    { name: 'General', icon: 'settings' },
+    { name: 'Theme', icon: 'palette' },
+    { name: 'Typography', icon: 'font_download' },
+    { name: 'Fonts', icon: 'text_format' },
+    { name: 'Color Presets', icon: 'style' },
+    { name: 'Hero Slides', icon: 'slideshow' },
+    { name: 'Promo Banners', icon: 'campaign' },
+    { name: 'Advertisements', icon: 'ad_units' },
+    { name: 'Homepage Sections', icon: 'view_quilt' },
+    { name: 'Footer', icon: 'vertical_align_bottom' },
+    { name: 'About Page', icon: 'info' },
+    { name: 'Contact', icon: 'contact_mail' },
+    { name: 'Social Links', icon: 'share' },
+    { name: 'Email Settings', icon: 'email' },
+    { name: 'WhatsApp Settings', icon: 'chat' },
+    { name: 'Shipping', icon: 'local_shipping' },
+    { name: 'Payment Gateway', icon: 'payment' },
+    { name: 'Newsletter', icon: 'alternate_email' },
+    { name: 'Chatbot', icon: 'smart_toy' },
+    { name: 'Product Page', icon: 'shopping_bag' },
+    { name: 'Tour Settings', icon: 'assistant' },
+    { name: 'FAQ', icon: 'quiz' },
+    { name: 'Services', icon: 'room_service' }
+  ];
+
+  constructor() {
+    effect(() => {
+      const live = this.admin.settingsService.settingsData();
+      if (live && Object.keys(live).length > 0) {
+        // Hydrate draft with copy on update
+        this.draft.set(JSON.parse(JSON.stringify(live)));
+      }
     });
+  }
+
+  setVal(key: string, value: any) {
+    this.draft.update(d => {
+      return { ...d, [key]: value };
+    });
+  }
+
+  setNested(parentKey: string, childKey: string, value: any) {
+    this.draft.update(d => {
+      const parent = d[parentKey] ? { ...d[parentKey] } : {};
+      parent[childKey] = value;
+      return { ...d, [parentKey]: parent };
+    });
+  }
+
+  setArrayFromCsv(parentKey: string, childKey: string, csv: string) {
+    const list = csv.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    this.setNested(parentKey, childKey, list);
+  }
+
+  updateArrayItem(arrayKey: string, index: number, value: any) {
+    this.draft.update(d => {
+      const list = [...(d[arrayKey] || [])];
+      list[index] = value;
+      return { ...d, [arrayKey]: list };
+    });
+  }
+
+  removeArrayItem(arrayKey: string, index: number) {
+    this.draft.update(d => {
+      const list = [...(d[arrayKey] || [])];
+      list.splice(index, 1);
+      return { ...d, [arrayKey]: list };
+    });
+  }
+
+  appendArrayItem(arrayKey: string, defaultValue: any) {
+    this.draft.update(d => {
+      const list = [...(d[arrayKey] || [])];
+      list.push(defaultValue);
+      return { ...d, [arrayKey]: list };
+    });
+  }
+
+  // Specialized array helpers
+  addHeroSlide() {
+    this.appendArrayItem('heroSlides', { imageUrl: '', title: '', subtitle: '', linkUrl: '' });
+  }
+
+  updateSlideField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const list = [...(d.heroSlides || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...d, heroSlides: list };
+    });
+  }
+
+  addPromoBanner() {
+    this.appendArrayItem('promoBanners', { id: 'banner_' + Date.now(), title: '', discountText: '', imageUrl: '', linkUrl: '' });
+  }
+
+  updatePromoBannerField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const list = [...(d.promoBanners || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...d, promoBanners: list };
+    });
+  }
+
+  addAd() {
+    this.appendArrayItem('advertisements', { id: 'ad_' + Date.now(), title: '', imageUrl: '', linkUrl: '' });
+  }
+
+  updateAdField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const list = [...(d.advertisements || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...d, advertisements: list };
+    });
+  }
+
+  addFaq() {
+    this.appendArrayItem('faqs', { question: '', answer: '', category: 'General' });
+  }
+
+  updateFaqField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const list = [...(d.faqs || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...d, faqs: list };
+    });
+  }
+
+  addService() {
+    this.appendArrayItem('services', { title: '', description: '', icon: 'star' });
+  }
+
+  updateServiceField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const list = [...(d.services || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...d, services: list };
+    });
+  }
+
+  async saveAllSettings() {
+    this.isSaving.set(true);
+    try {
+      await this.admin.settingsService.saveSettings(this.draft());
+      this.toastService.success('Centralized configuration serialized successfully.');
+    } catch (e: any) {
+      this.toastService.error(e.message || 'Error synchronization system schema.');
+    } finally {
+      this.isSaving.set(false);
+    }
   }
 }

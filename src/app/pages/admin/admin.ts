@@ -1726,19 +1726,16 @@ export class AdminPanel {
       return;
     }
     
-    // Create optimistic update
-    const previous = this.ds.banners();
-    this.ds.banners.set(banners);
-    
+    // Update via settingsService
     try {
-      // Send updates to the server setting sortOrder = current index
+      // Create clone with new order
       for (let i = 0; i < banners.length; i++) {
-        await this.ds.editBanner(banners[i].id, { sortOrder: i });
+        banners[i].sortOrder = i;
       }
+      await this.ds.settingsService.saveSettings({ banners });
       this.toastService.success('Banner order updated.');
     } catch {
       this.toastService.error('Failed to update banner order.');
-      this.ds.banners.set(previous); // Revert
     }
   }
 

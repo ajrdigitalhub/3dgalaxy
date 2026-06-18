@@ -876,33 +876,9 @@ model Setting {
   @@map("settings")
 }
 
-model Banner {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  imageUrl    String   @map("image_url")
-  linkUrl     String?  @map("link_url")
-  type        String   @default("HERO") // HERO, PROMOTIONAL, CATEGORY, BRAND
-  position    Int      @default(0)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@map("banners")
-}
 
-model Faq {
-  id           String   @id @default(uuid())
-  question     String
-  answer       String
-  category     String?
-  displayOrder Int      @default(0) @map("display_order")
-  isPublished  Boolean  @default(true) @map("is_published")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@map("faqs")
-}
 
 model Advertisement {
   id          String   @id @default(uuid())
