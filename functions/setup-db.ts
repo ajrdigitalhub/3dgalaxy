@@ -4,7 +4,7 @@ import { getDatabaseUrl } from './src/config/env';
 const DATABASE_URL = getDatabaseUrl();
 process.stdout.write('Deploying Prisma Schema...\n');
 try {
-  execSync(`npx prisma db push --accept-data-loss`, {
+  execSync(`npx prisma db push --accept-data-loss --schema=server/prisma/schema.prisma`, {
     env: { ...process.env, DATABASE_URL },
     stdio: 'inherit',
   });

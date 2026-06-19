@@ -112,14 +112,59 @@ export class SettingsService {
   }
 
   private applyTheme(themeData: any) {
-    if (!themeData) return;
+    if (!themeData || typeof document === 'undefined') return;
     const root = document.documentElement;
-    // We can map settings here to css variables
-    if (themeData.primaryColor) {
-      root.style.setProperty('--color-primary', themeData.primaryColor);
+    const d = this.settingsData() || {};
+
+    const primaryColor = themeData.primaryColor || '#2563EB';
+    const secondaryColor = themeData.secondaryColor || '#7C3AED';
+    const accentColor = themeData.accentColor || '#3B82F6';
+    
+    // Gradient Angle
+    let angle = themeData.gradientAngle !== undefined ? themeData.gradientAngle : '135';
+    if (typeof angle === 'number' || !String(angle).endsWith('deg')) {
+      angle = `${angle}deg`;
     }
-    if (themeData.secondaryColor) {
-      root.style.setProperty('--color-secondary', themeData.secondaryColor);
+
+    // Border Radius
+    const borderRadius = themeData.borderRadius || '0.75rem';
+
+    // Hover Effect (brightness or custom transform)
+    const hoverEffect = themeData.hoverEffect || 'brightness(1.15) scale(1.02)';
+
+    // Gradient build
+    const gradSettings = d.gradientSettings || {};
+    const gradColor = gradSettings.gradientColor || secondaryColor;
+    let gradient = gradSettings.gradient || `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
+
+    // Theme active mode colors
+    const isDarkMode = themeData.darkMode || false;
+    const lightColors = d.lightThemeColors || {};
+    const darkColors = d.darkThemeColors || {};
+    const actColors = isDarkMode ? darkColors : lightColors;
+
+    const finalPrimary = actColors.primary || primaryColor;
+    const finalSecondary = actColors.secondary || secondaryColor;
+    const finalAccent = actColors.accent || accentColor;
+
+    root.style.setProperty('--primary-color', finalPrimary);
+    root.style.setProperty('--secondary-color', finalSecondary);
+    root.style.setProperty('--accent-color', finalAccent);
+    root.style.setProperty('--gradient-angle', angle);
+    root.style.setProperty('--theme-radius', borderRadius);
+    root.style.setProperty('--theme-gradient', gradient);
+    root.style.setProperty('--theme-text', themeData.themeText || '#ffffff');
+    root.style.setProperty('--theme-hover-effect', hoverEffect);
+    
+    // Compatibility variables
+    root.style.setProperty('--color-primary', finalPrimary);
+    root.style.setProperty('--color-secondary', finalSecondary);
+
+    // Apply variables to body class for Dark Mode if enabled
+    if (isDarkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
     }
   }
 

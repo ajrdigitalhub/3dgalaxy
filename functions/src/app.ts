@@ -43,8 +43,8 @@ app.use(cors());
 app.use(express.json());
 
 // Serve Static Uploads
-const uploadsPath = path.resolve(__dirname, '../../uploads');
-app.use('/uploads', express.static(uploadsPath));
+// const uploadsPath = path.resolve(__dirname, '../../uploads');
+// app.use('/uploads', express.static(uploadsPath)); f gdfg dfg dfg d fdsf  d gdf
 
 // API Routing Configurations
 app.use('/', sitemapRoutes);

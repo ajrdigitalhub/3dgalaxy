@@ -11,9 +11,7 @@ export const getWishlist = async (req: any, res: Response) => {
 
     const wishlist = await prisma.customerWishlist.findMany({
       where: { customerId: customer.id },
-      include: { product: {
-        include: { images: true }
-      } }
+      include: { product: true }
     });
 
     return res.status(200).json({ success: true, data: wishlist });

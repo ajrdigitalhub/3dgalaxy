@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, UserProfile } from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ApiService } from '../../services/api.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-account',
@@ -71,13 +72,13 @@ export class Account {
           email: u.email || '',
           phone: u.phone || ''
         });
+        this.fetchMyOrders();
+        this.fetchWishlist();
       }
     });
   }
 
   ngOnInit() {
-    this.fetchMyOrders();
-    this.fetchWishlist();
     this.route.url.subscribe(url => {
       const path = url.length > 0 ? url[url.length - 1].path : 'dashboard';
       if (this.tabs.some(t => t.id === path)) {
@@ -90,14 +91,15 @@ export class Account {
 
   async fetchMyOrders() {
     try {
-      const resp = await this.api.get<any[]>('/orders/my-orders').toPromise();
-      if (resp) {
-        this.myOrders.set(resp.map(o => ({
+      const resp = await this.api.get<any>('/orders/my-orders').toPromise();
+      const orders = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.data) ? resp.data : []);
+      if (orders) {
+        this.myOrders.set(orders.map((o: any) => ({
           id: o.id,
           orderNumber: o.orderNumber,
           date: new Date(o.createdAt).toLocaleDateString(),
           status: o.status ? o.status.toLowerCase() : 'pending',
-          items: o.items.map((i: any) => ({
+          items: (o.items || []).map((i: any) => ({
             productId: i.productId,
             name: i.product?.name || 'Product',
             quantity: i.quantity,
@@ -201,7 +203,7 @@ export class Account {
 
       const token = localStorage.getItem('access_token');
       
-      const res = await fetch('/api/profile/image', {
+      const res = await fetch(`${environment.apiUrl}/profile/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -1,7 +1,8 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {HttpClient} from '@angular/common/http';
-import {MatIconModule} from '@angular/material/icon';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { MatIconModule } from '@angular/material/icon';
+import { environment } from '../../../environments/environment';
 import {
   DatastoreService,
   Advertisement,
@@ -11,20 +12,20 @@ import {
   Campaign,
   Order
 } from '../../services/datastore';
-import {SettingsService} from '../../core/services/settings.service';
+import { SettingsService } from '../../core/services/settings.service';
 
-import {LoadingService} from '../../core/services/loading.service';
-import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+import { LoadingService } from '../../core/services/loading.service';
+import { SkeletonPageComponent } from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 
 // Subcomponents
-import {AdminDashboardTab} from './components/dashboard-tab';
-import {AdminCatalogTab} from './components/catalog-tab';
-import {AdminSalesTab} from './components/sales-tab';
-import {AdminCustomersTab} from './components/customers-tab';
-import {AdminContentTab} from './components/content-tab';
-import {AdminMarketingTab} from './components/marketing-tab';
-import {AdminAnalyticsTab} from './components/analytics-tab';
-import {AdminSettingsTab} from './components/settings-tab';
+import { AdminDashboardTab } from './components/dashboard-tab';
+import { AdminCatalogTab } from './components/catalog-tab';
+import { AdminSalesTab } from './components/sales-tab';
+import { AdminCustomersTab } from './components/customers-tab';
+import { AdminContentTab } from './components/content-tab';
+import { AdminMarketingTab } from './components/marketing-tab';
+import { AdminAnalyticsTab } from './components/analytics-tab';
+import { AdminSettingsTab } from './components/settings-tab';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
 export type AdminTab =
@@ -259,7 +260,7 @@ export class AdminPanel {
   newCatName = signal<string>('');
   newCatParentId = signal<string>('');
   newCatDesc = signal<string>('');
-  
+
   editingCategory = signal<any | null>(null);
   catImage = signal<string>('');
   catBanner = signal<string>('');
@@ -298,20 +299,20 @@ export class AdminPanel {
   pDealer = signal<number>(999);
   pStock = signal<number>(50);
   pDesc = signal<string>('');
-  
+
   // Extended product fields
   pLongDesc = signal<string>('');
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
-  pImages = signal<{url: string, isPrimary: boolean}[]>([]);
+  pImages = signal<{ url: string, isPrimary: boolean }[]>([]);
   pOptions = signal<{ id?: string, name: string, values: string[] }[]>([]);
   pVariants = signal<any[]>([]);
-  pSpecs = signal<{name: string, value: string}[]>([]);
-  pFeatures = signal<{title: string, description: string}[]>([]);
-  pFaqs = signal<{question: string, answer: string}[]>([]);
-  pDownloads = signal<{title: string, fileUrl: string}[]>([]);
-  pWarranty = signal<{warrantyPeriod: string, warrantyDescription: string}>({warrantyPeriod: '', warrantyDescription: ''});
-  pShipping = signal<{deliveryTime: string, shippingCharges: number, shippingRegions: string}>({deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+  pSpecs = signal<{ name: string, value: string }[]>([]);
+  pFeatures = signal<{ title: string, description: string }[]>([]);
+  pFaqs = signal<{ question: string, answer: string }[]>([]);
+  pDownloads = signal<{ title: string, fileUrl: string }[]>([]);
+  pWarranty = signal<{ warrantyPeriod: string, warrantyDescription: string }>({ warrantyPeriod: '', warrantyDescription: '' });
+  pShipping = signal<{ deliveryTime: string, shippingCharges: number, shippingRegions: string }>({ deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
   pRelatedIds = signal<string[]>([]);
   pStatus = signal<'active' | 'draft' | 'out_of_stock'>('active');
 
@@ -687,10 +688,10 @@ export class AdminPanel {
     if (!status) return 'bg-neutral-500/10 text-neutral-400 border border-neutral-500/15';
     switch (status.toLowerCase()) {
       case 'delivered': return 'bg-emerald-500/10 text-emerald-400 dark:text-emerald-300 border border-emerald-500/15 dark:border-emerald-500/20';
-      case 'packed': 
+      case 'packed':
       case 'processing': return 'bg-blue-600/10 text-blue-500 dark:text-blue-400 border border-blue-500/15 dark:border-blue-500/20';
       case 'shipped': return 'bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/15 dark:border-purple-500/20';
-      case 'pending': 
+      case 'pending':
       case 'confirmed': return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/15 dark:border-yellow-500/20';
       default: return 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/15 dark:border-red-500/20';
     }
@@ -762,7 +763,7 @@ export class AdminPanel {
     if (this.isSavingCategory()) return;
     const name = this.newCatName().trim();
     if (!name) return this.toastService.error('Category Name is required.');
-    
+
     // Calculate display order
     let finalOrder = 1;
     if (this.editingCategory()) {
@@ -823,9 +824,9 @@ export class AdminPanel {
   // --- BRAND CRUD LOGICS ---
   startBrandEdit(brand: any) {
     this.editingBrand.set(brand);
-    this.brandName.set(brand.name);
-    this.brandSlug.set(brand.slug);
-    this.brandLogo.set(brand.logo);
+    this.brandName.set(brand.name || '');
+    this.brandSlug.set(brand.slug || '');
+    this.brandLogo.set(brand.logo || '');
     this.brandCountry.set(brand.country || 'Global HQ');
     this.brandBanner.set(brand.banner || '');
     this.brandDesc.set(brand.description || '');
@@ -845,17 +846,17 @@ export class AdminPanel {
 
   async saveBrand() {
     if (this.isSavingBrand()) return;
-    const name = this.brandName().trim();
+    const name = (this.brandName() || '').trim();
     if (!name) return this.toastService.error('Brand name is required.');
-    const slug = this.brandSlug().trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const slug = (this.brandSlug() || '').trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     const brandData: any = {
       name,
       slug,
-      logo: this.brandLogo().trim(),
-      country: this.brandCountry().trim(),
-      banner: this.brandBanner().trim(),
-      description: this.brandDesc().trim(),
+      logo: (this.brandLogo() || '').trim(),
+      country: (this.brandCountry() || '').trim(),
+      banner: (this.brandBanner() || '').trim(),
+      description: (this.brandDesc() || '').trim(),
       active: this.brandActive()
     };
 
@@ -948,6 +949,8 @@ export class AdminPanel {
   // --- PRODUCT MANAGEMENT LOGICS ---
   startProductEdit(p: Product) {
     this.editingProduct.set(p);
+
+    // Set immediate basic fields
     this.pName.set(p.name);
     this.pSku.set(p.sku || '');
     this.pDesc.set(p.description || '');
@@ -959,26 +962,79 @@ export class AdminPanel {
     this.pDealer.set(p.dealer_price || 0);
     this.pStock.set(p.stock || 0);
     this.pImages.set(p.images && p.images.length ? p.images.map((img: string, i: number) => ({ url: img, isPrimary: i === 0 })) : []);
-    
-    // Parse options for the UI
+    this.pStatus.set(p.status || 'active');
+
+    // Parse options for the UI (basic default)
     const restoredOptions = p.options?.map((o: any) => ({
-       id: o.id,
-       name: o.name,
-       values: o.values ? o.values.map((v: any) => v.value) : []
+      id: o.id,
+      name: o.name,
+      values: o.values ? o.values.map((v: any) => v.value) : []
     })) || [];
     this.pOptions.set(restoredOptions);
     this.pVariants.set(p.variants ? JSON.parse(JSON.stringify(p.variants)) : []);
-    
+
     this.pSeoTitle.set(p.seo?.seoTitle || p.seoTitle || '');
     this.pSeoDescription.set(p.seo?.seoDescription || p.seoDescription || '');
     this.pSpecs.set(p.specifications || p.specs || []);
     this.pFeatures.set(p.features || []);
     this.pFaqs.set(p.faqs || []);
     this.pDownloads.set(p.downloads || []);
-    this.pWarranty.set(p.warranty || {warrantyPeriod: '', warrantyDescription: ''});
-    this.pShipping.set(p.shipping || {deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+    this.pWarranty.set(p.warranty || { warrantyPeriod: '', warrantyDescription: '' });
+    this.pShipping.set(p.shipping || { deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
     this.pRelatedIds.set(p.relatedProducts?.map((rp: any) => typeof rp === 'string' ? rp : rp.relatedToId) || []);
-    this.pStatus.set(p.status || 'active');
+
+    // Asynchronously fetch complete product specifications, options, downloads, etc. from dedicated details endpoint
+    this.http.get<any>(`/api/admin/products/${p.id}/details`).subscribe({
+      next: (found) => {
+        if (found && !found.error) {
+          const detail = found.product || found;
+          const master = found.masterData || {};
+
+          this.pName.set(detail.name || p.name);
+          this.pSku.set(detail.sku || p.sku || '');
+          this.pDesc.set(detail.description || p.description || '');
+          this.pLongDesc.set(detail.long_description || p.long_description || '');
+          this.pBrand.set(detail.brandId || detail.brand || p.brand || '3D Galaxy');
+          this.pCatId.set(detail.categoryId || detail.category_id || p.category_id || '');
+          this.pMrp.set(detail.mrp || p.mrp || 0);
+          this.pSale.set(detail.salePrice || detail.sale_price || p.sale_price || 0);
+          this.pDealer.set(detail.dealerPrice || detail.dealer_price || p.dealer_price || 0);
+          this.pStock.set(detail.stock || p.stock || 0);
+
+          const imgs = found.images || detail.images || [];
+          this.pImages.set(imgs.map((img: any, i: number) => {
+            const url = typeof img === 'string' ? img : img?.url;
+            return { url, isPrimary: i === 0 };
+          }));
+
+          const opts = detail.options || [];
+          const detailOptions = opts.map((o: any) => ({
+            id: o.id,
+            name: o.name,
+            values: o.values ? o.values.map((v: any) => v.value) : []
+          })) || [];
+          if (detailOptions.length > 0) {
+            this.pOptions.set(detailOptions);
+          }
+          this.pVariants.set(found.variants || detail.variants || []);
+
+          this.pSeoTitle.set(master.seo?.title || master.seo?.seoTitle || detail.seoTitle || '');
+          this.pSeoDescription.set(master.seo?.description || master.seo?.seoDescription || detail.seoDescription || '');
+          this.pSpecs.set(master.specifications || detail.specifications || []);
+          this.pFeatures.set(master.features || detail.features || []);
+          this.pFaqs.set(master.faqs || detail.faqs || []);
+          this.pDownloads.set(master.downloads || detail.downloads || []);
+          this.pWarranty.set(master.warranty || detail.warranty || { warrantyPeriod: '', warrantyDescription: '' });
+          this.pShipping.set(master.shipping || detail.shipping || { deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
+          this.pRelatedIds.set(master.relatedProducts?.map((rp: any) => typeof rp === 'string' ? rp : (rp.relatedToId || rp.id)) || []);
+          this.pStatus.set(detail.status || p.status || 'active');
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load detailed specifications', err);
+        this.toastService.error('Error fetching complete specifications.');
+      }
+    });
   }
 
   cancelProductEdit() {
@@ -1001,8 +1057,8 @@ export class AdminPanel {
     this.pFeatures.set([]);
     this.pFaqs.set([]);
     this.pDownloads.set([]);
-    this.pWarranty.set({warrantyPeriod: '', warrantyDescription: ''});
-    this.pShipping.set({deliveryTime: '', shippingCharges: 0, shippingRegions: ''});
+    this.pWarranty.set({ warrantyPeriod: '', warrantyDescription: '' });
+    this.pShipping.set({ deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
     this.pRelatedIds.set([]);
     this.pStatus.set('active');
   }
@@ -1016,19 +1072,19 @@ export class AdminPanel {
   }
 
   // Array mutators
-  addSpec() { this.pSpecs.update(x => [...x, {name: '', value: ''}]); }
+  addSpec() { this.pSpecs.update(x => [...x, { name: '', value: '' }]); }
   removeSpec(idx: number) { this.pSpecs.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
   updateSpec(idx: number, field: 'name' | 'value', val: string) { this.pSpecs.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
 
-  addFeature() { this.pFeatures.update(x => [...x, {title: '', description: ''}]); }
+  addFeature() { this.pFeatures.update(x => [...x, { title: '', description: '' }]); }
   removeFeature(idx: number) { this.pFeatures.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
   updateFeature(idx: number, field: 'title' | 'description', val: string) { this.pFeatures.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
 
-  addDownload() { this.pDownloads.update(x => [...x, {title: '', fileUrl: ''}]); }
+  addDownload() { this.pDownloads.update(x => [...x, { title: '', fileUrl: '' }]); }
   removeDownload(idx: number) { this.pDownloads.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
   updateDownload(idx: number, field: 'title' | 'fileUrl', val: string) { this.pDownloads.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
 
-  addFaq() { this.pFaqs.update(x => [...x, {question: '', answer: ''}]); }
+  addFaq() { this.pFaqs.update(x => [...x, { question: '', answer: '' }]); }
   removeFaq(idx: number) { this.pFaqs.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
   updateFaq(idx: number, field: 'question' | 'answer', val: string) { this.pFaqs.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
 
@@ -1053,62 +1109,62 @@ export class AdminPanel {
 
   // --- OPTIONS & VARIANTS LOGIC ---
   addOption() {
-      const opts = [...this.pOptions(), { name: '', values: [] }];
-      this.pOptions.set(opts);
+    const opts = [...this.pOptions(), { name: '', values: [] }];
+    this.pOptions.set(opts);
   }
   removeOption(index: number) {
-      const opts = [...this.pOptions()];
-      opts.splice(index, 1);
-      this.pOptions.set(opts);
+    const opts = [...this.pOptions()];
+    opts.splice(index, 1);
+    this.pOptions.set(opts);
   }
   updateOption() {
-      this.pOptions.set([...this.pOptions()]);
+    this.pOptions.set([...this.pOptions()]);
   }
   getOptionValuesString(opt: any): string {
-      return opt.values ? opt.values.join(', ') : '';
+    return opt.values ? opt.values.join(', ') : '';
   }
   setOptionValuesString(opt: any, valueStr: string) {
-      opt.values = valueStr.split(',').map((s: string) => s.trim()).filter((s: string) => s);
-      this.updateOption();
+    opt.values = valueStr.split(',').map((s: string) => s.trim()).filter((s: string) => s);
+    this.updateOption();
   }
   generateVariants() {
-      // Cartesian product logic
-      const opts = this.pOptions().filter(o => o.name && o.values.length > 0);
-      if (opts.length === 0) return;
-      
-      const cartesian = (a: any[], b: any[]) => [].concat(...a.map((d: any) => b.map((e: any) => [].concat(d, e))) as any);
-      const cartesianProduct = (a: any[], b?: any[], ...c: any[]): any[] => {
-          if (!b) return a.map(x => [x]);
-          const d = cartesian(a, b);
-          if (c.length === 0) return d;
-          return cartesianProduct(d, c[0], ...c.slice(1));
+    // Cartesian product logic
+    const opts = this.pOptions().filter(o => o.name && o.values.length > 0);
+    if (opts.length === 0) return;
+
+    const cartesian = (a: any[], b: any[]) => [].concat(...a.map((d: any) => b.map((e: any) => [].concat(d, e))) as any);
+    const cartesianProduct = (a: any[], b?: any[], ...c: any[]): any[] => {
+      if (!b) return a.map(x => [x]);
+      const d = cartesian(a, b);
+      if (c.length === 0) return d;
+      return cartesianProduct(d, c[0], ...c.slice(1));
+    };
+
+    const valuesArr = opts.map(o => o.values);
+    const combinations: any[] = cartesianProduct(valuesArr[0], ...valuesArr.slice(1));
+
+    const existingVariants = this.pVariants();
+    const newVariants = combinations.map(combo => {
+      const comboStr = Array.isArray(combo) ? combo.join(' - ') : combo;
+      const comboArray = Array.isArray(combo) ? combo : [combo];
+      // Try to preserve existing variant properties
+      const existing = existingVariants.find(v => v.name === comboStr);
+      return existing || {
+        id: 'new-' + Math.random().toString(36).substring(2, 9),
+        name: comboStr,
+        sku: this.pSku() ? `${this.pSku()}-${comboArray.join('-')}`.toUpperCase().replace(/\s+/g, '-') : '',
+        price: this.pSale(),
+        stock: this.pStock(),
+        weight: 0,
+        optionsData: opts.map((opt, idx) => ({ optionName: opt.name, valueStr: comboArray[idx] })) // Tracking mapping
       };
-
-      const valuesArr = opts.map(o => o.values);
-      const combinations: any[] = cartesianProduct(valuesArr[0], ...valuesArr.slice(1));
-
-      const existingVariants = this.pVariants();
-      const newVariants = combinations.map(combo => {
-          const comboStr = Array.isArray(combo) ? combo.join(' - ') : combo;
-          const comboArray = Array.isArray(combo) ? combo : [combo];
-          // Try to preserve existing variant properties
-          const existing = existingVariants.find(v => v.name === comboStr);
-          return existing || {
-              id: 'new-' + Math.random().toString(36).substring(2, 9),
-              name: comboStr,
-              sku: this.pSku() ? `${this.pSku()}-${comboArray.join('-')}`.toUpperCase().replace(/\s+/g,'-') : '',
-              price: this.pSale(),
-              stock: this.pStock(),
-              weight: 0,
-              optionsData: opts.map((opt, idx) => ({ optionName: opt.name, valueStr: comboArray[idx] })) // Tracking mapping
-          };
-      });
-      this.pVariants.set(newVariants);
+    });
+    this.pVariants.set(newVariants);
   }
   removeVariant(index: number) {
-      const variants = [...this.pVariants()];
-      variants.splice(index, 1);
-      this.pVariants.set(variants);
+    const variants = [...this.pVariants()];
+    variants.splice(index, 1);
+    this.pVariants.set(variants);
   }
 
   removeImage(index: number) {
@@ -1135,7 +1191,7 @@ export class AdminPanel {
     if (!name) return this.toastService.error('Name is required.');
 
     const isEdit = this.editingProduct() && this.editingProduct()?.id !== 'new';
-    
+
     // Parse images array
     let imagesArr = ['https://picsum.photos/seed/' + Date.now() + '/800/800'];
     const currentImgs = this.pImages();
@@ -1148,13 +1204,13 @@ export class AdminPanel {
     // Parse variants from JSON block
     let variantsArr = this.pVariants();
     let optionsArr = this.pOptions().map((o: any, idx: number) => ({
-        name: o.name,
-        sortOrder: idx,
-        values: o.values.map((v: string, vidx: number) => ({
-            value: v,
-            displayValue: v,
-            sortOrder: vidx
-        }))
+      name: o.name,
+      sortOrder: idx,
+      values: o.values.map((v: string, vidx: number) => ({
+        value: v,
+        displayValue: v,
+        sortOrder: vidx
+      }))
     }));
 
     const pData: any = {
@@ -1245,7 +1301,7 @@ export class AdminPanel {
         accentColor: this.accentColor(),
         borderRadius: this.borderRadius(),
         fontFamily: this.fontFamily(),
-        
+
         logoUrl: this.logoUrl(),
         faviconUrl: this.faviconUrl(),
         appIconUrl: this.appIconUrl(),
@@ -1341,7 +1397,7 @@ export class AdminPanel {
     if (type === 'whatsapp') {
       const recipient = prompt('Enter recipient phone number to test live WhatsApp / Kall Me template dispatch:', '9876543210');
       if (recipient) {
-        fetch('/api/whatsapp/send', {
+        fetch(`${environment.apiUrl}/whatsapp/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1350,18 +1406,18 @@ export class AdminPanel {
             parameters: { Title: title, Message: msg }
           })
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            this.toastService.success(`WHATSAPP LIVE DISPATCH SUCCESS:\nContent: "${data.content}"\nStatus: ${data.status}\nLogged securely to Firestore database.`);
-          } else {
-            this.toastService.error(`WHATSAPP DISPATCH ERROR:\nStatus: ${data.status}\nReason: ${data.reason}`);
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          this.toastService.error('Network connection error dispatching WhatsApp message payload.');
-        });
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              this.toastService.success(`WHATSAPP LIVE DISPATCH SUCCESS:\nContent: "${data.content}"\nStatus: ${data.status}\nLogged securely to Firestore database.`);
+            } else {
+              this.toastService.error(`WHATSAPP DISPATCH ERROR:\nStatus: ${data.status}\nReason: ${data.reason}`);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            this.toastService.error('Network connection error dispatching WhatsApp message payload.');
+          });
       }
     } else {
       this.toastService.success(`SUCCESS: Campaign broadcast completed on type "${type}".`);
@@ -1725,7 +1781,7 @@ export class AdminPanel {
     } else {
       return;
     }
-    
+
     // Update via settingsService
     try {
       // Create clone with new order

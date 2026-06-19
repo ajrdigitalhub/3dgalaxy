@@ -23,8 +23,8 @@ export const queries = {
 
   // Products
   products: {
-    findMany: () => prisma.product.findMany({ include: { brand: true, category: true, images: true } }),
-    findById: (id: string) => prisma.product.findUnique({ where: { id }, include: { brand: true, category: true, images: true, variants: true } }),
+    findMany: () => prisma.product.findMany({ include: { brand: true, category: true } }),
+    findById: (id: string) => prisma.product.findUnique({ where: { id }, include: { brand: true, category: true, variants: true } }),
     create: (data: any) => prisma.product.create({ data }),
     update: (id: string, data: any) => prisma.product.update({ where: { id }, data }),
     delete: (id: string) => prisma.product.delete({ where: { id } }),

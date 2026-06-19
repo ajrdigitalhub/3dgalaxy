@@ -25,7 +25,6 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
           ],
           isActive: true
         },
-        include: { images: true },
         take: 5
       }),
       prisma.category.findMany({
@@ -85,7 +84,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
             ],
             isActive: true
           },
-          include: { images: true, category: true, brand: true }
+          include: { category: true, brand: true }
         }),
         prisma.category.findMany({
           where: { name: { contains: searchStr } }

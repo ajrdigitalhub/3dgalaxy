@@ -1,13 +1,14 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, ElementRef, viewChild, PLATFORM_ID} from '@angular/core';
-import {isPlatformBrowser} from '@angular/common';
-import {CommonModule} from '@angular/common';
-import {RouterModule, Router} from '@angular/router';
-import {MatIconModule} from '@angular/material/icon';
-import {DatastoreService, Product, Category} from '../../services/datastore';
-import {LoadingService} from '../../core/services/loading.service';
-import {animate} from 'motion';
-import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
-import {SettingsService} from '../../core/services/settings.service';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, ElementRef, viewChild, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { DatastoreService, Product, Category } from '../../services/datastore';
+import { LoadingService } from '../../core/services/loading.service';
+import { animate } from 'motion';
+import { SkeletonPageComponent } from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+import { SettingsService } from '../../core/services/settings.service';
+import { environment } from '../../../environments/environment';
 
 interface QuickNavItem {
   id: string;
@@ -45,20 +46,20 @@ export class Home {
   slides = computed(() => {
     const banners = this.settingsService.getHeroSlides() || [];
     if (banners.length === 0) {
-       // fallback placeholder if no banners
-       return [{
-         id: 1,
-         title: '3D Galaxy Storefront',
-         titleHighlight: 'The Future of Manufacturing',
-         desc: 'Check out our latest products and deals on 3D Printers, Filaments and more.',
-         image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
-         badge: 'Welcome',
-         badgeIcon: 'rocket_launch',
-         link: '/products',
-         btnText: 'Shop Ecosystem'
-       }];
+      // fallback placeholder if no banners
+      return [{
+        id: 1,
+        title: '3D Galaxy Storefront',
+        titleHighlight: 'The Future of Manufacturing',
+        desc: 'Check out our latest products and deals on 3D Printers, Filaments and more.',
+        image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
+        badge: 'Welcome',
+        badgeIcon: 'rocket_launch',
+        link: '/products',
+        btnText: 'Shop Ecosystem'
+      }];
     }
-    
+
     return banners.map((b, i) => {
       // Split the title into title and highlight if it has a dash or something,
       // But let's just make the first half title and second half titleHighlight
@@ -71,7 +72,7 @@ export class Home {
         id: b.id || i,
         title: title || 'Promo Event',
         titleHighlight: highlight,
-        desc: '', 
+        desc: '',
         image: b.imageUrl,
         badge: 'Featured',
         badgeIcon: 'bolt',
@@ -87,6 +88,35 @@ export class Home {
     { id: 'industrial', icon: 'precision_manufacturing', name: 'Industrial', desc: 'Large scale manufacturing for automotive and aerospace sectors.', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800' },
     { id: 'edu', icon: 'school', name: 'Educational', desc: 'STEM approved units for schools, universities, and makerspaces.', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800' }
   ];
+
+  designedBrands = computed(() => {
+    const list = [
+      { name: 'Creality', icon: 'CR', fallbackImage: 'https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Bambu Lab', icon: 'BL', fallbackImage: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
+      { name: 'Flashforge', icon: 'FF', fallbackImage: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Elegoo', icon: 'EG', fallbackImage: 'https://images.unsplash.com/photo-1551021210-994c6498a44b?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Phrozen', icon: 'PH', fallbackImage: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400' },
+      { name: 'CreatBot', icon: 'CB', fallbackImage: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Snapmaker', icon: 'SM', fallbackImage: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Anycubic', icon: 'AC', fallbackImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=400' },
+      { name: 'Prusa', icon: 'PR', fallbackImage: 'https://images.unsplash.com/photo-1608962714006-29d09083f830?auto=format&fit=crop&q=80&w=400' }
+    ];
+
+    return list.map(item => {
+      const dbBrand = this.ds.brands().find(dbB =>
+        dbB.name.toLowerCase() === item.name.toLowerCase() ||
+        dbB.slug.toLowerCase() === item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      );
+      return {
+        name: dbBrand?.name || item.name,
+        slug: dbBrand?.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        icon: item.icon,
+        logoUrl: dbBrand?.logo || '',
+        image: dbBrand?.banner || item.fallbackImage,
+        description: dbBrand?.description || ''
+      };
+    });
+  });
 
   brands = [
     { name: 'CREALITY', logo: 'C' },
@@ -121,7 +151,7 @@ export class Home {
   activeTopAd = computed(() => this.ds.advertisements().find(a => a.position === 'top-banner' && a.status === 'active'));
   activeFooterAd = computed(() => this.ds.advertisements().find(a => a.position === 'footer' && a.status === 'active'));
   activeSocialPosts = computed(() => this.ds.socialPosts().filter(p => p.approved));
-  
+
   featuredProducts = computed(() => this.ds.products().slice(0, 8));
 
   getIcon(catId: string): string {
@@ -162,7 +192,7 @@ export class Home {
     }
 
     if (term) {
-      prods = prods.filter(p => 
+      prods = prods.filter(p =>
         p.name.toLowerCase().includes(term) ||
         p.brand.toLowerCase().includes(term) ||
         p.description.toLowerCase().includes(term) ||
@@ -175,7 +205,7 @@ export class Home {
   filteredSearchProducts = computed(() => {
     const term = this.searchQuery().toLowerCase().trim();
     if (!term) return [];
-    return this.ds.products().filter(p => 
+    return this.ds.products().filter(p =>
       p.name.toLowerCase().includes(term) ||
       p.brand.toLowerCase().includes(term) ||
       p.tags.some(t => t.toLowerCase().includes(term))
@@ -191,7 +221,7 @@ export class Home {
   isRoot = (c: Category) => !c.parent_id;
   isSubBy = (parentId: string) => (c: Category) => c.parent_id === parentId;
   getCategoryName = (id: string) => this.ds.categories().find(c => c.id === id)?.name || '';
-  
+
   toggleCat(id: string) {
     if (this.expandedCatId() === id) {
       this.expandedCatId.set(null);
@@ -258,13 +288,13 @@ export class Home {
 
     animate(
       elements,
-      { 
+      {
         opacity: [0, 1],
         x: [xOffset, 0]
       },
-      { 
-        duration: 1, 
-        ease: [0.16, 1, 0.3, 1] 
+      {
+        duration: 1,
+        ease: [0.16, 1, 0.3, 1]
       }
     );
   }
@@ -351,12 +381,16 @@ export class Home {
     }
   }
 
+  selectFilterBrand(brandName: string) {
+    this.router.navigate(['/products'], { queryParams: { brand: brandName } });
+  }
+
   // AI-powered suggestions call using browser proxy back to our server
   async triggerAiSearchSuggestion() {
     const q = this.searchQuery().trim();
     this.isLoadingAiSuggestion.set(true);
     try {
-      const resp = await fetch('/api/generate-suggestions', {
+      const resp = await fetch(`${environment.apiUrl}/generate-suggestions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q })

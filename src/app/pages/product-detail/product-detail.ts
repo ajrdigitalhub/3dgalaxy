@@ -9,6 +9,7 @@ import {ApiService} from '../../services/api.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 import {AppButton} from '../../shared/components/app-button/app-button';
+import {environment} from '../../../environments/environment';
 
 @Component({
   selector: 'app-product-detail',
@@ -174,7 +175,7 @@ export class ProductDetail {
         this.slug.set(slugStr);
         
         // Fetch detailed product data
-        fetch(`/api/products/slug/${slugStr}`)
+        fetch(`${environment.apiUrl}/products/slug/${slugStr}`)
           .then(res => res.json())
           .then(detailedProd => {
             if (detailedProd && !detailedProd.error) {

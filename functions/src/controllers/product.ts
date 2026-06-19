@@ -57,7 +57,6 @@ export const getProducts = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Filters formulation
     const filters: any = {};
 
     if (search) {
@@ -86,7 +85,6 @@ export const getProducts = async (req: Request, res: Response) => {
       }
     }
 
-    // Sorting formulation
     const order: any = {};
     if (sortBy === 'price') {
       order.salePrice = sortOrder as string;
@@ -97,31 +95,47 @@ export const getProducts = async (req: Request, res: Response) => {
     const total = await prisma.product.count({ where: filters });
     const items = await prisma.product.findMany({
       where: filters,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        basePrice: true,
-        salePrice: true,
-        images: {
-          take: 1,
-          orderBy: { sortOrder: 'asc' },
-          select: { url: true }
-        }
+      include: {
+        brand: true,
+        category: true,
+        reviews: true,
       },
       orderBy: order,
       skip,
       take: limitNum,
     });
 
-    const mappedData = items.map(p => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: p.basePrice,
-      salePrice: p.salePrice,
-      thumbnail: p.images[0]?.url || ''
-    }));
+    const mappedData = items.map(p => {
+      let thumbnail = '';
+      const imgs = safeParseArray(p.images);
+      if (imgs.length > 0) {
+        const primaryImg = imgs.find((img: any) => img?.isPrimary) || imgs[0];
+        thumbnail = primaryImg?.url || '';
+      }
+      return {
+        id: p.id,
+        brandId: p.brandId,
+        categoryId: p.categoryId,
+        name: p.name,
+        slug: p.slug,
+        sku: p.sku,
+        description: p.description,
+        shortDescription: p.shortDescription,
+        basePrice: p.basePrice,
+        salePrice: p.salePrice,
+        dealerPrice: p.dealerPrice,
+        stock: p.stock,
+        isActive: p.isActive,
+        isExclusive: p.isExclusive,
+        images: imgs,
+        specifications: safeParseArray(p.specifications),
+        brand: p.brand,
+        category: p.category,
+        reviews: p.reviews,
+        price: p.basePrice,
+        thumbnail
+      };
+    });
 
     const finalResponse = {
       meta: {
@@ -133,9 +147,7 @@ export const getProducts = async (req: Request, res: Response) => {
       data: mappedData,
     };
 
-    // Product Cache: 5 Minute Cache (300 seconds)
     sysCache.set(cacheKey, finalResponse, 300);
-
     return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find products in catalog', details: error.message });
@@ -154,21 +166,9 @@ export const getProductBySlug = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { slug },
       include: {
-        options: { include: { values: true } },
-        variants: { include: { options: true, images: true } },
-        images: true,
+        variants: true,
         category: true,
         brand: true,
-        specifications: true,
-        downloads: true,
-        features: true,
-        faqs: true,
-        warranty: true,
-        shipping: true,
-        seo: true,
-        relatedProducts: {
-          include: { relatedProduct: true }
-        },
         reviews: {
           include: { user: true },
         },
@@ -179,40 +179,36 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const {
-      images,
-      variants,
-      reviews,
-      relatedProducts,
-      specifications,
-      downloads,
-      features,
-      faqs,
-      warranty,
-      shipping,
-      seo,
-      ...productFields
-    } = item;
-
-    const finalResponse = {
-      product: productFields,
-      images: images || [],
-      variants: variants || [],
-      variantImages: variants?.flatMap(v => v.images) || [],
-      reviews: reviews || [],
-      relatedProducts: relatedProducts || [],
-      specifications: specifications || [],
-      downloads: downloads || [],
-      features: features || [],
-      faqs: faqs || [],
-      warranty: warranty || null,
-      shipping: shipping || null,
-      seo: seo || null
+    const masterData = {
+      images: safeParseArray(item.images),
+      specifications: safeParseArray(item.specifications),
+      downloads: safeParseArray(item.downloads),
+      features: safeParseArray(item.features),
+      faqs: safeParseArray(item.faqs),
+      seo: safeParseObject(item.seo) || {},
+      shipping: safeParseObject(item.shipping) || {},
+      warranty: safeParseObject(item.warranty) || {},
+      relatedProducts: safeParseArray(item.relatedProducts)
     };
 
-    // Product Cache: 5 Minute Cache (300 seconds)
-    sysCache.set(cacheKey, finalResponse, 300);
+    const finalResponse = {
+      product: item,
+      variants: item.variants || [],
+      reviews: item.reviews || [],
+      // Keep backward compatibility lists
+      images: masterData.images,
+      specifications: masterData.specifications,
+      downloads: masterData.downloads,
+      features: masterData.features,
+      faqs: masterData.faqs,
+      warranty: masterData.warranty,
+      shipping: masterData.shipping,
+      seo: masterData.seo,
+      relatedProducts: masterData.relatedProducts,
+      masterData
+    };
 
+    sysCache.set(cacheKey, finalResponse, 300);
     return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch product', details: error.message });
@@ -222,7 +218,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 export const getProductById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const cacheKey = 'products_id_' + id;
+    const cacheKey = 'products_id_' + id + '_' + (req.originalUrl.includes('/details') ? 'admin' : 'cust');
     const cachedResponse = sysCache.get(cacheKey);
     if (cachedResponse) {
       return res.status(200).json(cachedResponse);
@@ -231,21 +227,9 @@ export const getProductById = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { id },
       include: {
-        options: { include: { values: true } },
-        variants: { include: { options: true, images: true } },
-        images: true,
+        variants: true,
         category: true,
         brand: true,
-        specifications: true,
-        downloads: true,
-        features: true,
-        faqs: true,
-        warranty: true,
-        shipping: true,
-        seo: true,
-        relatedProducts: {
-          include: { relatedProduct: true }
-        },
         reviews: {
           include: { user: true },
         },
@@ -253,73 +237,58 @@ export const getProductById = async (req: Request, res: Response) => {
     });
 
     if (!item) {
-      return res.status(404).json({ error: 'Product SKU does not exist' });
+      return res.status(404).json({ error: 'Product does not exist' });
     }
 
-    const {
-      images,
-      variants,
-      reviews,
-      relatedProducts,
-      specifications,
-      downloads,
-      features,
-      faqs,
-      warranty,
-      shipping,
-      seo,
-      ...productFields
-    } = item;
-
-    const finalResponse = {
-      product: productFields,
-      images: images || [],
-      variants: variants || [],
-      variantImages: variants?.flatMap(v => v.images) || [],
-      reviews: reviews || [],
-      relatedProducts: relatedProducts || [],
-      specifications: specifications || [],
-      downloads: downloads || [],
-      features: features || [],
-      faqs: faqs || [],
-      warranty: warranty || null,
-      shipping: shipping || null,
-      seo: seo || null
+    const masterData = {
+      images: safeParseArray(item.images),
+      specifications: safeParseArray(item.specifications),
+      downloads: safeParseArray(item.downloads),
+      features: safeParseArray(item.features),
+      faqs: safeParseArray(item.faqs),
+      seo: safeParseObject(item.seo) || {},
+      shipping: safeParseObject(item.shipping) || {},
+      warranty: safeParseObject(item.warranty) || {},
+      relatedProducts: safeParseArray(item.relatedProducts)
     };
 
-    // Product Cache: 5 Minute Cache (300 seconds)
-    sysCache.set(cacheKey, finalResponse, 300);
+    const finalResponse = {
+      product: item,
+      variants: item.variants || [],
+      reviews: item.reviews || [],
+      // Keep backward compatibility lists
+      images: masterData.images,
+      specifications: masterData.specifications,
+      downloads: masterData.downloads,
+      features: masterData.features,
+      faqs: masterData.faqs,
+      warranty: masterData.warranty,
+      shipping: masterData.shipping,
+      seo: masterData.seo,
+      relatedProducts: masterData.relatedProducts,
+      masterData
+    };
 
+    sysCache.set(cacheKey, finalResponse, 300);
     return res.status(200).json(finalResponse);
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to read individual product SKU', details: error.message });
+    return res.status(500).json({ error: 'Failed to read individual product', details: error.message });
   }
 };
 
 export const createProduct = async (req: Request, res: Response) => {
   const {
-    name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
-    categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts
+    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, stock,
+    categoryId, brandId, seoTitle, seoDescription, seoKeywords,
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes
   } = req.body;
 
   if (!name || !slug || !sku) {
-    return res.status(400).json({ error: 'Missing core mandatory parameters for SKU launch' });
+    return res.status(400).json({ error: 'Missing core mandatory parameters' });
   }
 
   try {
-    const parsedImages = safeParseArray(images);
-    const parsedVariants = safeParseArray(variants);
-    const parsedSpecs = safeParseArray(specifications);
-    const parsedDownloads = safeParseArray(downloads);
-    const parsedFeatures = safeParseArray(features);
-    const parsedFaqs = safeParseArray(faqs);
-    const parsedOptions = safeParseArray(options);
-    const parsedWarranty = safeParseObject(warranty);
-    const parsedShipping = safeParseObject(shipping);
-    const parsedRelatedProducts = safeParseArray(relatedProducts).filter(rid => typeof rid === 'string' && rid);
-
-    const validImages = parsedImages.map((img: any) => {
+    const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
       if (typeof img === 'string') {
         return { url: img, isPrimary: false, sortOrder: 0 };
@@ -329,16 +298,20 @@ export const createProduct = async (req: Request, res: Response) => {
         isPrimary: !!img.isPrimary,
         sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
       };
-    }).filter((img: any) => img && img.url.trim().length > 0) as any[];
+    }).filter((img: any) => img && img.url.trim().length > 0);
 
-    const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
-    const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
-    const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);
-    const validFeatures = parsedFeatures.filter((f: any) => f?.title);
-    const validFaqs = parsedFaqs.filter((f: any) => f?.question && f?.answer);
+    const parsedSpecs = safeParseArray(specifications).filter((s: any) => s?.name && s?.value);
+    const parsedDownloads = safeParseArray(downloads).filter((d: any) => d?.title || d?.name);
+    const parsedFeatures = safeParseArray(features);
+    const parsedFaqs = safeParseArray(faqs).filter((f: any) => f?.question && f?.answer);
+    const parsedVariants = safeParseArray(variants).filter((v: any) => v?.name && v?.sku);
+    const parsedOptions = safeParseArray(options);
+    const parsedAttributes = safeParseArray(attributes);
+    const parsedWarranty = safeParseObject(warranty);
+    const parsedShipping = safeParseObject(shipping);
+    const parsedRelatedProducts = safeParseArray(relatedProducts);
+    const parsedIncludedItems = safeParseArray(included_items);
 
-    // Ensure categoryId and brandId are actual UUIDs. If they are not (e.g. they are names or slugs), we should ideally look them up.
-    // For now, if they are provided, we will assume they are IDs or handle gracefully if Prisma fails.
     let resolvedCategoryId = categoryId || null;
     let resolvedBrandId = brandId || null;
 
@@ -349,196 +322,116 @@ export const createProduct = async (req: Request, res: Response) => {
     }
 
     if (resolvedBrandId && !resolvedBrandId.includes('-')) {
-      const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
-      if (brand) resolvedBrandId = brand.id;
+      const br = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
+      if (br) resolvedBrandId = br.id;
       else resolvedBrandId = null;
     }
 
     const created = await prisma.$transaction(async (tx) => {
       const p = await tx.product.create({
         data: {
-          name, slug, sku, description,
-          basePrice: parseFloat(mrp) || 0,
-          salePrice: parseFloat(salePrice) || 0,
-          dealerPrice: parseFloat(dealerPrice) || 0,
+          name,
+          slug,
+          sku,
+          description: description || null,
+          shortDescription: short_description || null,
+          basePrice: parseFloat(mrp) || parseFloat(price) || 0,
+          salePrice: parseFloat(salePrice) || null,
+          dealerPrice: parseFloat(dealerPrice) || null,
+          stock: parseInt(stock, 10) || 0,
           categoryId: resolvedCategoryId || null,
           brandId: resolvedBrandId || null,
+
+          // Store inside JSON fields
+          images: parsedImages,
+          specifications: parsedSpecs,
+          downloads: parsedDownloads,
+          features: parsedFeatures,
+          faqs: parsedFaqs,
           seo: {
-            create: { seoTitle, seoDescription, seoKeywords }
+            title: seoTitle || null,
+            description: seoDescription || null,
+            keywords: seoKeywords || []
           },
-          ...(validImages.length > 0 && {
-            images: {
-              create: validImages.map((img: any, idx: number) => ({
-                url: img.url, isPrimary: !!img.isPrimary, sortOrder: img.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validSpecs.length > 0 && {
-            specifications: {
-              create: validSpecs.map((s: any, idx: number) => ({
-                name: s.name, value: s.value, sortOrder: s.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validDownloads.length > 0 && {
-            downloads: {
-              create: validDownloads.map((d: any, idx: number) => ({
-                title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validFeatures.length > 0 && {
-            features: {
-              create: validFeatures.map((f: any, idx: number) => ({
-                icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validFaqs.length > 0 && {
-            faqs: {
-              create: validFaqs.map((f: any, idx: number) => ({
-                question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
-              })),
-            }
-          }),
-          ...(parsedWarranty?.warrantyPeriod && {
-            warranty: {
-              create: {
-                warrantyPeriod: parsedWarranty.warrantyPeriod,
-                warrantyType: parsedWarranty.warrantyType,
-                warrantyDescription: parsedWarranty.warrantyDescription
-              }
-            }
-          }),
-          ...(parsedShipping?.deliveryTime && {
-            shipping: {
-              create: {
-                deliveryTime: parsedShipping.deliveryTime,
-                shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
-                shippingRegions: parsedShipping.shippingRegions
-              }
-            }
-          }),
+          shipping: parsedShipping || {},
+          warranty: parsedWarranty || {},
+          relatedProducts: parsedRelatedProducts || [],
+          includedItems: parsedIncludedItems || [],
+          attributes: parsedAttributes || [],
+          options: parsedOptions || []
         }
       });
 
-      // Handle Options and Variants correctly via deep mappings
-      const validOptions = parsedOptions.filter((o: any) => o?.name && o?.values?.length > 0);
-      const optionValueMapping: Record<string, string> = {}; // Hash map
-
-      if (validOptions.length > 0) {
-          for (const opt of validOptions) {
-              const createdOpt = await tx.productOption.create({
-                  data: {
-                      productId: p.id,
-                      name: opt.name,
-                      sortOrder: opt.sortOrder || 0,
-                      displayType: 'select',
-                      values: {
-                          create: opt.values.map((v: any, vId: number) => ({
-                              value: v.value,
-                              displayValue: v.displayValue || v.value,
-                              sortOrder: v.sortOrder || vId
-                          }))
-                      }
-                  },
-                  include: { values: true }
-              });
-
-              for (const v of createdOpt.values) {
-                  optionValueMapping[`${opt.name}:${v.value}`] = v.id;
-              }
+      if (parsedVariants.length > 0) {
+        for (const v of parsedVariants) {
+          const optVals: Record<string, string> = {};
+          if (v.optionsData && Array.isArray(v.optionsData)) {
+            v.optionsData.forEach((od: any) => {
+              optVals[od.optionName] = od.valueStr;
+            });
+          } else if (v.optionValues || v.option_values) {
+            Object.assign(optVals, v.optionValues || v.option_values);
           }
-      }
 
-      if (validVariants.length > 0) {
-          for (const v of validVariants) {
-              const createdVariant = await tx.productVariant.create({
-                  data: {
-                      productId: p.id,
-                      name: v.name,
-                      sku: v.sku,
-                      price: parseFloat(v.price) || 0,
-                      stock: v.stock || 0,
-                      weight: v.weight || 0,
-                  }
-              });
-
-              if (v.optionsData && Array.isArray(v.optionsData)) {
-                  for (const od of v.optionsData) {
-                      const valId = optionValueMapping[`${od.optionName}:${od.valueStr}`];
-                      if (valId) {
-                          await tx.productVariantOption.create({
-                              data: {
-                                  variantId: createdVariant.id,
-                                  optionValueId: valId
-                              }
-                          });
-                      }
-                  }
+          const variantImagesList: string[] = [];
+          if (v.images && Array.isArray(v.images)) {
+            v.images.forEach((img: any) => {
+              if (typeof img === 'string') {
+                variantImagesList.push(img);
+              } else {
+                variantImagesList.push(img.url || img.imageUrl || '');
               }
-
-              if (v.images && Array.isArray(v.images)) {
-                  for (const img of v.images) {
-                      await tx.productVariantImage.create({
-                          data: {
-                              variantId: createdVariant.id,
-                              imageUrl: img.url || img.imageUrl,
-                              isPrimary: !!img.isPrimary,
-                              sortOrder: img.sortOrder || 0
-                          }
-                      });
-                  }
-              }
+            });
+          } else if (v.variantImages || v.variant_images) {
+            variantImagesList.push(...(v.variantImages || v.variant_images));
           }
-      }
 
-      if (parsedRelatedProducts.length > 0) {
-        for (const [idx, rId] of parsedRelatedProducts.entries()) {
-           await tx.productRelated.create({
-              data: {
-                 productId: p.id,
-                 relatedToId: rId as string,
-                 relationType: 'cross-sell',
-                 sortOrder: idx
-              }
-           }).catch(() => {});
+          await tx.productVariant.create({
+            data: {
+              productId: p.id,
+              name: v.name,
+              sku: v.sku,
+              price: parseFloat(v.price) || 0,
+              salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
+              stock: parseInt(v.stock, 10) || 0,
+              weight: parseFloat(v.weight) || 0,
+              variantImages: variantImagesList,
+              optionValues: optVals
+            }
+          });
         }
       }
 
-      return tx.product.findUnique({ where: { id: p.id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true, relatedProducts: true }});
-    }, {
-      timeout: 30000
+      return tx.product.findUnique({
+        where: { id: p.id },
+        include: {
+          variants: true,
+          category: true,
+          brand: true,
+          reviews: {
+            include: { user: true }
+          }
+        }
+      });
     });
 
     clearProductCache();
     return res.status(201).json({ success: true, message: 'Success', data: created });
   } catch (error: any) {
-    return res.status(500).json({ success: false, error: 'Failed to record Product SKU', message: error.message });
+    return res.status(500).json({ success: false, error: 'Failed to record Product', message: error.message });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
   const {
-    name, slug, sku, description, mrp, salePrice, dealerPrice, stock,
-    categoryId, brandId, is360Supported, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts
+    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, stock,
+    categoryId, brandId, seoTitle, seoDescription, seoKeywords,
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes
   } = req.body;
 
   try {
-    const parsedImages = safeParseArray(images);
-    const parsedVariants = safeParseArray(variants);
-    const parsedSpecs = safeParseArray(specifications);
-    const parsedDownloads = safeParseArray(downloads);
-    const parsedFeatures = safeParseArray(features);
-    const parsedFaqs = safeParseArray(faqs);
-    const parsedOptions = safeParseArray(options);
-    const parsedWarranty = safeParseObject(warranty);
-    const parsedShipping = safeParseObject(shipping);
-    const parsedRelatedProducts = safeParseArray(relatedProducts).filter(rid => typeof rid === 'string' && rid);
-
-    const validImages = parsedImages.map((img: any) => {
+    const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
       if (typeof img === 'string') {
         return { url: img, isPrimary: false, sortOrder: 0 };
@@ -548,13 +441,19 @@ export const updateProduct = async (req: Request, res: Response) => {
         isPrimary: !!img.isPrimary,
         sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
       };
-    }).filter((img: any) => img && img.url.trim().length > 0) as any[];
+    }).filter((img: any) => img && img.url.trim().length > 0);
 
-    const validVariants = parsedVariants.filter((v: any) => v?.name && v?.sku);
-    const validSpecs = parsedSpecs.filter((s: any) => s?.name && s?.value);
-    const validDownloads = parsedDownloads.filter((d: any) => d?.title && d?.fileUrl);
-    const validFeatures = parsedFeatures.filter((f: any) => f?.title);
-    const validFaqs = parsedFaqs.filter((f: any) => f?.question && f?.answer);
+    const parsedSpecs = safeParseArray(specifications).filter((s: any) => s?.name && s?.value);
+    const parsedDownloads = safeParseArray(downloads).filter((d: any) => d?.title || d?.name);
+    const parsedFeatures = safeParseArray(features);
+    const parsedFaqs = safeParseArray(faqs).filter((f: any) => f?.question && f?.answer);
+    const parsedVariants = safeParseArray(variants).filter((v: any) => v?.name && v?.sku);
+    const parsedOptions = safeParseArray(options);
+    const parsedAttributes = safeParseArray(attributes);
+    const parsedWarranty = safeParseObject(warranty);
+    const parsedShipping = safeParseObject(shipping);
+    const parsedRelatedProducts = safeParseArray(relatedProducts);
+    const parsedIncludedItems = safeParseArray(included_items);
 
     let resolvedCategoryId = categoryId || undefined;
     let resolvedBrandId = brandId || undefined;
@@ -566,210 +465,116 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     if (resolvedBrandId && !resolvedBrandId.includes('-')) {
-      const brand = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
-      if (brand) resolvedBrandId = brand.id;
+      const br = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
+      if (br) resolvedBrandId = br.id;
       else resolvedBrandId = undefined;
     }
 
     const updated = await prisma.$transaction(async (tx) => {
-      // Delete existing child relations before updates to prevent dangling keys
-      if (options) await tx.productOption.deleteMany({ where: { productId: id } }); // this cascades to option values and variant options
-      if (variants) await tx.productVariant.deleteMany({ where: { productId: id } });
-      if (images) await tx.productImage.deleteMany({ where: { productId: id } });
-      if (specifications) await tx.productSpecification.deleteMany({ where: { productId: id } });
-      if (downloads) await tx.productDownload.deleteMany({ where: { productId: id } });
-      if (features) await tx.productFeature.deleteMany({ where: { productId: id } });
-      if (faqs) await tx.productFaq.deleteMany({ where: { productId: id } });
+      // Clear previously set variants to prevent duplication/orphans
+      await tx.productVariant.deleteMany({ where: { productId: id } });
 
       const p = await tx.product.update({
         where: { id },
         data: {
-          name, slug, sku, description,
-          basePrice: mrp ? parseFloat(mrp) : undefined,
-          salePrice: salePrice ? parseFloat(salePrice) : undefined,
-          dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
-          categoryId: resolvedCategoryId || null,
-          brandId: resolvedBrandId || null,
+          name,
+          slug,
+          sku,
+          description: description !== undefined ? description : undefined,
+          shortDescription: short_description !== undefined ? short_description : undefined,
+          basePrice: mrp ? parseFloat(mrp) : (price ? parseFloat(price) : undefined),
+          salePrice: salePrice !== undefined ? parseFloat(salePrice) : undefined,
+          dealerPrice: dealerPrice !== undefined ? parseFloat(dealerPrice) : undefined,
+          stock: stock !== undefined ? parseInt(stock, 10) : undefined,
+          categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : undefined,
+          brandId: resolvedBrandId !== undefined ? resolvedBrandId : undefined,
+
+          // Store inside JSON fields
+          images: parsedImages,
+          specifications: parsedSpecs,
+          downloads: parsedDownloads,
+          features: parsedFeatures,
+          faqs: parsedFaqs,
           seo: {
-            upsert: {
-              create: { seoTitle, seoDescription, seoKeywords },
-              update: { seoTitle, seoDescription, seoKeywords }
-            }
+            title: seoTitle || null,
+            description: seoDescription || null,
+            keywords: seoKeywords || []
           },
-          ...(validImages.length > 0 && {
-            images: {
-              create: validImages.map((i: any, idx: number) => ({
-                url: i.url, isPrimary: !!i.isPrimary, sortOrder: i.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validSpecs.length > 0 && {
-            specifications: {
-              create: validSpecs.map((s: any, idx: number) => ({
-                name: s.name, value: s.value, sortOrder: s.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validDownloads.length > 0 && {
-            downloads: {
-              create: validDownloads.map((d: any, idx: number) => ({
-                title: d.title, fileUrl: d.fileUrl, downloadType: d.downloadType || 'manual', sortOrder: d.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validFeatures.length > 0 && {
-            features: {
-              create: validFeatures.map((f: any, idx: number) => ({
-                icon: f.icon, title: f.title, description: f.description, sortOrder: f.sortOrder || idx
-              })),
-            }
-          }),
-          ...(validFaqs.length > 0 && {
-            faqs: {
-              create: validFaqs.map((f: any, idx: number) => ({
-                question: f.question, answer: f.answer, sortOrder: f.sortOrder || idx
-              })),
-            }
-          }),
-          ...(parsedWarranty?.warrantyPeriod && {
-            warranty: {
-              upsert: {
-                create: {
-                  warrantyPeriod: parsedWarranty.warrantyPeriod,
-                  warrantyType: parsedWarranty.warrantyType,
-                  warrantyDescription: parsedWarranty.warrantyDescription
-                },
-                update: {
-                  warrantyPeriod: parsedWarranty.warrantyPeriod,
-                  warrantyType: parsedWarranty.warrantyType,
-                  warrantyDescription: parsedWarranty.warrantyDescription
-                }
-              }
-            }
-          }),
-          ...(parsedShipping?.deliveryTime && {
-            shipping: {
-              upsert: {
-                create: {
-                  deliveryTime: parsedShipping.deliveryTime,
-                  shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
-                  shippingRegions: parsedShipping.shippingRegions
-                },
-                update: {
-                  deliveryTime: parsedShipping.deliveryTime,
-                  shippingCharges: parsedShipping.shippingCharges ? parseFloat(parsedShipping.shippingCharges) : undefined,
-                  shippingRegions: parsedShipping.shippingRegions
-                }
-              }
-            }
-          }),
+          shipping: parsedShipping || {},
+          warranty: parsedWarranty || {},
+          relatedProducts: parsedRelatedProducts || [],
+          includedItems: parsedIncludedItems || [],
+          attributes: parsedAttributes || [],
+          options: parsedOptions || []
         }
       });
 
-      // Handle Options and Variants correctly via deep mappings
-      const validOptions = parsedOptions.filter((o: any) => o?.name && o?.values?.length > 0);
-      const optionValueMapping: Record<string, string> = {}; // Hash map
-
-      if (validOptions.length > 0) {
-          for (const opt of validOptions) {
-              const createdOpt = await tx.productOption.create({
-                  data: {
-                      productId: id,
-                      name: opt.name,
-                      sortOrder: opt.sortOrder || 0,
-                      displayType: 'select',
-                      values: {
-                          create: opt.values.map((v: any, vId: number) => ({
-                              value: v.value,
-                              displayValue: v.displayValue || v.value,
-                              sortOrder: v.sortOrder || vId
-                          }))
-                      }
-                  },
-                  include: { values: true }
-              });
-
-              for (const v of createdOpt.values) {
-                  optionValueMapping[`${opt.name}:${v.value}`] = v.id;
-              }
+      if (parsedVariants.length > 0) {
+        for (const v of parsedVariants) {
+          const optVals: Record<string, string> = {};
+          if (v.optionsData && Array.isArray(v.optionsData)) {
+            v.optionsData.forEach((od: any) => {
+              optVals[od.optionName] = od.valueStr;
+            });
+          } else if (v.optionValues || v.option_values) {
+            Object.assign(optVals, v.optionValues || v.option_values);
           }
-      }
 
-      if (validVariants.length > 0) {
-          for (const v of validVariants) {
-              const createdVariant = await tx.productVariant.create({
-                  data: {
-                      productId: id,
-                      name: v.name,
-                      sku: v.sku,
-                      price: parseFloat(v.price) || 0,
-                      stock: v.stock || 0,
-                      weight: v.weight || 0,
-                  }
-              });
-
-              if (v.optionsData && Array.isArray(v.optionsData)) {
-                  for (const od of v.optionsData) {
-                      const valId = optionValueMapping[`${od.optionName}:${od.valueStr}`];
-                      if (valId) {
-                          await tx.productVariantOption.create({
-                              data: {
-                                  variantId: createdVariant.id,
-                                  optionValueId: valId
-                              }
-                          });
-                      }
-                  }
+          const variantImagesList: string[] = [];
+          if (v.images && Array.isArray(v.images)) {
+            v.images.forEach((img: any) => {
+              if (typeof img === 'string') {
+                variantImagesList.push(img);
+              } else {
+                variantImagesList.push(img.url || img.imageUrl || '');
               }
-
-              if (v.images && Array.isArray(v.images)) {
-                  for (const img of v.images) {
-                      await tx.productVariantImage.create({
-                          data: {
-                              variantId: createdVariant.id,
-                              imageUrl: img.url || img.imageUrl,
-                              isPrimary: !!img.isPrimary,
-                              sortOrder: img.sortOrder || 0
-                          }
-                      });
-                  }
-              }
+            });
+          } else if (v.variantImages || v.variant_images) {
+            variantImagesList.push(...(v.variantImages || v.variant_images));
           }
-      }
 
-      if (parsedRelatedProducts.length > 0) {
-        await tx.productRelated.deleteMany({ where: { productId: id } });
-        for (const [idx, rId] of parsedRelatedProducts.entries()) {
-           await tx.productRelated.create({
-              data: {
-                 productId: id,
-                 relatedToId: rId as string,
-                 relationType: 'cross-sell',
-                 sortOrder: idx
-              }
-           }).catch(() => {}); // Catch unique constraint violations if accidentally passed duplicate
+          await tx.productVariant.create({
+            data: {
+              productId: p.id,
+              name: v.name,
+              sku: v.sku,
+              price: parseFloat(v.price) || 0,
+              salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
+              stock: parseInt(v.stock, 10) || 0,
+              weight: parseFloat(v.weight) || 0,
+              variantImages: variantImagesList,
+              optionValues: optVals
+            }
+          });
         }
       }
 
-      return tx.product.findUnique({ where: { id }, include: { variants: { include: { options: true, images: true } }, options: { include: { values: true } }, images: true, specifications: true, downloads: true, features: true, faqs: true, warranty: true, shipping: true, relatedProducts: true }});
-    }, {
-      timeout: 30000
+      return tx.product.findUnique({
+        where: { id },
+        include: {
+          variants: true,
+          category: true,
+          brand: true,
+          reviews: {
+            include: { user: true }
+          }
+        }
+      });
     });
 
     clearProductCache();
     return res.status(200).json({ success: true, message: 'Success', data: updated });
   } catch (error: any) {
-    return res.status(500).json({ success: false, error: 'Failed to apply product SKU updates', message: error.message });
+    return res.status(500).json({ success: false, error: 'Failed to record Product', message: error.message });
   }
 };
 
 export const deleteProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { mode = 'hard' } = req.query; // Support standard and "soft" deletion
+  const { mode = 'hard' } = req.query;
 
   try {
     if (mode === 'soft') {
-      // Toggle inventory stock to zero as a soft flag or configure empty visibility
       const softDeleted = await prisma.product.update({
         where: { id },
         data: { isActive: false },
@@ -778,7 +583,6 @@ export const deleteProduct = async (req: Request, res: Response) => {
       return res.status(200).json({ message: 'Soft deleted', data: softDeleted });
     }
 
-    // Hard delete deletes deep references automatically due to Cascade onDelete models
     await prisma.product.delete({ where: { id } });
     clearProductCache();
     return res.status(200).json({ message: 'Product SKU permanently deleted' });

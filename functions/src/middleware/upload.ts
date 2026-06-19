@@ -1,10 +1,12 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os'; // 1. Import the 'os' module
 
-const UPLOAD_DIR = path.resolve(__dirname, '../../../uploads');
+// 2. Point to the Cloud Run / Firebase writable /tmp directory
+const UPLOAD_DIR = path.join(os.tmpdir(), 'uploads');
 
-// Ensure directory exists
+// Ensure directory exists in the temporary file system
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }

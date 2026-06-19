@@ -87,7 +87,6 @@ export const getOrderById = async (req: any, res: Response) => {
           include: {
             product: {
               include: { 
-                images: true,
                 inventory: {
                   include: { warehouse: true }
                 }
@@ -267,7 +266,7 @@ export const createOrder = async (req: any, res: Response) => {
           billingAddressId,
           items: { create: parsedItems },
           statusHistory: { 
-            create: [{ status: 'Pending', comments: isGuest ? 'Guest Order created' : 'Order created', createdBy: userId || 'GUEST' }] 
+            create: [{ status: 'Pending', comments: isGuest ? 'Guest Order created' : 'Order created', createdBy: userId || null }] 
           },
           payments: {
             create: [{ paymentMethod, amount: totalAmount, status: 'Pending' }]
@@ -309,9 +308,7 @@ export const trackOrder = async (req: Request, res: Response) => {
         billingAddress: true,
         items: {
           include: {
-            product: {
-              include: { images: true }
-            },
+            product: true,
             variant: true
           }
         },
@@ -500,6 +497,7 @@ export const resendOrderNotification = async (req: any, res: Response) => {
       });
     }
 
+    //test
     return res.status(200).json({ success: true, message: 'Order notification resent successfully' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to resend notification', details: error.message });

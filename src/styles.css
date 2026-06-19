@@ -158,6 +158,46 @@
   }
 }
 
+/* Centralized dynamic theme override */
+.bg-blue-600, 
+.bg-indigo-600,
+.bg-violet-600,
+.bg-blue-500,
+.bg-indigo-500,
+.bg-theme-glow-button {
+  background-color: var(--primary-color, #2563eb) !important;
+  transition: all 0.3s ease;
+}
+
+.hover\:bg-blue-500:hover,
+.hover\:bg-blue-600:hover,
+.hover\:bg-indigo-500:hover,
+.hover\:bg-indigo-600:hover,
+.hover\:bg-blue-400:hover {
+  filter: brightness(1.1) !important;
+  background-color: var(--secondary-color, var(--primary-color, #1d4ed8)) !important;
+  opacity: 0.95;
+}
+
+.border-blue-600,
+.border-blue-500,
+.border-indigo-600,
+.border-indigo-500 {
+  border-color: var(--primary-color, #2563eb) !important;
+}
+
+.text-blue-600,
+.text-blue-500,
+.text-indigo-600,
+.text-indigo-500 {
+  color: var(--primary-color, #2563eb) !important;
+}
+
+.shadow-blue-500\/20,
+.shadow-blue-600\/20 {
+  box-shadow: 0 4px 6px -1px rgba(var(--primary-color), 0.1), 0 2px 4px -1px rgba(var(--primary-color), 0.06) !important;
+}
+
 @layer utilities {
   .max-w-7xl {
     max-width: 1440px !important;
@@ -166,3 +206,58 @@
     margin-right: auto !important;
   }
 }
+
+/* ==========================================================================
+   DYNAMIC THEME BUTTONS (.app-button)
+   ========================================================================== */
+.app-button,
+button.app-button,
+app-button button,
+button.bg-theme-glow-button {
+  background: var(--theme-gradient, linear-gradient(135deg, var(--primary-color, #2563EB), var(--secondary-color, #7C3AED))) !important;
+  color: var(--theme-text, #ffffff) !important;
+  border-radius: var(--theme-radius, 0.75rem) !important;
+  font-family: var(--font-display, "Space Grotesk", sans-serif) !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-size: 0.75rem !important; /* text-xs */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-height: 2.75rem !important;
+  position: relative !important;
+}
+
+.app-button:hover,
+button.app-button:hover,
+app-button button:hover,
+button.bg-theme-glow-button:hover {
+  filter: var(--theme-hover-effect, brightness(1.15) scale(1.02)) !important;
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.15) !important;
+  opacity: 0.95 !important;
+}
+
+.app-button:active,
+button.app-button:active,
+app-button button:active,
+button.bg-theme-glow-button:active {
+  transform: translateY(1px) scale(0.98) !important;
+}
+
+.app-button:disabled,
+button.app-button:disabled,
+app-button button:disabled,
+button.bg-theme-glow-button:disabled {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+

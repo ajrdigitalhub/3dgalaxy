@@ -135,43 +135,47 @@ model Brand {
 }
 
 model Product {
-  id              String                  @id @default(uuid())
-  brandId         String?                 @map("brand_id")
-  categoryId      String?                 @map("category_id")
-  name            String
-  slug            String                  @unique
-  sku             String                  @unique
-  description     String?
-  basePrice       Float                   @map("base_price")
-  salePrice       Float?                  @map("sale_price")
-  dealerPrice     Float?                  @map("dealer_price")
-  isActive        Boolean                 @default(true) @map("is_active")
-  isExclusive     Boolean                 @default(false) @map("is_exclusive")
-  deletedAt       DateTime?               @map("deleted_at")
-  createdAt       DateTime                @default(now()) @map("created_at")
-  updatedAt       DateTime                @default(now()) @updatedAt @map("updated_at")
-  cartItems       CartItem[]
-  customerReviews CustomerReview[]
-  wishlists       CustomerWishlist[]
-  inventory       Inventory[]
-  orderItems      OrderItem[]
-  attributeValues ProductAttributeValue[]
-  downloads       ProductDownload[]
-  faqs            ProductFaq[]
-  features        ProductFeature[]
-  images          ProductImage[]
-  relatedTo       ProductRelated[]        @relation("RelatedToProduct")
-  relatedProducts ProductRelated[]        @relation("ProductToRelated")
-  reviews         ProductReview[]
-  seo             ProductSeo?
-  shipping        ProductShipping?
-  specifications  ProductSpecification[]
-  tagMappings     ProductTagMapping[]
-  variants        ProductVariant[]
-  options         ProductOption[]
-  warranty        ProductWarranty?
-  category        Category?               @relation(fields: [categoryId], references: [id])
-  brand           Brand?                  @relation(fields: [brandId], references: [id])
+  id               String            @id @default(uuid())
+  brandId          String?           @map("brand_id")
+  categoryId       String?           @map("category_id")
+  name             String
+  slug             String            @unique
+  sku              String            @unique
+  description      String?
+  shortDescription String?           @map("short_description")
+  basePrice        Float             @map("base_price")
+  salePrice        Float?            @map("sale_price")
+  dealerPrice      Float?            @map("dealer_price")
+  stock            Int               @default(0)
+  isActive         Boolean           @default(true) @map("is_active")
+  isExclusive      Boolean           @default(false) @map("is_exclusive")
+  deletedAt        DateTime?         @map("deleted_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @default(now()) @updatedAt @map("updated_at")
+  
+  // Dynamic Master configuration stored as JSON
+  images           Json?             @default("[]")
+  specifications   Json?             @default("[]")
+  downloads        Json?             @default("[]")
+  features         Json?             @default("[]")
+  faqs             Json?             @default("[]")
+  seo              Json?             @default("{}")
+  shipping         Json?             @default("{}")
+  warranty         Json?             @default("{}")
+  relatedProducts  Json?             @map("related_products") @default("[]")
+  includedItems    Json?             @map("included_items") @default("[]")
+  attributes       Json?             @default("[]")
+  options          Json?             @default("[]")
+
+  cartItems        CartItem[]
+  customerReviews  CustomerReview[]
+  wishlists        CustomerWishlist[]
+  inventory        Inventory[]
+  orderItems       OrderItem[]
+  reviews          ProductReview[]
+  variants         ProductVariant[]
+  category         Category?         @relation(fields: [categoryId], references: [id])
+  brand            Brand?            @relation(fields: [brandId], references: [id])
 
   @@index([name])
   @@index([slug])
@@ -180,237 +184,30 @@ model Product {
   @@map("products")
 }
 
-model ProductImage {
-  id        String   @id @default(uuid())
-  productId String   @map("product_id")
-  url       String   @map("image_url")
-  isPrimary Boolean  @default(false) @map("is_primary")
-  altText   String?  @map("alt_text")
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@map("product_images")
-}
-
-model ProductSpecification {
-  id        String   @id @default(uuid())
-  productId String   @map("product_id")
-  name      String
-  value     String
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_specifications")
-}
-
-model ProductDownload {
-  id           String   @id @default(uuid())
-  productId    String   @map("product_id")
-  title        String
-  fileUrl      String   @map("file_url")
-  downloadType String   @map("download_type")
-  sortOrder    Int      @default(0) @map("sort_order")
-  createdAt    DateTime @default(now()) @map("created_at")
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_downloads")
-}
-
-model ProductFeature {
-  id          String   @id @default(uuid())
-  productId   String   @map("product_id")
-  icon        String?
-  title       String
-  description String?
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_features")
-}
-
-model ProductFaq {
-  id        String   @id @default(uuid())
-  productId String   @map("product_id")
-  question  String
-  answer    String
-  sortOrder Int      @default(0) @map("sort_order")
-  createdAt DateTime @default(now()) @map("created_at")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_faqs")
-}
-
-model ProductWarranty {
-  id                  String   @id @default(uuid())
-  productId           String   @unique @map("product_id")
-  warrantyPeriod      String?  @map("warranty_period")
-  warrantyType        String?  @map("warranty_type")
-  warrantyDescription String?  @map("warranty_description")
-  createdAt           DateTime @default(now()) @map("created_at")
-  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_warranty")
-}
-
-model ProductShipping {
-  id              String   @id @default(uuid())
-  productId       String   @unique @map("product_id")
-  deliveryTime    String?  @map("delivery_time")
-  shippingCharges Float?   @map("shipping_charges")
-  shippingRegions String?  @map("shipping_regions")
-  createdAt       DateTime @default(now()) @map("created_at")
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_shipping")
-}
-
-model ProductRelated {
-  id             String   @id @default(uuid())
-  productId      String   @map("product_id")
-  relatedToId    String   @map("related_to_id")
-  relationType   String   @map("relation_type")
-  sortOrder      Int      @default(0) @map("sort_order")
-  createdAt      DateTime @default(now()) @map("created_at")
-  relatedProduct Product  @relation("RelatedToProduct", fields: [relatedToId], references: [id], onDelete: Cascade)
-  product        Product  @relation("ProductToRelated", fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, relatedToId])
-  @@map("product_related_products")
-}
-
-model ProductSeo {
-  id             String   @id @default(uuid())
-  productId      String   @unique @map("product_id")
-  seoTitle       String?  @map("seo_title")
-  seoDescription String?  @map("seo_description")
-  seoKeywords    String?  @map("seo_keywords")
-  canonicalUrl   String?  @map("canonical_url")
-  openGraphImage String?  @map("open_graph_image")
-  createdAt      DateTime @default(now()) @map("created_at")
-  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_seo")
-}
-
-model ProductAttribute {
-  id        String                  @id @default(uuid())
-  name      String                  @unique
-  createdAt DateTime                @default(now()) @map("created_at")
-  values    ProductAttributeValue[]
-
-  @@map("product_attributes")
-}
-
-model ProductAttributeValue {
-  id          String           @id @default(uuid())
-  attributeId String           @map("attribute_id")
-  productId   String           @map("product_id")
-  value       String
-  createdAt   DateTime         @default(now()) @map("created_at")
-  product     Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  attribute   ProductAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-
-  @@map("product_attribute_values")
-}
-
 model ProductVariant {
-  id          String      @id @default(uuid())
-  productId   String      @map("product_id")
-  sku         String      @unique
-  price       Float
-  salePrice   Float?      @map("sale_price")
-  stock       Int         @default(0)
-  weight      Float?
-  isDefault   Boolean     @default(false) @map("is_default")
-  isActive    Boolean     @default(true) @map("is_active")
-  variantSlug String?     @map("variant_slug")
-  name        String
-  deletedAt   DateTime?   @map("deleted_at")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
-  cartItems   CartItem[]
-  inventory   Inventory[]
-  orderItems  OrderItem[]
-  options     ProductVariantOption[]
-  images      ProductVariantImage[]
-  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id            String      @id @default(uuid())
+  productId     String      @map("product_id")
+  sku           String      @unique
+  price         Float
+  salePrice     Float?      @map("sale_price")
+  stock         Int         @default(0)
+  weight        Float?
+  isDefault     Boolean     @default(false) @map("is_default")
+  isActive      Boolean     @default(true) @map("is_active")
+  variantSlug   String?     @map("variant_slug")
+  name          String
+  variantImages Json?       @map("variant_images") @default("[]")
+  optionValues  Json?       @map("option_values") @default("{}")
+  deletedAt     DateTime?   @map("deleted_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @default(now()) @updatedAt @map("updated_at")
+  cartItems     CartItem[]
+  inventory     Inventory[]
+  orderItems    OrderItem[]
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@map("product_variants")
-}
-
-model ProductOption {
-  id          String   @id @default(uuid())
-  productId   String   @map("product_id")
-  name        String
-  displayType String   @default("select") @map("display_type")
-  sortOrder   Int      @default(0) @map("sort_order")
-  
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  values      ProductOptionValue[]
-
-  @@map("product_options")
-}
-
-model ProductOptionValue {
-  id            String   @id @default(uuid())
-  optionId      String   @map("option_id")
-  value         String
-  displayValue  String?  @map("display_value")
-  colorCode     String?  @map("color_code")
-  imageUrl      String?  @map("image_url")
-  sortOrder     Int      @default(0) @map("sort_order")
-
-  option        ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
-  variants      ProductVariantOption[]
-
-  @@map("product_option_values")
-}
-
-model ProductVariantOption {
-  variantId     String  @map("variant_id")
-  optionValueId String  @map("option_value_id")
-
-  variant       ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  optionValue   ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
-
-  @@id([variantId, optionValueId])
-  @@map("product_variant_options")
-}
-
-model ProductVariantImage {
-  id         String   @id @default(uuid())
-  variantId  String   @map("variant_id")
-  imageUrl   String   @map("image_url")
-  isPrimary  Boolean  @default(false) @map("is_primary")
-  sortOrder  Int      @default(0) @map("sort_order")
-
-  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-
-  @@map("product_variant_images")
-}
-
-model ProductTag {
-  id       String              @id @default(uuid())
-  name     String              @unique
-  slug     String              @unique
-  mappings ProductTagMapping[]
-
-  @@map("product_tags")
-}
-
-model ProductTagMapping {
-  productId String     @map("product_id")
-  tagId     String     @map("tag_id")
-  tag       ProductTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@id([productId, tagId])
-  @@map("product_tag_mapping")
 }
 
 model ProductReview {

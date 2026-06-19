@@ -8,6 +8,7 @@ import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { Product } from '../../../services/datastore';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-product-edit',
@@ -60,7 +61,7 @@ export class ProductEditComponent implements OnInit {
 
     if (id) {
       this.isLoading.set(true);
-      fetch(`/api/admin/products/${id}/details`, {
+      fetch(`${environment.apiUrl}/admin/products/${id}/details`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }

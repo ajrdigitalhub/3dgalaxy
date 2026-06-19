@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed} from '@angular/core';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
@@ -38,24 +38,27 @@ export class OrdersTracking {
   api = inject(ApiService);
 
   constructor() {
-    // If registered role preexists, default values
-    const r = this.ds.userRole();
-    if (r !== 'guest') {
-      this.searchPhoneQuery.set(this.ds.activeUser()?.phone || '');
-      this.fetchMyOrders();
-    }
+    effect(() => {
+      const r = this.ds.userRole();
+      const u = this.ds.activeUser();
+      if (r !== 'guest' && u) {
+        this.searchPhoneQuery.set(u.phone || '');
+        this.fetchMyOrders();
+      }
+    });
   }
 
   async fetchMyOrders() {
     try {
-      const orders = await this.api.get<any[]>('/orders/my-orders').toPromise();
+      const resp = await this.api.get<any>('/orders/my-orders').toPromise();
+      const orders = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.data) ? resp.data : []);
       if (orders) {
-         this.memberOrders.set(orders.map(o => ({
+         this.memberOrders.set(orders.map((o: any) => ({
            id: o.id,
            orderNumber: o.orderNumber,
            date: new Date(o.createdAt).toLocaleDateString(),
            status: o.status ? o.status.toLowerCase() : 'pending',
-           items: o.items.map((i: any) => ({
+           items: (o.items || []).map((i: any) => ({
               productId: i.productId,
               name: i.product?.name || 'Product',
               quantity: i.quantity,

@@ -1113,7 +1113,14 @@ export class DatastoreService {
              dealer_price: p.dealerPrice || p.salePrice || p.basePrice || 0,
              stock: p.stock || 10,
              reserved: p.reserved || 0,
-             images: p.images && p.images.length ? p.images.sort((a: any, b: any) => a.sortOrder - b.sortOrder).map((i:any)=>i.url) : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
+             images: p.images && p.images.length ? [...p.images].sort((a: any, b: any) => {
+               const aPrimary = a && typeof a === 'object' && a.isPrimary ? 1 : 0;
+               const bPrimary = b && typeof b === 'object' && b.isPrimary ? 1 : 0;
+               if (aPrimary !== bPrimary) return bPrimary - aPrimary;
+               const aOrder = a && typeof a === 'object' && typeof a.sortOrder === 'number' ? a.sortOrder : 0;
+               const bOrder = b && typeof b === 'object' && typeof b.sortOrder === 'number' ? b.sortOrder : 0;
+               return aOrder - bOrder;
+             }).map((i: any) => (i && typeof i === 'object' ? i.url : i) || '') : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
              specs: p.specifications && p.specifications.length ? p.specifications.map((s: any) => ({ name: s.name, value: s.value })) : (p.specs || []),
              specifications: p.specifications || [],
              downloads: p.downloads || [],

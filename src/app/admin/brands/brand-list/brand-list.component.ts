@@ -50,20 +50,20 @@ export class BrandListComponent {
   }
 
   async saveBrand() {
-    const name = this.brandName().trim();
+    const name = (this.brandName() || '').trim();
     if (!name) {
       this.toastService.error('Brand name is required.');
       return;
     }
-    const slug = this.brandSlug().trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const slug = (this.brandSlug() || '').trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     const brandData: any = {
       name,
       slug,
-      logo: this.brandLogo().trim(),
-      country: this.brandCountry().trim(),
-      banner: this.brandBanner().trim(),
-      description: this.brandDesc().trim(),
+      logo: (this.brandLogo() || '').trim(),
+      country: (this.brandCountry() || '').trim(),
+      banner: (this.brandBanner() || '').trim(),
+      description: (this.brandDesc() || '').trim(),
       active: this.brandActive()
     };
 
