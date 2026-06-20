@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -23,6 +23,54 @@ export class CustomerOrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal('');
+
+  customerName = computed(() => {
+    const ord = this.order();
+    if (!ord) return '';
+    if (ord.shippingAddress?.fullName) return ord.shippingAddress.fullName;
+    if (ord.guestName) return ord.guestName;
+    if (ord.customer?.user) {
+      const u = ord.customer.user;
+      const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+      return fullName || u.name || 'Valued Customer';
+    }
+    return 'Valued Customer';
+  });
+
+  shippingAddressObj = computed(() => {
+    const ord = this.order();
+    if (!ord) return null;
+    if (ord.shippingAddress) return ord.shippingAddress;
+    if (ord.guestAddress) {
+      try {
+        const parsed = typeof ord.guestAddress === 'string' ? JSON.parse(ord.guestAddress) : ord.guestAddress;
+        return {
+          fullName: ord.guestName || 'Guest User',
+          addressLine1: parsed.addressLine1 || parsed.address || '',
+          addressLine2: parsed.addressLine2 || '',
+          city: parsed.city || '',
+          state: parsed.state || '',
+          postalCode: parsed.postalCode || parsed.pincode || '',
+          country: parsed.country || 'India',
+          phone: ord.guestPhone || 'Not provided'
+        };
+      } catch (e) {
+        return {
+          fullName: ord.guestName || 'Guest User',
+          addressLine1: ord.guestAddress,
+          phone: ord.guestPhone || 'Not provided'
+        };
+      }
+    }
+    return null;
+  });
+
+  billingAddressObj = computed(() => {
+    const ord = this.order();
+    if (!ord) return null;
+    if (ord.billingAddress) return ord.billingAddress;
+    return this.shippingAddressObj();
+  });
 
   // Support ticket inputs
   ticketCat = signal<string>('Logistics inquiry');
@@ -51,13 +99,18 @@ export class CustomerOrderDetailsComponent implements OnInit {
   }
 
   private getHeaders() {
+    const headers: any = {};
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token');
       if (token) {
-        return { headers: { 'Authorization': `Bearer ${token}` } };
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const guestId = localStorage.getItem('guest_session_id');
+      if (guestId) {
+        headers['x-guest-session-id'] = guestId;
       }
     }
-    return {};
+    return { headers };
   }
 
   fetchOrder(id: string) {

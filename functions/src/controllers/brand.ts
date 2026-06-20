@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { clearCache } from '../middleware/cache';
 
 export const getBrands = async (req: Request, res: Response) => {
   try {
@@ -54,6 +55,7 @@ export const createBrand = async (req: Request, res: Response) => {
         active: active !== undefined ? active : true,
       },
     });
+    clearCache();
     return res.status(201).json(created);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to record brand node', details: error.message });
@@ -77,6 +79,7 @@ export const updateBrand = async (req: Request, res: Response) => {
         active: active !== undefined ? active : undefined,
       },
     });
+    clearCache();
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update brand metadata', details: error.message });
@@ -87,6 +90,7 @@ export const deleteBrand = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await prisma.brand.delete({ where: { id } });
+    clearCache();
     return res.status(200).json({ message: 'Brand registration completely deleted' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Brand deletion operation halted', details: error.message });

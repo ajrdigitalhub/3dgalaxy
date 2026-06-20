@@ -15,7 +15,7 @@ import { AdminPanel } from '../admin';
         <div class="space-y-8">
           <div>
             <h1 class="text-xl font-black uppercase">Client Matrix Management</h1>
-            <p class="text-xs text-zinc-500">Monitor client lifetime value, segment tiers, and manage loyalty points.</p>
+            <p class="text-xs text-zinc-500">Monitor client lifetime value and segment tiers.</p>
           </div>
 
           <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans">
@@ -25,9 +25,7 @@ import { AdminPanel } from '../admin';
                   <th class="py-3">Profile</th>
                   <th class="py-3">Segment Tier</th>
                   <th class="py-3">Accumulated Spent (INR)</th>
-                  <th class="py-3">Fulfillment count</th>
-                  <th class="py-3">Loyalty Points</th>
-                  <th class="py-3 text-right">Points modifier</th>
+                  <th class="py-3 text-right">Fulfillment count</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -35,22 +33,22 @@ import { AdminPanel } from '../admin';
                   <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
                     <td class="py-4">
                       <p class="font-black text-zinc-900 dark:text-white uppercase">{{ c.name }}</p>
-                      <span class="text-[10px] text-zinc-400 font-mono">{{ c.email }}</span>
+                      <div class="flex flex-col text-[10px] text-zinc-400 font-mono leading-tight">
+                        <span>{{ c.email }}</span>
+                        @if (c.mobile && c.mobile !== 'N/A') {
+                          <span class="text-[9px] text-zinc-500 font-sans flex items-center gap-0.5 mt-0.5">
+                            <mat-icon class="scale-[0.6] origin-left text-emerald-500 -my-1">phone</mat-icon>{{ c.mobile }}
+                          </span>
+                        }
+                      </div>
                     </td>
                     <td class="py-4 font-bold">{{ c.tier }}</td>
                     <td class="py-4 font-mono font-medium">₹{{ c.spent | number }}</td>
-                    <td class="py-4 font-mono text-zinc-500">{{ c.orders }} order(s)</td>
-                    <td class="py-4 font-mono text-blue-500 font-black">{{ c.points }} pts</td>
-                    <td class="py-4 text-right">
-                      <div class="inline-flex gap-1">
-                        <button (click)="admin.awardPoints(c.id, -50)" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-[9px] font-black uppercase rounded-md cursor-pointer">-50</button>
-                        <button (click)="admin.awardPoints(c.id, 50)" class="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-[9px] font-black uppercase text-emerald-500 rounded-md cursor-pointer">+50</button>
-                      </div>
-                    </td>
+                    <td class="py-4 font-mono text-zinc-500 text-right">{{ c.orders }} order(s)</td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="py-12 text-center">
+                    <td colspan="4" class="py-12 text-center">
                       <div class="flex flex-col items-center justify-center space-y-2">
                         <mat-icon class="text-zinc-300 dark:text-zinc-700 text-3xl">people_outline</mat-icon>
                         <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Data Available</h4>

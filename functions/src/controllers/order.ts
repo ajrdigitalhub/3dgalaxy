@@ -115,7 +115,8 @@ export const getOrderById = async (req: any, res: Response) => {
       return res.status(404).json({ error: 'Order reference does not exist' });
     }
 
-    if (userRole !== 'Admin' && userRole !== 'Manager') {
+    const normalizedRole = userRole ? userRole.toLowerCase().replace(/[\s\-_]/g, '') : '';
+    if (normalizedRole !== 'admin' && normalizedRole !== 'superadmin' && normalizedRole !== 'manager') {
       if (order.customerType === 'GUEST') {
         const reqSessionId = req.headers['x-guest-session-id'] || req.query.guestSessionId;
         if (order.guestSessionId !== reqSessionId) {

@@ -411,6 +411,7 @@ export class DatastoreService {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      this.trySyncAuthFromToken();
       let guestId = localStorage.getItem('guest_session_id');
       if (!guestId) {
         const rand = Math.random().toString(16).substring(2, 10);
@@ -593,6 +594,52 @@ export class DatastoreService {
     signOut(auth).catch((err) => console.warn('Firebase signOut non-fatal warning:', err));
   }
 
+  private decodeJWT(token: string): any {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  private trySyncAuthFromToken() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      const decoded = this.decodeJWT(token);
+      if (decoded) {
+        const role = this.mapRole(decoded.role);
+        this.userRole.set(role);
+        this.userProfile.set({
+          id: decoded.id,
+          name: decoded.email,
+          email: decoded.email,
+          role: role,
+          active: true,
+          phone: '',
+          profileImage: '',
+        });
+        this.currentUser.set({
+          uid: decoded.id,
+          email: decoded.email,
+          displayName: decoded.email,
+          phoneNumber: '',
+          photoURL: ''
+        } as any);
+      }
+    }
+  }
+
   async loginWithGoogle() {
     const provider = new GoogleAuthProvider();
     return signInWithPopup(auth, provider);
@@ -638,9 +685,9 @@ export class DatastoreService {
     });
   }
 
-  async registerWithEmail(email: string, pass: string, name: string) {
+  async registerWithEmail(email: string, pass: string, name: string, mobile: string = '') {
     return new Promise<any>((resolve, reject) => {
-      this.api.post<any>('/auth/register', { email, password: pass, name }).subscribe({
+      this.api.post<any>('/auth/register', { email, password: pass, name, mobile }).subscribe({
         next: (res) => {
           const accessToken = res.accessToken || res.data?.accessToken;
           const refreshToken = res.refreshToken || res.data?.refreshToken;

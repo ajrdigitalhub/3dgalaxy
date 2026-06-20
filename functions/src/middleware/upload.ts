@@ -110,7 +110,12 @@ export const upload = {
           return next(err);
         });
 
-        req.pipe(bb);
+        const rawBody = (req as any).rawBody;
+        if (rawBody) {
+          bb.end(rawBody);
+        } else {
+          req.pipe(bb);
+        }
       } catch (err) {
         return next(err);
       }

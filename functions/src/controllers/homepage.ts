@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { clearCache } from '../middleware/cache';
 
 export const getHomepageSections = async (req: Request, res: Response) => {
   try {
@@ -39,6 +40,7 @@ export const createHomepageSection = async (req: Request, res: Response) => {
         isActive: isVisible !== undefined ? !!isVisible : true,
       },
     });
+    clearCache();
     return res.status(201).json(created);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to record layout section', details: error.message });
@@ -85,6 +87,7 @@ export const updateHomepageSection = async (req: Request, res: Response) => {
         isActive: isVisible !== undefined ? !!isVisible : undefined,
       },
     });
+    clearCache();
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to alter layout section details', details: error.message });
@@ -96,6 +99,7 @@ export const deleteHomepageSection = async (req: Request, res: Response) => {
   const mappedId = toValidUuid(id);
   try {
     await prisma.homepageSection.delete({ where: { id: mappedId } });
+    clearCache();
     return res.status(200).json({ message: 'Homepage layout section successfully deleted' });
   } catch (error: any) {
     return res.status(500).json({ error: 'layout section deletion command halted', details: error.message });

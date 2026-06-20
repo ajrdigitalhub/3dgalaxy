@@ -577,12 +577,7 @@
                 <span class="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-500 rounded font-black">{{ ds.userRole()
                   }}</span>
               </div>
-              <div
-                class="flex items-center justify-between text-[9px] uppercase tracking-wider font-black text-neutral-450 pt-1 border-t border-indigo-100/10">
-                <span>Loyalty Balance</span>
-                <span class="font-sans font-extrabold text-xs text-indigo-500">{{ ds.userProfile()?.rewardPoints || 0 }}
-                  pts</span>
-              </div>
+
             </div>
 
             <!-- Links lists -->
@@ -772,14 +767,6 @@
   </div>
   }
 
-  <!-- SECONDARY BREADCRUMB PROMO / ADS STICKY NOTIFICATION COMPONENT -->
-  @if (ds.userRole() === 'customer' && (ds.activeUser().rewardPoints || 0) > 100) {
-  <div
-    class="bg-indigo-600/5 border-b border-indigo-500/10 select-none py-2 text-center text-xs text-indigo-500 animate-fadeIn">
-    🥇 <strong>Loyalty Bonus Activated:</strong> You have an active balance of <span class="font-bold underline">{{
-      ds.activeUser().rewardPoints }} reward points</span> to redeem in B2B transactions!
-  </div>
-  }
 
   }
 
@@ -1014,8 +1001,8 @@
         class="border-t border-neutral-100 dark:border-neutral-900 mt-12 pt-8 text-[9px] sm:text-[10px] text-neutral-450 font-bold uppercase tracking-widest flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="flex items-center gap-2">
           <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <p>{{ ds.footerData()?.copyright?.copyrightText || '© 2026 3D GALAXY ECOSYSTEM. OPERATED BY GALAXY LABS
-            INDIA.' }} {{ ds.footerData()?.copyright?.poweredByText }}</p>
+          <p>{{ ds.footerData()?.copyright?.copyrightText || '© 2026 3D GALAXY' }} {{
+            ds.footerData()?.copyright?.poweredByText }}</p>
         </div>
 
         <!-- Payment Icons list -->

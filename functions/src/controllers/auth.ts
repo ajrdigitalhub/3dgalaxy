@@ -7,10 +7,10 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 const tokenBlocklist = new Set<string>();
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name, roleName } = req.body;
+  const { email, password, name, mobile, roleName } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  if (!email || !password || !mobile) {
+    return res.status(400).json({ error: 'Email, password, and mobile number are required' });
   }
 
   try {
@@ -43,6 +43,7 @@ export const register = async (req: Request, res: Response) => {
         passwordHash: hashedPassword,
         firstName,
         lastName,
+        mobile,
         isActive: true,
         roles: {
           create: {
@@ -81,6 +82,7 @@ export const register = async (req: Request, res: Response) => {
           id: newUser.id,
           email: newUser.email,
           name: `${newUser.firstName} ${newUser.lastName}`.trim(),
+          mobile: newUser.mobile,
           role: userRoleName,
         },
         accessToken,

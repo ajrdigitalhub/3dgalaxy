@@ -30,8 +30,13 @@ export class SessionService {
     effect(() => {
       // Whenever the user logs in or out, reset the timer appropriately
       const user = this.ds.currentUser();
+      const role = this.ds.userRole();
       if (user) {
-        this.resetTimer();
+        if (role === 'admin' || role === 'super-admin') {
+          this.clearTimers();
+        } else {
+          this.resetTimer();
+        }
       } else {
         this.clearTimers();
       }
@@ -66,6 +71,13 @@ export class SessionService {
 
     // Only track if user is logged in
     if (!this.ds.currentUser()) {
+      return;
+    }
+
+    // Keep session active for admin/super-admin users by disabling idle logout
+    const role = this.ds.userRole();
+    if (role === 'admin' || role === 'super-admin') {
+      this.clearTimers();
       return;
     }
 

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -21,6 +21,54 @@ export class OrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal('');
+
+  customerName = computed(() => {
+    const ord = this.order();
+    if (!ord) return '';
+    if (ord.shippingAddress?.fullName) return ord.shippingAddress.fullName;
+    if (ord.guestName) return ord.guestName;
+    if (ord.customer?.user) {
+      const u = ord.customer.user;
+      const fullName = `${u.firstName || ''} ${u.lastName || ''}`.trim();
+      return fullName || u.name || 'Valued Customer';
+    }
+    return 'Valued Customer';
+  });
+
+  shippingAddressObj = computed(() => {
+    const ord = this.order();
+    if (!ord) return null;
+    if (ord.shippingAddress) return ord.shippingAddress;
+    if (ord.guestAddress) {
+      try {
+        const parsed = typeof ord.guestAddress === 'string' ? JSON.parse(ord.guestAddress) : ord.guestAddress;
+        return {
+          fullName: ord.guestName || 'Guest User',
+          addressLine1: parsed.addressLine1 || parsed.address || '',
+          addressLine2: parsed.addressLine2 || '',
+          city: parsed.city || '',
+          state: parsed.state || '',
+          postalCode: parsed.postalCode || parsed.pincode || '',
+          country: parsed.country || 'India',
+          phone: ord.guestPhone || 'Not provided'
+        };
+      } catch (e) {
+        return {
+          fullName: ord.guestName || 'Guest User',
+          addressLine1: ord.guestAddress,
+          phone: ord.guestPhone || 'Not provided'
+        };
+      }
+    }
+    return null;
+  });
+
+  billingAddressObj = computed(() => {
+    const ord = this.order();
+    if (!ord) return null;
+    if (ord.billingAddress) return ord.billingAddress;
+    return this.shippingAddressObj();
+  });
 
   // Previous orders history of this same customer
   previousOrders = signal<any[]>([]);

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { clearCache } from '../middleware/cache';
 
 // Helper to construct recursively nested tree paths
 interface CategoryNode {
@@ -156,6 +157,7 @@ export const createCategory = async (req: Request, res: Response) => {
         image,
       },
     });
+    clearCache();
     return res.status(201).json(created);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category creation stalled', details: error.message });
@@ -177,6 +179,7 @@ export const updateCategory = async (req: Request, res: Response) => {
         image,
       },
     });
+    clearCache();
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category modification failed', details: error.message });
@@ -187,6 +190,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await prisma.category.delete({ where: { id } });
+    clearCache();
     return res.status(200).json({ message: 'Category structure permanently purged' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Category purge command failed', details: error.message });

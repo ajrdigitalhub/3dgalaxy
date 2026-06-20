@@ -12,29 +12,39 @@
   <!-- HERO: IMMERSIVE GALAXY STAGE -->
   <section #heroContainer id="hero-section"
     class="relative min-h-[60vh] lg:min-h-[85vh] w-full overflow-hidden bg-neutral-950 flex items-center group border-b border-neutral-900 touch-pan-y">
-    
+
     <!-- Ambient floating particles and glow decorations -->
-    <div class="absolute top-1/4 left-1/4 w-8 h-8 bg-orange-500/10 rounded-full animate-float-1 pointer-events-none z-1"></div>
-    <div class="absolute bottom-1/3 right-1/4 w-12 h-12 bg-purple-500/10 rounded-full animate-float-2 pointer-events-none z-1"></div>
-    <div class="absolute top-1/2 right-1/3 w-6 h-6 bg-blue-500/10 rounded-full animate-float-3 pointer-events-none z-1"></div>
+    <div
+      class="absolute top-1/4 left-1/4 w-8 h-8 bg-orange-500/10 rounded-full animate-float-1 pointer-events-none z-1">
+    </div>
+    <div
+      class="absolute bottom-1/3 right-1/4 w-12 h-12 bg-purple-500/10 rounded-full animate-float-2 pointer-events-none z-1">
+    </div>
+    <div class="absolute top-1/2 right-1/3 w-6 h-6 bg-blue-500/10 rounded-full animate-float-3 pointer-events-none z-1">
+    </div>
 
     <!-- Video or Image Background Media -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden">
       <!-- Ambient Blur Gradients -->
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.12),transparent_70%)] z-1"></div>
-      <div class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.18),transparent_70%)] blur-[80px] lg:blur-[120px] z-1"></div>
-      <div class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[700px] lg:h-[700px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.15),transparent_70%)] blur-[90px] lg:blur-[140px] z-1"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.12),transparent_70%)] z-1">
+      </div>
+      <div
+        class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.18),transparent_70%)] blur-[80px] lg:blur-[120px] z-1">
+      </div>
+      <div
+        class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[700px] lg:h-[700px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.15),transparent_70%)] blur-[90px] lg:blur-[140px] z-1">
+      </div>
 
       <!-- Background Video -->
       @if (slides()[currentSlide()].videoUrl) {
-        <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
-          class="absolute inset-0 w-full h-full object-cover opacity-35 dark:opacity-20 transition-opacity duration-700 animate-kenBurns"
-          referrerpolicy="no-referrer"></video>
+      <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
+        class="absolute inset-0 w-full h-full object-cover opacity-35 dark:opacity-20 transition-opacity duration-700 animate-kenBurns"
+        referrerpolicy="no-referrer"></video>
       } @else {
-        <!-- Background Image fallback -->
-        <img [src]="slides()[currentSlide()].image"
-          class="absolute inset-0 w-full h-full object-cover opacity-30 dark:opacity-15 transition-opacity duration-700 animate-kenBurns"
-          loading="eager" alt="Galaxy Bg" (error)="onImageError($event)" referrerpolicy="no-referrer">
+      <!-- Background Image fallback -->
+      <img [src]="slides()[currentSlide()].image"
+        class="absolute inset-0 w-full h-full object-cover opacity-30 dark:opacity-15 transition-opacity duration-700 animate-kenBurns"
+        loading="eager" alt="Galaxy Bg" (error)="onImageError($event)" referrerpolicy="no-referrer">
       }
 
       <!-- Multi-layered premium gradients for absolute high-contrast text visibility -->
@@ -43,7 +53,8 @@
     </div>
 
     <!-- Content Stack -->
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 py-12 lg:py-24" appScrollReveal="fade">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 py-12 lg:py-24"
+      appScrollReveal="fade">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
         <div class="space-y-6 lg:space-y-8 max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
           <div
@@ -70,7 +81,8 @@
           <div class="hero-anim flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2 lg:pt-4">
             <a [routerLink]="[slides()[currentSlide()].link]"
               class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto hover:shadow-orange-600/40 hover:scale-105 active:scale-98">
-              {{ slides()[currentSlide()].btnText }} <mat-icon class="transition-transform group-hover/btn:translate-x-1.5">arrow_forward</mat-icon>
+              {{ slides()[currentSlide()].btnText }} <mat-icon
+                class="transition-transform group-hover/btn:translate-x-1.5">arrow_forward</mat-icon>
             </a>
             <button (click)="scrollToProducts()"
               class="hidden md:flex h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 items-center justify-center gap-3 backdrop-blur-xl hover:scale-105 active:scale-98">
@@ -86,16 +98,16 @@
             <!-- Glass Print Box Mockup with mouse 3D Tilt -->
             <div appTilt [tiltMax]="5"
               class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group/card transition-all duration-500">
-              
+
               <!-- Video background in preview too if present, else image -->
               @if (slides()[currentSlide()].videoUrl) {
-                <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
-                  referrerpolicy="no-referrer"></video>
+              <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
+                referrerpolicy="no-referrer"></video>
               } @else {
-                <img [src]="slides()[currentSlide()].image"
-                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
-                  alt="Centerpiece" (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy">
+              <img [src]="slides()[currentSlide()].image"
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
+                alt="Centerpiece" (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy">
               }
               <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-transparent to-transparent"></div>
 
@@ -132,7 +144,8 @@
     <!-- Slide Control Dots -->
     <div
       class="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20 px-4 py-2 md:px-6 md:py-3 bg-neutral-900/60 border border-white/10 backdrop-blur-2xl rounded-full shadow-lg">
-      <button (click)="prevSlide()" class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
+      <button (click)="prevSlide()"
+        class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
         aria-label="Previous Slide"><mat-icon class="scale-90">chevron_left</mat-icon></button>
       <div class="flex gap-2">
         @for (s of slides(); track s.id; let idx = $index) {
@@ -140,7 +153,8 @@
           [class]="currentSlide() === idx ? 'h-1.5 w-6 md:w-8 bg-[#d65108] rounded-full transition-all duration-500 shadow-[0_0_8px_#d65108]' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
         }
       </div>
-      <button (click)="nextSlide()" class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
+      <button (click)="nextSlide()"
+        class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
         aria-label="Next Slide"><mat-icon class="scale-90">chevron_right</mat-icon></button>
     </div>
   </section>
@@ -148,7 +162,8 @@
 
   @case ('CATEGORIES') {
   <!-- QUICK NAVIGATION (Mobile Swipeable Slider) -->
-  <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-8 text-left" appScrollReveal="fade">
+  <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-8 text-left"
+    appScrollReveal="fade">
     <div class="flex items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3 md:pb-5 gap-4">
       <div class="space-y-1">
         <h2
@@ -168,30 +183,31 @@
       class="flex md:block overflow-x-auto md:overflow-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
       <div class="flex md:grid gap-3 md:gap-4 md:grid-cols-4 lg:grid-cols-8 pb-2 w-full">
         @for (item of ds.categories(); track item.id; let idx = $index) {
-        <button (click)="selectFilterCategory(item.id)"
-          [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
-          [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-1.5 p-2 md:p-3 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-2xl md:rounded-[1.5rem] transition-all h-32 w-28 md:h-40 md:w-full border border-neutral-200/50 dark:border-neutral-800/40 cursor-pointer relative overflow-hidden ' + 
+        <button (click)="selectFilterCategory(item.id)" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt
+          [tiltMax]="5"
+          [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-1.5 p-2 md:p-3 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-2xl md:rounded-[1.5rem] transition-all h-36 w-32 md:h-48 md:w-full border border-neutral-200/50 dark:border-neutral-800/40 cursor-pointer relative overflow-hidden ' + 
                                   (filterCategory() === item.id 
                                     ? 'border-orange-500 shadow-md shadow-orange-500/10' 
                                     : 'hover:border-orange-500 hover:scale-[1.04] hover:shadow-lg hover:shadow-orange-500/5')"
           [attr.aria-label]="'Filter by ' + item.name">
           <!-- Active accent glow -->
           @if (filterCategory() === item.id) {
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 to-amber-500"></div>
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 to-amber-500"></div>
           }
-          
+
           <div
-            [class]="'h-16 w-16 md:h-20 md:w-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ' + 
+            [class]="'h-20 w-20 md:h-26 md:w-26 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ' + 
                                   (filterCategory() === item.id 
                                     ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white' 
                                     : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-amber-500 group-hover:text-white group-hover:rotate-6')">
             @if (item.image) {
-              <img [src]="item.image" [alt]="item.name" class="w-[90%] h-[90%] object-contain logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
+            <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-1.5 logo-img"
+              (error)="onImageError($event)" referrerpolicy="no-referrer">
             } @else {
-              <mat-icon class="scale-[1.6] md:scale-[2]">{{ getIcon(item.id) }}</mat-icon>
+            <mat-icon class="scale-[2] md:scale-[2.5]">{{ getIcon(item.id) }}</mat-icon>
             }
           </div>
-          
+
           <div class="flex flex-col items-center gap-0.5 mt-1">
             <span
               [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
@@ -218,7 +234,7 @@
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
         <!-- Image on Left -->
         <div class="col-span-1 md:col-span-5 flex justify-center" appScrollReveal="scale-in">
-          <img [src]="section.config['image'] || 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'"
+          <img [src]="section.config['image'] || 'https://m.media-amazon.com/images/I/61LTnvKTtSL.jpg'"
             alt="Bambu Lab A1 Combo"
             class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
             referrerpolicy="no-referrer">
@@ -234,12 +250,15 @@
             </h2>
           </div>
           <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
-            {{ section.config['description'] || 'Seamless multi-color printing at an accessible price point, complete with fully automated alignment and calibration sensors.' }}
+            {{ section.config['description'] || 'Seamless multi-color printing at an accessible price point, complete
+            with fully automated alignment and calibration sensors.' }}
           </p>
           <div class="flex flex-wrap items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'] || 48999)
+            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice']
+              || 48999)
               | currency:'INR':'symbol':'1.0-0' }}</span>
-            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 55000) |
+            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 55000)
+              |
               currency:'INR':'symbol':'1.0-0' }}</span>
             @if (section.config['badge'] || 'AMS Multi-Color') {
             <span
@@ -277,12 +296,15 @@
             </h2>
           </div>
           <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
-            {{ section.config['description'] || 'Professional grade dual extrusion setup engineered for high efficiency, high speed fabrication runs.' }}
+            {{ section.config['description'] || 'Professional grade dual extrusion setup engineered for high efficiency,
+            high speed fabrication runs.' }}
           </p>
           <div class="flex flex-wrap items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'] || 75000)
+            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice']
+              || 75000)
               | currency:'INR':'symbol':'1.0-0' }}</span>
-            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 90000) |
+            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 90000)
+              |
               currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
           <div class="pt-2">
@@ -308,12 +330,14 @@
   @case ('CATEGORY-VIEW-FILAMENT') {
   <!-- CATEGORY SPLASH: FILAMENT -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
+    appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
         {{ section.config['title'] || 'PREMIUM FILAMENT' }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Ecosystem Materials' }}</h2>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] ||
+        'Ecosystem Materials' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('materials')"
@@ -327,12 +351,14 @@
   @case ('CATEGORY-VIEW-SPARE-PARTS') {
   <!-- CATEGORY SPLASH: SPARE PARTS -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
+    appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
         {{ section.config['title'] || 'SPARE PARTS' }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Original Components' }}</h2>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] ||
+        'Original Components' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('spare-parts')"
@@ -346,12 +372,14 @@
   @case ('CATEGORY-VIEW-3D-PRINTER') {
   <!-- CATEGORY SPLASH: 3D PRINTER -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
+    appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
         {{ section.config['title'] || '3D PRINTERS' }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Flagship Systems' }}</h2>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] ||
+        'Flagship Systems' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('3d-printers')"
@@ -377,7 +405,8 @@
           {{ section.config['title'] || "JOIN THE MAKER'S COLLECTIVE" }}
         </h3>
         <p class="text-neutral-400 text-xs font-normal leading-relaxed">
-          {{ section.config['description'] || 'Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals.' }}
+          {{ section.config['description'] || 'Get the latest on layer-shifting breakthroughs, hardware updates, and
+          exclusive cosmic deals.' }}
         </p>
       </div>
 
@@ -407,7 +436,8 @@
   <!-- FEATURED: THE PRINTING ELITE -->
   <section id="products-catalog" class="max-w-7xl mx-auto px-6 space-y-10 text-center sm:text-left animate-fadeIn">
     <div
-      class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4" appScrollReveal="fade">
+      class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4"
+      appScrollReveal="fade">
       <div class="space-y-1">
         <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{
           section.config['subtitle'] || 'Precision Catalog' }}</h2>
@@ -470,12 +500,11 @@
             [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/400x400?text=No+Image'"
             class="w-[90%] h-[90%] object-contain transform group-hover:scale-110 transition-transform duration-700 ease-out primary-image relative z-1"
             alt="{{p.name}}" loading="lazy" referrerpolicy="no-referrer">
-            
+
           @if (p.images && p.images.length > 1) {
-            <img
-              [src]="p.images[1]?.url || p.images[1]"
-              class="absolute inset-0 w-[90%] h-[90%] m-auto object-contain secondary-image z-2"
-              alt="{{p.name}} Alternate" loading="lazy" referrerpolicy="no-referrer">
+          <img [src]="p.images[1]?.url || p.images[1]"
+            class="absolute inset-0 w-[90%] h-[90%] m-auto object-contain secondary-image z-2"
+            alt="{{p.name}} Alternate" loading="lazy" referrerpolicy="no-referrer">
           }
 
           @if (p.warningText) {
@@ -533,35 +562,48 @@
 
   @case ('BRANDS') {
   <!-- FEATURED BRANDS MARQUEE -->
-  <section [id]="section.id" class="w-full bg-neutral-950 dark:bg-neutral-950 py-12 md:py-16 border-y border-neutral-900 overflow-hidden" appScrollReveal="fade">
+  <section [id]="section.id"
+    class="w-full bg-neutral-950 dark:bg-neutral-950 py-12 md:py-16 border-y border-neutral-900 overflow-hidden"
+    appScrollReveal="fade">
     <div class="max-w-7xl mx-auto px-6 mb-8 text-center">
-      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 font-display">{{ section.config['subtitle'] || 'Verified Partners' }}</h2>
-      <h3 class="text-2xl font-black text-white tracking-tighter font-display">{{ section.config['title'] || 'Official Distributor' }}</h3>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 font-display">{{
+        section.config['subtitle'] || 'Verified Partners' }}</h2>
+      <h3 class="text-2xl font-black text-white tracking-tighter font-display">{{ section.config['title'] || 'Shop By
+        Brands' }}</h3>
     </div>
-    
+
     <div class="relative flex overflow-hidden w-full group py-4">
-      <div class="flex animate-marquee gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]">
+      <div
+        class="flex animate-marquee gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]">
         @for (brand of designedBrands(); track brand.slug) {
-          <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}" 
-             class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
-            @if (brand.logoUrl) {
-              <img [src]="brand.logoUrl" [alt]="brand.name" class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
-            } @else {
-              <span class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
-            }
-          </a>
+        <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}"
+          class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+          @if (brand.logoUrl) {
+          <img [src]="brand.logoUrl" [alt]="brand.name"
+            class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img"
+            (error)="onImageError($event)" referrerpolicy="no-referrer">
+          } @else {
+          <span
+            class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
+          }
+        </a>
         }
       </div>
-      <div class="flex animate-marquee2 absolute top-4 gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]" aria-hidden="true">
+      <div
+        class="flex animate-marquee2 absolute top-4 gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]"
+        aria-hidden="true">
         @for (brand of designedBrands(); track brand.slug) {
-          <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}" 
-             class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
-            @if (brand.logoUrl) {
-              <img [src]="brand.logoUrl" [alt]="brand.name" class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
-            } @else {
-              <span class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
-            }
-          </a>
+        <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}"
+          class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+          @if (brand.logoUrl) {
+          <img [src]="brand.logoUrl" [alt]="brand.name"
+            class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img"
+            (error)="onImageError($event)" referrerpolicy="no-referrer">
+          } @else {
+          <span
+            class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
+          }
+        </a>
         }
       </div>
     </div>
@@ -572,55 +614,71 @@
   <!-- SHOP BY CATEGORY: ALTERNATE LAYOUT -->
   <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12" appScrollReveal="fade">
     <div class="text-center space-y-2">
-      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{ section.config['subtitle'] || 'Browse Collections' }}</h2>
-      <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">{{ section.config['title'] || 'Shop By Category' }}</h3>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{
+        section.config['subtitle'] || 'Browse Collections' }}</h2>
+      <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">{{
+        section.config['title'] || 'Shop By Category' }}</h3>
     </div>
 
     <div class="space-y-12">
       @for (group of shopByCategoryGroups(); track group.category.id; let idx = $index) {
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          
-          <!-- Large Card -->
-          <div class="lg:col-span-5 bg-neutral-100 dark:bg-neutral-900 rounded-[2.5rem] overflow-hidden relative group p-8 md:p-12 flex flex-col justify-end min-h-[450px]"
-               [class.lg:order-2]="idx % 2 !== 0" appScrollReveal="scale-in">
-            <img [src]="group.category.image || 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=800'"
-                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105" referrerpolicy="no-referrer">
-            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-900/60 to-transparent pointer-events-none"></div>
-            
-            <div class="relative z-10 space-y-4 text-left">
-              <h4 class="text-4xl font-black text-white tracking-tight uppercase font-display">{{ group.category.name }}</h4>
-              <p class="text-neutral-300 text-sm leading-relaxed max-w-sm line-clamp-2">{{ group.category.description || 'Explore the latest collection of premium ' + group.category.name + ' for your next project.' }}</p>
-              <a [routerLink]="['/category', group.category.slug]"
-                 class="inline-flex h-12 px-6 bg-white hover:bg-orange-600 text-neutral-950 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest items-center gap-2 transition-colors duration-300 shadow-md">
-                VIEW COLLECTION <mat-icon class="scale-75">arrow_forward</mat-icon>
-              </a>
-            </div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+
+        <!-- Large Card -->
+        <div
+          class="lg:col-span-5 bg-neutral-100 dark:bg-neutral-900 rounded-[2.5rem] overflow-hidden relative group p-8 md:p-12 flex flex-col justify-end min-h-[500px] lg:min-h-[550px]"
+          [class.lg:order-2]="idx % 2 !== 0" appScrollReveal="scale-in">
+          <img
+            [src]="group.category.image || 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=800'"
+            class="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
+            referrerpolicy="no-referrer">
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-900/60 to-transparent pointer-events-none">
           </div>
 
-          <!-- Medium Cards Grid -->
-          <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"
-               [class.lg:order-1]="idx % 2 !== 0" appScrollReveal="fade">
-            @for (p of group.products; track p.id; let subIdx = $index) {
-              <a [routerLink]="['/product', p.slug]"
-                 appScrollReveal="slide-up" [delay]="subIdx * 100" appTilt [tiltMax]="5"
-                 class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item">
-                <div class="w-28 h-28 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30">
-                  <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/150'" class="w-[90%] h-[90%] object-contain transform group-hover/item:scale-110 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
-                </div>
-                <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 text-left">
-                  <span class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108] truncate">{{ p.brand }}</span>
-                  <h5 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors">{{ p.name }}</h5>
-                  <div class="pt-2 flex items-center justify-between">
-                    <span class="text-sm font-black dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-                    <div class="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 group-hover/item:bg-[#d65108] group-hover/item:text-white transition-colors duration-300">
-                      <mat-icon class="scale-75">arrow_forward</mat-icon>
-                    </div>
-                  </div>
-                </div>
-              </a>
-            }
+          <div class="relative z-10 space-y-4 text-left">
+            <h4 class="text-4xl font-black text-white tracking-tight uppercase font-display">{{ group.category.name }}
+            </h4>
+            <p class="text-neutral-300 text-sm leading-relaxed max-w-sm line-clamp-2">{{ group.category.description ||
+              'Explore the latest collection of premium ' + group.category.name + ' for your next project.' }}</p>
+            <a [routerLink]="['/category', group.category.slug]"
+              class="inline-flex h-12 px-6 bg-white hover:bg-orange-600 text-neutral-950 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest items-center gap-2 transition-colors duration-300 shadow-md">
+              VIEW COLLECTION <mat-icon class="scale-75">arrow_forward</mat-icon>
+            </a>
           </div>
         </div>
+
+        <!-- Medium Cards Grid -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6" [class.lg:order-1]="idx % 2 !== 0"
+          appScrollReveal="fade">
+          @for (p of group.products; track p.id; let subIdx = $index) {
+          <a [routerLink]="['/product', p.slug]" appScrollReveal="slide-up" [delay]="subIdx * 100" appTilt [tiltMax]="5"
+            class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item">
+            <div
+              class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1.5 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30">
+              <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/150'"
+                class="w-full h-full object-contain transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
+                referrerpolicy="no-referrer">
+            </div>
+            <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 text-left">
+              <span class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108] truncate">{{ p.brand
+                }}</span>
+              <h5
+                class="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors">
+                {{ p.name }}</h5>
+              <div class="pt-2 flex items-center justify-between">
+                <span class="text-sm font-black dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0'
+                  }}</span>
+                <div
+                  class="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 group-hover/item:bg-[#d65108] group-hover/item:text-white transition-colors duration-300">
+                  <mat-icon class="scale-75">arrow_forward</mat-icon>
+                </div>
+              </div>
+            </div>
+          </a>
+          }
+        </div>
+      </div>
       }
     </div>
   </section>
@@ -634,7 +692,8 @@
         section.config['subtitle'] || 'The Laboratory' }}</h2>
       <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">{{
         section.config['title'] || 'Shop by Technology' }}</h3>
-      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical manufacturing criteria.</p>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical
+        manufacturing criteria.</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -680,7 +739,8 @@
             section.config['subtitle'] || 'Enterprise Protocol' }}</h2>
           <h3 class="text-5xl font-black text-white tracking-tighter leading-tight font-display">{{
             section.config['title'] || 'Industrial Solutions' }}</h3>
-          <p class="text-neutral-400 text-sm leading-relaxed">Unified 3D setups, industrial consulting, dental molds, and robotic kits formulated for scaling companies.</p>
+          <p class="text-neutral-400 text-sm leading-relaxed">Unified 3D setups, industrial consulting, dental molds,
+            and robotic kits formulated for scaling companies.</p>
         </div>
         <a [routerLink]="['/printing-service']"
           class="inline-flex h-12 px-8 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest items-center gap-3 hover:scale-105 transition-all">
@@ -710,11 +770,16 @@
 
   @case ('LAUNCH_SPOTLIGHT') {
   <!-- PREMIUM LAUNCH SPOTLIGHT: APPLE FLAGSHIP PRODUCT SHOWCASE -->
-  <section [id]="section.id" class="w-full overflow-hidden bg-neutral-950 text-white py-24 border-y border-neutral-900 relative">
+  <section [id]="section.id"
+    class="w-full overflow-hidden bg-neutral-950 text-white py-24 border-y border-neutral-900 relative">
     <!-- Glowing backgrounds -->
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
-    <div class="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
-    
+    <div
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none z-0">
+    </div>
+    <div
+      class="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none z-0">
+    </div>
+
     <div class="max-w-7xl mx-auto px-6 relative z-10">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         <!-- Text details -->
@@ -725,14 +790,17 @@
               Bambu Lab<br><span class="text-theme-gradient">X1-Carbon</span>
             </h2>
             <p class="text-neutral-400 text-base leading-relaxed max-w-lg font-medium">
-              Designed for ultimate speed, precision, and multi-material engineering. Experience automated printing with active vibration compensation, AI extrusion monitoring, and 16-color compatibility.
+              Designed for ultimate speed, precision, and multi-material engineering. Experience automated printing with
+              active vibration compensation, AI extrusion monitoring, and 16-color compatibility.
             </p>
           </div>
 
           <!-- Feature badges grid -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-              <div class="h-10 w-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
+            <div appTilt [tiltMax]="5"
+              class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div
+                class="h-10 w-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
                 <mat-icon class="scale-90">auto_awesome</mat-icon>
               </div>
               <div class="space-y-1">
@@ -741,8 +809,10 @@
               </div>
             </div>
 
-            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-              <div class="h-10 w-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
+            <div appTilt [tiltMax]="5"
+              class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div
+                class="h-10 w-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
                 <mat-icon class="scale-90">speed</mat-icon>
               </div>
               <div class="space-y-1">
@@ -751,7 +821,8 @@
               </div>
             </div>
 
-            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+            <div appTilt [tiltMax]="5"
+              class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
               <div class="h-10 w-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
                 <mat-icon class="scale-90">palette</mat-icon>
               </div>
@@ -761,8 +832,10 @@
               </div>
             </div>
 
-            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-              <div class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
+            <div appTilt [tiltMax]="5"
+              class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div
+                class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
                 <mat-icon class="scale-90">camera_enhance</mat-icon>
               </div>
               <div class="space-y-1">
@@ -782,15 +855,16 @@
 
         <!-- Huge Image showcase on right -->
         <div class="lg:col-span-6 flex justify-center relative" appScrollReveal="scale-in">
-          <div class="relative w-[340px] md:w-[440px] aspect-square rounded-[3rem] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-8 group">
+          <div
+            class="relative w-[340px] md:w-[440px] aspect-square rounded-[3rem] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-8 group">
             <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-1"></div>
             <!-- Scanner line -->
-            <div class="absolute top-0 left-0 w-full h-[2px] bg-purple-500 shadow-[0_0_15px_#7c3aed] animate-scan z-10"></div>
-            
-            <img src="https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png" 
-                 alt="Bambu Lab X1-C" 
-                 class="h-[80%] max-h-[360px] object-contain transition-transform duration-700 group-hover:scale-105 relative z-2"
-                 (error)="onImageError($event)" referrerpolicy="no-referrer">
+            <div class="absolute top-0 left-0 w-full h-[2px] bg-purple-500 shadow-[0_0_15px_#7c3aed] animate-scan z-10">
+            </div>
+
+            <img src="https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png" alt="Bambu Lab X1-C"
+              class="h-[80%] max-h-[360px] object-contain transition-transform duration-700 group-hover:scale-105 relative z-2"
+              (error)="onImageError($event)" referrerpolicy="no-referrer">
           </div>
         </div>
       </div>
@@ -803,63 +877,82 @@
   <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12 py-12" appScrollReveal="fade">
     <div class="text-center space-y-2 max-w-2xl mx-auto">
       <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">Galaxy Ecosystem</h2>
-      <h3 class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">Our Premium Services</h3>
-      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Industrial solutions, expert parameter tuning, and dynamic 3D quote tools mapped to scale your operations.</p>
+      <h3
+        class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">
+        Our Premium Services</h3>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Industrial solutions, expert parameter tuning, and
+        dynamic 3D quote tools mapped to scale your operations.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <!-- Service 1 -->
-      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
-        <div class="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center text-[#d65108] group-hover:scale-110 transition-transform">
+      <div appTilt [tiltMax]="6"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div
+          class="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center text-[#d65108] group-hover:scale-110 transition-transform">
           <mat-icon class="scale-110">layers</mat-icon>
         </div>
         <div class="space-y-2 text-left">
           <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Instant 3D Print Quoting</h4>
-          <p class="text-xs text-neutral-500 leading-relaxed">Upload any STL or STEP file and receive dynamic, tailored slicing quotes with infill controls in seconds.</p>
+          <p class="text-xs text-neutral-500 leading-relaxed">Upload any STL or STEP file and receive dynamic, tailored
+            slicing quotes with infill controls in seconds.</p>
         </div>
-        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+        <a routerLink="/printing-service"
+          class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
           UPLOAD CAD FILE <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
         </a>
       </div>
 
       <!-- Service 2 -->
-      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
-        <div class="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+      <div appTilt [tiltMax]="6"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div
+          class="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
           <mat-icon class="scale-110">school</mat-icon>
         </div>
         <div class="space-y-2 text-left">
           <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Academy & Maintenance</h4>
-          <p class="text-xs text-neutral-500 leading-relaxed">Certified training modules for industrial print mechanics, parameter profiles, and slicing calibrations.</p>
+          <p class="text-xs text-neutral-500 leading-relaxed">Certified training modules for industrial print mechanics,
+            parameter profiles, and slicing calibrations.</p>
         </div>
-        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+        <a routerLink="/printing-service"
+          class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
           START LEARNING <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
         </a>
       </div>
 
       <!-- Service 3 -->
-      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
-        <div class="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+      <div appTilt [tiltMax]="6"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div
+          class="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
           <mat-icon class="scale-110">build_circle</mat-icon>
         </div>
         <div class="space-y-2 text-left">
           <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Annual Maintenance (AMC)</h4>
-          <p class="text-xs text-neutral-500 leading-relaxed">Preventive care contracts including physical parts replacements, firmware audits, and calibration sweeps.</p>
+          <p class="text-xs text-neutral-500 leading-relaxed">Preventive care contracts including physical parts
+            replacements, firmware audits, and calibration sweeps.</p>
         </div>
-        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+        <a routerLink="/printing-service"
+          class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
           REQUEST AMC QUOTE <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
         </a>
       </div>
 
       <!-- Service 4 -->
-      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
-        <div class="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+      <div appTilt [tiltMax]="6"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div
+          class="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
           <mat-icon class="scale-110">hub</mat-icon>
         </div>
         <div class="space-y-2 text-left">
           <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Farm System Integration</h4>
-          <p class="text-xs text-neutral-500 leading-relaxed">Establish automated production pipelines using centralized dashboard panels and robotic filament loading structures.</p>
+          <p class="text-xs text-neutral-500 leading-relaxed">Establish automated production pipelines using centralized
+            dashboard panels and robotic filament loading structures.</p>
         </div>
-        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+        <a routerLink="/printing-service"
+          class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
           TALK TO ENGINEER <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
         </a>
       </div>
@@ -871,63 +964,77 @@
   <!-- WHY CHOOSE US: APPLE-STYLE STICKY OVERLAPPING CARDS -->
   <section [id]="section.id" class="max-w-5xl mx-auto px-6 py-20">
     <div class="text-center space-y-2 mb-12" appScrollReveal="fade">
-      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">THE GALAXY PROTOCOL</h2>
-      <h3 class="text-4xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">Why Choose 3D Galaxy</h3>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">THE GALAXY PROTOCOL
+      </h2>
+      <h3 class="text-4xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">Why Choose 3D
+        Galaxy</h3>
     </div>
 
     <div class="sticky-stack-container">
       <!-- Card 1 -->
-      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+      <div
+        class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
         <div class="space-y-4 max-w-xl text-left">
           <span class="text-[10px] font-black tracking-widest text-orange-500 uppercase">AUTHENTICATED SYSTEMS</span>
           <h4 class="text-3xl font-black tracking-tight leading-none">Authorized National Distributor</h4>
           <p class="text-sm text-neutral-400 leading-relaxed">
-            We work directly with tier-1 manufacturers to source authentic systems. Enjoy factory-certified product warranties, direct firmware overrides, and guaranteed spares support.
+            We work directly with tier-1 manufacturers to source authentic systems. Enjoy factory-certified product
+            warranties, direct firmware overrides, and guaranteed spares support.
           </p>
         </div>
-        <div class="h-20 w-20 bg-orange-500/10 border border-orange-500/25 rounded-2xl flex items-center justify-center text-orange-400 shrink-0 self-center">
+        <div
+          class="h-20 w-20 bg-orange-500/10 border border-orange-500/25 rounded-2xl flex items-center justify-center text-orange-400 shrink-0 self-center">
           <mat-icon class="scale-150">verified</mat-icon>
         </div>
       </div>
 
       <!-- Card 2 -->
-      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+      <div
+        class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
         <div class="space-y-4 max-w-xl text-left">
           <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">NATIONWIDE SUPPORT</span>
           <h4 class="text-3xl font-black tracking-tight leading-none">Pan-India Support Hubs</h4>
           <p class="text-sm text-neutral-400 leading-relaxed">
-            With 120+ localized maintenance offices and spare parts centers, engineering assistance is never far. Our field technicians carry original spares for instant calibrations.
+            With 120+ localized maintenance offices and spare parts centers, engineering assistance is never far. Our
+            field technicians carry original spares for instant calibrations.
           </p>
         </div>
-        <div class="h-20 w-20 bg-purple-500/10 border border-purple-500/25 rounded-2xl flex items-center justify-center text-purple-400 shrink-0 self-center">
+        <div
+          class="h-20 w-20 bg-purple-500/10 border border-purple-500/25 rounded-2xl flex items-center justify-center text-purple-400 shrink-0 self-center">
           <mat-icon class="scale-150">map</mat-icon>
         </div>
       </div>
 
       <!-- Card 3 -->
-      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+      <div
+        class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
         <div class="space-y-4 max-w-xl text-left">
           <span class="text-[10px] font-black tracking-widest text-blue-400 uppercase">CAD REVOLUTION</span>
           <h4 class="text-3xl font-black tracking-tight leading-none">Next-Gen Slicing Engine</h4>
           <p class="text-sm text-neutral-400 leading-relaxed">
-            Our cloud quoting pipeline estimates parameters using direct mesh parsing. Upload your files to automatically receive custom infill, density, and filament parameters with instant pricing.
+            Our cloud quoting pipeline estimates parameters using direct mesh parsing. Upload your files to
+            automatically receive custom infill, density, and filament parameters with instant pricing.
           </p>
         </div>
-        <div class="h-20 w-20 bg-blue-500/10 border border-blue-500/25 rounded-2xl flex items-center justify-center text-blue-400 shrink-0 self-center">
+        <div
+          class="h-20 w-20 bg-blue-500/10 border border-blue-500/25 rounded-2xl flex items-center justify-center text-blue-400 shrink-0 self-center">
           <mat-icon class="scale-150">cloud_done</mat-icon>
         </div>
       </div>
 
       <!-- Card 4 -->
-      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+      <div
+        class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
         <div class="space-y-4 max-w-xl text-left">
           <span class="text-[10px] font-black tracking-widest text-emerald-400 uppercase">ENTERPRISE CONSULTING</span>
           <h4 class="text-3xl font-black tracking-tight leading-none">Tailored Corporate Advisory</h4>
           <p class="text-sm text-neutral-400 leading-relaxed">
-            We calibrate specialized setups for automotive prototyping, dental templates, aerospace tooling, and academic labs. We provide complete setup layouts and material parameter sets.
+            We calibrate specialized setups for automotive prototyping, dental templates, aerospace tooling, and
+            academic labs. We provide complete setup layouts and material parameter sets.
           </p>
         </div>
-        <div class="h-20 w-20 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl flex items-center justify-center text-emerald-400 shrink-0 self-center">
+        <div
+          class="h-20 w-20 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl flex items-center justify-center text-emerald-400 shrink-0 self-center">
           <mat-icon class="scale-150">business</mat-icon>
         </div>
       </div>
@@ -937,14 +1044,17 @@
 
   @case ('STATISTICS') {
   <!-- STATISTICS: ANIMATED VIEWPORT COUNTERS -->
-  <section [id]="section.id" class="w-full bg-neutral-100 dark:bg-neutral-950 py-20 border-y border-neutral-200 dark:border-neutral-900 text-neutral-900 dark:text-white" appScrollReveal="fade">
+  <section [id]="section.id"
+    class="w-full bg-neutral-100 dark:bg-neutral-950 py-20 border-y border-neutral-200 dark:border-neutral-900 text-neutral-900 dark:text-white"
+    appScrollReveal="fade">
     <div class="max-w-7xl mx-auto px-6">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
         @for (stat of galaxyStats; track stat.label; let idx = $index) {
-          <div class="space-y-2" appScrollReveal="scale-in" [delay]="idx * 100">
-            <div class="text-5xl md:text-7xl font-black text-theme-gradient tracking-tight font-display" [appCountUp]="stat.value">0</div>
-            <p class="text-xs font-black uppercase tracking-widest text-neutral-400">{{ stat.label }}</p>
-          </div>
+        <div class="space-y-2" appScrollReveal="scale-in" [delay]="idx * 100">
+          <div class="text-5xl md:text-7xl font-black text-theme-gradient tracking-tight font-display"
+            [appCountUp]="stat.value">0</div>
+          <p class="text-xs font-black uppercase tracking-widest text-neutral-400">{{ stat.label }}</p>
+        </div>
         }
       </div>
     </div>
@@ -955,14 +1065,19 @@
   <!-- TESTIMONIALS: PREMIUM CARD GRID WITH 3D TILT -->
   <section [id]="section.id" class="max-w-7xl mx-auto px-6 py-12" appScrollReveal="fade">
     <div class="text-center space-y-2 max-w-2xl mx-auto mb-12">
-      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">Client Testimonials</h2>
-      <h3 class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">Ecosystem Reviews</h3>
-      <p class="text-neutral-500 dark:text-neutral-400 text-sm">See how aerospace labs, auto designers, and creators leverage our high-fidelity print ecosystem.</p>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">Client Testimonials
+      </h2>
+      <h3
+        class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">
+        Ecosystem Reviews</h3>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">See how aerospace labs, auto designers, and creators
+        leverage our high-fidelity print ecosystem.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Card 1 -->
-      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+      <div appTilt [tiltMax]="5"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
         <div class="flex items-center gap-1 text-amber-500 mb-4">
           <mat-icon class="scale-75">star</mat-icon>
           <mat-icon class="scale-75">star</mat-icon>
@@ -971,10 +1086,13 @@
           <mat-icon class="scale-75">star</mat-icon>
         </div>
         <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
-          "3D Galaxy revolutionized our design verification cycle. Their Bambu AMC contracts keep our 40-printer manufacturing farm running 24/7 with zero bottlenecks."
+          "3D Galaxy revolutionized our design verification cycle. Their Bambu AMC contracts keep our 40-printer
+          manufacturing farm running 24/7 with zero bottlenecks."
         </p>
         <div class="flex items-center gap-4 mt-6">
-          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">AS</div>
+          <div
+            class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">
+            AS</div>
           <div class="space-y-0.5">
             <h4 class="text-xs font-black text-neutral-900 dark:text-white">Dr. A. Sen</h4>
             <p class="text-[10px] text-neutral-400">R&D Director, Aero-Space India</p>
@@ -983,7 +1101,8 @@
       </div>
 
       <!-- Card 2 -->
-      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+      <div appTilt [tiltMax]="5"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
         <div class="flex items-center gap-1 text-amber-500 mb-4">
           <mat-icon class="scale-75">star</mat-icon>
           <mat-icon class="scale-75">star</mat-icon>
@@ -992,10 +1111,13 @@
           <mat-icon class="scale-75">star</mat-icon>
         </div>
         <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
-          "Their custom quotation portal is incredibly fast. We uploaded the suspension mounts, selected PETG-CF, and got our structural batches in perfect spec."
+          "Their custom quotation portal is incredibly fast. We uploaded the suspension mounts, selected PETG-CF, and
+          got our structural batches in perfect spec."
         </p>
         <div class="flex items-center gap-4 mt-6">
-          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">MJ</div>
+          <div
+            class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">
+            MJ</div>
           <div class="space-y-0.5">
             <h4 class="text-xs font-black text-neutral-900 dark:text-white">Meera J.</h4>
             <p class="text-[10px] text-neutral-400">Lead Product Designer, Nexa Motors</p>
@@ -1004,7 +1126,8 @@
       </div>
 
       <!-- Card 3 -->
-      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+      <div appTilt [tiltMax]="5"
+        class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
         <div class="flex items-center gap-1 text-amber-500 mb-4">
           <mat-icon class="scale-75">star</mat-icon>
           <mat-icon class="scale-75">star</mat-icon>
@@ -1013,10 +1136,13 @@
           <mat-icon class="scale-75">star</mat-icon>
         </div>
         <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
-          "Outstanding post-sales training and customer service. Our university makerspace runs completely on 3D Galaxy filaments, which yield highly consistent prints."
+          "Outstanding post-sales training and customer service. Our university makerspace runs completely on 3D Galaxy
+          filaments, which yield highly consistent prints."
         </p>
         <div class="flex items-center gap-4 mt-6">
-          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">RK</div>
+          <div
+            class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">
+            RK</div>
           <div class="space-y-0.5">
             <h4 class="text-xs font-black text-neutral-900 dark:text-white">Prof. Rajesh K.</h4>
             <p class="text-[10px] text-neutral-400">Makerspace Admin, IIT Delhi</p>
@@ -1029,23 +1155,29 @@
 
   @case ('VIDEO_SECTION') {
   <!-- VIDEO SECTION: HIGH-FIDELITY SHOWCASE -->
-  <section [id]="section.id" class="w-full py-16 bg-neutral-950 text-white overflow-hidden relative border-y border-neutral-900" appScrollReveal="fade">
+  <section [id]="section.id"
+    class="w-full py-16 bg-neutral-950 text-white overflow-hidden relative border-y border-neutral-900"
+    appScrollReveal="fade">
     <div class="max-w-7xl mx-auto px-6 space-y-10">
       <div class="text-center space-y-2 max-w-2xl mx-auto mb-8">
         <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Fabrication Showcase</span>
-        <h3 class="text-3xl md:text-4xl font-black tracking-tighter leading-tight font-display">Watch the Ecosystem in Action</h3>
+        <h3 class="text-3xl md:text-4xl font-black tracking-tighter leading-tight font-display">Watch the Ecosystem in
+          Action</h3>
       </div>
-      
-      <div class="relative w-full max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
-        <video src="https://assets.mixkit.co/videos/preview/mixkit-engineering-student-using-a-3d-printer-42646-large.mp4" 
-               autoplay loop muted playsinline
-               class="absolute inset-0 w-full h-full object-cover opacity-60" 
-               referrerpolicy="no-referrer"></video>
-        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950/20 z-10 flex flex-col justify-end p-8 md:p-12 text-left">
+
+      <div
+        class="relative w-full max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
+        <video
+          src="https://assets.mixkit.co/videos/preview/mixkit-engineering-student-using-a-3d-printer-42646-large.mp4"
+          autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60"
+          referrerpolicy="no-referrer"></video>
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950/20 z-10 flex flex-col justify-end p-8 md:p-12 text-left">
           <div class="relative z-20 space-y-2 max-w-lg">
             <span class="text-[9px] font-black uppercase tracking-widest text-orange-400">0.05mm Precision Curing</span>
             <h4 class="text-2xl font-black text-white leading-tight">High-Definition SLA Curing Chamber</h4>
-            <p class="text-xs text-neutral-400 leading-relaxed">Watch how our SLA resin units construct dental surgical guides and fine-detail jewelry molds layer by layer with 50-micron absolute accuracy.</p>
+            <p class="text-xs text-neutral-400 leading-relaxed">Watch how our SLA resin units construct dental surgical
+              guides and fine-detail jewelry molds layer by layer with 50-micron absolute accuracy.</p>
           </div>
         </div>
       </div>

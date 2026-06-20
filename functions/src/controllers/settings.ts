@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { clearCache } from '../middleware/cache';
 
 export const getThemeSettings = async (req: Request, res: Response) => {
   try {
@@ -128,6 +129,7 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
       },
     });
 
+    clearCache();
     return res.status(200).json(JSON.parse(updated.value));
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update security settings', details: error.message });
@@ -153,6 +155,7 @@ export const updateThemeSettings = async (req: Request, res: Response) => {
       },
     });
 
+    clearCache();
     return res.status(200).json(JSON.parse(updated.value));
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to write storefront visual presets', details: error.message });

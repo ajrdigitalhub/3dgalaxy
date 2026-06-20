@@ -24,7 +24,7 @@ export class AuthService {
     return this.ds.loginWithEmail(email, pass);
   }
 
-  registerWithEmail(email: string, pass: string, name: string) {
-    return this.ds.registerWithEmail(email, pass, name);
+  registerWithEmail(email: string, pass: string, name: string, mobile: string = '') {
+    return this.ds.registerWithEmail(email, pass, name, mobile);
   }
 }

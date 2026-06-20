@@ -46,6 +46,10 @@ export class Login implements OnInit {
       nonNullable: true,
       validators: [Validators.required, Validators.email]
     }),
+    mobile: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(/^[+]?[0-9]{10,15}$/)]
+    }),
     password: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.minLength(6)]
@@ -83,13 +87,13 @@ export class Login implements OnInit {
 
     if (this.isSignUp()) {
       if (this.registerForm.invalid) {
-        this.toast.error('Please fill out all fields correctly (Password: min 6 chars).');
+        this.toast.error('Please fill out all fields correctly (Password: min 6 chars, Mobile: 10-15 digits).');
         return;
       }
       this.loading.set(true);
-      const { name, email, password } = this.registerForm.getRawValue();
+      const { name, email, mobile, password } = this.registerForm.getRawValue();
       try {
-        await this.ds.registerWithEmail(email, password, name);
+        await this.ds.registerWithEmail(email, password, name, mobile);
         this.toast.success('Account registered successfully! Loading workspace...');
         this.handleRedirect();
       } catch (err: unknown) {
@@ -139,7 +143,7 @@ export class Login implements OnInit {
     let returnUrl = this.route.snapshot.queryParams['returnUrl'];
     if (!returnUrl) {
       const profile = this.ds.userProfile();
-      if (profile && profile.role === 'admin') {
+      if (profile && (profile.role === 'admin' || profile.role === 'super-admin')) {
         returnUrl = '/admin';
       } else {
         returnUrl = '/account';

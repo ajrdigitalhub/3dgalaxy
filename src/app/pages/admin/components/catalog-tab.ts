@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -567,96 +567,93 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
         <div class="space-y-8">
           <div>
             <h1 class="text-xl font-black uppercase font-sans">Taxonomy Tree</h1>
-            <p class="text-xs text-zinc-500">Manage structure taxonomy, recursive parent mappings, SEO attributes, and media.</p>
+            <p class="text-xs text-zinc-500">Manage structure taxonomy, parent mappings, SEO attributes, and media.</p>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- TREE GRAPH DIAL -->
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl space-y-4 shadow-xs font-sans">
-              <div class="flex justify-between items-center border-b dark:border-zinc-800 pb-2">
-                <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Active Tree Nodes (Infinite Depth Display)</p>
-                <span class="text-[9px] font-mono text-blue-500 font-bold">{{ admin.ds.categories().length }} Categories</span>
+            <!-- TAXONOMY DIRECTORY GRID -->
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-4 shadow-sm font-sans lg:col-span-1">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b dark:border-zinc-800 pb-4">
+                <div>
+                  <h3 class="text-xs font-mono font-black text-zinc-400 uppercase tracking-widest">Active Tree Nodes</h3>
+                  <span class="text-[11px] font-bold text-zinc-450 dark:text-zinc-500">{{ admin.ds.categories().length }} Categories</span>
+                </div>
+                <div class="relative w-full sm:w-64">
+                  <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                  <input type="text" [value]="categorySearchQuery()" (input)="categorySearchQuery.set($any($event.target).value)" 
+                         placeholder="Search categories..." 
+                         class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                </div>
               </div>
               
-              <div class="space-y-3 max-h-[600px] overflow-y-auto no-scrollbar pr-1">
-                <!-- Level 1 Root Nodes -->
-                @for (c of admin.ds.categories(); track c.id) {
-                  @if (!c.parent_id && !c.parentId) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-2">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2">
-                          <mat-icon class="text-blue-500 text-sm font-black">folder_open</mat-icon> {{ c.name }}
-                        </span>
-                        <div class="flex gap-1.5">
-                          <button (click)="admin.startCategoryEdit(c)" class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer">
-                            <mat-icon class="text-sm font-bold">edit</mat-icon>
-                          </button>
-                          <button (click)="admin.deleteCategory(c.id)" class="p-1 text-red-400 hover:text-red-600 cursor-pointer">
-                            <mat-icon class="text-sm font-bold">close</mat-icon>
-                          </button>
-                        </div>
-                      </div>
-
-                      @if (c.description) {
-                        <p class="text-[10px] text-zinc-400 pl-6 leading-relaxed">{{ c.description }}</p>
-                      }
-                      
-                      <!-- Level-2 Sub-nesting loop -->
-                      <div class="pl-5 border-l border-zinc-200 dark:border-zinc-800 space-y-2 mt-2">
-                        @for (sub of admin.ds.categories(); track sub.id) {
-                          @if (sub.parent_id === c.id || sub.parentId === c.id) {
-                            <div class="space-y-1.5 p-2 bg-blue-500/5 rounded-lg border dark:border-white/5">
-                              <div class="flex justify-between items-center text-[11px] font-black text-zinc-900 dark:text-zinc-100">
-                                <span class="flex items-center gap-1">↳ <mat-icon class="text-xs text-blue-400">subdirectory_arrow_right</mat-icon> {{ sub.name }}</span>
-                                <div class="flex gap-1">
-                                  <button (click)="admin.startCategoryEdit(sub)" class="text-blue-500 text-[10px] hover:text-blue-600 cursor-pointer">Edit</button>
-                                  <button (click)="admin.deleteCategory(sub.id)" class="text-red-400 text-[10px] hover:text-red-500 cursor-pointer">Del</button>
-                                </div>
-                              </div>
-                              
-                              <!-- Level-3 Sub-nesting loop -->
-                              <div class="pl-4 border-l border-blue-500/20 space-y-1">
-                                @for (nest of admin.ds.categories(); track nest.id) {
-                                  @if (nest.parent_id === sub.id || nest.parentId === sub.id) {
-                                    <div class="space-y-1 p-1 bg-emerald-500/5 rounded">
-                                      <div class="flex justify-between text-[10px] font-black text-zinc-600 dark:text-zinc-300">
-                                        <span class="flex items-center gap-1">↳ <mat-icon class="text-[10px] text-emerald-400 h-3 w-3">commit</mat-icon> {{ nest.name }}</span>
-                                        <div class="flex gap-1">
-                                          <button (click)="admin.startCategoryEdit(nest)" class="text-blue-400 text-[9px] hover:text-blue-500 cursor-pointer">Edit</button>
-                                          <button (click)="admin.deleteCategory(nest.id)" class="text-red-400 text-[9px] hover:text-red-500 cursor-pointer">Del</button>
-                                        </div>
-                                      </div>
-                                      
-                                      <!-- Level-4 Sub-nesting loop -->
-                                      <div class="pl-4 border-l border-emerald-500/20">
-                                        @for (deep of admin.ds.categories(); track deep.id) {
-                                          @if (deep.parent_id === nest.id || deep.parentId === nest.id) {
-                                            <div class="flex justify-between text-[9px] font-black text-zinc-400 pl-2">
-                                              <span>↳ {{ deep.name }}</span>
-                                              <div class="flex gap-1">
-                                                <button (click)="admin.startCategoryEdit(deep)" class="text-blue-400 text-[8px] hover:text-blue-500 cursor-pointer">Edit</button>
-                                                <button (click)="admin.deleteCategory(deep.id)" class="text-red-400 text-[8px] hover:text-red-500 cursor-pointer">Del</button>
-                                              </div>
-                                            </div>
-                                          }
-                                        }
-                                      </div>
-                                    </div>
-                                  }
-                                }
-                              </div>
+              <div class="overflow-x-auto no-scrollbar max-h-[600px] overflow-y-auto pr-1">
+                <table class="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+                      <th class="py-2.5">Category Name</th>
+                      <th class="py-2.5 text-center">Products</th>
+                      <th class="py-2.5 text-center">Status</th>
+                      <th class="py-2.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    @for (c of sortedCategories(); track c.id) {
+                      <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100">
+                        <td class="py-3 font-semibold">
+                          <div class="flex items-center gap-2" [style.padding-left.px]="c.level * 16">
+                            @if (c.level > 0) {
+                              <span class="text-zinc-350 dark:text-zinc-700 font-mono">└─</span>
+                            } @else {
+                              <mat-icon class="text-blue-500 text-base shrink-0">folder</mat-icon>
+                            }
+                            <div>
+                              <p class="font-extrabold uppercase text-zinc-900 dark:text-white">{{ c.name }}</p>
+                              @if (c.level > 1) {
+                                <p class="text-[8px] text-zinc-400 font-mono tracking-tight">{{ c.path }}</p>
+                              }
                             </div>
-                          }
-                        }
-                      </div>
-                    </div>
-                  }
-                }
+                          </div>
+                        </td>
+                        <td class="py-3 text-center font-mono font-bold text-zinc-500">
+                          {{ getProductCount(c.id) }}
+                        </td>
+                        <td class="py-3 text-center">
+                          <div class="inline-flex gap-1">
+                            <span [class]="c.isActive !== false ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/15' : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500'" 
+                                  class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase">
+                              {{ c.isActive !== false ? 'ACTIVE' : 'DRAFT' }}
+                            </span>
+                            @if (c.isFeatured) {
+                              <span class="bg-amber-500/10 text-amber-500 border border-amber-500/15 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">
+                                FEATURED
+                              </span>
+                            }
+                          </div>
+                        </td>
+                        <td class="py-3 text-right">
+                          <div class="inline-flex gap-1.5">
+                            <button (click)="admin.startCategoryEdit(c)" class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer bg-transparent border-none">
+                              <mat-icon class="text-sm font-bold">edit</mat-icon>
+                            </button>
+                            <button (click)="admin.deleteCategory(c.id)" class="p-1 text-red-400 hover:text-red-600 cursor-pointer bg-transparent border-none">
+                              <mat-icon class="text-sm font-bold">delete_outline</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                    @if (sortedCategories().length === 0) {
+                      <tr>
+                        <td colspan="4" class="py-8 text-center text-zinc-400 font-bold text-xs">No categories found matching your query.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             </div>
 
             <!-- ROOT ADDITION MODULE -->
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-6 shadow-xs relative overflow-hidden font-sans">
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-6 shadow-sm relative overflow-hidden font-sans">
               <div class="relative space-y-4 font-sans">
                 <div class="flex justify-between items-center pb-2 border-b dark:border-zinc-800">
                   <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-white leading-none">
@@ -676,7 +673,7 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                   <div class="space-y-1 relative">
                     <span class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Parent Segment Node (Leave empty if root)</span>
                     <button type="button" (click)="editorCatDropdownOpen.set(!editorCatDropdownOpen())" 
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer">
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer">
                       <span>{{ getCategoryPath(admin.newCatParentId()) || 'None (Top-Level Category)' }}</span>
                       <mat-icon class="text-zinc-400 text-sm">keyboard_arrow_down</mat-icon>
                     </button>
@@ -733,11 +730,11 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                       <input type="text" [value]="admin.catIcon()" (input)="admin.catIcon.set($any($event.target).value)" placeholder="folder" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-lg text-xs outline-none text-zinc-900 dark:text-white font-bold">
                     </div>
                     <div class="flex items-center gap-1.5 pt-4">
-                      <input type="checkbox" [checked]="admin.catIsActive()" (change)="admin.catIsActive.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 h-4 w-4">
+                      <input type="checkbox" [checked]="admin.catIsActive()" (change)="admin.catIsActive.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 h-4 w-4">
                       <span class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Active</span>
                     </div>
                     <div class="flex items-center gap-1.5 pt-4">
-                      <input type="checkbox" [checked]="admin.catIsFeatured()" (change)="admin.catIsFeatured.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 h-4 w-4">
+                      <input type="checkbox" [checked]="admin.catIsFeatured()" (change)="admin.catIsFeatured.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 h-4 w-4">
                       <span class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Featured</span>
                     </div>
                   </div>
@@ -1014,6 +1011,37 @@ export class AdminCatalogTab {
   pCatDropdownOpen = signal<boolean>(false);
   editorCatSearchQuery = signal<string>('');
   editorCatDropdownOpen = signal<boolean>(false);
+  categorySearchQuery = signal<string>('');
+
+  sortedCategories = computed(() => {
+    const cats = this.admin.ds.categories() || [];
+    const query = this.categorySearchQuery().toLowerCase().trim();
+    
+    const list = cats.map(c => ({
+      ...c,
+      path: this.getCategoryPath(c.id),
+      level: this.getCategoryLevel(c.id)
+    }));
+
+    const filtered = query 
+      ? list.filter(c => c.name.toLowerCase().includes(query) || c.path.toLowerCase().includes(query))
+      : list;
+
+    return filtered.sort((a, b) => a.path.localeCompare(b.path));
+  });
+
+  getCategoryLevel(catId: string | null): number {
+    if (!catId) return 0;
+    const cats = this.admin.ds.categories();
+    const cat = cats.find(c => c.id === catId);
+    if (!cat) return 0;
+    const parentId = cat.parent_id || cat.parentId;
+    return parentId ? 1 + this.getCategoryLevel(parentId) : 0;
+  }
+
+  getProductCount(catId: string): number {
+    return (this.admin.ds.products() || []).filter(p => p.category_id === catId || p.categoryId === catId).length;
+  }
 
   getCategoryPath(catId: string | null): string {
     if (!catId) return '';

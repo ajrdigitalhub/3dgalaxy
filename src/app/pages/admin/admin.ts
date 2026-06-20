@@ -86,80 +86,80 @@ export class AdminPanel {
     'Settings': true
   });
 
-  sidebarMenu = [
+  sidebarMenu: Array<{ group: string; items: Array<{ id: AdminTab; label: string; icon: string }> }> = [
     {
       group: 'Overview',
       items: [
-        { id: 'dashboard' as const, label: 'Dashboard', icon: 'grid_view' }
+        { id: 'dashboard', label: 'Dashboard', icon: 'grid_view' }
       ]
     },
     {
       group: 'Catalog',
       items: [
-        { id: 'products' as const, label: 'Products', icon: 'inventory_2' },
-        { id: 'categories' as const, label: 'Categories', icon: 'account_tree' },
-        { id: 'collections' as const, label: 'Collections', icon: 'layers' },
-        { id: 'brands' as const, label: 'Brands', icon: 'label' },
-        { id: 'inventory' as const, label: 'Inventory', icon: 'shelves' }
+        { id: 'products', label: 'Products', icon: 'inventory_2' },
+        { id: 'categories', label: 'Categories', icon: 'account_tree' },
+        // { id: 'collections', label: 'Collections', icon: 'layers' },
+        { id: 'brands', label: 'Brands', icon: 'label' },
+        // { id: 'inventory', label: 'Inventory', icon: 'shelves' }
       ]
     },
     {
       group: 'Sales',
       items: [
-        { id: 'orders' as const, label: 'Orders', icon: 'shopping_bag' },
-        { id: 'draft-orders' as const, label: 'Draft Orders', icon: 'note_add' },
-        { id: 'abandoned-carts' as const, label: 'Abandoned Carts', icon: 'remove_shopping_cart' },
-        { id: 'quotes' as const, label: 'Service Inquiries', icon: 'precision_manufacturing' }
+        { id: 'orders', label: 'Orders', icon: 'shopping_bag' },
+        // { id: 'draft-orders', label: 'Draft Orders', icon: 'note_add' },
+        // { id: 'abandoned-carts', label: 'Abandoned Carts', icon: 'remove_shopping_cart' },
+        // { id: 'quotes', label: 'Service Inquiries', icon: 'precision_manufacturing' }
       ]
     },
     {
       group: 'Customers',
       items: [
-        { id: 'customer-list' as const, label: 'Customer List', icon: 'people' },
-        { id: 'customer-groups' as const, label: 'Customer Groups', icon: 'groups' },
-        { id: 'reviews' as const, label: 'Reviews', icon: 'reviews' }
+        { id: 'customer-list', label: 'Customer List', icon: 'people' },
+        // { id: 'customer-groups', label: 'Customer Groups', icon: 'groups' },
+        // { id: 'reviews', label: 'Reviews', icon: 'reviews' }
       ]
     },
-    {
-      group: 'Content',
-      items: [
-        { id: 'pages' as const, label: 'Pages', icon: 'article' },
-        { id: 'blogs' as const, label: 'Blogs', icon: 'feed' },
-        { id: 'faqs' as const, label: 'FAQs', icon: 'quiz' },
-        { id: 'banners' as const, label: 'Banners', icon: 'view_carousel' },
-        { id: 'menu-builder' as const, label: 'Menu Builder', icon: 'menu' },
-        { id: 'homepage-builder' as const, label: 'Homepage Builder', icon: 'design_services' }
-      ]
-    },
-    {
-      group: 'Marketing',
-      items: [
-        { id: 'coupons' as const, label: 'Coupons', icon: 'local_offer' },
-        { id: 'promotions' as const, label: 'Promotions', icon: 'ads_click' },
-        { id: 'email-campaigns' as const, label: 'Email Campaigns', icon: 'email' },
-        { id: 'push-notifications' as const, label: 'Push Notifications', icon: 'notifications_active' }
-      ]
-    },
-    {
-      group: 'Analytics',
-      items: [
-        { id: 'sales-reports' as const, label: 'Sales Reports', icon: 'analytics' },
-        { id: 'product-reports' as const, label: 'Product Reports', icon: 'equalizer' },
-        { id: 'customer-reports' as const, label: 'Customer Reports', icon: 'trending_up' }
-      ]
-    },
+    // {
+    //   group: 'Content',
+    //   items: [
+    //     { id: 'pages', label: 'Pages', icon: 'article' },
+    //     { id: 'blogs', label: 'Blogs', icon: 'feed' },
+    //     { id: 'faqs', label: 'FAQs', icon: 'quiz' },
+    //     { id: 'banners', label: 'Banners', icon: 'view_carousel' },
+    //     { id: 'menu-builder', label: 'Menu Builder', icon: 'menu' },
+    //     { id: 'homepage-builder', label: 'Homepage Builder', icon: 'design_services' }
+    //   ]
+    // },
+    // {
+    //   group: 'Marketing',
+    //   items: [
+    //     { id: 'coupons', label: 'Coupons', icon: 'local_offer' },
+    //     { id: 'promotions', label: 'Promotions', icon: 'ads_click' },
+    //     { id: 'email-campaigns', label: 'Email Campaigns', icon: 'email' },
+    //     { id: 'push-notifications', label: 'Push Notifications', icon: 'notifications_active' }
+    //   ]
+    // },
+    // {
+    //   group: 'Analytics',
+    //   items: [
+    //     { id: 'sales-reports', label: 'Sales Reports', icon: 'analytics' },
+    //     { id: 'product-reports', label: 'Product Reports', icon: 'equalizer' },
+    //     { id: 'customer-reports', label: 'Customer Reports', icon: 'trending_up' }
+    //   ]
+    // },
     {
       group: 'Settings',
       items: [
-        { id: 'store-settings' as const, label: 'Store Settings', icon: 'store' },
-        { id: 'theme-settings' as const, label: 'Theme Settings', icon: 'brush' },
-        { id: 'payment-settings' as const, label: 'Payment Settings', icon: 'payment' },
-        { id: 'shipping-settings' as const, label: 'Shipping Settings', icon: 'local_shipping' },
-        { id: 'tax-settings' as const, label: 'Tax Settings', icon: 'percent' },
-        { id: 'print-settings' as const, label: 'Printing Service', icon: 'print' },
-        { id: 'user-management' as const, label: 'User Management', icon: 'badge' },
-        { id: 'active-sessions' as const, label: 'Active Sessions', icon: 'security' },
-        { id: 'security-settings' as const, label: 'Security Settings', icon: 'admin_panel_settings' }
+        { id: 'store-settings', label: 'Store Settings', icon: 'store' },
+        { id: 'theme-settings', label: 'Theme Settings', icon: 'brush' },
+        { id: 'payment-settings', label: 'Payment Settings', icon: 'payment' },
+        // { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping' },
+        // { id: 'tax-settings', label: 'Tax Settings', icon: 'percent' },
+        // { id: 'print-settings', label: 'Printing Service', icon: 'print' },
+        // { id: 'user-management', label: 'User Management', icon: 'badge' },
+        // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },
+        // { id: 'security-settings', label: 'Security Settings', icon: 'admin_panel_settings' }
       ]
     }
   ];
@@ -356,12 +356,12 @@ export class AdminPanel {
   newBrandCountry = signal('India Hub');
 
   // Customer List CRM data
-  customersList = signal([
-    { id: 'c1', name: 'Rajesh Kumar', email: 'rajesh.kumar@gmail.com', phone: '+91 98765 43210', spent: 58499, orders: 3, points: 580, tier: 'B2B Dealer', date: '2026-05-18' },
-    { id: 'c2', name: 'Priya Sharma', email: 'priya.sharma@yahoo.com', phone: '+91 98123 45678', spent: 21499, orders: 1, points: 210, tier: 'Retail Creator', date: '2026-06-02' },
-    { id: 'c3', name: 'Amit Patel', email: 'amit.patel@design-craft.in', phone: '+91 90011 22334', spent: 145200, orders: 5, points: 1450, tier: 'B2B Dealer', date: '2026-04-20' },
-    { id: 'c4', name: 'Vikram Singh', email: 'v.singh@panchkulamakers.org', phone: '+91 80543 21098', spent: 38499, orders: 1, points: 385, tracking_number_placeholder: '123' },
-    { id: 'c5', name: 'Sneha Reddy', email: 'sneha.r@gmail.com', phone: '+91 78901 23456', spent: 1250, orders: 1, points: 12, tier: 'Standard Guest', date: '2026-06-04' }
+  customersList = signal<any[]>([
+    { id: 'c1', name: 'Rajesh Kumar', email: 'rajesh.kumar@gmail.com', mobile: '+91 98765 43210', spent: 58499, orders: 3, tier: 'B2B Dealer', date: '2026-05-18' },
+    { id: 'c2', name: 'Priya Sharma', email: 'priya.sharma@yahoo.com', mobile: '+91 98123 45678', spent: 21499, orders: 1, tier: 'Retail Creator', date: '2026-06-02' },
+    { id: 'c3', name: 'Amit Patel', email: 'amit.patel@design-craft.in', mobile: '+91 90011 22334', spent: 145200, orders: 5, tier: 'B2B Dealer', date: '2026-04-20' },
+    { id: 'c4', name: 'Vikram Singh', email: 'v.singh@panchkulamakers.org', mobile: '+91 80543 21098', spent: 38499, orders: 1, tracking_number_placeholder: '123' },
+    { id: 'c5', name: 'Sneha Reddy', email: 'sneha.r@gmail.com', mobile: '+91 78901 23456', spent: 1250, orders: 1, tier: 'Standard Guest', date: '2026-06-04' }
   ]);
 
   customerGroupsList = signal([
@@ -1485,11 +1485,6 @@ export class AdminPanel {
     this.reviewsList.update(all => all.map(r => r.id === id ? { ...r, response: text } : r));
     this.tempResponseText.update(cur => ({ ...cur, [id]: '' }));
     this.toastService.info('Response saved and published.');
-  }
-
-  // --- REWARD POINTS CUSTOMIZER ---
-  awardPoints(id: string, points: number) {
-    this.customersList.update(all => all.map(c => c.id === id ? { ...c, points: Math.max(0, c.points + points) } : c));
   }
 
   // --- DRAFT ORDERS BUILDER ---

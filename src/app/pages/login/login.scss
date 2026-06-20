@@ -328,6 +328,9 @@ $stars-shadow-l: generate-stars(40);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
   padding-left: 48px !important;
+  padding-right: 48px !important;
+  padding-top: 18px !important;
+  padding-bottom: 4px !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 
   &:hover {
@@ -354,6 +357,7 @@ $stars-shadow-l: generate-stars(40);
 // Floating input labels
 .custom-label {
   left: 48px !important;
+  top: 18px !important;
   color: rgba(255, 255, 255, 0.4);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -362,6 +366,11 @@ $stars-shadow-l: generate-stars(40);
 .custom-input:not(:placeholder-shown) ~ .custom-label {
   color: #00f2fe !important;
   left: 48px !important;
+  top: 6px !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
   text-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
 }
 
