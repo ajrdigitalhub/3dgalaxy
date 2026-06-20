@@ -27,6 +27,15 @@ export class App {
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
 
+  isScrolled = signal(false);
+
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    if (typeof window !== 'undefined') {
+      this.isScrolled.set(window.scrollY > 40);
+    }
+  }
+
   loading = computed(() => {
     if (this.loadingService.isLoading()) return true;
     if (this.ds.categoriesLoading()) return true;
@@ -229,6 +238,13 @@ export class App {
     return this.ds.categories().filter(c => c.parent_id === parentId || c.parentId === parentId);
   }
 
+  getProductCount(categoryId: string): number {
+    const subCategories = this.getSubcategories(categoryId);
+    const subIds = subCategories.map(c => c.id);
+    const targetIds = [categoryId, ...subIds];
+    return this.ds.products().filter(p => targetIds.includes(p.category_id || p.categoryId || '')).length;
+  }
+
   getMenuItemChildren(parentId: string) {
     return this.ds.menuItems().filter(m => m.parentId === parentId);
   }
@@ -313,5 +329,24 @@ export class App {
         this.toastService.success('Thank you for subscribing!');
       }
     });
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img.getAttribute('data-error-handled')) return;
+    img.setAttribute('data-error-handled', 'true');
+    const isDark = document.documentElement.classList.contains('dark');
+    const placeholder = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+    
+    const isLogo = img.classList.contains('logo-img') || img.alt.toLowerCase().includes('logo') || img.src.toLowerCase().includes('logo') || img.src.toLowerCase().includes('brand');
+    if (isLogo) {
+      if (isDark) {
+        img.src = this.ds.settings()?.darkModeLogoUrl || this.ds.settings()?.logoUrl || placeholder;
+      } else {
+        img.src = this.ds.settings()?.logoUrl || this.ds.settings()?.headerLogoUrl || placeholder;
+      }
+    } else {
+      img.src = placeholder;
+    }
   }
 }

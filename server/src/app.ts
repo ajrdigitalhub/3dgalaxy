@@ -36,6 +36,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/menus', menuRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/whatsapp', whatsappRoutes);

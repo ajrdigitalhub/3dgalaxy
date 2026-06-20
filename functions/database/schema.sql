@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS brands (
     logo_url TEXT,
     banner_url TEXT,
     description TEXT,
+    country VARCHAR(255) DEFAULT 'Global HQ',
+    active BOOLEAN NOT NULL DEFAULT true,
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -521,4 +523,68 @@ CREATE TABLE IF NOT EXISTS advertisements (
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Theme Settings
+CREATE TABLE IF NOT EXISTS theme_settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    key_name VARCHAR(255) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Payment Gateways
+CREATE TABLE IF NOT EXISTS payment_gateways (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    gateway_code VARCHAR(255) UNIQUE NOT NULL,
+    is_enabled BOOLEAN NOT NULL DEFAULT false,
+    is_test_mode BOOLEAN NOT NULL DEFAULT true,
+    key_id VARCHAR(255),
+    key_secret VARCHAR(255),
+    webhook_secret VARCHAR(255),
+    display_name VARCHAR(255),
+    description TEXT,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Banners
+CREATE TABLE IF NOT EXISTS banners (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(255) NOT NULL,
+    link_url VARCHAR(255),
+    type VARCHAR(50) NOT NULL DEFAULT 'HERO',
+    position INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Homepage Sections
+CREATE TABLE IF NOT EXISTS homepage_sections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Homepage Section Items
+CREATE TABLE IF NOT EXISTS homepage_section_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    section_id UUID NOT NULL REFERENCES homepage_sections(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    image_url VARCHAR(255),
+    title VARCHAR(255),
+    sub_title VARCHAR(255),
+    link_url VARCHAR(255),
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

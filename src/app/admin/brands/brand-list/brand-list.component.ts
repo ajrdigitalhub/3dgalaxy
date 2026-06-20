@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { Brand } from '../../../services/datastore';
+import { DatastoreService, Brand } from '../../../services/datastore';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
@@ -16,6 +16,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 export class BrandListComponent {
   toastService = inject(ToastService);
   brandService = inject(BrandService);
+  ds = inject(DatastoreService);
 
   // Form fields
   editingBrand = signal<Brand | null>(null);
@@ -89,6 +90,20 @@ export class BrandListComponent {
       this.toastService.success('Brand deleted successfully.');
     } catch {
       this.toastService.error('Operation failed.');
+    }
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img.getAttribute('data-error-handled')) return;
+    img.setAttribute('data-error-handled', 'true');
+    const isDark = document.documentElement.classList.contains('dark');
+    const placeholder = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+    
+    if (isDark) {
+      img.src = this.ds.settings()?.darkModeLogoUrl || this.ds.settings()?.logoUrl || placeholder;
+    } else {
+      img.src = this.ds.settings()?.logoUrl || this.ds.settings()?.headerLogoUrl || placeholder;
     }
   }
 }

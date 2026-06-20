@@ -30,6 +30,22 @@ export class CategoryListComponent {
   catSeoTitle = signal<string>('');
   catSeoDescription = signal<string>('');
 
+  // Search autocomplete states
+  pCatSearchQuery = signal<string>('');
+  pCatDropdownOpen = signal<boolean>(false);
+
+  getCategoryPath(catId: string | null): string {
+    if (!catId) return '';
+    const cats = this.categoryService.categories();
+    const cat = cats.find(c => c.id === catId);
+    if (!cat) return '';
+    const parentId = cat.parent_id || cat.parentId;
+    if (parentId) {
+      return `${this.getCategoryPath(parentId)} > ${cat.name}`;
+    }
+    return cat.name;
+  }
+
   startCategoryEdit(c: Category) {
     this.editingCategory.set(c);
     this.newCatName.set(c.name || '');

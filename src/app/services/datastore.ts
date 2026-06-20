@@ -198,7 +198,7 @@ export interface QuoteRequest {
   customerEmail: string;
   fileName: string;
   fileSize: string; // e.g., "12.4 MB"
-  materialType: 'PLA' | 'PETG' | 'ABS' | 'TPU' | 'Resin';
+  materialType: string;
   color: string;
   infill: number; // e.g. 20
   layerHeight: number; // e.g. 0.2
@@ -309,7 +309,7 @@ export interface CheckoutRequest {
 }
 
 export interface PrintSpec {
-  material: 'PLA' | 'PETG' | 'ABS' | 'TPU' | 'Resin';
+  material: string;
   infillPercent: number;
   layerHeight: number;
   volumeCm3: number;
@@ -321,7 +321,7 @@ export interface QuotationRequest {
   email: string;
   fileName: string;
   fileSize: string;
-  material: 'PLA' | 'PETG' | 'ABS' | 'TPU' | 'Resin';
+  material: string;
   color: string;
   infill: number;
   layerHeight: number;
@@ -806,15 +806,41 @@ export class DatastoreService {
       })
     ).subscribe({
       next: (res) => { 
-        if (res && res.data) {
-          if (res.data.theme) this.settings.set(res.data.theme);
-          if (res.data.homepage) this.homeLayout.set(res.data.homepage.sections || [
-            { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
-            { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
-            { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 3, config: {} },
-            { id: 'best-4', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 4, config: {} },
-            { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 5, config: {} }
-          ]);
+        if (res) {
+          const d = res.data !== undefined ? res.data : res;
+          
+          let themeData = d.theme;
+          if (!themeData) {
+            themeData = {
+              primaryColor: d.primaryColor || '#d65108',
+              secondaryColor: d.secondaryColor || '#1e3a8a',
+              accentColor: d.accentColor || '#3B82F6',
+              borderRadius: d.borderRadius || '0.75rem',
+              fontFamily: d.typography || 'Inter',
+              darkMode: d.darkMode || false,
+              themeText: d.themeText || '#ffffff'
+            };
+          }
+          this.settings.set(themeData);
+
+          const layout = d.homepage || d.homepageSections;
+          if (layout) {
+            this.homeLayout.set(layout.sections || [
+              { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
+              { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
+              { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
+              { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
+              { id: 'launch-4', name: 'Launch Spotlight', type: 'LAUNCH_SPOTLIGHT', visible: true, order: 5, config: {} },
+              { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
+              { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
+              { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
+              { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
+              { id: 'video-10', name: 'Video Showcase', type: 'VIDEO_SECTION', visible: true, order: 10, config: {} },
+              { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
+              { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
+              { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
+            ]);
+          }
         }
       },
       error: (e) => console.error(e)
@@ -824,9 +850,17 @@ export class DatastoreService {
     this.homeLayout.set([
       { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
       { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
-      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 3, config: {} },
-      { id: 'best-4', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 4, config: {} },
-      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 5, config: {} }
+      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
+      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
+      { id: 'launch-4', name: 'Launch Spotlight', type: 'LAUNCH_SPOTLIGHT', visible: true, order: 5, config: {} },
+      { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
+      { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
+      { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
+      { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
+      { id: 'video-10', name: 'Video Showcase', type: 'VIDEO_SECTION', visible: true, order: 10, config: {} },
+      { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
+      { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
+      { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
     ]);
 
     // Orders
@@ -835,15 +869,16 @@ export class DatastoreService {
         const role = this.userRole();
         if (!this.authReady()) return;
         if (role !== 'admin' && role !== 'super-admin') return;
-        this.api.get<Order[]>('/orders').pipe(
+        this.api.get<any>('/orders').pipe(
           catchError((err) => {
             console.error('Error loading orders:', err);
-            return of([]);
+            return of(null as any);
           })
         ).subscribe({
-          next: (data: any) => { 
-            if (data) {
-              this.orders.set(data.map((o: any) => ({
+          next: (res: any) => { 
+            if (res) {
+              const ordersList = Array.isArray(res) ? res : (res.data || []);
+              this.orders.set(ordersList.map((o: any) => ({
                 ...o,
                 customerName: o.customer?.user?.name || o.customer?.user?.firstName || 'Guest',
                 customerPhone: o.customer?.user?.phone || 'N/A',
@@ -1546,25 +1581,26 @@ export class DatastoreService {
 
   // --- VOLUMETRIC 3D PRINT CALCULATOR ---
   calculate3DPrintCost(params: PrintSpec) {
-    const density = params.material === 'Resin' ? 1.1 : 1.25;
+    const config = this.settingsService.printServiceSettings() || {};
+    const materials = config.materials || [];
+    const matConfig = materials.find((m: any) => m.name.toLowerCase() === params.material.toLowerCase()) || {};
+
+    const density = matConfig.density !== undefined ? matConfig.density : (params.material === 'Resin' ? 1.1 : 1.25);
+    const pricePerGram = matConfig.pricePerGram !== undefined ? matConfig.pricePerGram : 2.5;
+
     const infillFactor = (20 + params.infillPercent * 0.8) / 100;
     const estimatedWeight = Math.round(params.volumeCm3 * density * infillFactor * 10) / 10;
-
-    let pricePerGram = 1.0;
-    switch (params.material) {
-      case 'PLA': pricePerGram = 2.5; break;
-      case 'PETG': pricePerGram = 3.2; break;
-      case 'ABS': pricePerGram = 3.5; break;
-      case 'TPU': pricePerGram = 4.8; break;
-      case 'Resin': pricePerGram = 7.5; break;
-    }
 
     const materialCost = estimatedWeight * pricePerGram;
     const printHoursFactor = (0.2 / (params.layerHeight || 0.2));
     const estimatedHours = Math.round((params.volumeCm3 * 0.05 * printHoursFactor) * 10) / 10;
-    const machineFee = estimatedHours * 150;
+
+    const machineRate = config.machineFeePerHour !== undefined ? config.machineFeePerHour : 150;
+    const machineFee = estimatedHours * machineRate;
+
     const baseCost = Math.round(materialCost + machineFee);
-    const gstTax = Math.round(baseCost * 0.18);
+    const gstRate = config.gstTaxRate !== undefined ? config.gstTaxRate : 18;
+    const gstTax = Math.round(baseCost * (gstRate / 100));
     const grandCost = baseCost + gstTax;
 
     return {

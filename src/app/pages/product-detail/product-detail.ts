@@ -10,10 +10,22 @@ import {ToastService} from '../../shared/components/toast/toast.service';
 import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 import {AppButton} from '../../shared/components/app-button/app-button';
 import {environment} from '../../../environments/environment';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 @Component({
   selector: 'app-product-detail',
-  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent, AppButton],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatIconModule,
+    SkeletonPageComponent,
+    AppButton,
+    ScrollRevealDirective,
+    TiltDirective,
+    CountUpDirective
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.scss'
@@ -144,6 +156,58 @@ export class ProductDetail {
 
   getImageUrl(img: any): string {
     return typeof img === 'string' ? img : img?.url || '';
+  }
+
+  currentActiveImageUrl = computed(() => {
+    const actImg = this.activeImage();
+    if (actImg) return this.getImageUrl(actImg);
+    const imgs = this.galleryImages();
+    if (imgs && imgs.length > 0) return this.getImageUrl(imgs[0]);
+    return '';
+  });
+
+  isZoomActive = signal<boolean>(false);
+  lensLeft = signal<number>(0);
+  lensTop = signal<number>(0);
+  zoomBgPosition = signal<string>('0% 0%');
+
+  onMouseEnter() {
+    if (!this.is360Active()) {
+      this.isZoomActive.set(true);
+    }
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (!this.isZoomActive()) return;
+
+    const container = event.currentTarget as HTMLElement;
+    const rect = container.getBoundingClientRect();
+
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const boundedX = Math.max(0, Math.min(x, rect.width));
+    const boundedY = Math.max(0, Math.min(y, rect.height));
+
+    const pctX = (boundedX / rect.width) * 100;
+    const pctY = (boundedY / rect.height) * 100;
+
+    const lensWidthPct = 30;
+    const lensHeightPct = 30;
+    
+    let leftPct = (boundedX / rect.width) * 100 - (lensWidthPct / 2);
+    let topPct = (boundedY / rect.height) * 100 - (lensHeightPct / 2);
+
+    leftPct = Math.max(0, Math.min(leftPct, 100 - lensWidthPct));
+    topPct = Math.max(0, Math.min(topPct, 100 - lensHeightPct));
+
+    this.lensLeft.set(leftPct);
+    this.lensTop.set(topPct);
+    this.zoomBgPosition.set(`${pctX}% ${pctY}%`);
+  }
+
+  onMouseLeave() {
+    this.isZoomActive.set(false);
   }
 
   selectOption(optionId: string, valueId: string) {

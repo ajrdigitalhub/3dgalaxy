@@ -1,9 +1,19 @@
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-5 mb-8">
-  <div class="space-y-1">
-    <h1 class="text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-white font-sans">{{ title }}</h1>
-    @if (description) {
-      <p class="text-xs text-zinc-500 max-w-2xl font-sans font-medium">{{ description }}</p>
-    }
+  <div class="flex items-center gap-3">
+    <!-- Admin Configuration Logo in Page Header -->
+    <div class="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
+      <img [src]="ds.theme() === 'dark' ? (ds.settings().appIconUrl || ds.settings().darkModeLogoUrl || ds.settings().logoUrl || '/3d-logo.png') : (ds.settings().logoUrl || ds.settings().headerLogoUrl || '/3d-logo.png')" 
+           alt="Console Logo" 
+           class="h-8 w-8 object-contain logo-img"
+           (error)="onImageError($event)"
+           referrerpolicy="no-referrer">
+    </div>
+    <div class="space-y-0.5">
+      <h1 class="text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-white font-sans">{{ title }}</h1>
+      @if (description) {
+        <p class="text-xs text-zinc-500 max-w-2xl font-sans font-medium leading-none">{{ description }}</p>
+      }
+    </div>
   </div>
   <div class="flex flex-wrap items-center gap-2 shrink-0">
     <ng-content></ng-content>

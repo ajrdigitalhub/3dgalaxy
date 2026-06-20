@@ -119,6 +119,73 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               </div>
             }
 
+            <!-- Theme Effects Configuration -->
+            @if (activeSubTab() === 'Theme Effects') {
+              <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Global Animation Speed</span>
+                    <select [value]="draft().theme?.animationSpeed || '0.5s'" (change)="setNested('theme', 'animationSpeed', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="0.3s">Fast (0.3s)</option>
+                      <option value="0.5s">Default (0.5s)</option>
+                      <option value="0.8s">Slow (0.8s)</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Global Animation Style (Easing)</span>
+                    <select [value]="draft().theme?.animationStyle || 'cubic-bezier(0.16, 1, 0.3, 1)'" (change)="setNested('theme', 'animationStyle', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="cubic-bezier(0.16, 1, 0.3, 1)">Framer Motion Spring (Cubic-Bezier)</option>
+                      <option value="ease-in-out">Smooth (Ease-In-Out)</option>
+                      <option value="linear">Linear</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Page Transition Effect</span>
+                    <select [value]="draft().theme?.pageTransition || 'fade'" (change)="setNested('theme', 'pageTransition', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="fade">Fade In</option>
+                      <option value="slide">Slide Up & Fade</option>
+                      <option value="zoom">Zoom Scale In</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Card Hover Interaction Style</span>
+                    <select [value]="draft().theme?.hoverStyle || 'translateY(-8px)'" (change)="setNested('theme', 'hoverStyle', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="translateY(-8px)">Premium Lift Offset (translateY -8px)</option>
+                      <option value="scale(1.04)">Subtle Scale Pop (scale 1.04)</option>
+                      <option value="none">Flat (No Offset)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Dashboard Card Styling</span>
+                    <select [value]="draft().theme?.cardStyle || 'glassmorphism'" (change)="setNested('theme', 'cardStyle', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="glassmorphism">Premium Frosted Glassmorphism</option>
+                      <option value="rounded-glow">High-End Rounded Glow</option>
+                      <option value="flat-modern">Flat Minimalist Border</option>
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Primary Button Layout Shape</span>
+                    <select [value]="draft().theme?.buttonStyle || 'rounded-xl'" (change)="setNested('theme', 'buttonStyle', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="rounded-xl">Dynamic Rounded Corner (rounded-xl)</option>
+                      <option value="rounded-full">Sleek Capsule Pill (rounded-full)</option>
+                      <option value="rounded-none">Square Industrial Brutalist (rounded-none)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl">
+                  <input type="checkbox" [checked]="draft().theme?.parallaxEnabled !== false" (change)="setNested('theme', 'parallaxEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Depth Scroll Parallax Interactions</span>
+                </div>
+              </div>
+            }
+
             <!-- 3. TYPOGRAPHY -->
             @if (activeSubTab() === 'Typography') {
               <div class="space-y-4">
@@ -193,6 +260,31 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           <input type="text" [value]="slide.linkUrl" (input)="updateSlideField($index, 'linkUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
                         </div>
                       </div>
+                      
+                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Badge Label</span>
+                          <input type="text" [value]="slide.badge || ''" (input)="updateSlideField($index, 'badge', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. Featured">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Badge Icon (Material)</span>
+                          <input type="text" [value]="slide.badgeIcon || ''" (input)="updateSlideField($index, 'badgeIcon', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. bolt, rocket_launch">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Button CTA Text</span>
+                          <input type="text" [value]="slide.btnText || ''" (input)="updateSlideField($index, 'btnText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. Shop Now">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Video URL</span>
+                          <input type="text" [value]="slide.videoUrl || ''" (input)="updateSlideField($index, 'videoUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. https://...mp4">
+                        </div>
+                      </div>
+
+                      <div class="space-y-1">
+                        <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Description</span>
+                        <textarea rows="2" [value]="slide.desc || ''" (input)="updateSlideField($index, 'desc', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="Provide slide details paragraph..."></textarea>
+                      </div>
+
                       <app-image-picker label="Slide Image Resource (Desktop/Responsive Layout)" [value]="slide.imageUrl" (valueChange)="updateSlideField($index, 'imageUrl', $event)"></app-image-picker>
                     </div>
                   }
@@ -557,6 +649,150 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               </div>
             }
 
+            <!-- 3D PRINTING SERVICE -->
+            @if (activeSubTab() === '3D Printing Service') {
+              <div class="space-y-6">
+                <p class="text-xs text-zinc-500">Configure global parameters for the volumetric 3D Printing estimator page (base prices, materials, filament colors, infill standards, qualities).</p>
+                
+                <!-- Pricing Core -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+                  <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Base Rates & Tax Calculations</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Machine Run Fee Per Hour (₹)</span>
+                      <input type="number" [value]="draft().printServiceSettings?.machineFeePerHour || 150" (input)="setPrintServiceSettingsField('machineFeePerHour', +$any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">GST Tax Rate (%)</span>
+                      <input type="number" [value]="draft().printServiceSettings?.gstTaxRate || 18" (input)="setPrintServiceSettingsField('gstTaxRate', +$any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Filament Materials Table -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Filament Materials & Colorways</h3>
+                    <button (click)="addPrintMaterial()" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"><mat-icon class="text-xs">add</mat-icon> Add Material</button>
+                  </div>
+                  <div class="space-y-4">
+                    @for (mat of draft().printServiceSettings?.materials || []; track mat.name; let parentIndex = $index) {
+                      <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-150 dark:border-zinc-800 space-y-3.5 relative">
+                        
+                        <!-- Material Fields -->
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center pr-8">
+                          <div>
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Material Name</span>
+                            <input type="text" [value]="mat.name" (input)="updatePrintMaterialField(parentIndex, 'name', $any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs outline-none">
+                          </div>
+                          <div>
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Price per Gram (₹)</span>
+                            <input type="number" step="0.1" [value]="mat.pricePerGram" (input)="updatePrintMaterialField(parentIndex, 'pricePerGram', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono outline-none">
+                          </div>
+                          <div>
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Density (g/cm³)</span>
+                            <input type="number" step="0.01" [value]="mat.density" (input)="updatePrintMaterialField(parentIndex, 'density', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono outline-none">
+                          </div>
+                          <div class="flex items-center gap-2 pt-3">
+                            <input type="checkbox" [checked]="mat.active" (change)="updatePrintMaterialField(parentIndex, 'active', $any($event.target).checked)" class="w-3.5 h-3.5 text-blue-600 rounded cursor-pointer animate-none">
+                            <span class="text-[10px] font-bold text-zinc-500 uppercase">Active</span>
+                          </div>
+                        </div>
+
+                        <!-- Delete Material Button -->
+                        <button (click)="removePrintMaterial(parentIndex)" class="absolute right-2 top-2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"><mat-icon class="text-sm">delete</mat-icon></button>
+
+                        <!-- Material Colors -->
+                        <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+                          <div class="flex justify-between items-center">
+                            <span class="text-[9px] font-black text-zinc-400 uppercase">Colors configured for {{ mat.name }}</span>
+                            <button (click)="addPrintMaterialColor(parentIndex)" class="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-750 rounded text-[9px] font-black uppercase flex items-center gap-0.5 cursor-pointer">
+                              <mat-icon class="text-xs scale-75">add</mat-icon> Add Color
+                            </button>
+                          </div>
+                          
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            @for (col of mat.colors || []; track col.name; let childIndex = $index) {
+                              <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-lg border border-zinc-150 dark:border-zinc-850 relative pr-7">
+                                <input type="color" [value]="col.hex" (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'hex', $any($event.target).value)" class="w-5 h-5 rounded cursor-pointer border-none bg-transparent">
+                                <div class="flex-1">
+                                  <input type="text" [value]="col.name" placeholder="Name" (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'name', $any($event.target).value)" class="w-full px-1.5 py-0.5 border border-zinc-250 dark:border-zinc-800 rounded text-[10px]">
+                                </div>
+                                <button (click)="removePrintMaterialColor(parentIndex, childIndex)" class="absolute right-1 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1 rounded"><mat-icon class="text-xs">delete</mat-icon></button>
+                              </div>
+                            }
+                          </div>
+                          @if (!(mat.colors?.length)) {
+                            <div class="text-[9px] text-yellow-600 font-bold">⚠️ No colorways configured for this material. Users won't be able to print in this polymer.</div>
+                          }
+                        </div>
+
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Printer Qualities Profile -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Printer Quality Profiles</h3>
+                    <button (click)="addPrintQuality()" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"><mat-icon class="text-xs">add</mat-icon> Add Profile</button>
+                  </div>
+                  <div class="space-y-3">
+                    @for (q of draft().printServiceSettings?.qualities || []; track $index) {
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-150 dark:border-zinc-800 relative pr-10">
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Profile Name</span>
+                          <input type="text" [value]="q.name" (input)="updatePrintQualityField($index, 'name', $any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs">
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Layer Thickness (mm)</span>
+                          <input type="number" step="0.01" [value]="q.height" (input)="updatePrintQualityField($index, 'height', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono">
+                        </div>
+                        <button (click)="removePrintQuality($index)" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"><mat-icon class="text-sm">delete</mat-icon></button>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Infill Standards -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+                  <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Infill Density Standards</h3>
+                    <button (click)="addPrintInfill()" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"><mat-icon class="text-xs">add</mat-icon> Add Infill</button>
+                  </div>
+                  <div class="space-y-3">
+                    @for (inf of draft().printServiceSettings?.infillStandards || []; track $index) {
+                      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-150 dark:border-zinc-800 relative pr-10">
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Name (e.g. 10 - 30%)</span>
+                          <input type="text" [value]="inf.name" (input)="updatePrintInfillField($index, 'name', $any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs">
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Description (e.g. Standard)</span>
+                          <input type="text" [value]="inf.desc" (input)="updatePrintInfillField($index, 'desc', $any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs">
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Min %</span>
+                          <input type="number" [value]="inf.min" (input)="updatePrintInfillField($index, 'min', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono">
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Max %</span>
+                          <input type="number" [value]="inf.max" (input)="updatePrintInfillField($index, 'max', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono">
+                        </div>
+                        <div>
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Default %</span>
+                          <input type="number" [value]="inf.defaultVal" (input)="updatePrintInfillField($index, 'defaultVal', +$any($event.target).value)" class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono">
+                        </div>
+                        <button (click)="removePrintInfill($index)" class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"><mat-icon class="text-sm">delete</mat-icon></button>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+              </div>
+            }
+
           </div>
         </div>
 
@@ -581,6 +817,7 @@ export class AdminSettingsTab {
   subTabs = [
     { name: 'General', icon: 'settings' },
     { name: 'Theme', icon: 'palette' },
+    { name: 'Theme Effects', icon: 'auto_awesome' },
     { name: 'Typography', icon: 'font_download' },
     { name: 'Fonts', icon: 'text_format' },
     { name: 'Color Presets', icon: 'style' },
@@ -601,7 +838,8 @@ export class AdminSettingsTab {
     { name: 'Product Page', icon: 'shopping_bag' },
     { name: 'Tour Settings', icon: 'assistant' },
     { name: 'FAQ', icon: 'quiz' },
-    { name: 'Services', icon: 'room_service' }
+    { name: 'Services', icon: 'room_service' },
+    { name: '3D Printing Service', icon: 'print' }
   ];
 
   constructor() {
@@ -610,6 +848,21 @@ export class AdminSettingsTab {
       if (live && Object.keys(live).length > 0) {
         // Hydrate draft with copy on update
         this.draft.set(JSON.parse(JSON.stringify(live)));
+      }
+    });
+
+    effect(() => {
+      const active = this.admin.activeTab();
+      if (active === 'print-settings') {
+        this.activeSubTab.set('3D Printing Service');
+      } else if (active === 'theme-settings') {
+        this.activeSubTab.set('Theme');
+      } else if (active === 'store-settings') {
+        this.activeSubTab.set('General');
+      } else if (active === 'payment-settings') {
+        this.activeSubTab.set('Payment Gateway');
+      } else if (active === 'shipping-settings') {
+        this.activeSubTab.set('Shipping');
       }
     });
   }
@@ -659,7 +912,7 @@ export class AdminSettingsTab {
 
   // Specialized array helpers
   addHeroSlide() {
-    this.appendArrayItem('heroSlides', { imageUrl: '', title: '', subtitle: '', linkUrl: '' });
+    this.appendArrayItem('heroSlides', { imageUrl: '', title: '', subtitle: '', linkUrl: '', badge: '', badgeIcon: '', btnText: '', videoUrl: '', desc: '' });
   }
 
   updateSlideField(index: number, field: string, value: any) {
@@ -715,6 +968,156 @@ export class AdminSettingsTab {
       const list = [...(d.services || [])];
       list[index] = { ...list[index], [field]: value };
       return { ...d, services: list };
+    });
+  }
+
+  // Print Service Helpers
+  setPrintServiceSettingsField(field: string, value: any) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      ps[field] = value;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  addPrintMaterial() {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      materials.push({
+        name: 'New Material',
+        pricePerGram: 2.0,
+        density: 1.2,
+        active: true,
+        colors: [
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Black', hex: '#000000' }
+        ]
+      });
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  updatePrintMaterialField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      materials[index] = { ...materials[index], [field]: value };
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  removePrintMaterial(index: number) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      materials.splice(index, 1);
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  addPrintMaterialColor(parentIndex: number) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      const mat = { ...materials[parentIndex] };
+      const colors = [...(mat.colors || [])];
+      colors.push({ name: 'New Color', hex: '#000000' });
+      mat.colors = colors;
+      materials[parentIndex] = mat;
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  updatePrintMaterialColorField(parentIndex: number, childIndex: number, field: string, value: any) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      const mat = { ...materials[parentIndex] };
+      const colors = [...(mat.colors || [])];
+      colors[childIndex] = { ...colors[childIndex], [field]: value };
+      mat.colors = colors;
+      materials[parentIndex] = mat;
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  removePrintMaterialColor(parentIndex: number, childIndex: number) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const materials = [...(ps.materials || [])];
+      const mat = { ...materials[parentIndex] };
+      const colors = [...(mat.colors || [])];
+      colors.splice(childIndex, 1);
+      mat.colors = colors;
+      materials[parentIndex] = mat;
+      ps.materials = materials;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  addPrintQuality() {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const qualities = [...(ps.qualities || [])];
+      qualities.push({ name: 'New Profile', height: 0.20 });
+      ps.qualities = qualities;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  updatePrintQualityField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const qualities = [...(ps.qualities || [])];
+      qualities[index] = { ...qualities[index], [field]: value };
+      ps.qualities = qualities;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  removePrintQuality(index: number) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const qualities = [...(ps.qualities || [])];
+      qualities.splice(index, 1);
+      ps.qualities = qualities;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  addPrintInfill() {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const infills = [...(ps.infillStandards || [])];
+      infills.push({ name: 'New Infill', desc: 'Standard', min: 10, max: 20, defaultVal: 15 });
+      ps.infillStandards = infills;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  updatePrintInfillField(index: number, field: string, value: any) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const infills = [...(ps.infillStandards || [])];
+      infills[index] = { ...infills[index], [field]: value };
+      ps.infillStandards = infills;
+      return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  removePrintInfill(index: number) {
+    this.draft.update(d => {
+      const ps = d.printServiceSettings ? { ...d.printServiceSettings } : {};
+      const infills = [...(ps.infillStandards || [])];
+      infills.splice(index, 1);
+      ps.infillStandards = infills;
+      return { ...d, printServiceSettings: ps };
     });
   }
 

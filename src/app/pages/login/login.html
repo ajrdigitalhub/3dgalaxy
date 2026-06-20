@@ -1,175 +1,171 @@
-<div class="min-h-screen w-full flex bg-zinc-50 dark:bg-zinc-950 select-none">
-  
+<div class="login-page-container select-none">
+  <!-- Sci-Fi Galactic Background Elements (GPU-Accelerated Parallax & Grids) -->
+  <div class="stars-s"></div>
+  <div class="stars-m"></div>
+  <div class="stars-l"></div>
+  <div class="perspective-grid"></div>
+  <div class="nebula-orb orb-violet"></div>
+  <div class="nebula-orb orb-cyan"></div>
+  <div class="nebula-orb orb-pink"></div>
+  <div class="grid-overlay"></div>
+
   <!-- Left Brand Section (Desktop Only - 40%) -->
-  <div class="hidden lg:flex w-[40%] bg-zinc-900 border-r border-zinc-800 text-white flex-col p-12 relative overflow-hidden">
-    <!-- Subtle 3D background abstract effect -->
-    <div class="absolute inset-x-0 inset-y-0 opacity-40 pointer-events-none">
-      <div class="absolute top-1/4 left-1/4 h-72 w-72 rounded-full bg-linear-to-tr from-fuchsia-600/20 to-purple-600/20 blur-3xl animate-float-bubble"></div>
-      <div class="absolute bottom-1/4 right-0 h-96 w-96 rounded-full bg-linear-to-tr from-cyan-500/20 to-purple-600/20 blur-[100px]" style="animation-delay: -2s"></div>
-    </div>
-    
-    <div class="z-10 flex flex-col h-full">
+  <div class="hidden lg:flex w-[40%] border-r border-white/5 text-white flex-col p-12 relative overflow-hidden z-10">
+    <div class="flex flex-col h-full">
       <!-- Logo -->
-      <a routerLink="/" class="flex items-center gap-3 cursor-pointer mt-4">
-           <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-14">
+      <a routerLink="/" class="flex items-center gap-3 cursor-pointer mt-4 animated-logo">
+        <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-14">
       </a>
 
       <div class="mt-auto mb-auto max-w-sm">
-        <h1 class="text-4xl font-sans font-black mb-4 tracking-tight text-white leading-tight">Welcome Back</h1>
+        <h1 class="text-4xl font-sans font-black mb-4 tracking-tight shine-text leading-tight">
+          Welcome Back
+        </h1>
         <p class="text-zinc-400 text-sm leading-relaxed mb-10 font-medium tracking-wide">
-          Access your account to manage orders, track shipments, wishlist products, and explore the latest 3D printing solutions.
+          Access your account to manage orders, track shipments, wishlist products, and explore the latest 3D printing
+          solutions.
         </p>
-        
+
         <ul class="space-y-4 text-sm font-semibold tracking-wide text-zinc-300">
-          <li class="flex items-center gap-3"><mat-icon class="text-emerald-400 shrink-0 scale-90">check_circle</mat-icon> Track Orders</li>
-          <li class="flex items-center gap-3"><mat-icon class="text-emerald-400 shrink-0 scale-90">check_circle</mat-icon> Manage Wishlist</li>
-          <li class="flex items-center gap-3"><mat-icon class="text-emerald-400 shrink-0 scale-90">check_circle</mat-icon> Fast Checkout</li>
-          <li class="flex items-center gap-3"><mat-icon class="text-emerald-400 shrink-0 scale-90">check_circle</mat-icon> Secure Payments</li>
+          <li class="flex items-center gap-3 feature-item">
+            <mat-icon class="feature-icon shrink-0 scale-90">check_circle</mat-icon> Track Orders
+          </li>
+          <li class="flex items-center gap-3 feature-item">
+            <mat-icon class="feature-icon shrink-0 scale-90">check_circle</mat-icon> Manage Wishlist
+          </li>
+          <li class="flex items-center gap-3 feature-item">
+            <mat-icon class="feature-icon shrink-0 scale-90">check_circle</mat-icon> Fast Checkout
+          </li>
+          <li class="flex items-center gap-3 feature-item">
+            <mat-icon class="feature-icon shrink-0 scale-90">check_circle</mat-icon> Secure Payments
+          </li>
         </ul>
       </div>
     </div>
   </div>
 
   <!-- Right Form Section (60% Desktop, 100% Mobile) -->
-  <div class="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 relative">
-    
-    <div class="w-full max-w-[480px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200/60 dark:border-zinc-800 p-8 sm:p-10 animate-slideUp relative z-10 transition-all duration-300">
-      
+  <div class="flex-1 flex flex-col justify-center items-center p-4 sm:p-8 relative z-10">
+
+    <div class="w-full max-w-[480px] glass-card rounded-3xl p-8 sm:p-10 relative">
+
       <!-- Mobile Logo -->
-      <div class="lg:hidden flex justify-center mb-6">
+      <div class="lg:hidden flex justify-center mb-6 animated-logo">
         <a routerLink="/" class="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" class="h-14 w-auto text-neutral-900 dark:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" class="h-14 w-auto text-white">
             <defs>
               <linearGradient id="gl-brand-mob1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#00f2fe"/><stop offset="100%" stop-color="#6f00ff"/>
+                <stop offset="0%" stop-color="#00f2fe" />
+                <stop offset="100%" stop-color="#6f00ff" />
               </linearGradient>
               <linearGradient id="gl-brand-mob2" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#6f00ff"/><stop offset="100%" stop-color="#ff007f"/>
+                <stop offset="0%" stop-color="#6f00ff" />
+                <stop offset="100%" stop-color="#ff007f" />
               </linearGradient>
               <linearGradient id="gl-brand-mob3" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#ff007f"/><stop offset="100%" stop-color="#00f2fe"/>
+                <stop offset="0%" stop-color="#ff007f" />
+                <stop offset="100%" stop-color="#00f2fe" />
               </linearGradient>
             </defs>
-            <text x="60" y="320" font-size="340" fill="currentColor" class="logo-3 font-black tracking-[-0.05em]" style="font-family: 'Outfit', sans-serif;">3</text>
+            <text x="60" y="320" font-size="340" fill="currentColor" class="logo-3 font-black tracking-[-0.05em]"
+              style="font-family: 'Outfit', sans-serif;">3</text>
             <path d="M 245,100 L 452,220 L 417,240 L 285,163 L 285,316 L 245,293 Z" fill="url(#gl-brand-mob1)" />
             <path d="M 245,293 L 285,316 L 285,214 L 417,291 L 452,220 L 245,340 Z" fill="url(#gl-brand-mob2)" />
             <path d="M 245,340 L 245,100 L 285,123 L 285,214 L 417,291 L 382,311 Z" fill="url(#gl-brand-mob3)" />
-            <text x="250" y="440" font-family="'Outfit', sans-serif" font-weight="900" font-size="80" fill="currentColor" text-anchor="middle" letter-spacing="15">GALAXY</text>
+            <text x="250" y="440" font-family="'Outfit', sans-serif" font-weight="900" font-size="80"
+              fill="currentColor" text-anchor="middle" letter-spacing="15">GALAXY</text>
           </svg>
         </a>
       </div>
 
       <div class="mb-8">
-        <h2 class="text-2xl sm:text-3xl font-sans font-black tracking-tight text-neutral-900 dark:text-white capitalize">
+        <h2 class="text-2xl sm:text-3xl font-sans font-black tracking-tight text-white capitalize">
           {{ isSignUp() ? 'Create Account' : 'Sign In' }}
         </h2>
-        <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mt-1.5">
+        <p class="text-sm font-medium text-zinc-400 mt-1.5">
           {{ isSignUp() ? 'Create your 3D Galaxy customer profile' : 'Login to your 3D Galaxy account' }}
         </p>
       </div>
 
-      <!-- Notifications -->
       <!-- SIGN IN FORM -->
       @if (!isSignUp()) {
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-          
-          <div class="relative group">
-            <input 
-              id="signin-email"
-              type="email" 
-              formControlName="email"
-              placeholder=" "
-              class="peer w-full h-14 px-4 pt-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl text-sm font-bold text-neutral-900 dark:text-white outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:-translate-y-0.5 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <label for="signin-email" class="absolute left-4 top-4 text-neutral-500 dark:text-neutral-450 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:text-indigo-500 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email Address</label>
-          </div>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
 
-          <div class="relative group">
-            <input 
-              id="signin-password"
-              [type]="showPassword() ? 'text' : 'password'" 
-              formControlName="password"
-              placeholder=" "
-              class="peer w-full h-14 px-4 pt-4 pr-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl text-sm font-bold text-neutral-900 dark:text-white outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:-translate-y-0.5 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <label for="signin-password" class="absolute left-4 top-4 text-neutral-500 dark:text-neutral-450 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:text-indigo-500 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password</label>
-            <button 
-              type="button" 
-              (click)="toggleShowPassword()" 
-              class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-neutral-400 hover:text-neutral-600 dark:hover:text-white flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none transition-colors">
-              <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
-            </button>
-            <a routerLink="/forgot-password" class="absolute right-1 -bottom-6 text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-[#b04005] transition-colors leading-none m-0">Forgot Password?</a>
-          </div>
+        <div class="input-container group">
+          <mat-icon class="input-icon">email</mat-icon>
+          <input id="signin-email" type="email" formControlName="email" placeholder=" "
+            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
+          <label for="signin-email"
+            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email
+            Address</label>
+        </div>
 
-          <app-button
-            [loading]="loading()"
-            text="Sign In"
-            loadingText="Authenticating..."
-            [isFullWidth]="true"
-            variant="primary"
-            class="block mt-8"
-            type="submit">
-          </app-button>
-        </form>
+        <div class="input-container group">
+          <mat-icon class="input-icon">lock</mat-icon>
+          <input id="signin-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+            placeholder=" " class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
+          <label for="signin-password"
+            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password</label>
+          <button type="button" (click)="toggleShowPassword()"
+            class="password-toggle-btn h-8 w-8 flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none">
+            <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+          <a routerLink="/forgot-password"
+            class="text-link absolute right-1 -bottom-6 text-[10px] font-black uppercase tracking-widest leading-none m-0">Forgot
+            Password?</a>
+        </div>
+
+        <app-button [loading]="loading()" text="Sign In" loadingText="Authenticating..." [isFullWidth]="true"
+          variant="primary" class="block mt-8" type="submit">
+        </app-button>
+      </form>
       }
 
       <!-- SIGN UP FORM -->
       @else {
-        <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
-          <div class="relative group">
-            <input 
-              id="signup-name"
-              type="text" 
-              formControlName="name"
-              placeholder=" "
-              class="peer w-full h-14 px-4 pt-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl text-sm font-bold text-neutral-900 dark:text-white outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:-translate-y-0.5 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <label for="signup-name" class="absolute left-4 top-4 text-neutral-500 dark:text-neutral-450 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:text-indigo-500 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Full Name</label>
-          </div>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="input-container group">
+          <mat-icon class="input-icon">person</mat-icon>
+          <input id="signup-name" type="text" formControlName="name" placeholder=" "
+            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
+          <label for="signup-name"
+            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Full
+            Name</label>
+        </div>
 
-          <div class="relative group">
-            <input 
-              id="signup-email"
-              type="email" 
-              formControlName="email"
-              placeholder=" "
-              class="peer w-full h-14 px-4 pt-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl text-sm font-bold text-neutral-900 dark:text-white outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:-translate-y-0.5 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <label for="signup-email" class="absolute left-4 top-4 text-neutral-500 dark:text-neutral-450 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:text-indigo-500 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email Address</label>
-          </div>
+        <div class="input-container group">
+          <mat-icon class="input-icon">email</mat-icon>
+          <input id="signup-email" type="email" formControlName="email" placeholder=" "
+            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
+          <label for="signup-email"
+            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email
+            Address</label>
+        </div>
 
-          <div class="relative group">
-            <input 
-              id="signup-password"
-              [type]="showPassword() ? 'text' : 'password'" 
-              formControlName="password"
-              placeholder=" "
-              class="peer w-full h-14 px-4 pt-4 pr-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl text-sm font-bold text-neutral-900 dark:text-white outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 focus:-translate-y-0.5 focus:shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-            <label for="signup-password" class="absolute left-4 top-4 text-neutral-500 dark:text-neutral-450 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:text-indigo-500 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password (6+ Char)</label>
-            <button 
-              type="button" 
-              (click)="toggleShowPassword()" 
-              class="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-neutral-400 hover:text-neutral-600 dark:hover:text-white flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none transition-colors">
-              <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
-            </button>
-          </div>
+        <div class="input-container group">
+          <mat-icon class="input-icon">lock</mat-icon>
+          <input id="signup-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+            placeholder=" " class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
+          <label for="signup-password"
+            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password
+            (6+ Char)</label>
+          <button type="button" (click)="toggleShowPassword()"
+            class="password-toggle-btn h-8 w-8 flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none">
+            <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </div>
 
-          <app-button
-            [loading]="loading()"
-            text="Create Account"
-            loadingText="Creating..."
-            [isFullWidth]="true"
-            variant="primary"
-            class="block mt-4"
-            type="submit">
-          </app-button>
-        </form>
+        <app-button [loading]="loading()" text="Create Account" loadingText="Creating..." [isFullWidth]="true"
+          variant="primary" class="block mt-4" type="submit">
+        </app-button>
+      </form>
       }
 
       <div class="mt-8 text-center">
-        <p class="text-xs sm:text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+        <p class="text-xs sm:text-sm font-semibold text-zinc-400">
           {{ isSignUp() ? "Already have an account?" : "Don't have an account?" }}
-          <button 
-            type="button" 
-            (click)="toggleMode()"
-            class="ml-2 font-black text-[#d65108] hover:text-[#b04005] cursor-pointer bg-transparent border-0 underline underline-offset-4 decoration-[#d65108]/30">
+          <button type="button" (click)="toggleMode()"
+            class="text-link ml-2 font-black cursor-pointer bg-transparent border-0">
             {{ isSignUp() ? 'Sign In' : 'Create Account' }}
           </button>
         </p>
@@ -177,34 +173,53 @@
 
       <div class="relative my-8 flex items-center justify-center">
         <div class="absolute inset-0 flex items-center" aria-hidden="true">
-          <div class="w-full border-t border-zinc-200 dark:border-zinc-800"></div>
+          <div class="w-full border-t border-white/10"></div>
         </div>
-        <div class="relative bg-white dark:bg-zinc-900 px-4">
+        <div class="relative bg-[#0b0b13] px-4 rounded-full border border-white/5 py-0.5">
           <span class="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Social Login</span>
         </div>
       </div>
 
       <!-- Social Login Buttons (Disabled by default / future-ready) -->
       <div class="flex flex-col gap-3">
-        <button [disabled]="true" [class.opacity-50]="true" class="w-full h-11 flex items-center justify-center gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-neutral-600 dark:text-neutral-300 font-semibold text-xs transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-not-allowed">
-          <svg class="h-4 w-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg>
+        <button [disabled]="true" [class.opacity-50]="true"
+          class="social-button w-full h-11 flex items-center justify-center gap-3 rounded-xl font-semibold text-xs cursor-not-allowed">
+          <svg class="h-4 w-4" viewBox="0 0 24 24">
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4" />
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853" />
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              fill="#FBBC05" />
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              fill="#EA4335" />
+            <path d="M1 1h22v22H1z" fill="none" />
+          </svg>
           Continue with Google
         </button>
-        <button [disabled]="true" [class.opacity-50]="true" class="w-full h-11 flex items-center justify-center gap-3 bg-zinc-900 dark:bg-white border border-zinc-900 border-transparent rounded-xl text-white dark:text-zinc-900 font-semibold text-xs transition-colors cursor-not-allowed">
-          <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.129 3.792 3.083 1.503-.046 2.062-.962 3.892-.962 1.815 0 2.336.962 3.907.926 1.614-.029 2.628-1.505 3.633-2.99 1.166-1.705 1.647-3.36 1.67-3.442-.038-.016-3.218-1.233-3.255-4.896-.03-3.076 2.508-4.557 2.627-4.636-1.434-2.102-3.649-2.387-4.444-2.433-1.898-.112-3.722 1.258-4.42 1.258zm-.65-2.052c.866-1.046 1.442-2.49 1.282-3.94-.131.006-1.637.106-2.548 1.144-.809.914-1.455 2.39-1.267 3.82.029.006 1.606.1 2.533-1.024z"/></svg>
+        <button [disabled]="true" [class.opacity-50]="true"
+          class="social-button w-full h-11 flex items-center justify-center gap-3 rounded-xl font-semibold text-xs cursor-not-allowed">
+          <svg class="h-5 w-5 fill-white" viewBox="0 0 24 24">
+            <path
+              d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.129 3.792 3.083 1.503-.046 2.062-.962 3.892-.962 1.815 0 2.336.962 3.907.926 1.614-.029 2.628-1.505 3.633-2.99 1.166-1.705 1.647-3.36 1.67-3.442-.038-.016-3.218-1.233-3.255-4.896-.03-3.076 2.508-4.557 2.627-4.636-1.434-2.102-3.649-2.387-4.444-2.433-1.898-.112-3.722 1.258-4.42 1.258zm-.65-2.052c.866-1.046 1.442-2.49 1.282-3.94-.131.006-1.637.106-2.548 1.144-.809.914-1.455 2.39-1.267 3.82.029.006 1.606.1 2.533-1.024z" />
+          </svg>
           Continue with Apple
         </button>
       </div>
 
       <!-- Security Indicator -->
       <div class="mt-8 flex flex-col items-center text-center">
-        <div class="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-          <mat-icon class="scale-75">lock</mat-icon>
-          <span class="text-xs font-black uppercase tracking-widest">Secure Login</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <mat-icon class="scale-75 text-cyan-400">lock</mat-icon>
+          <span class="text-[10px] font-black uppercase tracking-widest text-zinc-300">Secure Login</span>
         </div>
-        <p class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 uppercase tracking-wider font-semibold">Your information is protected and encrypted.</p>
+        <p class="text-[9px] text-zinc-500 mt-1 uppercase tracking-wider font-semibold">Your information is protected
+          and encrypted.</p>
       </div>
     </div>
   </div>
 </div>
-

@@ -36,7 +36,8 @@ export type AdminTab =
   | 'pages' | 'blogs' | 'faqs' | 'banners' | 'homepage-builder' | 'menu-builder'
   | 'coupons' | 'promotions' | 'email-campaigns' | 'push-notifications'
   | 'sales-reports' | 'product-reports' | 'customer-reports'
-  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions' | 'security-settings';
+  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions' | 'security-settings' | 'print-settings';
+
 
 @Component({
   selector: 'app-admin-panel',
@@ -155,6 +156,7 @@ export class AdminPanel {
         { id: 'payment-settings' as const, label: 'Payment Settings', icon: 'payment' },
         { id: 'shipping-settings' as const, label: 'Shipping Settings', icon: 'local_shipping' },
         { id: 'tax-settings' as const, label: 'Tax Settings', icon: 'percent' },
+        { id: 'print-settings' as const, label: 'Printing Service', icon: 'print' },
         { id: 'user-management' as const, label: 'User Management', icon: 'badge' },
         { id: 'active-sessions' as const, label: 'Active Sessions', icon: 'security' },
         { id: 'security-settings' as const, label: 'Security Settings', icon: 'admin_panel_settings' }

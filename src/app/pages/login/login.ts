@@ -12,7 +12,8 @@ import { ToastService } from '../../shared/components/toast/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-login',
   imports: [CommonModule, RouterModule, ReactiveFormsModule, MatIconModule, AppButton],
-  templateUrl: './login.html'
+  templateUrl: './login.html',
+  styleUrl: './login.scss'
 })
 export class Login implements OnInit {
   public ds = inject(DatastoreService);

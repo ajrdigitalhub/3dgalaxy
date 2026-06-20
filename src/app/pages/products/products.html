@@ -293,14 +293,14 @@
 
           @if (p.images.length > 1) {
           <img [src]="p.images[0]?.url || p.images[0]"
-            class="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-[85%] max-h-[85%] object-contain transition-opacity duration-500 md:group-hover:opacity-0"
+            class="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-[90%] max-h-[90%] object-contain transition-opacity duration-500 md:group-hover:opacity-0"
             loading="lazy" alt="{{p.name}}" referrerpolicy="no-referrer">
           <img [src]="p.images[1]?.url || p.images[1]"
-            class="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-[85%] max-h-[85%] object-contain opacity-0 transition-all duration-500 md:group-hover:opacity-100 transform md:group-hover:scale-105"
+            class="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto max-w-[90%] max-h-[90%] object-contain opacity-0 transition-all duration-500 md:group-hover:opacity-100 transform md:group-hover:scale-105"
             loading="lazy" alt="{{p.name}}" referrerpolicy="no-referrer">
           } @else {
           <img [src]="p.images[0]?.url || p.images[0]"
-            class="max-w-[85%] max-h-[85%] object-contain transform md:group-hover:scale-105 transition-transform duration-500"
+            class="max-w-[90%] max-h-[90%] object-contain transform md:group-hover:scale-105 transition-transform duration-500"
             loading="lazy" alt="{{p.name}}" referrerpolicy="no-referrer">
           }
 

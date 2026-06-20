@@ -45,21 +45,106 @@ export class SettingsService {
   public themeSettings = signal<any>({});
   public gradientSettings = signal<any>({});
   public security = signal<any>({});
+  public printServiceSettings = signal<any>({
+    materials: [
+      {
+        name: 'PLA',
+        pricePerGram: 2.5,
+        density: 1.25,
+        active: true,
+        colors: [
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Black', hex: '#000000' },
+          { name: 'Red', hex: '#FF0000' },
+          { name: 'Blue', hex: '#0000FF' },
+          { name: 'Green', hex: '#008000' }
+        ]
+      },
+      {
+        name: 'PETG',
+        pricePerGram: 3.2,
+        density: 1.27,
+        active: true,
+        colors: [
+          { name: 'Orange', hex: '#FF8C00' },
+          { name: 'Grey', hex: '#808080' },
+          { name: 'Silver', hex: '#C0C0C0' }
+        ]
+      },
+      {
+        name: 'ABS',
+        pricePerGram: 3.5,
+        density: 1.05,
+        active: true,
+        colors: [
+          { name: 'Black', hex: '#000000' },
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Red', hex: '#FF0000' }
+        ]
+      },
+      {
+        name: 'TPU',
+        pricePerGram: 4.8,
+        density: 1.20,
+        active: true,
+        colors: [
+          { name: 'Purple', hex: '#800080' },
+          { name: 'Yellow', hex: '#FFFF00' }
+        ]
+      },
+      {
+        name: 'Resin',
+        pricePerGram: 7.5,
+        density: 1.10,
+        active: true,
+        colors: [
+          { name: 'Gold', hex: '#FFD700' },
+          { name: 'Grey', hex: '#808080' }
+        ]
+      }
+    ],
+    qualities: [
+      { name: 'Standard', height: 0.20 },
+      { name: 'Medium', height: 0.15 },
+      { name: 'High', height: 0.10 }
+    ],
+    infillStandards: [
+      { name: '10 - 30%', desc: 'Standard', min: 10, max: 30, defaultVal: 20 },
+      { name: '31 - 50%', desc: 'Medium', min: 31, max: 50, defaultVal: 40 },
+      { name: '51 - 80%', desc: 'Strong', min: 51, max: 80, defaultVal: 60 }
+    ],
+    machineFeePerHour: 150,
+    gstTaxRate: 18
+  });
 
   async loadSettings(force = false) {
     if (this.isLoaded() && !force) return;
     
     try {
       const resp = await firstValueFrom(this.http.get<any>('/api/settings'));
-      if (resp && resp.data) {
-        const d = resp.data;
+      if (resp) {
+        const d = resp.data !== undefined ? resp.data : resp;
         this.settingsData.set(d);
         
         // Update all sub-signals
         if (d.siteName !== undefined) this.siteName.set(d.siteName);
         if (d.logoUrl !== undefined) this.logoUrl.set(d.logoUrl);
         if (d.currency !== undefined) this.currency.set(d.currency);
-        if (d.theme) this.theme.set(d.theme);
+        
+        let themeData = d.theme;
+        if (!themeData) {
+          themeData = {
+            primaryColor: d.primaryColor || '#d65108',
+            secondaryColor: d.secondaryColor || '#1e3a8a',
+            accentColor: d.accentColor || '#3B82F6',
+            borderRadius: d.borderRadius || '0.75rem',
+            fontFamily: d.typography || 'Inter',
+            darkMode: d.darkMode || false,
+            themeText: d.themeText || '#ffffff'
+          };
+        }
+        this.theme.set(themeData);
+        
         if (d.heroSlides) this.heroSlides.set(d.heroSlides);
         if (d.promoBanners) this.promoBanners.set(d.promoBanners);
         if (d.advertisements) this.advertisements.set(d.advertisements);
@@ -84,13 +169,14 @@ export class SettingsService {
         if (d.companyInfo) this.companyInfo.set(d.companyInfo);
         if (d.gradientSettings) this.gradientSettings.set(d.gradientSettings);
         if (d.security) this.security.set(d.security);
+        if (d.printServiceSettings) this.printServiceSettings.set(d.printServiceSettings);
 
         // Compatibility signals
         if (d.banners) this.banners.set(d.banners);
         if (d.paymentGatewaySettings) this.payment.set(d.paymentGatewaySettings);
         if (d.homepageSections) this.homepage.set(d.homepageSections);
 
-        this.applyTheme(d.theme);
+        this.applyTheme(themeData);
       }
       this.isLoaded.set(true);
     } catch (e) {
@@ -127,7 +213,10 @@ export class SettingsService {
     }
 
     // Border Radius
-    const borderRadius = themeData.borderRadius || '0.75rem';
+    let borderRadius = themeData.borderRadius !== undefined ? themeData.borderRadius : '0.75rem';
+    if (typeof borderRadius === 'number' || /^\d+$/.test(String(borderRadius).trim())) {
+      borderRadius = `${String(borderRadius).trim()}px`;
+    }
 
     // Hover Effect (brightness or custom transform)
     const hoverEffect = themeData.hoverEffect || 'brightness(1.15) scale(1.02)';
@@ -152,9 +241,27 @@ export class SettingsService {
     root.style.setProperty('--accent-color', finalAccent);
     root.style.setProperty('--gradient-angle', angle);
     root.style.setProperty('--theme-radius', borderRadius);
+    root.style.setProperty('--radius', borderRadius);
     root.style.setProperty('--theme-gradient', gradient);
     root.style.setProperty('--theme-text', themeData.themeText || '#ffffff');
     root.style.setProperty('--theme-hover-effect', hoverEffect);
+    
+    // Animation/Transitions customizations
+    const animSpeed = themeData.animationSpeed || '0.5s';
+    const animStyle = themeData.animationStyle || 'cubic-bezier(0.16, 1, 0.3, 1)';
+    const pageTrans = themeData.pageTransition || 'fade';
+    const hvrStyle = themeData.hoverStyle || 'translateY(-8px)';
+    const crdStyle = themeData.cardStyle || 'glassmorphism';
+    const btnStyle = themeData.buttonStyle || 'rounded-xl';
+    const plxEnabled = themeData.parallaxEnabled !== undefined ? themeData.parallaxEnabled : true;
+
+    root.style.setProperty('--animation-speed', animSpeed);
+    root.style.setProperty('--animation-style', animStyle);
+    root.style.setProperty('--page-transition', pageTrans);
+    root.style.setProperty('--hover-style', hvrStyle);
+    root.style.setProperty('--card-style', crdStyle);
+    root.style.setProperty('--button-style', btnStyle);
+    root.style.setProperty('--parallax-enabled', plxEnabled ? '1' : '0');
     
     // Compatibility variables
     root.style.setProperty('--color-primary', finalPrimary);

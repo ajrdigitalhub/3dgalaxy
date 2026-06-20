@@ -158,14 +158,19 @@
   }
 }
 
-/* Centralized dynamic theme override */
+/* Centralized dynamic theme override to support gradient-based primary elements */
 .bg-blue-600, 
 .bg-indigo-600,
 .bg-violet-600,
 .bg-blue-500,
 .bg-indigo-500,
+.bg-\[\#d65108\],
+.bg-\[\#f54f00\],
+.bg-orange-600,
+.bg-emerald-500,
 .bg-theme-glow-button {
-  background-color: var(--primary-color, #2563eb) !important;
+  background: linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #d65108), var(--secondary-color, #ea580c)) !important;
+  border-color: transparent !important;
   transition: all 0.3s ease;
 }
 
@@ -173,9 +178,16 @@
 .hover\:bg-blue-600:hover,
 .hover\:bg-indigo-500:hover,
 .hover\:bg-indigo-600:hover,
-.hover\:bg-blue-400:hover {
-  filter: brightness(1.1) !important;
-  background-color: var(--secondary-color, var(--primary-color, #1d4ed8)) !important;
+.hover\:bg-blue-400:hover,
+.hover\:bg-orange-700:hover,
+.hover\:bg-emerald-400:hover,
+.bg-\[\#d65108\]:hover,
+.bg-\[\#f54f00\]:hover,
+.bg-orange-600:hover,
+.bg-blue-600:hover,
+.bg-emerald-500:hover {
+  filter: brightness(1.15) !important;
+  background: linear-gradient(var(--gradient-angle, 135deg), var(--secondary-color, #ea580c), var(--primary-color, #d65108)) !important;
   opacity: 0.95;
 }
 
@@ -214,7 +226,7 @@
 button.app-button,
 app-button button,
 button.bg-theme-glow-button {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--primary-color, #2563EB), var(--secondary-color, #7C3AED))) !important;
+  background: var(--theme-gradient, linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #d65108), var(--secondary-color, #ea580c))) !important;
   color: var(--theme-text, #ffffff) !important;
   border-radius: var(--theme-radius, 0.75rem) !important;
   font-family: var(--font-display, "Space Grotesk", sans-serif) !important;
@@ -260,4 +272,206 @@ button.bg-theme-glow-button:disabled {
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ==========================================================================
+   PREMIUM UX ANIMATIONS AND CUSTOM TRANSITIONS
+   ========================================================================== */
+
+/* Custom Core Variables (Mapped to Admin Settings) */
+:root {
+  --animation-speed: 0.5s;
+  --animation-style: cubic-bezier(0.16, 1, 0.3, 1);
+  --page-transition: fade;
+  --hover-style: translateY(-8px);
+  --card-style: glassmorphism;
+  --button-style: rounded-xl;
+  --parallax-enabled: 1;
+}
+
+/* Scroll Reveal Classes (Intersection Observer) */
+.reveal-init {
+  opacity: 0;
+  transition: opacity var(--animation-speed) var(--animation-style),
+              transform var(--animation-speed) var(--animation-style),
+              filter var(--animation-speed) var(--animation-style);
+  will-change: opacity, transform, filter;
+}
+
+.reveal-fade {
+  transform: translateY(0);
+  filter: blur(8px);
+}
+
+.reveal-slide-up {
+  transform: translateY(80px);
+  filter: blur(0px);
+}
+
+.reveal-scale-in {
+  transform: scale(0.95);
+  filter: blur(4px);
+}
+
+.reveal-rotate-in {
+  transform: scale(0.95) rotate(2deg);
+  filter: blur(4px);
+}
+
+.reveal-active {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) rotate(0deg) !important;
+  filter: blur(0px) !important;
+}
+
+/* Floating Animations */
+@keyframes float-loop-1 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+@keyframes float-loop-2 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(-1deg); }
+}
+
+@keyframes float-loop-3 {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1.5deg); }
+}
+
+.animate-float-1 {
+  animation: float-loop-1 4s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-loop-2 5.5s ease-in-out infinite;
+}
+
+.animate-float-3 {
+  animation: float-loop-3 3.5s ease-in-out infinite;
+}
+
+/* Apple Sticky Overlapping Card Stack */
+.sticky-stack-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  width: 100%;
+}
+
+.sticky-stack-card {
+  position: sticky;
+  transition: transform var(--animation-speed) var(--animation-style);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.04);
+}
+
+.sticky-stack-card:nth-child(1) { top: 80px; z-index: 1; }
+.sticky-stack-card:nth-child(2) { top: 120px; z-index: 2; }
+.sticky-stack-card:nth-child(3) { top: 160px; z-index: 3; }
+.sticky-stack-card:nth-child(4) { top: 200px; z-index: 4; }
+
+/* Custom Marquee Keyframes (Missing Fallbacks) */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes marquee2 {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee {
+  display: flex;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee2 {
+  display: flex;
+  animation: marquee2 30s linear infinite;
+}
+
+/* Premium Product Cards Secondary Image Swap */
+.product-card-image-container .secondary-image {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.4s var(--animation-style), transform 0.4s var(--animation-style);
+}
+
+.product-card-image-container:hover .secondary-image {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.product-card-image-container:hover .primary-image {
+  opacity: 0;
+}
+
+/* Shimmer Loading Shine Effect */
+.shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: shimmer-swipe-animation 2.2s infinite ease-in-out;
+}
+
+.dark .shimmer-sweep::after {
+  background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+}
+
+@keyframes shimmer-swipe-animation {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Product Detail Sticky Buy Box */
+.sticky-buy-box {
+  position: sticky;
+  top: 100px;
+  z-index: 20;
+}
+
+/* Card and Theme configurations */
+.card-glassmorphism {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px border-neutral-200/50 !important;
+}
+
+.dark .card-glassmorphism {
+  background: rgba(10, 10, 10, 0.45) !important;
+  border: 1px border-neutral-800/40 !important;
+}
+
+.card-rounded-glow {
+  border: 1px solid rgba(214, 81, 8, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(214, 81, 8, 0.03) !important;
+}
+
+.dark .card-rounded-glow {
+  border: 1px solid rgba(214, 81, 8, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(214, 81, 8, 0.08) !important;
+}
+
+.card-flat-modern {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+.dark .card-flat-modern {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: none !important;
+}
+
 

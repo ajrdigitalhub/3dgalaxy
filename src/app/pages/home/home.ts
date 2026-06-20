@@ -9,6 +9,9 @@ import { animate } from 'motion';
 import { SkeletonPageComponent } from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
 import { SettingsService } from '../../core/services/settings.service';
 import { environment } from '../../../environments/environment';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 
 interface QuickNavItem {
   id: string;
@@ -17,7 +20,7 @@ interface QuickNavItem {
 
 @Component({
   selector: 'app-home',
-  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, SkeletonPageComponent, ScrollRevealDirective, TiltDirective, CountUpDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.html',
   styleUrl: './home.scss'
@@ -49,10 +52,11 @@ export class Home {
       // fallback placeholder if no banners
       return [{
         id: 1,
-        title: '3D Galaxy Storefront',
-        titleHighlight: 'The Future of Manufacturing',
+        title: 'Welcome to the Ecosystem',
+        titleHighlight: '3D Galaxy Storefront',
         desc: 'Check out our latest products and deals on 3D Printers, Filaments and more.',
         image: 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=2000',
+        videoUrl: '',
         badge: 'Welcome',
         badgeIcon: 'rocket_launch',
         link: '/products',
@@ -61,23 +65,28 @@ export class Home {
     }
 
     return banners.map((b, i) => {
-      // Split the title into title and highlight if it has a dash or something,
-      // But let's just make the first half title and second half titleHighlight
-      const words = (b.title || '').split(' ');
-      const half = Math.ceil(words.length / 2);
-      const title = words.slice(0, half).join(' ');
-      const highlight = words.slice(half).join(' ');
+      // If subtitle is present, map title/titleHighlight cleanly, else split b.title
+      let title = b.subtitle || '';
+      let highlight = b.title || '';
+      
+      if (!title && highlight) {
+        const words = highlight.split(' ');
+        const half = Math.ceil(words.length / 2);
+        title = words.slice(0, half).join(' ');
+        highlight = words.slice(half).join(' ');
+      }
 
       return {
         id: b.id || i,
         title: title || 'Promo Event',
-        titleHighlight: highlight,
-        desc: '',
+        titleHighlight: highlight || 'Special Highlight',
+        desc: b.desc || b.description || 'Experience premium performance and class-leading reliability with our curated tech collections.',
         image: b.imageUrl,
-        badge: 'Featured',
-        badgeIcon: 'bolt',
+        videoUrl: b.videoUrl || '',
+        badge: b.badge || 'Featured',
+        badgeIcon: b.badgeIcon || 'bolt',
         link: b.linkUrl || '/products',
-        btnText: 'Explore Now'
+        btnText: b.btnText || b.buttonText || 'Explore Now'
       };
     });
   });
@@ -153,6 +162,45 @@ export class Home {
   activeSocialPosts = computed(() => this.ds.socialPosts().filter(p => p.approved));
 
   featuredProducts = computed(() => this.ds.products().slice(0, 8));
+
+  shopByCategoryGroups = computed(() => {
+    const products = this.ds.products();
+    const categories = this.ds.categories();
+    
+    // Choose some top level categories to showcase
+    const targetSlugs = ['3d-printers', 'materials'];
+    const groups = [];
+
+    for (const slug of targetSlugs) {
+      const category = categories.find(c => c.slug === slug || c.id === slug);
+      if (category) {
+        // Find children
+        const childIds = categories.filter(c => c.parent_id === category.id).map(c => c.id);
+        const targetIds = [category.id, ...childIds];
+        
+        // Filter products
+        let catProducts = products.filter(p => targetIds.includes(p.category_id || p.categoryId || ''));
+        // Sort or slice top 4 products
+        catProducts = catProducts.slice(0, 4);
+        
+        groups.push({
+          category,
+          products: catProducts
+        });
+      }
+    }
+    return groups;
+  });
+
+  getCategoryProductCount(categoryId: string): number {
+    const categories = this.ds.categories();
+    const products = this.ds.products();
+    const subIds = categories
+      .filter(c => c.parent_id === categoryId || c.parentId === categoryId)
+      .map(c => c.id);
+    const targetIds = [categoryId, ...subIds];
+    return products.filter(p => targetIds.includes(p.category_id || p.categoryId || '')).length;
+  }
 
   getIcon(catId: string): string {
     const icons: Record<string, string> = {
@@ -408,6 +456,25 @@ export class Home {
       this.aiSuggestions.set(['Bambu carbon-fiber settings', 'Precision TPU nozzles', 'High viscosity resins', 'Ender 3 direct drive calibration']);
     } finally {
       this.isLoadingAiSuggestion.set(false);
+    }
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img.getAttribute('data-error-handled')) return;
+    img.setAttribute('data-error-handled', 'true');
+    const isDark = document.documentElement.classList.contains('dark');
+    const placeholder = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+    
+    const isLogo = img.classList.contains('logo-img') || img.alt.toLowerCase().includes('logo') || img.src.toLowerCase().includes('logo') || img.src.toLowerCase().includes('brand');
+    if (isLogo) {
+      if (isDark) {
+        img.src = this.ds.settings()?.darkModeLogoUrl || this.ds.settings()?.logoUrl || placeholder;
+      } else {
+        img.src = this.ds.settings()?.logoUrl || this.ds.settings()?.headerLogoUrl || placeholder;
+      }
+    } else {
+      img.src = placeholder;
     }
   }
 }

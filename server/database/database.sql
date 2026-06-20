@@ -429,6 +429,108 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
     subscribed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS settings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS advertisements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    media_url VARCHAR(255) NOT NULL,
+    target_url VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    clicks INT DEFAULT 0,
+    impressions INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT true,
+    deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customer_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    device_info VARCHAR(255),
+    ip_address VARCHAR(45),
+    is_active BOOLEAN DEFAULT true,
+    last_activity TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS search_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    search_term VARCHAR(255) NOT NULL,
+    result_count INT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS blog_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS blogs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category_id UUID REFERENCES blog_categories(id) ON DELETE SET NULL,
+    author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    content TEXT NOT NULL,
+    image_url VARCHAR(255),
+    is_published BOOLEAN DEFAULT false,
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    content TEXT,
+    is_published BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS page_sections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    page_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    section_type VARCHAR(50) NOT NULL,
+    content JSONB,
+    sort_order INT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS menu_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    menu_id UUID NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    url VARCHAR(255),
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- ==============================================================================
 -- 4. INDEXES
@@ -519,6 +621,26 @@ FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 -- Theme Settings
 CREATE TRIGGER update_theme_settings_modtime
 BEFORE UPDATE ON theme_settings
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- Settings
+CREATE TRIGGER update_settings_modtime
+BEFORE UPDATE ON settings
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- Advertisements
+CREATE TRIGGER update_advertisements_modtime
+BEFORE UPDATE ON advertisements
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- Blogs
+CREATE TRIGGER update_blogs_modtime
+BEFORE UPDATE ON blogs
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- Pages
+CREATE TRIGGER update_pages_modtime
+BEFORE UPDATE ON pages
 FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
 

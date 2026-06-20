@@ -4,46 +4,71 @@
 @if (product(); as p) {
   <div class="space-y-12 animate-fadeIn pb-24">
     <!-- BREADCRUMBS -->
-    <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400">
-      <a [routerLink]="['/']" class="hover:text-[#d65108] transition-colors">Home</a>
+    <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none]" appScrollReveal="fade">
+      <a [routerLink]="['/']" class="hover:text-[#d65108] transition-colors shrink-0">Home</a>
       
       @for (crumb of breadcrumbs(); track crumb.label) {
-        <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
-        <a [routerLink]="[crumb.url]" class="hover:text-[#d65108] transition-colors">{{ crumb.label }}</a>
+        <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
+        <a [routerLink]="[crumb.url]" class="hover:text-[#d65108] transition-colors shrink-0">{{ crumb.label }}</a>
       }
 
-      <mat-icon class="text-[12px] h-3 w-3">chevron_right</mat-icon>
-      <span class="text-neutral-900 dark:text-neutral-200 truncate">{{ p.name }}</span>
+      <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
+      <span class="text-neutral-900 dark:text-neutral-200 truncate shrink-0">{{ p.name }}</span>
     </nav>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 lg:items-start">
       <!-- LEFT: STICKY GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
-      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-24">
+      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-28" [class.z-40]="isZoomActive()" appScrollReveal="scale-in">
         
-        <!-- Main Image box (Desktop) & Swipeable Gallery (Mobile) -->
-        <div class="relative w-full aspect-[4/3] sm:aspect-square bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-hidden group shadow-sm transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5">
-          
-          <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
-          <div class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible">
-            @for (img of galleryImages(); track img?.url || img || $index) {
-              <div [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:group-hover:scale-150 md:transition-transform md:duration-500 md:cursor-zoom-in' : 'min-w-full h-full snap-start flex items-center justify-center p-6 sm:p-16 relative md:hidden'">
-                <img [src]="getImageUrl(img)" 
-                  class="max-h-full w-full object-contain md:pointer-events-auto"
-                  loading="lazy"
-                  alt="{{ p.name }}"
-                  referrerpolicy="no-referrer">
+        <!-- Main Image Wrapper (supports Flipkart hover zoom popup layout) -->
+        <div class="relative w-full aspect-[4/3] sm:aspect-square">
+          <div (mouseenter)="onMouseEnter()" 
+               (mousemove)="onMouseMove($event)" 
+               (mouseleave)="onMouseLeave()"
+               class="relative w-full h-full bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-hidden group shadow-sm transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5">
+            
+            <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
+            <div class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible">
+              @for (img of galleryImages(); track img?.url || img || $index) {
+                <div [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:transition-transform md:duration-500' : 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:hidden'">
+                  <img [src]="getImageUrl(img)" 
+                    class="max-h-[90%] max-w-[90%] object-contain md:pointer-events-auto transition-all duration-500"
+                    loading="lazy"
+                    alt="{{ p.name }}"
+                    referrerpolicy="no-referrer">
+                </div>
+              }
+            </div>
+            
+            @if (is360Active()) {
+              <div class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+                <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
+                  <mat-icon class="scale-75 sm:scale-100">chevron_left</mat-icon>
+                </button>
+                <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
+                  <mat-icon class="scale-75 sm:scale-100">chevron_right</mat-icon>
+                </button>
+              </div>
+            }
+
+            <!-- Magnifying Lens Overlay -->
+            @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
+              <div [style.left.%]="lensLeft()" 
+                   [style.top.%]="lensTop()" 
+                   class="absolute w-[30%] h-[30%] bg-orange-500/10 border-2 border-[#d65108] pointer-events-none z-30 rounded-xl shadow-inner backdrop-blur-[1px] hidden md:block">
               </div>
             }
           </div>
-          
-          @if (is360Active()) {
-            <div class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-              <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
-                <mat-icon class="scale-75 sm:scale-100">chevron_left</mat-icon>
-              </button>
-              <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
-                <mat-icon class="scale-75 sm:scale-100">chevron_right</mat-icon>
-              </button>
+
+          <!-- Flipkart-style Zoomed Detail Popup -->
+          @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
+            <div class="absolute left-[103%] top-0 w-full h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl z-45 hidden md:block">
+              <div class="w-full h-full" 
+                   [style.backgroundImage]="'url(' + currentActiveImageUrl() + ')'" 
+                   [style.backgroundPosition]="zoomBgPosition()" 
+                   [style.backgroundSize]="'330%'" 
+                   style="background-repeat: no-repeat;">
+              </div>
             </div>
           }
         </div>
@@ -52,14 +77,14 @@
         <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
           @for (img of galleryImages(); track img?.url || img || $index) {
             <button (click)="selectImage(img)" 
-                    [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 transition-all'">
+                    [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10 scale-105 transition-all' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 hover:scale-105 transition-all'">
               <img [src]="getImageUrl(img)" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
             </button>
           }
           @if (p.is360Supported) {
             <button (click)="toggle360Sensor()"
-                    [class]="is360Active() ? 'h-24 px-6 bg-[#d65108] text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-orange-600/40 ' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all'">
-              <mat-icon class="scale-125 mb-1">360</mat-icon>
+                    [class]="is360Active() ? 'h-24 px-6 bg-[#d65108] text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-orange-600/40 scale-105 transition-all' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:scale-105 transition-all'">
+              <mat-icon class="scale-125 mb-1 animate-spin-slow">360</mat-icon>
               <span class="text-[10px] font-black uppercase tracking-wider">360° Vision</span>
             </button>
           }
@@ -67,7 +92,7 @@
       </div>
 
       <!-- RIGHT: PURCHASING -->
-      <div class="space-y-6 lg:space-y-10 pb-24 md:pb-0">
+      <div class="space-y-6 lg:space-y-10 pb-24 md:pb-0" appScrollReveal="fade">
         <div class="space-y-4">
           <div class="flex items-center justify-between">
              <div class="flex items-center gap-3">
@@ -75,17 +100,17 @@
                <span class="px-3 py-1 bg-neutral-50 dark:bg-neutral-900 text-neutral-400 text-[10px] font-black uppercase tracking-[0.2em] border border-neutral-200 dark:border-neutral-800 rounded-md">SKU: {{ selectedVariant()?.sku || p.sku || 'N/A' }}</span>
              </div>
              <div class="flex items-center gap-2">
-                  <button (click)="toggleWishlist(p.id)" [class]="wishlistIds().has(p.id) ? 'h-10 w-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-500 rounded-full flex items-center justify-center shadow-sm' : 'h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-red-500 hover:text-red-500 transition-colors shadow-sm'">
+                  <button (click)="toggleWishlist(p.id)" [class]="wishlistIds().has(p.id) ? 'h-10 w-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-500 rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all' : 'h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-red-500 hover:text-red-500 hover:scale-110 active:scale-95 transition-all shadow-sm'">
                     <mat-icon class="scale-75">{{ wishlistIds().has(p.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
                   </button>
-                 <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors shadow-sm"><mat-icon class="scale-75">share</mat-icon></button>
+                 <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-blue-500 hover:text-blue-500 hover:scale-110 active:scale-95 transition-colors transition-transform shadow-sm"><mat-icon class="scale-75">share</mat-icon></button>
              </div>
           </div>
           
           <h1 class="text-3xl md:text-5xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]">{{ selectedVariant()?.name || p.name }}</h1>
           
           <div class="flex items-center gap-4 text-sm font-semibold">
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg">
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg animate-pulse">
                <mat-icon class="scale-75">star</mat-icon>
                <span>{{ p.reviews.length > 0 ? '4.9' : 'New' }}</span>
             </div>
@@ -94,13 +119,13 @@
             <div class="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
             
             @if((selectedVariant()?.stock ?? p.stock) > 0) {
-                <span class="text-emerald-600 flex items-center gap-1.5"><mat-icon class="scale-75">check_circle</mat-icon> In Stock ({{ selectedVariant()?.stock ?? p.stock }})</span>
+                <span class="text-emerald-600 flex items-center gap-1.5"><mat-icon class="scale-75 animate-bounce">check_circle</mat-icon> In Stock ({{ selectedVariant()?.stock ?? p.stock }})</span>
             } @else {
                 <span class="text-red-500 flex items-center gap-1.5"><mat-icon class="scale-75">error</mat-icon> Out of Stock</span>
             }
           </div>
 
-          <!-- Add mobile expandable description -->
+          <!-- Mobile expandable description -->
           <details class="md:hidden group text-sm text-neutral-500 font-medium mt-4">
             <summary class="list-none outline-none cursor-pointer flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
               <span class="text-xs font-black uppercase tracking-widest text-[#d65108]">Brief Overview</span>
@@ -125,14 +150,12 @@
                       @if (opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour') {
                         <button (click)="selectOption(opt.id, val.id)"
                                 [style.backgroundColor]="val.colorCode || val.value | lowercase"
-                                [class]="selectedOptions()[opt.id] === val.id ? 'shrink-0 h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md transition-all' : 'shrink-0 h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 transition-transform'"></button>
+                                [class]="selectedOptions()[opt.id] === val.id ? 'shrink-0 h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md scale-110 transition-all' : 'shrink-0 h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 active:scale-95 transition-all'"></button>
                       } @else {
                         <button (click)="selectOption(opt.id, val.id)" 
                                 [class]="selectedOptions()[opt.id] === val.id ? 
-                                         'shrink-0 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md transition-all' : 
-                                         'shrink-0 px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm'">
-                          {{ val.value }}
-                        </button>
+                                         'shrink-0 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md scale-102 transition-all' : 
+                                         'shrink-0 px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:scale-102 text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm'"></button>
                       }
                     }
                   </div>
@@ -142,10 +165,11 @@
           }
         </div>
 
-        <div class="p-6 md:p-8 bg-neutral-50/50 dark:bg-neutral-900/20 rounded-[1.5rem] md:rounded-[2rem] border border-neutral-200/60 dark:border-neutral-800/60 space-y-6 sm:space-y-8">
+        <!-- Sticky Buy Box Desktop card -->
+        <div class="sticky-buy-box p-6 md:p-8 bg-neutral-50/50 dark:bg-neutral-900/20 rounded-[1.5rem] md:rounded-[2rem] border border-neutral-200/60 dark:border-neutral-800/60 space-y-6 sm:space-y-8 shadow-sm hover:shadow-xl transition-all duration-300">
           <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-end gap-3 sm:gap-4">
-              <span class="text-4xl sm:text-5xl font-black text-neutral-950 dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
+              <span class="text-4xl sm:text-5xl font-black text-neutral-950 dark:text-white transition-all">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
               @if (getMrp(p) > activePrice(p)) {
                 <span class="text-lg sm:text-2xl line-through text-neutral-400 font-bold decoration-2 mb-1">{{ getMrp(p) | currency:'INR':'symbol':'1.0-0' }}</span>
                 <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-1 rounded-md mb-1.5">-{{ mrpDiscountPercent(p) }}% OFF</span>
@@ -180,19 +204,19 @@
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50">
+           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
                <mat-icon class="text-neutral-700 dark:text-neutral-300">verified_user</mat-icon>
                <span class="text-[10px] font-bold text-neutral-500 uppercase">{{ p.warranty?.warrantyPeriod || '1 Year Warranty' }}</span>
            </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50">
+           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
                <mat-icon class="text-neutral-700 dark:text-neutral-300">support_agent</mat-icon>
                <span class="text-[10px] font-bold text-neutral-500 uppercase">Tech Support</span>
            </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50">
+           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
                <mat-icon class="text-neutral-700 dark:text-neutral-300">local_shipping</mat-icon>
                <span class="text-[10px] font-bold text-neutral-500 uppercase">{{ p.shipping?.deliveryTime || 'Fast Delivery' }}</span>
            </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50">
+           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
                <mat-icon class="text-neutral-700 dark:text-neutral-300">security</mat-icon>
                <span class="text-[10px] font-bold text-neutral-500 uppercase">Secure Pay</span>
            </div>
@@ -202,7 +226,7 @@
 
     <!-- TABS -->
     <div class="pt-16 sm:pt-24 space-y-12 sm:space-y-16">
-      <div class="flex items-center gap-6 sm:gap-10 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll pb-2">
+      <div class="flex items-center gap-6 sm:gap-10 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll pb-2" appScrollReveal="fade">
         @for (tab of [
           { id: 'overview', label: 'Overview' },
           { id: 'specs', label: 'Technical Specifications', visible: productSpecs().length > 0 },
@@ -224,7 +248,7 @@
         }
       </div>
 
-      <div class="min-h-[200px] sm:min-h-[300px]">
+      <div class="min-h-[200px] sm:min-h-[300px]" appScrollReveal="fade">
         @switch (activeTab()) {
           
           @case ('overview') {
@@ -259,8 +283,8 @@
              <div class="animate-slideUp max-w-5xl space-y-8">
                @if(productFeatures().length) {
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   @for (feat of productFeatures(); track feat.title) {
-                     <div class="p-8 rounded-[2rem] bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800">
+                   @for (feat of productFeatures(); track feat.title; let idx = $index) {
+                     <div appTilt [tiltMax]="5" class="p-8 rounded-[2rem] bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 hover:border-orange-500/20 transition-all duration-300">
                        <h3 class="text-xl font-bold mb-3">{{ feat.title }}</h3>
                        <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">{{ feat.description }}</p>
                      </div>
@@ -274,8 +298,8 @@
              <div class="animate-slideUp max-w-4xl">
                @if(productDownloads().length) {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    @for(d of productDownloads(); track d.id || d.title) {
-                       <a [href]="d.fileUrl || '#'" target="_blank" class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group group-hover:text-[#d65108]">
+                    @for(d of productDownloads(); track d.id || d.title; let idx = $index) {
+                       <a [href]="d.fileUrl || '#'" target="_blank" appTilt [tiltMax]="4" class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group group-hover:text-[#d65108]">
                           <div class="flex items-center gap-4 text-neutral-800 dark:text-neutral-200">
                              <mat-icon class="text-neutral-400 group-hover:text-[#d65108]">insert_drive_file</mat-icon>
                              <span class="font-bold">{{ d.title }}</span>
@@ -299,7 +323,7 @@
                        </div>
                        <span class="text-xs font-bold text-neutral-500">Based on {{ productReviews().length }} Reviews</span>
                     </div>
-                    <!-- Mock summary stats -->
+                    <!-- summary stats -->
                     <div class="flex-1 space-y-2 hidden md:block">
                       @for(s of [5,4,3,2,1]; track s) {
                          <div class="flex items-center gap-3 text-xs font-bold text-neutral-500">
@@ -314,8 +338,9 @@
                  </div>
                  
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   @for (rev of productReviews(); track rev.id) {
-                     <div class="p-8 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm rounded-[2rem] space-y-4">
+                   @for (rev of productReviews(); track rev.id; let idx = $index) {
+                     <div [appScrollReveal]="'slide-up'" [delay]="(idx % 2) * 100" appTilt [tiltMax]="5"
+                          class="p-8 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm rounded-[2rem] space-y-4 hover:shadow-xl hover:border-orange-500/30 transition-all duration-300">
                         <div class="flex items-center justify-between">
                            <div class="flex flex-col">
                              <div class="flex items-center gap-2">
@@ -329,7 +354,7 @@
                            </div>
                         </div>
                         <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium">"{{ rev.comment }}"</p>
-                        <div class="flex items-center text-neutral-400 gap-2 border-t border-neutral-100 pt-4 cursor-pointer hover:text-neutral-950">
+                        <div class="flex items-center text-neutral-400 gap-2 border-t border-neutral-100 pt-4 cursor-pointer hover:text-[#d65108] transition-colors">
                            <mat-icon class="scale-[60%]">thumb_up</mat-icon> <span class="text-[10px] font-bold uppercase">Helpful</span>
                         </div>
                      </div>
@@ -347,15 +372,15 @@
           @case ('faqs') {
              <div class="animate-slideUp max-w-4xl space-y-4">
                 @if (productFaqs().length) {
-                   @for (faq of productFaqs(); track faq.question) {
-                     <details class="group bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] [&_summary::-webkit-details-marker]:hidden">
-                       <summary class="flex items-center justify-between p-6 cursor-pointer outline-none">
-                         <span class="font-bold text-lg">{{ faq.question }}</span>
+                   @for (faq of productFaqs(); track faq.question; let idx = $index) {
+                     <details [appScrollReveal]="'slide-up'" [delay]="idx * 80" class="group bg-white dark:bg-neutral-955 border border-neutral-250 dark:border-neutral-800 rounded-[1.5rem] [&_summary::-webkit-details-marker]:hidden transition-all">
+                       <summary class="flex items-center justify-between p-6 cursor-pointer outline-none hover:text-[#d65108] transition-colors">
+                         <span class="font-bold text-lg text-left">{{ faq.question }}</span>
                          <span class="transition group-open:rotate-180">
                            <mat-icon>expand_more</mat-icon>
                          </span>
                        </summary>
-                       <div class="text-neutral-600 dark:text-neutral-400 px-6 pb-6 leading-relaxed">
+                       <div class="text-neutral-650 dark:text-neutral-400 px-6 pb-6 leading-relaxed text-left border-t border-neutral-100 dark:border-neutral-900 pt-4 mt-2">
                          {{ faq.answer }}
                        </div>
                      </details>
@@ -368,25 +393,25 @@
     </div>
 
     <!-- RELATED PRODUCTS -->
-    <div class="pt-24 space-y-16">
+    <div class="pt-24 space-y-16" appScrollReveal="fade">
       <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
          <div class="flex items-center justify-between mb-8">
             <h2 class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white">Related Products</h2>
             <div class="flex gap-2">
-               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm"><mat-icon>chevron_left</mat-icon></button>
-               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm"><mat-icon>chevron_right</mat-icon></button>
+               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"><mat-icon>chevron_left</mat-icon></button>
+               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"><mat-icon>chevron_right</mat-icon></button>
             </div>
          </div>
          
          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            @for (rp of relatedProducts(); track rp.id) {
-               <a [routerLink]="['/product', rp.slug]" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-orange-200 transition-all flex flex-col h-full">
+            @for (rp of relatedProducts(); track rp.id; let idx = $index) {
+               <a [routerLink]="['/product', rp.slug]" [appScrollReveal]="'slide-up'" [delay]="(idx % 4) * 100" appTilt [tiltMax]="5" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-orange-200 transition-all flex flex-col h-full">
                   <div class="relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4">
-                     <img [src]="getImageUrl(rp.images?.[0])" class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform" />
+                     <img [src]="getImageUrl(rp.images?.[0])" class="w-[90%] h-[90%] object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform" />
                   </div>
                   <div class="flex flex-col flex-1">
                      <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2">{{ rp.brand }}</span>
-                     <h3 class="font-bold text-neutral-900 dark:text-white leading-tight mb-4 flex-1">{{ rp.name }}</h3>
+                     <h3 class="font-bold text-neutral-900 dark:text-white leading-tight mb-4 flex-1 text-left line-clamp-2 hover:text-[#d65108] transition-colors">{{ rp.name }}</h3>
                      <div class="flex items-end justify-between mt-auto">
                         <span class="text-lg font-black text-neutral-950 dark:text-white">{{ activePrice(rp) | currency:'INR':'symbol':'1.0-0' }}</span>
                         <div class="h-10 w-10 bg-neutral-950 dark:bg-neutral-800 text-white rounded-xl flex items-center justify-center opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all"><mat-icon class="scale-75">shopping_cart</mat-icon></div>
@@ -406,16 +431,16 @@
 
   <!-- Mobile Sticky Add To Cart Bottom Bar -->
   <div class="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp">
-    <div class="flex items-center gap-4 max-w-xl mx-auto">
+    <div class="flex items-center gap-4 max-w-xl mx-auto text-left">
       <div class="flex flex-col">
         <span class="text-[9px] font-black uppercase tracking-widest text-[#d65108]">Total Value</span>
         <span class="text-xl font-black text-neutral-900 dark:text-white">{{ activePrice(p) * quantity() | currency:'INR':'symbol':'1.0-0' }}</span>
       </div>
       <div class="flex-1 flex gap-2">
         <div class="inline-flex items-center bg-neutral-100 dark:bg-neutral-900 rounded-xl p-1 shrink-0">
-          <button (click)="adjustQty(-1)" class="h-10 w-10 flex items-center justify-center font-bold" aria-label="Decrease quantity"><mat-icon class="scale-75">remove</mat-icon></button>
+          <button (click)="adjustQty(-1)" class="h-full w-10 flex items-center justify-center font-bold" aria-label="Decrease quantity"><mat-icon class="scale-75">remove</mat-icon></button>
           <span class="w-8 text-center text-sm font-black">{{ quantity() }}</span>
-          <button (click)="adjustQty(1)" class="h-10 w-10 flex items-center justify-center font-bold" aria-label="Increase quantity"><mat-icon class="scale-75">add</mat-icon></button>
+          <button (click)="adjustQty(1)" class="h-full w-10 flex items-center justify-center font-bold" aria-label="Increase quantity"><mat-icon class="scale-75">add</mat-icon></button>
         </div>
         <app-button
           [loading]="isAddingToCart()"
@@ -438,4 +463,3 @@
   </div>
 }
 }
-

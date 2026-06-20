@@ -85,17 +85,44 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                   </div>
 
                   <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
-                    <div class="space-y-1">
-                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Linked Category *</span>
-                      <select [value]="admin.pCatId()" (change)="admin.pCatId.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
-                        <option value="">Select segment...</option>
-                        @for (c of admin.ds.categories(); track c.id) {
-                          <option [value]="c.id">
-                            @if (c.parent_id) { ↳ } {{ c.name }}
-                          </option>
-                        }
-                      </select>
+                    <div class="space-y-1 relative">
+                      <span class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Linked Category *</span>
+                      <button type="button" (click)="pCatDropdownOpen.set(!pCatDropdownOpen())" 
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer">
+                        <span>{{ getCategoryPath(admin.pCatId()) || 'Select category segment...' }}</span>
+                        <mat-icon class="text-zinc-400 text-sm">keyboard_arrow_down</mat-icon>
+                      </button>
+                      
+                      @if (pCatDropdownOpen()) {
+                        <div class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col">
+                          <div class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1">
+                            <mat-icon class="text-zinc-400 text-sm shrink-0 mr-1.5">search</mat-icon>
+                            <input type="text" [value]="pCatSearchQuery()" (input)="pCatSearchQuery.set($any($event.target).value)" 
+                              placeholder="Search categories by name..." 
+                              class="w-full bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-white py-1">
+                          </div>
+                          
+                          <div class="flex-1 overflow-y-auto max-h-[200px] space-y-1 no-scrollbar">
+                            <button type="button" (click)="admin.pCatId.set(''); pCatDropdownOpen.set(false); pCatSearchQuery.set('')"
+                              class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-550 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-none bg-transparent">
+                              None (Clear selection)
+                            </button>
+                            @for (c of admin.ds.categories(); track c.id) {
+                              @if (!pCatSearchQuery() || getCategoryPath(c.id).toLowerCase().includes(pCatSearchQuery().toLowerCase())) {
+                                <button type="button" (click)="admin.pCatId.set(c.id); pCatDropdownOpen.set(false); pCatSearchQuery.set('')"
+                                  [class.bg-blue-50]="admin.pCatId() === c.id"
+                                  [class.text-blue-500]="admin.pCatId() === c.id"
+                                  class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex flex-col border-none bg-transparent">
+                                  <span class="font-black text-zinc-900 dark:text-white">{{ c.name }}</span>
+                                  <span class="text-[9px] text-zinc-450 mt-0.5">{{ getCategoryPath(c.id) }}</span>
+                                </button>
+                              }
+                            }
+                          </div>
+                        </div>
+                      }
                     </div>
+
                     <div class="space-y-1">
                       <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
                       <select [value]="admin.pBrand()" (change)="admin.pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
@@ -505,7 +532,7 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                               </div>
                             </div>
                           </td>
-                          <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ p.category_id }}</td>
+                          <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ getCategoryPath(p.category_id) || p.category_id }}</td>
                           <td class="py-4 font-mono text-zinc-500 text-[10px] uppercase">{{ p.sku }}</td>
                           <td class="py-4">
                             <span [class]="p.stock > 10 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase">
@@ -629,36 +656,61 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
             </div>
 
             <!-- ROOT ADDITION MODULE -->
-            <div class="p-6 bg-linear-to-b from-fuchsia-600 via-purple-600 to-cyan-500 text-white rounded-2xl space-y-6 shadow-xl relative overflow-hidden font-sans">
-              <div class="absolute -right-20 -top-20 opacity-10 text-white"><mat-icon class="text-[12rem] h-auto w-auto">account_tree</mat-icon></div>
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-6 shadow-xs relative overflow-hidden font-sans">
               <div class="relative space-y-4 font-sans">
-                <div class="flex justify-between items-center">
-                  <h3 class="text-sm font-black uppercase text-white leading-none">
+                <div class="flex justify-between items-center pb-2 border-b dark:border-zinc-800">
+                  <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-white leading-none">
                     {{ admin.editingCategory() ? 'Update Segment Node' : 'Initialize Segment Node' }}
                   </h3>
                   @if (admin.editingCategory()) {
-                    <button (click)="admin.cancelCategoryEdit()" class="text-[9px] font-black uppercase tracking-wider bg-white/10 px-2 py-1 rounded text-white hover:bg-white/20">New Segment</button>
+                    <button (click)="admin.cancelCategoryEdit()" class="text-[9px] font-black uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-zinc-650 dark:text-zinc-350 hover:bg-zinc-200 dark:hover:bg-zinc-700">New Segment</button>
                   }
                 </div>
                 
-                <div class="space-y-3 text-zinc-900">
+                <div class="space-y-4">
                   <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-white/75 uppercase pl-1">Name / Label *</span>
-                    <input type="text" [value]="admin.newCatName()" (input)="admin.newCatName.set($any($event.target).value)" placeholder="e.g. FDM Accessories" class="w-full px-4 py-2 bg-white text-zinc-950 rounded-xl text-xs font-bold outline-none border-none">
+                    <span class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Name / Label *</span>
+                    <input type="text" [value]="admin.newCatName()" (input)="admin.newCatName.set($any($event.target).value)" placeholder="e.g. FDM Accessories" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
                   </div>
                   
-                  <div class="space-y-1">
-                    <span class="block text-[10px] font-black text-white/75 uppercase pl-1">Parent Segment Node (Leave empty if root)</span>
-                    <select [value]="admin.newCatParentId()" (change)="admin.newCatParentId.set($any($event.target).value)" class="w-full px-4 py-2 bg-white text-zinc-950 rounded-xl text-xs font-bold outline-none cursor-pointer">
-                      <option value="">None (Top-Level Category)</option>
-                      @for (c of admin.ds.categories(); track c.id) {
-                        @if (c.id !== admin.editingCategory()?.id) {
-                          <option [value]="c.id">
-                            @if (c.parent_id) { ↳ } {{ c.name }}
-                          </option>
-                        }
-                      }
-                    </select>
+                  <div class="space-y-1 relative">
+                    <span class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Parent Segment Node (Leave empty if root)</span>
+                    <button type="button" (click)="editorCatDropdownOpen.set(!editorCatDropdownOpen())" 
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer">
+                      <span>{{ getCategoryPath(admin.newCatParentId()) || 'None (Top-Level Category)' }}</span>
+                      <mat-icon class="text-zinc-400 text-sm">keyboard_arrow_down</mat-icon>
+                    </button>
+                    
+                    @if (editorCatDropdownOpen()) {
+                      <div class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col">
+                        <div class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1">
+                          <mat-icon class="text-zinc-400 text-sm shrink-0 mr-1.5">search</mat-icon>
+                          <input type="text" [value]="editorCatSearchQuery()" (input)="editorCatSearchQuery.set($any($event.target).value)" 
+                            placeholder="Search parent by name..." 
+                            class="w-full bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-white py-1">
+                        </div>
+                        
+                        <div class="flex-1 overflow-y-auto max-h-[200px] space-y-1 no-scrollbar">
+                          <button type="button" (click)="admin.newCatParentId.set(''); editorCatDropdownOpen.set(false); editorCatSearchQuery.set('')"
+                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-550 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-none bg-transparent">
+                            None (Top-Level Category)
+                          </button>
+                          @for (c of admin.ds.categories(); track c.id) {
+                            @if (c.id !== admin.editingCategory()?.id) {
+                              @if (!editorCatSearchQuery() || getCategoryPath(c.id).toLowerCase().includes(editorCatSearchQuery().toLowerCase())) {
+                                <button type="button" (click)="admin.newCatParentId.set(c.id); editorCatDropdownOpen.set(false); editorCatSearchQuery.set('')"
+                                  [class.bg-blue-50]="admin.newCatParentId() === c.id"
+                                  [class.text-blue-500]="admin.newCatParentId() === c.id"
+                                  class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex flex-col border-none bg-transparent">
+                                  <span class="font-black text-zinc-900 dark:text-white">{{ c.name }}</span>
+                                  <span class="text-[9px] text-zinc-450 mt-0.5">{{ getCategoryPath(c.id) }}</span>
+                                </button>
+                              }
+                            }
+                          }
+                        </div>
+                      </div>
+                    }
                   </div>
 
                   <div class="space-y-1">
@@ -666,7 +718,7 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                   </div>
 
                   <!-- Extra Shopify Layout details -->
-                  <div class="grid grid-cols-2 gap-2 text-zinc-900">
+                  <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
                       <app-image-picker label="Image Grid" [value]="admin.catImage()" (valueChange)="admin.catImage.set($event)"></app-image-picker>
                     </div>
@@ -675,33 +727,33 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-3 gap-2">
+                  <div class="grid grid-cols-3 gap-4 text-xs text-zinc-900 dark:text-white">
                     <div class="space-y-1 col-span-1">
-                      <span class="block text-[9px] font-black text-white/75 uppercase">Grid Icon</span>
-                      <input type="text" [value]="admin.catIcon()" (input)="admin.catIcon.set($any($event.target).value)" placeholder="folder" class="w-full px-3 py-1.5 bg-white rounded-lg text-xs outline-none">
+                      <span class="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Grid Icon</span>
+                      <input type="text" [value]="admin.catIcon()" (input)="admin.catIcon.set($any($event.target).value)" placeholder="folder" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-lg text-xs outline-none text-zinc-900 dark:text-white font-bold">
                     </div>
                     <div class="flex items-center gap-1.5 pt-4">
-                      <input type="checkbox" [checked]="admin.catIsActive()" (change)="admin.catIsActive.set($any($event.target).checked)" class="rounded text-blue-600">
-                      <span class="text-[9px] font-black text-white/80">Active</span>
+                      <input type="checkbox" [checked]="admin.catIsActive()" (change)="admin.catIsActive.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 h-4 w-4">
+                      <span class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Active</span>
                     </div>
                     <div class="flex items-center gap-1.5 pt-4">
-                      <input type="checkbox" [checked]="admin.catIsFeatured()" (change)="admin.catIsFeatured.set($any($event.target).checked)" class="rounded text-blue-600">
-                      <span class="text-[9px] font-black text-white/80">Featured</span>
+                      <input type="checkbox" [checked]="admin.catIsFeatured()" (change)="admin.catIsFeatured.set($any($event.target).checked)" class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 h-4 w-4">
+                      <span class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Featured</span>
                     </div>
                   </div>
 
                   <!-- Category SEO tags -->
-                  <div class="p-3 bg-white/10 rounded-xl border border-white/10 space-y-1.5 mt-2 col-span-1">
-                    <span class="text-[9px] font-black uppercase text-white/85 tracking-wide block">Taxonomy Meta Tags (Shopify Standard)</span>
-                    <div class="grid grid-cols-2 gap-2">
-                      <input type="text" [value]="admin.catSeoTitle()" (input)="admin.catSeoTitle.set($any($event.target).value)" placeholder="SEO Meta Title" class="w-full px-2 py-1 bg-white/20 rounded text-[10px] text-zinc-950 outline-none placeholder:text-zinc-600">
-                      <input type="text" [value]="admin.catSeoDescription()" (input)="admin.catSeoDescription.set($any($event.target).value)" placeholder="SEO Meta Desc" class="w-full px-2 py-1 bg-white/20 rounded text-[10px] text-zinc-950 outline-none placeholder:text-zinc-600">
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-200 dark:border-zinc-850 space-y-2">
+                    <span class="text-[9px] font-black uppercase text-zinc-450 dark:text-zinc-500 tracking-widest block">Taxonomy Meta Tags (Shopify Standard)</span>
+                    <div class="grid grid-cols-2 gap-3">
+                      <input type="text" [value]="admin.catSeoTitle()" (input)="admin.catSeoTitle.set($any($event.target).value)" placeholder="SEO Meta Title" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[10px] outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400">
+                      <input type="text" [value]="admin.catSeoDescription()" (input)="admin.catSeoDescription.set($any($event.target).value)" placeholder="SEO Meta Desc" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[10px] outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400">
                     </div>
                   </div>
                 </div>
 
                 <div class="pt-2">
-                  <button (click)="admin.saveCategory()" class="w-full py-3.5 bg-white text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg hover:bg-zinc-50 transition-colors cursor-pointer border-none">
+                  <button (click)="admin.saveCategory()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg transition-colors cursor-pointer border-none font-mono">
                     {{ admin.editingCategory() ? 'Publish Node Update' : 'Program Node Segment' }}
                   </button>
                 </div>
@@ -956,6 +1008,24 @@ export class AdminCatalogTab {
   uploadProgress = 0;
   
   activeVariantForImages = signal<number | null>(null);
+
+  // Search signals for product and categories
+  pCatSearchQuery = signal<string>('');
+  pCatDropdownOpen = signal<boolean>(false);
+  editorCatSearchQuery = signal<string>('');
+  editorCatDropdownOpen = signal<boolean>(false);
+
+  getCategoryPath(catId: string | null): string {
+    if (!catId) return '';
+    const cats = this.admin.ds.categories();
+    const cat = cats.find(c => c.id === catId);
+    if (!cat) return '';
+    const parentId = cat.parent_id || cat.parentId;
+    if (parentId) {
+      return `${this.getCategoryPath(parentId)} > ${cat.name}`;
+    }
+    return cat.name;
+  }
 
   openVariantImageModal(variantIdx: number) {
       this.activeVariantForImages.set(variantIdx);

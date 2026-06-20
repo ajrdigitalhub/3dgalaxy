@@ -112,6 +112,7 @@ model Category {
   parent         Category?             @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children       Category[]            @relation("CategoryHierarchy")
   products       Product[]
+  homepageItems  HomepageSectionItem[]
 
   @@index([name])
   @@index([parentId])
@@ -125,6 +126,8 @@ model Brand {
   logo        String?   @map("logo_url")
   banner      String?   @map("banner_url")
   description String?
+  country     String?   @default("Global HQ")
+  active      Boolean   @default(true)
   deletedAt   DateTime? @map("deleted_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
@@ -174,6 +177,7 @@ model Product {
   orderItems       OrderItem[]
   reviews          ProductReview[]
   variants         ProductVariant[]
+  homepageItems    HomepageSectionItem[]
   category         Category?         @relation(fields: [categoryId], references: [id])
   brand            Brand?            @relation(fields: [brandId], references: [id])
 
@@ -692,4 +696,77 @@ model Advertisement {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("advertisements")
+}
+
+model ThemeSetting {
+  id        String   @id @default(uuid())
+  keyName   String   @unique @map("key_name")
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("theme_settings")
+}
+
+model PaymentGateway {
+  id             String   @id @default(uuid())
+  name           String
+  gatewayCode    String   @unique @map("gateway_code")
+  isEnabled      Boolean  @default(false) @map("is_enabled")
+  isTestMode     Boolean  @default(true) @map("is_test_mode")
+  keyId          String?  @map("key_id")
+  keySecret      String?  @map("key_secret")
+  webhookSecret  String?  @map("webhook_secret")
+  displayName    String?  @map("display_name")
+  description    String?
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("payment_gateways")
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String   @map("image_url")
+  linkUrl     String?  @map("link_url")
+  type        String   @default("HERO") // HERO, PROMOTIONAL, CATEGORY, BRAND
+  position    Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+model HomepageSection {
+  id        String                @id @default(uuid())
+  name      String
+  type      String
+  sortOrder Int                   @default(0) @map("sort_order")
+  isActive  Boolean               @default(true) @map("is_active")
+  createdAt DateTime              @default(now()) @map("created_at")
+  items     HomepageSectionItem[]
+
+  @@map("homepage_sections")
+}
+
+model HomepageSectionItem {
+  id         String          @id @default(uuid())
+  sectionId  String          @map("section_id")
+  productId  String?         @map("product_id")
+  categoryId String?         @map("category_id")
+  imageUrl   String?         @map("image_url")
+  title      String?
+  subTitle   String?         @map("sub_title")
+  linkUrl    String?         @map("link_url")
+  sortOrder  Int             @default(0) @map("sort_order")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  category   Category?       @relation(fields: [categoryId], references: [id])
+  product    Product?        @relation(fields: [productId], references: [id])
+  section    HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@map("homepage_section_items")
 }

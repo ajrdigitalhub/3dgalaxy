@@ -60,6 +60,77 @@ const defaultSettings = {
   faqs: [],
   services: [],
   companyInfo: {},
+  printServiceSettings: {
+    materials: [
+      {
+        name: 'PLA',
+        pricePerGram: 2.5,
+        density: 1.25,
+        active: true,
+        colors: [
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Black', hex: '#000000' },
+          { name: 'Red', hex: '#FF0000' },
+          { name: 'Blue', hex: '#0000FF' },
+          { name: 'Green', hex: '#008000' }
+        ]
+      },
+      {
+        name: 'PETG',
+        pricePerGram: 3.2,
+        density: 1.27,
+        active: true,
+        colors: [
+          { name: 'Orange', hex: '#FF8C00' },
+          { name: 'Grey', hex: '#808080' },
+          { name: 'Silver', hex: '#C0C0C0' }
+        ]
+      },
+      {
+        name: 'ABS',
+        pricePerGram: 3.5,
+        density: 1.05,
+        active: true,
+        colors: [
+          { name: 'Black', hex: '#000000' },
+          { name: 'White', hex: '#FFFFFF' },
+          { name: 'Red', hex: '#FF0000' }
+        ]
+      },
+      {
+        name: 'TPU',
+        pricePerGram: 4.8,
+        density: 1.20,
+        active: true,
+        colors: [
+          { name: 'Purple', hex: '#800080' },
+          { name: 'Yellow', hex: '#FFFF00' }
+        ]
+      },
+      {
+        name: 'Resin',
+        pricePerGram: 7.5,
+        density: 1.10,
+        active: true,
+        colors: [
+          { name: 'Gold', hex: '#FFD700' },
+          { name: 'Grey', hex: '#808080' }
+        ]
+      }
+    ],
+    qualities: [
+      { name: 'Standard', height: 0.20 },
+      { name: 'Medium', height: 0.15 },
+      { name: 'High', height: 0.10 }
+    ],
+    infillStandards: [
+      { name: '10 - 30%', desc: 'Standard', min: 10, max: 30, defaultVal: 20 },
+      { name: '31 - 50%', desc: 'Medium', min: 31, max: 50, defaultVal: 40 },
+      { name: '51 - 80%', desc: 'Strong', min: 51, max: 80, defaultVal: 60 }
+    ],
+    machineFeePerHour: 150,
+    gstTaxRate: 18
+  },
 
   // Legacy fields for high backward-compatibility
   homepage: {

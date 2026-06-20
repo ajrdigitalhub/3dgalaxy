@@ -6,30 +6,44 @@
   @for (section of ds.homeLayout(); track section.id) {
   @if (section.visible) {
 
-  @switch (section.type) {
+  @switch (section.type?.toUpperCase()) {
 
   @case ('HERO') {
   <!-- HERO: IMMERSIVE GALAXY STAGE -->
   <section #heroContainer id="hero-section"
-    class="relative min-h-[60vh] lg:min-h-[85vh] w-full overflow-hidden bg-neutral-900 dark:bg-neutral-950 flex items-center group border-b border-neutral-800/10 dark:border-neutral-800/40 touch-pan-y">
-    <!-- Animated Nebula/Galaxy Background -->
-    <div class="absolute inset-0 pointer-events-none">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.1),transparent_70%)]"></div>
-      <div
-        class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[500px] lg:h-[500px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.15),transparent_70%)] blur-[80px] lg:blur-[100px]">
-      </div>
-      <div
-        class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.12),transparent_70%)] blur-[90px] lg:blur-[120px]">
-      </div>
+    class="relative min-h-[60vh] lg:min-h-[85vh] w-full overflow-hidden bg-neutral-950 flex items-center group border-b border-neutral-900 touch-pan-y">
+    
+    <!-- Ambient floating particles and glow decorations -->
+    <div class="absolute top-1/4 left-1/4 w-8 h-8 bg-orange-500/10 rounded-full animate-float-1 pointer-events-none z-1"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-12 h-12 bg-purple-500/10 rounded-full animate-float-2 pointer-events-none z-1"></div>
+    <div class="absolute top-1/2 right-1/3 w-6 h-6 bg-blue-500/10 rounded-full animate-float-3 pointer-events-none z-1"></div>
 
-      <img [src]="slides()[currentSlide()].image"
-        class="absolute inset-0 w-full h-full object-cover lg:object-contain opacity-25 lg:opacity-15 mix-blend-screen transition-opacity duration-700"
-        loading="eager" alt="Galaxy Bg" referrerpolicy="no-referrer">
-      <div class="absolute inset-0 bg-linear-to-b from-neutral-900/40 via-neutral-950/80 to-neutral-950"></div>
+    <!-- Video or Image Background Media -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <!-- Ambient Blur Gradients -->
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(214,81,8,0.12),transparent_70%)] z-1"></div>
+      <div class="absolute top-0 right-0 w-[300px] h-[300px] lg:w-[600px] lg:h-[600px] bg-[radial-gradient(circle_at_center,_rgba(126,34,206,0.18),transparent_70%)] blur-[80px] lg:blur-[120px] z-1"></div>
+      <div class="absolute bottom-0 left-0 w-[400px] h-[400px] lg:w-[700px] lg:h-[700px] bg-[radial-gradient(circle_at_center,_rgba(14,165,233,0.15),transparent_70%)] blur-[90px] lg:blur-[140px] z-1"></div>
+
+      <!-- Background Video -->
+      @if (slides()[currentSlide()].videoUrl) {
+        <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
+          class="absolute inset-0 w-full h-full object-cover opacity-35 dark:opacity-20 transition-opacity duration-700 animate-kenBurns"
+          referrerpolicy="no-referrer"></video>
+      } @else {
+        <!-- Background Image fallback -->
+        <img [src]="slides()[currentSlide()].image"
+          class="absolute inset-0 w-full h-full object-cover opacity-30 dark:opacity-15 transition-opacity duration-700 animate-kenBurns"
+          loading="eager" alt="Galaxy Bg" (error)="onImageError($event)" referrerpolicy="no-referrer">
+      }
+
+      <!-- Multi-layered premium gradients for absolute high-contrast text visibility -->
+      <div class="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/80 to-transparent z-5"></div>
+      <div class="absolute inset-0 bg-gradient-to-b from-neutral-950/20 via-transparent to-neutral-950 z-5"></div>
     </div>
 
     <!-- Content Stack -->
-    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 py-12 lg:py-24">
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20 py-12 lg:py-24" appScrollReveal="fade">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
         <div class="space-y-6 lg:space-y-8 max-w-2xl text-center lg:text-left mx-auto lg:mx-0">
           <div
@@ -49,32 +63,40 @@
           </div>
 
           <p
-            class="hero-anim text-neutral-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
+            class="hero-anim text-neutral-300 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
             {{ slides()[currentSlide()].desc }}
           </p>
 
           <div class="hero-anim flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2 lg:pt-4">
             <a [routerLink]="[slides()[currentSlide()].link]"
-              class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto">
-              Shop Now <mat-icon class="transition-transform group-hover/btn:translate-x-1">arrow_forward</mat-icon>
+              class="h-14 px-10 bg-[#d65108] hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 group/btn shadow-lg shadow-orange-600/20 w-full sm:w-auto hover:shadow-orange-600/40 hover:scale-105 active:scale-98">
+              {{ slides()[currentSlide()].btnText }} <mat-icon class="transition-transform group-hover/btn:translate-x-1.5">arrow_forward</mat-icon>
             </a>
             <button (click)="scrollToProducts()"
-              class="hidden md:flex h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 items-center justify-center gap-3 backdrop-blur-xl">
+              class="hidden md:flex h-14 px-10 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 items-center justify-center gap-3 backdrop-blur-xl hover:scale-105 active:scale-98">
               PRODUCT CATALOG <mat-icon class="scale-90">shopping_bag</mat-icon>
             </button>
           </div>
         </div>
 
         <!-- 3D Preview Frame Center (Desktop Only) -->
-        <div class="hero-anim hidden lg:flex justify-center relative">
+        <div class="hero-anim hidden lg:flex justify-center relative" appScrollReveal="scale-in" [delay]="250">
           <div class="relative w-[450px] h-[480px]">
             <div class="absolute -inset-10 bg-orange-500/10 blur-[100px] rounded-full animate-pulse"></div>
-            <!-- Glass Print Box Mockup -->
-            <div
-              class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group/card transition-all duration-1000 [transform:perspective(1000px)_rotateY(-5deg)] hover:[transform:perspective(1000px)_rotateY(0deg)]">
-              <img [src]="slides()[currentSlide()].image"
-                class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
-                alt="Centerpiece" referrerpolicy="no-referrer" loading="lazy">
+            <!-- Glass Print Box Mockup with mouse 3D Tilt -->
+            <div appTilt [tiltMax]="5"
+              class="relative h-full w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden group/card transition-all duration-500">
+              
+              <!-- Video background in preview too if present, else image -->
+              @if (slides()[currentSlide()].videoUrl) {
+                <video [src]="slides()[currentSlide()].videoUrl" autoplay loop muted playsinline
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
+                  referrerpolicy="no-referrer"></video>
+              } @else {
+                <img [src]="slides()[currentSlide()].image"
+                  class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
+                  alt="Centerpiece" (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy">
+              }
               <div class="absolute inset-0 bg-linear-to-t from-neutral-950 via-transparent to-transparent"></div>
 
               <!-- Scanning Line Animation -->
@@ -109,16 +131,16 @@
 
     <!-- Slide Control Dots -->
     <div
-      class="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20 px-4 py-2 md:px-6 md:py-3 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full">
-      <button (click)="prevSlide()" class="text-white/40 hover:text-white transition-colors"
+      class="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20 px-4 py-2 md:px-6 md:py-3 bg-neutral-900/60 border border-white/10 backdrop-blur-2xl rounded-full shadow-lg">
+      <button (click)="prevSlide()" class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
         aria-label="Previous Slide"><mat-icon class="scale-90">chevron_left</mat-icon></button>
       <div class="flex gap-2">
         @for (s of slides(); track s.id; let idx = $index) {
         <button (click)="setSlide(idx)" [attr.aria-label]="'Navigate to slide ' + (idx + 1)"
-          [class]="currentSlide() === idx ? 'h-1.5 w-6 md:w-8 bg-orange-500 rounded-full transition-all duration-500' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
+          [class]="currentSlide() === idx ? 'h-1.5 w-6 md:w-8 bg-[#d65108] rounded-full transition-all duration-500 shadow-[0_0_8px_#d65108]' : 'h-1.5 w-2 bg-white/20 rounded-full hover:bg-white/40 transition-all'"></button>
         }
       </div>
-      <button (click)="nextSlide()" class="text-white/40 hover:text-white transition-colors"
+      <button (click)="nextSlide()" class="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5"
         aria-label="Next Slide"><mat-icon class="scale-90">chevron_right</mat-icon></button>
     </div>
   </section>
@@ -126,7 +148,7 @@
 
   @case ('CATEGORIES') {
   <!-- QUICK NAVIGATION (Mobile Swipeable Slider) -->
-  <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-4 md:space-y-6 text-left">
+  <section [id]="section.id" class="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-8 text-left" appScrollReveal="fade">
     <div class="flex items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3 md:pb-5 gap-4">
       <div class="space-y-1">
         <h2
@@ -144,28 +166,43 @@
 
     <div
       class="flex md:block overflow-x-auto md:overflow-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
-      <!-- We add gap using wrapper so scrolling is correct -->
       <div class="flex md:grid gap-3 md:gap-4 md:grid-cols-4 lg:grid-cols-8 pb-2 w-full">
-        @for (item of ds.categories(); track item.id) {
+        @for (item of ds.categories(); track item.id; let idx = $index) {
         <button (click)="selectFilterCategory(item.id)"
-          [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-4 md:p-6 bg-white dark:bg-neutral-900 rounded-2xl md:rounded-[1.5rem] transition-all h-28 w-28 md:h-36 md:w-full border-b-4 shadow-sm cursor-pointer ' + 
+          [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
+          [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-1.5 p-2 md:p-3 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-2xl md:rounded-[1.5rem] transition-all h-32 w-28 md:h-40 md:w-full border border-neutral-200/50 dark:border-neutral-800/40 cursor-pointer relative overflow-hidden ' + 
                                   (filterCategory() === item.id 
-                                    ? 'border-[#d65108] border-b-[#d65108] bg-orange-500/5 dark:bg-orange-950/15 scale-[1.02] shadow-md' 
-                                    : 'border-neutral-200/50 dark:border-neutral-800/40 hover:border-[#d65108] hover:scale-105 hover:border-b-[#d65108]')"
+                                    ? 'border-orange-500 shadow-md shadow-orange-500/10' 
+                                    : 'hover:border-orange-500 hover:scale-[1.04] hover:shadow-lg hover:shadow-orange-500/5')"
           [attr.aria-label]="'Filter by ' + item.name">
+          <!-- Active accent glow -->
+          @if (filterCategory() === item.id) {
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 to-amber-500"></div>
+          }
+          
           <div
-            [class]="'h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center transition-colors ' + 
-                                (filterCategory() === item.id 
-                                  ? 'bg-orange-500/20 text-[#d65108]' 
-                                  : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:bg-orange-500/10 group-hover:text-[#d65108]')">
-            <mat-icon class="scale-100 md:scale-110">{{ getIcon(item.id) }}</mat-icon>
-          </div>
-          <span
-            [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
+            [class]="'h-16 w-16 md:h-20 md:w-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ' + 
                                   (filterCategory() === item.id 
-                                    ? 'text-neutral-900 dark:text-white' 
-                                    : 'text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white')">{{
-            item.name }}</span>
+                                    ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white' 
+                                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-amber-500 group-hover:text-white group-hover:rotate-6')">
+            @if (item.image) {
+              <img [src]="item.image" [alt]="item.name" class="w-[90%] h-[90%] object-contain logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
+            } @else {
+              <mat-icon class="scale-[1.6] md:scale-[2]">{{ getIcon(item.id) }}</mat-icon>
+            }
+          </div>
+          
+          <div class="flex flex-col items-center gap-0.5 mt-1">
+            <span
+              [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
+                                    (filterCategory() === item.id 
+                                      ? 'text-neutral-900 dark:text-white' 
+                                      : 'text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white')">{{
+              item.name }}</span>
+            <span class="text-[8px] text-neutral-400 font-bold uppercase tracking-wide">
+              {{ getCategoryProductCount(item.id) }} Items
+            </span>
+          </div>
         </button>
         }
       </div>
@@ -175,19 +212,19 @@
 
   @case ('BEST_SELLERS') {
   <!-- SHOWCASE CARD 1: BAMBU LAB A1 COMBO -->
-  <section [id]="section.id" class="max-w-7xl mx-auto px-6">
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6" appScrollReveal="fade">
     <div
       class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
         <!-- Image on Left -->
-        <div class="col-span-1 md:col-span-5 flex justify-center">
+        <div class="col-span-1 md:col-span-5 flex justify-center" appScrollReveal="scale-in">
           <img [src]="section.config['image'] || 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'"
             alt="Bambu Lab A1 Combo"
             class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
             referrerpolicy="no-referrer">
         </div>
         <!-- Copy on Right -->
-        <div class="col-span-1 md:col-span-7 space-y-6 text-left">
+        <div class="col-span-1 md:col-span-7 space-y-6 text-left" appScrollReveal="slide-up">
           <div class="space-y-1">
             <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 select-text">{{
               section.config['brand'] || 'BAMBU LAB' }}</span>
@@ -197,17 +234,17 @@
             </h2>
           </div>
           <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
-            {{ section.config['description'] }}
+            {{ section.config['description'] || 'Seamless multi-color printing at an accessible price point, complete with fully automated alignment and calibration sensors.' }}
           </p>
           <div class="flex flex-wrap items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'])
+            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'] || 48999)
               | currency:'INR':'symbol':'1.0-0' }}</span>
-            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp']) |
+            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 55000) |
               currency:'INR':'symbol':'1.0-0' }}</span>
-            @if (section.config['badge']) {
+            @if (section.config['badge'] || 'AMS Multi-Color') {
             <span
               class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black tracking-widest uppercase rounded border border-emerald-500/15">{{
-              section.config['badge'] }}</span>
+              section.config['badge'] || 'AMS Multi-Color' }}</span>
             }
           </div>
           <div class="pt-2">
@@ -223,14 +260,14 @@
   </section>
   }
 
-  @case ('showcase-2') {
+  @case ('SHOWCASE-2') {
   <!-- SHOWCASE CARD 2: CREALITY SPARX I7 COMBO -->
-  <section [id]="section.id" class="max-w-7xl mx-auto px-6">
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6" appScrollReveal="fade">
     <div
       class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
         <!-- Copy on Left -->
-        <div class="col-span-1 md:col-span-7 space-y-6 text-left order-2 md:order-1">
+        <div class="col-span-1 md:col-span-7 space-y-6 text-left order-2 md:order-1" appScrollReveal="slide-up">
           <div class="space-y-1">
             <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 select-text">{{
               section.config['brand'] || 'CREALITY' }}</span>
@@ -240,12 +277,12 @@
             </h2>
           </div>
           <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
-            {{ section.config['description'] }}
+            {{ section.config['description'] || 'Professional grade dual extrusion setup engineered for high efficiency, high speed fabrication runs.' }}
           </p>
           <div class="flex flex-wrap items-center gap-4">
-            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'])
+            <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ asNumber(section.config['salePrice'] || 75000)
               | currency:'INR':'symbol':'1.0-0' }}</span>
-            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp']) |
+            <span class="text-sm text-neutral-400 line-through font-medium">{{ asNumber(section.config['mrp'] || 90000) |
               currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
           <div class="pt-2">
@@ -257,7 +294,7 @@
           </div>
         </div>
         <!-- Image on Right -->
-        <div class="col-span-1 md:col-span-5 flex justify-center order-1 md:order-2">
+        <div class="col-span-1 md:col-span-5 flex justify-center order-1 md:order-2" appScrollReveal="scale-in">
           <img [src]="section.config['image'] || 'https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png'"
             alt="Creality Sparx i7 Combo"
             class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
@@ -268,15 +305,15 @@
   </section>
   }
 
-  @case ('category-view-filament') {
+  @case ('CATEGORY-VIEW-FILAMENT') {
   <!-- CATEGORY SPLASH: FILAMENT -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
-        {{ section.config['title'] }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+        {{ section.config['title'] || 'PREMIUM FILAMENT' }}</h1>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Ecosystem Materials' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('materials')"
@@ -287,15 +324,15 @@
   </section>
   }
 
-  @case ('category-view-spare-parts') {
+  @case ('CATEGORY-VIEW-SPARE-PARTS') {
   <!-- CATEGORY SPLASH: SPARE PARTS -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
-        {{ section.config['title'] }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+        {{ section.config['title'] || 'SPARE PARTS' }}</h1>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Original Components' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('spare-parts')"
@@ -306,15 +343,15 @@
   </section>
   }
 
-  @case ('category-view-3d-printer') {
+  @case ('CATEGORY-VIEW-3D-PRINTER') {
   <!-- CATEGORY SPLASH: 3D PRINTER -->
   <section [id]="section.id"
-    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6">
+    class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6" appScrollReveal="scale-in">
     <div class="space-y-2">
       <h1
         class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none">
-        {{ section.config['title'] }}</h1>
-      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] }}</h2>
+        {{ section.config['title'] || '3D PRINTERS' }}</h1>
+      <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]">{{ section.config['subtitle'] || 'Flagship Systems' }}</h2>
     </div>
     <div class="pt-4">
       <button (click)="selectFilterCategory('3d-printers')"
@@ -325,9 +362,9 @@
   </section>
   }
 
-  @case ('newsletter') {
+  @case ('NEWSLETTER') {
   <!-- JOIN THE MAKER'S COLLECTIVE NEWSLETTER -->
-  <section [id]="section.id" class="max-w-5xl mx-auto px-6">
+  <section [id]="section.id" class="max-w-5xl mx-auto px-6 animate-fadeIn" appScrollReveal="scale-in">
     <div
       class="bg-neutral-950 dark:bg-neutral-900 border border-neutral-850 dark:border-neutral-800 rounded-[2.5rem] p-12 md:p-16 flex flex-col items-center justify-center text-center space-y-8 relative overflow-hidden shadow-2xl">
       <!-- Radial Glow -->
@@ -340,8 +377,7 @@
           {{ section.config['title'] || "JOIN THE MAKER'S COLLECTIVE" }}
         </h3>
         <p class="text-neutral-400 text-xs font-normal leading-relaxed">
-          {{ section.config['description'] || 'Get the latest on layer-shifting breakthroughs, hardware updates, and
-          exclusive cosmic deals.' }}
+          {{ section.config['description'] || 'Get the latest on layer-shifting breakthroughs, hardware updates, and exclusive cosmic deals.' }}
         </p>
       </div>
 
@@ -369,9 +405,9 @@
 
   @case ('FEATURED_PRODUCTS') {
   <!-- FEATURED: THE PRINTING ELITE -->
-  <section id="products-catalog" class="max-w-7xl mx-auto px-6 space-y-10 text-center sm:text-left">
+  <section id="products-catalog" class="max-w-7xl mx-auto px-6 space-y-10 text-center sm:text-left animate-fadeIn">
     <div
-      class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4">
+      class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-neutral-200 dark:border-neutral-800 pb-5 gap-4" appScrollReveal="fade">
       <div class="space-y-1">
         <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{
           section.config['subtitle'] || 'Precision Catalog' }}</h2>
@@ -388,43 +424,20 @@
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-      @for (p of featuredProducts(); track p.id) {
-      <div
-        class="group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:shadow-[0_20px_50px_rgba(214,81,8,0.12)] min-h-[500px] hover:-translate-y-2 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-500 ease-out p-4 pb-6 flex flex-col relative text-left overflow-hidden">
+      @for (p of featuredProducts(); track p.id; let idx = $index) {
+      <div [appScrollReveal]="'slide-up'" [delay]="(idx % 4) * 100" appTilt [tiltMax]="8"
+        class="group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl hover:shadow-[0_20px_50px_rgba(214,81,8,0.1)] min-h-[350px] md:min-h-[500px] hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-500 ease-out p-3 md:p-4 pb-4 md:pb-6 flex flex-col text-left overflow-hidden">
 
         <!-- SPARKLING HOVER EFFECT STARS -->
         <div class="absolute inset-0 pointer-events-none overflow-hidden z-20">
-          <!-- Sparkle 1: Top-Left Amber -->
           <div class="sparkle-one">
             <svg class="h-6 w-6 text-amber-500 dark:text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]"
               fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z" />
             </svg>
           </div>
-          <!-- Sparkle 2: Top-Right Cyan/Blue -->
           <div class="sparkle-two">
             <svg class="h-5 w-5 text-cyan-500 dark:text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.9)]"
-              fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z" />
-            </svg>
-          </div>
-          <!-- Sparkle 3: Middle-Left Yellow -->
-          <div class="sparkle-three">
-            <svg class="h-4 w-4 text-yellow-400 dark:text-yellow-300 drop-shadow-[0_0_4px_rgba(234,179,8,0.8)]"
-              fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c.06 2.8 2 4.7 4.8 4.8-2.8.06-4.7 2-4.8 4.8-.06-2.8-2-4.7-4.8-4.8 2.8-.06 4.7-2 4.8-4.8z" />
-            </svg>
-          </div>
-          <!-- Sparkle 4: Bottom-Right Orange/Rust -->
-          <div class="sparkle-four">
-            <svg class="h-6 w-6 text-orange-600 dark:text-orange-500 drop-shadow-[0_0_8px_rgba(194,65,12,0.9)]"
-              fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c.1 3.9 3.1 6.9 7 7-3.9.1-6.9 3.1-7 7-.1-3.9-3.1-6.9-7-7 3.9-.1 6.9-3.1 7-7z" />
-            </svg>
-          </div>
-          <!-- Sparkle 5: Sparkle burst center -->
-          <div class="sparkle-five">
-            <svg class="h-5 w-5 text-neutral-100 dark:text-white drop-shadow-[0_0_6px_rgba(255,255,255,1)]"
               fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0c.08 3.5 2.5 5.9 6 6-3.5.08-5.9 2.5-6 6-.08-3.5-2.5-5.9-6-6 3.5-.08 5.9-2.5 6-6z" />
             </svg>
@@ -435,7 +448,7 @@
         <div
           class="absolute top-5 right-5 z-20 select-none pointer-events-none opacity-85 hover:opacity-100 transition-opacity">
           <div
-            class="relative w-16 h-16 rounded-full border border-orange-500/30 bg-orange-50/90 dark:bg-orange-950/40 flex flex-col items-center justify-center p-1 text-[7px] font-black tracking-tighter text-orange-600 dark:text-orange-400 uppercase text-center leading-none">
+            class="relative w-16 h-16 rounded-full border border-orange-500/30 bg-orange-50/90 dark:bg-orange-955/40 flex flex-col items-center justify-center p-1 text-[7px] font-black tracking-tighter text-orange-600 dark:text-orange-400 uppercase text-center leading-none">
             <svg class="absolute inset-0 w-full h-full -rotate-12" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="1.2"
                 stroke-dasharray="2,2" />
@@ -448,15 +461,23 @@
         }
 
         <div
-          class="relative aspect-[4/5] bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/80 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-2 mb-5 group-hover:scale-[0.98] transition-transform duration-500">
+          class="relative aspect-[4/5] bg-neutral-50/50 dark:bg-neutral-950/20 rounded-2xl border border-neutral-100/80 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-2 mb-5 group-hover:scale-[0.98] transition-transform duration-500 product-card-image-container">
 
           <!-- Polished Shimmer Sweep effect -->
-          <div class="shimmer-effect"></div>
+          <div class="shimmer-sweep absolute inset-0 pointer-events-none z-10"></div>
 
           <img
             [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/400x400?text=No+Image'"
-            class="w-[85%] h-[85%] object-contain transform group-hover:scale-105 transition-transform duration-500"
+            class="w-[90%] h-[90%] object-contain transform group-hover:scale-110 transition-transform duration-700 ease-out primary-image relative z-1"
             alt="{{p.name}}" loading="lazy" referrerpolicy="no-referrer">
+            
+          @if (p.images && p.images.length > 1) {
+            <img
+              [src]="p.images[1]?.url || p.images[1]"
+              class="absolute inset-0 w-[90%] h-[90%] m-auto object-contain secondary-image z-2"
+              alt="{{p.name}} Alternate" loading="lazy" referrerpolicy="no-referrer">
+          }
+
           @if (p.warningText) {
           <div
             class="absolute bottom-0 left-0 right-0 bg-[#ffd700] text-neutral-900 text-[9px] font-black tracking-widest uppercase py-1.5 text-center z-10">
@@ -465,13 +486,13 @@
           }
 
           <div
-            class="absolute inset-0 bg-neutral-950/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            class="absolute inset-0 bg-neutral-950/20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3 backdrop-blur-xs z-30">
             <button (click)="addToCart(p)"
-              class="h-11 w-11 bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300">
+              class="h-11 w-11 bg-white text-neutral-900 hover:bg-[#d65108] hover:text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
               <mat-icon class="scale-90">add_shopping_cart</mat-icon>
             </button>
             <a [routerLink]="['/product', p.slug]"
-              class="h-11 w-11 bg-white text-neutral-900 hover:bg-neutral-950 hover:text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300">
+              class="h-11 w-11 bg-white text-neutral-900 hover:bg-neutral-950 hover:text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
               <mat-icon class="scale-90">visibility</mat-icon>
             </a>
           </div>
@@ -497,6 +518,12 @@
               <span class="text-[10px] font-black">{{ p.avgRating || getProductRating(p) }}</span>
             </div>
           </div>
+
+          <!-- Visible Mobile Add to Cart CTA -->
+          <button (click)="$event.preventDefault(); addToCart(p)"
+            class="md:hidden mt-2 w-full h-8 bg-neutral-900 border border-neutral-900 dark:border-neutral-50 dark:bg-white text-white dark:text-neutral-900 hover:bg-[#d65108] hover:border-[#d65108] dark:hover:bg-[#d65108] dark:hover:border-[#d65108] hover:text-white dark:hover:text-white font-bold text-[9px] uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-1 active:scale-95 shadow-sm">
+            <mat-icon class="scale-[0.6]">add_shopping_cart</mat-icon> ADD TO CART
+          </button>
         </div>
       </div>
       }
@@ -504,21 +531,115 @@
   </section>
   }
 
-  @case ('technology-hubs') {
+  @case ('BRANDS') {
+  <!-- FEATURED BRANDS MARQUEE -->
+  <section [id]="section.id" class="w-full bg-neutral-950 dark:bg-neutral-950 py-12 md:py-16 border-y border-neutral-900 overflow-hidden" appScrollReveal="fade">
+    <div class="max-w-7xl mx-auto px-6 mb-8 text-center">
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 font-display">{{ section.config['subtitle'] || 'Verified Partners' }}</h2>
+      <h3 class="text-2xl font-black text-white tracking-tighter font-display">{{ section.config['title'] || 'Official Distributor' }}</h3>
+    </div>
+    
+    <div class="relative flex overflow-hidden w-full group py-4">
+      <div class="flex animate-marquee gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]">
+        @for (brand of designedBrands(); track brand.slug) {
+          <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}" 
+             class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+            @if (brand.logoUrl) {
+              <img [src]="brand.logoUrl" [alt]="brand.name" class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
+            } @else {
+              <span class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
+            }
+          </a>
+        }
+      </div>
+      <div class="flex animate-marquee2 absolute top-4 gap-8 md:gap-16 whitespace-nowrap px-4 group-hover:[animation-play-state:paused]" aria-hidden="true">
+        @for (brand of designedBrands(); track brand.slug) {
+          <a [routerLink]="['/products']" [queryParams]="{brand: brand.name}" 
+             class="flex items-center justify-center h-20 w-32 md:h-24 md:w-40 bg-neutral-900/50 rounded-2xl border border-neutral-800/60 hover:bg-neutral-800 hover:border-orange-500/30 hover:scale-[1.03] hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+            @if (brand.logoUrl) {
+              <img [src]="brand.logoUrl" [alt]="brand.name" class="max-h-16 max-w-[90%] md:max-h-20 object-contain filter grayscale hover:grayscale-0 transition-all duration-500 opacity-60 hover:opacity-100 logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
+            } @else {
+              <span class="text-base md:text-xl font-black text-neutral-400 tracking-wider uppercase font-display">{{brand.name}}</span>
+            }
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('SHOP_BY_CATEGORY') {
+  <!-- SHOP BY CATEGORY: ALTERNATE LAYOUT -->
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12" appScrollReveal="fade">
+    <div class="text-center space-y-2">
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">{{ section.config['subtitle'] || 'Browse Collections' }}</h2>
+      <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">{{ section.config['title'] || 'Shop By Category' }}</h3>
+    </div>
+
+    <div class="space-y-12">
+      @for (group of shopByCategoryGroups(); track group.category.id; let idx = $index) {
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          
+          <!-- Large Card -->
+          <div class="lg:col-span-5 bg-neutral-100 dark:bg-neutral-900 rounded-[2.5rem] overflow-hidden relative group p-8 md:p-12 flex flex-col justify-end min-h-[450px]"
+               [class.lg:order-2]="idx % 2 !== 0" appScrollReveal="scale-in">
+            <img [src]="group.category.image || 'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=800'"
+                 class="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105" referrerpolicy="no-referrer">
+            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-900/60 to-transparent pointer-events-none"></div>
+            
+            <div class="relative z-10 space-y-4 text-left">
+              <h4 class="text-4xl font-black text-white tracking-tight uppercase font-display">{{ group.category.name }}</h4>
+              <p class="text-neutral-300 text-sm leading-relaxed max-w-sm line-clamp-2">{{ group.category.description || 'Explore the latest collection of premium ' + group.category.name + ' for your next project.' }}</p>
+              <a [routerLink]="['/category', group.category.slug]"
+                 class="inline-flex h-12 px-6 bg-white hover:bg-orange-600 text-neutral-950 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest items-center gap-2 transition-colors duration-300 shadow-md">
+                VIEW COLLECTION <mat-icon class="scale-75">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+
+          <!-- Medium Cards Grid -->
+          <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"
+               [class.lg:order-1]="idx % 2 !== 0" appScrollReveal="fade">
+            @for (p of group.products; track p.id; let subIdx = $index) {
+              <a [routerLink]="['/product', p.slug]"
+                 appScrollReveal="slide-up" [delay]="subIdx * 100" appTilt [tiltMax]="5"
+                 class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item">
+                <div class="w-28 h-28 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30">
+                  <img [src]="p.images && p.images[0]?.url || p.images && p.images[0] || 'https://via.placeholder.com/150'" class="w-[90%] h-[90%] object-contain transform group-hover/item:scale-110 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
+                </div>
+                <div class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 text-left">
+                  <span class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108] truncate">{{ p.brand }}</span>
+                  <h5 class="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors">{{ p.name }}</h5>
+                  <div class="pt-2 flex items-center justify-between">
+                    <span class="text-sm font-black dark:text-white">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
+                    <div class="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 group-hover/item:bg-[#d65108] group-hover/item:text-white transition-colors duration-300">
+                      <mat-icon class="scale-75">arrow_forward</mat-icon>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+  }
+
+  @case ('TECHNOLOGY-HUBS') {
   <!-- TECHNOLOGY CARDS: MODULAR HUBS -->
-  <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12">
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12" appScrollReveal="fade">
     <div class="text-center space-y-2 max-w-2xl mx-auto">
       <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-[#d65108] font-display">{{
         section.config['subtitle'] || 'The Laboratory' }}</h2>
       <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">{{
         section.config['title'] || 'Shop by Technology' }}</h3>
-      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical
-        manufacturing criteria.</p>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Expertly matched systems for diverse rapid physical manufacturing criteria.</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      @for (tech of technologies; track tech.id) {
-      <div
+      @for (tech of technologies; track tech.id; let idx = $index) {
+      <div appScrollReveal="slide-up" [delay]="idx * 100" appTilt [tiltMax]="5"
         class="relative group h-[420px] rounded-[2rem] overflow-hidden border border-neutral-200 dark:border-neutral-800/40 bg-neutral-100 dark:bg-neutral-900">
         <img [src]="tech.image" [alt]="tech.name"
           class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
@@ -545,31 +666,30 @@
   </section>
   }
 
-  @case ('enterprise-solutions') {
+  @case ('ENTERPRISE-SOLUTIONS') {
   <!-- BUSINESS SOLUTIONS: ENTERPRISE HUB -->
-  <section [id]="section.id"
+  <section [id]="section.id" appScrollReveal="fade"
     class="relative py-24 bg-neutral-900 rounded-[3rem] border border-neutral-800/40 overflow-hidden mx-6 text-left">
     <div
       class="absolute top-0 right-0 w-[800px] h-[800px] bg-orange-500/5 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2">
     </div>
     <div class="relative z-10 max-w-7xl mx-auto px-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-      <div class="lg:col-span-4 space-y-8 col-span-1">
+      <div class="lg:col-span-4 space-y-8 col-span-1" appScrollReveal="slide-up">
         <div class="space-y-3">
           <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 font-display">{{
             section.config['subtitle'] || 'Enterprise Protocol' }}</h2>
           <h3 class="text-5xl font-black text-white tracking-tighter leading-tight font-display">{{
             section.config['title'] || 'Industrial Solutions' }}</h3>
-          <p class="text-neutral-400 text-sm leading-relaxed">Unified 3D setups, industrial consulting, dental molds,
-            and robotic kits formulated for scaling companies.</p>
+          <p class="text-neutral-400 text-sm leading-relaxed">Unified 3D setups, industrial consulting, dental molds, and robotic kits formulated for scaling companies.</p>
         </div>
         <a [routerLink]="['/printing-service']"
           class="inline-flex h-12 px-8 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest items-center gap-3 hover:scale-105 transition-all">
           BOOK CONSULTATION <mat-icon class="scale-90">support_agent</mat-icon>
         </a>
       </div>
-      <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-        @for (s of solutions; track s.name) {
-        <div
+      <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6" appScrollReveal="fade">
+        @for (s of solutions; track s.name; let idx = $index) {
+        <div appScrollReveal="slide-up" [delay]="idx * 100" appTilt [tiltMax]="5"
           class="p-6 bg-neutral-950/70 border border-white/5 rounded-2xl hover:border-orange-500/30 transition-all group text-left">
           <div
             class="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500 mb-6 transition-transform group-hover:scale-110">
@@ -588,52 +708,346 @@
   </section>
   }
 
-  @case ('BRANDS') {
-  <!-- AUTHORIZED GLOBAL PARTNERS: HIGH-FIDELITY GRID -->
-  <section [id]="section.id"
-    class="py-16 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50/30 dark:bg-neutral-900/10">
-    <div class="max-w-7xl mx-auto px-6 space-y-10">
-      <div class="flex items-center justify-between border-b border-neutral-200/60 dark:border-neutral-800/60 pb-5">
-        <h3 class="text-xs font-black uppercase tracking-[0.25em] text-neutral-400 font-display">Shop by Brand</h3>
-        <span class="text-[10px] font-bold text-[#d65108] uppercase tracking-widest font-display">SELECT AN ENTERPRISE
-          ECOSYSTEM</span>
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4 md:gap-5 pb-4">
-        @for (b of designedBrands(); track b.name) {
-        <button (click)="selectFilterBrand(b.name)"
-          class="group flex flex-col items-stretch p-3 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 rounded-2xl shadow-xs hover:shadow-md hover:border-[#d65108] hover:scale-[1.03] transition-all text-center">
-
-          <!-- 1. Brand Image -->
-          <div
-            class="relative aspect-video rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-950/60 mb-3 flex items-center justify-center">
-            <img [src]="b.image" [alt]="b.name"
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              referrerpolicy="no-referrer" loading="lazy">
-            <div class="absolute inset-0 bg-gradient-to-t from-neutral-950/20 via-transparent to-transparent"></div>
+  @case ('LAUNCH_SPOTLIGHT') {
+  <!-- PREMIUM LAUNCH SPOTLIGHT: APPLE FLAGSHIP PRODUCT SHOWCASE -->
+  <section [id]="section.id" class="w-full overflow-hidden bg-neutral-950 text-white py-24 border-y border-neutral-900 relative">
+    <!-- Glowing backgrounds -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+    <div class="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
+    
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+        <!-- Text details -->
+        <div class="lg:col-span-6 space-y-8 text-left" appScrollReveal="slide-up">
+          <div class="space-y-4">
+            <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Flagship Showcase</span>
+            <h2 class="text-5xl lg:text-7xl font-black tracking-tighter leading-[1.05] font-display">
+              Bambu Lab<br><span class="text-theme-gradient">X1-Carbon</span>
+            </h2>
+            <p class="text-neutral-400 text-base leading-relaxed max-w-lg font-medium">
+              Designed for ultimate speed, precision, and multi-material engineering. Experience automated printing with active vibration compensation, AI extrusion monitoring, and 16-color compatibility.
+            </p>
           </div>
 
-          <!-- 2. Brand Logo & Name container -->
-          <div class="flex flex-col items-center gap-2">
-            <!-- Overlapping logo badge -->
-            <div
-              class="h-10 w-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border-2 border-white dark:border-neutral-900 shadow-sm overflow-hidden flex-shrink-0 -mt-6 z-10">
-              @if (b.logoUrl) {
-              <img [src]="b.logoUrl" [alt]="b.name + ' Logo'" class="h-full w-full object-contain"
-                referrerpolicy="no-referrer">
-              } @else {
-              <span class="text-[11px] font-black text-neutral-800 dark:text-neutral-200 uppercase">{{ b.icon }}</span>
-              }
+          <!-- Feature badges grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div class="h-10 w-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
+                <mat-icon class="scale-90">auto_awesome</mat-icon>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-sm font-black text-white leading-none">AI LIDAR Sensor</h4>
+                <p class="text-[11px] text-neutral-500">First-layer inspection & flow calibration automated.</p>
+              </div>
             </div>
 
-            <!-- 3. Brand Name -->
-            <span
-              class="text-[10px] font-black uppercase tracking-wider text-neutral-700 dark:text-neutral-200 leading-tight group-hover:text-[#d65108] transition-colors line-clamp-1 w-full">{{
-              b.name }}</span>
+            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div class="h-10 w-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
+                <mat-icon class="scale-90">speed</mat-icon>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-sm font-black text-white leading-none">20,000 mm/s²</h4>
+                <p class="text-[11px] text-neutral-500">Industrial speed, active input shaping verification.</p>
+              </div>
+            </div>
+
+            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div class="h-10 w-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
+                <mat-icon class="scale-90">palette</mat-icon>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-sm font-black text-white leading-none">16-Color Print</h4>
+                <p class="text-[11px] text-neutral-500">Automatic Material System handles filament swaps.</p>
+              </div>
+            </div>
+
+            <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+              <div class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
+                <mat-icon class="scale-90">camera_enhance</mat-icon>
+              </div>
+              <div class="space-y-1">
+                <h4 class="text-sm font-black text-white leading-none">Spaghetti Detection</h4>
+                <p class="text-[11px] text-neutral-500">AI chamber camera halts print on failures.</p>
+              </div>
+            </div>
           </div>
 
-        </button>
+          <div class="pt-4">
+            <button (click)="addToCartById('prod-3')"
+              class="h-14 px-10 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-98 transition-all shadow-lg shadow-orange-500/20">
+              EXPLORE LAUNCH OFFER
+            </button>
+          </div>
+        </div>
+
+        <!-- Huge Image showcase on right -->
+        <div class="lg:col-span-6 flex justify-center relative" appScrollReveal="scale-in">
+          <div class="relative w-[340px] md:w-[440px] aspect-square rounded-[3rem] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-8 group">
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-1"></div>
+            <!-- Scanner line -->
+            <div class="absolute top-0 left-0 w-full h-[2px] bg-purple-500 shadow-[0_0_15px_#7c3aed] animate-scan z-10"></div>
+            
+            <img src="https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png" 
+                 alt="Bambu Lab X1-C" 
+                 class="h-[80%] max-h-[360px] object-contain transition-transform duration-700 group-hover:scale-105 relative z-2"
+                 (error)="onImageError($event)" referrerpolicy="no-referrer">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('SERVICES') {
+  <!-- SERVICES SECTION: PREMIUM ECOSYSTEM HUBS -->
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6 space-y-12 py-12" appScrollReveal="fade">
+    <div class="text-center space-y-2 max-w-2xl mx-auto">
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">Galaxy Ecosystem</h2>
+      <h3 class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">Our Premium Services</h3>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">Industrial solutions, expert parameter tuning, and dynamic 3D quote tools mapped to scale your operations.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Service 1 -->
+      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div class="h-12 w-12 bg-orange-500/10 rounded-xl flex items-center justify-center text-[#d65108] group-hover:scale-110 transition-transform">
+          <mat-icon class="scale-110">layers</mat-icon>
+        </div>
+        <div class="space-y-2 text-left">
+          <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Instant 3D Print Quoting</h4>
+          <p class="text-xs text-neutral-500 leading-relaxed">Upload any STL or STEP file and receive dynamic, tailored slicing quotes with infill controls in seconds.</p>
+        </div>
+        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+          UPLOAD CAD FILE <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <!-- Service 2 -->
+      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div class="h-12 w-12 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+          <mat-icon class="scale-110">school</mat-icon>
+        </div>
+        <div class="space-y-2 text-left">
+          <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Academy & Maintenance</h4>
+          <p class="text-xs text-neutral-500 leading-relaxed">Certified training modules for industrial print mechanics, parameter profiles, and slicing calibrations.</p>
+        </div>
+        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+          START LEARNING <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <!-- Service 3 -->
+      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div class="h-12 w-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+          <mat-icon class="scale-110">build_circle</mat-icon>
+        </div>
+        <div class="space-y-2 text-left">
+          <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Annual Maintenance (AMC)</h4>
+          <p class="text-xs text-neutral-500 leading-relaxed">Preventive care contracts including physical parts replacements, firmware audits, and calibration sweeps.</p>
+        </div>
+        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+          REQUEST AMC QUOTE <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <!-- Service 4 -->
+      <div appTilt [tiltMax]="6" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2rem] flex flex-col justify-between h-[320px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:border-orange-500/30 transition-all duration-300 group">
+        <div class="h-12 w-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+          <mat-icon class="scale-110">hub</mat-icon>
+        </div>
+        <div class="space-y-2 text-left">
+          <h4 class="text-lg font-black text-neutral-900 dark:text-white leading-tight">Farm System Integration</h4>
+          <p class="text-xs text-neutral-500 leading-relaxed">Establish automated production pipelines using centralized dashboard panels and robotic filament loading structures.</p>
+        </div>
+        <a routerLink="/printing-service" class="text-[10px] font-black uppercase tracking-widest text-[#d65108] hover:text-orange-400 flex items-center gap-2 mt-4 text-left">
+          TALK TO ENGINEER <mat-icon class="text-sm scale-75">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('WHY_CHOOSE_US') {
+  <!-- WHY CHOOSE US: APPLE-STYLE STICKY OVERLAPPING CARDS -->
+  <section [id]="section.id" class="max-w-5xl mx-auto px-6 py-20">
+    <div class="text-center space-y-2 mb-12" appScrollReveal="fade">
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">THE GALAXY PROTOCOL</h2>
+      <h3 class="text-4xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">Why Choose 3D Galaxy</h3>
+    </div>
+
+    <div class="sticky-stack-container">
+      <!-- Card 1 -->
+      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+        <div class="space-y-4 max-w-xl text-left">
+          <span class="text-[10px] font-black tracking-widest text-orange-500 uppercase">AUTHENTICATED SYSTEMS</span>
+          <h4 class="text-3xl font-black tracking-tight leading-none">Authorized National Distributor</h4>
+          <p class="text-sm text-neutral-400 leading-relaxed">
+            We work directly with tier-1 manufacturers to source authentic systems. Enjoy factory-certified product warranties, direct firmware overrides, and guaranteed spares support.
+          </p>
+        </div>
+        <div class="h-20 w-20 bg-orange-500/10 border border-orange-500/25 rounded-2xl flex items-center justify-center text-orange-400 shrink-0 self-center">
+          <mat-icon class="scale-150">verified</mat-icon>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+        <div class="space-y-4 max-w-xl text-left">
+          <span class="text-[10px] font-black tracking-widest text-purple-400 uppercase">NATIONWIDE SUPPORT</span>
+          <h4 class="text-3xl font-black tracking-tight leading-none">Pan-India Support Hubs</h4>
+          <p class="text-sm text-neutral-400 leading-relaxed">
+            With 120+ localized maintenance offices and spare parts centers, engineering assistance is never far. Our field technicians carry original spares for instant calibrations.
+          </p>
+        </div>
+        <div class="h-20 w-20 bg-purple-500/10 border border-purple-500/25 rounded-2xl flex items-center justify-center text-purple-400 shrink-0 self-center">
+          <mat-icon class="scale-150">map</mat-icon>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+        <div class="space-y-4 max-w-xl text-left">
+          <span class="text-[10px] font-black tracking-widest text-blue-400 uppercase">CAD REVOLUTION</span>
+          <h4 class="text-3xl font-black tracking-tight leading-none">Next-Gen Slicing Engine</h4>
+          <p class="text-sm text-neutral-400 leading-relaxed">
+            Our cloud quoting pipeline estimates parameters using direct mesh parsing. Upload your files to automatically receive custom infill, density, and filament parameters with instant pricing.
+          </p>
+        </div>
+        <div class="h-20 w-20 bg-blue-500/10 border border-blue-500/25 rounded-2xl flex items-center justify-center text-blue-400 shrink-0 self-center">
+          <mat-icon class="scale-150">cloud_done</mat-icon>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]">
+        <div class="space-y-4 max-w-xl text-left">
+          <span class="text-[10px] font-black tracking-widest text-emerald-400 uppercase">ENTERPRISE CONSULTING</span>
+          <h4 class="text-3xl font-black tracking-tight leading-none">Tailored Corporate Advisory</h4>
+          <p class="text-sm text-neutral-400 leading-relaxed">
+            We calibrate specialized setups for automotive prototyping, dental templates, aerospace tooling, and academic labs. We provide complete setup layouts and material parameter sets.
+          </p>
+        </div>
+        <div class="h-20 w-20 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl flex items-center justify-center text-emerald-400 shrink-0 self-center">
+          <mat-icon class="scale-150">business</mat-icon>
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('STATISTICS') {
+  <!-- STATISTICS: ANIMATED VIEWPORT COUNTERS -->
+  <section [id]="section.id" class="w-full bg-neutral-100 dark:bg-neutral-950 py-20 border-y border-neutral-200 dark:border-neutral-900 text-neutral-900 dark:text-white" appScrollReveal="fade">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        @for (stat of galaxyStats; track stat.label; let idx = $index) {
+          <div class="space-y-2" appScrollReveal="scale-in" [delay]="idx * 100">
+            <div class="text-5xl md:text-7xl font-black text-theme-gradient tracking-tight font-display" [appCountUp]="stat.value">0</div>
+            <p class="text-xs font-black uppercase tracking-widest text-neutral-400">{{ stat.label }}</p>
+          </div>
         }
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('TESTIMONIALS') {
+  <!-- TESTIMONIALS: PREMIUM CARD GRID WITH 3D TILT -->
+  <section [id]="section.id" class="max-w-7xl mx-auto px-6 py-12" appScrollReveal="fade">
+    <div class="text-center space-y-2 max-w-2xl mx-auto mb-12">
+      <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">Client Testimonials</h2>
+      <h3 class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display">Ecosystem Reviews</h3>
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">See how aerospace labs, auto designers, and creators leverage our high-fidelity print ecosystem.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Card 1 -->
+      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+        <div class="flex items-center gap-1 text-amber-500 mb-4">
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+        </div>
+        <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
+          "3D Galaxy revolutionized our design verification cycle. Their Bambu AMC contracts keep our 40-printer manufacturing farm running 24/7 with zero bottlenecks."
+        </p>
+        <div class="flex items-center gap-4 mt-6">
+          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">AS</div>
+          <div class="space-y-0.5">
+            <h4 class="text-xs font-black text-neutral-900 dark:text-white">Dr. A. Sen</h4>
+            <p class="text-[10px] text-neutral-400">R&D Director, Aero-Space India</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+        <div class="flex items-center gap-1 text-amber-500 mb-4">
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+        </div>
+        <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
+          "Their custom quotation portal is incredibly fast. We uploaded the suspension mounts, selected PETG-CF, and got our structural batches in perfect spec."
+        </p>
+        <div class="flex items-center gap-4 mt-6">
+          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">MJ</div>
+          <div class="space-y-0.5">
+            <h4 class="text-xs font-black text-neutral-900 dark:text-white">Meera J.</h4>
+            <p class="text-[10px] text-neutral-400">Lead Product Designer, Nexa Motors</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div appTilt [tiltMax]="5" class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left">
+        <div class="flex items-center gap-1 text-amber-500 mb-4">
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+          <mat-icon class="scale-75">star</mat-icon>
+        </div>
+        <p class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic">
+          "Outstanding post-sales training and customer service. Our university makerspace runs completely on 3D Galaxy filaments, which yield highly consistent prints."
+        </p>
+        <div class="flex items-center gap-4 mt-6">
+          <div class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs">RK</div>
+          <div class="space-y-0.5">
+            <h4 class="text-xs font-black text-neutral-900 dark:text-white">Prof. Rajesh K.</h4>
+            <p class="text-[10px] text-neutral-400">Makerspace Admin, IIT Delhi</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
+  @case ('VIDEO_SECTION') {
+  <!-- VIDEO SECTION: HIGH-FIDELITY SHOWCASE -->
+  <section [id]="section.id" class="w-full py-16 bg-neutral-950 text-white overflow-hidden relative border-y border-neutral-900" appScrollReveal="fade">
+    <div class="max-w-7xl mx-auto px-6 space-y-10">
+      <div class="text-center space-y-2 max-w-2xl mx-auto mb-8">
+        <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Fabrication Showcase</span>
+        <h3 class="text-3xl md:text-4xl font-black tracking-tighter leading-tight font-display">Watch the Ecosystem in Action</h3>
+      </div>
+      
+      <div class="relative w-full max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
+        <video src="https://assets.mixkit.co/videos/preview/mixkit-engineering-student-using-a-3d-printer-42646-large.mp4" 
+               autoplay loop muted playsinline
+               class="absolute inset-0 w-full h-full object-cover opacity-60" 
+               referrerpolicy="no-referrer"></video>
+        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950/20 z-10 flex flex-col justify-end p-8 md:p-12 text-left">
+          <div class="relative z-20 space-y-2 max-w-lg">
+            <span class="text-[9px] font-black uppercase tracking-widest text-orange-400">0.05mm Precision Curing</span>
+            <h4 class="text-2xl font-black text-white leading-tight">High-Definition SLA Curing Chamber</h4>
+            <p class="text-xs text-neutral-400 leading-relaxed">Watch how our SLA resin units construct dental surgical guides and fine-detail jewelry molds layer by layer with 50-micron absolute accuracy.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>

@@ -134,35 +134,22 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
   }
 };
 export const updateThemeSettings = async (req: Request, res: Response) => {
-  const { logo, favicon, primaryColor, secondaryColor, typography, headerConfig, footerConfig, homepageConfig } = req.body;
-
   try {
+    const existing = await prisma.themeSetting.findUnique({
+      where: { keyName: 'global-settings' },
+    });
+
+    const currentValue = existing ? JSON.parse(existing.value) : {};
+    const newValue = { ...currentValue, ...req.body };
+
     const updated = await prisma.themeSetting.upsert({
       where: { keyName: 'global-settings' },
       update: {
-        value: JSON.stringify({
-          logo,
-          favicon,
-          primaryColor,
-          secondaryColor,
-          typography,
-          headerConfig: headerConfig || undefined,
-          footerConfig: footerConfig || undefined,
-          homepageConfig: homepageConfig || undefined,
-        })
+        value: JSON.stringify(newValue)
       },
       create: {
         keyName: 'global-settings',
-        value: JSON.stringify({
-          logo: logo || 'https://picsum.photos/seed/logo/200/50',
-          favicon: favicon || 'https://picsum.photos/seed/favicon/32/32',
-          primaryColor: primaryColor || '#d65108',
-          secondaryColor: secondaryColor || '#1e3a8a',
-          typography: typography || 'Inter',
-          headerConfig: headerConfig || {},
-          footerConfig: footerConfig || {},
-          homepageConfig: homepageConfig || {},
-        })
+        value: JSON.stringify(newValue)
       },
     });
 

@@ -37,6 +37,19 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
       })
     ]);
 
+const safeParseArray = (val: any): any[] => {
+  if (!val) return [];
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(val) ? val : [];
+};
+
     // Format products
     const formattedProducts = products.map((p) => ({
       id: p.id,
@@ -44,7 +57,7 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
       slug: p.slug,
       price: p.basePrice,
       salePrice: p.salePrice,
-      image: p.images[0]?.url || null,
+      image: safeParseArray(p.images)[0]?.url || null,
       type: 'Product'
     }));
 
