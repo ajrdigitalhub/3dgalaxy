@@ -1,0 +1,283 @@
+// =============================================
+// RECENT PURCHASE POPUP — styles
+// =============================================
+
+// Keyframes
+@keyframes rppSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-28px) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes rppSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-16px) translateY(16px);
+  }
+}
+
+@keyframes rppPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+@keyframes rppProgressShrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+// ---- Wrapper (fixed positioning) ----
+.rpp-wrapper {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+  width: 350px;
+  max-width: calc(100vw - 40px);
+  pointer-events: auto;
+
+  // Mobile: centered bottom
+  @media (max-width: 480px) {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 16px;
+    width: min(320px, calc(95vw));
+  }
+
+  &.rpp-enter {
+    animation: rppSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  &.rpp-exit {
+    animation: rppSlideOut 0.35s ease-in forwards;
+    pointer-events: none;
+  }
+}
+
+// ---- Card ----
+.rpp-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 14px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+
+  // Light mode glassmorphism
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.16),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #d65108;
+    outline-offset: 3px;
+  }
+
+  // Dark mode override
+  .dark & {
+    background: rgba(15, 15, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    &:hover {
+      box-shadow:
+        0 16px 48px rgba(0, 0, 0, 0.55),
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+  }
+}
+
+// ---- Image ----
+.rpp-image-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.rpp-image {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+
+  .dark & {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.rpp-live-dot {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid white;
+  animation: rppPulse 2s ease-in-out infinite;
+
+  .dark & {
+    border-color: #0f0f14;
+  }
+}
+
+// ---- Text ----
+.rpp-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20px;
+}
+
+.rpp-location {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+
+  .dark & { color: #9ca3af; }
+}
+
+.rpp-name {
+  font-weight: 700;
+  color: #374151;
+
+  .dark & { color: #d1d5db; }
+}
+
+.rpp-sep {
+  font-weight: 400;
+}
+
+.rpp-city {
+  font-weight: 600;
+}
+
+.rpp-product {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+
+  strong {
+    font-weight: 800;
+    color: #d65108;
+  }
+
+  .dark & {
+    color: #f3f4f6;
+
+    strong { color: #fb923c; }
+  }
+}
+
+.rpp-time {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  .dark & { color: #6b7280; }
+}
+
+// ---- Close Button ----
+.rpp-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  padding: 0;
+  z-index: 10;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #374151;
+    transform: scale(1.15);
+  }
+
+  .dark & {
+    background: rgba(255, 255, 255, 0.06);
+    color: #6b7280;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #d1d5db;
+    }
+  }
+}
+
+// ---- Progress bar ----
+.rpp-progress {
+  height: 3px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+
+  .dark & { background: rgba(255, 255, 255, 0.06); }
+}
+
+.rpp-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #d65108, #f97316);
+  border-radius: 0 0 16px 16px;
+
+  .rpp-progress-active & {
+    animation: rppProgressShrink linear forwards;
+    // Duration is set via inline style from component
+  }
+
+  .dark & {
+    background: linear-gradient(90deg, #ea580c, #fb923c);
+  }
+}

@@ -22,6 +22,14 @@ export const getThemeSettings = async (req: Request, res: Response) => {
             headerConfig: { announceBar: 'Welcome B2B Buyers - Brahma 3D Galactic Fabrication Platform' },
             footerConfig: { copyright: '© 2026 Brahma 3D Galaxy Labs. All Rights Reserved.' },
             homepageConfig: { columnsCount: 3, itemsFeaturedCount: 6 },
+            recentPurchasePopup: {
+              enabled: true,
+              interval: 5000,
+              displayDuration: 4000,
+              maxItems: 20,
+              showLocation: true,
+              showTime: true
+            }
           })
         },
       });

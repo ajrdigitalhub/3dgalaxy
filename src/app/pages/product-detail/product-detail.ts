@@ -56,16 +56,18 @@ export class ProductDetail {
   wishlistIds = signal<Set<string>>(new Set());
 
   // Variant Logic
-  selectedOptions = signal<Record<string, string>>({}); // { optionId: valueId }
+  selectedOptions = signal<Record<string, string>>({}); // { optionName: valueString }
   selectedVariant = computed(() => {
       const p = this.product();
       if (!p || !p.variants || p.variants.length === 0) return null;
       const opts = this.selectedOptions();
-      // Match variant based on selected options
+      // Match variant based on selected options — normalize both sides to strings
+      const toStr = (v: any) => typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
       const matched = p.variants.find((v: any) => {
-          return v.options?.every((vo: any) => opts[vo.optionValue.optionId] === vo.optionValueId);
+          if (!v.optionValues) return false;
+          return Object.keys(opts).every(key => toStr(v.optionValues[key]) === toStr(opts[key]));
       });
-      return matched || p.variants[0];
+      return matched || null;
   });
 
   galleryImages = computed(() => {
@@ -75,6 +77,100 @@ export class ProductDetail {
       }
       return this.product()?.images || [];
   });
+
+  getColorCode(colorName: string): string {
+    if (!colorName || typeof colorName !== 'string') return '#e2e8f0';
+    const name = colorName.toLowerCase().trim();
+    const colors: Record<string, string> = {
+      white: '#ffffff',
+      black: '#000000',
+      red: '#ef4444',
+      blue: '#3b82f6',
+      green: '#22c55e',
+      yellow: '#eab308',
+      orange: '#f97316',
+      grey: '#6b7280',
+      gray: '#6b7280',
+      purple: '#a855f7',
+      pink: '#ec4899',
+      brown: '#78350f',
+      ivory: '#fffff0',
+      silver: '#c0c0c0',
+      gold: '#ffd700',
+      copper: '#b87333',
+      natural: '#e2e8f0',
+      translucent: '#f1f5f9',
+      sky_blue: '#0ea5e9',
+      metallic_blue: '#1d4ed8'
+    };
+    return colors[name] || colors[name.replace(/\s+/g, '_')] || name;
+  }
+
+  isOptionValueOutOfStock(optionName: string, val: string): boolean {
+    const p = this.product();
+    if (!p || !p.variants || p.variants.length === 0) return false;
+    const toStr = (v: any) => typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
+    const currentOpts = { ...this.selectedOptions(), [optionName]: val };
+    const matchingVariant = p.variants.find((v: any) => {
+      if (!v.optionValues) return false;
+      return Object.keys(currentOpts).every(k => toStr(v.optionValues[k]) === toStr(currentOpts[k]));
+    });
+    
+    if (matchingVariant) {
+      return matchingVariant.stock <= 0;
+    }
+    
+    const anyInStock = p.variants.some((v: any) => {
+      return v.optionValues && toStr(v.optionValues[optionName]) === toStr(val) && v.stock > 0;
+    });
+    return !anyInStock;
+  }
+
+  initializeDefaultVariant(p: any) {
+    if (!p) return;
+    const queryParams = this.route.snapshot.queryParams;
+    const initialVariantId = queryParams['variant'];
+    
+    let targetVariant = p.variants?.find((v: any) => String(v.id) === String(initialVariantId));
+    if (!targetVariant && p.variants && p.variants.length > 0) {
+      targetVariant = p.variants.find((v: any) => v.isDefault) || p.variants[0];
+    }
+    
+    if (targetVariant) {
+      const opts: Record<string, string> = {};
+      if (targetVariant.optionValues) {
+        // Normalize: values may be objects or strings
+        Object.entries(targetVariant.optionValues).forEach(([k, v]: [string, any]) => {
+          opts[k] = typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
+        });
+      } else if (targetVariant.options) {
+        targetVariant.options.forEach((vo: any) => {
+          opts[vo.optionValue.optionId] = vo.optionValueId;
+        });
+      }
+      this.selectedOptions.set(opts);
+      
+      const variantImages = targetVariant.variantImages || targetVariant.images;
+      if (variantImages && variantImages.length > 0) {
+        this.activeImage.set(this.getImageUrl(variantImages[0]));
+      } else if (p.images && p.images.length > 0) {
+        this.activeImage.set(this.getImageUrl(p.images[0]));
+      }
+      
+      if (!initialVariantId) {
+        this.router.navigate([], {
+          queryParams: { variant: targetVariant.id },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+      }
+    } else {
+      this.selectedOptions.set({});
+      if (p.images && p.images.length > 0) {
+        this.activeImage.set(this.getImageUrl(p.images[0]));
+      }
+    }
+  }
 
   // Discussions and rating state drafts
   newQuestionText = signal<string>('');
@@ -210,14 +306,15 @@ export class ProductDetail {
     this.isZoomActive.set(false);
   }
 
-  selectOption(optionId: string, valueId: string) {
-      this.selectedOptions.update(opts => ({...opts, [optionId]: valueId}));
+  selectOption(optionName: string, value: string) {
+      this.selectedOptions.update(opts => ({...opts, [optionName]: value}));
       
-      // Update variant images if variant matches
+      // Update variant images and URL query params if variant matches
       const variant = this.selectedVariant();
       if (variant) {
-          if (variant.images && variant.images.length > 0) {
-              this.activeImage.set(this.getImageUrl(variant.images[0]));
+          const variantImages = variant.variantImages || variant.images;
+          if (variantImages && variantImages.length > 0) {
+              this.activeImage.set(this.getImageUrl(variantImages[0]));
           }
           this.router.navigate([], {
               queryParams: { variant: variant.id },
@@ -228,8 +325,16 @@ export class ProductDetail {
   }
 
   getOptionValueName(values: any[], selectedId: string): string {
-     const val = values.find(v => v.id === selectedId);
-     return val ? (val.displayValue || val.value) : '';
+     return selectedId || '';
+  }
+
+  /** Safely extract a plain string label from an option value that may be a string or object */
+  getOptionValueStr(val: any): string {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    // Handle objects — prefer label > value > name > toString
+    return val.label || val.value || val.name || val.title || JSON.stringify(val);
   }
 
   constructor() {
@@ -244,8 +349,16 @@ export class ProductDetail {
           .then(detailedProd => {
             if (detailedProd && !detailedProd.error) {
                // Reconstruct flat object for existing frontend properties mapped to it
-               const merged = { ...detailedProd.product, images: detailedProd.images, variants: detailedProd.variants, reviews: detailedProd.reviews, relatedProducts: detailedProd.relatedProducts };
+               const merged = { 
+                 ...detailedProd.product, 
+                 options: detailedProd.options || detailedProd.product?.options || [],
+                 images: detailedProd.images, 
+                 variants: detailedProd.variants, 
+                 reviews: detailedProd.reviews, 
+                 relatedProducts: detailedProd.relatedProducts 
+               };
                this.fetchedProduct.set(merged);
+               this.initializeDefaultVariant(merged);
             }
           })
           .catch(err => console.error("Could not fetch product details:", err));
@@ -258,30 +371,11 @@ export class ProductDetail {
           this.is360Active.set(false);
           this.rotationAngle.set(0);
 
-          // Build default options based on URL variant tracking or default variant
-          const queryParams = this.route.snapshot.queryParams;
-          const initialVariantId = queryParams['variant'];
-          
-          let targetVariant = matched.variants?.find((v: any) => v.id === initialVariantId);
-          if (!targetVariant && matched.variants && matched.variants.length > 0) {
-              targetVariant = matched.variants[0];
-          }
-
-          if (targetVariant && targetVariant.options) {
-             const opts: Record<string, string> = {};
-             targetVariant.options.forEach((vo: any) => {
-                 opts[vo.optionValue.optionId] = vo.optionValueId;
-             });
-             this.selectedOptions.set(opts);
-             
-             if (targetVariant.images && targetVariant.images.length > 0) {
-                 this.activeImage.set(this.getImageUrl(targetVariant.images[0]));
-             }
-          }
+          this.initializeDefaultVariant(matched);
 
           // Update SEO
-          const pageTitle = (matched as any).seoTitle || `${matched.brand} ${matched.name} | 3D Galaxy`;
-          const pageDesc = (matched as any).seoDescription || matched.description;
+          const pageTitle = (matched as any).seoTitle || `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
+          const pageDesc = (matched as any).seoDescription || `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
           this.titleService.setTitle(pageTitle);
           this.metaService.updateTag({ name: 'description', content: pageDesc });
           this.metaService.updateTag({ property: 'og:title', content: pageTitle });
@@ -297,6 +391,32 @@ export class ProductDetail {
              this.document.head.appendChild(link);
           }
           link.setAttribute('href', `https://3dgalaxy.com/product/${matched.slug}`);
+        }
+      }
+    });
+
+    // When query parameters change, update selected options if a variant matches
+    this.route.queryParams.subscribe(q => {
+      const varId = q['variant'];
+      if (varId) {
+        const prod = this.product();
+        const currentVariant = this.selectedVariant();
+        if (currentVariant && String(currentVariant.id) === String(varId)) {
+          return; // Already matched
+        }
+        if (prod && prod.variants) {
+          const matchedVar = prod.variants.find((v: any) => String(v.id) === String(varId));
+          if (matchedVar && matchedVar.optionValues) {
+            const normalized: Record<string, string> = {};
+            Object.entries(matchedVar.optionValues).forEach(([k, v]: [string, any]) => {
+              normalized[k] = typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
+            });
+            this.selectedOptions.set(normalized);
+            const variantImages = matchedVar.variantImages || matchedVar.images;
+            if (variantImages && variantImages.length > 0) {
+              this.activeImage.set(this.getImageUrl(variantImages[0]));
+            }
+          }
         }
       }
     });
@@ -343,8 +463,27 @@ export class ProductDetail {
 
   addToCart(p: Product) {
     if (this.isAddingToCart()) return;
-    this.isAddingToCart.set(true);
-    this.ds.addToCart(p, this.quantity(), this.selectedVariant() || undefined);
+    
+    if (p.variants && p.variants.length > 0) {
+      const selected = this.selectedVariant();
+      if (!selected) {
+        this.toastService.error('Please select all variant options.');
+        return;
+      }
+      if (selected.stock <= 0) {
+        this.toastService.error('Selected variant is out of stock.');
+        return;
+      }
+      this.isAddingToCart.set(true);
+      this.ds.addToCart(p, this.quantity(), selected);
+    } else {
+      if (p.stock <= 0) {
+        this.toastService.error('Product is out of stock.');
+        return;
+      }
+      this.isAddingToCart.set(true);
+      this.ds.addToCart(p, this.quantity());
+    }
     
     setTimeout(() => {
       this.isAddingToCart.set(false);
@@ -397,7 +536,24 @@ export class ProductDetail {
   }
 
   buyNow(p: Product) {
-    this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity(), variant: this.selectedVariant() || undefined } });
+    if (p.variants && p.variants.length > 0) {
+      const selected = this.selectedVariant();
+      if (!selected) {
+        this.toastService.error('Please select all variant options.');
+        return;
+      }
+      if (selected.stock <= 0) {
+        this.toastService.error('Selected variant is out of stock.');
+        return;
+      }
+      this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity(), variant: selected } });
+    } else {
+      if (p.stock <= 0) {
+        this.toastService.error('Product is out of stock.');
+        return;
+      }
+      this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity() } });
+    }
   }
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION

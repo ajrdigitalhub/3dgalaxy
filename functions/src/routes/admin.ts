@@ -8,8 +8,9 @@ import { upload } from '../middleware/upload';
 
 const router = Router();
 
-// Ensure roles: Admin and Super Admin have full access
-const adminGuard = [authenticateToken, requireRole(['Admin', 'Super Admin'])];
+
+// Ensure roles: Admin, Super Admin and Manager have full access
+const adminGuard = [authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager'])];
 
 router.post('/upload-image', adminGuard, upload.single('image'), async (req: Request, res: Response) => {
   try {
@@ -560,7 +561,7 @@ router.get('/customers', adminGuard, async (req: Request, res: Response) => {
         createdAt: 'desc'
       }
     });
-    
+
     const formatted = customers.map(c => {
       const name = c.user.firstName ? `${c.user.firstName} ${c.user.lastName || ''}`.trim() : (c.user.email || 'N/A');
       return {
@@ -610,9 +611,9 @@ router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) =
       const customerName = cart.customer?.user?.firstName ? `${cart.customer.user.firstName} ${cart.customer.user.lastName || ''}`.trim() : (cart.customer?.user?.email || 'Guest Customer');
       const email = cart.customer?.user?.email || 'N/A';
       const phone = cart.customer?.phone || cart.customer?.user?.mobile || 'N/A';
-      
+
       const itemsText = cart.items.map(i => `${i.product.name}${i.variant ? ' (' + i.variant.name + ')' : ''} x ${i.quantity}`).join(', ');
-      
+
       const cartValue = cart.items.reduce((total, i) => {
         const price = i.variant?.salePrice || i.product.salePrice || 0;
         return total + (price * i.quantity);
@@ -707,7 +708,7 @@ router.get('/notifications', adminGuard, async (req: Request, res: Response) => 
       orderBy: { createdAt: 'desc' },
       include: { user: true, template: true }
     });
-    
+
     const formatted = list.map(n => ({
       id: n.id,
       title: n.template?.subject || 'Notification',
@@ -720,6 +721,137 @@ router.get('/notifications', adminGuard, async (req: Request, res: Response) => 
     return res.status(200).json({ success: true, data: formatted });
   } catch (err: any) {
     return res.status(550).json({ success: false, error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// RECENT PURCHASES — Social Proof Popup API
+// -------------------------------------------------------------
+let recentPurchasesCache: { data: any[]; expiresAt: number } | null = null;
+const RECENT_PURCHASES_TTL = 5 * 60 * 1000; // 5 minutes
+
+const DEMO_PURCHASES = [
+  { id: 'd1', customerName: 'R*** K', city: 'Mumbai', state: 'Maharashtra', country: 'India', productName: 'Bambu Lab A1 Mini', productImage: 'https://picsum.photos/seed/bambu/80/80', productSlug: 'bambu-lab-a1-mini', minutesAgo: 3 },
+  { id: 'd2', customerName: 'S*** P', city: 'Bangalore', state: 'Karnataka', country: 'India', productName: 'PLA Pro Filament 1.75mm', productImage: 'https://picsum.photos/seed/pla/80/80', productSlug: 'pla-pro-filament-175mm', minutesAgo: 11 },
+  { id: 'd3', customerName: 'A*** M', city: 'Chennai', state: 'Tamil Nadu', country: 'India', productName: 'Elegoo Mars 4 Ultra', productImage: 'https://picsum.photos/seed/elegoo/80/80', productSlug: 'elegoo-mars-4-ultra', minutesAgo: 18 },
+  { id: 'd4', customerName: 'T*** S', city: 'Gaya', state: 'Bihar', country: 'India', productName: 'PETG Filament 1kg Black', productImage: 'https://picsum.photos/seed/petg/80/80', productSlug: 'petg-filament-1kg', minutesAgo: 24 },
+  { id: 'd5', customerName: 'V*** R', city: 'Hyderabad', state: 'Telangana', country: 'India', productName: 'Bambu Lab P1S Combo', productImage: 'https://picsum.photos/seed/p1s/80/80', productSlug: 'bambu-lab-p1s-combo', minutesAgo: 37 },
+  { id: 'd6', customerName: 'D*** L', city: 'Pune', state: 'Maharashtra', country: 'India', productName: 'Creality K1 Max', productImage: 'https://picsum.photos/seed/k1max/80/80', productSlug: 'creality-k1-max', minutesAgo: 52 },
+];
+
+function maskCustomerName(firstName: string | null, lastName: string | null, email: string | null): string {
+  const first = (firstName || '').trim();
+  const last = (lastName || '').trim();
+  if (first && last) {
+    return `${first.charAt(0).toUpperCase()}*** ${last.charAt(0).toUpperCase()}`;
+  }
+  if (first) {
+    return `${first.charAt(0).toUpperCase()}*** Customer`;
+  }
+  if (email) {
+    const localPart = email.split('@')[0];
+    return `${localPart.charAt(0).toUpperCase()}*** Customer`;
+  }
+  return 'Customer';
+}
+
+function getMinutesAgo(date: Date): number {
+  return Math.max(1, Math.floor((Date.now() - date.getTime()) / 60000));
+}
+
+router.get('/recent-purchases', async (req: Request, res: Response) => {
+  try {
+    // Serve from cache if still fresh
+    if (recentPurchasesCache && Date.now() < recentPurchasesCache.expiresAt) {
+      return res.status(200).json({ success: true, data: recentPurchasesCache.data, cached: true });
+    }
+
+    const allowedStatuses = ['paid', 'PAID', 'confirmed', 'CONFIRMED', 'processing', 'PROCESSING', 'completed', 'COMPLETED'];
+
+    const orders = await prisma.order.findMany({
+      where: {
+        status: { in: allowedStatuses }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        customer: {
+          include: { user: true }
+        },
+        items: {
+          take: 1,
+          include: {
+            product: {
+              select: { name: true, slug: true, images: true }
+            }
+          }
+        }
+      }
+    });
+
+    const items: any[] = [];
+    for (const order of orders) {
+      const firstItem = order.items[0];
+      if (!firstItem) continue;
+
+      const user = order.customer?.user;
+      const customerName = maskCustomerName(
+        user?.firstName || null,
+        user?.lastName || null,
+        user?.email || null
+      );
+
+      // Extract location from address or customer record
+      let city = 'India';
+      let state = '';
+      let country = 'India';
+
+      if ((order as any).shippingAddress) {
+        try {
+          const addr = typeof (order as any).shippingAddress === 'string'
+            ? JSON.parse((order as any).shippingAddress)
+            : (order as any).shippingAddress;
+          city = addr.city || addr.town || city;
+          state = addr.state || addr.province || state;
+          country = addr.country || country;
+        } catch (_) {}
+      }
+
+      // Get product image
+      let productImage = 'https://picsum.photos/seed/product/80/80';
+      try {
+        const imgs = typeof firstItem.product.images === 'string'
+          ? JSON.parse(firstItem.product.images as any)
+          : (firstItem.product.images as any[]);
+        if (Array.isArray(imgs) && imgs.length > 0) {
+          const img = imgs[0];
+          productImage = typeof img === 'string' ? img : (img.url || productImage);
+        }
+      } catch (_) {}
+
+      items.push({
+        id: order.id,
+        customerName,
+        city,
+        state,
+        country,
+        productName: firstItem.product.name,
+        productImage,
+        productSlug: firstItem.product.slug,
+        minutesAgo: getMinutesAgo(order.createdAt)
+      });
+
+      if (items.length >= 20) break;
+    }
+
+    const finalData = items.length > 0 ? items : DEMO_PURCHASES;
+    recentPurchasesCache = { data: finalData, expiresAt: Date.now() + RECENT_PURCHASES_TTL };
+
+    return res.status(200).json({ success: true, data: finalData });
+  } catch (err: any) {
+    console.error('recent-purchases error:', err.message);
+    // Fallback gracefully to demo data
+    return res.status(200).json({ success: true, data: DEMO_PURCHASES, fallback: true });
   }
 });
 

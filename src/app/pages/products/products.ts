@@ -168,9 +168,9 @@ export class Products {
              this.expandedCategoryIds.update(set => new Set(set).add(cat.id));
              
              // Update SEO
-             this.titleService.setTitle(`${cat.name} | 3D Galaxy`);
-             this.metaService.updateTag({ name: 'description', content: `Browse our collection of ${cat.name}. High quality 3D printing supplies.` });
-             this.metaService.updateTag({ property: 'og:title', content: `${cat.name} | 3D Galaxy` });
+             this.titleService.setTitle(`Buy ${cat.name} Online at Best Prices | 3D Galaxy`);
+             this.metaService.updateTag({ name: 'description', content: `Shop premium ${cat.name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!` });
+             this.metaService.updateTag({ property: 'og:title', content: `Buy ${cat.name} Online at Best Prices | 3D Galaxy` });
              
              let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
              if (!link) {
@@ -186,9 +186,9 @@ export class Products {
              this.filterBrand.set(b.name);
              
              // Update SEO
-             this.titleService.setTitle(`Buy ${b.name} | 3D Galaxy`);
-             this.metaService.updateTag({ name: 'description', content: `Shop original ${b.name} printers and filaments.` });
-             this.metaService.updateTag({ property: 'og:title', content: `Buy ${b.name} | 3D Galaxy` });
+             this.titleService.setTitle(`Buy Original ${b.name} Products Online | 3D Galaxy India`);
+             this.metaService.updateTag({ name: 'description', content: `Get authorized ${b.name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.` });
+             this.metaService.updateTag({ property: 'og:title', content: `Buy Original ${b.name} Products Online | 3D Galaxy India` });
              
              let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
              if (!link) {
@@ -200,8 +200,8 @@ export class Products {
           }
        } else {
              // Reset SEO
-             this.titleService.setTitle(`All Products | 3D Galaxy`);
-             this.metaService.updateTag({ name: 'description', content: `Browse all high quality 3D printing supplies.` });
+             this.titleService.setTitle(`Buy 3D Printers, Filaments & Spare Parts Online | 3D Galaxy`);
+             this.metaService.updateTag({ name: 'description', content: `Browse India's largest catalog of industrial 3D printers, SLA/FDM materials, filaments, and precision spare parts. OEM warranty & bulk dealer discounts available.` });
              let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
              if (!link) {
                  link = this.document.createElement('link');

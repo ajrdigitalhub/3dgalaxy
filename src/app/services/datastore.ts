@@ -289,6 +289,14 @@ export interface Settings {
   defaultSocialShareImageUrl?: string;
   razorpayLogoUrl?: string;
   paymentMethodIconsUrl?: string;
+  recentPurchasePopup?: {
+    enabled: boolean;
+    interval: number;
+    displayDuration: number;
+    maxItems: number;
+    showLocation: boolean;
+    showTime: boolean;
+  };
 }
 
 export interface HomeLayoutSection {
@@ -1451,7 +1459,8 @@ export class DatastoreService {
     this.cart.update(items => {
       const isVariantMatch = (i: CartItem) => {
          if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
-         return i.product.id === product.id;
+         if (!variant && !i.variant) return i.product.id === product.id;
+         return false;
       };
       
       const existing = items.find(isVariantMatch);
@@ -1592,7 +1601,7 @@ export class DatastoreService {
     if (localStorage.getItem('access_token')) {
       const itemsPayload = this.cart().map(i => ({
         productId: i.product.id,
-        variantId: null,
+        variantId: i.variant?.id || null,
         quantity: i.quantity
       }));
       const addressPayload = {

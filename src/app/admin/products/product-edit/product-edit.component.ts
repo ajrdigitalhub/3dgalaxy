@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
@@ -12,7 +13,7 @@ import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-product-edit',
-  imports: [CommonModule, RouterModule, MatIconModule, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-edit.component.html',
   styleUrl: './product-edit.component.scss'
@@ -41,7 +42,6 @@ export class ProductEditComponent implements OnInit {
   pImages = signal<string>('');
   pDesc = signal<string>('');
   pLongDesc = signal<string>('');
-  pVariants = signal<string>('[]');
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
   
@@ -52,6 +52,10 @@ export class ProductEditComponent implements OnInit {
   pWarranty = signal<any>(null);
   pShipping = signal<any>(null);
   pRelatedProducts = signal<any[]>([]);
+
+  // Variant & Option Signals
+  adminOptions = signal<{ name: string; valuesString: string }[]>([]);
+  adminVariants = signal<any[]>([]);
 
   isLoading = signal<boolean>(false);
 
@@ -83,10 +87,6 @@ export class ProductEditComponent implements OnInit {
     }
   }
 
-  constructor() {
-    // Removed effect that overwrote details from lightweight catalog
-  }
-
   fillForm(data: any) {
     const p = data.product || data;
     this.pName.set(p.name || '');
@@ -107,10 +107,6 @@ export class ProductEditComponent implements OnInit {
     this.pDesc.set(p.description || '');
     this.pLongDesc.set(p.long_description || '');
     
-    // Check if variants came separately in detailed payload
-    const variantsList = data.variants || p.variants || [];
-    this.pVariants.set(JSON.stringify(variantsList, null, 2));
-
     const seoData = data.seo || p.seo || {};
     this.pSeoTitle.set(p.seoTitle || seoData.title || seoData.seoTitle || '');
     this.pSeoDescription.set(p.seoDescription || seoData.description || seoData.seoDescription || '');
@@ -122,6 +118,88 @@ export class ProductEditComponent implements OnInit {
     this.pWarranty.set(data.warranty || p.warranty || null);
     this.pShipping.set(data.shipping || p.shipping || null);
     this.pRelatedProducts.set(data.relatedProducts || p.relatedProducts || []);
+
+    // Map dynamic options
+    const opts = data.options || p.options || [];
+    const mappedOptions = opts.map((opt: any) => ({
+      name: opt.name || '',
+      valuesString: Array.isArray(opt.values) ? opt.values.join(', ') : ''
+    }));
+    this.adminOptions.set(mappedOptions);
+
+    // Map dynamic variants
+    const vars = data.variants || p.variants || [];
+    const mappedVariants = vars.map((v: any) => ({
+      name: v.name || '',
+      sku: v.sku || '',
+      price: v.price || 0,
+      salePrice: v.salePrice || null,
+      stock: v.stock || 0,
+      variantImages: Array.isArray(v.variantImages) ? v.variantImages.join('\n') : (Array.isArray(v.images) ? v.images.join('\n') : ''),
+      optionValues: v.optionValues || {}
+    }));
+    this.adminVariants.set(mappedVariants);
+  }
+
+  addOption() {
+    this.adminOptions.update(opts => [...opts, { name: '', valuesString: '' }]);
+  }
+
+  removeOption(index: number) {
+    this.adminOptions.update(opts => opts.filter((_, i) => i !== index));
+  }
+
+  generateVariants() {
+    const baseName = this.pName().trim();
+    const baseSku = this.pSku().trim();
+    if (!baseName || !baseSku) {
+      this.toastService.error('Please enter Product Name and SKU first.');
+      return;
+    }
+
+    const options = this.adminOptions().map(opt => ({
+      name: opt.name.trim(),
+      values: opt.valuesString.split(',').map(v => v.trim()).filter(Boolean)
+    })).filter(o => o.name && o.values.length > 0);
+
+    if (options.length === 0) {
+      this.toastService.error('Please add at least one Option with values.');
+      return;
+    }
+
+    // Generate Cartesian product combinations
+    const cartesian = (arrays: any[]): any[][] => {
+      return arrays.reduce((acc, curr) => {
+        return acc.flatMap((d: any) => curr.map((e: any) => [...d, e]));
+      }, [[]]);
+    };
+
+    const combinations = cartesian(options.map(o => o.values));
+    
+    const newVariants = combinations.map(comb => {
+      const optValues: Record<string, string> = {};
+      options.forEach((opt, idx) => {
+        optValues[opt.name] = comb[idx];
+      });
+
+      const suffix = comb.join(' / ');
+      const name = `${baseName} - ${suffix}`;
+      const skuSuffix = comb.map(c => c.toLowerCase().replace(/[^a-z0-9]+/g, '')).join('-');
+      const sku = `${baseSku}-${skuSuffix}`.toUpperCase();
+
+      return {
+        name,
+        sku,
+        price: this.pSale() || this.pMrp() || 0,
+        salePrice: this.pSale() || null,
+        stock: this.pStock() || 0,
+        variantImages: '',
+        optionValues: optValues
+      };
+    });
+
+    this.adminVariants.set(newVariants);
+    this.toastService.success(`Generated ${newVariants.length} variant combinations!`);
   }
 
   async saveProduct() {
@@ -162,17 +240,22 @@ export class ProductEditComponent implements OnInit {
       return;
     }
 
-    // Parse variants JSON block
-    let variantsArr = [];
-    try {
-      const vText = this.pVariants().trim();
-      if (vText) {
-        variantsArr = JSON.parse(vText);
-      }
-    } catch {
-      this.toastService.error('Invalid Variants JSON. Correct or empty this field.');
-      return;
-    }
+    // Parse dynamic options
+    const optionsArr = this.adminOptions().map(opt => ({
+      name: opt.name.trim(),
+      values: opt.valuesString.split(',').map(v => v.trim()).filter(Boolean)
+    })).filter(o => o.name && o.values.length > 0);
+
+    // Map dynamic variants
+    const variantsArr = this.adminVariants().map(v => ({
+      name: v.name,
+      sku: v.sku,
+      price: parseFloat(v.price) || 0,
+      salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
+      stock: parseInt(v.stock, 10) || 0,
+      variantImages: v.variantImages ? v.variantImages.split('\n').map((url: string) => url.trim()).filter(Boolean) : [],
+      optionValues: v.optionValues
+    }));
 
     const pData: Partial<Product> | any = {
       name,
@@ -187,6 +270,7 @@ export class ProductEditComponent implements OnInit {
       description: this.pDesc(),
       images: imagesArr.map((url, i) => ({ url, isPrimary: i === 0, sortOrder: i })),
       variants: variantsArr,
+      options: optionsArr,
       isActive: this.pStatus() === 'active',
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),

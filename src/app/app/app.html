@@ -2,6 +2,14 @@
 <div
   [class]="ds.theme() === 'dark' ? 'dark bg-neutral-950 text-neutral-100 min-h-screen font-sans selection:bg-blue-500/30 transition-all duration-300' : 'bg-neutral-50 text-neutral-900 min-h-screen font-sans selection:bg-blue-500/20 transition-all duration-300'">
 
+  <!-- PREMIUM VIEWPORT LOADING INDICATORS -->
+  @if (loading()) {
+  <div class="top-loader-progress">
+    <div class="top-loader-bar"></div>
+  </div>
+  }
+
+
   @if (!isAuthRoute()) {
   <!-- INTERACTIVE TOP MARKETING SLIDER BANNER -->
   @if (topAd(); as ad) {
@@ -1063,4 +1071,9 @@
   }
 
   <app-toast-container></app-toast-container>
+
+  <!-- Recent Purchase Social Proof Popup -->
+  @if (!isAuthRoute()) {
+    <app-recent-purchase-popup />
+  }
 </div>

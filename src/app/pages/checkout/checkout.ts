@@ -58,10 +58,13 @@ export class CheckoutComponent {
     return this.checkoutItems().reduce((acc, item) => {
       const p = item.product;
       const role = this.ds.userRole();
-      const pPrice = role === 'admin' || role === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300
+      let price = role === 'admin' || role === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300
         ? (p.dealerPrice || p.dealer_price || p.basePrice || 0)
         : (p.salePrice || p.sale_price || p.basePrice || 0);
-      return acc + (pPrice * item.quantity);
+      if (item.variant) {
+        price = item.variant.salePrice || item.variant.price || price;
+      }
+      return acc + (price * item.quantity);
     }, 0);
   });
   
@@ -111,7 +114,7 @@ export class CheckoutComponent {
 
     const state = this.location.getState() as any;
     if (state && state.product) {
-       this.checkoutItems.set([{ product: state.product, quantity: state.quantity || 1 }]);
+       this.checkoutItems.set([{ product: state.product, variant: state.variant, quantity: state.quantity || 1 }]);
     } else {
         // if no state, retrieve from cart or redirect
         setTimeout(() => {
@@ -134,11 +137,17 @@ export class CheckoutComponent {
     this.showAuthModal.set(false);
   }
 
-  getPrice(p: any) {
+  getPrice(item: any) {
+    const p = item.product || item;
+    const variant = item.variant;
     const role = this.ds.userRole();
-    return role === 'admin' || role === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300
+    let price = role === 'admin' || role === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300
       ? (p.dealerPrice || p.dealer_price || p.basePrice || 0)
       : (p.salePrice || p.sale_price || p.basePrice || 0);
+    if (variant) {
+      price = variant.salePrice || variant.price || price;
+    }
+    return price;
   }
 
   async placeOrder() {
@@ -163,6 +172,7 @@ export class CheckoutComponent {
     const payload: any = {
       items: this.checkoutItems().map(ci => ({
         productId: ci.product.id,
+        variantId: ci.variant?.id || null,
         quantity: ci.quantity
       })),
       shippingAddress: {

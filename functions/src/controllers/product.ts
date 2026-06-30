@@ -193,7 +193,11 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 
     const finalResponse = {
       product: item,
-      variants: item.variants || [],
+      options: safeParseArray(item.options),
+      variants: (item.variants || []).map((v: any) => ({
+        ...v,
+        images: safeParseArray(v.variantImages || v.images || [])
+      })),
       reviews: item.reviews || [],
       // Keep backward compatibility lists
       images: masterData.images,
@@ -254,7 +258,11 @@ export const getProductById = async (req: Request, res: Response) => {
 
     const finalResponse = {
       product: item,
-      variants: item.variants || [],
+      options: safeParseArray(item.options),
+      variants: (item.variants || []).map((v: any) => ({
+        ...v,
+        images: safeParseArray(v.variantImages || v.images || [])
+      })),
       reviews: item.reviews || [],
       // Keep backward compatibility lists
       images: masterData.images,

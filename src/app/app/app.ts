@@ -10,11 +10,12 @@ import { ToastContainerComponent } from '../shared/components/toast/toast.compon
 import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
 import { ThemeService } from '../core/services/theme.service';
+import { RecentPurchasePopupComponent } from '../shared/components/recent-purchase-popup/recent-purchase-popup';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent, ToastContainerComponent],
+  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent, ToastContainerComponent, RecentPurchasePopupComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

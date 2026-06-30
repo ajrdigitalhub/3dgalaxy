@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, E
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { Title, Meta } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, Product, Category } from '../../services/datastore';
 import { LoadingService } from '../../core/services/loading.service';
@@ -30,6 +31,8 @@ export class Home {
   router = inject(Router);
   loadingService = inject(LoadingService);
   settingsService = inject(SettingsService);
+  titleService = inject(Title);
+  metaService = inject(Meta);
   heroContainer = viewChild<ElementRef>('heroContainer');
 
   loading = computed(() => {
@@ -280,6 +283,13 @@ export class Home {
 
   constructor() {
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+    
+    // Set dynamic sales-focused SEO tags
+    this.titleService.setTitle('3D Galaxy | Buy 3D Printers, Filaments & Custom 3D Printing Service Online');
+    this.metaService.updateTag({ name: 'description', content: "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!" });
+    this.metaService.updateTag({ property: 'og:title', content: '3D Galaxy | Buy 3D Printers, Filaments & 3D Printing Services Online' });
+    this.metaService.updateTag({ property: 'og:description', content: "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!" });
+
     // Auto-slide effect
     effect((onCleanup) => {
       if (!isBrowser) return;

@@ -1,0 +1,57 @@
+@if (!isDismissed() && isVisible() && currentItem(); as item) {
+  <div
+    class="rpp-wrapper"
+    [class.rpp-enter]="!isAnimatingOut()"
+    [class.rpp-exit]="isAnimatingOut()"
+    [class.dark]="isDark()"
+    role="status"
+    aria-live="polite"
+    [attr.aria-label]="'Recent purchase notification'"
+  >
+    <!-- Clickable Card -->
+    <div class="rpp-card" (click)="navigate()" (keydown.enter)="navigate()" tabindex="0" role="button" [attr.aria-label]="'View product ' + item.productName">
+
+      <!-- Product Thumbnail -->
+      <div class="rpp-image-wrap">
+        <img
+          [src]="item.productImage"
+          [alt]="item.productName"
+          class="rpp-image"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          onerror="this.src='https://picsum.photos/seed/product/80/80'"
+        />
+        <!-- Live indicator dot -->
+        <span class="rpp-live-dot" aria-hidden="true"></span>
+      </div>
+
+      <!-- Text Content -->
+      <div class="rpp-content">
+        @if (popupConfig().showLocation) {
+          <p class="rpp-location">
+            <span class="rpp-name">{{ item.customerName }}</span>
+            <span class="rpp-sep"> in </span>
+            <span class="rpp-city">{{ formatLocation(item) }}</span>
+          </p>
+        }
+        <p class="rpp-product">Purchased <strong>{{ item.productName }}</strong></p>
+        @if (popupConfig().showTime) {
+          <p class="rpp-time">{{ formatTime(item.minutesAgo) }}</p>
+        }
+      </div>
+
+    </div>
+
+    <!-- Close Button -->
+    <button class="rpp-close" (click)="$event.stopPropagation(); dismiss()" aria-label="Dismiss popup" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22z"/>
+      </svg>
+    </button>
+
+    <!-- Progress bar -->
+    <div class="rpp-progress" [class.rpp-progress-active]="!isAnimatingOut()">
+      <div class="rpp-progress-bar" [style.animation-duration]="popupConfig().displayDuration + 'ms'"></div>
+    </div>
+  </div>
+}

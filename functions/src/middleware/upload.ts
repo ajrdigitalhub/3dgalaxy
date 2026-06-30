@@ -20,6 +20,8 @@ export const upload = {
       }
 
       try {
+        console.log('[UPLOAD] Content-Type:', contentType);
+
         const bb = busboy({
           headers: req.headers,
           limits: {
@@ -28,16 +30,31 @@ export const upload = {
           },
         });
 
-        let fileProcessed = false;
-        let fileErrorOccurred = false;
+        let fileHandled = false;
+        let busboyFinished = false;
+        let writeFinished = false;
+        let errorOccurred = false;
+
+        // Called once both busboy AND writeStream are done
+        const tryNext = () => {
+          if (errorOccurred) return;
+          if (busboyFinished && (writeFinished || !fileHandled)) {
+            console.log('[UPLOAD] All done. req.file:', req.file ? req.file.filename : 'NOT SET');
+            next();
+          }
+        };
 
         bb.on('file', (name, fileStream, info) => {
           const { filename: originalname, mimeType: mimetype, encoding } = info;
+          console.log('[UPLOAD] file event — field:', name, 'file:', originalname, 'mime:', mimetype);
 
           if (name !== fieldname) {
+            console.log('[UPLOAD] field mismatch, expected:', fieldname, 'got:', name);
             fileStream.resume();
             return;
           }
+
+          fileHandled = true;
 
           // Validate mime type and extension
           const allowedExtensions = /jpeg|jpg|png|gif|webp|svg/;
@@ -45,7 +62,8 @@ export const upload = {
           const extNameValid = allowedExtensions.test(path.extname(originalname).toLowerCase());
 
           if (!mimeTypeValid || !extNameValid) {
-            fileErrorOccurred = true;
+            console.log('[UPLOAD] invalid mime/ext:', mimetype, originalname);
+            errorOccurred = true;
             fileStream.resume();
             return next(new Error('Only web images are supported (JPG, PNG, GIF, WEBP, SVG)!'));
           }
@@ -58,23 +76,22 @@ export const upload = {
           fileStream.pipe(writeStream);
 
           let fileSize = 0;
-          fileStream.on('data', (data) => {
+          fileStream.on('data', (data: Buffer) => {
             fileSize += data.length;
           });
 
           fileStream.on('limit', () => {
-            fileErrorOccurred = true;
+            console.log('[UPLOAD] file size limit exceeded');
+            errorOccurred = true;
             writeStream.destroy();
             try {
-              if (fs.existsSync(filepath)) {
-                fs.unlinkSync(filepath);
-              }
-            } catch (err) {}
+              if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+            } catch (_) {}
             return next(new Error('File size limit exceeded (Max 10MB)!'));
           });
 
           writeStream.on('finish', () => {
-            if (fileErrorOccurred) return;
+            if (errorOccurred) return;
             req.file = {
               fieldname,
               originalname,
@@ -84,14 +101,17 @@ export const upload = {
               filename,
               path: filepath,
               size: fileSize,
-              buffer: Buffer.alloc(0), // Mock buffer field to satisfy multer type if required
+              buffer: Buffer.alloc(0),
               stream: fileStream,
             } as any;
-            fileProcessed = true;
+            console.log('[UPLOAD] writeStream finished. file saved:', filepath, 'size:', fileSize);
+            writeFinished = true;
+            tryNext();
           });
 
           writeStream.on('error', (err) => {
-            fileErrorOccurred = true;
+            console.log('[UPLOAD] writeStream error:', err);
+            errorOccurred = true;
             return next(err);
           });
         });
@@ -102,21 +122,23 @@ export const upload = {
         });
 
         bb.on('close', () => {
-          if (fileErrorOccurred) return;
-          next();
+          console.log('[UPLOAD] busboy close. fileHandled:', fileHandled, 'writeFinished:', writeFinished);
+          busboyFinished = true;
+          tryNext();
         });
 
         bb.on('error', (err) => {
+          console.log('[UPLOAD] busboy error:', err);
+          errorOccurred = true;
           return next(err);
         });
 
-        const rawBody = (req as any).rawBody;
-        if (rawBody) {
-          bb.end(rawBody);
-        } else {
-          req.pipe(bb);
-        }
+        // Resume the stream (it may have been paused) then pipe to busboy
+        req.resume();
+        req.pipe(bb);
+
       } catch (err) {
+        console.log('[UPLOAD] unexpected error:', err);
         return next(err);
       }
     };

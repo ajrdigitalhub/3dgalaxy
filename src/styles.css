@@ -1,7 +1,26 @@
 /* You can add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons&display=block');
 @import "tailwindcss";
+
+/* Avoid FOUC (flash of unstyled content) for Material Icons by hiding the ligature text while font loads */
+mat-icon {
+  display: inline-block !important;
+  width: 24px !important;
+  height: 24px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: clip !important;
+  vertical-align: middle;
+}
+
+html:not(.material-icons-loaded) mat-icon {
+  color: transparent !important;
+  background: rgba(156, 163, 175, 0.15) !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+}
+
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -473,5 +492,34 @@ button.bg-theme-glow-button:disabled {
   border: 1px solid #1e293b !important;
   box-shadow: none !important;
 }
+
+/* Premium Top API Progress Loader */
+.top-loader-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 99999;
+  background: rgba(139, 92, 246, 0.1);
+  overflow: hidden;
+}
+
+.top-loader-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6, #06b6d4, #ec4899);
+  animation: topLoaderCrawl 1.5s infinite ease-in-out;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6), 0 0 4px rgba(6, 182, 212, 0.4);
+}
+
+@keyframes topLoaderCrawl {
+  0% { left: -35%; width: 35%; }
+  50% { left: 30%; width: 40%; }
+  100% { left: 100%; width: 35%; }
+}
+
 
 
