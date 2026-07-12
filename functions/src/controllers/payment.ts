@@ -2,32 +2,12 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 // Helper to get payment settings
 const getPaymentSettings = async () => {
-  // Try app_settings in Setting table first
-  const settingRecord = await prisma.setting.findUnique({
-    where: { settingKey: 'app_settings' }
-  });
-  if (settingRecord && settingRecord.settingData) {
-    const data = typeof settingRecord.settingData === 'string' ? JSON.parse(settingRecord.settingData) : settingRecord.settingData;
-    if (data && data.paymentGatewaySettings) {
-      return data.paymentGatewaySettings;
-    }
-  }
-
-  // Fallback to global-settings in ThemeSetting table
-  const record = await prisma.themeSetting.findUnique({
-    where: { keyName: 'global-settings' },
-  });
-  if (record) {
-    const value = typeof record.value === 'string' ? JSON.parse(record.value) : record.value;
-    if (value && value.paymentGatewaySettings) {
-      return value.paymentGatewaySettings;
-    }
-  }
-
-  return {};
+  const settings = await getSettingsService();
+  return settings?.paymentGatewaySettings || {};
 };
 
 // Razorpay Order Creation
@@ -229,7 +209,7 @@ export const createCashfreeOrder = async (req: Request, res: Response) => {
       order_id: order.orderNumber,
       customer_details: customerDetails,
       order_meta: {
-        return_url: `${req.headers.origin || 'http://localhost:4200'}/order-success?order_id=${order.id}`,
+        return_url: `${(req.headers.origin || 'http://localhost:4200').replace(/^http:\/\//i, 'https://')}/order-success?order_id=${order.id}`,
       },
     };
 

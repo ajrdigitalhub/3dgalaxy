@@ -416,14 +416,22 @@ export class DatastoreService {
   userRole = signal<'guest' | 'customer' | 'admin' | 'super-admin'>('guest');
   authReady = signal<boolean>(false);
 
-  // Global Settings
-  settings = signal<Settings>({
-    appName: '3D Galaxy Industrial',
-    primaryColor: '#2563eb',
-    secondaryColor: '#4f46e5',
-    accentColor: '#10b981',
-    borderRadius: 16,
-    fontFamily: 'Inter'
+  // Global Settings computed from SettingsService
+  settings = computed<any>(() => {
+    const data = this.settingsService.settingsData() || {};
+    const themeData = this.settingsService.theme() || {};
+    return {
+      ...data,
+      ...themeData,
+      appName: data.siteName || data.appName || '3D Galaxy',
+      primaryColor: themeData.primaryColor || data.primaryColor || '#d65108',
+      secondaryColor: themeData.secondaryColor || data.secondaryColor || '#1e3a8a',
+      accentColor: themeData.accentColor || data.accentColor || '#3B82F6',
+      borderRadius: themeData.borderRadius || data.borderRadius || 16,
+      fontFamily: themeData.fontFamily || themeData.typography || data.fontFamily || 'Inter',
+      logoUrl: data.logoUrl || themeData.logo || '',
+      defaultPlaceholderUrl: data.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400'
+    };
   });
 
   // Theme Configuration
@@ -438,13 +446,39 @@ export class DatastoreService {
   featuredProductsLoading = signal<boolean>(true);
   orders = signal<Order[]>([]);
   quotes = signal<QuoteRequest[]>([]);
-  advertisements = signal<Advertisement[]>([]);
+  
+  // Computed from SettingsService
+  advertisements = computed<Advertisement[]>(() => {
+    return this.settingsService.advertisements() || [];
+  });
+  
   blogs = signal<BlogPost[]>([]);
   coupons = signal<Coupon[]>([]);
   socialPosts = signal<SocialPost[]>([]);
   notifications = signal<Campaign[]>([]);
   
-  homeLayout = signal<HomeLayoutSection[]>([]);
+  // Computed homeLayout from settings
+  homeLayout = computed<HomeLayoutSection[]>(() => {
+    const data = this.settingsService.settingsData() || {};
+    const dbSections = data.homeLayout || data.homepage?.sections;
+    if (Array.isArray(dbSections) && dbSections.length > 0) {
+      return [...dbSections].sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+    // Fallback static defaults
+    return [
+      { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
+      { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
+      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
+      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
+      { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
+      { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
+      { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
+      { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
+      { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
+      { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
+      { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
+    ];
+  });
   
   homepageLoading = signal<boolean>(true);
   categoriesLoading = signal<boolean>(true);
@@ -457,7 +491,10 @@ export class DatastoreService {
   couponDiscountAmount = signal<number>(0);
   guestSessionId = signal<string>('');
   
-  footerData = signal<any>(null);
+  // Computed from SettingsService
+  footerData = computed<any>(() => {
+    return this.settingsService.footer();
+  });
   footerLoading = signal<boolean>(true);
   filterCategory = signal<string>('');
 
@@ -1045,29 +1082,8 @@ export class DatastoreService {
           
           // 1. Settings & Theme
           const settingsVal = d.settings || {};
-          let themeData = d.theme;
-          if (!themeData) {
-            themeData = {
-              primaryColor: settingsVal.primaryColor || '#d65108',
-              secondaryColor: settingsVal.secondaryColor || '#1e3a8a',
-              accentColor: settingsVal.accentColor || '#3B82F6',
-              borderRadius: settingsVal.borderRadius || '0.75rem',
-              fontFamily: settingsVal.typography || 'Inter',
-              darkMode: settingsVal.darkMode || false,
-              themeText: settingsVal.themeText || '#ffffff'
-            };
-          }
-          this.settings.set(themeData);
-          
           try {
-            this.settingsService.settingsData.set(settingsVal);
-            this.settingsService.theme.set(themeData);
-            if (settingsVal.heroSlides) this.settingsService.heroSlides.set(settingsVal.heroSlides);
-            if (settingsVal.promoBanners) this.settingsService.promoBanners.set(settingsVal.promoBanners);
-            if (settingsVal.advertisements) this.settingsService.advertisements.set(settingsVal.advertisements);
-            if (settingsVal.banners) this.settingsService.banners.set(settingsVal.banners);
-            if (settingsVal.faqs) this.settingsService.faqs.set(settingsVal.faqs);
-            this.settingsService.isLoaded.set(true);
+            this.settingsService.hydrateSettings(settingsVal);
           } catch (e) {
             console.warn('Non-fatal settingsService sync warning:', e);
           }
@@ -1096,22 +1112,7 @@ export class DatastoreService {
     this.loadConsolidatedHome();
     this.reloadFeaturedProducts();
 
-    // Default Layout configuration
-    this.homeLayout.set([
-      { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
-      { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
-      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
-      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
-      { id: 'launch-4', name: 'Launch Spotlight', type: 'LAUNCH_SPOTLIGHT', visible: true, order: 5, config: {} },
-      { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
-      { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
-      { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
-      { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
-      { id: 'video-10', name: 'Video Showcase', type: 'VIDEO_SECTION', visible: true, order: 10, config: {} },
-      { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
-      { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
-      { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
-    ]);
+
 
     // Admin Orders
     runInInjectionContext(this.injector, () => {
@@ -1566,7 +1567,7 @@ export class DatastoreService {
     this.advertisementsCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
-        if (Array.isArray(data)) this.advertisements.set(data);
+        if (Array.isArray(data)) this.settingsService.advertisements.set(data);
       },
       error: (e) => console.error('Error reloading advertisements:', e)
     });
@@ -1720,16 +1721,11 @@ export class DatastoreService {
   }
 
   async updateSettings(updated: Partial<Settings>) {
-    return new Promise((resolve, reject) => {
-      this.api.put('/admin/settings', { theme: updated }).subscribe({
-        next: (res: any) => {
-          const data = res?.data?.theme || res;
-          if (data) this.settings.set(data);
-          resolve(res);
-        },
-        error: (err) => reject(err)
-      });
-    });
+    const current = this.settingsService.settingsData() || {};
+    const currentTheme = current.theme || {};
+    const newTheme = { ...currentTheme, ...updated };
+    const payload = { ...current, theme: newTheme, ...updated };
+    return this.settingsService.saveSettings(payload);
   }
 
   async updateHomeLayout(sections: HomeLayoutSection[]) {
@@ -1738,13 +1734,17 @@ export class DatastoreService {
     sorted.forEach((section, index) => {
       section.order = index + 1;
     });
-    this.homeLayout.set(sorted);
-    return new Promise((resolve, reject) => {
-      this.api.put('/admin/settings', { homepage: { sections: sorted } }).subscribe({
-        next: (res) => resolve(res),
-        error: (err) => reject(err)
-      });
-    });
+    
+    const current = this.settingsService.settingsData() || {};
+    const payload = { 
+      ...current, 
+      homeLayout: sorted,
+      homepageSections: { 
+        ...(current.homepageSections || {}), 
+        sections: sorted 
+      }
+    };
+    return this.settingsService.saveSettings(payload);
   }
 
   // --- COMPATIBILITY MOCK WRAPPERS (to prevent breaking legacy views) ---

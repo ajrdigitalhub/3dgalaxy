@@ -12,71 +12,8 @@ function asNumber(value: unknown): number {
   return typeof value === 'number' ? value : Number(value) || 0;
 }
 
-@Component({
-  selector: 'app-home-best-sellers',
-  standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, ScrollRevealDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section [id]="section.id" class="max-w-7xl mx-auto px-6" appScrollReveal="fade">
-      <div class="bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-8 md:p-12 lg:py-16">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center">
-          <div class="col-span-1 md:col-span-5 flex justify-center" appScrollReveal="scale-in">
-            <img [src]="section.config['image'] || 'https://m.media-amazon.com/images/I/61LTnvKTtSL.jpg'"
-              alt="Bambu Lab A1 Combo"
-              class="max-h-[340px] md:max-h-[380px] object-contain hover:scale-105 transition-transform duration-500"
-              referrerpolicy="no-referrer" loading="lazy" decoding="async">
-          </div>
-          <div class="col-span-1 md:col-span-7 space-y-6 text-left" appScrollReveal="slide-up">
-            <div class="space-y-1">
-              <span class="text-[10px] font-extrabold uppercase tracking-[0.25em] text-neutral-400 select-text">{{ section.config['brand'] || 'BAMBU LAB' }}</span>
-              <h2 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter leading-none font-display select-text">
-                {{ section.config['name'] || 'A1 Combo' }}
-              </h2>
-            </div>
-            <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed font-normal max-w-xl">
-              {{ section.config['description'] || 'Seamless multi-color printing at an accessible price point, complete with fully automated alignment and calibration sensors.' }}
-            </p>
-            <div class="flex flex-wrap items-center gap-4">
-              <span class="text-2xl font-black text-neutral-900 dark:text-white">{{ salePrice() | currency:'INR':'symbol':'1.0-0' }}</span>
-              <span class="text-sm text-neutral-400 line-through font-medium">{{ mrp() | currency:'INR':'symbol':'1.0-0' }}</span>
-              @if (section.config['badge'] || 'AMS Multi-Color') {
-                <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black tracking-widest uppercase rounded border border-emerald-500/15">
-                  {{ section.config['badge'] || 'AMS Multi-Color' }}
-                </span>
-              }
-            </div>
-            <div class="pt-2">
-              <button (click)="addToCartById('prod-3')"
-                class="h-12 px-8 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:scale-[1.03] transition-all shadow-md shadow-orange-500/10 flex items-center gap-2 cursor-pointer">
-                <span>BUY NOW</span>
-                <mat-icon class="scale-95">shopping_cart</mat-icon>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `
-})
-export class HomeBestSellersComponent {
-  ds = inject(DatastoreService);
 
-  private _section = signal<any>(null);
-  @Input() set section(val: any) {
-    this._section.set(val);
-  }
-  get section() {
-    return this._section();
-  }
 
-  salePrice = computed(() => asNumber(this._section()?.config?.['salePrice'] || 48999));
-  mrp = computed(() => asNumber(this._section()?.config?.['mrp'] || 55000));
-
-  addToCartById(id: string) {
-    this.ds.addToCartById(id);
-  }
-}
 
 
 @Component({
@@ -468,106 +405,106 @@ export class HomeEnterpriseSolutionsComponent {
   ];
 }
 
-@Component({
-  selector: 'app-home-launch-spotlight',
-  standalone: true,
-  imports: [CommonModule, MatIconModule, ScrollRevealDirective, TiltDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section [id]="section.id" class="w-full overflow-hidden bg-neutral-950 text-white py-24 border-y border-neutral-900 relative">
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
-      <div class="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
+// @Component({
+//   selector: 'app-home-launch-spotlight',
+//   standalone: true,
+//   imports: [CommonModule, MatIconModule, ScrollRevealDirective, TiltDirective],
+//   changeDetection: ChangeDetectionStrategy.OnPush,
+//   template: `
+//     <section [id]="section.id" class="w-full overflow-hidden bg-neutral-950 text-white py-24 border-y border-neutral-900 relative">
+//       <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+//       <div class="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none z-0"></div>
 
-      <div class="max-w-7xl mx-auto px-6 relative z-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-          <div class="lg:col-span-6 space-y-8 text-left" appScrollReveal="slide-up">
-            <div class="space-y-4">
-              <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Flagship Showcase</span>
-              <h2 class="text-5xl lg:text-7xl font-black tracking-tighter leading-[1.05] font-display">
-                Bambu Lab<br><span class="text-theme-gradient">X1-Carbon</span>
-              </h2>
-              <p class="text-neutral-400 text-base leading-relaxed max-w-lg font-medium">
-                Designed for ultimate speed, precision, and multi-material engineering. Experience automated printing with active vibration compensation, AI extrusion monitoring, and 16-color compatibility.
-              </p>
-            </div>
+//       <div class="max-w-7xl mx-auto px-6 relative z-10">
+//         <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+//           <div class="lg:col-span-6 space-y-8 text-left" appScrollReveal="slide-up">
+//             <div class="space-y-4">
+//               <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Flagship Showcase</span>
+//               <h2 class="text-5xl lg:text-7xl font-black tracking-tighter leading-[1.05] font-display">
+//                 Bambu Lab<br><span class="text-theme-gradient">X1-Carbon</span>
+//               </h2>
+//               <p class="text-neutral-400 text-base leading-relaxed max-w-lg font-medium">
+//                 Designed for ultimate speed, precision, and multi-material engineering. Experience automated printing with active vibration compensation, AI extrusion monitoring, and 16-color compatibility.
+//               </p>
+//             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-                <div class="h-10 w-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
-                  <mat-icon class="scale-90">auto_awesome</mat-icon>
-                </div>
-                <div class="space-y-1">
-                  <h4 class="text-sm font-black text-white leading-none">AI LIDAR Sensor</h4>
-                  <p class="text-[11px] text-neutral-500">First-layer inspection & flow calibration automated.</p>
-                </div>
-              </div>
+//             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//               <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+//                 <div class="h-10 w-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400 shrink-0">
+//                   <mat-icon class="scale-90">auto_awesome</mat-icon>
+//                 </div>
+//                 <div class="space-y-1">
+//                   <h4 class="text-sm font-black text-white leading-none">AI LIDAR Sensor</h4>
+//                   <p class="text-[11px] text-neutral-500">First-layer inspection & flow calibration automated.</p>
+//                 </div>
+//               </div>
 
-              <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-                <div class="h-10 w-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
-                  <mat-icon class="scale-90">speed</mat-icon>
-                </div>
-                <div class="space-y-1">
-                  <h4 class="text-sm font-black text-white leading-none">20,000 mm/s²</h4>
-                  <p class="text-[11px] text-neutral-500">Industrial speed, active input shaping verification.</p>
-                </div>
-              </div>
+//               <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+//                 <div class="h-10 w-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 shrink-0">
+//                   <mat-icon class="scale-90">speed</mat-icon>
+//                 </div>
+//                 <div class="space-y-1">
+//                   <h4 class="text-sm font-black text-white leading-none">20,000 mm/s²</h4>
+//                   <p class="text-[11px] text-neutral-500">Industrial speed, active input shaping verification.</p>
+//                 </div>
+//               </div>
 
-              <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-                <div class="h-10 w-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
-                  <mat-icon class="scale-90">palette</mat-icon>
-                </div>
-                <div class="space-y-1">
-                  <h4 class="text-sm font-black text-white leading-none">16-Color Print</h4>
-                  <p class="text-[11px] text-neutral-500">Automatic Material System handles filament swaps.</p>
-                </div>
-              </div>
+//               <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+//                 <div class="h-10 w-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 shrink-0">
+//                   <mat-icon class="scale-90">palette</mat-icon>
+//                 </div>
+//                 <div class="space-y-1">
+//                   <h4 class="text-sm font-black text-white leading-none">16-Color Print</h4>
+//                   <p class="text-[11px] text-neutral-500">Automatic Material System handles filament swaps.</p>
+//                 </div>
+//               </div>
 
-              <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
-                <div class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
-                  <mat-icon class="scale-90">camera_enhance</mat-icon>
-                </div>
-                <div class="space-y-1">
-                  <h4 class="text-sm font-black text-white leading-none">Spaghetti Detection</h4>
-                  <p class="text-[11px] text-neutral-500">AI chamber camera halts print on failures.</p>
-                </div>
-              </div>
-            </div>
+//               <div appTilt [tiltMax]="5" class="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 hover:border-orange-500/30 transition-all duration-300">
+//                 <div class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
+//                   <mat-icon class="scale-90">camera_enhance</mat-icon>
+//                 </div>
+//                 <div class="space-y-1">
+//                   <h4 class="text-sm font-black text-white leading-none">Spaghetti Detection</h4>
+//                   <p class="text-[11px] text-neutral-500">AI chamber camera halts print on failures.</p>
+//                 </div>
+//               </div>
+//             </div>
 
-            <div class="pt-4">
-              <button (click)="addToCartById('prod-3')"
-                class="h-14 px-10 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-98 transition-all shadow-lg shadow-orange-500/20 cursor-pointer">
-                EXPLORE LAUNCH OFFER
-              </button>
-            </div>
-          </div>
+//             <div class="pt-4">
+//               <button (click)="addToCartById('prod-3')"
+//                 class="h-14 px-10 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-98 transition-all shadow-lg shadow-orange-500/20 cursor-pointer">
+//                 EXPLORE LAUNCH OFFER
+//               </button>
+//             </div>
+//           </div>
 
-          <div class="lg:col-span-6 flex justify-center relative" appScrollReveal="scale-in">
-            <div class="relative w-[340px] md:w-[440px] aspect-square rounded-[3rem] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-8 group">
-              <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-1"></div>
-              <div class="absolute top-0 left-0 w-full h-[2px] bg-purple-500 shadow-[0_0_15px_#7c3aed] animate-scan z-10"></div>
-              <img src="https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png" alt="Bambu Lab X1-C"
-                class="h-[80%] max-h-[360px] object-contain transition-transform duration-700 group-hover:scale-105 relative z-2"
-                (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `
-})
-export class HomeLaunchSpotlightComponent {
-  ds = inject(DatastoreService);
-  @Input() section!: any;
+//           <div class="lg:col-span-6 flex justify-center relative" appScrollReveal="scale-in">
+//             <div class="relative w-[340px] md:w-[440px] aspect-square rounded-[3rem] overflow-hidden bg-neutral-900 border border-white/10 flex items-center justify-center p-8 group">
+//               <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-1"></div>
+//               <div class="absolute top-0 left-0 w-full h-[2px] bg-purple-500 shadow-[0_0_15px_#7c3aed] animate-scan z-10"></div>
+//               <img src="https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png" alt="Bambu Lab X1-C"
+//                 class="h-[80%] max-h-[360px] object-contain transition-transform duration-700 group-hover:scale-105 relative z-2"
+//                 (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+//     </section>
+//   `
+// })
+// export class HomeLaunchSpotlightComponent {
+//   ds = inject(DatastoreService);
+//   @Input() section!: any;
 
-  addToCartById(id: string) {
-    this.ds.addToCartById(id);
-  }
+//   addToCartById(id: string) {
+//     this.ds.addToCartById(id);
+//   }
 
-  onImageError(event: Event) {
-    const img = event.target as HTMLImageElement;
-    img.src = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
-  }
-}
+//   onImageError(event: Event) {
+//     const img = event.target as HTMLImageElement;
+//     img.src = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+//   }
+// }
 
 @Component({
   selector: 'app-home-services',
@@ -793,35 +730,3 @@ export class HomeTestimonialsComponent {
   @Input() section!: any;
 }
 
-@Component({
-  selector: 'app-home-video-showcase',
-  standalone: true,
-  imports: [CommonModule, ScrollRevealDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section [id]="section.id" class="w-full py-16 bg-neutral-950 text-white overflow-hidden relative border-y border-neutral-900" appScrollReveal="fade">
-      <div class="max-w-7xl mx-auto px-6 space-y-10">
-        <div class="text-center space-y-2 max-w-2xl mx-auto mb-8">
-          <span class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500">Fabrication Showcase</span>
-          <h3 class="text-3xl md:text-4xl font-black tracking-tighter leading-tight font-display">Watch the Ecosystem in Action</h3>
-        </div>
-
-        <div class="relative w-full max-w-5xl mx-auto aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
-          <video src="https://assets.mixkit.co/videos/preview/mixkit-engineering-student-using-a-3d-printer-42646-large.mp4"
-            autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover opacity-60" referrerpolicy="no-referrer"></video>
-          <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950/20 z-10 flex flex-col justify-end p-8 md:p-12 text-left">
-            <div class="relative z-20 space-y-2 max-w-lg">
-              <span class="text-[9px] font-black uppercase tracking-widest text-orange-400">0.05mm Precision Curing</span>
-              <h4 class="text-2xl font-black text-white leading-tight">High-Definition SLA Curing Chamber</h4>
-              <p class="text-xs text-neutral-400 leading-relaxed">Watch how our SLA resin units construct dental surgical guides and fine-detail jewelry molds layer by layer with 50-micron absolute accuracy.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `
-})
-export class HomeVideoShowcaseComponent {
-  ds = inject(DatastoreService);
-  @Input() section!: any;
-}

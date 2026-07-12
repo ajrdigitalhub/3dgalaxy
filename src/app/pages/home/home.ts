@@ -13,7 +13,6 @@ import { HomeFeaturedProductsComponent } from './components/home-featured-produc
 import { HomeBrandsComponent } from './components/home-brands.component';
 import { HomeFeaturedShowcaseComponent } from './components/home-featured-showcase.component';
 import {
-  HomeBestSellersComponent,
   HomeShowcaseTwoComponent,
   HomeCategoryViewFilamentComponent,
   HomeCategoryViewSparePartsComponent,
@@ -22,12 +21,11 @@ import {
   HomeShopByCategoryComponent,
   HomeTechnologyHubsComponent,
   HomeEnterpriseSolutionsComponent,
-  HomeLaunchSpotlightComponent,
+
   HomeServicesComponent,
   HomeWhyChooseUsComponent,
   HomeStatisticsComponent,
   HomeTestimonialsComponent,
-  HomeVideoShowcaseComponent
 } from './components/home-sections.component';
 
 @Component({
@@ -41,7 +39,6 @@ import {
     HomeFeaturedProductsComponent,
     HomeFeaturedShowcaseComponent,
     HomeBrandsComponent,
-    HomeBestSellersComponent,
     HomeShowcaseTwoComponent,
     HomeCategoryViewFilamentComponent,
     HomeCategoryViewSparePartsComponent,
@@ -50,12 +47,10 @@ import {
     HomeShopByCategoryComponent,
     HomeTechnologyHubsComponent,
     HomeEnterpriseSolutionsComponent,
-    HomeLaunchSpotlightComponent,
     HomeServicesComponent,
     HomeWhyChooseUsComponent,
     HomeStatisticsComponent,
     HomeTestimonialsComponent,
-    HomeVideoShowcaseComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './home.html',

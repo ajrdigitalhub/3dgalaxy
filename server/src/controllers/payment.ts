@@ -229,7 +229,7 @@ export const createCashfreeOrder = async (req: Request, res: Response) => {
       order_id: order.orderNumber,
       customer_details: customerDetails,
       order_meta: {
-        return_url: `${req.headers.origin || 'http://localhost:4200'}/order-success?order_id=${order.id}`,
+        return_url: `${(req.headers.origin || 'http://localhost:4200').replace(/^http:\/\//i, 'https://')}/order-success?order_id=${order.id}`,
       },
     };
 

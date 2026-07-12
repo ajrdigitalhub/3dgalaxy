@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const getThemeSettings = async (req: Request, res: Response) => {
   try {
@@ -149,13 +150,8 @@ export const updateThemeSettings = async (req: Request, res: Response) => {
 
 export const getServiceConfig = async (req: Request, res: Response) => {
   try {
-    const settingRecord = await prisma.themeSetting.findUnique({
-      where: { keyName: 'global-settings' },
-    });
-
-    const valueStr = settingRecord?.value;
-    const configRaw = valueStr ? (typeof valueStr === 'string' ? JSON.parse(valueStr) : valueStr) : {};
-    const config = configRaw.printServiceSettings || {};
+    const settings = await getSettingsService();
+    const config = settings?.printServiceSettings || {};
 
     const defaultMaterials = [
       { name: 'PLA', pricePerGram: 2.5, density: 1.25, active: true },

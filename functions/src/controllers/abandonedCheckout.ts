@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 async function getSettings() {
-  const record = await prisma.themeSetting.findUnique({
-    where: { keyName: 'global-settings' },
-  });
-  const data = (record?.value as any) || {};
-  return data.abandonedCheckoutSettings || {
+  const settings = await getSettingsService();
+  return settings?.abandonedCheckoutSettings || {
     enabled: true,
     timeoutMinutes: 30,
     captureGuestUsers: true,

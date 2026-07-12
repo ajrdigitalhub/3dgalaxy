@@ -1,16 +1,23 @@
-import { Injectable, effect, inject, signal } from '@angular/core';
-import { DatastoreService } from '../../services/datastore';
+import { Injectable, computed, inject } from '@angular/core';
+import { SettingsService } from './settings.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  private ds = inject(DatastoreService);
+  private settingsService = inject(SettingsService);
 
-  primaryColor = signal<string>('#00f2fe');
-  secondaryColor = signal<string>('#4facfe');
-  gradientAngle = signal<string>('135deg');
-  radius = signal<string>('0.75rem');
+  primaryColor = computed<string>(() => this.settingsService.theme()?.primaryColor || '#00f2fe');
+  secondaryColor = computed<string>(() => this.settingsService.theme()?.secondaryColor || '#4facfe');
+  gradientAngle = computed<string>(() => {
+    const rawAngle = this.settingsService.theme()?.gradientAngle;
+    return this.formatAngle(rawAngle);
+  });
+  radius = computed<string>(() => {
+    const theme = this.settingsService.theme() || {};
+    const rawRadius = theme.radius !== undefined ? theme.radius : theme.borderRadius;
+    return this.formatRadius(rawRadius);
+  });
 
   private formatAngle(angle: any): string {
     if (angle === undefined || angle === null) return '135deg';
@@ -33,53 +40,10 @@ export class ThemeService {
     return s;
   }
 
-  constructor() {
-    effect(() => {
-      const config = this.ds.settings();
-      if (config) {
-        if (config.primaryColor) this.primaryColor.set(config.primaryColor);
-        if (config.secondaryColor) this.secondaryColor.set(config.secondaryColor);
-        
-        const rawAngle = config.gradientAngle;
-        if (rawAngle !== undefined && rawAngle !== null) {
-          this.gradientAngle.set(this.formatAngle(rawAngle));
-        }
-
-        const rawRadius = config.radius !== undefined ? config.radius : config.borderRadius;
-        if (rawRadius !== undefined && rawRadius !== null) {
-          this.radius.set(this.formatRadius(rawRadius));
-        }
-        
-        this.applyTheme();
-      }
-    });
-  }
-
   updateLivePreview(config: any) {
-    if (config.primaryColor) this.primaryColor.set(config.primaryColor);
-    if (config.secondaryColor) this.secondaryColor.set(config.secondaryColor);
-    
-    const rawAngle = config.gradientAngle;
-    if (rawAngle !== undefined && rawAngle !== null) {
-      this.gradientAngle.set(this.formatAngle(rawAngle));
+    if (config) {
+      this.settingsService.applyTheme(config);
     }
-
-    const rawRadius = config.radius !== undefined ? config.radius : config.borderRadius;
-    if (rawRadius !== undefined && rawRadius !== null) {
-      this.radius.set(this.formatRadius(rawRadius));
-    }
-    
-    this.applyTheme();
-  }
-
-  private applyTheme() {
-    if (typeof document === 'undefined') return;
-
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', this.primaryColor());
-    root.style.setProperty('--secondary-color', this.secondaryColor());
-    root.style.setProperty('--gradient-angle', this.gradientAngle());
-    root.style.setProperty('--radius', this.radius());
-    root.style.setProperty('--theme-radius', this.radius());
   }
 }
+

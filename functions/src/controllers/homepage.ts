@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const getHomepageSections = async (req: Request, res: Response) => {
   try {
@@ -108,10 +109,8 @@ export const deleteHomepageSection = async (req: Request, res: Response) => {
 
 export const getConsolidatedHome = async (req: Request, res: Response) => {
   try {
-    const [settingRecord, categories, brands, menuItems, products] = await Promise.all([
-      prisma.themeSetting.findUnique({
-        where: { keyName: 'global-settings' },
-      }),
+    const [settingsData, categories, brands, menuItems, products] = await Promise.all([
+      getSettingsService(),
       prisma.category.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
@@ -130,8 +129,6 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
         }
       })
     ]);
-
-    const settingsData = settingRecord ? (settingRecord.value as any) : {};
 
     const buildMenuTree = (items: any[], parentId: string | null = null): any[] => {
       return items

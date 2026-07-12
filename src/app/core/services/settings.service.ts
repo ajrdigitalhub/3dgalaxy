@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, effect, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,6 +7,16 @@ import { firstValueFrom } from 'rxjs';
 })
 export class SettingsService {
   private http = inject(HttpClient);
+  private loadPromise: Promise<any> | null = null;
+
+  constructor() {
+    effect(() => {
+      const themeData = this.theme();
+      if (themeData && Object.keys(themeData).length > 0) {
+        this.applyTheme(themeData);
+      }
+    });
+  }
 
   // Expose signals for reactivity
   public settingsData = signal<any>({});
@@ -117,71 +127,80 @@ export class SettingsService {
     gstTaxRate: 18
   });
 
-  async loadSettings(force = false) {
-    if (this.isLoaded() && !force) return;
+  public hydrateSettings(d: any) {
+    if (!d) return;
+    this.settingsData.set(d);
     
-    try {
-      const resp = await firstValueFrom(this.http.get<any>('/api/settings'));
+    // Update all sub-signals
+    if (d.siteName !== undefined) this.siteName.set(d.siteName);
+    if (d.logoUrl !== undefined) this.logoUrl.set(d.logoUrl);
+    if (d.currency !== undefined) this.currency.set(d.currency);
+    
+    let themeData = d.theme;
+    if (!themeData) {
+      themeData = {
+        primaryColor: d.primaryColor || '#d65108',
+        secondaryColor: d.secondaryColor || '#1e3a8a',
+        accentColor: d.accentColor || '#3B82F6',
+        borderRadius: d.borderRadius || '0.75rem',
+        fontFamily: d.typography || 'Inter',
+        darkMode: d.darkMode || false,
+        themeText: d.themeText || '#ffffff'
+      };
+    }
+    this.theme.set(themeData);
+    
+    if (d.heroSlides) this.heroSlides.set(d.heroSlides);
+    if (d.promoBanners) this.promoBanners.set(d.promoBanners);
+    if (d.advertisements) this.advertisements.set(d.advertisements);
+    if (d.footer) this.footer.set(d.footer);
+    if (d.aboutPage) this.aboutPage.set(d.aboutPage);
+    if (d.contact) this.contact.set(d.contact);
+    if (d.socialLinks) this.socialLinks.set(d.socialLinks);
+    if (d.emailSettings) this.emailSettings.set(d.emailSettings);
+    if (d.whatsappSettings) this.whatsappSettings.set(d.whatsappSettings);
+    if (d.shippingSettings) this.shippingSettings.set(d.shippingSettings);
+    if (d.paymentGatewaySettings) this.paymentGatewaySettings.set(d.paymentGatewaySettings);
+    if (d.newsletterSettings) this.newsletterSettings.set(d.newsletterSettings);
+    if (d.chatbotSettings) this.chatbotSettings.set(d.chatbotSettings);
+    if (d.homepageSections) this.homepageSections.set(d.homepageSections);
+    if (d.productPageSettings) this.productPageSettings.set(d.productPageSettings);
+    if (d.tourSettings) this.tourSettings.set(d.tourSettings);
+    if (d.colorPresets) this.colorPresets.set(d.colorPresets);
+    if (d.managedFonts) this.managedFonts.set(d.managedFonts);
+    if (d.tickerTexts) this.tickerTexts.set(d.tickerTexts);
+    if (d.faqs) this.faqs.set(d.faqs);
+    if (d.services) this.services.set(d.services);
+    if (d.companyInfo) this.companyInfo.set(d.companyInfo);
+    if (d.gradientSettings) this.gradientSettings.set(d.gradientSettings);
+    if (d.security) this.security.set(d.security);
+    if (d.printServiceSettings) this.printServiceSettings.set(d.printServiceSettings);
+
+    // Compatibility signals
+    if (d.banners) this.banners.set(d.banners);
+    if (d.paymentGatewaySettings) this.payment.set(d.paymentGatewaySettings);
+    if (d.homepageSections) this.homepage.set(d.homepageSections);
+
+    this.isLoaded.set(true);
+  }
+
+  async loadSettings(force = false) {
+    if (this.isLoaded() && !force) return this.settingsData();
+    if (this.loadPromise && !force) return this.loadPromise;
+
+    this.loadPromise = firstValueFrom(this.http.get<any>('/api/settings')).then(resp => {
       if (resp) {
         const d = resp.data !== undefined ? resp.data : resp;
-        this.settingsData.set(d);
-        
-        // Update all sub-signals
-        if (d.siteName !== undefined) this.siteName.set(d.siteName);
-        if (d.logoUrl !== undefined) this.logoUrl.set(d.logoUrl);
-        if (d.currency !== undefined) this.currency.set(d.currency);
-        
-        let themeData = d.theme;
-        if (!themeData) {
-          themeData = {
-            primaryColor: d.primaryColor || '#d65108',
-            secondaryColor: d.secondaryColor || '#1e3a8a',
-            accentColor: d.accentColor || '#3B82F6',
-            borderRadius: d.borderRadius || '0.75rem',
-            fontFamily: d.typography || 'Inter',
-            darkMode: d.darkMode || false,
-            themeText: d.themeText || '#ffffff'
-          };
-        }
-        this.theme.set(themeData);
-        
-        if (d.heroSlides) this.heroSlides.set(d.heroSlides);
-        if (d.promoBanners) this.promoBanners.set(d.promoBanners);
-        if (d.advertisements) this.advertisements.set(d.advertisements);
-        if (d.footer) this.footer.set(d.footer);
-        if (d.aboutPage) this.aboutPage.set(d.aboutPage);
-        if (d.contact) this.contact.set(d.contact);
-        if (d.socialLinks) this.socialLinks.set(d.socialLinks);
-        if (d.emailSettings) this.emailSettings.set(d.emailSettings);
-        if (d.whatsappSettings) this.whatsappSettings.set(d.whatsappSettings);
-        if (d.shippingSettings) this.shippingSettings.set(d.shippingSettings);
-        if (d.paymentGatewaySettings) this.paymentGatewaySettings.set(d.paymentGatewaySettings);
-        if (d.newsletterSettings) this.newsletterSettings.set(d.newsletterSettings);
-        if (d.chatbotSettings) this.chatbotSettings.set(d.chatbotSettings);
-        if (d.homepageSections) this.homepageSections.set(d.homepageSections);
-        if (d.productPageSettings) this.productPageSettings.set(d.productPageSettings);
-        if (d.tourSettings) this.tourSettings.set(d.tourSettings);
-        if (d.colorPresets) this.colorPresets.set(d.colorPresets);
-        if (d.managedFonts) this.managedFonts.set(d.managedFonts);
-        if (d.tickerTexts) this.tickerTexts.set(d.tickerTexts);
-        if (d.faqs) this.faqs.set(d.faqs);
-        if (d.services) this.services.set(d.services);
-        if (d.companyInfo) this.companyInfo.set(d.companyInfo);
-        if (d.gradientSettings) this.gradientSettings.set(d.gradientSettings);
-        if (d.security) this.security.set(d.security);
-        if (d.printServiceSettings) this.printServiceSettings.set(d.printServiceSettings);
-
-        // Compatibility signals
-        if (d.banners) this.banners.set(d.banners);
-        if (d.paymentGatewaySettings) this.payment.set(d.paymentGatewaySettings);
-        if (d.homepageSections) this.homepage.set(d.homepageSections);
-
-        this.applyTheme(themeData);
+        this.hydrateSettings(d);
       }
-      this.isLoaded.set(true);
-    } catch (e) {
-      console.error('Failed to load global settings', e);
-    }
+      this.loadPromise = null;
+      return this.settingsData();
+    }).catch(err => {
+      this.loadPromise = null;
+      throw err;
+    });
+
+    return this.loadPromise;
   }
 
   async saveSettings(payload: any) {
@@ -195,7 +214,7 @@ export class SettingsService {
     }
   }
 
-  private applyTheme(themeData: any) {
+  public applyTheme(themeData: any) {
     if (!themeData || typeof document === 'undefined') return;
     const root = document.documentElement;
     const d = this.settingsData() || {};

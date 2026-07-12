@@ -1,343 +1,390 @@
 <div class="space-y-12 text-left max-w-6xl mx-auto">
-  
+
   <!-- HEADER -->
   <section class="space-y-2 pt-4">
     <h1 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tight">Shopping Basket & Checkout</h1>
-    <p class="text-neutral-500 text-xs">Verify your precision components quantity and finalize courier dispatch addresses.</p>
+    <p class="text-neutral-500 text-xs">Verify your precision components quantity and finalize courier dispatch
+      addresses.</p>
   </section>
 
   @if (ds.cart().length > 0) {
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- LEFT: ITEMS LIST & DISPATCH FORM (2 COLUMNS) -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- BASKET CONTENTS -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-4">
-          <h3 class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase">STAGE 1: VERIFY BASKET COMPONENT ITEMS</h3>
-          
-          <div class="space-y-4 divide-y divide-neutral-100 dark:divide-neutral-900">
-            @for (item of ds.groupedCartItems(); track item.product.id + (item.variant?.id || ''); let idx = $index) {
-              <div class="py-4 space-y-3" [class.border-t]="idx > 0" [class.pt-0]="idx === 0">
-                <!-- Main product row -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                  
-                  <!-- Img & title & Qty (Mobile Compact merged layout) -->
-                  <div class="flex items-start sm:items-center gap-3 sm:gap-4 text-left w-full sm:w-auto">
-                    <img [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]" class="h-16 w-16 sm:h-16 sm:w-16 object-contain p-1 bg-neutral-100 dark:bg-neutral-900 rounded-xl shrink-0" referrerpolicy="no-referrer" alt="item">
-                    
-                    <div class="flex-1 flex flex-col justify-between min-h-[64px]">
-                      <h4 class="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 line-clamp-2 leading-tight pr-4">
-                          {{ item.product.name }}
-                          @if (item.variant) {
-                             <span class="text-neutral-400 font-medium"> - {{ item.variant.name }}</span>
-                          }
-                      </h4>
-                      
-                      <div class="flex items-center justify-between mt-auto pt-1 sm:hidden">
-                         <!-- Mobile quick qty -->
-                         <div class="inline-flex items-center bg-neutral-50 dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200 dark:border-neutral-800 shrink-0">
-                           <button (click)="changeQty(item.product.id, item.quantity - 1, item.variant?.id)" class="h-6 w-6 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors">-</button>
-                           <span class="px-2.5 text-[10px] font-mono font-black text-neutral-900 dark:text-white">{{ item.quantity }}</span>
-                           <button (click)="changeQty(item.product.id, item.quantity + 1, item.variant?.id)" class="h-6 w-6 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors">+</button>
-                         </div>
-                         <!-- Mobile total price -->
-                         <span class="text-sm font-black text-neutral-900 dark:text-white">{{ ds.getItemPrice(item) * item.quantity | currency:'INR':'symbol':'1.0-0' }}</span>
-                      </div>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                      <div class="flex items-center gap-2 mt-1">
-                        <span class="hidden sm:inline text-[9px] font-mono font-bold bg-neutral-100 dark:bg-neutral-900 text-neutral-500 px-1.5 py-0.5 rounded">SKU: {{ item.variant?.sku || item.product.sku }}</span>
-                        @if (item.selectedPriceType === 'dealer') {
-                          <span class="text-[8px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase tracking-tighter">Dealer Pricing Apply</span>
-                        }
-                        @if (item.bundleSubs && item.bundleSubs.length > 0) {
-                          <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wide">
-                            <mat-icon class="scale-[0.55] -ml-0.5 -mt-0.5">inventory_2</mat-icon> Bundle · {{item.bundleSubs.length}} included
-                          </span>
-                        }
-                      </div>
+    <!-- LEFT: ITEMS LIST & DISPATCH FORM (2 COLUMNS) -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- BASKET CONTENTS -->
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-4">
+        <h3 class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase">STAGE 1:
+          VERIFY BASKET COMPONENT ITEMS</h3>
+
+        <div class="space-y-4 divide-y divide-neutral-100 dark:divide-neutral-900">
+          @for (item of ds.groupedCartItems(); track item.product.id + (item.variant?.id || ''); let idx = $index) {
+          <div class="py-4 space-y-3" [class.border-t]="idx > 0" [class.pt-0]="idx === 0">
+            <!-- Main product row -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+
+              <!-- Img & title & Qty (Mobile Compact merged layout) -->
+              <div class="flex items-start sm:items-center gap-3 sm:gap-4 text-left w-full sm:w-auto">
+                <img
+                  [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]"
+                  class="h-16 w-16 sm:h-16 sm:w-16 object-contain p-1 bg-neutral-100 dark:bg-neutral-900 rounded-xl shrink-0"
+                  referrerpolicy="no-referrer" alt="item">
+
+                <div class="flex-1 flex flex-col justify-between min-h-[64px]">
+                  <h4
+                    class="text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 line-clamp-2 leading-tight pr-4">
+                    {{ item.product.name }}
+                    @if (item.variant) {
+                    <span class="text-neutral-400 font-medium"> - {{ item.variant.name }}</span>
+                    }
+                  </h4>
+
+                  <div class="flex items-center justify-between mt-auto pt-1 sm:hidden">
+                    <!-- Mobile quick qty -->
+                    <div
+                      class="inline-flex items-center bg-neutral-50 dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200 dark:border-neutral-800 shrink-0">
+                      <button (click)="changeQty(item.product.id, item.quantity - 1, item.variant?.id)"
+                        class="h-6 w-6 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors">-</button>
+                      <span class="px-2.5 text-[10px] font-mono font-black text-neutral-900 dark:text-white">{{
+                        item.quantity }}</span>
+                      <button (click)="changeQty(item.product.id, item.quantity + 1, item.variant?.id)"
+                        class="h-6 w-6 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded text-xs font-bold text-neutral-700 dark:text-neutral-200 transition-colors">+</button>
                     </div>
+                    <!-- Mobile total price -->
+                    <span class="text-sm font-black text-neutral-900 dark:text-white">{{ ds.getItemPrice(item) *
+                      item.quantity | currency:'INR':'symbol':'1.0-0' }}</span>
                   </div>
 
-                  <!-- Qty adjuster & single pricing (Desktop only) -->
-                  <div class="hidden sm:flex items-center justify-between gap-6 sm:gap-12">
-                    <div class="inline-flex items-center bg-neutral-50 dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200 dark:border-neutral-800">
-                      <button (click)="changeQty(item.product.id, item.quantity - 1, item.variant?.id)" class="h-7 w-7 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded font-bold text-neutral-700 dark:text-neutral-200 transition-colors">-</button>
-                      <span class="px-3 text-xs font-mono font-black text-neutral-900 dark:text-white">{{ item.quantity }}</span>
-                      <button (click)="changeQty(item.product.id, item.quantity + 1, item.variant?.id)" class="h-7 w-7 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded font-bold text-neutral-700 dark:text-neutral-200 transition-colors">+</button>
-                    </div>
-
-                    <div class="text-right min-w-[100px]">
-                      <p class="text-sm font-black text-neutral-900 dark:text-white">
-                        {{ ds.getItemPrice(item) * item.quantity | currency:'INR':'symbol':'1.0-0' }}
-                      </p>
-                      <span class="text-[10px] text-neutral-400 font-medium">
-                        {{ ds.getItemPrice(item) | currency:'INR':'symbol':'1.0-0' }} / unit
-                      </span>
-                    </div>
-                  </div>
-                  
-                </div>
-
-                <!-- Bundle sub-products list -->
-                @if (item.bundleSubs && item.bundleSubs.length > 0) {
-                  <div class="ml-6 sm:ml-10 pl-4 border-l-2 border-emerald-200 dark:border-emerald-800/50 space-y-2 mt-2">
-                    @for (sub of item.bundleSubs; track sub.product.id) {
-                      <div class="flex gap-3 items-center justify-between py-1 bg-neutral-50/50 dark:bg-neutral-900/30 px-3 rounded-xl border border-neutral-100 dark:border-neutral-900/40">
-                        <div class="flex gap-2 items-center min-w-0">
-                          <img [src]="sub.product.images?.[0]?.url || sub.product.images?.[0]" class="w-8 h-8 object-contain bg-white dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200/50 dark:border-neutral-800 shrink-0" alt="sub">
-                          <span class="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 truncate">
-                            {{sub.product.name}}
-                          </span>
-                        </div>
-                        <span class="inline-flex items-center px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider shrink-0">
-                          FREE
-                        </span>
-                      </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span
+                      class="hidden sm:inline text-[9px] font-mono font-bold bg-neutral-100 dark:bg-neutral-900 text-neutral-500 px-1.5 py-0.5 rounded">SKU:
+                      {{ item.variant?.sku || item.product.sku }}</span>
+                    @if (item.selectedPriceType === 'dealer') {
+                    <span
+                      class="text-[8px] font-black bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase tracking-tighter">Dealer
+                      Pricing Apply</span>
+                    }
+                    @if (item.bundleSubs && item.bundleSubs.length > 0) {
+                    <span
+                      class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wide">
+                      <mat-icon class="scale-[0.55] -ml-0.5 -mt-0.5">inventory_2</mat-icon> Bundle ·
+                      {{item.bundleSubs.length}} included
+                    </span>
                     }
                   </div>
-                }
+                </div>
               </div>
+
+              <!-- Qty adjuster & single pricing (Desktop only) -->
+              <div class="hidden sm:flex items-center justify-between gap-6 sm:gap-12">
+                <div
+                  class="inline-flex items-center bg-neutral-50 dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                  <button (click)="changeQty(item.product.id, item.quantity - 1, item.variant?.id)"
+                    class="h-7 w-7 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded font-bold text-neutral-700 dark:text-neutral-200 transition-colors">-</button>
+                  <span class="px-3 text-xs font-mono font-black text-neutral-900 dark:text-white">{{ item.quantity
+                    }}</span>
+                  <button (click)="changeQty(item.product.id, item.quantity + 1, item.variant?.id)"
+                    class="h-7 w-7 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded font-bold text-neutral-700 dark:text-neutral-200 transition-colors">+</button>
+                </div>
+
+                <div class="text-right min-w-[100px]">
+                  <p class="text-sm font-black text-neutral-900 dark:text-white">
+                    {{ ds.getItemPrice(item) * item.quantity | currency:'INR':'symbol':'1.0-0' }}
+                  </p>
+                  <span class="text-[10px] text-neutral-400 font-medium">
+                    {{ ds.getItemPrice(item) | currency:'INR':'symbol':'1.0-0' }} / unit
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Bundle sub-products list -->
+            @if (item.bundleSubs && item.bundleSubs.length > 0) {
+            <div class="ml-6 sm:ml-10 pl-4 border-l-2 border-emerald-200 dark:border-emerald-800/50 space-y-2 mt-2">
+              @for (sub of item.bundleSubs; track sub.product.id) {
+              <div
+                class="flex gap-3 items-center justify-between py-1 bg-neutral-50/50 dark:bg-neutral-900/30 px-3 rounded-xl border border-neutral-100 dark:border-neutral-900/40">
+                <div class="flex gap-2 items-center min-w-0">
+                  <img [src]="sub.product.images?.[0]?.url || sub.product.images?.[0]"
+                    class="w-8 h-8 object-contain bg-white dark:bg-neutral-900 p-0.5 rounded-lg border border-neutral-200/50 dark:border-neutral-800 shrink-0"
+                    alt="sub">
+                  <span class="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 truncate">
+                    {{sub.product.name}}
+                  </span>
+                </div>
+                <span
+                  class="inline-flex items-center px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider shrink-0">
+                  FREE
+                </span>
+              </div>
+              }
+            </div>
             }
           </div>
+          }
         </div>
+      </div>
 
-        <!-- CHECKOUT FORM -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.2em]">STAGE 2: DISPATCH & RECIPIENT INFORMATION</h3>
-            
-            <!-- Quick checkout picker based on roles toggle -->
-            <div class="flex items-center gap-1.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-1 rounded-xl">
-              <button (click)="toggleCheckoutGroup('guest')" [class]="checkoutGroup() === 'guest' ? 'bg-blue-600 text-white text-[9px] font-black px-3 py-1.5 rounded-lg' : 'text-neutral-400 text-[9px] font-black px-3 py-1.5 hover:text-neutral-700 transition-colors uppercase'">Guest Mode</button>
-              <button (click)="toggleCheckoutGroup('member')" [class]="checkoutGroup() === 'member' ? 'bg-blue-600 text-white text-[9px] font-black px-3 py-1.5 rounded-lg' : 'text-neutral-400 text-[9px] font-black px-3 py-1.5 hover:text-neutral-700 transition-colors uppercase'">Member Auto-Fill</button>
-            </div>
-          </div>
+      <!-- CHECKOUT FORM -->
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-6">
+        <div class="flex items-center justify-between">
+          <h3
+            class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.2em]">
+            STAGE 2: DISPATCH & RECIPIENT INFORMATION</h3>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label for="recipientName" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Full Name:</label>
-              <input id="recipientName" type="text" [value]="recipientName()" (input)="recipientName.set($any($event.target).value)" placeholder="e.g. Sumit Sharma" class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
-            </div>
-            <div class="space-y-1">
-              <label for="recipientPhone" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Contact Mobile:</label>
-              <input id="recipientPhone" type="text" [value]="recipientPhone()" (input)="recipientPhone.set($any($event.target).value)" placeholder="e.g. 9876543210" class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
-            </div>
-            <div class="space-y-1 sm:col-span-2">
-              <label for="recipientEmail" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Email Address:</label>
-              <input id="recipientEmail" type="text" [value]="recipientEmail()" (input)="recipientEmail.set($any($event.target).value)" placeholder="e.g. sumit&#64;3dgalaxy.co.in" class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
-            </div>
-            <div class="space-y-1 sm:col-span-2">
-              <label for="recipientAddress" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Detailed Shipping Address:</label>
-              <textarea id="recipientAddress" rows="2" [value]="recipientAddress()" (input)="recipientAddress.set($any($event.target).value)" placeholder="Full address with landmark and pincode..." class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium"></textarea>
-            </div>
+          <!-- Quick checkout picker based on roles toggle -->
+          <div
+            class="flex items-center gap-1.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-1 rounded-xl">
+            <button (click)="toggleCheckoutGroup('guest')"
+              [class]="checkoutGroup() === 'guest' ? 'bg-blue-600 text-white text-[9px] font-black px-3 py-1.5 rounded-lg' : 'text-neutral-400 text-[9px] font-black px-3 py-1.5 hover:text-neutral-700 transition-colors uppercase'">Guest
+              Mode</button>
+            <button (click)="toggleCheckoutGroup('member')"
+              [class]="checkoutGroup() === 'member' ? 'bg-blue-600 text-white text-[9px] font-black px-3 py-1.5 rounded-lg' : 'text-neutral-400 text-[9px] font-black px-3 py-1.5 hover:text-neutral-700 transition-colors uppercase'">Member
+              Auto-Fill</button>
           </div>
         </div>
 
-        <!-- PAYMENT OPTIONS (Dynamic from admin settings) -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-6">
-          <h3 class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.2em]">STAGE 3: CHOOSE PAYMENT METHOD</h3>
-          
-          <div class="space-y-2">
-            @for (method of availableGateways(); track method.gatewayCode) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1">
+            <label for="recipientName" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Full
+              Name:</label>
+            <input id="recipientName" type="text" [value]="recipientName()"
+              (input)="recipientName.set($any($event.target).value)" placeholder="e.g. Sumit Sharma"
+              class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
+          </div>
+          <div class="space-y-1">
+            <label for="recipientPhone" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Contact
+              Mobile:</label>
+            <input id="recipientPhone" type="text" [value]="recipientPhone()"
+              (input)="recipientPhone.set($any($event.target).value)" placeholder="e.g. 9876543210"
+              class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
+          </div>
+          <div class="space-y-1 sm:col-span-2">
+            <label for="recipientEmail" class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Email
+              Address:</label>
+            <input id="recipientEmail" type="text" [value]="recipientEmail()"
+              (input)="recipientEmail.set($any($event.target).value)" placeholder="e.g. sumit&#64;3dgalaxy.co.in"
+              class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium">
+          </div>
+          <div class="space-y-1 sm:col-span-2">
+            <label for="recipientAddress"
+              class="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Detailed Shipping
+              Address:</label>
+            <textarea id="recipientAddress" rows="2" [value]="recipientAddress()"
+              (input)="recipientAddress.set($any($event.target).value)"
+              placeholder="Full address with landmark and pincode..."
+              class="w-full px-3 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-800 dark:text-white font-medium"></textarea>
+          </div>
+        </div>
+      </div>
 
-              @if (method.gatewayCode === 'COD' && !isCodAllowed()) {
-                <!-- COD Disabled State -->
-                <div class="relative animate-fadeIn">
-                  <div class="flex items-center gap-3 p-4 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-950/50 opacity-60 cursor-not-allowed transition-all select-none">
-                    <div class="h-10 w-10 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/60 flex items-center justify-center shrink-0">
-                      <mat-icon class="text-neutral-400 dark:text-neutral-600 scale-90">{{ method.icon }}</mat-icon>
-                    </div>
-                    <div class="flex-1">
-                      <h4 class="text-xs font-black text-neutral-400 dark:text-neutral-500 line-through decoration-red-400/60">{{ method.displayName }}</h4>
-                      <p class="text-[9px] text-neutral-400 mt-0.5 font-bold">{{ method.description }}</p>
-                    </div>
-                    <mat-icon class="text-neutral-300 dark:text-neutral-600 scale-75">block</mat-icon>
-                  </div>
-                  <div class="mt-1.5 ml-2 flex items-start gap-1.5 text-[10px] font-semibold text-red-500/90">
-                    <mat-icon class="scale-[0.6] mt-0.5 text-red-400 shrink-0">info</mat-icon>
-                    <span>{{ codError() || 'COD is not available for this order.' }}</span>
-                  </div>
-                </div>
-              } @else {
-                <!-- Normal selectable method -->
-                <button (click)="setPaymentMethod(method.gatewayCode)" 
-                  [class]="selectedPayment() === method.gatewayCode 
+      <!-- PAYMENT OPTIONS (Dynamic from admin settings) -->
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-6">
+        <h3
+          class="text-[10px] font-black tracking-widest text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.2em]">
+          STAGE 3: CHOOSE PAYMENT METHOD</h3>
+
+        <div class="space-y-2">
+          @for (method of availableGateways(); track method.gatewayCode) {
+
+          @if (method.gatewayCode === 'COD' && !isCodAllowed()) {
+          <!-- COD Disabled State -->
+          <div class="relative animate-fadeIn">
+            <div
+              class="flex items-center gap-3 p-4 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-950/50 opacity-60 cursor-not-allowed transition-all select-none">
+              <div
+                class="h-10 w-10 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/60 flex items-center justify-center shrink-0">
+                <mat-icon class="text-neutral-400 dark:text-neutral-600 scale-90">{{ method.icon }}</mat-icon>
+              </div>
+              <div class="flex-1">
+                <h4
+                  class="text-xs font-black text-neutral-400 dark:text-neutral-500 line-through decoration-red-400/60">
+                  {{ method.displayName }}</h4>
+                <p class="text-[9px] text-neutral-400 mt-0.5 font-bold">{{ method.description }}</p>
+              </div>
+              <mat-icon class="text-neutral-300 dark:text-neutral-600 scale-75">block</mat-icon>
+            </div>
+            <div class="mt-1.5 ml-2 flex items-start gap-1.5 text-[10px] font-semibold text-red-500/90">
+              <mat-icon class="scale-[0.6] mt-0.5 text-red-400 shrink-0">info</mat-icon>
+              <span>{{ codError() || 'COD is not available for this order.' }}</span>
+            </div>
+          </div>
+          } @else {
+          <!-- Normal selectable method -->
+          <button (click)="setPaymentMethod(method.gatewayCode)"
+            [class]="selectedPayment() === method.gatewayCode 
                     ? 'w-full p-4 bg-blue-500/5 border-2 border-blue-500 rounded-2xl text-left relative overflow-hidden transition-all animate-fadeIn' 
                     : 'w-full p-4 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-800 text-left rounded-2xl transition-all animate-fadeIn'">
-                  <div class="flex items-center gap-3 relative z-10">
-                    <div class="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
-                      [class]="selectedPayment() === method.gatewayCode 
+            <div class="flex items-center gap-3 relative z-10">
+              <div class="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" [class]="selectedPayment() === method.gatewayCode 
                         ? 'bg-blue-500/10 border border-blue-500/20' 
                         : 'bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700'">
-                      <mat-icon [class]="selectedPayment() === method.gatewayCode ? 'text-blue-500' : 'text-neutral-500'">{{ method.icon }}</mat-icon>
-                    </div>
-                    <div class="flex-1">
-                      <h4 class="text-xs font-black text-neutral-900 dark:text-white">{{ method.displayName }}</h4>
-                      <p class="text-[9px] text-neutral-400 mt-0.5 font-bold">{{ method.description }}</p>
-                    </div>
-                    @if (selectedPayment() === method.gatewayCode) {
-                      <mat-icon class="text-blue-500 scale-90">check_circle</mat-icon>
-                    }
-                  </div>
-                </button>
+                <mat-icon [class]="selectedPayment() === method.gatewayCode ? 'text-blue-500' : 'text-neutral-500'">{{
+                  method.icon }}</mat-icon>
+              </div>
+              <div class="flex-1">
+                <h4 class="text-xs font-black text-neutral-900 dark:text-white">{{ method.displayName }}</h4>
+                <p class="text-[9px] text-neutral-400 mt-0.5 font-bold">{{ method.description }}</p>
+              </div>
+              @if (selectedPayment() === method.gatewayCode) {
+              <mat-icon class="text-blue-500 scale-90">check_circle</mat-icon>
               }
-            }
-
-            @if (availableGateways().length === 0) {
-              <div class="p-4 text-center text-[10px] font-bold text-red-500 bg-red-50/50 dark:bg-red-950/20 border border-red-200/30 dark:border-red-800/20 rounded-2xl">
-                <mat-icon class="scale-75 text-red-400 mb-1">warning</mat-icon>
-                <p>No payment methods currently enabled in admin settings.</p>
-              </div>
-            }
-          </div>
-
-          @if (selectedPayment() === 'RAZORPAY') {
-            <div class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex flex-col sm:flex-row items-center gap-4 text-xs animate-fadeIn">
-              <div class="h-14 w-14 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-2 flex items-center justify-center flex-shrink-0">
-                <mat-icon class="text-blue-600 !w-8 !h-8 !text-[32px]">security</mat-icon>
-              </div>
-              <div class="space-y-1 text-center sm:text-left">
-                <h5 class="font-bold text-neutral-850 dark:text-neutral-150 text-[11px] uppercase tracking-wider">Secure Razorpay Gateway</h5>
-                <p class="text-[10px] text-neutral-500 leading-relaxed">Proceed to securely enter your Credit/Debit Card, Netbanking, or Wallet details through Razorpay's PCI-DSS compliant interface.</p>
-              </div>
             </div>
-          }
-
-          @if (selectedPayment() === 'COD' && isCodAllowed() && codSurcharge() > 0) {
-            <div class="p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl text-[10px] flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold animate-fadeIn">
-              <mat-icon class="scale-75">info</mat-icon>
-              <span>A COD handling surcharge of {{ codSurcharge() | currency:'INR':'symbol':'1.0-0' }} will be applied to this order.</span>
-            </div>
-          }
-        </div>
-
-      </div>
-
-      <!-- RIGHT: PRICE BILL BREAKDOWN & COUPONS (1 COLUMN) -->
-      <div class="space-y-6">
-        
-        <!-- PROCEED CHECKOUT PANEL -->
-        <div class="p-6 bg-neutral-900 dark:bg-neutral-950 text-white rounded-[2rem] border border-neutral-200/10 dark:border-white/5 shadow-2xl space-y-6">
-          <h3 class="text-[10px] font-black tracking-[0.2em] text-neutral-400 uppercase border-b border-white/10 pb-4 text-center">Summary Totals</h3>
-          
-          <!-- Coupon Area code -->
-          <div class="space-y-3">
-            <span class="text-[9px] text-neutral-300 uppercase block font-black tracking-widest">Apply Promotion Code</span>
-            <div class="flex gap-2">
-              <input type="text" 
-                     [value]="couponInputText()" 
-                     (input)="onCouponInput($event)"
-                     placeholder="E.G. WELCOME10" 
-                     class="flex-1 px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-[10px] font-mono font-bold uppercase text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all">
-              <button (click)="applyCoupon()" class="px-5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all active:scale-95">Apply</button>
-            </div>
-            
-            @if (ds.activeCouponCode()) {
-              <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-[10px] flex justify-between items-center font-bold animate-fadeIn">
-                <span class="flex items-center gap-2 italic">
-                  <mat-icon class="text-sm scale-75">verified</mat-icon>
-                  {{ ds.activeCouponCode() }} VALIDATED
-                </span>
-                <button (click)="removeCoupon()" class="text-neutral-500 hover:text-white transition-colors">Discard</button>
-              </div>
-            } @else {
-              <p class="text-[9px] text-neutral-400 font-medium leading-relaxed">
-                Try using <span class="text-blue-400 font-bold">WELCOME10</span> or <span class="text-blue-400 font-bold">GALAXY20</span> for direct savings.
-              </p>
-            }
-          </div>
-
-          <!-- Metrics -->
-          <div class="space-y-4 text-xs font-sans">
-            <div class="flex justify-between items-center">
-              <span class="text-neutral-300 font-medium">Market Subtotal</span>
-              <span class="font-mono text-neutral-100 font-bold">{{ ds.cartSubtotal() | currency:'INR':'symbol':'1.0-0' }}</span>
-            </div>
-            @if (ds.couponDiscountAmount() > 0) {
-              <div class="flex justify-between items-center text-emerald-400 font-bold">
-                <span class="font-medium">Coupon Savings</span>
-                <span class="font-mono animate-pulse">-{{ ds.couponDiscountAmount() | currency:'INR':'symbol':'1.0-0' }}</span>
-              </div>
-            }
-            <div class="flex justify-between items-center">
-              <span class="text-neutral-300 font-medium">Logistics (Courier)</span>
-              <span class="font-mono text-emerald-400 font-black">
-                @if (ds.cartShipping() === 0) {
-                  FREE DELIVERY
-                } @else {
-                  {{ ds.cartShipping() | currency:'INR':'symbol':'1.0-0' }}
-                }
-              </span>
-            </div>
-
-            @if (codSurcharge() > 0) {
-              <div class="flex justify-between items-center">
-                <span class="text-neutral-300 font-medium">COD Surcharge</span>
-                <span class="font-mono text-amber-400 font-bold">{{ codSurcharge() | currency:'INR':'symbol':'1.0-0' }}</span>
-              </div>
-            }
-
-            
-            @if (mrpSavings() > 0) {
-              <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] text-emerald-400 flex justify-between font-black uppercase tracking-tighter">
-                <span>Total Catalog Savings</span>
-                <span class="font-mono">{{ mrpSavings() | currency:'INR':'symbol':'1.0-0' }} Saved</span>
-              </div>
-            }
-
-            <div class="pt-6 border-t border-white/10 flex justify-between items-center">
-              <span class="text-sm font-black text-white uppercase tracking-tighter">Net Payable</span>
-              <span class="text-2xl font-black text-blue-400 tracking-tighter">{{ ds.cartGrandTotal() + codSurcharge() | currency:'INR':'symbol':'1.0-0' }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 bg-white/5 rounded-2xl border border-white/5 text-[9px] text-neutral-400 flex items-start gap-3 leading-relaxed">
-            <mat-icon class="text-amber-500 text-xs scale-90 mt-0.5">stars</mat-icon>
-            <div>
-              <p class="font-black text-neutral-100 uppercase tracking-widest mb-1">{{ accruedPoints() }} LAB POINTS EARNED</p>
-              <p>Redeemable for precision prints or calibration services in future orders.</p>
-            </div>
-          </div>
-
-          <button (click)="proceedToCheckout()" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black text-xs tracking-[0.2em] uppercase rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 group">
-            <mat-icon class="scale-90 group-hover:animate-bounce">lock_clock</mat-icon>
-            Proceed to Secure Checkout
           </button>
-        </div>
-        
-        <!-- SECURITY STREAK PANEL -->
-        <div class="mb-24 md:mb-0 p-6 bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl text-left space-y-3 text-xs text-neutral-500 leading-relaxed">
-          <h5 class="text-neutral-800 dark:text-neutral-300 font-bold uppercase tracking-wider text-[10px]">🔒 3D Galaxy Secure Checkout guarantee</h5>
-          <p>We process standard payment transactions through tokenized payment streams (UPI, RTGS Bank transfers). Your filament spool guarantees are fully managed according to Shopify-grade SLA structures.</p>
+          }
+          }
+
+          @if (availableGateways().length === 0) {
+          <div
+            class="p-4 text-center text-[10px] font-bold text-red-500 bg-red-50/50 dark:bg-red-950/20 border border-red-200/30 dark:border-red-800/20 rounded-2xl">
+            <mat-icon class="scale-75 text-red-400 mb-1">warning</mat-icon>
+            <p>No payment methods currently enabled in admin settings.</p>
+          </div>
+          }
         </div>
 
+        @if (selectedPayment() === 'RAZORPAY') {
+        <div
+          class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex flex-col sm:flex-row items-center gap-4 text-xs animate-fadeIn">
+          <div
+            class="h-14 w-14 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-2 flex items-center justify-center flex-shrink-0">
+            <mat-icon class="text-blue-600 !w-8 !h-8 !text-[32px]">security</mat-icon>
+          </div>
+          <div class="space-y-1 text-center sm:text-left">
+            <h5 class="font-bold text-neutral-850 dark:text-neutral-150 text-[11px] uppercase tracking-wider">Secure
+              Razorpay Gateway</h5>
+            <p class="text-[10px] text-neutral-500 leading-relaxed">Proceed to securely enter your Credit/Debit Card,
+              Netbanking, or Wallet details through Razorpay's PCI-DSS compliant interface.</p>
+          </div>
+        </div>
+        }
+
+        @if (selectedPayment() === 'COD' && isCodAllowed() && codSurcharge() > 0) {
+        <div
+          class="p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl text-[10px] flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold animate-fadeIn">
+          <mat-icon class="scale-75">info</mat-icon>
+          <span>A COD handling surcharge of {{ codSurcharge() | currency:'INR':'symbol':'1.0-0' }} will be applied to
+            this order.</span>
+        </div>
+        }
       </div>
+
     </div>
 
-    <!-- Mobile Sticky Checkout Bottom Bar -->
-    <div class="md:hidden fixed bottom-16 sm:bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp">
-      <div class="flex items-center gap-4 max-w-xl mx-auto">
-        <div class="flex flex-col">
-          <span class="text-[9px] font-black uppercase tracking-widest text-neutral-500">Net Payable</span>
-          <span class="text-xl font-black text-blue-600 dark:text-blue-400">{{ ds.cartGrandTotal() + codSurcharge() | currency:'INR':'symbol':'1.0-0' }}</span>
+    <!-- RIGHT: PRICE BILL BREAKDOWN & COUPONS (1 COLUMN) -->
+    <div class="space-y-6">
+
+      <!-- PROCEED CHECKOUT PANEL -->
+      <div
+        class="p-6 bg-neutral-900 dark:bg-neutral-950 text-white rounded-[2rem] border border-neutral-200/10 dark:border-white/5 shadow-2xl space-y-6">
+        <h3
+          class="text-[10px] font-black tracking-[0.2em] text-neutral-400 uppercase border-b border-white/10 pb-4 text-center">
+          Summary Totals</h3>
+
+
+        <!-- Metrics -->
+        <div class="space-y-4 text-xs font-sans">
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-300 font-medium">Market Subtotal</span>
+            <span class="font-mono text-neutral-100 font-bold">{{ ds.cartSubtotal() | currency:'INR':'symbol':'1.0-0'
+              }}</span>
+          </div>
+          @if (ds.couponDiscountAmount() > 0) {
+          <div class="flex justify-between items-center text-emerald-400 font-bold">
+            <span class="font-medium">Coupon Savings</span>
+            <span class="font-mono animate-pulse">-{{ ds.couponDiscountAmount() | currency:'INR':'symbol':'1.0-0'
+              }}</span>
+          </div>
+          }
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-300 font-medium">Logistics (Courier)</span>
+            <span class="font-mono text-emerald-400 font-black">
+              @if (ds.cartShipping() === 0) {
+              FREE DELIVERY
+              } @else {
+              {{ ds.cartShipping() | currency:'INR':'symbol':'1.0-0' }}
+              }
+            </span>
+          </div>
+
+          @if (codSurcharge() > 0) {
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-300 font-medium">COD Surcharge</span>
+            <span class="font-mono text-amber-400 font-bold">{{ codSurcharge() | currency:'INR':'symbol':'1.0-0'
+              }}</span>
+          </div>
+          }
+
+
+          @if (mrpSavings() > 0) {
+          <div
+            class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] text-emerald-400 flex justify-between font-black uppercase tracking-tighter">
+            <span>Total Catalog Savings</span>
+            <span class="font-mono">{{ mrpSavings() | currency:'INR':'symbol':'1.0-0' }} Saved</span>
+          </div>
+          }
+
+          <div class="pt-6 border-t border-white/10 flex justify-between items-center">
+            <span class="text-sm font-black text-white uppercase tracking-tighter">Net Payable</span>
+            <span class="text-2xl font-black text-blue-400 tracking-tighter">{{ ds.cartGrandTotal() + codSurcharge() |
+              currency:'INR':'symbol':'1.0-0' }}</span>
+          </div>
         </div>
-        <button (click)="proceedToCheckout()" class="flex-1 h-12 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-          <mat-icon class="scale-90">lock_clock</mat-icon> SECURE CHECKOUT
+
+
+
+        <button (click)="proceedToCheckout()"
+          class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black text-xs tracking-[0.2em] uppercase rounded-2xl shadow-xl shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 group">
+          <mat-icon class="scale-90 group-hover:animate-bounce">lock_clock</mat-icon>
+          Proceed to Secure Checkout
         </button>
       </div>
+
+      <!-- SECURITY STREAK PANEL -->
+      <div
+        class="mb-24 md:mb-0 p-6 bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl text-left space-y-3 text-xs text-neutral-500 leading-relaxed">
+        <h5 class="text-neutral-800 dark:text-neutral-300 font-bold uppercase tracking-wider text-[10px]">🔒 3D Galaxy
+          Secure Checkout guarantee</h5>
+        <p>We process standard payment transactions through tokenized payment streams (UPI, RTGS Bank transfers). Your
+          filament spool guarantees are fully managed according to Shopify-grade SLA structures.</p>
+      </div>
+
     </div>
+  </div>
+
+  <!-- Mobile Sticky Checkout Bottom Bar -->
+  <div
+    class="md:hidden fixed bottom-16 sm:bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp">
+    <div class="flex items-center gap-4 max-w-xl mx-auto">
+      <div class="flex flex-col">
+        <span class="text-[9px] font-black uppercase tracking-widest text-neutral-500">Net Payable</span>
+        <span class="text-xl font-black text-blue-600 dark:text-blue-400">{{ ds.cartGrandTotal() + codSurcharge() |
+          currency:'INR':'symbol':'1.0-0' }}</span>
+      </div>
+      <button (click)="proceedToCheckout()"
+        class="flex-1 h-12 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+        <mat-icon class="scale-90">lock_clock</mat-icon> SECURE CHECKOUT
+      </button>
+    </div>
+  </div>
 
   } @else {
-    <!-- CART EMPTY -->
-    <div class="py-24 text-center space-y-4">
-      <mat-icon class="text-neutral-300 scale-200 h-12 w-12 pb-2">remove_shopping_cart</mat-icon>
-      <h2 class="text-2xl font-black text-neutral-400">Your Basket is Empty</h2>
-      <p class="text-neutral-550 text-xs">Pick premium direct-calibration filaments or accessories inside our store and perfect your models.</p>
-      <a [routerLink]="['/']" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl inline-flex items-center gap-2 transition-all">
-        <mat-icon class="scale-90 text-sm">home</mat-icon> Back to Showroom
-      </a>
-    </div>
+  <!-- CART EMPTY -->
+  <div class="py-24 text-center space-y-4">
+    <mat-icon class="text-neutral-300 scale-200 h-12 w-12 pb-2">remove_shopping_cart</mat-icon>
+    <h2 class="text-2xl font-black text-neutral-400">Your Basket is Empty</h2>
+    <p class="text-neutral-550 text-xs">Pick premium direct-calibration filaments or accessories inside our store and
+      perfect your models.</p>
+    <a [routerLink]="['/']"
+      class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl inline-flex items-center gap-2 transition-all">
+      <mat-icon class="scale-90 text-sm">home</mat-icon> Back to Showroom
+    </a>
+  </div>
   }
 
 </div>

@@ -1,159 +1,144 @@
 @if(loading()) {
-  <app-skeleton-page />
+<app-skeleton-page />
 } @else {
-  <!-- Top Advertisement Banner -->
-  @if (activeTopAd(); as ad) {
-    <div class="w-full bg-[#f54f00] text-white py-2 px-4 text-center text-xs font-black uppercase tracking-widest relative z-50 cursor-pointer animate-fadeIn"
-         (click)="trackAdClick(ad.id)">
-      <a [href]="ad.targetUrl" target="_blank" class="hover:underline">{{ ad.title }}</a>
-    </div>
+<!-- Top Advertisement Banner -->
+@if (activeTopAd(); as ad) {
+<div
+  class="w-full bg-[#f54f00] text-white py-2 px-4 text-center text-xs font-black uppercase tracking-widest relative z-50 cursor-pointer animate-fadeIn"
+  (click)="trackAdClick(ad.id)">
+  <a [href]="ad.targetUrl" target="_blank" class="hover:underline">{{ ad.title }}</a>
+</div>
+}
+
+<div class="space-y-24 pb-20 select-none text-neutral-800 dark:text-neutral-100 animate-fadeIn">
+  @for (section of ds.homeLayout(); track section.id) {
+  @if (section.visible) {
+  @switch (section.type?.toUpperCase()) {
+  @case ('HERO') {
+  <!-- Hero is loaded eagerly for LCP optimization -->
+  <app-home-hero />
+  }
+  @case ('CATEGORIES') {
+  @defer (on viewport) {
+  <app-home-categories />
+  } @placeholder {
+  <div class="h-32 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('BRANDS') {
+  @defer (on viewport) {
+  <app-home-brands />
+  } @placeholder {
+  <div class="h-28 w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('FEATURED_PRODUCTS') {
+  @defer (on viewport) {
+  <app-home-featured-products />
+  <app-home-featured-showcase class="block pt-12 pb-16" />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
   }
 
-  <div class="space-y-24 pb-20 select-none text-neutral-800 dark:text-neutral-100 animate-fadeIn">
-    @for (section of ds.homeLayout(); track section.id) {
-      @if (section.visible) {
-        @switch (section.type?.toUpperCase()) {
-          @case ('HERO') {
-            <!-- Hero is loaded eagerly for LCP optimization -->
-            <app-home-hero />
-          }
-          @case ('CATEGORIES') {
-            @defer (on viewport) {
-              <app-home-categories />
-            } @placeholder {
-              <div class="h-32 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('BRANDS') {
-            @defer (on viewport) {
-              <app-home-brands />
-            } @placeholder {
-              <div class="h-28 w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('FEATURED_PRODUCTS') {
-            @defer (on viewport) {
-              <app-home-featured-products />
-              <app-home-featured-showcase class="block pt-12 pb-16" />
-            } @placeholder {
-              <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('BEST_SELLERS') {
-            @defer (on viewport) {
-              <app-home-best-sellers [section]="section" />
-            } @placeholder {
-              <div class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
-            }
-          }
-          @case ('SHOWCASE-2') {
-            @defer (on viewport) {
-              <app-home-showcase-two [section]="section" />
-            } @placeholder {
-              <div class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
-            }
-          }
-          @case ('CATEGORY-VIEW-FILAMENT') {
-            @defer (on viewport) {
-              <app-home-category-view-filament [section]="section" />
-            } @placeholder {
-              <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
-            }
-          }
-          @case ('CATEGORY-VIEW-SPARE-PARTS') {
-            @defer (on viewport) {
-              <app-home-category-view-spare-parts [section]="section" />
-            } @placeholder {
-              <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
-            }
-          }
-          @case ('CATEGORY-VIEW-3D-PRINTER') {
-            @defer (on viewport) {
-              <app-home-category-view-3d-printer [section]="section" />
-            } @placeholder {
-              <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
-            }
-          }
-          @case ('NEWSLETTER') {
-            @defer (on viewport) {
-              <app-home-newsletter [section]="section" />
-            } @placeholder {
-              <div class="h-[300px] max-w-5xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
-            }
-          }
-          @case ('SHOP_BY_CATEGORY') {
-            @defer (on viewport) {
-              <app-home-shop-by-category [section]="section" />
-            } @placeholder {
-              <div class="h-[600px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
-            }
-          }
-          @case ('TECHNOLOGY-HUBS') {
-            @defer (on viewport) {
-              <app-home-technology-hubs [section]="section" />
-            } @placeholder {
-              <div class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('ENTERPRISE-SOLUTIONS') {
-            @defer (on viewport) {
-              <app-home-enterprise-solutions [section]="section" />
-            } @placeholder {
-              <div class="h-[500px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
-            }
-          }
-          @case ('LAUNCH_SPOTLIGHT') {
-            @defer (on viewport) {
-              <app-home-launch-spotlight [section]="section" />
-            } @placeholder {
-              <div class="h-[500px] w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('SERVICES') {
-            @defer (on viewport) {
-              <app-home-services [section]="section" />
-            } @placeholder {
-              <div class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('WHY_CHOOSE_US') {
-            @defer (on viewport) {
-              <app-home-why-choose-us [section]="section" />
-            } @placeholder {
-              <div class="h-[600px] max-w-5xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('STATISTICS') {
-            @defer (on viewport) {
-              <app-home-statistics [section]="section" />
-            } @placeholder {
-              <div class="h-44 w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('TESTIMONIALS') {
-            @defer (on viewport) {
-              <app-home-testimonials [section]="section" />
-            } @placeholder {
-              <div class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
-            }
-          }
-          @case ('VIDEO_SECTION') {
-            @defer (on viewport) {
-              <app-home-video-showcase [section]="section" />
-            } @placeholder {
-              <div class="h-[450px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
-            }
-          }
-        }
-      }
-    }
-  </div>
 
-  <!-- Footer Advertisement Banner -->
-  @if (activeFooterAd(); as ad) {
-    <div class="w-full bg-[#111] text-white py-4 px-6 text-center text-xs border-t border-neutral-800 relative z-50 cursor-pointer"
-         (click)="trackAdClick(ad.id)">
-      <a [href]="ad.targetUrl" target="_blank" class="hover:text-orange-400 font-bold">{{ ad.title }}</a>
-    </div>
+  @case ('SHOWCASE-2') {
+  @defer (on viewport) {
+  <app-home-showcase-two [section]="section" />
+  } @placeholder {
+  <div class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
   }
+  }
+  @case ('CATEGORY-VIEW-FILAMENT') {
+  @defer (on viewport) {
+  <app-home-category-view-filament [section]="section" />
+  } @placeholder {
+  <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
+  }
+  }
+  @case ('CATEGORY-VIEW-SPARE-PARTS') {
+  @defer (on viewport) {
+  <app-home-category-view-spare-parts [section]="section" />
+  } @placeholder {
+  <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
+  }
+  }
+  @case ('CATEGORY-VIEW-3D-PRINTER') {
+  @defer (on viewport) {
+  <app-home-category-view-3d-printer [section]="section" />
+  } @placeholder {
+  <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
+  }
+  }
+  @case ('NEWSLETTER') {
+  @defer (on viewport) {
+  <app-home-newsletter [section]="section" />
+  } @placeholder {
+  <div class="h-[300px] max-w-5xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
+  }
+  }
+  @case ('SHOP_BY_CATEGORY') {
+  @defer (on viewport) {
+  <app-home-shop-by-category [section]="section" />
+  } @placeholder {
+  <div class="h-[600px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
+  }
+  }
+  @case ('TECHNOLOGY-HUBS') {
+  @defer (on viewport) {
+  <app-home-technology-hubs [section]="section" />
+  } @placeholder {
+  <div class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('ENTERPRISE-SOLUTIONS') {
+  @defer (on viewport) {
+  <app-home-enterprise-solutions [section]="section" />
+  } @placeholder {
+  <div class="h-[500px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"></div>
+  }
+  }
+
+  @case ('SERVICES') {
+  @defer (on viewport) {
+  <app-home-services [section]="section" />
+  } @placeholder {
+  <div class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('WHY_CHOOSE_US') {
+  @defer (on viewport) {
+  <app-home-why-choose-us [section]="section" />
+  } @placeholder {
+  <div class="h-[600px] max-w-5xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('STATISTICS') {
+  @defer (on viewport) {
+  <app-home-statistics [section]="section" />
+  } @placeholder {
+  <div class="h-44 w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+  @case ('TESTIMONIALS') {
+  @defer (on viewport) {
+  <app-home-testimonials [section]="section" />
+  } @placeholder {
+  <div class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  }
+  }
+
+  }
+  }
+  }
+</div>
+
+<!-- Footer Advertisement Banner -->
+@if (activeFooterAd(); as ad) {
+<div
+  class="w-full bg-[#111] text-white py-4 px-6 text-center text-xs border-t border-neutral-800 relative z-50 cursor-pointer"
+  (click)="trackAdClick(ad.id)">
+  <a [href]="ad.targetUrl" target="_blank" class="hover:text-orange-400 font-bold">{{ ad.title }}</a>
+</div>
+}
 }

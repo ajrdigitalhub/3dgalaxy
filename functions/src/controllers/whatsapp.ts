@@ -5,14 +5,12 @@ import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import prisma from '../config/database';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 // Helper to get WhatsApp settings
 export const getWhatsappSettings = async () => {
-  const record = await prisma.themeSetting.findUnique({
-    where: { keyName: 'global-settings' },
-  });
-  const value = (record?.value as any) || {};
-  return value.whatsappSettings || {};
+  const settings = await getSettingsService();
+  return settings?.whatsappSettings || {};
 };
 
 // Parse placeholders from text (e.g. {{customer_name}})

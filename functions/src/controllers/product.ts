@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { sysCache } from '../config/cache';
 import { sendPushNotificationInternal } from './notification';
 import { clearCache } from '../middleware/cache';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const clearProductCache = () => {
   sysCache.clearPattern('products_list_');
@@ -510,13 +511,8 @@ export const createProduct = async (req: Request, res: Response) => {
 
     // Dispatch automatic push notification if configured
     try {
-      const settingsRecord = await prisma.themeSetting.findUnique({
-        where: { keyName: 'global-settings' }
-      });
-      if (settingsRecord) {
-        const settings = typeof settingsRecord.value === 'string'
-          ? JSON.parse(settingsRecord.value)
-          : (settingsRecord.value as any || {});
+      const settings = await getSettingsService();
+      if (settings) {
         const pushConfig = settings.pushNotificationSettings || {};
         if (pushConfig.autoNotifyNewProduct) {
           let title = pushConfig.notifyTitleTemplate || "New Product Alert: {product_name}";
