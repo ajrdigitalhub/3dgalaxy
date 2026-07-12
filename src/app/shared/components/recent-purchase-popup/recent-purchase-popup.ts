@@ -77,14 +77,6 @@ export class RecentPurchasePopupComponent implements OnInit, OnDestroy {
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // Check session dismissal
-    try {
-      if (sessionStorage.getItem(SESSION_KEY) === '1') {
-        this.isDismissed.set(true);
-        return;
-      }
-    } catch (_) {}
-
     // Start after 2.5s delay so page has time to settle
     this.initTimer = setTimeout(() => this.init(), 2500);
   }
@@ -102,6 +94,11 @@ export class RecentPurchasePopupComponent implements OnInit, OnDestroy {
           if (res?.success && res.data?.length) {
             const max = config.maxItems ?? 20;
             this.items.set(res.data.slice(0, max));
+            this.showNext();
+            this.startRotation();
+          } else {
+            // Use fallback demo data if no recent purchases in DB
+            this.items.set(FALLBACK_ITEMS);
             this.showNext();
             this.startRotation();
           }
