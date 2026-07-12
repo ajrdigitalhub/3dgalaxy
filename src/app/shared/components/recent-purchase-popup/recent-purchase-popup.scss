@@ -43,7 +43,7 @@
   z-index: 9999;
   width: 350px;
   max-width: calc(100vw - 40px);
-  pointer-events: auto;
+  pointer-events: none; // Let clicks pass through wrapper, only allow card interaction
 
   // Mobile: centered bottom
   @media (max-width: 480px) {
@@ -52,6 +52,13 @@
     bottom: 16px;
     width: min(320px, calc(95vw));
   }
+}
+
+// ---- Animator (for enter/exit transitions) ----
+.rpp-animator {
+  width: 100%;
+  position: relative;
+  pointer-events: auto; // Capture clicks on actual card and its contents
 
   &.rpp-enter {
     animation: rppSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
