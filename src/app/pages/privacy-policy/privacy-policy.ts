@@ -4,10 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-terms',
+  selector: 'app-privacy-policy',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule, RouterModule],
-  templateUrl: './terms.html'
+  templateUrl: './privacy-policy.html'
 })
-export class TermsAndConditions {}
+export class PrivacyPolicyComponent {}

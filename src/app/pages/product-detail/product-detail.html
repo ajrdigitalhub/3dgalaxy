@@ -16,12 +16,12 @@
       <span class="text-neutral-900 dark:text-neutral-200 truncate shrink-0">{{ p.name }}</span>
     </nav>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 lg:items-start">
-      <!-- LEFT: STICKY GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
-      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-28" [class.z-40]="isZoomActive()" appScrollReveal="scale-in">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-start relative">
+      <!-- LEFT: GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
+      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-24 lg:self-start" [class.z-30]="isZoomActive()" appScrollReveal="scale-in">
         
         <!-- Main Image Wrapper (supports Flipkart hover zoom popup layout) -->
-        <div class="relative w-full aspect-[4/3] sm:aspect-square">
+        <div class="relative w-full aspect-[4/3] sm:aspect-square isolate">
           <div (mouseenter)="onMouseEnter()" 
                (mousemove)="onMouseMove($event)" 
                (mouseleave)="onMouseLeave()"
@@ -62,7 +62,7 @@
 
           <!-- Flipkart-style Zoomed Detail Popup -->
           @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
-            <div class="absolute left-[103%] top-0 w-full h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl z-45 hidden md:block">
+            <div class="absolute left-[103%] top-0 w-full h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl z-50 hidden lg:block">
               <div class="w-full h-full" 
                    [style.backgroundImage]="'url(' + currentActiveImageUrl() + ')'" 
                    [style.backgroundPosition]="zoomBgPosition()" 
@@ -92,7 +92,7 @@
       </div>
 
       <!-- RIGHT: PURCHASING -->
-      <div class="space-y-6 lg:space-y-10 pb-24 md:pb-0" appScrollReveal="fade">
+      <div class="space-y-6 lg:space-y-10 pb-28 md:pb-0 relative z-10" appScrollReveal="fade">
         <div class="space-y-4">
           <div class="flex items-center justify-between">
              <div class="flex items-center gap-3">
@@ -253,7 +253,7 @@
           </div>
         }
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
            <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
                <mat-icon class="text-neutral-700 dark:text-neutral-300">verified_user</mat-icon>
                <span class="text-[10px] font-bold text-neutral-500 uppercase">{{ p.warranty?.warrantyPeriod || '1 Year Warranty' }}</span>

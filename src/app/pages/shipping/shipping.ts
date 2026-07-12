@@ -4,10 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-terms',
+  selector: 'app-shipping-policy',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatIconModule, RouterModule],
-  templateUrl: './terms.html'
+  templateUrl: './shipping.html'
 })
-export class TermsAndConditions {}
+export class ShippingPolicyComponent {}

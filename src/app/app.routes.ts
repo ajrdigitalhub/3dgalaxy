@@ -70,7 +70,12 @@ export const routes: Routes = [
   { path: 'forgot-password', loadComponent: () => import('./pages/forgot-password/forgot-password').then(m => m.ForgotPassword) },
   { path: 'reset-password', loadComponent: () => import('./pages/reset-password/reset-password').then(m => m.ResetPassword) },
   { path: 'terms', loadComponent: () => import('./pages/terms/terms').then(m => m.TermsAndConditions) },
+  { path: 'terms-of-service', loadComponent: () => import('./pages/terms/terms').then(m => m.TermsAndConditions) },
+  { path: 'privacy-policy', loadComponent: () => import('./pages/privacy-policy/privacy-policy').then(m => m.PrivacyPolicyComponent) },
   { path: 'returns', loadComponent: () => import('./pages/returns/returns').then(m => m.ReturnPolicy) },
+  { path: 'return-policy', loadComponent: () => import('./pages/returns/returns').then(m => m.ReturnPolicy) },
+  { path: 'refund-policy', loadComponent: () => import('./pages/returns/returns').then(m => m.ReturnPolicy) },
+  { path: 'shipping-policy', loadComponent: () => import('./pages/shipping/shipping').then(m => m.ShippingPolicyComponent) },
   { path: '**', redirectTo: '' }
 ];
 

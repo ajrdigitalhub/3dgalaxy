@@ -163,7 +163,7 @@
       <!-- Logo Section -->
       <a [routerLink]="['/']" (click)="isMobileMenuOpen.set(false)"
         class="flex items-center gap-2 flex-shrink-0 mr-auto lg:mr-0 text-neutral-900 dark:text-white hover:opacity-90 transition-opacity">
-        <img [src]="ds.theme() === 'dark' ? '/logo.svg' :  '/logo.svg'" alt="3D Galaxy Logo"
+        <img [src]="ds.theme() === 'dark' ? '/3d-logo.png' :  '/3d-logo.png'" alt="3D Galaxy Logo"
           class="h-14 object-contain logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
       </a> <!-- Global Links (Desktop Only) -->
       @if(ds.categories().length === 0 && ds.categoriesLoading()) {
@@ -207,7 +207,8 @@
                       class="font-extrabold text-[11px] uppercase tracking-wider text-neutral-900 dark:text-white hover:text-[#d65108] transition-colors block">
                       {{ cat.name }}
                     </a>
-                    <span class="text-[9px] text-neutral-400 font-bold block">{{ productCountMap()[cat.id] || 0 }} items</span>
+                    <span class="text-[9px] text-neutral-400 font-bold block">{{ productCountMap()[cat.id] || 0 }}
+                      items</span>
                   </div>
                 </div>
                 <ul class="space-y-1.5 text-[10px] font-bold text-neutral-500 dark:text-neutral-400">
@@ -293,7 +294,8 @@
                 <span
                   class="block text-[10px] font-black text-neutral-900 dark:text-white group-hover/item:text-[#d65108] transition-colors uppercase tracking-wider">{{
                   cat.name }}</span>
-                <span class="block text-[8px] text-neutral-400 font-bold mt-0.5">{{ productCountMap()[cat.id] || 0 }} items
+                <span class="block text-[8px] text-neutral-400 font-bold mt-0.5">{{ productCountMap()[cat.id] || 0 }}
+                  items
                   listed</span>
               </div>
             </a>
@@ -889,37 +891,6 @@
               solutions.' }}
             </p>
           </div>
-
-          <div class="space-y-1.5 pt-1">
-            @if (ds.footerData()?.companyInfo?.address) {
-            <span
-              class="text-[8px] sm:text-[9px] uppercase font-mono font-semibold tracking-wider text-neutral-450 block flex items-center gap-1.5">
-              <mat-icon class="scale-50 text-[12px] h-3 w-3 inline text-neutral-400">place</mat-icon>
-              {{ ds.footerData()?.companyInfo?.address }}
-            </span>
-            }
-            @if (ds.footerData()?.companyInfo?.phone) {
-            <span
-              class="text-[8px] sm:text-[9px] uppercase font-mono font-semibold tracking-wider text-neutral-450 block flex items-center gap-1.5">
-              <mat-icon class="scale-50 text-[12px] h-3 w-3 inline text-neutral-400">call</mat-icon>
-              {{ ds.footerData()?.companyInfo?.phone }}
-            </span>
-            }
-            @if (ds.footerData()?.companyInfo?.email) {
-            <span
-              class="text-[8px] sm:text-[9px] uppercase font-mono font-semibold tracking-wider text-neutral-450 block flex items-center gap-1.5">
-              <mat-icon class="scale-50 text-[12px] h-3 w-3 inline text-neutral-400">mail</mat-icon>
-              {{ ds.footerData()?.companyInfo?.email }}
-            </span>
-            }
-            @if (ds.footerData()?.companyInfo?.workingHours) {
-            <span
-              class="text-[8px] sm:text-[9px] uppercase font-mono font-semibold tracking-wider text-neutral-450 block flex items-center gap-1.5">
-              <mat-icon class="scale-50 text-[12px] h-3 w-3 inline text-neutral-400">schedule</mat-icon>
-              {{ ds.footerData()?.companyInfo?.workingHours }}
-            </span>
-            }
-          </div>
         </div>
 
         <!-- Dynamic Link Groups Iteration - Columns 2 & 3 -->
@@ -957,37 +928,33 @@
         }
         }
 
-        <!-- Column 4: Stay Connected, Newsletter & Socials -->
+        <!-- Column 4: Contact Us -->
         <div class="space-y-4 pt-4 md:pt-0">
-          @if (ds.footerData()?.newsletter?.enabled) {
           <h5 class="font-sans font-black text-neutral-900 dark:text-neutral-200 uppercase tracking-widest text-[10px]">
-            {{ ds.footerData()?.newsletter?.title || 'Stay Connected' }}</h5>
-          <p class="text-neutral-500 dark:text-neutral-400 text-[10px] leading-relaxed">{{
-            ds.footerData()?.newsletter?.description }}</p>
-
-          <div class="flex items-center gap-2 w-full pt-1">
-            <input type="email" placeholder="Enter your email"
-              class="flex-1 min-w-0 px-3 h-9 text-xs bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:outline-none focus:border-blue-500 text-neutral-800 dark:text-white"
-              #newsEmailInput>
-            <button (click)="subscribeNewsletter(newsEmailInput.value); newsEmailInput.value=''"
-              class="px-3.5 h-9 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black rounded-xl uppercase tracking-wider transition-colors shrink-0">
-              {{ ds.footerData()?.newsletter?.buttonText || 'Subscribe' }}
-            </button>
+            Contact Us</h5>
+          <div
+            class="flex flex-col gap-3 font-semibold text-neutral-600 dark:text-neutral-400 text-[11px] leading-relaxed">
+            <div>
+              <span class="font-black text-neutral-900 dark:text-white">Trade Name - </span>
+              <span>3D Galaxy</span>
+            </div>
+            <div>
+              <span class="font-black text-neutral-900 dark:text-white">Working Hours - </span>
+              <span>Mon-Sat - 11-7pm</span>
+            </div>
+            <div>
+              <span class="font-black text-neutral-900 dark:text-white">Email - </span>
+              <span>galaxy.3d&#64;hotmail.com</span>
+            </div>
+            <div>
+              <span class="font-black text-neutral-900 dark:text-white">Call Us - </span>
+              <span>+91 9111381113</span>
+            </div>
+            <div>
+              <span class="font-black text-neutral-900 dark:text-white">Address:</span>
+              <span>374/1 Budana Compound, Udyog Nagar Palda, Indore (M.P)- 452001</span>
+            </div>
           </div>
-          }
-
-          <!-- Sponsor Ad Spot -->
-          @if (footerAd(); as fad) {
-          <button type="button" (click)="clickAd(fad)"
-            class="w-full text-left p-3.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-2xl cursor-pointer hover:border-blue-500 transition-all space-y-1 relative group focus:outline-none focus:ring-1 focus:ring-blue-500">
-            <span
-              class="absolute top-1.5 right-1.5 px-1.5 py-0.5 bg-blue-500/10 text-blue-500 font-bold text-[7px] rounded-full uppercase tracking-tighter">Sponsored</span>
-            <h4
-              class="text-[10px] font-black text-neutral-800 dark:text-white group-hover:text-blue-500 transition-colors pr-10">
-              {{ fad.title }}</h4>
-            <p class="text-[9px] text-neutral-450 leading-relaxed truncate">{{ fad.targetUrl }}</p>
-          </button>
-          }
 
           <!-- Social Links -->
           @if (ds.footerData()?.socialLinks?.length) {
@@ -1056,8 +1023,7 @@
         <a [href]="ds.footerData()?.copyright?.brandUrl || 'https://ajrdigitalhub.com'" target="_blank"
           class="flex items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105 no-underline">
           <span class="text-base group-hover:animate-bounce transition-all">🚀</span>
-          <span
-            [class]="brandingAnimationClass()"
+          <span [class]="brandingAnimationClass()"
             class="font-sans font-black tracking-widest text-xs sm:text-sm text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-purple-600 to-cyan-500 bg-[length:200%_auto] relative">
             {{ ds.footerData()?.copyright?.developedByText || 'Developed by AJR Digital Hub' }}
             <span
@@ -1075,7 +1041,7 @@
 
   <!-- Recent Purchase Social Proof Popup -->
   @if (!isAuthRoute()) {
-    <app-recent-purchase-popup />
+  <app-recent-purchase-popup />
   }
 
   <app-notification-popup></app-notification-popup>

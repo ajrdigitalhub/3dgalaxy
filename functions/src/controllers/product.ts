@@ -47,75 +47,157 @@ export const getProducts = async (req: Request, res: Response) => {
 
     const {
       page = '1',
-      limit = '12',
+      limit = '24',
       search,
-      categoryId,
-      brandId,
-      minPrice,
-      maxPrice,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      category,
+      subcategory,
+      brand,
+      priceMin,
+      priceMax,
+      rating,
+      stock,
+      featured,
+      material,
+      color,
+      technology,
+      printerType,
+      compatibility,
+      sort = 'popularity',
     } = req.query;
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    const filters: any = {};
-
-    if (search) {
-      filters.OR = [
-        { name: { contains: search as string, mode: 'insensitive' } },
-        { sku: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
-      ];
-    }
-
-    if (categoryId) {
-      filters.categoryId = categoryId as string;
-    }
-
-    if (brandId) {
-      filters.brandId = brandId as string;
-    }
-
-    if (minPrice || maxPrice) {
-      filters.salePrice = {};
-      if (minPrice) {
-        filters.salePrice.gte = parseFloat(minPrice as string);
-      }
-      if (maxPrice) {
-        filters.salePrice.lte = parseFloat(maxPrice as string);
-      }
-    }
-
-    const order: any = {};
-    if (sortBy === 'price') {
-      order.salePrice = sortOrder as string;
-    } else {
-      order[sortBy as string] = sortOrder as string;
-    }
-
-    const total = await prisma.product.count({ where: filters });
+    // Load all active products first
     const items = await prisma.product.findMany({
-      where: filters,
+      where: { deletedAt: null, isActive: true },
       include: {
         brand: true,
         category: true,
         reviews: true,
-      },
-      orderBy: order,
-      skip,
-      take: limitNum,
+      }
     });
 
-    const mappedData = items.map(p => {
+    const getSpecsArray = (specsJson: any): any[] => {
+      if (!specsJson) return [];
+      if (Array.isArray(specsJson)) return specsJson;
+      if (specsJson && typeof specsJson === 'object' && Array.isArray((specsJson as any).create)) {
+        return (specsJson as any).create;
+      }
+      return [];
+    };
+
+    // Parse and map all products with computed features
+    const allMapped = items.map(p => {
+      const specs = getSpecsArray(p.specifications);
+
+      // Extract Color
+      const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
+      let colors: string[] = [];
+      if (colorSpec && colorSpec.value) {
+        colors = colorSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+      }
+      if (colors.length === 0) {
+        const colorKeywords = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Grey', 'Gray', 'Orange', 'Purple', 'Silver', 'Gold', 'Pink', 'Brown'];
+        for (const keyword of colorKeywords) {
+          if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+            colors.push(keyword);
+          }
+        }
+      }
+      if (colors.length === 0) colors.push('Multicolor');
+
+      // Extract Material
+      const materialSpec = specs.find(s => ['material', 'materials'].includes(s.name.toLowerCase()));
+      let materials: string[] = [];
+      if (materialSpec && materialSpec.value) {
+        materials = materialSpec.value.split(/[,/]/).map((m: string) => m.trim()).filter(Boolean);
+      }
+      if (materials.length === 0 && p.category?.name) {
+        const matKeywords = ['PLA', 'PETG', 'ABS', 'TPU', 'Resin', 'Nylon', 'Carbon Fiber', 'Wood', 'Metal'];
+        for (const keyword of matKeywords) {
+          if (p.category.name.toLowerCase().includes(keyword.toLowerCase()) || p.name.toLowerCase().includes(keyword.toLowerCase())) {
+            materials.push(keyword);
+          }
+        }
+      }
+      if (materials.length === 0) materials.push('Other');
+
+      // Extract Technology
+      const techSpec = specs.find(s => ['technology', 'print technology', 'printing technology'].includes(s.name.toLowerCase()));
+      let technology = techSpec?.value || '';
+      if (!technology && p.category?.name) {
+        if (p.category.name.toLowerCase().includes('resin') || p.name.toLowerCase().includes('resin') || p.category.name.toLowerCase().includes('sla') || p.category.name.toLowerCase().includes('lcd')) {
+          technology = 'Resin (SLA/LCD)';
+        } else if (p.category.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('printer') || p.category.name.toLowerCase().includes('pla') || p.category.name.toLowerCase().includes('abs') || p.category.name.toLowerCase().includes('petg')) {
+          technology = 'FDM';
+        }
+      }
+      if (!technology) technology = 'Other';
+
+      // Extract Printer Type
+      const typeSpec = specs.find(s => ['printer type', 'type', 'structure'].includes(s.name.toLowerCase()));
+      let printerType = typeSpec?.value || '';
+      if (!printerType && p.name.toLowerCase().includes('mini')) {
+        printerType = 'Desktop / Compact';
+      } else if (!printerType && (p.name.toLowerCase().includes('industrial') || p.name.toLowerCase().includes('brahma'))) {
+        printerType = 'Industrial';
+      } else if (!printerType) {
+        printerType = 'Desktop';
+      }
+
+      // Extract Compatibility
+      const compSpec = specs.find(s => ['compatibility', 'compatible printers', 'compatible with'].includes(s.name.toLowerCase()));
+      let compatibility: string[] = [];
+      if (compSpec && compSpec.value) {
+        compatibility = compSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+      }
+      const compKeywords = ['A1', 'P1S', 'X1C', 'K1', 'Ender', 'Neptune', 'Saturn', 'Mars'];
+      for (const keyword of compKeywords) {
+        if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+          compatibility.push(keyword);
+        }
+      }
+
+      // Calculate rating
+      let avgRating = 4.9;
+      if (p.reviews && p.reviews.length > 0) {
+        const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+        avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
+      }
+
+      // Stock status
+      let stockStatus = 'IN_STOCK';
+      if (p.stock === 0) {
+        const checkStr = (p.name + ' ' + (p.description || '')).toLowerCase();
+        if (checkStr.includes('pre-order') || checkStr.includes('preorder')) {
+          stockStatus = 'PRE_ORDER';
+        } else if (checkStr.includes('coming-soon') || checkStr.includes('coming soon')) {
+          stockStatus = 'COMING_SOON';
+        } else {
+          stockStatus = 'OUT_OF_STOCK';
+        }
+      }
+
+      // Active price
+      const basePriceNum = parseFloat(p.basePrice?.toString() || '0');
+      const salePriceNum = p.salePrice ? parseFloat(p.salePrice.toString()) : basePriceNum;
+      const activePrice = salePriceNum;
+
+      // Featured flags
+      const isBestseller = p.isExclusive || p.name.toLowerCase().includes('combo') || p.stock > 100;
+      const isTrending = p.isFeatured || p.stock < 10;
+      const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
+
       let thumbnail = '';
       const imgs = safeParseArray(p.images);
       if (imgs.length > 0) {
         const primaryImg = imgs.find((img: any) => img?.isPrimary) || imgs[0];
-        thumbnail = primaryImg?.url || '';
+        thumbnail = primaryImg?.url || (typeof primaryImg === 'string' ? primaryImg : '');
       }
+
       return {
         id: p.id,
         brandId: p.brandId,
@@ -125,30 +207,283 @@ export const getProducts = async (req: Request, res: Response) => {
         sku: p.sku,
         description: p.description,
         shortDescription: p.shortDescription,
-        basePrice: p.basePrice,
-        salePrice: p.salePrice,
-        dealerPrice: p.dealerPrice,
+        basePrice: basePriceNum,
+        salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
+        dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
         stock: p.stock,
         isActive: p.isActive,
         isExclusive: p.isExclusive,
-        images: imgs,
-        specifications: safeParseArray(p.specifications),
+        images: imgs.map(img => typeof img === 'string' ? { url: img } : img),
+        specifications: specs,
         brand: p.brand,
         category: p.category,
         reviews: p.reviews,
-        price: p.basePrice,
-        thumbnail
+        thumbnail,
+        activePrice,
+        colors,
+        materials,
+        technology,
+        printerType,
+        compatibility,
+        avgRating,
+        stockStatus,
+        isFeatured: p.isFeatured,
+        isBestseller,
+        isTrending,
+        isNewArrival,
+        isOnSale
       };
     });
 
+    // Helper to check if a category belongs to a parent (by ID or slug)
+    const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
+      if (!cat) return false;
+      if (cat.id === parentSlugOrId || cat.slug === parentSlugOrId) return true;
+      if (cat.parentId) {
+        const parent = allMapped.map(x => x.category).find(c => c && c.id === cat.parentId);
+        return isCategoryChildOf(parent, parentSlugOrId);
+      }
+      return false;
+    };
+
+    // Filter products
+    let filtered = allMapped;
+
+    // Search query filter
+    if (search) {
+      const term = (search as string).toLowerCase().trim();
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        (p.brand?.name || '').toLowerCase().includes(term) ||
+        (p.category?.name || '').toLowerCase().includes(term) ||
+        (p.sku || '').toLowerCase().includes(term) ||
+        (p.description || '').toLowerCase().includes(term)
+      );
+    }
+
+    // Category / Subcategory filter
+    if (category) {
+      const catsArray = (category as string).split(',').map(s => s.trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return catsArray.some(cVal => isCategoryChildOf(p.category, cVal));
+      });
+    }
+
+    if (subcategory) {
+      const subcatsArray = (subcategory as string).split(',').map(s => s.trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return subcatsArray.some(sVal => p.categoryId === sVal || p.category?.slug === sVal);
+      });
+    }
+
+    // Brand filter
+    if (brand) {
+      const brandsArray = (brand as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return brandsArray.includes((p.brand?.name || '').toLowerCase()) ||
+               brandsArray.includes((p.brand?.slug || '').toLowerCase()) ||
+               brandsArray.includes((p.brandId || '').toLowerCase());
+      });
+    }
+
+    // Price filter
+    const minP = priceMin ? parseFloat(priceMin as string) : null;
+    const maxP = priceMax ? parseFloat(priceMax as string) : null;
+    if (minP !== null) {
+      filtered = filtered.filter(p => p.activePrice >= minP);
+    }
+    if (maxP !== null) {
+      filtered = filtered.filter(p => p.activePrice <= maxP);
+    }
+
+    // Rating filter
+    if (rating) {
+      const minRating = parseFloat(rating as string);
+      filtered = filtered.filter(p => p.avgRating >= minRating);
+    }
+
+    // Stock filter
+    if (stock) {
+      const stocksArray = (stock as string).split(',').map(s => s.toUpperCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => stocksArray.includes(p.stockStatus));
+    }
+
+    // Featured flags filter
+    if (featured) {
+      const featuredArray = (featured as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return featuredArray.some(f => {
+          if (f === 'featured') return p.isFeatured;
+          if (f === 'bestseller') return p.isBestseller;
+          if (f === 'trending') return p.isTrending;
+          if (f === 'new_arrival') return p.isNewArrival;
+          if (f === 'on_sale') return p.isOnSale;
+          if (f === 'recommended') return p.isFeatured || p.isBestseller;
+          return false;
+        });
+      });
+    }
+
+    // Color filter
+    if (color) {
+      const colorsArray = (color as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return p.colors.some(c => colorsArray.includes(c.toLowerCase()));
+      });
+    }
+
+    // Material filter
+    if (material) {
+      const materialsArray = (material as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return p.materials.some(m => materialsArray.includes(m.toLowerCase()));
+      });
+    }
+
+    // Technology filter
+    if (technology) {
+      const techArray = (technology as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => techArray.includes(p.technology.toLowerCase()));
+    }
+
+    // Printer Type filter
+    if (printerType) {
+      const typesArray = (printerType as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => typesArray.includes(p.printerType.toLowerCase()));
+    }
+
+    // Compatibility filter
+    if (compatibility) {
+      const compArray = (compatibility as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+      filtered = filtered.filter(p => {
+        return p.compatibility.some(c => compArray.includes(c.toLowerCase()));
+      });
+    }
+
+    // Aggregation lists compiled from allMapped (unfiltered by sidebar check selections, but filtered by search/category)
+    let baseForAgg = allMapped;
+    if (search) {
+      const term = (search as string).toLowerCase().trim();
+      baseForAgg = baseForAgg.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        (p.brand?.name || '').toLowerCase().includes(term) ||
+        (p.category?.name || '').toLowerCase().includes(term)
+      );
+    }
+    if (category) {
+      const catsArray = (category as string).split(',').map(s => s.trim()).filter(Boolean);
+      baseForAgg = baseForAgg.filter(p => {
+        return catsArray.some(cVal => isCategoryChildOf(p.category, cVal));
+      });
+    }
+
+    // Aggregations
+    const aggCategoriesMap: Record<string, { id: string; name: string; parentId: string | null; count: number }> = {};
+    const aggBrandsMap: Record<string, { id: string; name: string; logo: string; count: number }> = {};
+    const aggColorsMap: Record<string, number> = {};
+    const aggMaterialsMap: Record<string, number> = {};
+    const aggRatingsMap: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    const aggStockMap: Record<string, number> = { IN_STOCK: 0, OUT_OF_STOCK: 0, PRE_ORDER: 0, COMING_SOON: 0 };
+    const aggFeaturedMap: Record<string, number> = { featured: 0, bestseller: 0, trending: 0, new_arrival: 0, on_sale: 0, recommended: 0 };
+    const aggTechMap: Record<string, number> = {};
+    const aggPrinterTypeMap: Record<string, number> = {};
+    const aggCompatibilityMap: Record<string, number> = {};
+
+    baseForAgg.forEach(p => {
+      // Categories
+      if (p.category) {
+        const cat = p.category;
+        if (!aggCategoriesMap[cat.id]) {
+          aggCategoriesMap[cat.id] = { id: cat.id, name: cat.name, parentId: cat.parentId, count: 0 };
+        }
+        aggCategoriesMap[cat.id].count++;
+      }
+
+      // Brands
+      if (p.brand) {
+        const b = p.brand;
+        if (!aggBrandsMap[b.id]) {
+          aggBrandsMap[b.id] = { id: b.id, name: b.name, logo: b.logo || '', count: 0 };
+        }
+        aggBrandsMap[b.id].count++;
+      }
+
+      // Colors
+      p.colors.forEach(c => {
+        aggColorsMap[c] = (aggColorsMap[c] || 0) + 1;
+      });
+
+      // Materials
+      p.materials.forEach(m => {
+        aggMaterialsMap[m] = (aggMaterialsMap[m] || 0) + 1;
+      });
+
+      // Ratings
+      for (let i = 1; i <= 5; i++) {
+        if (p.avgRating >= i) {
+          aggRatingsMap[i]++;
+        }
+      }
+
+      // Stock
+      aggStockMap[p.stockStatus]++;
+
+      // Featured
+      if (p.isFeatured) aggFeaturedMap.featured++;
+      if (p.isBestseller) aggFeaturedMap.bestseller++;
+      if (p.isTrending) aggFeaturedMap.trending++;
+      if (p.isNewArrival) aggFeaturedMap.new_arrival++;
+      if (p.isOnSale) aggFeaturedMap.on_sale++;
+      if (p.isFeatured || p.isBestseller) aggFeaturedMap.recommended++;
+
+      // Tech
+      aggTechMap[p.technology] = (aggTechMap[p.technology] || 0) + 1;
+
+      // Printer Type
+      aggPrinterTypeMap[p.printerType] = (aggPrinterTypeMap[p.printerType] || 0) + 1;
+
+      // Compatibility
+      p.compatibility.forEach(c => {
+        aggCompatibilityMap[c] = (aggCompatibilityMap[c] || 0) + 1;
+      });
+    });
+
+    // Sorting
+    if (sort === 'newest') {
+      filtered.sort((a, b) => b.id.localeCompare(a.id));
+    } else if (sort === 'price-asc') {
+      filtered.sort((a, b) => a.activePrice - b.activePrice);
+    } else if (sort === 'price-desc') {
+      filtered.sort((a, b) => b.activePrice - a.activePrice);
+    } else if (sort === 'rating-desc') {
+      filtered.sort((a, b) => b.avgRating - a.avgRating);
+    } else if (sort === 'name-asc') {
+      filtered.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sort === 'bestselling' || sort === 'popularity') {
+      filtered.sort((a, b) => (b.reviews?.length || 0) - (a.reviews?.length || 0));
+    }
+
+    // Paging
+    const total = filtered.length;
+    const paginated = filtered.slice(skip, skip + limitNum);
+
     const finalResponse = {
-      meta: {
-        total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages: Math.ceil(total / limitNum),
-      },
-      data: mappedData,
+      products: paginated,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+      availableFilters: {
+        categories: Object.values(aggCategoriesMap),
+        brands: Object.values(aggBrandsMap),
+        colors: Object.entries(aggColorsMap).map(([name, count]) => ({ name, count })),
+        materials: Object.entries(aggMaterialsMap).map(([name, count]) => ({ name, count })),
+        ratings: Object.entries(aggRatingsMap).map(([rating, count]) => ({ rating: parseInt(rating), count })),
+        stock: Object.entries(aggStockMap).map(([status, count]) => ({ status, count })),
+        featured: Object.entries(aggFeaturedMap).map(([type, count]) => ({ type, count })),
+        technologies: Object.entries(aggTechMap).map(([name, count]) => ({ name, count })),
+        printerTypes: Object.entries(aggPrinterTypeMap).map(([name, count]) => ({ name, count })),
+        compatibilities: Object.entries(aggCompatibilityMap).map(([name, count]) => ({ name, count }))
+      }
     };
 
     sysCache.set(cacheKey, finalResponse, 300);
