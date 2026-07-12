@@ -783,7 +783,7 @@
 
   <!-- MAIN VIEWPORT ROUTER OUTLET SLOT -->
   <main
-    [class]="isHome() || isAuthRoute() ? 'w-full relative min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative min-h-[60vh]'">
+    [class]="isHome() ? 'w-full relative min-h-screen -mt-16 sm:-mt-20' : (isAuthRoute() ? 'w-full relative min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-8 md:pb-12 relative min-h-[60vh]')">
     <router-outlet />
   </main>
 
