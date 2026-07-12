@@ -14,8 +14,11 @@ import {
 import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
 import { SettingsService } from '../core/services/settings.service';
-import { of } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { ToastService } from '../shared/components/toast/toast.service';
+import { of, Observable } from 'rxjs';
+import { catchError, finalize, shareReplay } from 'rxjs/operators';
+
 
 
 export interface Category {
@@ -125,6 +128,8 @@ export interface Product {
   is360Supported: boolean;
   tags: string[];
   isExclusive?: boolean;
+  shortDescription?: string;
+  discountPercent?: number;
   warningText?: string;
   avgRating?: number;
   ratingCount?: number;
@@ -144,6 +149,13 @@ export interface Product {
   warranty?: any;
   shipping?: any;
   relatedProducts?: { relatedProduct: any }[];
+  isFeatured?: boolean;
+  codAvailable?: boolean;
+  baseShippingCharge?: number;
+  estimatedDeliveryDays?: number;
+  freeShippingEligible?: boolean;
+  bundleProducts?: any;
+  recommendedFilaments?: any;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -153,6 +165,7 @@ export interface CartItem {
   variant?: ProductVariant;
   quantity: number;
   selectedPriceType: 'sale' | 'dealer';
+  isFree?: boolean;
 }
 
 export interface OrderItem {
@@ -188,6 +201,8 @@ export interface Order {
   guestPhone?: string;
   guestAddress?: string;
   guestSessionId?: string;
+  gstNumber?: string;
+  companyName?: string;
 }
 
 export interface QuoteRequest {
@@ -269,6 +284,21 @@ export interface Settings {
   accentColor: string;
   borderRadius: number;
   fontFamily: string;
+  currency?: string;
+  heroCarousel?: {
+    enabled?: boolean;
+    autoplay?: boolean;
+    interval?: number;
+    transition?: string;
+    backgroundStyle?: string;
+    showPrice?: boolean;
+    showDiscount?: boolean;
+    showBrand?: boolean;
+    showDescription?: boolean;
+    showCTA?: boolean;
+    showNavigation?: boolean;
+    showIndicators?: boolean;
+  };
   logoUrl?: string;
   faviconUrl?: string;
   companyName?: string;
@@ -296,6 +326,24 @@ export interface Settings {
     maxItems: number;
     showLocation: boolean;
     showTime: boolean;
+  };
+  pushNotifications?: {
+    enabled?: boolean;
+    projectId?: string;
+    apiKey?: string;
+    senderId?: string;
+    vapidKey?: string;
+    defaultIcon?: string;
+    defaultClickAction?: string;
+    defaultImage?: string;
+    expiry?: number;
+    ttl?: number;
+    soundEnabled?: boolean;
+    vibrationEnabled?: boolean;
+    autoCloseDuration?: number;
+    badgeIcon?: string;
+    topicConfig?: string;
+    types?: Record<string, boolean>;
   };
 }
 
@@ -386,6 +434,8 @@ export class DatastoreService {
   brands = signal<Brand[]>([]);
   menuItems = signal<MenuItem[]>([]);
   products = signal<Product[]>([]);
+  featuredProducts = signal<Product[]>([]);
+  featuredProductsLoading = signal<boolean>(true);
   orders = signal<Order[]>([]);
   quotes = signal<QuoteRequest[]>([]);
   advertisements = signal<Advertisement[]>([]);
@@ -409,13 +459,146 @@ export class DatastoreService {
   
   footerData = signal<any>(null);
   footerLoading = signal<boolean>(true);
+  filterCategory = signal<string>('');
 
   shippingAddress = computed(() => this.userProfile()?.address || '');
+
+  // Resolves the cart items with current product and variant details from the database
+  resolvedCartItems = computed(() => {
+    const items = this.cart();
+    const allProds = this.products();
+
+    // 1. Refresh product/variant information from database
+    const refreshed = items.map(item => {
+      const found = allProds.find(p => p.id === item.product.id);
+      if (found) {
+        let refreshedVariant = item.variant;
+        if (item.variant && found.variants) {
+          const vFound = found.variants.find(v => v.id === item.variant?.id);
+          if (vFound) refreshedVariant = vFound;
+        }
+        return { ...item, product: found, variant: refreshedVariant };
+      }
+      return item;
+    });
+
+    // 2. Identify all bundled product IDs that are covered by parent products in the cart
+    const bundledIds = new Set<string>();
+    for (const item of refreshed) {
+      const p = item.product;
+      if (p.bundleProducts) {
+        try {
+          const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
+          if (Array.isArray(list)) {
+            for (const bp of list) {
+              const id = typeof bp === 'string' ? bp : bp.id;
+              if (id) bundledIds.add(id);
+            }
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+    }
+
+    // 3. Mark items as free if they are part of a bundle of another product in the cart
+    return refreshed.map(item => {
+      const isFree = bundledIds.has(item.product.id) || item.isFree;
+      return { ...item, isFree };
+    });
+  });
+
+  // Groups cart items: main products with their bundle sub-products nested underneath
+  groupedCartItems = computed(() => {
+    const items = this.resolvedCartItems();
+    const grouped: any[] = [];
+
+    // Find main items (not free)
+    for (const item of items) {
+      if (item.isFree) continue;
+
+      const p = item.product;
+      let bundleSubs: any[] = [];
+
+      // Find any items in the cart that are free and are bundled by this parent product
+      if (p.bundleProducts) {
+        try {
+          const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
+          if (Array.isArray(list)) {
+            const listIds = list.map((bp: any) => typeof bp === 'string' ? bp : bp.id);
+            // Match with items in the cart marked as free
+            bundleSubs = items.filter(i => i.isFree && listIds.includes(i.product.id));
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+
+      grouped.push({ ...item, bundleSubs });
+    }
+
+    // Add any free items that were NOT claimed by any parent product in the cart (just in case)
+    const claimedIds = new Set<string>();
+    for (const g of grouped) {
+      for (const sub of g.bundleSubs) {
+        claimedIds.add(sub.product.id);
+      }
+    }
+    for (const item of items) {
+      if (item.isFree && !claimedIds.has(item.product.id)) {
+        grouped.push({ ...item, bundleSubs: [] });
+      }
+    }
+
+    return grouped;
+  });
+
+  // Pre-computed map: parentId -> subcategories[] (only recomputes when categories change)
+  subcategoriesMap = computed(() => {
+    const map: Record<string, Category[]> = {};
+    const cats = this.categories();
+    for (const c of cats) {
+      const pid = c.parent_id || c.parentId;
+      if (pid) {
+        if (!map[pid]) map[pid] = [];
+        map[pid].push(c);
+      }
+    }
+    return map;
+  });
+
+  // Pre-computed map: categoryId -> product count (only recomputes when products/categories change)
+  productCountMap = computed(() => {
+    const map: Record<string, number> = {};
+    const products = this.products();
+    const subcatMap = this.subcategoriesMap();
+    const cats = this.categories();
+
+    // Count products per direct category
+    const directCount: Record<string, number> = {};
+    for (const p of products) {
+      const catId = p.category_id || p.categoryId || '';
+      if (catId) {
+        directCount[catId] = (directCount[catId] || 0) + 1;
+      }
+    }
+
+    // For each category, sum its own count + all subcategory counts
+    for (const cat of cats) {
+      let count = directCount[cat.id] || 0;
+      const subs = subcatMap[cat.id];
+      if (subs) {
+        for (const sub of subs) {
+          count += directCount[sub.id] || 0;
+        }
+      }
+      map[cat.id] = count;
+    }
+    return map;
+  });
 
   private platformId = inject(PLATFORM_ID);
   api = inject(ApiService);
   settingsService = inject(SettingsService);
   private injector = inject(Injector);
+  private router = inject(Router);
+  private toastService = inject(ToastService);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -739,15 +922,27 @@ export class DatastoreService {
     });
   }
 
-  async logout() {
+  async logout(redirect = true, showToast = true) {
     return new Promise<void>((resolve) => {
       this.api.post('/auth/logout', {}).subscribe({
         next: () => {
           this.clearSession();
+          if (showToast) {
+            this.toastService.success('Logout successful');
+          }
+          if (redirect) {
+            this.router.navigate(['/']);
+          }
           resolve();
         },
         error: () => {
           this.clearSession();
+          if (showToast) {
+            this.toastService.success('Logout successful');
+          }
+          if (redirect) {
+            this.router.navigate(['/']);
+          }
           resolve();
         }
       });
@@ -808,100 +1003,100 @@ export class DatastoreService {
     });
   }
 
-  private initRealtimeSync() {
-    // ---- API SYNC BLOCK ----
+  private consolidatedHomeCache$?: Observable<any>;
+  private productsCache$?: Observable<{data: any[]}>;
+  private brandsCache$?: Observable<Brand[]>;
+  private menusCache$?: Observable<MenuItem[]>;
+  private blogsCache$?: Observable<any>;
+  private couponsCache$?: Observable<any>;
+  private socialPostsCache$?: Observable<any>;
+  private advertisementsCache$?: Observable<any>;
+  private pagesCache$?: Observable<any>;
+  private featuredProductsCache$?: Observable<{ products: any[] }>;
+
+  public loadConsolidatedHome(force = false) {
+    if (force || !this.consolidatedHomeCache$) {
+      this.consolidatedHomeCache$ = this.api.get<any>('/home').pipe(
+        catchError((err) => {
+          console.error('Error loading consolidated home payload:', err);
+          this.consolidatedHomeCache$ = undefined;
+          this.categoriesLoading.set(false);
+          this.bannersLoading.set(false);
+          this.homepageLoading.set(false);
+          this.productsLoading.set(false);
+          return of(null);
+        })
+      );
+    }
+
     this.categoriesLoading.set(true);
-    this.api.get<Category[]>('/categories').pipe(
-      catchError((err) => {
-        console.error('Error loading categories:', err);
-        return of([]);
-      }),
-      finalize(() => {
+    this.bannersLoading.set(true);
+    this.productsLoading.set(true);
+    
+    this.consolidatedHomeCache$.subscribe({
+      next: (res) => {
         this.categoriesLoading.set(false);
-      })
-    ).subscribe({
-      next: (data) => { if (data) this.categories.set(data); console.log("Loaded Categories", data); },
-      error: (e) => console.error(e)
-    });
+        this.bannersLoading.set(false);
+        this.homepageLoading.set(false);
+        this.productsLoading.set(false);
 
-    this.api.get<Brand[]>('/brands').pipe(
-      catchError((err) => {
-        console.error('Error loading brands:', err);
-        return of([]);
-      })
-    ).subscribe({
-      next: (data) => { if (data) this.brands.set(data); },
-      error: (e) => console.error(e)
-    });
-
-    this.reloadProducts();
-    this.reloadPages();
-    this.reloadBlogs();
-    this.reloadFaqs();
-    this.reloadBanners();
-    this.reloadCoupons();
-    this.reloadSocialPosts();
-    this.reloadAdvertisements();
-    this.reloadFooter();
-
-    this.api.get<MenuItem[]>('/menus/tree').pipe(
-      catchError((err) => {
-        console.error('Error loading menus/tree:', err);
-        return of([]);
-      })
-    ).subscribe({
-      next: (data) => { if (data) this.menuItems.set(data); },
-      error: (e) => console.error(e)
-    });
-
-    this.api.get<any>('/settings').pipe(
-      catchError((err) => {
-        console.error('Error loading settings:', err);
-        return of(null as any);
-      })
-    ).subscribe({
-      next: (res) => { 
-        if (res) {
-          const d = res.data !== undefined ? res.data : res;
+        if (res && res.success && res.data) {
+          const d = res.data;
           
+          // 1. Settings & Theme
+          const settingsVal = d.settings || {};
           let themeData = d.theme;
           if (!themeData) {
             themeData = {
-              primaryColor: d.primaryColor || '#d65108',
-              secondaryColor: d.secondaryColor || '#1e3a8a',
-              accentColor: d.accentColor || '#3B82F6',
-              borderRadius: d.borderRadius || '0.75rem',
-              fontFamily: d.typography || 'Inter',
-              darkMode: d.darkMode || false,
-              themeText: d.themeText || '#ffffff'
+              primaryColor: settingsVal.primaryColor || '#d65108',
+              secondaryColor: settingsVal.secondaryColor || '#1e3a8a',
+              accentColor: settingsVal.accentColor || '#3B82F6',
+              borderRadius: settingsVal.borderRadius || '0.75rem',
+              fontFamily: settingsVal.typography || 'Inter',
+              darkMode: settingsVal.darkMode || false,
+              themeText: settingsVal.themeText || '#ffffff'
             };
           }
           this.settings.set(themeData);
+          
+          try {
+            this.settingsService.settingsData.set(settingsVal);
+            this.settingsService.theme.set(themeData);
+            if (settingsVal.heroSlides) this.settingsService.heroSlides.set(settingsVal.heroSlides);
+            if (settingsVal.promoBanners) this.settingsService.promoBanners.set(settingsVal.promoBanners);
+            if (settingsVal.advertisements) this.settingsService.advertisements.set(settingsVal.advertisements);
+            if (settingsVal.banners) this.settingsService.banners.set(settingsVal.banners);
+            if (settingsVal.faqs) this.settingsService.faqs.set(settingsVal.faqs);
+            this.settingsService.isLoaded.set(true);
+          } catch (e) {
+            console.warn('Non-fatal settingsService sync warning:', e);
+          }
 
-          const layout = d.homepage || d.homepageSections;
-          if (layout) {
-            this.homeLayout.set(layout.sections || [
-              { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
-              { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
-              { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
-              { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
-              { id: 'launch-4', name: 'Launch Spotlight', type: 'LAUNCH_SPOTLIGHT', visible: true, order: 5, config: {} },
-              { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
-              { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
-              { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
-              { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
-              { id: 'video-10', name: 'Video Showcase', type: 'VIDEO_SECTION', visible: true, order: 10, config: {} },
-              { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
-              { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
-              { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
-            ]);
+          // 2. Categories
+          if (d.categories) {
+            this.categories.set(d.categories);
+          }
+
+          // 3. Navigation megamenu
+          if (d.navigation) {
+            this.menuItems.set(d.navigation);
+          }
+
+          // 4. Initial Products
+          if (d.featuredProducts) {
+            this.products.set(d.featuredProducts);
           }
         }
-      },
-      error: (e) => console.error(e)
+      }
     });
+  }
 
-    this.homepageLoading.set(false);
+  private initRealtimeSync() {
+    // Consolidated /home loader replaces separate startup calls
+    this.loadConsolidatedHome();
+    this.reloadFeaturedProducts();
+
+    // Default Layout configuration
     this.homeLayout.set([
       { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
       { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
@@ -918,7 +1113,7 @@ export class DatastoreService {
       { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
     ]);
 
-    // Orders
+    // Admin Orders
     runInInjectionContext(this.injector, () => {
       effect(() => {
         const role = this.userRole();
@@ -938,7 +1133,7 @@ export class DatastoreService {
                 customerName: o.customer?.user?.name || o.customer?.user?.firstName || 'Guest',
                 customerPhone: o.customer?.user?.phone || 'N/A',
                 status: o.status ? o.status.toLowerCase() : 'pending',
-                grandTotal: o.totalAmount,
+                grandTotal: Number(o.totalAmount) || 0,
               })));
             }
           },
@@ -956,6 +1151,7 @@ export class DatastoreService {
       });
     });
   }
+
 
   private handleFirestoreError(error: unknown, op: string, path: string) {
     const errInfo = {
@@ -989,17 +1185,57 @@ export class DatastoreService {
 
   // --- CRUD OPERATIONS ---
   
-  reloadCategories() {
-    this.api.get<Category[]>('/categories').subscribe(data => { if (data) this.categories.set(data); });
+  private categoriesCache$?: Observable<Category[]>;
+
+  reloadCategories(force = false) {
+    if (force || !this.categoriesCache$) {
+      this.categoriesCache$ = this.api.get<Category[]>('/categories').pipe(
+        shareReplay(1),
+        catchError(err => {
+          this.categoriesCache$ = undefined;
+          return of([]);
+        })
+      );
+    }
+    this.categoriesCache$.subscribe(data => {
+      if (data) {
+        const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
+        this.categories.set(list);
+      }
+    });
   }
 
-  reloadBrands() {
-    this.api.get<Brand[]>('/brands').subscribe(data => { if (data) this.brands.set(data); });
+  reloadBrands(force = false) {
+    if (force || !this.brandsCache$) {
+      this.brandsCache$ = this.api.get<Brand[]>('/brands').pipe(
+        shareReplay(1),
+        catchError(err => {
+          this.brandsCache$ = undefined;
+          return of([]);
+        })
+      );
+    }
+    this.brandsCache$.subscribe(data => {
+      if (data) {
+        const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
+        this.brands.set(list);
+      }
+    });
   }
 
-  reloadMenus() {
-    this.api.get<MenuItem[]>('/menus/tree').subscribe(data => { if (data) this.menuItems.set(data); });
+  reloadMenus(force = false) {
+    if (force || !this.menusCache$) {
+      this.menusCache$ = this.api.get<MenuItem[]>('/menus/tree').pipe(
+        shareReplay(1),
+        catchError(err => {
+          this.menusCache$ = undefined;
+          return of([]);
+        })
+      );
+    }
+    this.menusCache$.subscribe(data => { if (data) this.menuItems.set(data); });
   }
+
 
   // reloadFooter removed
 
@@ -1086,37 +1322,15 @@ export class DatastoreService {
     });
   }
 
-  async addProduct(p: Omit<Product, 'id' | 'stock' | 'reserved' | 'reviews' | 'qnas'> & { stock: number }) {
+  async addProduct(p: any) {
     const slug = p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    
     return new Promise((resolve, reject) => {
       this.api.post('/products', {
-        name: p.name,
+        ...p,
         slug,
-        sku: p.sku || `SKU-${Date.now()}`,
-        description: p.description,
-        long_description: p.long_description,
-        categoryId: p.category_id,
-        brandId: p.brand,
-        mrp: p.mrp,
-        salePrice: p.sale_price,
-        dealerPrice: p.dealer_price,
-        stock: p.stock,
-        is360Supported: p.is360Supported,
-        images: p.images, // Let backend array map handles this
-        variants: p.variants,
-        options: p.options,
-        seoTitle: p.seoTitle,
-        seoDescription: p.seoDescription,
-        specifications: p.specifications || (p as any).specs || [],
-        downloads: p.downloads || [],
-        features: p.features || [],
-        faqs: p.faqs || [],
-        warranty: p.warranty || null,
-        shipping: p.shipping || null
+        sku: p.sku || `SKU-${Date.now()}`
       }).subscribe({
         next: (res) => {
-           // Reload
            this.reloadProducts(false);
            resolve(res);
         },
@@ -1125,33 +1339,9 @@ export class DatastoreService {
     });
   }
 
-  async editProduct(id: string, updated: Partial<Product>) {
+  async editProduct(id: string, updated: any) {
     return new Promise((resolve, reject) => {
-      this.api.put(`/products/${id}`, {
-        name: updated.name,
-        slug: updated.slug || (updated.name ? updated.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : undefined),
-        sku: updated.sku,
-        description: updated.description,
-        long_description: updated.long_description,
-        categoryId: updated.category_id,
-        brandId: updated.brand,
-        mrp: updated.mrp,
-        salePrice: updated.sale_price,
-        dealerPrice: updated.dealer_price,
-        stock: updated.stock,
-        is360Supported: updated.is360Supported,
-        images: updated.images,
-        variants: updated.variants,
-        options: updated.options,
-        seoTitle: updated.seoTitle,
-        seoDescription: updated.seoDescription,
-        specifications: updated.specifications || (updated as any).specs || [],
-        downloads: updated.downloads || [],
-        features: updated.features || [],
-        faqs: updated.faqs || [],
-        warranty: updated.warranty || null,
-        shipping: updated.shipping || null
-      }).subscribe({
+      this.api.put(`/products/${id}`, updated).subscribe({
         next: (res) => {
            this.reloadProducts(false);
            resolve(res);
@@ -1173,19 +1363,24 @@ export class DatastoreService {
     });
   }
 
-  reloadProducts(showLoader = true) {
+  reloadProducts(showLoader = true, force = false) {
     if (showLoader) {
       this.productsLoading.set(true);
     }
-    this.api?.get<{data: any[]}>('/products').pipe(
-      catchError((err) => {
-        console.error('Error loading products:', err);
-        return of({ data: [] });
-      }),
-      finalize(() => {
-        this.productsLoading.set(false);
-      })
-    ).subscribe({
+    if (force || !this.productsCache$) {
+      this.productsCache$ = this.api?.get<{data: any[]}>('/products').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          console.error('Error loading products:', err);
+          this.productsCache$ = undefined;
+          return of({ data: [] });
+        }),
+        finalize(() => {
+          this.productsLoading.set(false);
+        })
+      );
+    }
+    this.productsCache$.subscribe({
       next: (res) => { 
         if (res && res.data) {
            this.products.set(res.data.map((p: any) => ({
@@ -1222,7 +1417,11 @@ export class DatastoreService {
              seoDescription: p.seo?.seoDescription || '',
              reviews: p.reviews || [],
              qnas: p.qnas || [],
-             featured: false,
+             featured: !!p.isFeatured || !!p.featured,
+             isFeatured: !!p.isFeatured || !!p.featured,
+             isExclusive: !!p.isExclusive,
+             codAvailable: !!p.codAvailable,
+             freeShippingEligible: !!p.freeShippingEligible,
              is360Supported: p.is360Supported || false,
              tags: []
            })));
@@ -1232,12 +1431,71 @@ export class DatastoreService {
     });
   }
 
+  reloadFeaturedProducts(force = false) {
+    if (force || !this.featuredProductsCache$) {
+      this.featuredProductsCache$ = this.api.get<{ products: any[] }>('/home/featured-products').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          console.error('Error loading featured products:', err);
+          this.featuredProductsCache$ = undefined;
+          return of({ products: [] });
+        })
+      );
+    }
+    this.featuredProductsLoading.set(true);
+    this.featuredProductsCache$.subscribe({
+      next: (res) => {
+        if (res && res.products) {
+          this.featuredProducts.set(res.products.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            sku: p.sku || '',
+            barcode: p.barcode || '',
+            category_id: p.category_id,
+            brand: p.brand || '',
+            description: p.description || '',
+            long_description: p.description || '',
+            mrp: p.mrp || 0,
+            sale_price: p.salePrice || p.mrp || 0,
+            dealer_price: p.dealerPrice || p.salePrice || p.mrp || 0,
+            stock: p.stock || 10,
+            reserved: 0,
+            images: p.images && p.images.length ? p.images : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
+            specs: p.specifications && p.specifications.length ? p.specifications.map((s: any) => ({ name: s.name, value: s.value })) : [],
+            specifications: p.specifications || [],
+            downloads: p.downloads || [],
+            features: p.features || [],
+            faqs: p.faqs || [],
+            warranty: p.warranty || null,
+            shipping: p.shipping || null,
+            seoTitle: p.seoTitle || '',
+            seoDescription: p.seoDescription || '',
+            reviews: p.reviews || [],
+            qnas: [],
+            featured: true,
+            is360Supported: false,
+            tags: [],
+            isExclusive: p.isExclusive,
+            codAvailable: p.codAvailable,
+            freeShippingEligible: p.freeShippingEligible
+          } as Product)));
+        }
+        this.featuredProductsLoading.set(false);
+      },
+      error: (e) => {
+        console.error('Featured products sub error:', e);
+        this.featuredProductsLoading.set(false);
+      }
+    });
+  }
+
   // --- COUPON AND BLOG CRUD ---
   async addCoupon(coupon: Coupon) {
     return new Promise((resolve, reject) => {
       this.api.post('/admin/coupons', coupon).subscribe({
         next: (res) => {
-          this.reloadCoupons();
+          this.reloadCoupons(true);
           resolve(res);
         },
         error: (err) => reject(err)
@@ -1249,7 +1507,7 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.delete(`/admin/coupons/${code}`).subscribe({
         next: (res) => {
-          this.reloadCoupons();
+          this.reloadCoupons(true);
           resolve(res);
         },
         error: (err) => reject(err)
@@ -1257,8 +1515,17 @@ export class DatastoreService {
     });
   }
 
-  reloadCoupons() {
-    this.api.get<any>('/admin/coupons').subscribe({
+  reloadCoupons(force = false) {
+    if (force || !this.couponsCache$) {
+      this.couponsCache$ = this.api.get<any>('/admin/coupons').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.couponsCache$ = undefined;
+          return of({ data: [] });
+        })
+      );
+    }
+    this.couponsCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.coupons.set(data);
@@ -1267,8 +1534,17 @@ export class DatastoreService {
     });
   }
 
-  reloadSocialPosts() {
-    this.api.get<any>('/admin/social-posts').subscribe({
+  reloadSocialPosts(force = false) {
+    if (force || !this.socialPostsCache$) {
+      this.socialPostsCache$ = this.api.get<any>('/admin/social-posts').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.socialPostsCache$ = undefined;
+          return of({ data: [] });
+        })
+      );
+    }
+    this.socialPostsCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.socialPosts.set(data);
@@ -1277,8 +1553,17 @@ export class DatastoreService {
     });
   }
 
-  reloadAdvertisements() {
-    this.api.get<any>('/admin/advertisements').subscribe({
+  reloadAdvertisements(force = false) {
+    if (force || !this.advertisementsCache$) {
+      this.advertisementsCache$ = this.api.get<any>('/admin/advertisements').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.advertisementsCache$ = undefined;
+          return of({ data: [] });
+        })
+      );
+    }
+    this.advertisementsCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.advertisements.set(data);
@@ -1287,13 +1572,15 @@ export class DatastoreService {
     });
   }
 
-  reloadQuotes() {
+  reloadQuotes(force = false) {
     const user = this.currentUser();
     let url = '/admin/quotes';
     if (user && user.email) {
       url += `?email=${encodeURIComponent(user.email)}`;
     }
-    this.api.get<any>(url).subscribe({
+    this.api.get<any>(url).pipe(
+      catchError((err) => of({ data: [] }))
+    ).subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.quotes.set(data);
@@ -1306,8 +1593,17 @@ export class DatastoreService {
   faqs = computed(() => this.settingsService.faqs());
   banners = computed(() => this.settingsService.banners());
 
-  reloadPages() {
-    this.api.get<any>('/admin/pages').subscribe({
+  reloadPages(force = false) {
+    if (force || !this.pagesCache$) {
+      this.pagesCache$ = this.api.get<any>('/admin/pages').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.pagesCache$ = undefined;
+          return of({ data: [] });
+        })
+      );
+    }
+    this.pagesCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.pages.set(data);
@@ -1316,8 +1612,17 @@ export class DatastoreService {
     });
   }
 
-  reloadBlogs() {
-    this.api.get<any>('/admin/blogs').subscribe({
+  reloadBlogs(force = false) {
+    if (force || !this.blogsCache$) {
+      this.blogsCache$ = this.api.get<any>('/admin/blogs').pipe(
+        shareReplay(1),
+        catchError((err) => {
+          this.blogsCache$ = undefined;
+          return of({ data: [] });
+        })
+      );
+    }
+    this.blogsCache$.subscribe({
       next: (res: any) => {
         const data = res?.success ? res.data : (res?.data || res);
         if (Array.isArray(data)) this.blogs.set(data);
@@ -1455,6 +1760,36 @@ export class DatastoreService {
   });
 
   // --- CART OPERATIONS ---
+  addToCartById(id: string) {
+    const prod = this.products().find(p => p.id === id);
+    if (prod) {
+      this.addToCart(prod, 1);
+    } else {
+      this.addToCart({
+        id,
+        name: id === 'prod-3' ? 'Bambu Lab A1 Combo' : 'Creality Sparx i7 Combo',
+        brand: id === 'prod-3' ? 'BAMBU LAB' : 'CREALITY',
+        slug: id === 'prod-3' ? 'bambu-lab-a1-combo' : 'creality-sparx-i7-combo',
+        sku: 'MOCK-SKU-' + id,
+        barcode: '123456789',
+        category_id: 'materials',
+        description: id === 'prod-3' ? 'Seamless multicolor 3D printing with full auto calibration.' : 'Professional grade dual extrusion combo printer setup.',
+        mrp: 55000,
+        sale_price: 48999,
+        dealer_price: 45000,
+        stock: 100,
+        reserved: 0,
+        images: [id === 'prod-3' ? 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' : 'https://store.bambulab.com/cdn/shop/files/X1C_Combo_800x800.png'],
+        specs: [],
+        reviews: [],
+        qnas: [],
+        featured: true,
+        is360Supported: false,
+        tags: [id === 'prod-3' ? 'BAMBU LAB' : 'CREALITY']
+      } as Product, 1);
+    }
+  }
+
   addToCart(product: Product, quantity = 1, variant?: ProductVariant) {
     this.cart.update(items => {
       const isVariantMatch = (i: CartItem) => {
@@ -1472,29 +1807,41 @@ export class DatastoreService {
       return [...items, { product, variant, quantity, selectedPriceType: priceType }];
     });
     this.recalcDiscount();
+    this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name} to cart.`);
   }
 
   updateCartQty(productId: string, qty: number, variantId?: string) {
+    const item = this.cart().find(i => i.product.id === productId);
+    const prevQty = item?.quantity || 0;
+
     if (qty <= 0) {
       this.cart.update(items => items.filter(i => {
            if (variantId) return !(i.product.id === productId && i.variant?.id === variantId);
            return i.product.id !== productId;
       }));
+      this.logCartActivity('Removed from Cart', `Removed product from cart.`);
     } else {
       this.cart.update(items => items.map(i => {
            const match = variantId ? (i.product.id === productId && i.variant?.id === variantId) : (i.product.id === productId);
            return match ? { ...i, quantity: qty } : i;
       }));
+      this.logCartActivity('Quantity Changed', `Updated product quantity from ${prevQty} to ${qty}.`);
     }
     this.recalcDiscount();
   }
 
-  getItemPrice(item: CartItem): number {
-      let price = item.selectedPriceType === 'dealer' ? item.product.dealer_price : item.product.sale_price;
-      if (item.variant) {
-         price = item.variant.salePrice || item.variant.price || price;
-      }
-      return price;
+  getItemPrice(item: any): number {
+    if (item.isFree) return 0;
+    const p = item.product || item;
+    const variant = item.variant;
+    const role = this.userRole();
+    let price = role === 'admin' || role === 'super-admin' || (this.activeUser()?.rewardPoints || 0) > 300
+      ? (p.dealerPrice || p.dealer_price || p.basePrice || 0)
+      : (p.salePrice || p.sale_price || p.basePrice || 0);
+    if (variant) {
+      price = variant.salePrice || variant.price || price;
+    }
+    return price;
   }
 
   applyCoupon(code: string): boolean {
@@ -1517,30 +1864,42 @@ export class DatastoreService {
   }
 
   cartSubtotal = computed(() => {
-    return this.cart().reduce((sum, item) => {
-      let price = item.selectedPriceType === 'dealer' ? item.product.dealer_price : item.product.sale_price;
-      if (item.variant) {
-         price = item.variant.salePrice || item.variant.price || price;
-      }
-      return sum + (price * item.quantity);
+    return this.resolvedCartItems().reduce((sum, item) => {
+      if (item.isFree) return sum;
+      return sum + (this.getItemPrice(item) * item.quantity);
     }, 0);
   });
 
   cartMRPtotal = computed(() => {
-    return this.cart().reduce((sum, item) => {
-       const mrp = item.variant?.price || item.product.mrp;
-       return sum + (mrp * item.quantity)
+    return this.resolvedCartItems().reduce((sum, item) => {
+      if (item.isFree) return sum;
+      const mrp = item.variant?.price || item.product.mrp || item.product.basePrice || 0;
+      return sum + (mrp * item.quantity);
     }, 0);
   });
 
   cartShipping = computed(() => {
     const sub = this.cartSubtotal();
     if (sub === 0) return 0;
-    return sub > 4999 ? 0 : 150;
+
+    const globalSettings = this.settingsService.shippingSettings() || {};
+    const threshold = globalSettings.freeShippingMinSpent !== undefined 
+      ? Number(globalSettings.freeShippingMinSpent) 
+      : (globalSettings.freeShippingThreshold !== undefined ? Number(globalSettings.freeShippingThreshold) : 3000);
+    
+    if (sub >= threshold) return 0;
+
+    const productShipping = this.resolvedCartItems().reduce((sum, item) => {
+      if (item.isFree) return sum;
+      return sum + (item.product.baseShippingCharge ? Number(item.product.baseShippingCharge) : 0);
+    }, 0);
+
+    const baseRate = globalSettings.fixedCourierRate !== undefined ? Number(globalSettings.fixedCourierRate) : 150;
+    return productShipping > 0 ? productShipping : baseRate;
   });
 
   cartTax = computed(() => {
-    return Math.round(this.cartSubtotal() * 0.18);
+    return 0;
   });
 
   cartGrandTotal = computed(() => {
@@ -1579,12 +1938,12 @@ export class DatastoreService {
       customerPhone: customerDetails.phone,
       customerEmail: customerDetails.email,
       shippingAddress: customerDetails.address,
-      items: this.cart().map(i => ({
+      items: this.resolvedCartItems().map(i => ({
         productId: i.product.id,
         name: i.product.name,
         quantity: i.quantity,
-        price: i.selectedPriceType === 'dealer' ? i.product.dealer_price : i.product.sale_price,
-        mrp: i.product.mrp
+        price: this.getItemPrice(i),
+        mrp: i.variant?.price || i.product.mrp || i.product.basePrice || 0
       })),
       subtotal: sub,
       discount: disk,
@@ -1814,5 +2173,78 @@ export class DatastoreService {
 
   async rejectQuote(id: string) {
     return this.updateQuoteStatus(id, 'rejected');
+  }
+
+  getSessionId(): string {
+    if (typeof window === 'undefined') return 'server_session';
+    let id = localStorage.getItem('checkout_session_id');
+    if (!id) {
+      id = 'sess_' + Math.random().toString(36).substring(2) + '_' + Date.now();
+      localStorage.setItem('checkout_session_id', id);
+    }
+    return id;
+  }
+
+  getGuestId(): string {
+    if (typeof window === 'undefined') return 'server_guest';
+    let id = localStorage.getItem('guest_user_id');
+    if (!id) {
+      id = 'guest_' + Math.random().toString(36).substring(2) + '_' + Date.now();
+      localStorage.setItem('guest_user_id', id);
+    }
+    return id;
+  }
+
+  getBrowserInfo() {
+    if (typeof window === 'undefined') return { browser: 'Server', device: 'Unknown' };
+    const ua = navigator.userAgent;
+    let browser = 'Unknown';
+    let device = 'Desktop';
+
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Edge')) browser = 'Edge';
+
+    if (/Mobi|Android|iPhone/i.test(ua)) {
+      device = 'Mobile';
+    } else if (/iPad|Tablet/i.test(ua)) {
+      device = 'Tablet';
+    }
+
+    return { browser, device };
+  }
+
+  logCartActivity(activity: string, details?: string) {
+    const session = this.getSessionId();
+    const user = this.currentUser();
+    const items = this.cart().map(i => ({
+      productId: i.product.id,
+      productName: i.product.name,
+      slug: i.product.slug,
+      quantity: i.quantity,
+      price: i.variant?.price || i.product.sale_price,
+      variantName: i.variant?.name || null
+    }));
+
+    const browserInfo = this.getBrowserInfo();
+
+    this.api.post('/cart/activity', {
+      sessionId: session,
+      cartItems: items,
+      cartTotal: this.cartGrandTotal(),
+      customerId: this.userProfile()?.id || null,
+      guestId: !user ? this.getGuestId() : null,
+      email: user?.email || localStorage.getItem('guest_email') || null,
+      mobile: this.userProfile()?.phone || localStorage.getItem('guest_mobile') || null,
+      customerName: user ? (this.userProfile()?.name || 'Maker') : localStorage.getItem('guest_name') || null,
+      browser: browserInfo.browser,
+      device: browserInfo.device,
+      ipAddress: '127.0.0.1',
+      activity,
+      details
+    }).subscribe({
+      error: (err) => console.warn('Activity logging failed:', err)
+    });
   }
 }

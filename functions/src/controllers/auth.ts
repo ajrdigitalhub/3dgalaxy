@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token';
+import { triggerWhatsAppNotification } from './whatsapp';
 
 // Simple in-memory blocklist for illustrative JWT logouts
 const tokenBlocklist = new Set<string>();
@@ -74,6 +75,11 @@ export const register = async (req: Request, res: Response) => {
     const userRoleName = newUser.roles?.[0]?.role?.name || 'Customer';
     const accessToken = generateAccessToken({ id: newUser.id, email: newUser.email, role: userRoleName });
     const refreshToken = generateRefreshToken({ id: newUser.id, email: newUser.email });
+
+    // Trigger WhatsApp Registration notification
+    if (newUser.mobile) {
+      await triggerWhatsAppNotification('registration', newUser.mobile, null, newUser);
+    }
 
     return res.status(201).json({
       success: true,
@@ -320,6 +326,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
       },
     });
 
+    // Trigger WhatsApp OTP / Reset notification
+    if (user.mobile) {
+      await triggerWhatsAppNotification('otp', user.mobile, null, user, { otp_code: resetToken });
+    }
+
     return res.status(200).json({
       message: 'Reset token generated (mock email dispatch).',
       debugToken: resetToken, // Exposed for testability during reviews
@@ -348,7 +359,8 @@ export const resetPassword = async (req: Request, res: Response) => {
       take: 1,
     });
 
-    if (recentLogs.length === 0 || !recentLogs[0].newData?.includes(token)) {
+    const logData = recentLogs[0].newData;
+    if (recentLogs.length === 0 || typeof logData !== 'string' || !logData.includes(token)) {
       return res.status(400).json({ error: 'Incorrect or expired recovery token' });
     }
 
@@ -367,6 +379,11 @@ export const resetPassword = async (req: Request, res: Response) => {
         newData: JSON.stringify('Password was successfully reset'),
       },
     });
+
+    // Trigger WhatsApp Password Reset Success notification
+    if (user.mobile) {
+      await triggerWhatsAppNotification('password_reset', user.mobile, null, user);
+    }
 
     return res.status(200).json({ message: 'Password replaced successfully' });
   } catch (error: any) {

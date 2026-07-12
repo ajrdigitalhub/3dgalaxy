@@ -270,6 +270,12 @@
               @if (bill.country) {
                 <p class="font-mono text-[11px] text-neutral-450 pt-1">Country: {{ bill.country }}</p>
               }
+              @if (ord.gstNumber) {
+                <p class="pt-1"><span class="font-bold text-neutral-950 dark:text-white">GSTIN:</span> {{ ord.gstNumber }}</p>
+              }
+              @if (ord.companyName) {
+                <p><span class="font-bold text-neutral-950 dark:text-white">Company Name:</span> {{ ord.companyName }}</p>
+              }
             </div>
           </div>
           }
@@ -441,14 +447,25 @@
                         class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
             </div>
 
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <a [href]="supportWhatsAppUrl()" target="_blank"
+                 class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer">
+                <mat-icon class="text-sm scale-90">chat</mat-icon> Chat on WhatsApp
+              </a>
+              <a [href]="supportEmailUrl()"
+                 class="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer">
+                <mat-icon class="text-sm scale-90">mail</mat-icon> Send Email Support
+              </a>
+            </div>
+
             <button (click)="submitSupportTicket()" 
                     [disabled]="ticketSubmitting()"
-                    class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md">
+                    class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md mt-3 cursor-pointer">
               @if (ticketSubmitting()) {
                 <div class="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 DISPATCHING HELPDESK RECORD...
               } @else {
-                <mat-icon class="text-sm scale-90">contact_support</mat-icon> SUBMIT SUPPORT COMPLAINT
+                <mat-icon class="text-sm scale-90">contact_support</mat-icon> SUBMIT LOCAL TICKET FORM
               }
             </button>
           </div>

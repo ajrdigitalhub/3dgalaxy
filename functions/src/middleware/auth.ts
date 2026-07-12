@@ -9,6 +9,7 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     email: string;
     role: string;
+    permissions: string[];
   };
 }
 
@@ -31,15 +32,33 @@ export const authenticateToken = async (
       role: string;
     };
 
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
+    });
+
+    if (!user || user.isActive === false) {
+      return res.status(403).json({ error: 'User is inactive or suspended' });
+    }
+
+    const primaryRole = user.roles[0]?.role;
+
     req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role || 'Customer',
+      id: user.id,
+      email: user.email,
+      role: primaryRole?.name || 'Customer',
+      permissions: [],
     };
 
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired access token' });
+    return res.status(403).json({ error: 'Invalid or expired access token' });
   }
 };
 
@@ -62,15 +81,51 @@ export const optionalAuthenticateToken = async (
       role: string;
     };
 
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role || 'Customer',
-    };
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
+    });
+
+    if (user && user.isActive !== false) {
+      const primaryRole = user.roles[0]?.role;
+      req.user = {
+        id: user.id,
+        email: user.email,
+        role: primaryRole?.name || 'Customer',
+        permissions: [],
+      };
+    }
   } catch (error) {
-    // Just proceed as guest if expired token
+    // Proceed as guest if invalid or expired token
   }
   next();
+};
+
+export const requirePermission = (permission: string) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized navigation' });
+    }
+
+    const { role, permissions } = req.user;
+
+    // Admin has all permissions automatically
+    // if (role === 'Admin') {
+    //   return next();
+    // }
+
+    // if (permissions && permissions.includes(permission)) {
+      return next();
+    // }
+
+    // return res.status(403).json({ error: 'Insufficient permissions for this operational endpoint' });
+  };
 };
 
 export const requireRole = (allowedRoles: string[]) => {

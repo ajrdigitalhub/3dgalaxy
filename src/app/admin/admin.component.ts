@@ -96,10 +96,12 @@ export class AdminComponent {
       group: 'Settings',
       items: [
         { id: 'store-settings', label: 'Store Settings', icon: 'store', route: 'settings/store-settings' },
+        { id: 'push-settings', label: 'Push Notifications', icon: 'notifications_active', route: 'settings/push-settings' },
         { id: 'theme-settings', label: 'Theme Settings', icon: 'brush', route: 'settings/theme-settings' },
         { id: 'payment-settings', label: 'Payment Settings', icon: 'payment', route: 'settings/payment-settings' },
         { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping', route: 'settings/shipping-settings' },
         { id: 'tax-settings', label: 'Tax Settings', icon: 'percent', route: 'settings/tax-settings' },
+        { id: 'print-settings', label: 'Printing Service', icon: 'print', route: 'settings/print-settings' },
         { id: 'user-management', label: 'User Management', icon: 'settings/user-management', route: 'settings/user-management' }
       ]
     }

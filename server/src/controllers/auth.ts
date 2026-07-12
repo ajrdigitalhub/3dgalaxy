@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token';
+import { triggerWhatsAppNotification } from './whatsapp';
 
 // Simple in-memory blocklist for illustrative JWT logouts
 const tokenBlocklist = new Set<string>();
@@ -57,6 +58,11 @@ export const register = async (req: Request, res: Response) => {
 
     const accessToken = generateAccessToken({ id: newUser.id, email: newUser.email, role: newUser.role.name });
     const refreshToken = generateRefreshToken({ id: newUser.id, email: newUser.email });
+
+    // Trigger WhatsApp Registration notification
+    if (newUser.mobile) {
+      await triggerWhatsAppNotification('registration', newUser.mobile, null, newUser);
+    }
 
     return res.status(201).json({
       user: {
@@ -185,6 +191,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
       },
     });
 
+    // Trigger WhatsApp OTP / Reset notification
+    if (user.mobile) {
+      await triggerWhatsAppNotification('otp', user.mobile, null, user, { otp_code: resetToken });
+    }
+
     return res.status(200).json({
       message: 'Reset token generated (mock email dispatch).',
       debugToken: resetToken, // Exposed for testability during reviews
@@ -230,6 +241,11 @@ export const resetPassword = async (req: Request, res: Response) => {
         details: 'Password was successfully reset',
       },
     });
+
+    // Trigger WhatsApp Password Reset Success notification
+    if (user.mobile) {
+      await triggerWhatsAppNotification('password_reset', user.mobile, null, user);
+    }
 
     return res.status(200).json({ message: 'Password replaced successfully' });
   } catch (error: any) {

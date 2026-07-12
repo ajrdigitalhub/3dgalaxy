@@ -17,7 +17,10 @@ export class BrandService {
   loadBrands() {
     this.api.get<Brand[]>('/brands').subscribe({
       next: (data) => {
-        if (data) this.brands.set(data);
+        if (data) {
+          const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
+          this.brands.set(list);
+        }
       }
     });
   }

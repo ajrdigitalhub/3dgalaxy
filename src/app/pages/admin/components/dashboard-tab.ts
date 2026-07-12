@@ -47,7 +47,7 @@ import { AdminPanel } from '../admin';
 
       <!-- SECONDARY KPI STRAPS FOR ACTION ITEMS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+        <div (click)="admin.setActiveTab('abandoned-carts')" class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition-all">
           <div class="space-y-1">
             <span class="block text-[9px] font-black uppercase text-amber-500 tracking-wider">Active Abandoned Carts</span>
             <span class="block text-lg font-black font-mono text-zinc-900 dark:text-white">{{ admin.dashboardStats()?.abandonedCarts ?? admin.abandonedCartsList().length }} Baskets</span>
@@ -137,6 +137,6 @@ export class AdminDashboardTab {
   getGuestSalesTotal(): number {
     return this.admin.ds.orders()
       .filter((o: any) => o.customerType === 'GUEST')
-      .reduce((acc: number, o: any) => acc + (o.grandTotal || o.totalAmount || 0), 0);
+      .reduce((acc: number, o: any) => acc + (Number(o.grandTotal || o.totalAmount) || 0), 0);
   }
 }

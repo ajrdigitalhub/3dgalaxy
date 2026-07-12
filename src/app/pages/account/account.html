@@ -15,16 +15,17 @@
             </div>
           </div>
           <nav class="space-y-1">
-            <button *ngFor="let tab of tabs" 
-                    (click)="switchTab(tab.id)"
-                    [class.bg-blue-50]="activeTab() === tab.id"
-                    [class.text-blue-600]="activeTab() === tab.id"
-                    [class.dark:bg-blue-500_10]="activeTab() === tab.id"
-                    [class.dark:text-blue-400]="activeTab() === tab.id"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-              <mat-icon class="scale-90" [class.text-blue-600]="activeTab() === tab.id">{{ tab.icon }}</mat-icon>
-              {{ tab.label }}
-            </button>
+            @for (tab of tabs; track tab.id) {
+              <button (click)="switchTab(tab.id)"
+                      [class.bg-blue-50]="activeTab() === tab.id"
+                      [class.text-blue-600]="activeTab() === tab.id"
+                      [class.dark:bg-blue-500_10]="activeTab() === tab.id"
+                      [class.dark:text-blue-400]="activeTab() === tab.id"
+                      class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <mat-icon class="scale-90" [class.text-blue-600]="activeTab() === tab.id">{{ tab.icon }}</mat-icon>
+                {{ tab.label }}
+              </button>
+            }
             <div class="h-px bg-neutral-200 dark:bg-neutral-800 my-2"></div>
             <button (click)="logout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
               <mat-icon class="scale-90">logout</mat-icon>
@@ -60,20 +61,22 @@
               <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Recent Orders</h3>
               <ng-container *ngIf="myOrders().length > 0; else noRecentDash">
                 <div class="space-y-3">
-                  <div *ngFor="let ord of myOrders().slice(0, 3)" class="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-800/20">
-                    <div>
-                      <p class="text-sm font-bold text-neutral-900 dark:text-white">Order {{ ord.orderNumber }}</p>
-                      <p class="text-xs text-neutral-500">{{ ord.date }}</p>
+                  @for (ord of myOrders().slice(0, 3); track ord.orderNumber) {
+                    <div class="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-800/20">
+                      <div>
+                        <p class="text-sm font-bold text-neutral-900 dark:text-white">Order {{ ord.orderNumber }}</p>
+                        <p class="text-xs text-neutral-500">{{ ord.date }}</p>
+                      </div>
+                      <div class="text-right">
+                        <p class="text-sm font-bold text-neutral-900 dark:text-white">₹{{ ord.grandTotal }}</p>
+                        <span [ngClass]="{
+                          'text-emerald-600': ord.status === 'delivered',
+                          'text-blue-600': ord.status === 'processing',
+                          'text-yellow-600': ord.status === 'pending'
+                        }" class="text-xs font-bold uppercase tracking-wider">{{ ord.status }}</span>
+                      </div>
                     </div>
-                    <div class="text-right">
-                      <p class="text-sm font-bold text-neutral-900 dark:text-white">₹{{ ord.grandTotal }}</p>
-                      <span [ngClass]="{
-                        'text-emerald-600': ord.status === 'delivered',
-                        'text-blue-600': ord.status === 'processing',
-                        'text-yellow-600': ord.status === 'pending'
-                      }" class="text-xs font-bold uppercase tracking-wider">{{ ord.status }}</span>
-                    </div>
-                  </div>
+                  }
                 </div>
               </ng-container>
               <ng-template #noRecentDash>
@@ -202,7 +205,8 @@
             
             <div class="space-y-4">
               <ng-container *ngIf="myOrders().length > 0; else noOrders">
-                <div *ngFor="let ord of myOrders()" class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
+              @for (ord of myOrders(); track ord.orderNumber) {
+                <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
                   <div class="px-6 py-4 bg-white dark:bg-neutral-800/60 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
                     <div>
                       <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Placed</p>
@@ -242,6 +246,7 @@
                     </div>
                   </div>
                 </div>
+              }
               </ng-container>
               
               <ng-template #noOrders>
@@ -327,30 +332,116 @@
 
         <!-- NOTIFICATIONS TAB -->
         <ng-container *ngIf="activeTab() === 'notifications'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Notifications</h2>
-            <div class="divide-y divide-neutral-200 dark:divide-neutral-800">
-              <div class="py-4 flex gap-4">
-                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                  <mat-icon class="text-blue-600 dark:text-blue-400">local_offer</mat-icon>
-                </div>
-                <div>
-                  <h4 class="font-bold text-neutral-900 dark:text-white">Summer Sale is Live!</h4>
-                  <p class="text-sm text-neutral-500 mt-1">Get up to 20% off on all resin printers. Offer valid till 30th June.</p>
-                  <p class="text-xs text-neutral-400 mt-2 font-medium">Just now</p>
-                </div>
+          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 space-y-6">
+            
+            <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-4">
+              <div>
+                <h2 class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">Notifications Center</h2>
+                <p class="text-xs text-neutral-500 mt-1">Manage system alerts and push preferences</p>
               </div>
-              <div class="py-4 flex gap-4">
-                <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                  <mat-icon class="text-green-600 dark:text-green-400">check_circle</mat-icon>
-                </div>
-                <div>
-                  <h4 class="font-bold text-neutral-900 dark:text-white">Welcome to 3D Galaxy!</h4>
-                  <p class="text-sm text-neutral-500 mt-1">Your account has been successfully created.</p>
-                  <p class="text-xs text-neutral-400 mt-2 font-medium">2 days ago</p>
-                </div>
-              </div>
+              
+              @if (notifications.length > 0) {
+                <button (click)="markAllNotificationsRead()" 
+                        class="text-xs font-black text-[#f54f00] hover:text-orange-700 uppercase tracking-widest cursor-pointer">
+                  Mark all read
+                </button>
+              }
             </div>
+
+            <!-- Permission Status Widget -->
+            <div class="p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-2xl border border-neutral-100 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                     [ngClass]="{
+                       'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-450': notificationPermission === 'granted',
+                       'bg-orange-100 text-orange-650 dark:bg-orange-950/40 dark:text-orange-450': notificationPermission !== 'granted'
+                     }">
+                  <mat-icon>{{ notificationPermission === 'granted' ? 'notifications_active' : 'notifications_paused' }}</mat-icon>
+                </div>
+                <div>
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white">Push Notifications</h4>
+                  <p class="text-xs text-neutral-500 mt-0.5">
+                    {{ notificationPermission === 'granted' ? 'Status: Active and registered' : 'Status: Paused / Blocked' }}
+                  </p>
+                </div>
+              </div>
+
+              @if (notificationPermission !== 'granted') {
+                <button (click)="enableNotifications()" 
+                        class="px-5 py-2.5 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer transition-transform hover:scale-[1.02]">
+                  Enable Notifications
+                </button>
+              } @else {
+                <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded border border-emerald-500/15">
+                  Enabled
+                </span>
+              }
+            </div>
+
+            <!-- Notifications Inbox List -->
+            <div class="divide-y divide-neutral-100 dark:divide-neutral-850">
+              @if (notifications.length === 0) {
+                <div class="py-12 text-center text-neutral-500">
+                  <mat-icon class="text-5xl text-neutral-300 mb-2">notifications_off</mat-icon>
+                  <h3 class="text-sm font-bold text-neutral-800 dark:text-neutral-200">No Notifications</h3>
+                  <p class="text-xs text-neutral-500 mt-1">We will notify you about updates and alerts here.</p>
+                </div>
+              } @else {
+                @for (item of notifications; track item.id) {
+                  <div class="py-4 flex gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/10 p-3 rounded-xl transition-all relative group"
+                       [style.background-color]="!item.isRead ? 'rgba(245,79,0,0.02)' : 'transparent'">
+                    
+                    @if (!item.isRead) {
+                      <span class="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#f54f00] rounded-full"></span>
+                    }
+
+                    <div class="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 shrink-0 overflow-hidden">
+                      @if (item.image) {
+                        <img [src]="item.image" alt="banner" class="w-full h-full object-cover">
+                      } @else {
+                        <mat-icon>info</mat-icon>
+                      }
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-bold text-sm text-neutral-900 dark:text-white leading-snug">
+                        {{ item.title }}
+                      </h4>
+                      <p class="text-xs text-neutral-500 mt-1 leading-relaxed">
+                        {{ item.body }}
+                      </p>
+                      
+                      <div class="flex items-center gap-4 mt-2">
+                        <span class="text-[10px] text-neutral-450 font-bold uppercase tracking-wider">
+                          {{ item.createdAt | date:'mediumDate' }} • {{ item.createdAt | date:'shortTime' }}
+                        </span>
+
+                        @if (item.actionUrl) {
+                          <a [routerLink]="item.actionUrl" (click)="markNotificationRead(item.id)"
+                             class="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer">
+                            <span>Open URL</span>
+                            <mat-icon class="scale-50">arrow_forward</mat-icon>
+                          </a>
+                        }
+
+                        @if (!item.isRead) {
+                          <button (click)="markNotificationRead(item.id)"
+                                  class="text-[10px] font-black text-neutral-500 hover:text-[#f54f00] uppercase tracking-widest cursor-pointer">
+                            Mark Read
+                          </button>
+                        }
+                      </div>
+                    </div>
+
+                    <button (click)="deleteNotification(item.id)" 
+                            class="text-neutral-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100 cursor-pointer self-start">
+                      <mat-icon class="scale-75">delete</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+
           </div>
         </ng-container>
 

@@ -1,4 +1,4 @@
-import { Component, forwardRef, inject, signal, viewChild, ElementRef, OnInit, OnDestroy, HostListener, Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, forwardRef, inject, signal, viewChild, ElementRef, OnInit, OnDestroy, HostListener, Input, Output, EventEmitter, AfterViewInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,7 @@ import { ToastService } from '../toast/toast.service';
 @Component({
   selector: 'app-rich-text-editor',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, MatIconModule],
   templateUrl: './rich-text-editor.component.html',
   styleUrls: ['./rich-text-editor.component.scss'],

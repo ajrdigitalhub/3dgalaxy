@@ -172,6 +172,68 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                   <div class="space-y-1 col-span-1 md:col-span-2">
                     <app-rich-text-editor label="Long description / Overview page" placeholder="Enter detailed comprehensive description paragraph..." [value]="admin.pLongDesc()" (valueChange)="admin.pLongDesc.set($event)"></app-rich-text-editor>
                   </div>
+
+                  <!-- Featured & Bundles Config -->
+                  <div class="col-span-1 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-6">
+                    <div class="flex items-center gap-3">
+                      <input type="checkbox" id="isFeatured" [checked]="admin.pFeatured()" (change)="admin.pFeatured.set($any($event.target).checked)" class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800">
+                      <label for="isFeatured" class="text-xs font-black text-zinc-700 dark:text-zinc-300 uppercase tracking-widest cursor-pointer select-none">Mark as Featured Product</label>
+                    </div>
+
+                    <!-- Bundle Products Selector -->
+                    <div class="space-y-2">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Included Bundle Products (Complimentary / FREE Included)</span>
+                      <div class="flex gap-2">
+                        <select #bundleSelect class="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                          <option value="">Select a complimentary product to include for FREE...</option>
+                          @for (p of admin.ds.products(); track p.id) {
+                            @if (p.id !== admin.editingProduct()?.id && !isProductInBundle(p.id)) {
+                              <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+                            }
+                          }
+                        </select>
+                        <button type="button" (click)="addBundleProduct(bundleSelect.value); bundleSelect.value=''" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold uppercase rounded-xl border-none cursor-pointer">Add to Bundle</button>
+                      </div>
+                      
+                      @if (admin.pBundleProducts().length > 0) {
+                        <div class="flex flex-wrap gap-2 mt-2">
+                          @for (bItem of admin.pBundleProducts(); track bItem.id || bItem) {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-55/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold border border-blue-150 dark:border-blue-900/40">
+                              {{ getBundleItemName(bItem) }}
+                              <button type="button" (click)="removeBundleProduct(bItem.id || bItem)" class="text-red-400 hover:text-red-650 bg-transparent border-none p-0 cursor-pointer flex items-center justify-center"><mat-icon class="scale-75 text-xs w-4 h-4 flex items-center justify-center">close</mat-icon></button>
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Recommended Filaments Selector -->
+                    <div class="space-y-2">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Recommended Filaments catalog items</span>
+                      <div class="flex gap-2">
+                        <select #filamentSelect class="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                          <option value="">Select suggested filament for compatible printer...</option>
+                          @for (p of admin.ds.products(); track p.id) {
+                            @if (p.id !== admin.editingProduct()?.id && !admin.pRecommendedFilaments().includes(p.id)) {
+                              <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+                            }
+                          }
+                        </select>
+                        <button type="button" (click)="addRecommendedFilament(filamentSelect.value); filamentSelect.value=''" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold uppercase rounded-xl border-none cursor-pointer">Add Filament</button>
+                      </div>
+                      
+                      @if (admin.pRecommendedFilaments().length > 0) {
+                        <div class="flex flex-wrap gap-2 mt-2">
+                          @for (fId of admin.pRecommendedFilaments(); track fId) {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-55/60 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-150 dark:border-emerald-900/40">
+                              {{ getBundleItemName(fId) }}
+                              <button type="button" (click)="removeRecommendedFilament(fId)" class="text-red-400 hover:text-red-650 bg-transparent border-none p-0 cursor-pointer flex items-center justify-center"><mat-icon class="scale-75 text-xs w-4 h-4 flex items-center justify-center">close</mat-icon></button>
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Images Tab -->
@@ -428,6 +490,29 @@ import { AppButton } from '../../../shared/components/app-button/app-button';
                        <div class="space-y-1">
                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Regions</span>
                          <input type="text" [value]="admin.pShipping().shippingRegions" (input)="admin.updateShippingRegions($any($event.target).value)" placeholder="e.g. Pan India / Selected Zones" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                       </div>
+                     </div>
+                     
+                     <!-- New Product-Level Shipping Configuration -->
+                     <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+                       <div class="space-y-1 flex items-center gap-3 pt-4">
+                         <input type="checkbox" id="codAvailable" [checked]="admin.pCodAvailable()" (change)="admin.pCodAvailable.set($any($event.target).checked)" class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800">
+                         <label for="codAvailable" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer select-none">COD Available</label>
+                       </div>
+                       
+                       <div class="space-y-1 flex items-center gap-3 pt-4">
+                         <input type="checkbox" id="freeShippingEligible" [checked]="admin.pFreeShippingEligible()" (change)="admin.pFreeShippingEligible.set($any($event.target).checked)" class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800">
+                         <label for="freeShippingEligible" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer select-none">Free Shipping Eligible</label>
+                       </div>
+
+                       <div class="space-y-1">
+                         <span class="block text-[9px] font-black text-zinc-400 uppercase">Base Shipping Charge (₹)</span>
+                         <input type="number" [value]="admin.pBaseShippingCharge()" (input)="admin.pBaseShippingCharge.set(+$any($event.target).value)" placeholder="Default: 0" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                       </div>
+
+                       <div class="space-y-1">
+                         <span class="block text-[9px] font-black text-zinc-400 uppercase">Estimated Delivery Days</span>
+                         <input type="number" [value]="admin.pEstimatedDeliveryDays()" (input)="admin.pEstimatedDeliveryDays.set(+$any($event.target).value)" placeholder="Default: 3" class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
                        </div>
                      </div>
                   </div>
@@ -1136,6 +1221,48 @@ export class AdminCatalogTab {
   startEditNew() {
     this.activeEditTab.set('general');
     this.admin.startProductEdit({ id: 'new', name: '', slug: '', barcode: '', sku: '', brand: '3D Galaxy', category_id: '', mrp: 1499, sale_price: 1199, dealer_price: 999, stock: 50, reserved: 0, description: '', images: [], specs: [], reviews: [], qnas: [], featured: false, is360Supported: false, tags: [], downloads: [], features: [], faqs: [], relatedProducts: [] });
+  }
+
+  isProductInBundle(id: string): boolean {
+    const list = this.admin.pBundleProducts();
+    return list.some((item: any) => {
+      const bId = typeof item === 'string' ? item : item.id;
+      return bId === id;
+    });
+  }
+
+  addBundleProduct(id: string) {
+    if (!id) return;
+    const list = [...this.admin.pBundleProducts()];
+    list.push({ id });
+    this.admin.pBundleProducts.set(list);
+  }
+
+  removeBundleProduct(id: string) {
+    const list = this.admin.pBundleProducts().filter((item: any) => {
+      const bId = typeof item === 'string' ? item : item.id;
+      return bId !== id;
+    });
+    this.admin.pBundleProducts.set(list);
+  }
+
+  addRecommendedFilament(id: string) {
+    if (!id) return;
+    const list = [...this.admin.pRecommendedFilaments()];
+    if (!list.includes(id)) {
+      list.push(id);
+      this.admin.pRecommendedFilaments.set(list);
+    }
+  }
+
+  removeRecommendedFilament(id: string) {
+    const list = this.admin.pRecommendedFilaments().filter(x => x !== id);
+    this.admin.pRecommendedFilaments.set(list);
+  }
+
+  getBundleItemName(itemOrId: any): string {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
+    return this.getProductName(id);
   }
 
   getProductName(id: string): string {

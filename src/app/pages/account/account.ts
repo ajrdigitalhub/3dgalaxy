@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -6,11 +6,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, UserProfile } from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { ApiService } from '../../services/api.service';
+import { NotificationService } from '../../services/notification.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-account',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, MatIconModule, RouterModule],
   templateUrl: './account.html'
 })
@@ -22,6 +24,7 @@ export class Account {
   fb = inject(FormBuilder);
 
   api = inject(ApiService);
+  ns = inject(NotificationService);
 
   profile = this.ds.userProfile;
   myOrders = signal<any[]>([]);
@@ -105,11 +108,11 @@ export class Account {
             quantity: i.quantity,
             price: i.unitPrice || i.price
           })),
-          grandTotal: o.totalAmount,
-          subtotal: o.totalAmount - o.taxAmount - o.shippingAmount + o.discountAmount,
-          tax: o.taxAmount,
-          shippingFee: o.shippingAmount,
-          discount: o.discountAmount,
+          grandTotal: Number(o.totalAmount) || 0,
+          subtotal: (Number(o.totalAmount) || 0) - (Number(o.taxAmount) || 0) - (Number(o.shippingAmount) || 0) + (Number(o.discountAmount) || 0),
+          tax: Number(o.taxAmount) || 0,
+          shippingFee: Number(o.shippingAmount) || 0,
+          discount: Number(o.discountAmount) || 0,
           trackingNumber: null,
           paymentMethod: o.payments && o.payments.length > 0 ? o.payments[0].paymentMethod : 'Unknown',
           shippingAddress: 'See details in actual invoice'
@@ -221,5 +224,36 @@ export class Account {
     } catch (e: any) {
       this.toastService.error(`Error uploading image: ${e.message}`);
     }
+  }
+
+  // --- Notification Center Helpers ---
+  get notifications() {
+    return this.ns.inbox();
+  }
+
+  get notificationPermission() {
+    return this.ns.permission();
+  }
+
+  markNotificationRead(id: string) {
+    this.ns.markAsRead(id);
+  }
+
+  markAllNotificationsRead() {
+    this.ns.markAsRead();
+  }
+
+  deleteNotification(id: string) {
+    this.ns.deleteNotification(id);
+  }
+
+  enableNotifications() {
+    this.ns.requestPermission().then(success => {
+      if (success) {
+        this.toastService.success('Push notifications successfully enabled!');
+      } else {
+        this.toastService.warning('Failed to enable push notifications. Check browser settings.');
+      }
+    });
   }
 }

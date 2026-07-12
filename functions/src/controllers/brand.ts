@@ -38,7 +38,7 @@ export const getBrandById = async (req: Request, res: Response) => {
 };
 
 export const createBrand = async (req: Request, res: Response) => {
-  const { name, slug, logo, banner, description, country, active } = req.body;
+  const { name, slug, logo, description } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Manufacturer name and brand URL slug represent required inputs' });
   }
@@ -49,10 +49,7 @@ export const createBrand = async (req: Request, res: Response) => {
         name,
         slug,
         logo,
-        banner,
         description,
-        country: country || 'Global HQ',
-        active: active !== undefined ? active : true,
       },
     });
     clearCache();
@@ -64,7 +61,7 @@ export const createBrand = async (req: Request, res: Response) => {
 
 export const updateBrand = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, logo, banner, description, country, active } = req.body;
+  const { name, slug, logo, description } = req.body;
 
   try {
     const updated = await prisma.brand.update({
@@ -73,10 +70,7 @@ export const updateBrand = async (req: Request, res: Response) => {
         name,
         slug,
         logo,
-        banner,
         description,
-        country,
-        active: active !== undefined ? active : undefined,
       },
     });
     clearCache();

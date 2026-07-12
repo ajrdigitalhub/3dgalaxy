@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { sysCache } from '../../config/cache';
+import { clearCache } from '../../middleware/cache';
 
 const defaultSettings = {
   siteName: "3D Galaxy",
@@ -201,15 +202,17 @@ export const updateSettingsService = async (payload: any) => {
 
   let finalSettingsObj: any = null;
   try {
-     finalSettingsObj = typeof updatedRecord.settingData === 'string' ? JSON.parse(updatedRecord.settingData) : updatedRecord.settingData as any;
+    finalSettingsObj = typeof updatedRecord.settingData === 'string' ? JSON.parse(updatedRecord.settingData) : updatedRecord.settingData as any;
   } catch (e) {
-     finalSettingsObj = newSettings;
+    finalSettingsObj = newSettings;
   }
 
   // Clear cache and replace
+  // Clear both caches: sysCache (app-level) and route-level NodeCache
   sysCache.del('app_settings');
   sysCache.set('app_settings', finalSettingsObj, 1800);
-  
+  clearCache(); // flush route-level cache so GET /api/settings returns fresh data
+
   return finalSettingsObj;
 };
 

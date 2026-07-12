@@ -385,9 +385,9 @@ router.get('/advertisements', async (req: Request, res: Response) => {
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' }
     });
-    return res.status(200).json({ success: true, data: list });
+    return res.status(200).json({ status: 'success', success: true, message: 'success', data: list });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }
 });
 
@@ -400,11 +400,11 @@ router.put('/advertisements/:id/click', async (req: Request, res: Response) => {
         where: { id },
         data: { clicks: { increment: 1 } }
       });
-      return res.status(200).json({ success: true, data: updated });
+      return res.status(200).json({ status: 'success', success: true, message: 'success', data: updated });
     }
-    return res.status(404).json({ success: false, error: 'Advertisement not found' });
+    return res.status(404).json({ status: 'error', success: false, message: 'Advertisement not found', error: 'Advertisement not found' });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }
 });
 
@@ -418,11 +418,11 @@ router.post('/advertisements/:id/impression', async (req: Request, res: Response
         where: { id: advertisementId },
         data: { impressions: { increment: 1 } }
       });
-      return res.status(200).json({ success: true, data: updated });
+      return res.status(200).json({ status: 'success', success: true, message: 'success', data: updated });
     }
-    return res.status(404).json({ success: false, error: 'Advertisement not found' });
+    return res.status(404).json({ status: 'error', success: false, message: 'Advertisement not found', error: 'Advertisement not found' });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }
 });
 
@@ -433,9 +433,9 @@ router.post('/social-posts', adminGuard, async (req: Request, res: Response) => 
     const current = await getSetting('social-posts-list', []);
     current.push(newItem);
     await saveSetting('social-posts-list', current);
-    return res.status(201).json({ success: true, data: newItem });
+    return res.status(201).json({ status: 'success', success: true, message: 'success', data: newItem });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }
 });
 
@@ -451,9 +451,9 @@ router.post('/advertisements', adminGuard, async (req: Request, res: Response) =
         status: status || 'active'
       }
     });
-    return res.status(201).json({ success: true, data: newItem });
+    return res.status(201).json({ status: 'success', success: true, message: 'success', data: newItem });
   } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }
 });
 
@@ -615,7 +615,7 @@ router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) =
       const itemsText = cart.items.map(i => `${i.product.name}${i.variant ? ' (' + i.variant.name + ')' : ''} x ${i.quantity}`).join(', ');
 
       const cartValue = cart.items.reduce((total, i) => {
-        const price = i.variant?.salePrice || i.product.salePrice || 0;
+        const price = i.variant?.price ? Number(i.variant.price) : (i.product.salePrice ? Number(i.product.salePrice) : Number(i.product.basePrice));
         return total + (price * i.quantity);
       }, 0);
 
@@ -704,7 +704,7 @@ router.get('/wishlist', adminGuard, async (req: Request, res: Response) => {
 // 6. Notifications List
 router.get('/notifications', adminGuard, async (req: Request, res: Response) => {
   try {
-    const list = await prisma.notification.findMany({
+    const list = await prisma.systemNotification.findMany({
       orderBy: { createdAt: 'desc' },
       include: { user: true, template: true }
     });
@@ -720,7 +720,7 @@ router.get('/notifications', adminGuard, async (req: Request, res: Response) => 
 
     return res.status(200).json({ success: true, data: formatted });
   } catch (err: any) {
-    return res.status(550).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -819,15 +819,17 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
 
       // Get product image
       let productImage = 'https://picsum.photos/seed/product/80/80';
-      try {
-        const imgs = typeof firstItem.product.images === 'string'
-          ? JSON.parse(firstItem.product.images as any)
-          : (firstItem.product.images as any[]);
-        if (Array.isArray(imgs) && imgs.length > 0) {
-          const img = imgs[0];
-          productImage = typeof img === 'string' ? img : (img.url || productImage);
-        }
-      } catch (_) {}
+      if (firstItem.product) {
+        try {
+          const imgs = typeof firstItem.product.images === 'string'
+            ? JSON.parse(firstItem.product.images as any)
+            : (firstItem.product.images as any[]);
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            const img = imgs[0];
+            productImage = typeof img === 'string' ? img : (img.url || productImage);
+          }
+        } catch (_) {}
+      }
 
       items.push({
         id: order.id,
@@ -835,9 +837,9 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
         city,
         state,
         country,
-        productName: firstItem.product.name,
+        productName: firstItem.product?.name || 'Unknown Product',
         productImage,
-        productSlug: firstItem.product.slug,
+        productSlug: firstItem.product?.slug || '',
         minutesAgo: getMinutesAgo(order.createdAt)
       });
 

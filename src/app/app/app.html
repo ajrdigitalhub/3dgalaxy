@@ -84,7 +84,7 @@
                   class="block text-sm font-semibold text-blue-500 hover:opacity-80 transition-colors">
                   All {{ cat.name }}
                 </a>
-                @for (sub of getSubcategories(cat.id); track sub.id) {
+                @for (sub of (subcategoriesMap()[cat.id] || []); track sub.id) {
                 <a [routerLink]="['/category', cat.slug || cat.id]" [queryParams]="{ subcategory: sub.id }"
                   (click)="isMobileMenuOpen.set(false)"
                   class="block text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-500 transition-colors py-1">
@@ -163,10 +163,10 @@
       <!-- Logo Section -->
       <a [routerLink]="['/']" (click)="isMobileMenuOpen.set(false)"
         class="flex items-center gap-2 flex-shrink-0 mr-auto lg:mr-0 text-neutral-900 dark:text-white hover:opacity-90 transition-opacity">
-        <img [src]="ds.theme() === 'dark' ? '/3d-logo.png' :  '/3d-logo.png'" alt="3D Galaxy Logo"
+        <img [src]="ds.theme() === 'dark' ? '/logo.svg' :  '/logo.svg'" alt="3D Galaxy Logo"
           class="h-14 object-contain logo-img" (error)="onImageError($event)" referrerpolicy="no-referrer">
       </a> <!-- Global Links (Desktop Only) -->
-      @if(loading()) {
+      @if(ds.categories().length === 0 && ds.categoriesLoading()) {
       <div class="hidden xl:flex h-full items-center">
         <app-skeleton-menu />
       </div>
@@ -207,18 +207,18 @@
                       class="font-extrabold text-[11px] uppercase tracking-wider text-neutral-900 dark:text-white hover:text-[#d65108] transition-colors block">
                       {{ cat.name }}
                     </a>
-                    <span class="text-[9px] text-neutral-400 font-bold block">{{ getProductCount(cat.id) }} items</span>
+                    <span class="text-[9px] text-neutral-400 font-bold block">{{ productCountMap()[cat.id] || 0 }} items</span>
                   </div>
                 </div>
                 <ul class="space-y-1.5 text-[10px] font-bold text-neutral-500 dark:text-neutral-400">
-                  @for (sub of getSubcategories(cat.id).slice(0, 5); track sub.id) {
+                  @for (sub of (subcategoriesMap()[cat.id] || []).slice(0, 5); track sub.id) {
                   <li>
                     <a [routerLink]="['/category', cat.slug || cat.id]" [queryParams]="{ subcategory: sub.id }"
                       class="hover:text-[#d65108] transition-colors flex items-center justify-between">
                       <span>{{ sub.name }}</span>
                       <span
                         class="text-[8px] px-1 py-0.2 bg-neutral-100 dark:bg-neutral-900 text-neutral-400 rounded-sm font-mono">{{
-                        getProductCount(sub.id) }}</span>
+                        productCountMap()[sub.id] || 0 }}</span>
                     </a>
                   </li>
                   }
@@ -293,7 +293,7 @@
                 <span
                   class="block text-[10px] font-black text-neutral-900 dark:text-white group-hover/item:text-[#d65108] transition-colors uppercase tracking-wider">{{
                   cat.name }}</span>
-                <span class="block text-[8px] text-neutral-400 font-bold mt-0.5">{{ getProductCount(cat.id) }} items
+                <span class="block text-[8px] text-neutral-400 font-bold mt-0.5">{{ productCountMap()[cat.id] || 0 }} items
                   listed</span>
               </div>
             </a>
@@ -535,6 +535,9 @@
               d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
           </svg>
         </a>
+
+        <!-- Header notifications bell -->
+        <app-notification-bell class="hidden sm:block"></app-notification-bell>
 
         <!-- Profile & Account Multi-Mode Dropdown -->
         <div class="relative role-dropdown-container">
@@ -1038,11 +1041,9 @@
         <p>{{ ds.footerData()?.mobile?.mobileFooterText }}</p>
         @if (ds.footerData()?.mobile?.mobileFooterLinks) {
         <div class="flex flex-wrap justify-center gap-3 mt-2">
-          @for (lnkStr of ds.footerData()?.mobile?.mobileFooterLinks?.split(','); track $index) {
-          @if (lnkStr && lnkStr.includes('|')) {
+          @for (lnkStr of mobileFooterLinks(); track $index) {
           <a [routerLink]="[lnkStr.split('|')[1]]" class="hover:text-blue-500 underline transition-colors">{{
             lnkStr.split('|')[0] }}</a>
-          }
           }
         </div>
         }
@@ -1056,7 +1057,7 @@
           class="flex items-center gap-2 group cursor-pointer transition-transform duration-300 hover:scale-105 no-underline">
           <span class="text-base group-hover:animate-bounce transition-all">🚀</span>
           <span
-            [class]="getBrandingAnimationClass(ds.footerData()?.copyright?.animationType, ds.footerData()?.copyright?.glowEffect)"
+            [class]="brandingAnimationClass()"
             class="font-sans font-black tracking-widest text-xs sm:text-sm text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-purple-600 to-cyan-500 bg-[length:200%_auto] relative">
             {{ ds.footerData()?.copyright?.developedByText || 'Developed by AJR Digital Hub' }}
             <span
@@ -1076,4 +1077,6 @@
   @if (!isAuthRoute()) {
     <app-recent-purchase-popup />
   }
+
+  <app-notification-popup></app-notification-popup>
 </div>

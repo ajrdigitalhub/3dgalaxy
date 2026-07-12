@@ -235,6 +235,12 @@
             <p><span class="font-bold text-neutral-700 dark:text-neutral-300">INVOICE:</span> {{ ord.orderNumber }}</p>
             <p><span class="font-bold text-neutral-700 dark:text-neutral-300">DATE:</span> {{ ord.date }}</p>
             <p><span class="font-bold text-neutral-700 dark:text-neutral-300">CLIENT:</span> {{ ord.customerName }}</p>
+            @if (ord.gstNumber) {
+              <p><span class="font-bold text-neutral-700 dark:text-neutral-300">GSTIN:</span> {{ ord.gstNumber }}</p>
+            }
+            @if (ord.companyName) {
+              <p><span class="font-bold text-neutral-700 dark:text-neutral-300">COMPANY:</span> {{ ord.companyName }}</p>
+            }
             <p class="truncate"><span class="font-bold text-neutral-700 dark:text-neutral-300">SHIPPING:</span> {{ ord.shippingAddress }}</p>
           </div>
 

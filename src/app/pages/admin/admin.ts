@@ -26,6 +26,9 @@ import { AdminContentTab } from './components/content-tab';
 import { AdminMarketingTab } from './components/marketing-tab';
 import { AdminAnalyticsTab } from './components/analytics-tab';
 import { AdminSettingsTab } from './components/settings-tab';
+import { AdminPaymentsTab } from './components/payments-tab';
+import { AdminCommunicationTab } from './components/communication-tab';
+import { AdminAbandonedCheckoutsTab } from './components/abandoned-checkouts-tab';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
 export type AdminTab =
@@ -36,7 +39,9 @@ export type AdminTab =
   | 'pages' | 'blogs' | 'faqs' | 'banners' | 'homepage-builder' | 'menu-builder'
   | 'coupons' | 'promotions' | 'email-campaigns' | 'push-notifications'
   | 'sales-reports' | 'product-reports' | 'customer-reports'
-  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions' | 'security-settings' | 'print-settings';
+  | 'store-settings' | 'theme-settings' | 'seo-settings' | 'payment-settings' | 'shipping-settings' | 'tax-settings' | 'user-management' | 'active-sessions' | 'security-settings' | 'print-settings' | 'push-settings'
+  | 'transactions' | 'webhook-logs'
+  | 'whatsapp-logs' | 'whatsapp-campaign';
 
 
 @Component({
@@ -52,7 +57,10 @@ export type AdminTab =
     AdminContentTab,
     AdminMarketingTab,
     AdminAnalyticsTab,
-    AdminSettingsTab
+    AdminSettingsTab,
+    AdminPaymentsTab,
+    AdminCommunicationTab,
+    AdminAbandonedCheckoutsTab
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin.html',
@@ -66,8 +74,7 @@ export class AdminPanel {
   settingsService = inject(SettingsService);
 
   loading = computed(() => {
-    if (this.loadingService.isLoading()) return true;
-    if (this.ds.productsLoading()) return true;
+    if (this.ds.products().length === 0 && this.ds.productsLoading()) return true;
     return false;
   });
 
@@ -79,9 +86,11 @@ export class AdminPanel {
     'Overview': false,
     'Catalog': false,
     'Sales': false,
+    'Payments': false,
+    'Communication': false,
     'Customers': false,
     'Content': true,
-    'Marketing': true,
+    'Marketing': false,
     'Analytics': true,
     'Settings': true
   });
@@ -107,9 +116,21 @@ export class AdminPanel {
       group: 'Sales',
       items: [
         { id: 'orders', label: 'Orders', icon: 'shopping_bag' },
-        // { id: 'draft-orders', label: 'Draft Orders', icon: 'note_add' },
-        // { id: 'abandoned-carts', label: 'Abandoned Carts', icon: 'remove_shopping_cart' },
-        // { id: 'quotes', label: 'Service Inquiries', icon: 'precision_manufacturing' }
+        { id: 'abandoned-carts', label: 'Abandoned Carts', icon: 'remove_shopping_cart' },
+        { id: 'quotes', label: 'Service Inquiries', icon: 'precision_manufacturing' }
+      ]
+    },
+    {
+      group: 'Payments',
+      items: [
+        { id: 'transactions', label: 'Transactions', icon: 'payments' },
+        { id: 'webhook-logs', label: 'Webhook Logs', icon: 'history' }
+      ]
+    },
+    {
+      group: 'Communication',
+      items: [
+        { id: 'whatsapp-logs', label: 'WhatsApp Logs', icon: 'history' }
       ]
     },
     {
@@ -120,26 +141,12 @@ export class AdminPanel {
         // { id: 'reviews', label: 'Reviews', icon: 'reviews' }
       ]
     },
-    // {
-    //   group: 'Content',
-    //   items: [
-    //     { id: 'pages', label: 'Pages', icon: 'article' },
-    //     { id: 'blogs', label: 'Blogs', icon: 'feed' },
-    //     { id: 'faqs', label: 'FAQs', icon: 'quiz' },
-    //     { id: 'banners', label: 'Banners', icon: 'view_carousel' },
-    //     { id: 'menu-builder', label: 'Menu Builder', icon: 'menu' },
-    //     { id: 'homepage-builder', label: 'Homepage Builder', icon: 'design_services' }
-    //   ]
-    // },
-    // {
-    //   group: 'Marketing',
-    //   items: [
-    //     { id: 'coupons', label: 'Coupons', icon: 'local_offer' },
-    //     { id: 'promotions', label: 'Promotions', icon: 'ads_click' },
-    //     { id: 'email-campaigns', label: 'Email Campaigns', icon: 'email' },
-    //     { id: 'push-notifications', label: 'Push Notifications', icon: 'notifications_active' }
-    //   ]
-    // },
+    {
+      group: 'Marketing',
+      items: [
+        { id: 'whatsapp-campaign', label: 'WhatsApp Campaign', icon: 'chat' }
+      ]
+    },
     // {
     //   group: 'Analytics',
     //   items: [
@@ -156,7 +163,8 @@ export class AdminPanel {
         { id: 'payment-settings', label: 'Payment Settings', icon: 'payment' },
         // { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping' },
         // { id: 'tax-settings', label: 'Tax Settings', icon: 'percent' },
-        // { id: 'print-settings', label: 'Printing Service', icon: 'print' },
+        { id: 'print-settings', label: 'Printing Service', icon: 'print' },
+        { id: 'push-settings', label: 'Push Notification Config', icon: 'notifications' },
         // { id: 'user-management', label: 'User Management', icon: 'badge' },
         // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },
         // { id: 'security-settings', label: 'Security Settings', icon: 'admin_panel_settings' }
@@ -315,6 +323,13 @@ export class AdminPanel {
   pDownloads = signal<{ title: string, fileUrl: string }[]>([]);
   pWarranty = signal<{ warrantyPeriod: string, warrantyDescription: string }>({ warrantyPeriod: '', warrantyDescription: '' });
   pShipping = signal<{ deliveryTime: string, shippingCharges: number, shippingRegions: string }>({ deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
+  pFeatured = signal<boolean>(false);
+  pCodAvailable = signal<boolean>(true);
+  pBaseShippingCharge = signal<number>(0);
+  pEstimatedDeliveryDays = signal<number>(3);
+  pFreeShippingEligible = signal<boolean>(true);
+  pBundleProducts = signal<any[]>([]);
+  pRecommendedFilaments = signal<string[]>([]);
   pRelatedIds = signal<string[]>([]);
   pStatus = signal<'active' | 'draft' | 'out_of_stock'>('active');
 
@@ -429,13 +444,12 @@ export class AdminPanel {
       error: (err: any) => console.error('Customers Load Error:', err)
     });
 
-    this.ds.api.get<any>('/admin/abandoned-carts').subscribe({
+    this.ds.api.get<any>('/admin/abandoned-checkouts').subscribe({
       next: (res: any) => {
-        if (res && res.success) {
-          this.abandonedCartsList.set(res.data);
-        }
+        const list = Array.isArray(res) ? res : (res.checkouts || []);
+        this.abandonedCartsList.set(list);
       },
-      error: (err: any) => console.error('Carts Load Error:', err)
+      error: (err: any) => console.error('Checkouts Load Error:', err)
     });
 
     this.ds.api.get<any>('/admin/reviews').subscribe({
@@ -488,24 +502,35 @@ export class AdminPanel {
 
   fetchPaymentGateways() {
     this.settingsService.loadSettings().then(() => {
-      const gateways = this.settingsService.payment()?.gateways || [];
-      this.paymentGateways.set(gateways);
+      const pgs = this.settingsService.paymentGatewaySettings() || {};
+      const methods = pgs.paymentMethods || {};
+      const list: any[] = [];
+      if (methods.razorpay?.enabled || pgs.razorpayEnabled) {
+        list.push({ id: 'razorpay', name: 'Razorpay', enabled: true, keyId: methods.razorpay?.keyId || pgs.razorpayKeyId });
+      }
+      if (methods.cashfree?.enabled) {
+        list.push({ id: 'cashfree', name: 'Cashfree', enabled: true, appId: methods.cashfree?.appId });
+      }
+      if (methods.cod?.enabled || pgs.codEnabled) {
+        list.push({ id: 'cod', name: 'Cash on Delivery (COD)', enabled: true });
+      }
+      // Fallback to legacy payment.gateways array if empty
+      if (list.length === 0) {
+        const legacy = this.settingsService.payment()?.gateways || [];
+        list.push(...legacy);
+      }
+      this.paymentGateways.set(list);
     }).catch(err => console.error('Failed to load payment gateways', err));
   }
 
   updatePaymentGateway(id: string, updates: any) {
-    const currentGateways = [...this.paymentGateways()];
-    const idx = currentGateways.findIndex((g: any) => g.id === id);
-    if (idx >= 0) {
-      currentGateways[idx] = { ...currentGateways[idx], ...updates };
-    } else {
-      currentGateways.push({ id, ...updates });
-    }
+    const pgs = this.settingsService.paymentGatewaySettings() ? { ...this.settingsService.paymentGatewaySettings() } : {};
+    const methods = pgs.paymentMethods ? { ...pgs.paymentMethods } : {};
+    methods[id] = { ...(methods[id] || {}), ...updates };
+    pgs.paymentMethods = methods;
 
     this.settingsService.saveSettings({
-      payment: {
-        gateways: currentGateways
-      }
+      paymentGatewaySettings: pgs
     }).then(() => {
       this.fetchPaymentGateways();
       this.toastService.success('Payment gateway updated');
@@ -592,6 +617,15 @@ export class AdminPanel {
   }
 
   constructor() {
+    this.ds.reloadProducts(true, true);
+    this.ds.reloadCategories(true);
+    this.ds.reloadBrands(true);
+    this.ds.reloadPages(true);
+    this.ds.reloadBlogs(true);
+    this.ds.reloadCoupons(true);
+    this.ds.reloadSocialPosts(true);
+    this.ds.reloadAdvertisements(true);
+
     this.fetchPaymentGateways();
     this.fetchSecuritySettings();
     this.fetchUserSessions();
@@ -965,6 +999,13 @@ export class AdminPanel {
     this.pStock.set(p.stock || 0);
     this.pImages.set(p.images && p.images.length ? p.images.map((img: string, i: number) => ({ url: img, isPrimary: i === 0 })) : []);
     this.pStatus.set(p.status || 'active');
+    this.pFeatured.set(p.isFeatured || p.featured || false);
+    this.pCodAvailable.set(p.codAvailable !== false);
+    this.pBaseShippingCharge.set(p.baseShippingCharge ? Number(p.baseShippingCharge) : 0);
+    this.pEstimatedDeliveryDays.set(p.estimatedDeliveryDays || 3);
+    this.pFreeShippingEligible.set(p.freeShippingEligible !== false);
+    this.pBundleProducts.set(p.bundleProducts ? (typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts) : []);
+    this.pRecommendedFilaments.set(p.recommendedFilaments ? (typeof p.recommendedFilaments === 'string' ? JSON.parse(p.recommendedFilaments) : p.recommendedFilaments) : []);
 
     // Parse options for the UI (basic default)
     const restoredOptions = p.options?.map((o: any) => ({
@@ -1030,6 +1071,13 @@ export class AdminPanel {
           this.pShipping.set(master.shipping || detail.shipping || { deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
           this.pRelatedIds.set(master.relatedProducts?.map((rp: any) => typeof rp === 'string' ? rp : (rp.relatedToId || rp.id)) || []);
           this.pStatus.set(detail.status || p.status || 'active');
+          this.pFeatured.set(detail.isFeatured || detail.featured || false);
+          this.pCodAvailable.set(detail.codAvailable !== false);
+          this.pBaseShippingCharge.set(detail.baseShippingCharge ? Number(detail.baseShippingCharge) : 0);
+          this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
+          this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
+          this.pBundleProducts.set(detail.bundleProducts ? (typeof detail.bundleProducts === 'string' ? JSON.parse(detail.bundleProducts) : detail.bundleProducts) : []);
+          this.pRecommendedFilaments.set(detail.recommendedFilaments ? (typeof detail.recommendedFilaments === 'string' ? JSON.parse(detail.recommendedFilaments) : detail.recommendedFilaments) : []);
         }
       },
       error: (err) => {
@@ -1063,6 +1111,13 @@ export class AdminPanel {
     this.pShipping.set({ deliveryTime: '', shippingCharges: 0, shippingRegions: '' });
     this.pRelatedIds.set([]);
     this.pStatus.set('active');
+    this.pFeatured.set(false);
+    this.pCodAvailable.set(true);
+    this.pBaseShippingCharge.set(0);
+    this.pEstimatedDeliveryDays.set(3);
+    this.pFreeShippingEligible.set(true);
+    this.pBundleProducts.set([]);
+    this.pRecommendedFilaments.set([]);
   }
 
   updateProductName(name: string) {
@@ -1090,8 +1145,8 @@ export class AdminPanel {
   removeFaq(idx: number) { this.pFaqs.update(x => { const a = [...x]; a.splice(idx, 1); return a; }); }
   updateFaq(idx: number, field: 'question' | 'answer', val: string) { this.pFaqs.update(x => { const a = [...x]; a[idx][field] = val; return a; }); }
 
-  updateWarrantyPeriod(val: string) { this.pWarranty.update(w => ({ ...w, warrantyPeriod: val })); }
-  updateWarrantyDesc(val: string) { this.pWarranty.update(w => ({ ...w, warrantyDescription: val })); }
+  updateWarrantyPeriod(val: string) { this.pWarranty.update((w: { warrantyPeriod: string, warrantyDescription: string }) => ({ ...w, warrantyPeriod: val })); }
+  updateWarrantyDesc(val: string) { this.pWarranty.update((w: { warrantyPeriod: string, warrantyDescription: string }) => ({ ...w, warrantyDescription: val })); }
 
   updateShippingTime(val: string) { this.pShipping.update(s => ({ ...s, deliveryTime: val })); }
   updateShippingCharges(val: string) { this.pShipping.update(s => ({ ...s, shippingCharges: parseFloat(val) || 0 })); }
@@ -1234,7 +1289,14 @@ export class AdminPanel {
       status: this.pStatus(),
       seoTitle: this.pSeoTitle(),
       seoDescription: this.pSeoDescription(),
-      featured: isEdit ? (this.editingProduct()?.featured || false) : false,
+      isFeatured: this.pFeatured(),
+      featured: this.pFeatured(),
+      codAvailable: this.pCodAvailable(),
+      baseShippingCharge: this.pBaseShippingCharge(),
+      estimatedDeliveryDays: this.pEstimatedDeliveryDays(),
+      freeShippingEligible: this.pFreeShippingEligible(),
+      bundleProducts: this.pBundleProducts(),
+      recommendedFilaments: this.pRecommendedFilaments(),
       is360Supported: isEdit ? (this.editingProduct()?.is360Supported || false) : false,
       tags: [this.pBrand() || '3D Galaxy'],
       specs: this.pSpecs(),
@@ -1252,13 +1314,21 @@ export class AdminPanel {
     this.isSavingProduct.set(true);
     try {
       if (isEdit) {
-        await this.ds.editProduct(this.editingProduct()!.id, pData);
+        const res: any = await this.ds.editProduct(this.editingProduct()!.id, pData);
         this.toastService.success('Product updated successfully!');
+        // Reload details using the dedicated API to populate all fields correctly
+        this.startProductEdit({ id: this.editingProduct()!.id } as any);
       } else {
-        await this.ds.addProduct(pData);
+        const res: any = await this.ds.addProduct(pData);
         this.toastService.success('Product created successfully!');
+        const createdProd = res?.data || res?.product;
+        if (createdProd && createdProd.id) {
+          // Open the new product in edit mode using details API
+          this.startProductEdit({ id: createdProd.id } as any);
+        } else {
+          this.cancelProductEdit();
+        }
       }
-      this.cancelProductEdit();
     } catch {
       this.toastService.error('Save failed: Verify administrator privileges.');
     } finally {

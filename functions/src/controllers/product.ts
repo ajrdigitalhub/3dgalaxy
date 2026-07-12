@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { sysCache } from '../config/cache';
+import { sendPushNotificationInternal } from './notification';
+import { clearCache } from '../middleware/cache';
 
 export const clearProductCache = () => {
   sysCache.clearPattern('products_list_');
   sysCache.clearPattern('products_slug_');
   sysCache.clearPattern('products_id_');
+  clearCache(); // Flushes route cache for /api/home and other routes
 };
 
 const safeParseArray = (val: any): any[] => {
@@ -154,6 +157,29 @@ export const getProducts = async (req: Request, res: Response) => {
   }
 };
 
+const populateProductRelations = async (item: any) => {
+  const bundleList = safeParseArray(item.bundleProducts);
+  const bundleIds = bundleList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId)).filter(Boolean);
+  
+  const filamentList = safeParseArray(item.recommendedFilaments);
+  const filamentIds = filamentList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId)).filter(Boolean);
+  
+  const relatedList = safeParseArray(item.relatedProducts);
+  const relatedIds = relatedList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId || x?.relatedToId)).filter(Boolean);
+
+  const [bundleProducts, recommendedFilaments, relatedProducts] = await Promise.all([
+    bundleIds.length > 0 ? prisma.product.findMany({ where: { id: { in: bundleIds }, deletedAt: null } }) : Promise.resolve([]),
+    filamentIds.length > 0 ? prisma.product.findMany({ where: { id: { in: filamentIds }, deletedAt: null } }) : Promise.resolve([]),
+    relatedIds.length > 0 ? prisma.product.findMany({ where: { id: { in: relatedIds }, deletedAt: null } }) : Promise.resolve([])
+  ]);
+
+  return {
+    bundleProducts,
+    recommendedFilaments,
+    relatedProducts
+  };
+};
+
 export const getProductBySlug = async (req: Request, res: Response) => {
   const { slug } = req.params;
   try {
@@ -179,6 +205,8 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    const relations = await populateProductRelations(item);
+
     const masterData = {
       images: safeParseArray(item.images),
       specifications: safeParseArray(item.specifications),
@@ -188,11 +216,27 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       seo: safeParseObject(item.seo) || {},
       shipping: safeParseObject(item.shipping) || {},
       warranty: safeParseObject(item.warranty) || {},
-      relatedProducts: safeParseArray(item.relatedProducts)
+      relatedProducts: relations.relatedProducts
     };
 
     const finalResponse = {
-      product: item,
+      product: {
+        ...item,
+        bundleProducts: relations.bundleProducts,
+        recommendedFilaments: relations.recommendedFilaments,
+        relatedProducts: relations.relatedProducts
+      },
+      pricing: {
+        price: item.basePrice,
+        salePrice: item.salePrice,
+        dealerPrice: item.dealerPrice,
+        tax: 18
+      },
+      inventory: {
+        stock: item.stock,
+        lowStock: 10,
+        backorder: false
+      },
       options: safeParseArray(item.options),
       variants: (item.variants || []).map((v: any) => ({
         ...v,
@@ -208,7 +252,11 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       warranty: masterData.warranty,
       shipping: masterData.shipping,
       seo: masterData.seo,
-      relatedProducts: masterData.relatedProducts,
+      relatedProducts: relations.relatedProducts,
+      bundleProducts: relations.bundleProducts,
+      complimentaryProducts: relations.bundleProducts,
+      recommendedFilaments: relations.recommendedFilaments,
+      assets: safeParseArray(item.attributes),
       masterData
     };
 
@@ -244,6 +292,8 @@ export const getProductById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Product does not exist' });
     }
 
+    const relations = await populateProductRelations(item);
+
     const masterData = {
       images: safeParseArray(item.images),
       specifications: safeParseArray(item.specifications),
@@ -253,11 +303,27 @@ export const getProductById = async (req: Request, res: Response) => {
       seo: safeParseObject(item.seo) || {},
       shipping: safeParseObject(item.shipping) || {},
       warranty: safeParseObject(item.warranty) || {},
-      relatedProducts: safeParseArray(item.relatedProducts)
+      relatedProducts: relations.relatedProducts
     };
 
     const finalResponse = {
-      product: item,
+      product: {
+        ...item,
+        bundleProducts: relations.bundleProducts,
+        recommendedFilaments: relations.recommendedFilaments,
+        relatedProducts: relations.relatedProducts
+      },
+      pricing: {
+        price: item.basePrice,
+        salePrice: item.salePrice,
+        dealerPrice: item.dealerPrice,
+        tax: 18
+      },
+      inventory: {
+        stock: item.stock,
+        lowStock: 10,
+        backorder: false
+      },
       options: safeParseArray(item.options),
       variants: (item.variants || []).map((v: any) => ({
         ...v,
@@ -273,7 +339,11 @@ export const getProductById = async (req: Request, res: Response) => {
       warranty: masterData.warranty,
       shipping: masterData.shipping,
       seo: masterData.seo,
-      relatedProducts: masterData.relatedProducts,
+      relatedProducts: relations.relatedProducts,
+      bundleProducts: relations.bundleProducts,
+      complimentaryProducts: relations.bundleProducts,
+      recommendedFilaments: relations.recommendedFilaments,
+      assets: safeParseArray(item.attributes),
       masterData
     };
 
@@ -286,9 +356,11 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   const {
-    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, stock,
+    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, sale_price, dealer_price, stock,
     categoryId, brandId, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
+    isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
+    status
   } = req.body;
 
   if (!name || !slug || !sku) {
@@ -296,6 +368,9 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 
   try {
+    const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
+    const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+
     const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
       if (typeof img === 'string') {
@@ -319,6 +394,8 @@ export const createProduct = async (req: Request, res: Response) => {
     const parsedShipping = safeParseObject(shipping);
     const parsedRelatedProducts = safeParseArray(relatedProducts);
     const parsedIncludedItems = safeParseArray(included_items);
+    const parsedBundleProducts = safeParseArray(bundleProducts);
+    const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
 
     let resolvedCategoryId = categoryId || null;
     let resolvedBrandId = brandId || null;
@@ -344,11 +421,19 @@ export const createProduct = async (req: Request, res: Response) => {
           description: description || null,
           shortDescription: short_description || null,
           basePrice: parseFloat(mrp) || parseFloat(price) || 0,
-          salePrice: parseFloat(salePrice) || null,
-          dealerPrice: parseFloat(dealerPrice) || null,
+          salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : null,
+          dealerPrice: resolvedDealerPrice !== undefined && resolvedDealerPrice !== null ? parseFloat(resolvedDealerPrice) : null,
           stock: parseInt(stock, 10) || 0,
           categoryId: resolvedCategoryId || null,
           brandId: resolvedBrandId || null,
+          isActive: status !== undefined ? status === 'active' : true,
+          isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : false),
+          codAvailable: codAvailable !== undefined ? !!codAvailable : true,
+          baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : 0,
+          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : 3,
+          freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : true,
+          bundleProducts: parsedBundleProducts || [],
+          recommendedFilaments: parsedRecommendedFilaments || [],
 
           // Store inside JSON fields
           images: parsedImages,
@@ -423,6 +508,48 @@ export const createProduct = async (req: Request, res: Response) => {
       });
     });
 
+    // Dispatch automatic push notification if configured
+    try {
+      const settingsRecord = await prisma.themeSetting.findUnique({
+        where: { keyName: 'global-settings' }
+      });
+      if (settingsRecord) {
+        const settings = typeof settingsRecord.value === 'string'
+          ? JSON.parse(settingsRecord.value)
+          : (settingsRecord.value as any || {});
+        const pushConfig = settings.pushNotificationSettings || {};
+        if (pushConfig.autoNotifyNewProduct) {
+          let title = pushConfig.notifyTitleTemplate || "New Product Alert: {product_name}";
+          title = title.replace(/{product_name}/g, created?.name || name);
+
+          let body = pushConfig.notifyBodyTemplate || "We just added {product_name} to our catalog for only ₹{price}! Get it now.";
+          body = body.replace(/{product_name}/g, created?.name || name)
+                     .replace(/{price}/g, String(price || mrp || '0'))
+                     .replace(/{sku}/g, created?.sku || sku || '');
+
+          if (pushConfig.autoGenerateMarketingContent) {
+            // Automatic generation of premium marketing copy
+            body = `🔥 New Launch: The premium ${created?.name || name} is now live in our catalog! Special price: ₹${price || mrp || '0'}. Order yours today!`;
+          }
+
+          const imagesList = safeParseArray(created?.images);
+          const image = imagesList.length > 0 ? imagesList[0] : undefined;
+
+          // Send notification to all active devices/users
+          await sendPushNotificationInternal({
+            targetType: 'all',
+            title,
+            body,
+            image,
+            actionUrl: `/products/${created?.slug || slug}`,
+            type: 'New Product'
+          });
+        }
+      }
+    } catch (pushErr: any) {
+      console.error('Failed to auto-send new product notification:', pushErr);
+    }
+
     clearProductCache();
     return res.status(201).json({ success: true, message: 'Success', data: created });
   } catch (error: any) {
@@ -433,12 +560,17 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
   const {
-    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, stock,
+    name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, sale_price, dealer_price, stock,
     categoryId, brandId, seoTitle, seoDescription, seoKeywords,
-    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes
+    variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
+    isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
+    status
   } = req.body;
 
   try {
+    const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
+    const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+
     const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
       if (typeof img === 'string') {
@@ -462,6 +594,8 @@ export const updateProduct = async (req: Request, res: Response) => {
     const parsedShipping = safeParseObject(shipping);
     const parsedRelatedProducts = safeParseArray(relatedProducts);
     const parsedIncludedItems = safeParseArray(included_items);
+    const parsedBundleProducts = safeParseArray(bundleProducts);
+    const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
 
     let resolvedCategoryId = categoryId || undefined;
     let resolvedBrandId = brandId || undefined;
@@ -491,11 +625,19 @@ export const updateProduct = async (req: Request, res: Response) => {
           description: description !== undefined ? description : undefined,
           shortDescription: short_description !== undefined ? short_description : undefined,
           basePrice: mrp ? parseFloat(mrp) : (price ? parseFloat(price) : undefined),
-          salePrice: salePrice !== undefined ? parseFloat(salePrice) : undefined,
-          dealerPrice: dealerPrice !== undefined ? parseFloat(dealerPrice) : undefined,
+          salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : undefined,
+          dealerPrice: resolvedDealerPrice !== undefined && resolvedDealerPrice !== null ? parseFloat(resolvedDealerPrice) : undefined,
           stock: stock !== undefined ? parseInt(stock, 10) : undefined,
           categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : undefined,
           brandId: resolvedBrandId !== undefined ? resolvedBrandId : undefined,
+          isActive: status !== undefined ? status === 'active' : undefined,
+          isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : undefined),
+          codAvailable: codAvailable !== undefined ? !!codAvailable : undefined,
+          baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : undefined,
+          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : undefined,
+          freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+          bundleProducts: parsedBundleProducts !== undefined ? parsedBundleProducts : undefined,
+          recommendedFilaments: parsedRecommendedFilaments !== undefined ? parsedRecommendedFilaments : undefined,
 
           // Store inside JSON fields
           images: parsedImages,

@@ -22,6 +22,15 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
         isVerified: true,
         createdAt: true,
         updatedAt: true,
+        roles: {
+          select: {
+            role: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
       },
     });
 
@@ -66,6 +75,15 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
         isVerified: true,
         createdAt: true,
         updatedAt: true,
+        roles: {
+          select: {
+            role: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
       },
     });
 

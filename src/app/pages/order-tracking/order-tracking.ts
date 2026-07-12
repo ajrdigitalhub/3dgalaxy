@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -10,6 +10,7 @@ import { AppButton } from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-order-tracking',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule, AppButton],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

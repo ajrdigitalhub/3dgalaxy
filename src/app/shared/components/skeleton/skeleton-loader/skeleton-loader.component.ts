@@ -1,8 +1,9 @@
-import { Component, input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 @Component({
   selector: 'app-skeleton-loader',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div [class]="'skeleton ' + (width() || 'w-full') + ' ' + (height() || 'h-4') + ' ' + (borderRadius() || 'rounded-xl') + ' ' + (extraClasses() || '')"></div>
   `

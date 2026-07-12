@@ -78,6 +78,27 @@ export class CustomerOrderDetailsComponent implements OnInit {
   ticketDesc = signal<string>('');
   ticketSubmitting = signal(false);
 
+  supportWhatsAppUrl = computed(() => {
+    const ord = this.order();
+    if (!ord) return '';
+    const name = this.customerName();
+    const orderNo = ord.orderNumber;
+    const itemsText = ord.items?.map((i: any) => `${i.product?.name} (Qty: ${i.quantity})`).join(', ') || '';
+    const text = `Hi 3D Galaxy Team! I need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\nIssue category: ${this.ticketCat()}\nSubject: ${this.ticketSub()}\nDetails: ${this.ticketDesc()}`;
+    return `https://wa.me/919876543210?text=${encodeURIComponent(text)}`;
+  });
+
+  supportEmailUrl = computed(() => {
+    const ord = this.order();
+    if (!ord) return '';
+    const name = this.customerName();
+    const orderNo = ord.orderNumber;
+    const itemsText = ord.items?.map((i: any) => `${i.product?.name} (Qty: ${i.quantity})`).join(', ') || '';
+    const subject = `Support Inquiry for Order: ${orderNo} - ${this.ticketCat()}`;
+    const body = `Hi 3D Galaxy Team,\n\nI need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\n\nSubject: ${this.ticketSub()}\nDetails: ${this.ticketDesc()}\n\nPlease advise. Thanks!`;
+    return `mailto:support@3dgalaxy.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  });
+
   // Define order tracking lifecycle steps
   trackingSteps = [
     { key: 'Pending', label: 'Order Placed', icon: 'shopping_bag', desc: 'Your order was submitted successfully.' },

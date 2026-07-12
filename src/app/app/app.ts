@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import {ChangeDetectionStrategy, Component, inject, computed, signal, HostListener, ElementRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, computed, signal, ElementRef, PLATFORM_ID, DestroyRef, NgZone} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import {RouterOutlet, RouterModule, Router, NavigationEnd} from '@angular/router';
 import {CommonModule} from '@angular/common';
 import {MatIconModule} from '@angular/material/icon';
@@ -11,11 +12,26 @@ import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
 import { ThemeService } from '../core/services/theme.service';
 import { RecentPurchasePopupComponent } from '../shared/components/recent-purchase-popup/recent-purchase-popup';
+import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell';
+import { NotificationPopupComponent } from '../shared/components/notification-popup/notification-popup';
+import { fromEvent } from 'rxjs';
+import { throttleTime, filter } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [RouterOutlet, RouterModule, CommonModule, MatIconModule, SkeletonMenuComponent, ToastContainerComponent, RecentPurchasePopupComponent],
+  imports: [
+    RouterOutlet, 
+    RouterModule, 
+    CommonModule, 
+    MatIconModule, 
+    SkeletonMenuComponent, 
+    ToastContainerComponent, 
+    RecentPurchasePopupComponent,
+    NotificationBellComponent,
+    NotificationPopupComponent
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -27,15 +43,11 @@ export class App {
   public router = inject(Router);
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
+  private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
+  private ngZone = inject(NgZone);
 
   isScrolled = signal(false);
-
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    if (typeof window !== 'undefined') {
-      this.isScrolled.set(window.scrollY > 40);
-    }
-  }
 
   loading = computed(() => {
     if (this.loadingService.isLoading()) return true;
@@ -60,6 +72,53 @@ export class App {
       const urlPath = this.router.url.split('?')[0];
       this.isHome.set(urlPath === '/' || urlPath === '/home');
     });
+
+    // Throttled scroll listener - only fires at most every 100ms instead of on every scroll event
+    if (isPlatformBrowser(this.platformId)) {
+      this.ngZone.runOutsideAngular(() => {
+        fromEvent(window, 'scroll', { passive: true }).pipe(
+          throttleTime(100, undefined, { leading: true, trailing: true }),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(() => {
+          const scrolled = window.scrollY > 40;
+          if (this.isScrolled() !== scrolled) {
+            this.isScrolled.set(scrolled);
+          }
+        });
+
+        // Optimized document click - only processes when a dropdown is actually open
+        fromEvent<Event>(document, 'click').pipe(
+          filter(() => this.isRoleDropdownOpen() || this.isBellOpen() || this.isSearchFocused() || this.isMobileMenuOpen()),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe((event) => {
+          const target = event.target as HTMLElement;
+          if (this.isRoleDropdownOpen() && !target.closest('.role-dropdown-container')) {
+            this.isRoleDropdownOpen.set(false);
+          }
+          if (this.isBellOpen() && !target.closest('.bell-dropdown-container')) {
+            this.isBellOpen.set(false);
+          }
+          if (this.isSearchFocused() && !target.closest('.search-container')) {
+            this.isSearchFocused.set(false);
+          }
+          if (this.isMobileMenuOpen() && !target.closest('.mobile-menu-drawer') && !target.closest('.mobile-menu-trigger')) {
+            this.isMobileMenuOpen.set(false);
+          }
+        });
+
+        // Escape key handler
+        fromEvent<KeyboardEvent>(document, 'keydown').pipe(
+          filter(e => e.key === 'Escape'),
+          takeUntilDestroyed(this.destroyRef)
+        ).subscribe(() => {
+          this.isRoleDropdownOpen.set(false);
+          this.isBellOpen.set(false);
+          this.isSearchFocused.set(false);
+          this.isMobileSearchOpen.set(false);
+          this.isMobileMenuOpen.set(false);
+        });
+      });
+    }
   }
 
   // Categories Hierarchy for Nav
@@ -178,40 +237,6 @@ export class App {
 
   private eRef = inject(ElementRef);
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: Event) {
-    const target = event.target as HTMLElement;
-    
-    // Close role dropdown if clicked outside
-    if (this.isRoleDropdownOpen() && !target.closest('.role-dropdown-container')) {
-      this.isRoleDropdownOpen.set(false);
-    }
-    
-    // Close bell if clicked outside
-    if (this.isBellOpen() && !target.closest('.bell-dropdown-container')) {
-      this.isBellOpen.set(false);
-    }
-    
-    // Close search if clicked outside
-    if (this.isSearchFocused() && !target.closest('.search-container')) {
-      this.isSearchFocused.set(false);
-    }
-
-    // Close mobile menu if clicked outside
-    if (this.isMobileMenuOpen() && !target.closest('.mobile-menu-drawer') && !target.closest('.mobile-menu-trigger')) {
-      this.isMobileMenuOpen.set(false);
-    }
-  }
-
-  @HostListener('document:keydown.escape', ['$event'])
-  onEscape(event: KeyboardEvent) {
-    this.isRoleDropdownOpen.set(false);
-    this.isBellOpen.set(false);
-    this.isSearchFocused.set(false);
-    this.isMobileSearchOpen.set(false);
-    this.isMobileMenuOpen.set(false);
-  }
-
   // Compute Active Advertisements
   topAd = computed(() => {
     return this.ds.advertisements().find(a => a.position === 'top-banner');
@@ -235,20 +260,40 @@ export class App {
     return icons[catId] || 'category';
   }
 
-  getSubcategories(parentId: string) {
-    return this.ds.categories().filter(c => c.parent_id === parentId || c.parentId === parentId);
-  }
+  // Pre-computed maps aliased from DatastoreService
+  subcategoriesMap = this.ds.subcategoriesMap;
+  productCountMap = this.ds.productCountMap;
 
-  getProductCount(categoryId: string): number {
-    const subCategories = this.getSubcategories(categoryId);
-    const subIds = subCategories.map(c => c.id);
-    const targetIds = [categoryId, ...subIds];
-    return this.ds.products().filter(p => targetIds.includes(p.category_id || p.categoryId || '')).length;
-  }
+  // Pre-computed branding animation class (only recomputes when footer data changes)
+  brandingAnimationClass = computed(() => {
+    const footerData = this.ds.footerData();
+    const type = footerData?.copyright?.animationType;
+    const glow = footerData?.copyright?.glowEffect;
+    let classes = '';
+    const animType = type || 'Glow';
+    if (animType === 'Glow') {
+      classes += 'animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] ';
+    } else if (animType === 'Pulse') {
+      classes += 'animate-pulse ';
+    } else if (animType === 'Shimmer') {
+      classes += 'animate-bounce ';
+    } else if (animType === 'Gradient Wave') {
+      classes += 'bg-linear-to-r from-emerald-500 via-sky-500 to-indigo-500 animate-[textGradientFlow_3s_linear_infinite] ';
+    } else {
+      classes += 'animate-[textGradientFlow_4s_linear_infinite] ';
+    }
+    if (glow && animType !== 'Glow') {
+      classes += 'drop-shadow-[0_0_6px_rgba(59,130,246,0.5)] ';
+    }
+    return classes;
+  });
 
-  getMenuItemChildren(parentId: string) {
-    return this.ds.menuItems().filter(m => m.parentId === parentId);
-  }
+  // Pre-computed mobile footer links (only recomputes when footer data changes)
+  mobileFooterLinks = computed(() => {
+    const links = this.ds.footerData()?.mobile?.mobileFooterLinks;
+    if (!links) return [];
+    return links.split(',').filter((s: string) => s && s.includes('|'));
+  });
 
   toggleTheme() {
     this.ds.theme.update(t => t === 'dark' ? 'light' : 'dark');
@@ -294,27 +339,7 @@ export class App {
     this.toastService.warning('Notice: Top campaign alert hidden. You can find promo coupons inside checkout cart logs!');
   }
 
-  getBrandingAnimationClass(type: string | undefined, glow: boolean | undefined): string {
-    let classes = '';
-    const animType = type || 'Glow';
-    
-    if (animType === 'Glow') {
-      classes += 'animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] ';
-    } else if (animType === 'Pulse') {
-      classes += 'animate-pulse ';
-    } else if (animType === 'Shimmer') {
-      classes += 'animate-bounce ';
-    } else if (animType === 'Gradient Wave') {
-      classes += 'bg-linear-to-r from-emerald-500 via-sky-500 to-indigo-500 animate-[textGradientFlow_3s_linear_infinite] ';
-    } else {
-      classes += 'animate-[textGradientFlow_4s_linear_infinite] ';
-    }
-    
-    if (glow && animType !== 'Glow') {
-      classes += 'drop-shadow-[0_0_6px_rgba(59,130,246,0.5)] ';
-    }
-    return classes;
-  }
+
 
   subscribeNewsletter(email: string) {
     if (!email || !email.includes('@')) {

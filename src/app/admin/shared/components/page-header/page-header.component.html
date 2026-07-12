@@ -2,7 +2,7 @@
   <div class="flex items-center gap-3">
     <!-- Admin Configuration Logo in Page Header -->
     <div class="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
-      <img [src]="ds.theme() === 'dark' ? (ds.settings().appIconUrl || ds.settings().darkModeLogoUrl || ds.settings().logoUrl || '/3d-logo.png') : (ds.settings().logoUrl || ds.settings().headerLogoUrl || '/3d-logo.png')" 
+      <img [src]="logoUrlComputed()" 
            alt="Console Logo" 
            class="h-8 w-8 object-contain logo-img"
            (error)="onImageError($event)"

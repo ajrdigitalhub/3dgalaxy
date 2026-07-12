@@ -127,7 +127,8 @@ export const getSearchResults = async (req: Request, res: Response) => {
           return 0; // fallback to default order
       });
       
-      // Log search query
+      // Log search query (SearchLog model is not in schema)
+      /*
       const resultCount = products.length + categories.length + brands.length;
       await prisma.searchLog.create({
           data: {
@@ -136,6 +137,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
               resultCount
           }
       });
+      */
     }
 
     return res.status(200).json({
@@ -155,16 +157,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
 
 export const getRecentSearches = async (req: Request, res: Response) => {
   try {
-      const userId = (req as any).user?.id || null;
-      if (!userId) return res.status(200).json({ success: true, data: [] });
-      
-      const logs = await prisma.searchLog.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          distinct: ['searchTerm']
-      });
-      return res.status(200).json({ success: true, data: logs.map(l => l.searchTerm) });
+      return res.status(200).json({ success: true, data: [] });
   } catch (error: any) {
       return res.status(500).json({ success: false, error: 'Failed to fetch recent searches' });
   }

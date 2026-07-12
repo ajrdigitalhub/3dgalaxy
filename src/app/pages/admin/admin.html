@@ -221,8 +221,12 @@
             <app-admin-catalog-tab [admin]="this" />
           }
 
-          @if (activeTab() === 'orders' || activeTab() === 'draft-orders' || activeTab() === 'abandoned-carts' || activeTab() === 'quotes') {
+          @if (activeTab() === 'orders' || activeTab() === 'draft-orders' || activeTab() === 'quotes') {
             <app-admin-sales-tab [admin]="this" />
+          }
+
+          @if (activeTab() === 'abandoned-carts') {
+            <app-admin-abandoned-checkouts-tab [admin]="this" />
           }
 
           @if (activeTab() === 'customer-list' || activeTab() === 'customer-groups' || activeTab() === 'reviews') {
@@ -243,6 +247,14 @@
 
           @if (activeTab().endsWith('-settings') || activeTab() === 'user-management' || activeTab() === 'active-sessions') {
             <app-admin-settings-tab [admin]="this" />
+          }
+
+          @if (activeTab() === 'transactions' || activeTab() === 'webhook-logs') {
+            <app-admin-payments-tab [admin]="this" />
+          }
+
+          @if (activeTab() === 'whatsapp-logs' || activeTab() === 'whatsapp-campaign') {
+            <app-admin-communication-tab [admin]="this" />
           }
         }
 

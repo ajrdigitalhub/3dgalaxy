@@ -1,7 +1,8 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, effect} from '@angular/core';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, OnDestroy, effect, OnInit, HostListener} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
+import {HttpClient} from '@angular/common/http';
 import {DatastoreService} from '../../services/datastore';
 import { SettingsService } from '../../core/services/settings.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
@@ -15,21 +16,48 @@ import { AppButton } from '../../shared/components/app-button/app-button';
   templateUrl: './printing-service.html',
   styleUrl: './printing-service.scss'
 })
-export class PrintingService implements AfterViewInit, OnDestroy {
+export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   toastService = inject(ToastService);
   ds = inject(DatastoreService);
   settingsService = inject(SettingsService);
+  http = inject(HttpClient);
 
   @ViewChild('viewportCanvas') viewportCanvas!: ElementRef<HTMLCanvasElement>;
 
   // Selection states
-  selectedFileName = signal<string>('mechanical_sprocket_gear.stl');
-  selectedFileSize = signal<string>('12.8 MB');
+  selectedFileName = signal<string>('');
+  selectedFileSize = signal<string>('');
   selectedMaterial = signal<string>('PLA');
   selectedColor = signal<string>('White');
-  infillPercent = signal<number>(40);
+  infillPercent = signal<number>(20);
   layerHeight = signal<number>(0.20);
-  sourceVolume = signal<number>(128.4);
+  sourceVolume = signal<number>(0);
+  activeConfigTab = signal<'quality' | 'material' | 'infill' | 'quantity'>('quality');
+
+  // Searchable dropdown states
+  openDropdownId = signal<string | null>(null);
+  searchQuery = signal<string>('');
+
+  // Dropdown list configurations loaded from backend API
+  serviceConfig = signal<any>(null);
+
+  // New configurations
+  supportType = signal<string>('None');
+  buildPlateAdhesion = signal<string>('None');
+  nozzleSize = signal<string>('0.4 mm');
+  layerHeightText = signal<string>('0.20 mm');
+  printSpeed = signal<string>('Normal');
+  wallCount = signal<string>('2');
+  topLayers = signal<string>('3');
+  bottomLayers = signal<string>('3');
+  fillPattern = signal<string>('Grid');
+  surfaceFinish = signal<string>('Matte');
+  deliveryPriority = signal<string>('Standard');
+  quantity = signal<number>(1);
+
+  // Upload states
+  uploading = signal<boolean>(false);
+  uploadProgress = signal<number | null>(null);
 
   // Customer details
   custName = signal<string>('Sumit Sharma');
@@ -43,27 +71,85 @@ export class PrintingService implements AfterViewInit, OnDestroy {
   scaleFactor = signal<number>(1.0);
   modelVertices: number[][] = [];
   modelFaces: number[][] = [];
-  modelDimensions = signal<{x: number, y: number, z: number}>({ x: 50, y: 28, z: 5.0 });
-  modelTriangles = signal<number>(1280);
-  modelVolume = signal<number>(5.12);
+  modelDimensions = signal<{x: number, y: number, z: number}>({ x: 0, y: 0, z: 0 });
+  modelTriangles = signal<number>(0);
+  modelVolume = signal<number>(0);
 
   // Advanced Custom Slicer Studio States
   visualMode = signal<'solid' | 'wireframe' | 'vertices'>('solid');
   simulationLayer = signal<number>(100);
-  activeTab = signal<'hardware' | 'parameters' | 'checkout'>('hardware');
   
-  // Dynamic lists from Settings Service
-  printConfig = computed(() => this.settingsService.printServiceSettings() || {});
-  materials = computed(() => this.printConfig().materials?.filter((m: any) => m.active) || []);
+  // Dynamic lists from serviceConfig computed
+  materials = computed(() => this.serviceConfig()?.materials || []);
+  qualities = computed(() => this.serviceConfig()?.qualities || []);
+  selectedQualityName = computed(() => {
+    const activeHeight = this.layerHeight();
+    const qualitiesList = this.qualities();
+    const matched = qualitiesList.find((q: any) => q.height === activeHeight);
+    return matched ? matched.name : 'Select Quality';
+  });
+  defaultHexMap: Record<string, string> = {
+    'white': '#ffffff',
+    'black': '#000000',
+    'red': '#ef4444',
+    'blue': '#3b82f6',
+    'green': '#22c55e',
+    'yellow': '#eab308',
+    'orange': '#f97316',
+    'purple': '#a855f7',
+    'silver': '#cbd5e1',
+    'gold': '#fbbf24',
+    'grey': '#6b7280',
+    'pink': '#ec4899',
+    'brown': '#78350f'
+  };
+
   colors = computed(() => {
     const activeMatName = this.selectedMaterial();
-    const config = this.printConfig();
-    const materials = config.materials || [];
-    const mat = materials.find((m: any) => m.name === activeMatName);
-    return mat?.colors || [];
+    const mat = this.materials().find((m: any) => m.name === activeMatName);
+    let rawList: any[] = [];
+    if (mat && mat.colors && mat.colors.length > 0) {
+      rawList = mat.colors;
+    } else {
+      rawList = this.serviceConfig()?.colors || [];
+    }
+    return rawList.map((c: any) => {
+      if (typeof c === 'string') {
+        const lower = c.toLowerCase();
+        return { name: c, hex: this.defaultHexMap[lower] || '#3b82f6' };
+      }
+      return c;
+    });
   });
-  qualities = computed(() => this.printConfig().qualities || []);
-  infillStandards = computed(() => this.printConfig().infillStandards || []);
+
+  infillStandards = computed(() => {
+    return this.serviceConfig()?.infillStandards || [
+      { name: '10 - 30%', desc: 'Standard', min: 10, max: 30, default: 20 },
+      { name: '31 - 50%', desc: 'Medium', min: 31, max: 50, default: 40 },
+      { name: '51 - 80%', desc: 'Strong', min: 51, max: 80, default: 60 }
+    ];
+  });
+
+  isInfillActive(inf: any): boolean {
+    const infVal = this.infillPercent();
+    return infVal >= inf.min && infVal <= inf.max;
+  }
+
+  isColorDark(hex: string): boolean {
+    const rgb = this.hexToRgb(hex);
+    const yiq = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
+    return yiq < 128;
+  }
+  supports = computed(() => this.serviceConfig()?.supports || []);
+  fillPatterns = computed(() => this.serviceConfig()?.fillPatterns || []);
+  adhesionTypes = computed(() => this.serviceConfig()?.adhesionTypes || []);
+  layerHeights = computed(() => this.serviceConfig()?.layerHeights || []);
+  printSpeeds = computed(() => this.serviceConfig()?.printSpeeds || []);
+  nozzleSizes = computed(() => this.serviceConfig()?.nozzleSizes || []);
+  wallCounts = computed(() => this.serviceConfig()?.wallCounts || []);
+  deliveryPriorities = computed(() => this.serviceConfig()?.deliveryPriorities || []);
+  infillOptions = computed(() => this.serviceConfig()?.infillOptions || []);
+  surfaceFinishes = computed(() => this.serviceConfig()?.surfaceFinishes || []);
 
   // Canvas context & loop
   private canvasContext?: CanvasRenderingContext2D;
@@ -91,33 +177,108 @@ export class PrintingService implements AfterViewInit, OnDestroy {
       this.custEmail.set(u.email);
     }
 
-    // Effect to initialize values from custom settings when they are fetched
+    // Effect to auto-save selected options locally
     effect(() => {
-      const config = this.printConfig();
-      if (config && Object.keys(config).length > 0) {
-        if (config.materials?.length > 0 && !config.materials.some((m: any) => m.name === this.selectedMaterial())) {
-          this.selectedMaterial.set(config.materials[0].name);
+      if (typeof window === 'undefined') return;
+      localStorage.setItem('3dg_slicer_material', this.selectedMaterial());
+      localStorage.setItem('3dg_slicer_color', this.selectedColor());
+      localStorage.setItem('3dg_slicer_infill', String(this.infillPercent()));
+      localStorage.setItem('3dg_slicer_layer_height', this.layerHeightText());
+      localStorage.setItem('3dg_slicer_quality', String(this.layerHeight()));
+      localStorage.setItem('3dg_slicer_support', this.supportType());
+      localStorage.setItem('3dg_slicer_adhesion', this.buildPlateAdhesion());
+      localStorage.setItem('3dg_slicer_nozzle', this.nozzleSize());
+      localStorage.setItem('3dg_slicer_speed', this.printSpeed());
+      localStorage.setItem('3dg_slicer_walls', this.wallCount());
+      localStorage.setItem('3dg_slicer_top_layers', this.topLayers());
+      localStorage.setItem('3dg_slicer_bottom_layers', this.bottomLayers());
+      localStorage.setItem('3dg_slicer_pattern', this.fillPattern());
+      localStorage.setItem('3dg_slicer_finish', this.surfaceFinish());
+      localStorage.setItem('3dg_slicer_priority', this.deliveryPriority());
+      localStorage.setItem('3dg_slicer_quantity', String(this.quantity()));
+      localStorage.setItem('3dg_slicer_notes', this.notesText());
+    });
+  }
+
+  ngOnInit() {
+    this.loadServiceConfig();
+    this.restoreOptionsFromLocal();
+  }
+
+  loadServiceConfig() {
+    this.http.get<any>('/api/service-config').subscribe({
+      next: (cfg) => {
+        this.serviceConfig.set(cfg);
+        // Apply defaults if not restored
+        if (!localStorage.getItem('3dg_slicer_material') && cfg.materials?.length > 0) {
+          this.selectedMaterial.set(cfg.materials[0].name);
         }
-        
-        const activeMat = this.selectedMaterial();
-        const mat = config.materials?.find((m: any) => m.name === activeMat);
-        const matColors = mat?.colors || [];
-        if (matColors.length > 0 && !matColors.some((c: any) => c.name === this.selectedColor())) {
-          this.selectedColor.set(matColors[0].name);
+        if (!localStorage.getItem('3dg_slicer_color') && cfg.colors?.length > 0) {
+          this.selectedColor.set(cfg.colors[0]);
         }
-        
-        if (config.qualities?.length > 0 && !config.qualities.some((q: any) => q.height === this.layerHeight())) {
-          this.layerHeight.set(config.qualities[0].height);
-        }
-        if (config.infillStandards?.length > 0 && this.infillPercent() === 40) {
-          this.infillPercent.set(config.infillStandards[0].defaultVal || 20);
-        }
+      },
+      error: (err) => {
+        console.error('Failed to load printing service configuration', err);
       }
     });
   }
 
+  restoreOptionsFromLocal() {
+    if (typeof window === 'undefined') return;
+    const material = localStorage.getItem('3dg_slicer_material');
+    if (material) this.selectedMaterial.set(material);
+    
+    const color = localStorage.getItem('3dg_slicer_color');
+    if (color) this.selectedColor.set(color);
+    
+    const infill = localStorage.getItem('3dg_slicer_infill');
+    if (infill) this.infillPercent.set(Number(infill));
+    
+    const layerHeightText = localStorage.getItem('3dg_slicer_layer_height');
+    if (layerHeightText) this.layerHeightText.set(layerHeightText);
+    
+    const quality = localStorage.getItem('3dg_slicer_quality');
+    if (quality) this.layerHeight.set(Number(quality));
+    
+    const support = localStorage.getItem('3dg_slicer_support');
+    if (support) this.supportType.set(support);
+    
+    const adhesion = localStorage.getItem('3dg_slicer_adhesion');
+    if (adhesion) this.buildPlateAdhesion.set(adhesion);
+    
+    const nozzle = localStorage.getItem('3dg_slicer_nozzle');
+    if (nozzle) this.nozzleSize.set(nozzle);
+    
+    const speed = localStorage.getItem('3dg_slicer_speed');
+    if (speed) this.printSpeed.set(speed);
+    
+    const walls = localStorage.getItem('3dg_slicer_walls');
+    if (walls) this.wallCount.set(walls);
+    
+    const topLayers = localStorage.getItem('3dg_slicer_top_layers');
+    if (topLayers) this.topLayers.set(topLayers);
+    
+    const bottomLayers = localStorage.getItem('3dg_slicer_bottom_layers');
+    if (bottomLayers) this.bottomLayers.set(bottomLayers);
+    
+    const pattern = localStorage.getItem('3dg_slicer_pattern');
+    if (pattern) this.fillPattern.set(pattern);
+    
+    const finish = localStorage.getItem('3dg_slicer_finish');
+    if (finish) this.surfaceFinish.set(finish);
+    
+    const priority = localStorage.getItem('3dg_slicer_priority');
+    if (priority) this.deliveryPriority.set(priority);
+    
+    const qty = localStorage.getItem('3dg_slicer_quantity');
+    if (qty) this.quantity.set(Number(qty));
+    
+    const notes = localStorage.getItem('3dg_slicer_notes');
+    if (notes) this.notesText.set(notes);
+  }
+
   ngAfterViewInit() {
-    if (this.viewportCanvas) {
+    if (this.viewportCanvas && this.selectedFileName()) {
       this.initCanvas(this.viewportCanvas.nativeElement);
     }
   }
@@ -128,14 +289,87 @@ export class PrintingService implements AfterViewInit, OnDestroy {
     }
   }
 
+  initCanvasAfterUpload() {
+    setTimeout(() => {
+      const canvasEl = document.getElementById('viewportCanvas') as HTMLCanvasElement;
+      if (canvasEl) {
+        this.initCanvas(canvasEl);
+      }
+    }, 100);
+  }
+
   // Cost estimation details
   estimatedReport = computed(() => {
-    return this.ds.calculate3DPrintCost({
-      material: this.selectedMaterial(),
-      infillPercent: this.infillPercent(),
-      layerHeight: this.layerHeight(),
-      volumeCm3: this.sourceVolume()
-    });
+    const cfg = this.serviceConfig() || {};
+    const materialsList = cfg.materials || [];
+    const qualitiesList = cfg.qualities || [];
+    
+    // Find active material
+    const activeMatName = this.selectedMaterial();
+    const mat = materialsList.find((m: any) => m.name === activeMatName) || { pricePerGram: 2.5, density: 1.25 };
+    const density = mat.density || 1.25;
+    const pricePerGram = mat.pricePerGram || 2.5;
+    
+    // Find quality
+    const activeQualityHeight = this.layerHeight();
+    const qual = qualitiesList.find((q: any) => q.height === activeQualityHeight) || { price: 50 };
+    const qualityPrice = qual.price !== undefined ? qual.price : 50;
+    
+    const machineRate = cfg.machineFeePerHour !== undefined ? cfg.machineFeePerHour : 150;
+    const setupCost = cfg.setupCost !== undefined ? cfg.setupCost : 100;
+    const gstRate = cfg.gstTaxRate !== undefined ? cfg.gstTaxRate : 18;
+    
+    const volume = this.sourceVolume();
+    const infillVal = this.infillPercent();
+    const infillFactor = (20 + infillVal * 0.8) / 100;
+    
+    // Weight (grams)
+    const estimatedWeight = Math.round(volume * density * infillFactor * 10) / 10;
+    
+    // Material Cost
+    const materialCost = Math.round(estimatedWeight * pricePerGram);
+    
+    // Machine Time (hours)
+    const speed = this.printSpeed();
+    let speedFactor = 1.0;
+    if (speed === 'Slow') speedFactor = 1.5;
+    else if (speed === 'Fast') speedFactor = 0.7;
+    else if (speed === 'Ultra Fast') speedFactor = 0.5;
+    
+    const layerHeightVal = Number(this.layerHeightText().replace(' mm', '')) || 0.20;
+    const heightFactor = 0.20 / Math.max(0.04, layerHeightVal);
+    
+    const baseHours = volume * 0.08;
+    const estimatedHours = Math.round(Math.max(1, baseHours * heightFactor * speedFactor * infillFactor) * 10) / 10;
+    
+    // Printing Cost = machine fee + quality price
+    const machineFee = Math.round(estimatedHours * machineRate);
+    const printingCost = machineFee + qualityPrice;
+    
+    // Subtotal before tax
+    const qty = this.quantity();
+    const subtotal = (materialCost + printingCost + setupCost) * qty;
+    
+    // GST
+    const gstTax = Math.round(subtotal * (gstRate / 100));
+    
+    // Shipping
+    const shippingThreshold = this.settingsService.shippingSettings()?.freeShippingMinSpent || 3000;
+    const shippingFee = (subtotal >= shippingThreshold) ? 0 : 120;
+    
+    // Grand Total
+    const totalCost = subtotal + gstTax + shippingFee;
+    
+    return {
+      weightGrams: estimatedWeight,
+      hours: estimatedHours,
+      materialCost: materialCost * qty,
+      printingCost: printingCost * qty,
+      setupCost: setupCost * qty,
+      gstTax: gstTax,
+      shipping: shippingFee,
+      totalCost: totalCost
+    };
   });
 
   customerQuotes = computed(() => {
@@ -156,19 +390,51 @@ export class PrintingService implements AfterViewInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      this.selectedFileName.set(file.name);
-      const sizeMb = Math.round((file.size / (1024 * 1024)) * 10) / 10;
-      this.selectedFileSize.set(`${sizeMb} MB`);
       
-      // Attempt STL parsing
-      if (file.name.toLowerCase().endsWith('.stl')) {
-        this.parseSTLFile(file);
-      } else {
-        const mockVolume = Math.floor(45 + Math.random() * 320);
-        this.sourceVolume.set(mockVolume);
-        this.generateDefaultModel();
+      // Supported files validation
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'stl' && ext !== 'obj' && ext !== '3mf') {
+        this.toastService.error('Unsupported file format! Please upload STL, OBJ or 3MF.');
+        return;
       }
+      
+      this.simulateFileUpload(file);
     }
+  }
+
+  simulateFileUpload(file: File) {
+    this.uploading.set(true);
+    this.uploadProgress.set(0);
+    
+    const totalSteps = 100;
+    const intervalTime = 15;
+    let currentProgress = 0;
+    
+    const interval = setInterval(() => {
+      currentProgress += 2;
+      this.uploadProgress.set(currentProgress);
+      
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        this.uploading.set(false);
+        this.uploadProgress.set(null);
+        
+        this.selectedFileName.set(file.name);
+        const sizeMb = Math.round((file.size / (1024 * 1024)) * 10) / 10;
+        this.selectedFileSize.set(`${sizeMb} MB`);
+        
+        if (file.name.toLowerCase().endsWith('.stl')) {
+          this.parseSTLFile(file);
+        } else {
+          const mockVolume = Math.floor(45 + Math.random() * 320);
+          this.sourceVolume.set(mockVolume);
+          this.generateDefaultModel();
+        }
+        
+        this.initCanvasAfterUpload();
+        this.toastService.success(`Model "${file.name}" loaded successfully!`);
+      }
+    }, intervalTime);
   }
 
   clearFile() {
@@ -182,36 +448,87 @@ export class PrintingService implements AfterViewInit, OnDestroy {
     this.simulationLayer.set(100);
   }
 
-  onMaterialChange(materialName: string) {
-    this.selectedMaterial.set(materialName);
-    
-    // Auto select first color of new material if current color isn't in its colors list
-    const config = this.printConfig();
-    const materials = config.materials || [];
-    const mat = materials.find((m: any) => m.name === materialName);
-    const colors = mat?.colors || [];
-    if (colors.length > 0) {
-      const matches = colors.some((c: any) => c.name.toLowerCase() === this.selectedColor().toLowerCase());
-      if (!matches) {
-        this.selectedColor.set(colors[0].name);
-      }
+  // Dropdown actions
+  toggleDropdown(id: string, event?: Event) {
+    if (event) event.stopPropagation();
+    this.openDropdownId.update(current => current === id ? null : id);
+    this.searchQuery.set('');
+  }
+
+  isDropdownOpen(id: string): boolean {
+    return this.openDropdownId() === id;
+  }
+
+  selectOption(id: string, val: any) {
+    if (id === 'material') {
+      this.selectedMaterial.set(val);
+      setTimeout(() => {
+        const currentColors = this.colors();
+        const hasColor = currentColors.some(c => c.name === this.selectedColor());
+        if (currentColors.length > 0 && !hasColor) {
+          this.selectedColor.set(currentColors[0].name);
+        }
+      }, 50);
+    } else if (id === 'quality') {
+      this.layerHeight.set(val.height);
+      this.layerHeightText.set(`${val.height} mm`);
+    } else if (id === 'infill') {
+      const num = parseInt(val.replace('%', ''), 10);
+      this.infillPercent.set(num);
+    } else if (id === 'infill_standard') {
+      this.infillPercent.set(val.default);
+    } else if (id === 'support') {
+      this.supportType.set(val);
+    } else if (id === 'adhesion') {
+      this.buildPlateAdhesion.set(val);
+    } else if (id === 'nozzle') {
+      this.nozzleSize.set(val);
+    } else if (id === 'layerHeight') {
+      this.layerHeightText.set(val);
+    } else if (id === 'speed') {
+      this.printSpeed.set(val);
+    } else if (id === 'walls') {
+      this.wallCount.set(val);
+    } else if (id === 'topLayers') {
+      this.topLayers.set(val);
+    } else if (id === 'bottomLayers') {
+      this.bottomLayers.set(val);
+    } else if (id === 'pattern') {
+      this.fillPattern.set(val);
+    } else if (id === 'color') {
+      this.selectedColor.set(val);
+    } else if (id === 'finish') {
+      this.surfaceFinish.set(val);
+    } else if (id === 'priority') {
+      this.deliveryPriority.set(val);
+    }
+    this.openDropdownId.set(null);
+  }
+
+  getFilteredOptions(id: string, options: any[]): any[] {
+    const query = this.searchQuery().trim().toLowerCase();
+    if (!query) return options;
+    return options.filter(opt => {
+      const name = typeof opt === 'string' ? opt : (opt.name || '');
+      return name.toLowerCase().includes(query);
+    });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+      this.openDropdownId.set(null);
     }
   }
 
-  onColorChange(colorName: string) {
-    this.selectedColor.set(colorName);
+  // Stepper handlers
+  incrementQty() {
+    this.quantity.update(q => q + 1);
   }
 
-  onInfillChange(event: Event) {
-    this.infillPercent.set(parseInt((event.target as HTMLInputElement).value, 10));
-  }
-
-  selectInfillStandard(inf: any) {
-    this.infillPercent.set(inf.defaultVal);
-  }
-
-  selectLayerHeight(v: number) {
-    this.layerHeight.set(v);
+  decrementQty() {
+    this.quantity.update(q => Math.max(1, q - 1));
   }
 
   resetRotation() {
@@ -228,8 +545,6 @@ export class PrintingService implements AfterViewInit, OnDestroy {
     this.scaleFactor.update(s => Math.max(0.2, s * 0.85));
   }
 
-
-
   isSubmitting = signal(false);
 
   async submitQuotation() {
@@ -237,6 +552,24 @@ export class PrintingService implements AfterViewInit, OnDestroy {
     this.isSubmitting.set(true);
     
     try {
+      const customNotes = `
+=== SLICER PARAMETERS ===
+- Quantity: ${this.quantity()}
+- Support: ${this.supportType()}
+- Adhesion: ${this.buildPlateAdhesion()}
+- Nozzle: ${this.nozzleSize()}
+- Layer Height: ${this.layerHeightText()}
+- Speed: ${this.printSpeed()}
+- Walls: ${this.wallCount()}
+- Top/Bottom Layers: ${this.topLayers()} / ${this.bottomLayers()}
+- Pattern: ${this.fillPattern()}
+- Surface Finish: ${this.surfaceFinish()}
+- Priority: ${this.deliveryPriority()}
+
+=== INSTRUCTIONS ===
+${this.notesText().trim()}
+      `.trim();
+
       await this.ds.submitQuotation({
         name: this.custName().trim() || 'Anonymous Maker',
         phone: this.custPhone().trim(),
@@ -248,11 +581,11 @@ export class PrintingService implements AfterViewInit, OnDestroy {
         infill: this.infillPercent(),
         layerHeight: this.layerHeight(),
         volumeSrc: this.sourceVolume(),
-        notes: this.notesText()
+        notes: customNotes
       });
 
       this.notesText.set('');
-      this.toastService.success('SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list on the right!');
+      this.toastService.success('SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list below!');
     } catch {
       this.toastService.error('Quotation Submission Failed: Access Denied or Network Error.');
     } finally {
@@ -617,7 +950,7 @@ export class PrintingService implements AfterViewInit, OnDestroy {
   getFilamentHexColor(): string {
     const colors = this.colors();
     const active = colors.find((c: any) => c.name.toLowerCase() === this.selectedColor().toLowerCase());
-    return active ? active.hex : '#2563EB';
+    return active ? active.hex : '#3b82f6';
   }
 
   getProgressPercent(): number {

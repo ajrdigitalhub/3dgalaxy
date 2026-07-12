@@ -211,8 +211,16 @@ export class ProductDetail {
   relatedProducts = computed(() => {
     const p = this.product();
     if (!p) return [];
-    if (p.relatedProducts && p.relatedProducts.length > 0) {
-       return p.relatedProducts.map((rp: any) => rp.relatedProduct).slice(0, 4);
+    let rels = p.relatedProducts;
+    if (typeof rels === 'string') {
+      try { rels = JSON.parse(rels); } catch { rels = []; }
+    }
+    if (Array.isArray(rels) && rels.length > 0) {
+      return rels.map((rp: any) => {
+        if (rp && typeof rp === 'object' && rp.name) return rp;
+        const id = typeof rp === 'string' ? rp : (rp.id || rp.relatedToId || rp.relatedProduct?.id);
+        return this.ds.products().find(x => x.id === id);
+      }).filter(x => x !== undefined).slice(0, 4) as Product[];
     }
     return this.ds.products().filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 4);
   });
@@ -220,6 +228,39 @@ export class ProductDetail {
   optionalFilaments = computed(() => {
     return this.ds.products().filter(p => p.category_id === 'cat-2').slice(0, 4);
   });
+
+  bundleProductsList = computed(() => {
+    const p = this.product();
+    if (!p || !p.bundleProducts) return [];
+    const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
+    if (!Array.isArray(list)) return [];
+    return list.map((item: any) => {
+      if (item && typeof item === 'object' && item.name) return item;
+      const id = typeof item === 'string' ? item : item.id;
+      return this.ds.products().find(x => x.id === id);
+    }).filter(x => x !== undefined) as Product[];
+  });
+
+  recommendedFilamentsList = computed(() => {
+    const p = this.product();
+    if (!p || !p.recommendedFilaments) return [];
+    const list = typeof p.recommendedFilaments === 'string' ? JSON.parse(p.recommendedFilaments) : p.recommendedFilaments;
+    if (!Array.isArray(list)) return [];
+    return list.map((item: any) => {
+      if (item && typeof item === 'object' && item.name) return item;
+      const id = typeof item === 'string' ? item : item.id;
+      return this.ds.products().find(x => x.id === id);
+    }).filter(x => x !== undefined) as Product[];
+  });
+
+  addRecommendedFilamentToCart(filament: Product) {
+    if (filament.stock <= 0) {
+      this.toastService.error(`${filament.name} is out of stock.`);
+      return;
+    }
+    this.ds.addToCart(filament, 1);
+    this.toastService.success(`${filament.name} added to cart!`);
+  }
 
   isDealerActive = computed(() => {
     const r = this.ds.userRole();
@@ -483,6 +524,22 @@ export class ProductDetail {
       }
       this.isAddingToCart.set(true);
       this.ds.addToCart(p, this.quantity());
+    }
+
+    // Automatically add complimentary bundle items to the cart
+    const bundleItems = this.bundleProductsList();
+    if (bundleItems && bundleItems.length > 0) {
+      for (const item of bundleItems) {
+        this.ds.cart.update(items => {
+          const isExist = items.some(i => i.product.id === item.id && i.isFree);
+          if (isExist) {
+            return items.map(i => (i.product.id === item.id && i.isFree) ? { ...i, quantity: i.quantity + this.quantity() } : i);
+          }
+          const role = this.ds.userRole();
+          const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
+          return [...items, { product: item, quantity: this.quantity(), selectedPriceType: priceType, isFree: true }];
+        });
+      }
     }
     
     setTimeout(() => {

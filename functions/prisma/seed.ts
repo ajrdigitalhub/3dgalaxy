@@ -453,16 +453,16 @@ async function main() {
     });
   }
 
-  // 9. Banners seeding
   const existingBanners = await prisma.banner.count();
   if (existingBanners === 0) {
-    await prisma.banner.createMany({
-      data: [
-        { title: 'Homepage Main Banner', imageUrl: 'https://picsum.photos/seed/homebanner/1200/400', position: 'HOMEPAGE_TOP' },
-        { title: 'Summer Promotion', imageUrl: 'https://picsum.photos/seed/promobanner/1200/300', position: 'PROMOTIONAL' },
-        { title: 'FDM Category Highlights', imageUrl: 'https://picsum.photos/seed/catbanner/1200/200', position: 'CATEGORY_HEADER' }
-      ]
-    });
+    const banners = [
+      { title: 'Homepage Main Banner', imageUrl: 'https://picsum.photos/seed/homebanner/1200/400', position: 'HOMEPAGE_TOP' },
+      { title: 'Summer Promotion', imageUrl: 'https://picsum.photos/seed/promobanner/1200/300', position: 'PROMOTIONAL' },
+      { title: 'FDM Category Highlights', imageUrl: 'https://picsum.photos/seed/catbanner/1200/200', position: 'CATEGORY_HEADER' }
+    ];
+    for (const b of banners) {
+      await prisma.banner.create({ data: b });
+    }
   }
 
   console.log('🎉 Seeding successfully completed!');

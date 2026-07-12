@@ -64,7 +64,7 @@ export class OrdersTracking {
               quantity: i.quantity,
               price: i.price
            })),
-           grandTotal: o.totalAmount,
+           grandTotal: Number(o.totalAmount) || 0,
            trackingNumber: null,
            paymentMethod: o.payments && o.payments.length > 0 ? o.payments[0].method : 'Unknown'
          })));
@@ -93,13 +93,17 @@ export class OrdersTracking {
   }
 
   triggerPrintInvoice(ord: Order) {
+    const gstInfo = ord.gstNumber ? `
+Company Name: ${ord.companyName}
+GSTIN: ${ord.gstNumber}
+` : '';
     const pdfData = `
 3D GALAXY PRINTING LABS - OFFICIAL SALES TAX INVOICE
 ===================================================
 Invoice Number: ${ord.orderNumber}
-Issued To: ${ord.customerName} (Email: ${ord.customerEmail}, Phone: ${ord.customerPhone})
+Issued To: ${ord.customerName} (Email: ${ord.customerEmail}, Phone: ${ord.customerPhone})${gstInfo}
 Date of Invoice: ${ord.date}
-GSTIN Registration Type: Taxable Business Supply B2C / B2B
+GSTIN Registration Type: ${ord.gstNumber ? 'B2B Taxable Business Supply' : 'Taxable Business Supply B2C / B2B'}
 
 Particular Component list:
 ${ord.items.map(i => `- ${i.name} (x${i.quantity}) @ ₹${i.price} each.`).join('\n')}

@@ -10,6 +10,8 @@
     "test-backend": "cd server && BACKEND_PORT=4000 npx ts-node --transpile-only src/server.ts",
     "build:server": "npx -y esbuild src/server.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/applet/server/server.mjs --external:express --external:axios --external:firebase/* --external:firebase-admin",
     "build": "ng build && npm run build:server",
+    "deploy": "npm run build && npm run build --prefix functions && firebase deploy",
+    "deploy:functions": "npm run build --prefix functions && firebase deploy --only functions",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

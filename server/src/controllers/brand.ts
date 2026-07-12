@@ -26,14 +26,14 @@ export const getBrandById = async (req: Request, res: Response) => {
 };
 
 export const createBrand = async (req: Request, res: Response) => {
-  const { name, slug, logo, banner, description } = req.body;
+  const { name, slug, logo, description } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Manufacturer name and brand URL slug represent required inputs' });
   }
 
   try {
     const created = await prisma.brand.create({
-      data: { name, slug, logo, banner, description },
+      data: { name, slug, logo, description },
     });
     return res.status(201).json(created);
   } catch (error: any) {
@@ -43,12 +43,12 @@ export const createBrand = async (req: Request, res: Response) => {
 
 export const updateBrand = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, logo, banner, description } = req.body;
+  const { name, slug, logo, description } = req.body;
 
   try {
     const updated = await prisma.brand.update({
       where: { id },
-      data: { name, slug, logo, banner, description },
+      data: { name, slug, logo, description },
     });
     return res.status(200).json(updated);
   } catch (error: any) {

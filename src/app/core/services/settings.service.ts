@@ -187,10 +187,8 @@ export class SettingsService {
   async saveSettings(payload: any) {
     try {
       const resp = await firstValueFrom(this.http.put<any>('/api/admin/settings', payload));
-      if (resp && resp.data) {
-        // Automatically reload and apply correctly
-        await this.loadSettings(true);
-      }
+      // Always force-reload settings from the server after save to ensure sync
+      await this.loadSettings(true);
       return resp;
     } catch (e: any) {
       throw new Error(e.error?.error || e.message || 'Failed to update settings');

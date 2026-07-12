@@ -110,6 +110,32 @@ export const getProductById = async (req: Request, res: Response) => {
   }
 };
 
+export const getProductBySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  try {
+    const item = await prisma.product.findUnique({
+      where: { slug },
+      include: {
+        variants: true,
+        images: true,
+        category: true,
+        brand: true,
+        reviews: {
+          include: { customer: true },
+        },
+      },
+    });
+
+    if (!item) {
+      return res.status(404).json({ error: 'Product slug does not exist' });
+    }
+
+    return res.status(200).json(item);
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to read individual product by slug', details: error.message });
+  }
+};
+
 export const createProduct = async (req: Request, res: Response) => {
   const {
     name,
@@ -119,6 +145,8 @@ export const createProduct = async (req: Request, res: Response) => {
     mrp,
     salePrice,
     dealerPrice,
+    sale_price,
+    dealer_price,
     stock,
     categoryId,
     brandId,
@@ -128,6 +156,14 @@ export const createProduct = async (req: Request, res: Response) => {
     seoKeywords,
     variants, // Array: [{name, price, stock, sku}]
     images,   // Array: [{url, isPrimary}]
+    isFeatured,
+    codAvailable,
+    baseShippingCharge,
+    estimatedDeliveryDays,
+    freeShippingEligible,
+    bundleProducts,
+    recommendedFilaments,
+    status
   } = req.body;
 
   if (!name || !slug || !sku || !categoryId || !brandId) {
@@ -135,6 +171,9 @@ export const createProduct = async (req: Request, res: Response) => {
   }
 
   try {
+    const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
+    const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+
     const created = await prisma.product.create({
       data: {
         name,
@@ -142,8 +181,8 @@ export const createProduct = async (req: Request, res: Response) => {
         sku,
         description,
         mrp: parseFloat(mrp),
-        salePrice: parseFloat(salePrice),
-        dealerPrice: parseFloat(dealerPrice),
+        salePrice: parseFloat(resolvedSalePrice),
+        dealerPrice: parseFloat(resolvedDealerPrice),
         stock: parseInt(stock, 10),
         categoryId,
         brandId,
@@ -151,6 +190,14 @@ export const createProduct = async (req: Request, res: Response) => {
         seoTitle,
         seoDescription,
         seoKeywords,
+        isActive: status !== undefined ? status === 'active' : true,
+        isFeatured: !!isFeatured,
+        codAvailable: codAvailable !== false,
+        baseShippingCharge: baseShippingCharge ? parseFloat(baseShippingCharge) : 0,
+        estimatedDeliveryDays: estimatedDeliveryDays ? parseInt(estimatedDeliveryDays, 10) : 3,
+        freeShippingEligible: freeShippingEligible !== false,
+        bundleProducts: bundleProducts ? (typeof bundleProducts === 'string' ? JSON.parse(bundleProducts) : bundleProducts) : [],
+        recommendedFilaments: recommendedFilaments ? (typeof recommendedFilaments === 'string' ? JSON.parse(recommendedFilaments) : recommendedFilaments) : [],
         variants: {
           create: (variants || []).map((v: any) => ({
             name: v.name,
@@ -188,6 +235,8 @@ export const updateProduct = async (req: Request, res: Response) => {
     mrp,
     salePrice,
     dealerPrice,
+    sale_price,
+    dealer_price,
     stock,
     categoryId,
     brandId,
@@ -197,9 +246,20 @@ export const updateProduct = async (req: Request, res: Response) => {
     seoKeywords,
     variants,
     images,
+    isFeatured,
+    codAvailable,
+    baseShippingCharge,
+    estimatedDeliveryDays,
+    freeShippingEligible,
+    bundleProducts,
+    recommendedFilaments,
+    status
   } = req.body;
 
   try {
+    const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
+    const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+
     // Delete existing child relations before updates to prevent dangling keys
     if (variants) {
       await prisma.productVariant.deleteMany({ where: { productId: id } });
@@ -216,8 +276,8 @@ export const updateProduct = async (req: Request, res: Response) => {
         sku,
         description,
         mrp: mrp ? parseFloat(mrp) : undefined,
-        salePrice: salePrice ? parseFloat(salePrice) : undefined,
-        dealerPrice: dealerPrice ? parseFloat(dealerPrice) : undefined,
+        salePrice: resolvedSalePrice ? parseFloat(resolvedSalePrice) : undefined,
+        dealerPrice: resolvedDealerPrice ? parseFloat(resolvedDealerPrice) : undefined,
         stock: stock ? parseInt(stock, 10) : undefined,
         categoryId,
         brandId,
@@ -225,6 +285,14 @@ export const updateProduct = async (req: Request, res: Response) => {
         seoTitle,
         seoDescription,
         seoKeywords,
+        isActive: status !== undefined ? status === 'active' : undefined,
+        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
+        codAvailable: codAvailable !== undefined ? !!codAvailable : undefined,
+        baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : undefined,
+        estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : undefined,
+        freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+        bundleProducts: bundleProducts !== undefined ? (typeof bundleProducts === 'string' ? JSON.parse(bundleProducts) : bundleProducts) : undefined,
+        recommendedFilaments: recommendedFilaments !== undefined ? (typeof recommendedFilaments === 'string' ? JSON.parse(recommendedFilaments) : recommendedFilaments) : undefined,
         variants: variants ? {
           create: (variants || []).map((v: any) => ({
             name: v.name,

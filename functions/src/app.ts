@@ -22,9 +22,12 @@ import whatsappRoutes from './routes/whatsapp';
 import sitemapRoutes from './routes/sitemap';
 import profileRoutes from './routes/profile';
 import wishlistRoutes from './routes/wishlist';
-
 import paymentRoutes from './routes/payment';
-import webhookRoutes from './routes/webhook';
+import abandonedCheckoutRoutes from './routes/abandonedCheckout';
+import notificationRoutes from './routes/notification';
+import { getServiceConfig } from './controllers/settings';
+import { getConsolidatedHome, getFeaturedProducts } from './controllers/homepage';
+import { cacheMiddleware } from './middleware/cache';
 
 const app = express();
 
@@ -48,6 +51,9 @@ app.use(express.json());
 
 // API Routing Configurations
 app.use('/', sitemapRoutes);
+app.get('/api/home', cacheMiddleware(300), getConsolidatedHome);
+app.get('/api/home/featured-products', cacheMiddleware(300), getFeaturedProducts);
+app.get('/api/service-config', cacheMiddleware(300), getServiceConfig);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -61,13 +67,15 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api', whatsappRoutes);
+app.use('/api', abandonedCheckoutRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api', paymentRoutes);
+app.use('/api', notificationRoutes);
 import searchRoutes from './routes/search';
 
-app.use('/api/webhooks', webhookRoutes);
+
 app.use('/api/search', searchRoutes);
 
 // Raw OpenAPI/Swagger Specification Object

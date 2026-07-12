@@ -1,5 +1,6 @@
 import { Component, Input, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
@@ -9,7 +10,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 @Component({
   selector: 'app-admin-settings-tab',
   standalone: true,
-  imports: [CommonModule, MatIconModule, ImagePickerComponent],
+  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
@@ -242,10 +243,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <p class="text-xs text-zinc-500">Provide high-contrast sliders for your central hero carousel.</p>
                 <div class="space-y-4">
                   @for (slide of draft().heroSlides || []; track $index) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative">
+                    <div class="p-5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4 relative">
                       <div class="absolute top-2 right-2">
                         <button (click)="removeArrayItem('heroSlides', $index)" class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"><mat-icon class="text-base">delete</mat-icon></button>
                       </div>
+
+                      <!-- Row 1: Title, Subheading, Redirect Link -->
                       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div class="space-y-1">
                           <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Title</span>
@@ -260,7 +263,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           <input type="text" [value]="slide.linkUrl" (input)="updateSlideField($index, 'linkUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
                         </div>
                       </div>
-                      
+
+                      <!-- Row 2: Badge, Badge Icon, Button CTA, Secondary Button Text -->
                       <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div class="space-y-1">
                           <span class="block text-[8px] font-black text-zinc-400 uppercase">Badge Label</span>
@@ -268,28 +272,224 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         </div>
                         <div class="space-y-1">
                           <span class="block text-[8px] font-black text-zinc-400 uppercase">Badge Icon (Material)</span>
-                          <input type="text" [value]="slide.badgeIcon || ''" (input)="updateSlideField($index, 'badgeIcon', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. bolt, rocket_launch">
+                          <input type="text" [value]="slide.badgeIcon || ''" (input)="updateSlideField($index, 'badgeIcon', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. bolt">
                         </div>
                         <div class="space-y-1">
                           <span class="block text-[8px] font-black text-zinc-400 uppercase">Button CTA Text</span>
-                          <input type="text" [value]="slide.btnText || ''" (input)="updateSlideField($index, 'btnText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. Shop Now">
+                          <input type="text" [value]="slide.btnText || ''" (input)="updateSlideField($index, 'btnText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. Buy Now">
                         </div>
                         <div class="space-y-1">
-                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Video URL</span>
-                          <input type="text" [value]="slide.videoUrl || ''" (input)="updateSlideField($index, 'videoUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. https://...mp4">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Secondary Button Text</span>
+                          <input type="text" [value]="slide.secBtnText || ''" (input)="updateSlideField($index, 'secBtnText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. View Details">
                         </div>
+                      </div>
+
+                      <!-- Row 3: Pricing and tags: Price, Old Price, Discount Text, Product Tag -->
+                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Price (Current)</span>
+                          <input type="text" [value]="slide.price || ''" (input)="updateSlideField($index, 'price', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. 48999">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Old Price (Strike)</span>
+                          <input type="text" [value]="slide.oldPrice || ''" (input)="updateSlideField($index, 'oldPrice', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. 55000">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Discount Text</span>
+                          <input type="text" [value]="slide.discountText || ''" (input)="updateSlideField($index, 'discountText', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. 11% OFF">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Product Tag</span>
+                          <input type="text" [value]="slide.productTag || ''" (input)="updateSlideField($index, 'productTag', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. Hot">
+                        </div>
+                      </div>
+
+                      <!-- Row 4: Background Video/Image/Gradient/Color -->
+                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Video URL</span>
+                          <input type="text" [value]="slide.bgVideoUrl || slide.videoUrl || ''" (input)="updateSlideField($index, 'bgVideoUrl', $any($event.target).value); updateSlideField($index, 'videoUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. https://...mp4">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Image URL</span>
+                          <input type="text" [value]="slide.bgImageUrl || ''" (input)="updateSlideField($index, 'bgImageUrl', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. https://...jpg">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Gradient</span>
+                          <input type="text" [value]="slide.bgGradient || ''" (input)="updateSlideField($index, 'bgGradient', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="e.g. linear-gradient(...)">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Background Color</span>
+                          <div class="flex items-center gap-2">
+                            <input type="color" [value]="slide.bgColor || '#09090b'" (input)="updateSlideField($index, 'bgColor', $any($event.target).value)" class="w-8 h-8 rounded cursor-pointer border-none bg-transparent">
+                            <input type="text" [value]="slide.bgColor || '#09090b'" (input)="updateSlideField($index, 'bgColor', $any($event.target).value)" class="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Row 5: Animation, Overlay, Alignment, Button Theme -->
+                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Animation Type</span>
+                          <select [value]="slide.animationType || 'fade'" (change)="updateSlideField($index, 'animationType', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                            <option value="fade">Fade</option>
+                            <option value="slide-left">Slide Left</option>
+                            <option value="slide-right">Slide Right</option>
+                            <option value="scale">Scale</option>
+                            <option value="zoom">Zoom</option>
+                            <option value="blur-reveal">Blur Reveal</option>
+                          </select>
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Overlay Opacity (0.0 to 1.0)</span>
+                          <input type="number" step="0.1" min="0" max="1" [value]="slide.overlayOpacity ?? 0.4" (input)="updateSlideField($index, 'overlayOpacity', +$any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Text Alignment</span>
+                          <select [value]="slide.textAlignment || 'left'" (change)="updateSlideField($index, 'textAlignment', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Button Theme</span>
+                          <select [value]="slide.btnTheme || 'primary'" (change)="updateSlideField($index, 'btnTheme', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                            <option value="primary">Primary (Theme Accent)</option>
+                            <option value="secondary">Secondary (Theme Secondary)</option>
+                            <option value="accent">Accent (Glassmorphism / Bordered)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Row 6: Duration, Slide Order, Boolean switches -->
+                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Duration (ms)</span>
+                          <input type="number" [value]="slide.slideDuration ?? 3000" (input)="updateSlideField($index, 'slideDuration', +$any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Order</span>
+                          <input type="number" [value]="slide.slideOrder ?? 0" (input)="updateSlideField($index, 'slideOrder', +$any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                        </div>
+                        <div class="flex items-center gap-2 pt-4">
+                          <input type="checkbox" [checked]="slide.active ?? true" (change)="updateSlideField($index, 'active', $any($event.target).checked)" class="w-4 h-4 cursor-pointer">
+                          <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none">Active</span>
+                        </div>
+                        <div class="flex items-center gap-2 pt-4">
+                          <input type="checkbox" [checked]="slide.darkOverlay ?? true" (change)="updateSlideField($index, 'darkOverlay', $any($event.target).checked)" class="w-4 h-4 cursor-pointer">
+                          <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none">Dark Overlay</span>
+                        </div>
+                      </div>
+
+                      <!-- Row 7: Device Visibility switches -->
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="flex items-center gap-2">
+                          <input type="checkbox" [checked]="slide.hideOnMobile ?? false" (change)="updateSlideField($index, 'hideOnMobile', $any($event.target).checked)" class="w-4 h-4 cursor-pointer">
+                          <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none text-[10px]">Hide on Mobile</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <input type="checkbox" [checked]="slide.hideOnDesktop ?? false" (change)="updateSlideField($index, 'hideOnDesktop', $any($event.target).checked)" class="w-4 h-4 cursor-pointer">
+                          <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none text-[10px]">Hide on Desktop</span>
+                        </div>
+                      </div>
+
+                      <!-- Row 8: Image Resources -->
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <app-image-picker label="Desktop Image Resource" [value]="slide.imageUrl" (valueChange)="updateSlideField($index, 'imageUrl', $event)"></app-image-picker>
+                        <app-image-picker label="Mobile Image Resource" [value]="slide.mobileImageUrl || ''" (valueChange)="updateSlideField($index, 'mobileImageUrl', $event)"></app-image-picker>
                       </div>
 
                       <div class="space-y-1">
                         <span class="block text-[8px] font-black text-zinc-400 uppercase">Slide Description</span>
                         <textarea rows="2" [value]="slide.desc || ''" (input)="updateSlideField($index, 'desc', $any($event.target).value)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none" placeholder="Provide slide details paragraph..."></textarea>
                       </div>
-
-                      <app-image-picker label="Slide Image Resource (Desktop/Responsive Layout)" [value]="slide.imageUrl" (valueChange)="updateSlideField($index, 'imageUrl', $event)"></app-image-picker>
                     </div>
                   }
                 </div>
                 <button (click)="addHeroSlide()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add_to_photos</mat-icon> Insert Slide Frame</button>
+              </div>
+            }
+
+            <!-- HERO CAROUSEL -->
+            @if (activeSubTab() === 'Hero Carousel') {
+              <div class="space-y-4 font-sans">
+                <p class="text-xs text-zinc-500">Manage settings for the dynamic Homepage Hero Product Carousel.</p>
+                
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <span class="block text-xs font-black uppercase text-zinc-900 dark:text-white">Enable Hero Product Carousel</span>
+                    <p class="text-[10px] text-zinc-400">Toggle whether the premium featured product carousel displays on the homepage.</p>
+                  </div>
+                  <input type="checkbox" [checked]="draft().heroCarousel?.enabled" (change)="setNested('heroCarousel', 'enabled', $any($event.target).checked)" class="w-5 h-5 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                    <div>
+                      <span class="block text-xs font-black uppercase text-zinc-900 dark:text-white">Auto Play Carousel</span>
+                      <p class="text-[10px] text-zinc-400">Enable automatic transitions between slides.</p>
+                    </div>
+                    <input type="checkbox" [checked]="draft().heroCarousel?.autoplay !== false" (change)="setNested('heroCarousel', 'autoplay', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Transition Speed (Interval ms)</span>
+                    <input type="number" [value]="draft().heroCarousel?.interval ?? 5000" (input)="setNested('heroCarousel', 'interval', +$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Animation Type</span>
+                    <select [value]="draft().heroCarousel?.transition || 'fade'" (change)="setNested('heroCarousel', 'transition', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="fade">Fade (Crossfade)</option>
+                      <option value="slide">Slide (Horizontal Swipe)</option>
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Background Style</span>
+                    <select [value]="draft().heroCarousel?.backgroundStyle || 'dynamic'" (change)="setNested('heroCarousel', 'backgroundStyle', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                      <option value="dynamic">Dynamic Color Theme (Brand Palette Gradients)</option>
+                      <option value="fixed">Fixed Global Dark Gradients</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4">
+                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Content Visibility Toggles</h3>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showPrice !== false" (change)="setNested('heroCarousel', 'showPrice', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Price</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showDiscount !== false" (change)="setNested('heroCarousel', 'showDiscount', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Discount</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showBrand !== false" (change)="setNested('heroCarousel', 'showBrand', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Brand</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showDescription !== false" (change)="setNested('heroCarousel', 'showDescription', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Description</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showCTA !== false" (change)="setNested('heroCarousel', 'showCTA', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show CTA</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showNavigation !== false" (change)="setNested('heroCarousel', 'showNavigation', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Navigation</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" [checked]="draft().heroCarousel?.showIndicators !== false" (change)="setNested('heroCarousel', 'showIndicators', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer animate-none">
+                      <span class="text-[10px] font-black uppercase text-zinc-600 dark:text-zinc-300">Show Indicators</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             }
 
@@ -472,19 +672,320 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
             <!-- 15. WHATSAPP SETTINGS -->
             @if (activeSubTab() === 'WhatsApp Settings') {
-              <div class="space-y-4">
-                <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl">
-                  <input type="checkbox" [checked]="draft().whatsappSettings?.automationEnabled" (change)="setNested('whatsappSettings', 'automationEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
-                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Automated WhatsApp Tracking Updates</span>
+              <div class="space-y-6 font-sans">
+                <!-- Sub Menu -->
+                <div class="flex border-b border-zinc-200 dark:border-zinc-800 gap-4 pb-2">
+                  <button (click)="whatsappSubSection.set('config')" [class]="whatsappSubSection() === 'config' ? 'border-b-2 border-blue-600 text-blue-600 font-black' : 'text-zinc-400 font-bold'" class="px-3 py-1.5 text-xs uppercase cursor-pointer bg-transparent border-none">API Configuration</button>
+                  <button (click)="whatsappSubSection.set('templates')" [class]="whatsappSubSection() === 'templates' ? 'border-b-2 border-blue-600 text-blue-600 font-black' : 'text-zinc-400 font-bold'" class="px-3 py-1.5 text-xs uppercase cursor-pointer bg-transparent border-none">Template Manager</button>
                 </div>
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Enterprise WhatsApp Broadcast Number</span>
-                  <input type="text" [value]="draft().whatsappSettings?.whatsappNumber || ''" (input)="setNested('whatsappSettings', 'whatsappNumber', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-                <div class="space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Dispatched Shipment Welcome API Message Template</span>
-                  <textarea rows="3" [value]="draft().whatsappSettings?.welcomeTemplate || ''" (input)="setNested('whatsappSettings', 'welcomeTemplate', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"></textarea>
-                </div>
+
+                @if (whatsappSubSection() === 'config') {
+                  <div class="space-y-6">
+                    <!-- Global Toggle -->
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-250 dark:border-zinc-850 flex items-center justify-between">
+                      <div>
+                        <span class="block text-xs font-black uppercase text-zinc-900 dark:text-white">Enable WhatsApp Engine</span>
+                        <p class="text-[10px] text-zinc-400">Enable or disable Meta Cloud API notifications site-wide.</p>
+                      </div>
+                      <input type="checkbox" [checked]="draft().whatsappSettings?.enabled" (change)="setNested('whatsappSettings', 'enabled', $any($event.target).checked)" class="w-5 h-5 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                    </div>
+
+                    <!-- Meta API Credentials -->
+                    <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs">
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Meta Cloud API Credentials</h3>
+                      
+                      <div class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800">
+                        <input type="checkbox" [checked]="draft().whatsappSettings?.apiEnabled" (change)="setNested('whatsappSettings', 'apiEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                        <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Live API Endpoint Dispatches (Sends active API calls)</span>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1 col-span-2">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Meta API Base URL</span>
+                          <input type="text" [value]="draft().whatsappSettings?.apiUrl || 'https://graph.facebook.com/v19.0'" (input)="setNested('whatsappSettings', 'apiUrl', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1 col-span-2">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">System Access Token</span>
+                          <input type="password" [value]="draft().whatsappSettings?.accessToken || ''" (input)="setNested('whatsappSettings', 'accessToken', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none" placeholder="EAABw...">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Phone Number ID</span>
+                          <input type="text" [value]="draft().whatsappSettings?.phoneNumberId || ''" (input)="setNested('whatsappSettings', 'phoneNumberId', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">WhatsApp Business Account ID</span>
+                          <input type="text" [value]="draft().whatsappSettings?.businessAccountId || ''" (input)="setNested('whatsappSettings', 'businessAccountId', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Webhook Verification Token (Verify Token)</span>
+                          <input type="text" [value]="draft().whatsappSettings?.verifyToken || ''" (input)="setNested('whatsappSettings', 'verifyToken', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Webhook Signature Secret (HMAC verification)</span>
+                          <input type="password" [value]="draft().whatsappSettings?.webhookSecret || ''" (input)="setNested('whatsappSettings', 'webhookSecret', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Dispatch Rules -->
+                    <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs">
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Rules & Retries</h3>
+                      
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Default Country Prefix</span>
+                          <input type="text" [value]="draft().whatsappSettings?.defaultCountryCode || '+91'" (input)="setNested('whatsappSettings', 'defaultCountryCode', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Administrator Alert Mobile Number</span>
+                          <input type="text" [value]="draft().whatsappSettings?.adminPhoneNumber || ''" (input)="setNested('whatsappSettings', 'adminPhoneNumber', $any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Maximum Send Retry Limit</span>
+                          <input type="number" [value]="draft().whatsappSettings?.sendRetryCount || 3" (input)="setNested('whatsappSettings', 'sendRetryCount', +$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Retry Wait Window Interval (Minutes)</span>
+                          <input type="number" [value]="draft().whatsappSettings?.retryInterval || 5" (input)="setNested('whatsappSettings', 'retryInterval', +$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                        </div>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800">
+                          <input type="checkbox" [checked]="draft().whatsappSettings?.sendInvoiceOnDelivered" (change)="setNested('whatsappSettings', 'sendInvoiceOnDelivered', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                          <span class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300">Generate invoice on delivery</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800">
+                          <input type="checkbox" [checked]="draft().whatsappSettings?.attachInvoicePdf" (change)="setNested('whatsappSettings', 'attachInvoicePdf', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                          <span class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300">Attach Invoice PDF Document</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800">
+                          <input type="checkbox" [checked]="draft().whatsappSettings?.sendAdminNotification" (change)="setNested('whatsappSettings', 'sendAdminNotification', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                          <span class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300">Send Admin Alert notifications</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800">
+                          <input type="checkbox" [checked]="draft().whatsappSettings?.enableLogs" (change)="setNested('whatsappSettings', 'enableLogs', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+                          <span class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300">Log all incoming and outgoing events</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Trigger Rules -->
+                    <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs">
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Notification Triggers</h3>
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        @for (trig of [
+                          { key: 'registration', label: 'User Registration' },
+                          { key: 'otp', label: 'OTP Verification' },
+                          { key: 'password_reset', label: 'Password Reset Request' },
+                          { key: 'order_placed', label: 'Order Placed' },
+                          { key: 'payment_success', label: 'Payment Successful' },
+                          { key: 'payment_failed', label: 'Payment Failed' },
+                          { key: 'order_confirmed', label: 'Order Confirmed' },
+                          { key: 'order_processing', label: 'Order Processing' },
+                          { key: 'packed', label: 'Packed' },
+                          { key: 'shipped', label: 'Shipped' },
+                          { key: 'out_for_delivery', label: 'Out For Delivery' },
+                          { key: 'delivered', label: 'Delivered' },
+                          { key: 'cancelled', label: 'Cancelled' },
+                          { key: 'refund_completed', label: 'Refund Completed' }
+                        ]; track trig.key) {
+                          <div class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-850 rounded-xl">
+                            <input type="checkbox" [checked]="draft().whatsappSettings?.triggers?.[trig.key] !== false" (change)="toggleWhatsappTrigger(trig.key, $any($event.target).checked)" class="w-4 h-4 text-blue-600 cursor-pointer">
+                            <span class="text-[10px] font-bold text-zinc-750 dark:text-zinc-300 uppercase truncate">{{ trig.label }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                @if (whatsappSubSection() === 'templates') {
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Template Selection and Editor -->
+                    <div class="lg:col-span-2 space-y-5 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+                      
+                      <!-- Selector -->
+                      <div class="space-y-1">
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Select Target Trigger</span>
+                        <select [value]="activeTemplateKey()" (change)="activeTemplateKey.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                          <option value="registration">Welcome & Registration</option>
+                          <option value="otp">OTP Verification</option>
+                          <option value="password_reset">Password Reset Request</option>
+                          <option value="order_placed">Order Placed (Checkout Success)</option>
+                          <option value="payment_success">Payment Confirmed</option>
+                          <option value="payment_failed">Payment Failed</option>
+                          <option value="order_confirmed">Order Confirmed</option>
+                          <option value="order_processing">Order Processing</option>
+                          <option value="packed">Order Packed</option>
+                          <option value="shipped">Order Shipped (Tracking Code)</option>
+                          <option value="out_for_delivery">Out For Delivery</option>
+                          <option value="delivered">Delivered (Completed)</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="refund_completed">Refund Dispatched</option>
+                          <option value="admin_new_order">Admin Alert: New Order</option>
+                          <option value="admin_payment_received">Admin Alert: Payment Received</option>
+                          <option value="admin_order_cancelled">Admin Alert: Order Cancelled</option>
+                        </select>
+                      </div>
+
+                      <div class="h-[1px] bg-zinc-150 dark:bg-zinc-800 my-4"></div>
+
+                      <!-- Form editor for activeTemplateKey -->
+                      <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-3">
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Meta Approved Template Name</span>
+                            <input type="text" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.name || ''" (input)="updateTemplateField(activeTemplateKey(), 'name', $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none" placeholder="e.g. order_confirmed_v2">
+                          </div>
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Language Code</span>
+                            <input type="text" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.language || 'en'" (input)="updateTemplateField(activeTemplateKey(), 'language', $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                          </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Header Type</span>
+                            <select [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.headerType || 'None'" (change)="updateTemplateField(activeTemplateKey(), 'headerType', $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
+                              <option value="None">None</option>
+                              <option value="Text">Text Header</option>
+                              <option value="Document">PDF Document Attachment</option>
+                              <option value="Image">Image</option>
+                            </select>
+                          </div>
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Template Header Variable / Text</span>
+                            <input type="text" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.headerText || ''" (input)="updateTemplateField(activeTemplateKey(), 'headerText', $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none" placeholder="Welcome To 3D Galaxy">
+                          </div>
+                        </div>
+
+                        <!-- Body & Variable Picker -->
+                        <div class="space-y-1">
+                          <div class="flex justify-between items-center">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Message Body Text</span>
+                            
+                            <!-- Variables Picker Dropdown -->
+                            <div class="relative inline-block text-left">
+                              <button (click)="showVarPicker.set(!showVarPicker())" class="px-2 py-0.5 bg-blue-600/10 hover:bg-blue-600/15 border border-blue-500/20 text-blue-600 text-[9px] font-black uppercase rounded-md flex items-center gap-1 cursor-pointer">
+                                <mat-icon class="text-[12px] h-3 w-3">add_circle</mat-icon> Insert Variable
+                              </button>
+                              @if (showVarPicker()) {
+                                <div class="absolute right-0 mt-1 w-48 rounded-xl bg-white dark:bg-zinc-950 shadow-lg border border-zinc-150 dark:border-zinc-800 z-50 py-1 grid grid-cols-1 max-h-48 overflow-y-auto">
+                                  @for (v of [
+                                    'customer_name', 'order_id', 'tracking_number', 'courier', 
+                                    'estimated_delivery', 'payment_status', 'order_total', 'currency', 
+                                    'invoice_url', 'store_name', 'support_phone', 'support_email', 
+                                    'site_url', 'order_items', 'shipping_address', 'otp_code'
+                                  ]; track v) {
+                                    <button (click)="insertVariableAtCursor(activeTemplateKey(), v)" class="w-full text-left px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-[10px] font-bold text-zinc-700 dark:text-zinc-350 cursor-pointer border-none bg-transparent">
+                                      {{ v }}
+                                    </button>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          </div>
+                          
+                          <textarea id="templateBodyTextarea" rows="5" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.body || ''" (input)="updateTemplateField(activeTemplateKey(), 'body', $any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium leading-relaxed" [attr.placeholder]="'Hello {{customer_name}}, your order {{order_id}} was received...'"></textarea>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Footer Text</span>
+                          <input type="text" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.footer || ''" (input)="updateTemplateField(activeTemplateKey(), 'footer', $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none" placeholder="Thank you for shopping with 3D Galaxy.">
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="space-y-1">
+                          <span class="block text-[9px] font-black text-zinc-400 uppercase">Action Buttons (Comma Separated)</span>
+                          <input type="text" [value]="draft().whatsappSettings?.templates?.[activeTemplateKey()]?.buttons?.join(', ') || ''" (input)="updateTemplateButtons(activeTemplateKey(), $any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none" placeholder="Track Order, Contact Support">
+                        </div>
+                      </div>
+
+                      <!-- Test Sender Box -->
+                      <div class="mt-6 pt-5 border-t border-zinc-150 dark:border-zinc-800 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-2xl">
+                        <span class="block text-[10px] font-black uppercase text-blue-500">Test Send Notification Sandbox</span>
+                        <div class="flex gap-2">
+                          <input type="text" [(ngModel)]="testNumber" class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none" placeholder="Test recipient number with prefix (e.g. +919999999999)">
+                          <button (click)="sendTestMessage(activeTemplateKey())" [disabled]="testSendLoading()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">
+                            @if (testSendLoading()) { Sending... } @else { Dispatch Test }
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Live Mobile Preview Frame -->
+                    <div class="space-y-4">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest text-center">Live Preview (Mobile UI)</span>
+                      
+                      <!-- iOS WhatsApp Chat Screen Mock -->
+                      <div class="bg-zinc-900 border-[8px] border-zinc-800 dark:border-zinc-950 rounded-[2.5rem] overflow-hidden aspect-[9/18] w-full max-w-sm mx-auto shadow-2xl relative flex flex-col select-none">
+                        
+                        <!-- Top status bar -->
+                        <div class="h-10 bg-zinc-900 px-6 flex items-center justify-between text-white text-[10px] font-bold">
+                          <span>9:41</span>
+                          <div class="flex items-center gap-1">
+                            <mat-icon class="text-xs">signal_cellular_4_bar</mat-icon>
+                            <mat-icon class="text-xs">battery_full</mat-icon>
+                          </div>
+                        </div>
+
+                        <!-- Chat Header -->
+                        <div class="bg-zinc-850 p-3.5 flex items-center gap-2.5 text-white border-b border-white/5">
+                          <div class="w-8 h-8 rounded-full bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center font-bold text-xs">3D</div>
+                          <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold truncate">3D Galaxy Hub</p>
+                            <span class="text-[8px] text-emerald-400 block leading-none font-medium">Official Account</span>
+                          </div>
+                          <mat-icon class="text-zinc-400 text-base">call</mat-icon>
+                        </div>
+
+                        <!-- Messages Canvas -->
+                        <div class="flex-1 p-4 bg-zinc-950 overflow-y-auto space-y-3 flex flex-col justify-end" style="background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 16px 16px;">
+                          
+                          <!-- Dispatched WhatsApp Bubble -->
+                          <div class="bg-zinc-850 max-w-[85%] rounded-2xl rounded-tr-none ml-auto text-zinc-150 p-3 shadow-md space-y-1.5 border border-white/5 relative">
+                            
+                            <!-- Header Attachment preview -->
+                            @if (draft().whatsappSettings?.templates?.[activeTemplateKey()]?.headerType === 'Document') {
+                              <div class="p-2.5 bg-zinc-900/60 rounded-xl flex items-center gap-2 border border-white/5 mb-1.5">
+                                <span class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center"><mat-icon class="text-base">description</mat-icon></span>
+                                <div class="flex-1 min-w-0">
+                                  <p class="text-[9px] font-bold text-white truncate leading-none">Invoice_B3D-4890.pdf</p>
+                                  <span class="text-[7px] text-zinc-500 leading-none">PDF Document • 142 KB</span>
+                                </div>
+                              </div>
+                            } @else if (draft().whatsappSettings?.templates?.[activeTemplateKey()]?.headerText) {
+                              <p class="text-[10px] font-bold text-white uppercase tracking-wider leading-none mb-1">{{ draft().whatsappSettings?.templates?.[activeTemplateKey()]?.headerText }}</p>
+                            }
+
+                            <!-- Resolved Preview Body -->
+                            <p class="text-[11px] whitespace-pre-line leading-relaxed">{{ getResolvedPreviewText(draft().whatsappSettings?.templates?.[activeTemplateKey()]?.body) }}</p>
+                            
+                            <!-- Footer -->
+                            @if (draft().whatsappSettings?.templates?.[activeTemplateKey()]?.footer; as ft) {
+                              <p class="text-[8px] text-zinc-500 leading-none">{{ ft }}</p>
+                            }
+
+                            <!-- Timestamp -->
+                            <span class="text-[7px] text-zinc-600 block text-right mt-1 font-mono">9:41 AM ✓✓</span>
+                          </div>
+
+                          <!-- Styled buttons attached to bubble -->
+                          @if (draft().whatsappSettings?.templates?.[activeTemplateKey()]?.buttons; as btns) {
+                            @for (btn of btns; track btn) {
+                              <div class="w-[85%] ml-auto bg-zinc-850 border-t border-white/5 text-blue-400 text-[10px] font-bold py-2 text-center rounded-xl hover:bg-zinc-800 transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1">
+                                <mat-icon class="text-xs text-[12px]">open_in_new</mat-icon>
+                                {{ btn }}
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             }
 
@@ -507,21 +1008,107 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <!-- 17. PAYMENT GATEWAY -->
             @if (activeSubTab() === 'Payment Gateway') {
               <div class="space-y-4">
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <div class="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-lg">
-                    <input type="checkbox" [checked]="draft().paymentGatewaySettings?.razorpayEnabled" (change)="setNested('paymentGatewaySettings', 'razorpayEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
-                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Integrate Razorpay PG Checkout Payment</span>
+                <!-- Global Config -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 grid grid-cols-2 gap-4">
+                  <div class="space-y-1 col-span-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Default Gateway</span>
+                    <select [value]="draft().paymentGatewaySettings?.defaultGateway || 'razorpay'" (change)="setNested('paymentGatewaySettings', 'defaultGateway', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none cursor-pointer">
+                      <option value="razorpay">Razorpay</option>
+                      <option value="cashfree">Cashfree</option>
+                      <option value="cod">Cash on Delivery</option>
+                    </select>
                   </div>
-                  <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Razorpay Key ID</span>
-                    <input type="text" [value]="draft().paymentGatewaySettings?.razorpayKeyId || ''" (input)="setNested('paymentGatewaySettings', 'razorpayKeyId', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                  <div class="space-y-1 col-span-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Currency Code</span>
+                    <input type="text" [value]="draft().paymentGatewaySettings?.currency || 'INR'" (input)="setNested('paymentGatewaySettings', 'currency', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
                   </div>
                 </div>
 
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <!-- Razorpay -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                  <div class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-850">
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" [checked]="draft().paymentGatewaySettings?.paymentMethods?.razorpay?.enabled" (change)="setPgField('razorpay', 'enabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                      <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Razorpay PG</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" [checked]="draft().paymentGatewaySettings?.paymentMethods?.razorpay?.sandbox" (change)="setPgField('razorpay', 'sandbox', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                      <span class="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">Sandbox Mode</span>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Key ID</span>
+                      <input type="text" [value]="draft().paymentGatewaySettings?.paymentMethods?.razorpay?.keyId || ''" (input)="setPgField('razorpay', 'keyId', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Key Secret</span>
+                      <input type="password" [value]="draft().paymentGatewaySettings?.paymentMethods?.razorpay?.keySecret || ''" (input)="setPgField('razorpay', 'keySecret', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Webhook Secret</span>
+                      <input type="password" [value]="draft().paymentGatewaySettings?.paymentMethods?.razorpay?.webhookSecret || ''" (input)="setPgField('razorpay', 'webhookSecret', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cashfree -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                  <div class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-850">
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" [checked]="draft().paymentGatewaySettings?.paymentMethods?.cashfree?.enabled" (change)="setPgField('cashfree', 'enabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                      <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Cashfree PG</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" [checked]="draft().paymentGatewaySettings?.paymentMethods?.cashfree?.sandbox" (change)="setPgField('cashfree', 'sandbox', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                      <span class="text-xs font-black uppercase text-zinc-500 dark:text-zinc-400">Sandbox Mode</span>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">App ID</span>
+                      <input type="text" [value]="draft().paymentGatewaySettings?.paymentMethods?.cashfree?.appId || ''" (input)="setPgField('cashfree', 'appId', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Secret Key</span>
+                      <input type="password" [value]="draft().paymentGatewaySettings?.paymentMethods?.cashfree?.secretKey || ''" (input)="setPgField('cashfree', 'secretKey', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Webhook Secret</span>
+                      <input type="password" [value]="draft().paymentGatewaySettings?.paymentMethods?.cashfree?.webhookSecret || ''" (input)="setPgField('cashfree', 'webhookSecret', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- COD -->
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
                   <div class="flex items-center gap-2 p-2 bg-white dark:bg-zinc-900 rounded-lg">
-                    <input type="checkbox" [checked]="draft().paymentGatewaySettings?.codEnabled" (change)="setNested('paymentGatewaySettings', 'codEnabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
-                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Cash on Delivery (COD) Option</span>
+                    <input type="checkbox" [checked]="draft().paymentGatewaySettings?.paymentMethods?.cod?.enabled" (change)="setCodField('enabled', $any($event.target).checked)" class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer animate-none">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Enable Cash on Delivery (COD)</span>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Min Order Amt</span>
+                      <input type="number" [value]="draft().paymentGatewaySettings?.paymentMethods?.cod?.minimumOrderAmount ?? 0" (input)="setCodField('minimumOrderAmount', +$any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Max Order Amt</span>
+                      <input type="number" [value]="draft().paymentGatewaySettings?.paymentMethods?.cod?.maximumOrderAmount ?? 10000" (input)="setCodField('maximumOrderAmount', +$any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">COD Surcharge</span>
+                      <input type="number" [value]="draft().paymentGatewaySettings?.paymentMethods?.cod?.extraCharge ?? 0" (input)="setCodField('extraCharge', +$any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Allowed PIN Codes (CSV)</span>
+                      <input type="text" [value]="draft().paymentGatewaySettings?.paymentMethods?.cod?.allowedPinCodes?.join(', ') || ''" (input)="setFourDeepCsv('paymentGatewaySettings', 'paymentMethods', 'cod', 'allowedPinCodes', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none" placeholder="e.g. 110001, 400001">
+                    </div>
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Blocked PIN Codes (CSV)</span>
+                      <input type="text" [value]="draft().paymentGatewaySettings?.paymentMethods?.cod?.blockedPinCodes?.join(', ') || ''" (input)="setFourDeepCsv('paymentGatewaySettings', 'paymentMethods', 'cod', 'blockedPinCodes', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-205 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none" placeholder="e.g. 560001, 600001">
+                    </div>
                   </div>
                 </div>
               </div>
@@ -647,7 +1234,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </div>
                 <button (click)="addService()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1 cursor-pointer w-fit"><mat-icon class="text-sm">add_box</mat-icon> Insert Offer badge</button>
               </div>
-            }
+                   }
 
             <!-- 3D PRINTING SERVICE -->
             @if (activeSubTab() === '3D Printing Service') {
@@ -713,7 +1300,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                           
                           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             @for (col of mat.colors || []; track col.name; let childIndex = $index) {
-                              <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-lg border border-zinc-150 dark:border-zinc-850 relative pr-7">
+                              <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-955 p-1.5 rounded-lg border border-zinc-150 dark:border-zinc-850 relative pr-7">
                                 <input type="color" [value]="col.hex" (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'hex', $any($event.target).value)" class="w-5 h-5 rounded cursor-pointer border-none bg-transparent">
                                 <div class="flex-1">
                                   <input type="text" [value]="col.name" placeholder="Name" (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'name', $any($event.target).value)" class="w-full px-1.5 py-0.5 border border-zinc-250 dark:border-zinc-800 rounded text-[10px]">
@@ -755,7 +1342,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   </div>
                 </div>
 
-                <!-- Infill Standards -->
+                <!-- Infill Density Standards -->
                 <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
                   <div class="flex justify-between items-center">
                     <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Infill Density Standards</h3>
@@ -793,6 +1380,73 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               </div>
             }
 
+            <!-- PUSH NOTIFICATION SETTINGS -->
+            @if (activeSubTab() === 'Push Settings') {
+              <div class="space-y-6">
+                <p class="text-xs text-zinc-500">Configure FCM Push Notification rules, templates, and automatic dispatch triggers when catalog changes occur.</p>
+                
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4">
+                  <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Automated Dispatch Triggers</h3>
+                  
+                  <div class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800 rounded-xl">
+                    <input type="checkbox" [checked]="draft().pushNotificationSettings?.autoNotifyNewProduct" (change)="setNested('pushNotificationSettings', 'autoNotifyNewProduct', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Notify Users Automatically When a New Product is Created</span>
+                  </div>
+
+                  <div class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-850 rounded-xl">
+                    <input type="checkbox" [checked]="draft().pushNotificationSettings?.autoGenerateMarketingContent" (change)="setNested('pushNotificationSettings', 'autoGenerateMarketingContent', $any($event.target).checked)" class="w-4 h-4 text-blue-600 rounded cursor-pointer">
+                    <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Auto-Generate Premium Marketing Copy for Notifications</span>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4">
+                  <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Default Catalog Notification Templates</h3>
+                  
+                  <div class="space-y-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Notification Title Template</span>
+                      <input type="text" [value]="draft().pushNotificationSettings?.notifyTitleTemplate || 'New Product Alert: {product_name}'" (input)="setNested('pushNotificationSettings', 'notifyTitleTemplate', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                      <span class="text-[9px] text-zinc-400">Variables available: <code>&#123;product_name&#125;</code></span>
+                    </div>
+
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Notification Body Template</span>
+                      <textarea rows="3" [value]="draft().pushNotificationSettings?.notifyBodyTemplate || 'We just added {product_name} to our catalog for only ₹{price}! Get it now.'" (input)="setNested('pushNotificationSettings', 'notifyBodyTemplate', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none resize-none"></textarea>
+                      <span class="text-[9px] text-zinc-400">Variables available: <code>&#123;product_name&#125;</code>, <code>&#123;price&#125;</code>, <code>&#123;sku&#125;</code></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4">
+                  <h3 class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300">Firebase Cloud Messaging (FCM) Credentials</h3>
+                  
+                  <div class="space-y-3">
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">FCM VAPID Public Key</span>
+                      <input type="text" [value]="draft().pushNotificationSettings?.vapidKey || 'BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215'" (input)="setNested('pushNotificationSettings', 'vapidKey', $any($event.target).value)" class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                      <span class="text-[9px] text-zinc-400">Required for web browser push token generation.</span>
+                    </div>
+
+                    <div class="space-y-1">
+                      <span class="block text-[9px] font-black text-zinc-400 uppercase">Active Firebase Web Application Configuration (Read-Only)</span>
+                      <div class="p-3 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                        <pre class="text-[10px] font-mono text-zinc-650 dark:text-zinc-450 overflow-x-auto whitespace-pre-wrap select-all">
+&#123;
+  "projectId": "manifest-replica-3lkqp",
+  "appId": "1:13671285845:web:d590ce7b58aadc0dcf00dc",
+  "apiKey": "AIzaSyAhMymmsQh5hvLg-hiWtNMqYCwPiZkSWYY",
+  "authDomain": "manifest-replica-3lkqp.firebaseapp.com",
+  "storageBucket": "manifest-replica-3lkqp.firebasestorage.app",
+  "messagingSenderId": "13671285845"
+&#125;</pre>
+                      </div>
+                      <span class="text-[9px] text-zinc-400">Loaded dynamically from <code>public/firebase-applet-config.json</code>.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
           </div>
         </div>
 
@@ -814,6 +1468,117 @@ export class AdminSettingsTab {
   draft = signal<any>({});
   isSaving = signal<boolean>(false);
 
+  // WhatsApp Settings Signals
+  whatsappSubSection = signal<'config' | 'templates'>('config');
+  activeTemplateKey = signal<string>('registration');
+  showVarPicker = signal<boolean>(false);
+  testNumber = '';
+  testSendLoading = signal<boolean>(false);
+
+  toggleWhatsappTrigger(triggerKey: string, checked: boolean) {
+    this.draft.update(d => {
+      const ws = d.whatsappSettings ? { ...d.whatsappSettings } : {};
+      const triggers = ws.triggers ? { ...ws.triggers } : {};
+      triggers[triggerKey] = checked;
+      ws.triggers = triggers;
+      return { ...d, whatsappSettings: ws };
+    });
+  }
+
+  updateTemplateField(templateKey: string, field: string, value: any) {
+    this.draft.update(d => {
+      const ws = d.whatsappSettings ? { ...d.whatsappSettings } : {};
+      const templates = ws.templates ? { ...ws.templates } : {};
+      const t = templates[templateKey] ? { ...templates[templateKey] } : { name: templateKey, language: 'en', headerType: 'Text', body: '', footer: '', buttons: [] };
+      t[field] = value;
+      templates[templateKey] = t;
+      ws.templates = templates;
+      return { ...d, whatsappSettings: ws };
+    });
+  }
+
+  updateTemplateButtons(templateKey: string, csv: string) {
+    const list = csv.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    this.updateTemplateField(templateKey, 'buttons', list);
+  }
+
+  insertVariableAtCursor(templateKey: string, variable: string) {
+    const textarea = document.getElementById('templateBodyTextarea') as HTMLTextAreaElement;
+    const currentVal = this.draft().whatsappSettings?.templates?.[templateKey]?.body || '';
+    let newVal = currentVal;
+    
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      newVal = currentVal.substring(0, start) + `{{${variable}}}` + currentVal.substring(end);
+    } else {
+      newVal += ` {{${variable}}}`;
+    }
+    
+    this.updateTemplateField(templateKey, 'body', newVal);
+    this.showVarPicker.set(false);
+  }
+
+  getResolvedPreviewText(body: string): string {
+    if (!body) return 'Enter template body text...';
+    
+    const mockVals: Record<string, string> = {
+      customer_name: 'Jayakumar',
+      order_id: 'B3D-4890',
+      tracking_number: 'TRK-98319-X',
+      courier: 'Blue Dart Express',
+      estimated_delivery: new Date().toLocaleDateString(),
+      payment_status: 'PAID',
+      order_total: '4,890.00',
+      currency: 'INR',
+      invoice_url: 'https://3dgalaxy.com/uploads/invoices/inv_4890.pdf',
+      store_name: '3D Galaxy Hub',
+      support_phone: '+91 99999 99999',
+      support_email: 'support@3dgalaxy.com',
+      site_url: 'https://3dgalaxy.com',
+      order_items: 'Carbon Fiber PETG x 2, Resin Clear Pro x 1',
+      shipping_address: '12/4 East Coast Road, Chennai, Tamil Nadu - 600041',
+      otp_code: '482091'
+    };
+    
+    let text = body;
+    Object.keys(mockVals).forEach(k => {
+      text = text.replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, 'g'), mockVals[k]);
+    });
+    return text;
+  }
+
+  sendTestMessage(templateKey: string) {
+    if (!this.testNumber) {
+      this.toastService.error('Please enter a recipient number to dispatch test');
+      return;
+    }
+    
+    this.testSendLoading.set(true);
+    const template = this.draft().whatsappSettings?.templates?.[templateKey] || {};
+    
+    this.admin.http.post('/api/admin/whatsapp/send', {
+      recipientNumber: this.testNumber,
+      templateName: templateKey,
+      parameters: {
+        customer_name: 'Jayakumar',
+        order_id: 'TEST-100',
+        tracking_number: 'TRK-TEST',
+        courier: 'Express Courier',
+        order_total: '1200'
+      }
+    }).subscribe({
+      next: () => {
+        this.toastService.success('Test WhatsApp message queued successfully!');
+        this.testSendLoading.set(false);
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.error || 'Failed to dispatch test WhatsApp message');
+        this.testSendLoading.set(false);
+      }
+    });
+  }
+
   subTabs = [
     { name: 'General', icon: 'settings' },
     { name: 'Theme', icon: 'palette' },
@@ -822,6 +1587,7 @@ export class AdminSettingsTab {
     { name: 'Fonts', icon: 'text_format' },
     { name: 'Color Presets', icon: 'style' },
     { name: 'Hero Slides', icon: 'slideshow' },
+    { name: 'Hero Carousel', icon: 'view_carousel' },
     { name: 'Promo Banners', icon: 'campaign' },
     { name: 'Advertisements', icon: 'ad_units' },
     { name: 'Homepage Sections', icon: 'view_quilt' },
@@ -831,6 +1597,7 @@ export class AdminSettingsTab {
     { name: 'Social Links', icon: 'share' },
     { name: 'Email Settings', icon: 'email' },
     { name: 'WhatsApp Settings', icon: 'chat' },
+    { name: 'Push Settings', icon: 'notifications' },
     { name: 'Shipping', icon: 'local_shipping' },
     { name: 'Payment Gateway', icon: 'payment' },
     { name: 'Newsletter', icon: 'alternate_email' },
@@ -863,6 +1630,8 @@ export class AdminSettingsTab {
         this.activeSubTab.set('Payment Gateway');
       } else if (active === 'shipping-settings') {
         this.activeSubTab.set('Shipping');
+      } else if (active === 'push-settings') {
+        this.activeSubTab.set('Push Settings');
       }
     });
   }
@@ -879,6 +1648,38 @@ export class AdminSettingsTab {
       parent[childKey] = value;
       return { ...d, [parentKey]: parent };
     });
+  }
+
+  setThreeDeep(parentKey: string, midKey: string, childKey: string, value: any) {
+    this.draft.update(d => {
+      const parent = d[parentKey] ? { ...d[parentKey] } : {};
+      const mid = parent[midKey] ? { ...parent[midKey] } : {};
+      mid[childKey] = value;
+      parent[midKey] = mid;
+      return { ...d, [parentKey]: parent };
+    });
+  }
+
+  setThreeDeepCsv(parentKey: string, midKey: string, childKey: string, csv: string) {
+    const list = csv.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    this.setThreeDeep(parentKey, midKey, childKey, list);
+  }
+
+  setFourDeep(parentKey: string, midKey: string, subKey: string, childKey: string, value: any) {
+    this.draft.update(d => {
+      const parent = d[parentKey] ? { ...d[parentKey] } : {};
+      const mid = parent[midKey] ? { ...parent[midKey] } : {};
+      const sub = mid[subKey] ? { ...mid[subKey] } : {};
+      sub[childKey] = value;
+      mid[subKey] = sub;
+      parent[midKey] = mid;
+      return { ...d, [parentKey]: parent };
+    });
+  }
+
+  setFourDeepCsv(parentKey: string, midKey: string, subKey: string, childKey: string, csv: string) {
+    const list = csv.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    this.setFourDeep(parentKey, midKey, subKey, childKey, list);
   }
 
   setArrayFromCsv(parentKey: string, childKey: string, csv: string) {
@@ -912,7 +1713,37 @@ export class AdminSettingsTab {
 
   // Specialized array helpers
   addHeroSlide() {
-    this.appendArrayItem('heroSlides', { imageUrl: '', title: '', subtitle: '', linkUrl: '', badge: '', badgeIcon: '', btnText: '', videoUrl: '', desc: '' });
+    this.appendArrayItem('heroSlides', { 
+      imageUrl: '', 
+      title: '', 
+      subtitle: '', 
+      linkUrl: '', 
+      badge: '', 
+      badgeIcon: '', 
+      btnText: '', 
+      videoUrl: '', 
+      desc: '',
+      secBtnText: 'View Details',
+      mobileImageUrl: '',
+      bgImageUrl: '',
+      bgVideoUrl: '',
+      bgGradient: '',
+      bgColor: '#09090b',
+      price: '',
+      oldPrice: '',
+      discountText: '',
+      productTag: '',
+      animationType: 'fade',
+      overlayOpacity: 0.4,
+      textAlignment: 'left',
+      darkOverlay: true,
+      btnTheme: 'primary',
+      slideOrder: 0,
+      slideDuration: 3000,
+      active: true,
+      hideOnMobile: false,
+      hideOnDesktop: false
+    });
   }
 
   updateSlideField(index: number, field: string, value: any) {
@@ -1118,6 +1949,28 @@ export class AdminSettingsTab {
       infills.splice(index, 1);
       ps.infillStandards = infills;
       return { ...d, printServiceSettings: ps };
+    });
+  }
+
+  /** Update a single field on any payment gateway (razorpay | cashfree) */
+  setPgField(gateway: 'razorpay' | 'cashfree', key: string, value: any) {
+    this.draft.update(d => {
+      const pgs = d.paymentGatewaySettings ? { ...d.paymentGatewaySettings } : {};
+      const methods = pgs.paymentMethods ? { ...pgs.paymentMethods } : {};
+      methods[gateway] = { ...(methods[gateway] || {}), [key]: value };
+      pgs.paymentMethods = methods;
+      return { ...d, paymentGatewaySettings: pgs };
+    });
+  }
+
+  /** Update a single field on the COD payment method */
+  setCodField(key: string, value: any) {
+    this.draft.update(d => {
+      const pgs = d.paymentGatewaySettings ? { ...d.paymentGatewaySettings } : {};
+      const methods = pgs.paymentMethods ? { ...pgs.paymentMethods } : {};
+      methods['cod'] = { ...(methods['cod'] || {}), [key]: value };
+      pgs.paymentMethods = methods;
+      return { ...d, paymentGatewaySettings: pgs };
     });
   }
 

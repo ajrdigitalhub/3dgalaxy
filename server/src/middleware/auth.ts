@@ -34,24 +34,77 @@ export const authenticateToken = async (
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: { role: true },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
     });
 
-    if (!user || user.status !== 'ACTIVE') {
+    if (!user || user.isActive === false) {
       return res.status(403).json({ error: 'User is inactive or suspended' });
     }
+
+    const primaryRole = user.roles[0]?.role;
 
     req.user = {
       id: user.id,
       email: user.email,
-      role: user.role.name,
-      permissions: user.role.permissions as string[],
+      role: primaryRole?.name || 'Customer',
+      permissions: [],
     };
 
     next();
   } catch (error) {
     return res.status(403).json({ error: 'Invalid or expired access token' });
   }
+};
+
+export const optionalAuthenticateToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      id: string;
+      email: string;
+      role: string;
+    };
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: {
+        roles: {
+          include: {
+            role: true
+          }
+        }
+      },
+    });
+
+    if (user && user.isActive !== false) {
+      const primaryRole = user.roles[0]?.role;
+      req.user = {
+        id: user.id,
+        email: user.email,
+        role: primaryRole?.name || 'Customer',
+        permissions: [],
+      };
+    }
+  } catch (error) {
+    // Proceed as guest if invalid or expired token
+  }
+  next();
 };
 
 export const requirePermission = (permission: string) => {

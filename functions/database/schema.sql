@@ -120,6 +120,14 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
+    is_featured BOOLEAN NOT NULL DEFAULT false,
+    cod_available BOOLEAN NOT NULL DEFAULT true,
+    base_shipping_charge DOUBLE PRECISION NOT NULL DEFAULT 0,
+    estimated_delivery_days INT NOT NULL DEFAULT 3,
+    free_shipping_eligible BOOLEAN NOT NULL DEFAULT true,
+    bundle_products JSONB DEFAULT '[]',
+    recommended_filaments JSONB DEFAULT '[]',
+    
     -- Dynamic Master configuration inputs stored as native JSONB
     images JSONB DEFAULT '[]',
     specifications JSONB DEFAULT '[]',
@@ -281,6 +289,9 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_address_id UUID REFERENCES customer_addresses(id),
     billing_address_id UUID REFERENCES customer_addresses(id),
     notes TEXT,
+    invoice_url VARCHAR(255),
+    gst_number VARCHAR(15),
+    company_name VARCHAR(255),
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

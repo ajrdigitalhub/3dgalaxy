@@ -78,7 +78,8 @@ export const getDirectChildren = async (req: Request, res: Response) => {
       where: { parentId: targetParentId },
       orderBy: { name: 'asc' },
     });
-    return res.status(200).json(list);
+    const mapped = list.map(c => ({ ...c, parent_id: c.parentId }));
+    return res.status(200).json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch child subcategories', details: error.message });
   }
@@ -89,7 +90,8 @@ export const getCategories = async (req: Request, res: Response) => {
     const list = await prisma.category.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    return res.status(200).json(list);
+    const mapped = list.map(c => ({ ...c, parent_id: c.parentId }));
+    return res.status(200).json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to access flatter category listing', details: error.message });
   }
@@ -111,7 +113,8 @@ export const createCategory = async (req: Request, res: Response) => {
         image,
       },
     });
-    return res.status(201).json(created);
+    const mapped = { ...created, parent_id: created.parentId };
+    return res.status(201).json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category creation stalled', details: error.message });
   }
@@ -132,7 +135,8 @@ export const updateCategory = async (req: Request, res: Response) => {
         image,
       },
     });
-    return res.status(200).json(updated);
+    const mapped = { ...updated, parent_id: updated.parentId };
+    return res.status(200).json(mapped);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category modification failed', details: error.message });
   }

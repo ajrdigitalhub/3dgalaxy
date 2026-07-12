@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 export const getBanners = async (type?: string) => {
   return prisma.banner.findMany({
     where: {
-      ...(type && { type })
+      ...(type && { position: type })
     },
     orderBy: {
       position: 'asc'

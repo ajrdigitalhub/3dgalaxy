@@ -41,6 +41,14 @@ const routes: Routes = [
         loadComponent: () => import('./footer-settings/footer-settings.component').then(m => m.FooterSettingsComponent)
       },
       {
+        path: 'settings/push-settings',
+        loadComponent: () => import('./settings/push-settings/push-settings.component').then(m => m.PushSettingsComponent)
+      },
+      {
+        path: 'marketing/push-notifications',
+        loadComponent: () => import('./marketing/push-notifications/push-notifications.component').then(m => m.PushNotificationsComponent)
+      },
+      {
         path: 'marketing',
         loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
       },

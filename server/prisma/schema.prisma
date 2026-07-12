@@ -48,7 +48,12 @@ model User {
   firstName       String?           @map("first_name") @db.VarChar(100)
   lastName        String?           @map("last_name") @db.VarChar(100)
   mobile          String?           @db.VarChar(50)
+  profileImage    String?           @map("profile_image") @db.Text
+  dateOfBirth     DateTime?         @map("date_of_birth") @db.Timestamptz
+  gender          String?           @db.VarChar(50)
+  lastLogin       DateTime?         @map("last_login") @db.Timestamptz
   isActive        Boolean           @default(true) @map("is_active")
+  isVerified      Boolean           @default(false) @map("is_verified")
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -60,7 +65,9 @@ model User {
   productReviews  ProductReview[]
   orderHistories  OrderStatusHistory[]
   blogs           Blog[]
-  notifications   Notification[]
+  systemNotifications SystemNotification[]
+  notifications       Notification[]
+  notificationDevices NotificationDevice[]
 
   @@map("users")
 }
@@ -80,6 +87,9 @@ model RefreshToken {
   userId          String            @map("user_id") @db.Uuid
   token           String            @unique @db.VarChar(255)
   expiresAt       DateTime          @map("expires_at") @db.Timestamptz
+  revoked         Boolean           @default(false)
+  deviceInfo      String?           @map("device_info") @db.Text
+  ipAddress       String?           @map("ip_address") @db.VarChar(255)
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -133,7 +143,7 @@ model Brand {
   id              String            @id @default(uuid()) @db.Uuid
   name            String            @db.VarChar(255)
   slug            String            @unique @db.VarChar(255)
-  logo            String?           @db.VarChar(255)
+  logo            String?           @map("logo_url") @db.VarChar(255)
   description     String?           @db.Text
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
@@ -153,21 +163,39 @@ model Product {
   slug            String            @unique @db.VarChar(255)
   sku             String            @unique @db.VarChar(100)
   description     String?           @db.Text
+  shortDescription String?          @map("short_description") @db.Text
   basePrice       Decimal           @map("base_price") @db.Decimal(10, 2)
   salePrice       Decimal?          @map("sale_price") @db.Decimal(10, 2)
   dealerPrice     Decimal?          @map("dealer_price") @db.Decimal(10, 2)
+  stock           Int               @default(0)
   isActive        Boolean           @default(true) @map("is_active")
   isExclusive     Boolean           @default(false) @map("is_exclusive")
+  isFeatured      Boolean           @default(false) @map("is_featured")
+  codAvailable    Boolean           @default(true) @map("cod_available")
+  baseShippingCharge Decimal        @default(0) @map("base_shipping_charge") @db.Decimal(10, 2)
+  estimatedDeliveryDays Int         @default(3) @map("estimated_delivery_days")
+  freeShippingEligible Boolean      @default(true) @map("free_shipping_eligible")
+  bundleProducts  Json?             @map("bundle_products")
+  recommendedFilaments Json?        @map("recommended_filaments")
+  images          Json?             @default("[]")
+  specifications  Json?             @default("[]")
+  downloads       Json?             @default("[]")
+  features        Json?             @default("[]")
+  faqs            Json?             @default("[]")
+  seo             Json?             @default("{}")
+  shipping        Json?             @default("{}")
+  warranty        Json?             @default("{}")
+  relatedProducts Json?             @map("related_products") @default("[]")
+  includedItems   Json?             @map("included_items") @default("[]")
+  attributes      Json?             @default("[]")
+  options         Json?             @default("[]")
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   brand           Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
   category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  images          ProductImage[]
-  attributeValues ProductAttributeValue[]
   variants        ProductVariant[]
-  tagMappings     ProductTagMapping[]
   reviews         ProductReview[]
   inventory       Inventory[]
   wishlists       CustomerWishlist[]
@@ -179,48 +207,21 @@ model Product {
   @@map("products")
 }
 
-model ProductImage {
-  id              String            @id @default(uuid()) @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  url             String            @db.VarChar(255)
-  altText         String?           @map("alt_text") @db.VarChar(255)
-  sortOrder       Int               @default(0) @map("sort_order")
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_images")
-}
-
-model ProductAttribute {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  values          ProductAttributeValue[]
-
-  @@map("product_attributes")
-}
-
-model ProductAttributeValue {
-  id              String            @id @default(uuid()) @db.Uuid
-  attributeId     String            @map("attribute_id") @db.Uuid
-  productId       String            @map("product_id") @db.Uuid
-  value           String            @db.VarChar(255)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-
-  attribute       ProductAttribute  @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_attribute_values")
-}
 
 model ProductVariant {
   id              String            @id @default(uuid()) @db.Uuid
   productId       String            @map("product_id") @db.Uuid
   sku             String            @unique @db.VarChar(100)
   price           Decimal           @db.Decimal(10, 2)
+  salePrice       Decimal?          @map("sale_price") @db.Decimal(10, 2)
+  stock           Int               @default(0)
+  weight          Decimal?          @db.Decimal(10, 2)
+  isDefault       Boolean           @default(false) @map("is_default")
+  isActive        Boolean           @default(true) @map("is_active")
+  variantSlug     String?           @map("variant_slug") @db.VarChar(255)
   name            String            @db.VarChar(255)
+  variantImages   Json?             @map("variant_images") @default("[]")
+  optionValues    Json?             @map("option_values") @default("{}")
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -233,26 +234,7 @@ model ProductVariant {
   @@map("product_variants")
 }
 
-model ProductTag {
-  id              String            @id @default(uuid()) @db.Uuid
-  name            String            @unique @db.VarChar(100)
-  slug            String            @unique @db.VarChar(100)
 
-  mappings        ProductTagMapping[]
-
-  @@map("product_tags")
-}
-
-model ProductTagMapping {
-  productId       String            @map("product_id") @db.Uuid
-  tagId           String            @map("tag_id") @db.Uuid
-
-  product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
-  tag             ProductTag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([productId, tagId])
-  @@map("product_tag_mapping")
-}
 
 model ProductReview {
   id              String            @id @default(uuid()) @db.Uuid
@@ -394,6 +376,9 @@ model Order {
   shippingAddressId String?         @map("shipping_address_id") @db.Uuid
   billingAddressId  String?         @map("billing_address_id") @db.Uuid
   notes           String?           @db.Text
+  invoiceUrl      String?           @map("invoice_url") @db.VarChar(255)
+  gstNumber       String?           @map("gst_number") @db.VarChar(15)
+  companyName     String?           @map("company_name") @db.VarChar(255)
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -621,6 +606,17 @@ model ThemeSetting {
   @@map("theme_settings")
 }
 
+// Settings
+model Setting {
+  id          String   @id @default(uuid()) @db.Uuid
+  settingKey  String   @unique @map("setting_key") @db.VarChar(255)
+  settingData Json     @map("setting_data")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("settings")
+}
+
 // CMS
 model Page {
   id              String            @id @default(uuid()) @db.Uuid
@@ -687,12 +683,12 @@ model NotificationTemplate {
   body            String            @db.Text
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
 
-  notifications   Notification[]
+  notifications   SystemNotification[]
 
   @@map("notification_templates")
 }
 
-model Notification {
+model SystemNotification {
   id              String            @id @default(uuid()) @db.Uuid
   userId          String?           @map("user_id") @db.Uuid
   templateId      String?           @map("template_id") @db.Uuid
@@ -704,7 +700,7 @@ model Notification {
   user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   template        NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
-  @@map("notifications")
+  @@map("system_notifications")
 }
 
 // Contact
@@ -728,3 +724,211 @@ model NewsletterSubscriber {
 
   @@map("newsletter_subscribers")
 }
+
+model TransactionHistory {
+  id                     String    @id @default(uuid()) @db.Uuid
+  orderId                String    @map("order_id") @db.Uuid
+  customerId             String?   @map("customer_id") @db.Uuid
+  paymentMethod          String    @map("payment_method") @db.VarChar(100)
+  gatewayName            String?   @map("gateway_name") @db.VarChar(100)
+  gatewayOrderId         String?   @map("gateway_order_id") @db.VarChar(255)
+  gatewayTransactionId   String?   @map("gateway_transaction_id") @db.VarChar(255)
+  gatewayPaymentId       String?   @map("gateway_payment_id") @db.VarChar(255)
+  amount                 Decimal   @db.Decimal(10, 2)
+  currency               String    @default("INR") @db.VarChar(10)
+  status                 String    @db.VarChar(50)
+  paymentStatus          String    @map("payment_status") @db.VarChar(50)
+  responsePayload        Json?     @map("response_payload")
+  requestPayload         Json?     @map("request_payload")
+  errorMessage           String?   @map("error_message") @db.Text
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("transaction_history")
+}
+
+model PaymentWebhookLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  gateway     String   @db.VarChar(100)
+  headers     Json?
+  payload     Json?
+  status      String   @db.VarChar(50)
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz
+
+  @@map("payment_webhook_logs")
+}
+
+model WhatsappLog {
+  id               String    @id @default(uuid()) @db.Uuid
+  customerId       String?   @map("customer_id") @db.Uuid
+  orderId          String?   @map("order_id") @db.Uuid
+  phone            String    @db.VarChar(50)
+  templateName     String    @map("template_name") @db.VarChar(100)
+  templateLanguage String    @map("template_language") @default("en") @db.VarChar(10)
+  messageType      String    @map("message_type") @db.VarChar(50)
+  provider         String    @db.VarChar(50)
+  status           String    @db.VarChar(50)
+  requestPayload   Json?     @map("request_payload")
+  responsePayload  Json?     @map("response_payload")
+  errorMessage     String?   @map("error_message") @db.Text
+  retryCount       Int       @default(0) @map("retry_count")
+  messageId        String?   @map("message_id") @db.VarChar(255)
+  deliveredAt      DateTime? @map("delivered_at") @db.Timestamptz
+  readAt           DateTime? @map("read_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("whatsapp_logs")
+}
+
+model WhatsappCampaign {
+  id             String    @id @default(uuid()) @db.Uuid
+  title          String    @db.VarChar(255)
+  templateName   String    @map("template_name") @db.VarChar(100)
+  messageType    String    @map("message_type") @default("campaign") @db.VarChar(50)
+  status         String    @default("Draft") @db.VarChar(50)
+  targetType     String    @map("target_type") @db.VarChar(100)
+  targetFilters  Json?     @map("target_filters")
+  scheduledAt    DateTime? @map("scheduled_at") @db.Timestamptz
+  sentCount      Int       @default(0) @map("sent_count")
+  deliveredCount Int       @default(0) @map("delivered_count")
+  readCount      Int       @default(0) @map("read_count")
+  failedCount    Int       @default(0) @map("failed_count")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("whatsapp_campaigns")
+}
+
+model AbandonedCheckout {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String?   @map("customer_id") @db.Uuid
+  guestId             String?   @map("guest_id") @db.VarChar(255)
+  sessionId           String    @map("session_id") @db.VarChar(255)
+  email               String?   @db.VarChar(255)
+  mobile              String?   @db.VarChar(50)
+  customerName        String?   @map("customer_name") @db.VarChar(255)
+  cartItems           Json      @map("cart_items") // JSON list of items
+  checkoutData        Json?     @map("checkout_data") // shipping address, billing address, variants
+  cartTotal           Decimal   @map("cart_total") @db.Decimal(10, 2)
+  shippingCharge      Decimal   @map("shipping_charge") @default(0) @db.Decimal(10, 2)
+  tax                 Decimal   @default(0) @db.Decimal(10, 2)
+  discount            Decimal   @default(0) @db.Decimal(10, 2)
+  paymentMethod       String?   @map("payment_method") @db.VarChar(100)
+  paymentStatus       String?   @map("payment_status") @db.VarChar(50)
+  checkoutStep        String    @map("checkout_step") @db.VarChar(100) // e.g. "CART", "STARTED", "SHIPPING", "PAYMENT", "FAILED"
+  abandonmentReason   String?   @map("abandonment_reason") @db.Text
+  recoveryStatus      String    @map("recovery_status") @default("Active") @db.VarChar(50) // "Active", "Recovered", "Expired", "Converted", "Cancelled"
+  recoveredOrderId    String?   @map("recovered_order_id") @db.Uuid
+  lastActivity        DateTime  @map("last_activity") @default(now()) @db.Timestamptz
+  browser             String?   @db.VarChar(255)
+  device              String?   @db.VarChar(100)
+  ipAddress           String?   @map("ip_address") @db.VarChar(255)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  activityLogs        CheckoutActivityLog[]
+  notifications       RecoveryNotification[]
+
+  @@map("abandoned_checkouts")
+}
+
+model CheckoutActivityLog {
+  id                  String            @id @default(uuid()) @db.Uuid
+  abandonedCheckoutId String            @map("abandoned_checkout_id") @db.Uuid
+  activity            String            @db.VarChar(100)
+  details             String?           @db.Text
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  abandonedCheckout   AbandonedCheckout @relation(fields: [abandonedCheckoutId], references: [id], onDelete: Cascade)
+
+  @@map("checkout_activity_logs")
+}
+
+model RecoveryNotification {
+  id                  String            @id @default(uuid()) @db.Uuid
+  abandonedCheckoutId String            @map("abandoned_checkout_id") @db.Uuid
+  channel             String            @db.VarChar(50) // "EMAIL" | "WHATSAPP"
+  sentAt              DateTime          @default(now()) @map("sent_at") @db.Timestamptz
+  status              String            @db.VarChar(50) // "SUCCESS" | "FAILED"
+  errorMessage        String?           @map("error_message") @db.Text
+  reminderStep        Int               @map("reminder_step")
+  abandonedCheckout   AbandonedCheckout @relation(fields: [abandonedCheckoutId], references: [id], onDelete: Cascade)
+
+  @@map("recovery_notifications")
+}
+
+model NotificationDevice {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String?  @map("user_id") @db.VarChar(255)
+  guestId             String?  @map("guest_id") @db.VarChar(255)
+  sessionId           String?  @map("session_id") @db.VarChar(255)
+  fcmToken            String   @unique @map("fcm_token") @db.Text
+  browser             String?  @db.VarChar(255)
+  device              String?  @db.VarChar(100)
+  os                  String?  @db.VarChar(100)
+  appVersion          String?  @map("app_version") @db.VarChar(50)
+  language            String?  @db.VarChar(50)
+  country             String?  @db.VarChar(100)
+  notificationEnabled Boolean  @default(true) @map("notification_enabled")
+  lastActive          DateTime @default(now()) @map("last_active") @db.Timestamptz
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_devices")
+}
+
+model NotificationLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  title          String   @db.VarChar(255)
+  body           String   @db.Text
+  type           String   @db.VarChar(100)
+  image          String?  @db.Text
+  actionUrl      String?  @map("action_url") @db.Text
+  sentTo         String?  @map("sent_to") @db.VarChar(255)
+  topic          String?  @db.VarChar(255)
+  status         String   @db.VarChar(50)
+  deliveryStatus String?  @map("delivery_status") @db.Text
+  clickStatus    String?  @map("click_status") @db.VarChar(50)
+  payload        Json?
+  response       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("notification_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.VarChar(255)
+  guestId   String?  @map("guest_id") @db.VarChar(255)
+  title     String   @db.VarChar(255)
+  body      String   @db.Text
+  image     String?  @db.Text
+  actionUrl String?  @map("action_url") @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Advertisement {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String?   @db.VarChar(255)
+  position    String    @db.VarChar(50)
+  mediaUrl    String    @map("media_url") @db.VarChar(255)
+  targetUrl   String?   @map("target_url") @db.VarChar(255)
+  status      String    @default("active") @db.VarChar(50)
+  clicks      Int       @default(0)
+  impressions Int       @default(0)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("advertisements")
+}
+
+
+

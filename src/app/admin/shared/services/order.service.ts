@@ -27,7 +27,7 @@ export class OrderService {
           customerName: o.customer?.user?.name || o.customer?.user?.firstName || 'Guest',
           customerPhone: o.customer?.user?.phone || 'N/A',
           status: o.status ? o.status.toLowerCase() : 'pending',
-          grandTotal: o.totalAmount,
+          grandTotal: Number(o.totalAmount) || 0,
         })));
       }
     } catch(e) {

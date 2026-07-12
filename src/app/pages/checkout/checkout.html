@@ -1,143 +1,330 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
-  <div class="mb-8 cursor-pointer w-max" (click)="router.navigate(['/'])">
-    <mat-icon class="align-middle pr-2">arrow_back</mat-icon> <span class="font-bold text-sm">Back to store</span>
+  <div
+    class="mb-8 cursor-pointer w-max flex items-center gap-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
+    (click)="router.navigate(['/'])">
+    <mat-icon class="align-middle text-sm">arrow_back</mat-icon> <span
+      class="font-bold text-xs uppercase tracking-widest">Back to store</span>
   </div>
 
   <h1 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tight uppercase mb-8">Secure Checkout</h1>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
     <div class="lg:col-span-7 space-y-8">
-      
-      <!-- Customer Information -->
-      <div class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-[2rem] shadow-sm border border-neutral-200 dark:border-neutral-800">
-        <h2 class="text-lg font-black uppercase tracking-widest text-[#d65108] mb-6 flex items-center gap-2"><mat-icon>person</mat-icon> Contact Info</h2>
+
+      <!-- Customer Information Card -->
+      <div
+        class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800">
+        <h2
+          class="text-base font-black uppercase tracking-wider text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-[#d65108]/10 text-[#d65108] flex items-center justify-center"><mat-icon
+              class="scale-90">person</mat-icon></span>
+          Customer Details
+        </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Full Name *</label>
-            <input type="text" [(ngModel)]="name" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Full Name *</label>
+            <input type="text" [(ngModel)]="name"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Email *</label>
-            <input type="email" [(ngModel)]="email" [readonly]="isLoggedIn()" [class.bg-neutral-100]="isLoggedIn()" [class.text-neutral-400]="isLoggedIn()" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Email Address
+              *</label>
+            <input type="email" [(ngModel)]="email" [readonly]="isLoggedIn()" [class.bg-neutral-100]="isLoggedIn()"
+              [class.text-neutral-400]="isLoggedIn()"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2 sm:col-span-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Mobile Number *</label>
-            <input type="tel" [(ngModel)]="phone" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1 sm:col-span-2">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Mobile Number
+              *</label>
+            <input type="tel" [(ngModel)]="phone"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors"
+              placeholder="e.g. 9876543210">
           </div>
         </div>
       </div>
 
-      <!-- Shipping Address -->
-      <div class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-[2rem] shadow-sm border border-neutral-200 dark:border-neutral-800">
-        <h2 class="text-lg font-black uppercase tracking-widest text-[#d65108] mb-6 flex items-center gap-2"><mat-icon>local_shipping</mat-icon> Shipping Address</h2>
+      <!-- Business / GST Details Card -->
+      <div
+        class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" id="businessPurchase" [checked]="isBusinessPurchase()"
+            (change)="isBusinessPurchase.set($any($event.target).checked)"
+            class="w-4 h-4 text-[#d65108] bg-zinc-150 border-zinc-300 rounded focus:ring-[#d65108] cursor-pointer">
+          <label for="businessPurchase"
+            class="text-xs font-black text-neutral-700 dark:text-neutral-350 cursor-pointer uppercase select-none tracking-wider">This
+            is a Business Purchase (GST Invoice)</label>
+        </div>
+
+        @if (isBusinessPurchase()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 animate-fadeIn">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">GST Number *</label>
+            <input type="text" [value]="gstNumber()" (input)="gstNumber.set($any($event.target).value)"
+              placeholder="e.g. 27AAAAA1111A1Z1"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors uppercase">
+            @if (gstNumber().trim() && !isGstValid()) {
+            <span class="text-[9px] font-semibold text-red-500 block mt-1">Invalid GSTIN format (e.g. 15 characters,
+              starting with State code digits).</span>
+            }
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Company Name *</label>
+            <input type="text" [value]="companyName()" (input)="companyName.set($any($event.target).value)"
+              placeholder="e.g. Acme Corporation"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- Shipping Address Card -->
+      <div
+        class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800">
+        <h2
+          class="text-base font-black uppercase tracking-wider text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-[#d65108]/10 text-[#d65108] flex items-center justify-center"><mat-icon
+              class="scale-90">local_shipping</mat-icon></span>
+          Shipping Address
+        </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2 md:col-span-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Address Line 1 *</label>
-            <input type="text" [(ngModel)]="accAddr1" placeholder="House/Flat No., Building Name, Street" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1 md:col-span-2">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line 1
+              *</label>
+            <input type="text" [(ngModel)]="accAddr1" placeholder="House/Flat No., Building Name, Street"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2 md:col-span-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Address Line 2</label>
-            <input type="text" [(ngModel)]="accAddr2" placeholder="Locality, Area, Landmark" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1 md:col-span-2">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line 2</label>
+            <input type="text" [(ngModel)]="accAddr2" placeholder="Locality, Area, Landmark (Optional)"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">City *</label>
-            <input type="text" [(ngModel)]="accCity" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">City *</label>
+            <input type="text" [(ngModel)]="accCity"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">State *</label>
-            <input type="text" [(ngModel)]="accState" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">State *</label>
+            <input type="text" [(ngModel)]="accState"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">PIN / Pincode *</label>
-            <input type="text" [(ngModel)]="accPin" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">PIN / Pincode
+              *</label>
+            <input type="text" [(ngModel)]="accPin"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors"
+              placeholder="6-digit ZIP">
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-bold text-neutral-500 uppercase">Country</label>
-            <input type="text" [(ngModel)]="accCountry" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#d65108] outline-none">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Country</label>
+            <input type="text" [(ngModel)]="accCountry"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#d65108] transition-colors">
           </div>
         </div>
       </div>
+      <!-- Order Notes & Terms Card -->
+      <div
+        class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 space-y-4">
+        <div class="space-y-1">
+          <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Order Notes</label>
+          <textarea rows="3" [(ngModel)]="orderNotes" placeholder="Delivery requests, packaging notes, etc..."
+            class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2 text-xs outline-none focus:border-[#d65108] transition-colors"></textarea>
+        </div>
 
-      <!-- Payment Section -->
-      <div class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-[2rem] shadow-sm border border-neutral-200 dark:border-neutral-800">
-        <h2 class="text-lg font-black uppercase tracking-widest text-[#d65108] mb-6 flex items-center gap-2"><mat-icon>payment</mat-icon> Payment Method</h2>
-        
-        <div class="space-y-4">
-          @for (method of availableGateways(); track method.gatewayCode) {
-            <label class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all" 
-              [class]="paymentMethod() === method.gatewayCode ? 'border-[#d65108] bg-orange-50 dark:bg-[#d65108]/10' : 'border-neutral-200 dark:border-neutral-800'">
-              <input type="radio" [value]="method.gatewayCode" [(ngModel)]="paymentMethod" class="w-5 h-5 text-[#d65108] focus:ring-[#d65108]">
-              <div class="flex-1">
-                <span class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider block">{{ method.displayName }}</span>
-                <span class="text-xs text-neutral-500">{{ method.description || 'Secure Gateway' }}</span>
-              </div>
-              @if (method.gatewayCode === 'COD') {
-                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">local_shipping</mat-icon>
-              } @else if (method.gatewayCode === 'RAZORPAY') {
-                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">credit_card</mat-icon>
-              } @else {
-                <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode">account_balance</mat-icon>
-              }
-            </label>
-          }
-
-          @if (availableGateways().length === 0) {
-             <div class="p-4 text-center text-sm font-bold text-red-500">No payment methods currently available.</div>
-          }
+        <div
+          class="flex items-center gap-2.5 p-3 bg-neutral-50 dark:bg-neutral-955 rounded-xl border border-neutral-200 dark:border-neutral-800/80">
+          <input type="checkbox" [(ngModel)]="termsAccepted" id="termsCheck"
+            class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer">
+          <label for="termsCheck"
+            class="text-[11px] font-bold text-neutral-600 dark:text-neutral-350 cursor-pointer uppercase">I accept the
+            terms and conditions of purchase</label>
         </div>
       </div>
     </div>
 
-    <!-- Order Summary sidebar -->
-    <div class="lg:col-span-5">
-      <div class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-[2rem] shadow-sm border border-neutral-200 dark:border-neutral-800 sticky top-24">
-        <h2 class="text-lg font-black uppercase tracking-widest text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-800 pb-4 mb-6">Order Summary</h2>
-        
-        <div class="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
-          @for (item of checkoutItems(); track item.product.id) {
+    <!-- Right Side Order Summary panel -->
+    <div class="lg:col-span-5 space-y-6">
+      <div
+        class="bg-white dark:bg-neutral-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200 dark:border-neutral-800 sticky top-24 space-y-6">
+        <h2
+          class="text-base font-black uppercase tracking-wider text-neutral-900 dark:text-white border-b border-neutral-100 dark:border-neutral-850 pb-4">
+          Order Summary</h2>
+
+        <!-- Cart Items inside Checkout -->
+        <div class="space-y-4 max-h-[30vh] overflow-y-auto pr-2 scrollbar-thin">
+          @for (item of groupedCheckoutItems(); track item.product.id) {
+          <div class="space-y-2">
+            <!-- Main product -->
             <div class="flex gap-4 items-start">
-              <div class="w-16 h-16 bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden shrink-0">
-                <img [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]" class="w-full h-full object-cover">
+              <div class="w-14 h-14 bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden shrink-0">
+                <img
+                  [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]"
+                  class="w-full h-full object-cover">
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="text-sm font-bold text-neutral-900 dark:text-white truncate">
-                    {{item.product.name}}
-                    @if (item.variant) {
-                        <span class="text-neutral-400 font-medium"> - {{ item.variant.name }}</span>
-                    }
+                <h3 class="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                  {{item.product.name}}
                 </h3>
-                <p class="text-xs text-neutral-500">Qty: {{item.quantity}}</p>
-                <div class="font-black mt-1">{{ds.getItemPrice(item) | currency:'INR':'symbol':'1.0-0'}}</div>
+                @if (item.variant) {
+                <span class="text-[10px] text-neutral-400 font-medium tracking-wide uppercase">{{ item.variant.name
+                  }}</span>
+                }
+                <p class="text-[10px] text-neutral-500 font-semibold mt-0.5">Quantity: {{item.quantity}}</p>
+                @if (item.bundleSubs && item.bundleSubs.length > 0) {
+                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-black uppercase tracking-wide">
+                  <mat-icon class="scale-[0.55] -ml-0.5">inventory_2</mat-icon> Bundle · {{item.bundleSubs.length}} included
+                </span>
+                }
               </div>
-              <div class="font-bold text-sm text-neutral-900 dark:text-white">
-                {{(ds.getItemPrice(item) * item.quantity) | currency:'INR':'symbol':'1.0-0'}}
+              <div class="font-bold text-xs text-neutral-900 dark:text-white">
+                {{(getPrice(item) * item.quantity) | currency:'INR':'symbol':'1.0-0'}}
               </div>
             </div>
+
+            <!-- Bundle sub-products -->
+            @if (item.bundleSubs && item.bundleSubs.length > 0) {
+            <div class="ml-6 pl-4 border-l-2 border-emerald-200 dark:border-emerald-800/50 space-y-2">
+              @for (sub of item.bundleSubs; track sub.product.id) {
+              <div class="flex gap-3 items-center">
+                <div class="w-8 h-8 bg-neutral-100 dark:bg-neutral-800 rounded-lg overflow-hidden shrink-0">
+                  <img
+                    [src]="sub.product.images?.[0]?.url || sub.product.images?.[0]"
+                    class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-[10px] font-semibold text-neutral-600 dark:text-neutral-400 truncate">
+                    {{sub.product.name}}
+                  </p>
+                </div>
+                <span class="inline-flex items-center px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-md text-[8px] font-black uppercase tracking-wider shrink-0">
+                  FREE
+                </span>
+              </div>
+              }
+            </div>
+            }
+          </div>
           }
         </div>
 
-        <div class="space-y-3 pt-6 border-t border-neutral-100 dark:border-neutral-800 text-sm">
-          <div class="flex justify-between text-neutral-500 font-medium"><span>Subtotal</span> <span class="text-neutral-900 dark:text-white font-bold">{{subtotal() | currency:'INR':'symbol':'1.0-2'}}</span></div>
-          <div class="flex justify-between text-neutral-500 font-medium"><span>Shipping</span> <span class="text-neutral-900 dark:text-white font-bold">{{shipping() === 0 ? 'Free' : (shipping() | currency:'INR':'symbol':'1.0-2')}}</span></div>
-          <div class="flex justify-between text-neutral-500 font-medium"><span>Tax (18% est.)</span> <span class="text-neutral-900 dark:text-white font-bold">{{tax() | currency:'INR':'symbol':'1.0-2'}}</span></div>
-          <div class="flex justify-between text-neutral-500 font-medium"><span>Discount</span> <span class="text-green-600 font-bold">-{{discount() | currency:'INR':'symbol':'1.0-2'}}</span></div>
+        <!-- Promo / Coupon section -->
+        <!-- <div class="pt-4 border-t border-neutral-100 dark:border-neutral-850 space-y-2">
+          <span class="block text-[9px] font-black text-neutral-400 uppercase tracking-wider">Coupon Code</span>
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="couponCode" placeholder="GALAXY10" [disabled]="couponApplied()" class="flex-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-2 text-xs outline-none focus:border-[#d65108] transition-colors uppercase font-mono">
+            <button (click)="applyCoupon()" [disabled]="couponApplied() || !couponCode()" class="px-4 py-2 bg-neutral-900 hover:bg-neutral-850 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase transition-all disabled:opacity-40">Apply</button>
+          </div>
+        </div> -->
+
+
+        <!-- Choose Payment Method (Right Side) -->
+        <div class="pt-4 border-t border-neutral-100 dark:border-neutral-850 space-y-3 animate-fadeIn">
+          <span class="block text-[10px] font-black text-neutral-400 uppercase tracking-wider">Payment Method</span>
+          <div class="space-y-2">
+            @for (method of availableGateways(); track method.gatewayCode) {
+
+            @if (method.gatewayCode === 'COD' && !isCodAllowed()) {
+            <!-- COD Disabled State -->
+            <div class="relative">
+              <label
+                class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-950/50 opacity-60 cursor-not-allowed transition-all select-none">
+                <input type="radio" name="payment_method" value="COD" disabled
+                  class="w-4 h-4 text-neutral-300 cursor-not-allowed">
+                <div class="flex-1">
+                  <span class="font-bold text-neutral-500 dark:text-neutral-500 uppercase tracking-wider text-[11px] block line-through decoration-red-400/60">{{
+                    method.displayName }}</span>
+                </div>
+                <mat-icon class="scale-75 text-neutral-300 dark:text-neutral-600">local_shipping</mat-icon>
+              </label>
+              <div class="mt-1.5 ml-1 flex items-start gap-1.5 text-[10px] font-semibold text-red-500/90">
+                <mat-icon class="scale-[0.6] mt-0.5 text-red-400 shrink-0">info</mat-icon>
+                <span>{{ codError() || 'COD is not available for this order.' }}</span>
+              </div>
+            </div>
+            } @else {
+            <!-- Normal selectable method -->
+            <label
+              class="flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all hover:border-[#d65108]/50"
+              [class]="paymentMethod() === method.gatewayCode ? 'border-[#d65108] bg-orange-500/5 dark:bg-[#d65108]/5' : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/30'">
+              <input type="radio" name="payment_method" [value]="method.gatewayCode"
+                [checked]="paymentMethod() === method.gatewayCode" (change)="paymentMethod.set(method.gatewayCode)"
+                class="w-4 h-4 text-[#d65108] focus:ring-[#d65108] cursor-pointer">
+              <div class="flex-1">
+                <span class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-[11px] block">{{
+                  method.displayName }}</span>
+              </div>
+              @if (method.gatewayCode === 'COD') {
+              <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode"
+                class="scale-75 text-neutral-400">local_shipping</mat-icon>
+              } @else if (method.gatewayCode === 'RAZORPAY') {
+              <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode"
+                class="scale-75 text-neutral-400">credit_card</mat-icon>
+              } @else {
+              <mat-icon [class.text-[#d65108]]="paymentMethod() === method.gatewayCode"
+                class="scale-75 text-neutral-400">account_balance</mat-icon>
+              }
+            </label>
+            }
+
+            }
+
+            @if (availableGateways().length === 0) {
+            <div class="p-3 text-center text-[10px] font-bold text-red-500">No payment methods currently enabled in
+              settings.</div>
+            }
+          </div>
         </div>
 
-        <div class="flex justify-between items-end pt-6 mt-6 border-t border-neutral-900 dark:border-white">
-          <span class="text-sm font-bold text-neutral-500 uppercase tracking-widest">Grand Total</span>
-          <span class="text-3xl font-black text-neutral-900 dark:text-white">{{grandTotal() | currency:'INR':'symbol':'1.0-2'}}</span>
+        <!-- Calculations -->
+        <div class="space-y-2.5 pt-4 border-t border-neutral-100 dark:border-neutral-850 text-xs">
+          <div class="flex justify-between text-neutral-500 font-semibold"><span>Subtotal</span> <span
+              class="text-neutral-900 dark:text-white font-bold">{{subtotal() | currency:'INR':'symbol':'1.0-0'}}</span>
+          </div>
+          <div class="flex justify-between text-neutral-500 font-semibold"><span>Delivery Charges</span> <span
+              class="text-neutral-900 dark:text-white font-bold">{{shipping() === 0 ? 'Free' : (shipping() |
+              currency:'INR':'symbol':'1.0-0')}}</span></div>
+          @if (paymentMethod() === 'COD' && codSurcharge() > 0) {
+          <div class="flex justify-between text-neutral-500 font-semibold"><span>COD Surcharge</span> <span
+              class="text-neutral-900 dark:text-white font-bold">{{codSurcharge() |
+              currency:'INR':'symbol':'1.0-0'}}</span></div>
+          }
+
+          @if (discount() > 0) {
+          <div class="flex justify-between text-green-600 font-semibold"><span>Discount Applied</span> <span
+              class="font-bold">-{{discount() | currency:'INR':'symbol':'1.0-0'}}</span></div>
+          }
         </div>
 
-        <app-button
-          [loading]="isSubmitting()"
-          text="Place Order"
-          loadingText="Placing Order..."
-          icon="check_circle"
-          variant="primary"
-          [isFullWidth]="true"
-          class="block mt-8 text-center"
-          (btnClick)="placeOrder()"
-        >
+        <div class="flex justify-between items-end pt-5 border-t border-neutral-900 dark:border-white">
+          <span class="text-xs font-black text-neutral-400 uppercase tracking-wider">Grand Total</span>
+          <span class="text-2xl font-black text-neutral-900 dark:text-white leading-none">{{grandTotal() |
+            currency:'INR':'symbol':'1.0-0'}}</span>
+        </div>
+
+        <!-- Validation Summary Alert -->
+        @if (!isValid() && termsAccepted()) {
+        <div
+          class="p-3 bg-red-500/10 text-red-500 border border-red-500/15 rounded-2xl text-[10px] font-bold space-y-1">
+          <p class="uppercase text-[9px] tracking-wide text-red-600">Please correct details:</p>
+          <ul class="list-disc pl-4 space-y-0.5">
+            @if (!name().trim()) { <li>Name is required</li> }
+            @if (!email().trim() || !email().includes('@')) { <li>Valid email required</li> }
+            @if (phone().trim().length < 10) { <li>Valid 10-12 digit phone number required</li> }
+              @if (!accAddr1().trim()) { <li>Address Line 1 is required</li> }
+              @if (!accCity().trim()) { <li>City is required</li> }
+              @if (!accState().trim()) { <li>State is required</li> }
+              @if (accPin().trim().length !== 6) { <li>6-digit PIN code required</li> }
+              @if (paymentMethod() === 'COD' && !isCodAllowed()) { <li>{{ codError() || 'COD not permitted' }}</li> }
+              @if (isBusinessPurchase() && !companyName().trim()) { <li>Company name is required for Business purchase
+              </li> }
+              @if (isBusinessPurchase() && !isGstValid()) { <li>Invalid GSTIN format (15 characters required)</li> }
+          </ul>
+        </div>
+        }
+
+        <app-button [loading]="isSubmitting()" text="Place Order" loadingText="Processing Payment..." icon="lock"
+          variant="primary" [isFullWidth]="true" [disabled]="!isValid() || isSubmitting()"
+          class="block mt-4 text-center" (btnClick)="placeOrder()">
         </app-button>
       </div>
     </div>
@@ -145,49 +332,55 @@
 
   <!-- Checkout Options Modal -->
   @if (showAuthModal()) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800 max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
-        <!-- Brand glow backgrounds -->
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#d65108]/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-600/15 rounded-full blur-2xl"></div>
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div
+      class="bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800 max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
+      <!-- Brand glow backgrounds -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#d65108]/10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-600/15 rounded-full blur-2xl"></div>
 
-        <div class="relative z-10 space-y-6">
-          <div class="text-center">
-            <div class="w-16 h-16 bg-orange-50 dark:bg-orange-950/30 text-[#d65108] rounded-full flex items-center justify-center mx-auto mb-4">
-              <mat-icon class="scale-125">shopping_bag</mat-icon>
-            </div>
-            <h2 class="text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">Checkout Options</h2>
-            <p class="text-sm text-neutral-500 mt-1">Please choose how to proceed with your purchase.</p>
+      <div class="relative z-10 space-y-6">
+        <div class="text-center">
+          <div
+            class="w-16 h-16 bg-orange-50 dark:bg-orange-950/30 text-[#d65108] rounded-full flex items-center justify-center mx-auto mb-4">
+            <mat-icon class="scale-125">shopping_bag</mat-icon>
           </div>
+          <h2 class="text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">Checkout Options
+          </h2>
+          <p class="text-sm text-neutral-500 mt-1">Please choose how to proceed with your purchase.</p>
+        </div>
 
-          <div class="border-t border-b border-neutral-100 dark:border-neutral-800 py-6 space-y-3">
-            <h3 class="text-xs font-black text-[#d65108] uppercase tracking-widest text-center mb-2">Benefits of Login:</h3>
-            <ul class="space-y-2 text-sm font-bold text-neutral-700 dark:text-neutral-300">
-              <li class="flex items-center gap-3">
-                <mat-icon class="text-emerald-500">check_circle</mat-icon> Track Orders
-              </li>
-              <li class="flex items-center gap-3">
-                <mat-icon class="text-emerald-500">check_circle</mat-icon> Faster Checkout
-              </li>
-              <li class="flex items-center gap-3">
-                <mat-icon class="text-emerald-500">check_circle</mat-icon> Save Addresses
-              </li>
-              <li class="flex items-center gap-3">
-                <mat-icon class="text-emerald-500">check_circle</mat-icon> Wishlist Sync
-              </li>
-            </ul>
-          </div>
+        <div class="border-t border-b border-neutral-100 dark:border-neutral-800 py-6 space-y-3">
+          <h3 class="text-xs font-black text-[#d65108] uppercase tracking-widest text-center mb-2">Benefits of Login:
+          </h3>
+          <ul class="space-y-2 text-sm font-bold text-neutral-700 dark:text-neutral-300">
+            <li class="flex items-center gap-3">
+              <mat-icon class="text-emerald-500 text-sm">check_circle</mat-icon> Track Orders
+            </li>
+            <li class="flex items-center gap-3">
+              <mat-icon class="text-emerald-500 text-sm">check_circle</mat-icon> Faster Checkout
+            </li>
+            <li class="flex items-center gap-3">
+              <mat-icon class="text-emerald-500 text-sm">check_circle</mat-icon> Save Addresses
+            </li>
+            <li class="flex items-center gap-3">
+              <mat-icon class="text-emerald-500 text-sm">check_circle</mat-icon> Wishlist Sync
+            </li>
+          </ul>
+        </div>
 
-          <div class="flex flex-col gap-3">
-            <button (click)="continueAsGuest()" class="w-full bg-[#d65108] hover:bg-orange-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
-              Continue as Guest <mat-icon>arrow_forward</mat-icon>
-            </button>
-            <button (click)="router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } })" class="w-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest cursor-pointer">
-              Login / Register
-            </button>
-          </div>
+        <div class="flex flex-col gap-3">
+          <button (click)="continueAsGuest()"
+            class="w-full bg-[#d65108] hover:bg-orange-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-none">
+            Continue as Guest <mat-icon class="text-sm">arrow_forward</mat-icon>
+          </button>
+          <button (click)="router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } })"
+            class="w-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest cursor-pointer border-none">
+            Login / Register
+          </button>
         </div>
       </div>
     </div>
+  </div>
   }
 </div>

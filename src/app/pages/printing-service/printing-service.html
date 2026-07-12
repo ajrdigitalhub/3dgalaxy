@@ -1,619 +1,421 @@
-<div class="space-y-8 lg:space-y-12 text-left w-full animate-fadeIn font-sans pb-16 slicer-workspace">
+<div class="space-y-8 lg:space-y-12 text-left w-full animate-fadeIn font-sans pb-16 slicer-workspace max-w-7xl mx-auto px-4">
 
   <!-- SYSTEM HEADER BAR -->
   <header
-    class="w-full flex flex-col md:flex-row md:items-center md:justify-between p-4 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl gap-4">
+    class="w-full flex flex-col md:flex-row md:items-center md:justify-between p-5 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl gap-4">
     <div class="flex items-center gap-3">
       <div
-        class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+        class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
         <mat-icon class="scale-90">layers</mat-icon>
       </div>
       <div>
         <h1 class="text-sm font-black tracking-wider uppercase flex items-center gap-2">
-          3D Galaxy // Printing Service
+          3D Galaxy // Printing Studio
           <span
-            class="text-[8px] px-1.5 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold rounded">v2.8</span>
+            class="text-[8px] px-1.5 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-bold rounded">v3.0</span>
         </h1>
-        <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Autonomous Toolpath Generator & Fleet Dispatch Engine
-        </p>
+        <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Instant Online Estimator & Fleet Dispatch Console</p>
       </div>
     </div>
 
     <!-- Live Telemetry Stats -->
-    <div class="flex flex-wrap items-center gap-4 text-[10px] text-zinc-650 dark:text-zinc-300 font-mono">
-      <div
-        class="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800/60 rounded-lg border border-zinc-250 dark:border-zinc-800">
+    <div class="flex items-center gap-4 text-[10px] text-zinc-600 dark:text-zinc-350 font-mono">
+      <div class="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-800">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-zinc-500 dark:text-zinc-400">FLEET:</span>
+        <span class="text-zinc-500 dark:text-zinc-400">FLEET INSERVICE:</span>
         <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">ONLINE</span>
       </div>
     </div>
   </header>
 
-  <!-- STEP-BY-STEP WORKSPACE TRACKER -->
-  <section class="max-w-6xl mx-auto py-2">
-    <div
-      class="relative flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4 p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-lg">
+  <!-- WORKSPACE STAGE -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-      <!-- Connecting Progress Track Line Behind -->
-      <div class="absolute top-[42px] left-[8%] right-[8%] h-0.5 bg-zinc-200 dark:bg-zinc-800 hidden md:block z-0">
-        <!-- Animated completed progress line -->
-        <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-550"
-          [style.width.%]="getProgressPercent()"></div>
-      </div>
+    <!-- LEFT PANEL: UPLOAD & 3D VIEWPORT -->
+    <div class="lg:col-span-5 space-y-6">
 
-      <!-- Step 1: Upload -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step1Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.25)] animate-pulse-glow' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90 transition-transform duration-300 group-hover:rotate-12">cloud_upload</mat-icon>
-        </div>
-        <span
-          [class]="step1Active() ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">01. Upload</span>
-      </div>
-
-      <!-- Step 2: Resolution -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step2Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.25)] animate-float' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90">layers</mat-icon>
-        </div>
-        <span
-          [class]="step2Active() ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">02. Resolution</span>
-      </div>
-
-      <!-- Step 3: Material -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step3Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.25)] animate-pulse-glow' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90 transition-transform duration-300 group-hover:scale-110">opacity</mat-icon>
-        </div>
-        <span
-          [class]="step3Active() ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">03. Material</span>
-      </div>
-
-      <!-- Step 4: Infill Density -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step4Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.25)] animate-soft-rotate' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90">grid_3x3</mat-icon>
-        </div>
-        <span
-          [class]="step4Active() ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">04. Infill</span>
-      </div>
-
-      <!-- Step 5: Cost Estimate -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step5Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-blue-500/10 border border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.25)] animate-float' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90">monetization_on</mat-icon>
-        </div>
-        <span
-          [class]="step5Active() ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">05. Estimate</span>
-      </div>
-
-      <!-- Step 6: Dispatch Status -->
-      <div class="flex-1 flex flex-col items-center text-center z-10 group cursor-default">
-        <div
-          [class]="step6Active() 
-          ? 'w-10 h-10 rounded-full flex items-center justify-center bg-emerald-500/10 border border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
-          : 'w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-400'"
-          class="transition-all duration-300 transform group-hover:scale-110">
-          <mat-icon class="scale-90">rocket_launch</mat-icon>
-        </div>
-        <span
-          [class]="step6Active() ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-zinc-400 dark:text-zinc-500 font-bold'"
-          class="text-[9px] tracking-wider uppercase mt-2.5 transition-colors">06. Dispatch</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- WIDESCREEN DOUBLE-PANEL INTERACTION STAGE -->
-  <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-
-    <!-- LEFT PANEL: 3D SLICER VIEWPORT & TELEMETRY (8 COLUMNS) -->
-    <div class="xl:col-span-8 space-y-6">
-
-      <!-- Interactive Viewport Card -->
-      <div
-        class="glass-panel text-zinc-900 dark:text-zinc-100 rounded-3xl relative overflow-hidden flex flex-col p-4 shadow-lg border border-zinc-200 dark:border-zinc-800/80">
-
-        <!-- Viewport Header Controls Overlay -->
-        <div
-          class="flex justify-between items-center w-full pb-3 border-b border-zinc-200 dark:border-zinc-800/80 z-10 px-1">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span>
-            <span class="text-[10px] font-mono tracking-wider text-zinc-555 dark:text-zinc-400 uppercase">
-              Viewport: {{ selectedFileName() || 'Default Calibration Gear' }}
-            </span>
-          </div>
-
-          <!-- Viewport Mode Buttons -->
-          <div
-            class="flex items-center gap-1.5 p-0.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-            <button (click)="visualMode.set('solid')"
-              [class]="visualMode() === 'solid' ? 'p-1 px-2.5 bg-blue-600 text-white rounded-md text-[9px] font-black uppercase flex items-center gap-1 slicer-btn' : 'p-1 px-2.5 hover:bg-zinc-250 text-zinc-555 dark:hover:bg-zinc-800 dark:text-zinc-400 rounded-md text-[9px] font-bold uppercase flex items-center gap-1 slicer-btn'"
-              title="Solid Shaded Mesh">
-              <mat-icon class="scale-75 text-[10px]">view_in_ar</mat-icon>
-              Solid
-            </button>
-            <button (click)="visualMode.set('wireframe')"
-              [class]="visualMode() === 'wireframe' ? 'p-1 px-2.5 bg-blue-600 text-white rounded-md text-[9px] font-black uppercase flex items-center gap-1 slicer-btn' : 'p-1 px-2.5 hover:bg-zinc-250 text-zinc-555 dark:hover:bg-zinc-800 dark:text-zinc-400 rounded-md text-[9px] font-bold uppercase flex items-center gap-1 slicer-btn'"
-              title="Wireframe View">
-              <mat-icon class="scale-75 text-[10px]">grid_3x3</mat-icon>
-              Wireframe
-            </button>
-            <button (click)="visualMode.set('vertices')"
-              [class]="visualMode() === 'vertices' ? 'p-1 px-2.5 bg-blue-600 text-white rounded-md text-[9px] font-black uppercase flex items-center gap-1 slicer-btn' : 'p-1 px-2.5 hover:bg-zinc-250 text-zinc-555 dark:hover:bg-zinc-800 dark:text-zinc-400 rounded-md text-[9px] font-bold uppercase flex items-center gap-1 slicer-btn'"
-              title="Point Cloud Vertices">
-              <mat-icon class="scale-75 text-[10px]">grain</mat-icon>
-              Cloud
-            </button>
-          </div>
-        </div>
-
-        <!-- 3D Canvas Stage -->
-        <div
-          class="relative w-full aspect-video min-h-[380px] bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-800/60 mt-3 group">
-          <!-- Reset view and coordinate helpers -->
-          <div class="absolute top-4 left-4 flex gap-1 z-10 font-mono text-[9px]">
-            <span
-              class="px-1.5 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded font-black">X-AXIS</span>
-            <span
-              class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded font-black">Y-AXIS</span>
-            <span
-              class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded font-black">Z-AXIS</span>
-          </div>
-
-          <button (click)="resetRotation()"
-            class="absolute top-4 right-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-55 hover:text-blue-500 dark:hover:bg-zinc-750 text-zinc-600 dark:text-zinc-200 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10"
-            title="Reset Camera Coordinates">
-            <mat-icon class="text-sm scale-90">refresh</mat-icon>
-          </button>
-
-          <button (click)="zoomIn()"
-            class="absolute top-4 right-14 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-55 hover:text-blue-500 dark:hover:bg-zinc-750 text-zinc-600 dark:text-zinc-200 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10"
-            title="Zoom In">
-            <mat-icon class="text-sm scale-90">zoom_in</mat-icon>
-          </button>
-
-          <button (click)="zoomOut()"
-            class="absolute top-4 right-24 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-55 hover:text-blue-500 dark:hover:bg-zinc-750 text-zinc-600 dark:text-zinc-200 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10"
-            title="Zoom Out">
-            <mat-icon class="text-sm scale-90">zoom_out</mat-icon>
-          </button>
-
-          <!-- The HTML5 Viewport Canvas -->
-          <canvas #viewportCanvas width="640" height="380" (mousedown)="onMouseDown($event)"
-            (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()"
-            class="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"></canvas>
-
-          <!-- Perspective Orbit Hints -->
-          <div
-            class="absolute bottom-4 right-4 text-[9px] font-mono text-zinc-450 dark:text-zinc-500 pointer-events-none uppercase">
-            Click & drag to rotate bed
-          </div>
-        </div>
-
-        <!-- Layer slicing simulation control bar -->
-        <div
-          class="w-full mt-4 p-3 bg-zinc-100/50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
-          <div
-            class="flex justify-between items-center text-[9px] font-black uppercase tracking-wider text-zinc-450 dark:text-zinc-450">
-            <span class="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-              <mat-icon class="text-[12px] text-blue-500 w-3 h-3 flex items-center justify-center">speed</mat-icon>
-              Layer Heights Simulator
-            </span>
-            <span class="font-mono text-blue-600 dark:text-blue-400">
-              Active Layer Z-height: {{ (simulationLayer() * modelDimensions().z / 100) | number:'1.1-1' }} mm / {{
-              modelDimensions().z }} mm
-            </span>
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="font-mono text-[9px] text-zinc-500">BASE</span>
-            <input type="range" min="0" max="100" [value]="simulationLayer()"
-              (input)="simulationLayer.set(+$any($event.target).value)" class="flex-1 custom-slider">
-            <span class="font-mono text-[9px] text-blue-500 font-bold">{{ simulationLayer() }}%</span>
-          </div>
-        </div>
-
-        <!-- Viewport Rotation Angle Fine Tuners -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-zinc-250 dark:border-zinc-800">
-          <!-- X Axis Angle slider -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-              <span>ORBIT X-ANGLE (PITCH)</span>
-              <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ rotationX() | number:'1.0-0' }}°</span>
-            </div>
-            <input type="range" min="-180" max="180" [value]="rotationX()" (input)="onSliderXChange($event)"
-              class="w-full custom-slider accent-blue-500">
-          </div>
-          <!-- Y Axis Angle slider -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
-              <span>ORBIT Y-ANGLE (YAW)</span>
-              <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ rotationY() | number:'1.0-0' }}°</span>
-            </div>
-            <input type="range" min="-180" max="180" [value]="rotationY()" (input)="onSliderYChange($event)"
-              class="w-full custom-slider accent-blue-500">
-          </div>
-        </div>
-
-      </div>
-
-      <!-- TELEMETRY & DIMENSIONS DRAWER -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <!-- Stat 1: Volume -->
-        <div class="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl glow-card">
-          <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Volumetric Mesh</span>
-          <div class="font-mono text-sm font-black text-zinc-800 dark:text-zinc-100">
-            @if (modelVolume() > 0) {
-            {{ modelVolume() * 1000 | number:'1.0-0' }} <span class="text-[10px] text-zinc-500">mm³</span>
-            } @else {
-            --
-            }
-          </div>
-          <span class="text-[9px] text-zinc-500 block mt-0.5">Calculated cubic volume</span>
-        </div>
-
-        <!-- Stat 2: Triangles -->
-        <div class="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl glow-card">
-          <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Polygon Facets</span>
-          <div class="font-mono text-sm font-black text-zinc-800 dark:text-zinc-100">
-            {{ modelTriangles() | number }} <span class="text-[10px] text-zinc-500">tris</span>
-          </div>
-          <span class="text-[9px] text-zinc-500 block mt-0.5">Resolved stereolithography</span>
-        </div>
-
-        <!-- Stat 3: Dimensions -->
-        <div class="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl glow-card">
-          <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Envelope Size</span>
-          <div class="font-mono text-[11px] font-black text-zinc-800 dark:text-zinc-100 leading-tight py-0.5">
-            @if (modelVolume() > 0) {
-            {{ modelDimensions().x | number:'1.1-1' }}×{{ modelDimensions().y | number:'1.1-1' }}×{{ modelDimensions().z
-            | number:'1.1-1' }} <span class="text-[9px] text-zinc-500">mm</span>
-            } @else {
-            --
-            }
-          </div>
-          <span class="text-[9px] text-zinc-500 block mt-0.5">Bounding box dimensions</span>
-        </div>
-
-        <!-- Stat 4: Estimated spool print duration -->
-        <div class="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-2xl glow-card">
-          <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Spool Runtime</span>
-          <div class="font-mono text-sm font-black text-zinc-800 dark:text-zinc-100">
-            @if (modelVolume() > 0) {
-            {{ (modelVolume() * (100 - infillPercent()) / 65 + 1.2) | number:'1.1-1' }} <span
-              class="text-[10px] text-zinc-500">hrs</span>
-            } @else {
-            --
-            }
-          </div>
-          <span class="text-[9px] text-zinc-500 block mt-0.5">Calculated toolpath spool run</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT PANEL: SLICER PARAMETERS CONTROL CENTER (4 COLUMNS) -->
-    <div class="xl:col-span-4 space-y-6">
-
-      <div class="glass-panel rounded-3xl border border-zinc-200 dark:border-zinc-900 p-6 space-y-6 shadow-2xl">
-
-        <!-- Workspace Tabs -->
-        <div class="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl">
-          <button (click)="activeTab.set('hardware')"
-            [class]="activeTab() === 'hardware' ? 'py-2 text-[9px] font-black uppercase tracking-wider bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 rounded-lg shadow-sm border border-zinc-200/50 dark:border-zinc-800' : 'py-2 text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-lg'">
-            01 Hardware
-          </button>
-          <button (click)="activeTab.set('parameters')"
-            [class]="activeTab() === 'parameters' ? 'py-2 text-[9px] font-black uppercase tracking-wider bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 rounded-lg shadow-sm border border-zinc-200/50 dark:border-zinc-800' : 'py-2 text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-lg'">
-            02 Slicer
-          </button>
-          <button (click)="activeTab.set('checkout')"
-            [class]="activeTab() === 'checkout' ? 'py-2 text-[9px] font-black uppercase tracking-wider bg-white dark:bg-zinc-950 text-blue-600 dark:text-blue-400 rounded-lg shadow-sm border border-zinc-200/50 dark:border-zinc-800' : 'py-2 text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded-lg'">
-            03 Dispatch
-          </button>
-        </div>
-
-        <!-- -------------------- TAB 1: HARDWARE SETTINGS -------------------- -->
-        @if (activeTab() === 'hardware') {
-        <div class="space-y-6 animate-fadeIn">
-          <div>
-            <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400 mb-2">Layer Resolution
-              Quality</span>
-            <div class="grid grid-cols-1 gap-2.5">
-              @for (q of qualities(); track q.name) {
-              <button (click)="selectLayerHeight(q.height)"
-                [class]="layerHeight() === q.height 
-                      ? 'p-3 text-left bg-blue-500/10 border border-blue-500 rounded-2xl flex items-center justify-between shadow-sm cursor-pointer'
-                      : 'p-3 text-left bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-between cursor-pointer transition-all'">
-                <div>
-                  <div class="text-xs font-black text-zinc-800 dark:text-zinc-200 uppercase">{{ q.name }}</div>
-                  <span class="text-[9px] text-zinc-400">Optimal layer thickness parameter</span>
-                </div>
-                <span class="font-mono text-xs font-black text-blue-600 dark:text-blue-400">{{ q.height }} mm</span>
-              </button>
-              }
-            </div>
-          </div>
-
-          <div>
-            <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400 mb-2">Polymer Material
-              Base</span>
-            <div class="grid grid-cols-1 gap-2.5">
-              @for (mat of materials(); track mat.name) {
-              <button (click)="onMaterialChange(mat.name)"
-                [class]="selectedMaterial() === mat.name 
-                      ? 'p-3 text-left bg-blue-500/10 border border-blue-500 rounded-2xl flex items-center justify-between shadow-sm cursor-pointer'
-                      : 'p-3 text-left bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-between cursor-pointer transition-all'">
-                <div>
-                  <div class="text-xs font-black text-zinc-800 dark:text-zinc-200 uppercase">{{ mat.name }}</div>
-                  <span class="text-[9px] text-zinc-400">Spec density: {{ mat.density || '1.24' }} g/cm³</span>
-                </div>
-                <span class="font-mono text-xs font-black text-blue-600 dark:text-blue-400">₹{{ mat.pricePerGram
-                  }}/g</span>
-              </button>
-              }
-            </div>
-          </div>
-
-          <div class="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-            <p class="text-[10px] text-zinc-500 leading-relaxed">
-              ℹ️ **Note**: Selected polymers dictate physical mechanical limits and structural rigidity constraints.
-            </p>
-          </div>
-        </div>
-        }
-
-        <!-- -------------------- TAB 2: SLICER PARAMETERS -------------------- -->
-        @if (activeTab() === 'parameters') {
-        <div class="space-y-6 animate-fadeIn">
-          <div>
-            <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400 mb-2">Select Filament
-              Colorway</span>
-            <div
-              class="flex flex-wrap gap-2.5 p-3.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-850 rounded-2xl">
-              @for (col of colors(); track col.name) {
-              <button (click)="onColorChange(col.name)" [title]="col.name"
-                class="relative group cursor-pointer flex flex-col items-center gap-1 text-[8px]">
-                <div [style.backgroundColor]="col.hex"
-                  [class]="selectedColor() === col.name 
-                        ? 'w-7 h-7 rounded-full border-2 border-blue-600 scale-110 shadow-md shadow-blue-500/20 ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-zinc-900' 
-                        : 'w-7 h-7 rounded-full border border-zinc-300 dark:border-zinc-800 hover:scale-105 transition-transform'"></div>
-                <span class="text-zinc-500 font-mono truncate w-10 text-center">{{ col.name }}</span>
-              </button>
-              }
-            </div>
-          </div>
-
-          <div>
-            <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400 mb-2">Structural Infill
-              Standard</span>
-            <div class="grid grid-cols-1 gap-2.5">
-              @for (inf of infillStandards(); track inf.name) {
-              <button (click)="selectInfillStandard(inf)"
-                [class]="infillPercent() >= inf.min && infillPercent() <= inf.max
-                      ? 'p-3 text-left bg-blue-500/10 border border-blue-500 rounded-2xl flex items-center justify-between shadow-sm cursor-pointer'
-                      : 'p-3 text-left bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-between cursor-pointer transition-all'">
-                <div>
-                  <div class="text-xs font-black text-zinc-800 dark:text-zinc-200 uppercase">{{ inf.name }}</div>
-                  <span class="text-[9px] text-zinc-400">{{ inf.desc }}</span>
-                </div>
-                <span class="font-mono text-xs font-black text-blue-600 dark:text-blue-400">{{ inf.defaultVal }}%</span>
-              </button>
-              }
-            </div>
-
-            <!-- Fine adjustment slider -->
-            <div
-              class="mt-4 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-2">
-              <div class="flex justify-between items-center text-[9px] font-black text-zinc-400 uppercase">
-                <span>Fine Toolpath Infill</span>
-                <span class="font-mono text-blue-600 dark:text-blue-400 font-black">{{ infillPercent() }}%</span>
-              </div>
-              <input type="range" min="10" max="95" step="5" [value]="infillPercent()" (input)="onInfillChange($event)"
-                class="w-full custom-slider">
-            </div>
-          </div>
-        </div>
-        }
-
-        <!-- -------------------- TAB 3: DISPATCH & ORDER -------------------- -->
-        @if (activeTab() === 'checkout') {
-        <div class="space-y-6 animate-fadeIn">
-
-          <!-- File resource loading -->
-          <div class="space-y-2">
-            <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Ingest stereolithography
-              (.stl, .obj, .3mf)</span>
-
-            <!-- Drag and drop zone -->
-            <div
-              class="border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-blue-500 rounded-2xl p-4 flex flex-col items-center justify-center text-center bg-zinc-50/50 dark:bg-zinc-900/10 relative cursor-pointer group transition-all min-h-[90px]">
-              <input type="file" (change)="onFileDropped($event)" class="absolute inset-0 opacity-0 cursor-pointer">
-              <mat-icon
-                class="text-zinc-400 group-hover:text-blue-500 transition-colors mb-1 scale-90">cloud_upload</mat-icon>
-              <p class="text-[10px] font-black text-zinc-700 dark:text-zinc-300">Drag & drop 3D model, or <span
-                  class="text-blue-500">browse</span></p>
-              <p class="text-[8px] text-zinc-500">Mesh processed client-side</p>
-            </div>
-          </div>
-
-          <!-- Active file success panel -->
+      <!-- Upload Container Card -->
+      <div class="glass-panel p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/80 shadow-xl space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+            <mat-icon class="scale-75 text-zinc-400">cloud_upload</mat-icon> Step 1: Upload Model
+          </h2>
           @if (selectedFileName()) {
-          <div
-            class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between text-[10px] text-emerald-600 dark:text-emerald-400">
-            <span class="font-mono font-black flex items-center gap-1.5 truncate max-w-[240px]">
-              <mat-icon
-                class="scale-75 text-[12px] w-3.5 h-3.5 flex items-center justify-center">check_circle</mat-icon>
-              Loaded: {{ selectedFileName() }}
-            </span>
+            <span class="text-[9px] px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold uppercase rounded-full border border-emerald-500/20">Uploaded</span>
+          } @else {
+            <span class="text-[9px] px-2 py-0.5 bg-zinc-100 text-zinc-500 dark:bg-zinc-850 dark:text-zinc-400 font-extrabold uppercase rounded-full border border-zinc-250 dark:border-zinc-800">Pending</span>
+          }
+        </div>
+
+        <!-- Drag & Drop / Browse Field -->
+        @if (!selectedFileName() && !uploading()) {
+          <div class="border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500/80 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-zinc-50/50 dark:bg-zinc-900/10 relative cursor-pointer group transition-all duration-300 min-h-[180px]">
+            <input type="file" (change)="onFileDropped($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+            <mat-icon class="text-zinc-400 group-hover:text-blue-500 transition-colors mb-3 scale-125">cloud_upload</mat-icon>
+            <p class="text-xs font-black text-zinc-700 dark:text-zinc-300">Drag & drop 3D model, or <span class="text-blue-500">browse</span></p>
+            <p class="text-[10px] text-zinc-500 mt-1">Supported: .stl, .obj, .3mf</p>
           </div>
+        }
 
-
-          <!-- Contact Form -->
-          <div
-            class="p-4 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-850 rounded-2xl space-y-3">
-            <span
-              class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block border-b border-zinc-200 dark:border-zinc-800 pb-1">Client
-              Telemetry</span>
-
-            <div class="space-y-2">
-              <div class="space-y-0.5">
-                <label for="custName" class="text-[8px] font-bold text-zinc-400">Full Name</label>
-                <input id="custName" type="text" [value]="custName()" (input)="custName.set($any($event.target).value)"
-                  placeholder="Sumit Sharma"
-                  class="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded-xl text-zinc-800 dark:text-white">
+        <!-- Upload Progress Indicator -->
+        @if (uploading()) {
+          <div class="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-zinc-50/50 dark:bg-zinc-900/10 min-h-[180px] space-y-4">
+            <mat-icon class="text-blue-500 animate-spin scale-125">autorenew</mat-icon>
+            <div class="w-full space-y-1.5">
+              <div class="flex justify-between text-[10px] font-mono text-zinc-500">
+                <span class="font-bold">Hashing Mesh Data...</span>
+                <span>{{ uploadProgress() }}%</span>
               </div>
-              <div class="space-y-0.5">
-                <label for="custPhone" class="text-[8px] font-bold text-zinc-400">WhatsApp Mobile</label>
-                <input id="custPhone" type="text" [value]="custPhone()"
-                  (input)="custPhone.set($any($event.target).value)" placeholder="9876543210"
-                  class="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded-xl text-zinc-800 dark:text-white">
-              </div>
-              <div class="space-y-0.5">
-                <label for="custEmail" class="text-[8px] font-bold text-zinc-400">Email Address</label>
-                <input id="custEmail" type="text" [value]="custEmail()"
-                  (input)="custEmail.set($any($event.target).value)" placeholder="sumit@3dgalaxy.co.in"
-                  class="w-full p-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs rounded-xl text-zinc-800 dark:text-white">
-              </div>
-              <div class="space-y-0.5">
-                <label for="notesText" class="text-[8px] font-bold text-zinc-400">Special Slicer Instructions</label>
-                <textarea id="notesText" rows="2" [value]="notesText()"
-                  (input)="notesText.set($any($event.target).value)"
-                  placeholder="Specify functional tolerance constraints, mechanical fitting requirements, etc..."
-                  class="w-full p-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 text-xs rounded-xl text-zinc-800 dark:text-white"></textarea>
+              <div class="w-full h-1.5 bg-zinc-250 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 transition-all duration-150" [style.width.%]="uploadProgress()"></div>
               </div>
             </div>
           </div>
+        }
 
-          <!-- Estimate valuation breakdown -->
-          <div
-            class="p-4.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-white rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3.5 relative overflow-hidden shadow-lg shadow-zinc-200 dark:shadow-zinc-950/20">
+        <!-- File Success / Replace File Controls -->
+        @if (selectedFileName()) {
+          <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
+            <div class="flex items-center gap-3 truncate max-w-[80%]">
+              <mat-icon class="text-emerald-500 scale-90">check_circle</mat-icon>
+              <div class="truncate">
+                <span class="font-bold block truncate text-zinc-800 dark:text-zinc-200">{{ selectedFileName() }}</span>
+                <span class="text-[10px] text-zinc-500 font-mono">{{ selectedFileSize() }}</span>
+              </div>
+            </div>
+            <button (click)="clearFile()" class="p-1 text-zinc-400 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-850 rounded-lg cursor-pointer transition-colors" title="Remove File">
+              <mat-icon class="scale-90">delete</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- 3D Viewer Workspace -->
+      @if (selectedFileName()) {
+        <div class="glass-panel p-4 rounded-3xl border border-zinc-200 dark:border-zinc-800/80 shadow-xl space-y-4 animate-fadeIn">
+          <div class="flex justify-between items-center px-1">
+            <span class="text-[10px] font-mono text-zinc-450 uppercase flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Live 3D Mesh Preview
+            </span>
+            <div class="flex gap-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5 rounded-lg">
+              <button (click)="visualMode.set('solid')" [class]="visualMode() === 'solid' ? 'px-2 py-0.5 bg-blue-600 text-white rounded text-[9px] font-bold' : 'px-2 py-0.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-[9px]'" class="cursor-pointer transition-all">Solid</button>
+              <button (click)="visualMode.set('wireframe')" [class]="visualMode() === 'wireframe' ? 'px-2 py-0.5 bg-blue-600 text-white rounded text-[9px] font-bold' : 'px-2 py-0.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-[9px]'" class="cursor-pointer transition-all">Wire</button>
+              <button (click)="visualMode.set('vertices')" [class]="visualMode() === 'vertices' ? 'px-2 py-0.5 bg-blue-600 text-white rounded text-[9px] font-bold' : 'px-2 py-0.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-[9px]'" class="cursor-pointer transition-all">Cloud</button>
+            </div>
+          </div>
+
+          <div class="relative w-full aspect-video min-h-[300px] bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl flex items-center justify-center overflow-hidden border border-zinc-200 dark:border-zinc-800/60 group">
+            <canvas id="viewportCanvas" #viewportCanvas (mousedown)="onMouseDown($event)" (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+            
+            <!-- Controls overlay -->
+            <button (click)="resetRotation()" class="absolute top-4 right-4 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Reset View"><mat-icon class="scale-75">refresh</mat-icon></button>
+            <button (click)="zoomIn()" class="absolute top-4 right-14 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Zoom In"><mat-icon class="scale-75">zoom_in</mat-icon></button>
+            <button (click)="zoomOut()" class="absolute top-4 right-24 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Zoom Out"><mat-icon class="scale-75">zoom_out</mat-icon></button>
+          </div>
+
+          <!-- Mesh Telemetry Statistics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-[10px] font-mono text-zinc-600 dark:text-zinc-350">
+            <div>
+              <span class="block text-[8px] text-zinc-450 uppercase font-black">Triangles</span>
+              <span class="text-zinc-800 dark:text-zinc-100 font-bold">{{ modelTriangles() }}</span>
+            </div>
+            <div>
+              <span class="block text-[8px] text-zinc-450 uppercase font-black">Est. Volume</span>
+              <span class="text-zinc-800 dark:text-zinc-100 font-bold">{{ modelVolume() }} cm³</span>
+            </div>
+            <div>
+              <span class="block text-[8px] text-zinc-450 uppercase font-black">Est. Weight</span>
+              <span class="text-zinc-800 dark:text-zinc-100 font-bold">{{ estimatedReport().weightGrams }} g</span>
+            </div>
+            <div>
+              <span class="block text-[8px] text-zinc-450 uppercase font-black">Dimensions</span>
+              <span class="text-zinc-800 dark:text-zinc-100 font-bold truncate block" [title]="modelDimensions().x + ' x ' + modelDimensions().y + ' x ' + modelDimensions().z + ' mm'">{{ modelDimensions().x }}x{{ modelDimensions().y }}x{{ modelDimensions().z }} mm</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- RIGHT PANEL: CONFIGURATION FORM -->
+    <div class="lg:col-span-7 relative">
+
+      <!-- Glassmorphic locked overlay if file not uploaded -->
+      @if (!selectedFileName()) {
+        <div class="absolute inset-0 z-20 bg-zinc-50/70 dark:bg-zinc-950/75 backdrop-blur-xs rounded-3xl flex flex-col items-center justify-center p-6 border border-dashed border-zinc-300 dark:border-zinc-800 text-center animate-fadeIn">
+          <div class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/5">
+            <mat-icon class="scale-110">lock</mat-icon>
+          </div>
+          <h3 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-100 mb-1">Configuration Locked</h3>
+          <p class="text-[11px] text-zinc-500 max-w-xs leading-relaxed">
+            Upload your 3D model to continue configuring the print.
+          </p>
+        </div>
+      }
+      <!-- Settings Panel -->
+      <div class="glass-panel p-6 rounded-3xl border border-zinc-200 dark:border-zinc-900 shadow-xl space-y-6 transition-all duration-500" [class.opacity-30]="!selectedFileName()">
+        <h2 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5 border-b dark:border-zinc-800 pb-3">
+          <mat-icon class="scale-75 text-zinc-400">settings</mat-icon> Step 2: Print Configuration
+        </h2>
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto hide-scroll -mx-6 px-6 pt-2">
+          <button type="button" (click)="activeConfigTab.set('quality')"
+            class="flex items-center gap-2 pb-3 px-4 border-b-2 font-black uppercase text-[10px] tracking-wider transition-all shrink-0 cursor-pointer border-none bg-transparent"
+            [class.border-blue-500]="activeConfigTab() === 'quality'"
+            [class.text-blue-500]="activeConfigTab() === 'quality'"
+            [class.border-transparent]="activeConfigTab() !== 'quality'"
+            [class.text-zinc-450]="activeConfigTab() !== 'quality'"
+            [class.hover:text-zinc-700]="activeConfigTab() !== 'quality'"
+            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'quality'">
+            <mat-icon class="scale-75">high_quality</mat-icon> Quality
+          </button>
+          <button type="button" (click)="activeConfigTab.set('material')"
+            class="flex items-center gap-2 pb-3 px-4 border-b-2 font-black uppercase text-[10px] tracking-wider transition-all shrink-0 cursor-pointer border-none bg-transparent"
+            [class.border-blue-500]="activeConfigTab() === 'material'"
+            [class.text-blue-500]="activeConfigTab() === 'material'"
+            [class.border-transparent]="activeConfigTab() !== 'material'"
+            [class.text-zinc-450]="activeConfigTab() !== 'material'"
+            [class.hover:text-zinc-700]="activeConfigTab() !== 'material'"
+            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'material'">
+            <mat-icon class="scale-75">palette</mat-icon> Material & Color
+          </button>
+          <button type="button" (click)="activeConfigTab.set('infill')"
+            class="flex items-center gap-2 pb-3 px-4 border-b-2 font-black uppercase text-[10px] tracking-wider transition-all shrink-0 cursor-pointer border-none bg-transparent"
+            [class.border-blue-500]="activeConfigTab() === 'infill'"
+            [class.text-blue-500]="activeConfigTab() === 'infill'"
+            [class.border-transparent]="activeConfigTab() !== 'infill'"
+            [class.text-zinc-450]="activeConfigTab() !== 'infill'"
+            [class.hover:text-zinc-700]="activeConfigTab() !== 'infill'"
+            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'infill'">
+            <mat-icon class="scale-75">grid_view</mat-icon> Infill
+          </button>
+          <button type="button" (click)="activeConfigTab.set('quantity')"
+            class="flex items-center gap-2 pb-3 px-4 border-b-2 font-black uppercase text-[10px] tracking-wider transition-all shrink-0 cursor-pointer border-none bg-transparent"
+            [class.border-blue-500]="activeConfigTab() === 'quantity'"
+            [class.text-blue-500]="activeConfigTab() === 'quantity'"
+            [class.border-transparent]="activeConfigTab() !== 'quantity'"
+            [class.text-zinc-450]="activeConfigTab() !== 'quantity'"
+            [class.hover:text-zinc-700]="activeConfigTab() !== 'quantity'"
+            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'quantity'">
+            <mat-icon class="scale-75">tag</mat-icon> Quantity
+          </button>
+        </div>
+
+        <div class="space-y-6">
+
+          <!-- Printer Quality Cards -->
+          @if (activeConfigTab() === 'quality') {
+            <div class="space-y-2 animate-fadeIn">
+              <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Printer Quality</span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                @for (q of qualities(); track q.name) {
+                  <button type="button" (click)="selectOption('quality', q)"
+                    [disabled]="!selectedFileName()"
+                    [class]="layerHeight() === q.height 
+                      ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
+                      : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
+                    class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
+                    <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ q.name.split(' ')[0] }}</span>
+                    <span class="text-[9px] text-zinc-400 dark:text-zinc-550">{{ q.height.toFixed(2) }} mm</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Filament Material & Color -->
+          @if (activeConfigTab() === 'material') {
+            <div class="space-y-6 animate-fadeIn">
+              <!-- Filament Material Cards -->
+              <div class="space-y-2">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Filament Material</span>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  @for (mat of materials(); track mat.name) {
+                    @if (mat.active !== false) {
+                      <button type="button" (click)="selectOption('material', mat.name)"
+                        [disabled]="!selectedFileName()"
+                        [class]="selectedMaterial() === mat.name 
+                          ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
+                          : 'p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
+                        class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
+                        <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ mat.name }}</span>
+                        <span class="text-[9px] text-zinc-450 dark:text-zinc-550">{{ mat.name === 'PLA' ? 'Standard' : mat.name === 'ABS' ? 'Durable' : mat.name === 'PETG' ? 'Balanced' : mat.name === 'TPU' ? 'Flexible' : 'Premium' }}</span>
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+
+              <!-- Color Swatches -->
+              <div class="space-y-2">
+                <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Select {{ selectedMaterial() }} Color</span>
+                <div class="flex flex-wrap gap-3 p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-2xl items-center">
+                  @for (col of colors(); track col.name) {
+                    <button type="button" (click)="selectOption('color', col.name)"
+                      [title]="col.name"
+                      [disabled]="!selectedFileName()"
+                      [class]="selectedColor() === col.name 
+                        ? 'w-8 h-8 rounded-full border-2 border-blue-500 flex items-center justify-center cursor-pointer transition-all shadow-md scale-110' 
+                        : 'w-8 h-8 rounded-full border border-zinc-300 dark:border-zinc-800 flex items-center justify-center cursor-pointer transition-all hover:scale-105'"
+                      [style.backgroundColor]="col.hex"
+                      class="relative shrink-0 disabled:opacity-50 disabled:cursor-not-allowed border-none">
+                      @if (selectedColor() === col.name) {
+                        <mat-icon class="text-[14px] !w-3.5 !h-3.5 flex items-center justify-center scale-90" [style.color]="isColorDark(col.hex) ? '#ffffff' : '#000000'">check</mat-icon>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Infill Density Cards -->
+          @if (activeConfigTab() === 'infill') {
+            <div class="space-y-2 animate-fadeIn">
+              <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Infill Standards</span>
+              <div class="grid grid-cols-3 gap-3">
+                @for (inf of infillStandards(); track inf.name) {
+                  <button type="button" (click)="selectOption('infill_standard', inf)"
+                    [disabled]="!selectedFileName()"
+                    [class]="isInfillActive(inf) 
+                      ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
+                      : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 hover:border-zinc-350 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
+                    class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
+                    <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ inf.name }}</span>
+                    <span class="text-[9px] text-zinc-440 dark:text-zinc-500">{{ inf.desc }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Quantity Stepper -->
+          @if (activeConfigTab() === 'quantity') {
+            <div class="space-y-2 animate-fadeIn">
+              <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Print Quantity</span>
+              <div class="flex items-center gap-3 w-fit bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl">
+                <button type="button" (click)="decrementQty()" [disabled]="!selectedFileName() || quantity() <= 1"
+                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 flex items-center justify-center text-zinc-550 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <mat-icon class="scale-75">remove</mat-icon>
+                </button>
+                <span class="text-xs font-black text-zinc-800 dark:text-zinc-200 px-3 min-w-8 text-center">{{ quantity() }}</span>
+                <button type="button" (click)="incrementQty()" [disabled]="!selectedFileName()"
+                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 flex items-center justify-center text-zinc-555 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  <mat-icon class="scale-75">add</mat-icon>
+                </button>
+              </div>
+            </div>
+          }>
+      </div>
+
+      <!-- Instant Cost Summary Card & Submit -->
+      @if (selectedFileName()) {
+        <div class="mt-6 space-y-6 animate-fadeIn">
+          <div class="p-6 bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-white rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-4 relative overflow-hidden shadow-2xl">
             <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500"></div>
 
-            <div class="flex justify-between items-center pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
-              <span class="text-[9px] font-black uppercase tracking-wider text-zinc-550 dark:text-zinc-400">Instant
-                Estimate report</span>
-              <span class="text-[8px] text-zinc-500 dark:text-zinc-500 font-mono">{{ estimatedReport().weightGrams }}g
-                spool | {{ estimatedReport().hours }}h run</span>
+            <div class="flex justify-between items-center pb-2.5 border-b border-zinc-200 dark:border-zinc-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Instant Estimate Report</span>
+              <span class="text-[10px] text-zinc-550 dark:text-zinc-500 font-mono font-bold">
+                {{ estimatedReport().weightGrams }}g spool | {{ estimatedReport().hours }}h print
+              </span>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5 text-[10px] font-mono">
+            <div class="grid grid-cols-2 gap-y-3 gap-x-6 text-xs font-mono">
               <div class="flex justify-between">
-                <span class="text-zinc-500 dark:text-zinc-400">Material Base:</span>
-                <span class="text-zinc-700 dark:text-zinc-300">₹{{ estimatedReport().materialCost }}</span>
+                <span class="text-zinc-500 dark:text-zinc-400">Material Cost:</span>
+                <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().materialCost }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-zinc-500 dark:text-zinc-400">Machine Run:</span>
-                <span class="text-zinc-700 dark:text-zinc-300">₹{{ estimatedReport().serviceFee }}</span>
+                <span class="text-zinc-500 dark:text-zinc-400">Printing Cost:</span>
+                <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().printingCost }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-zinc-500 dark:text-zinc-400">GST Tax:</span>
-                <span class="text-zinc-700 dark:text-zinc-300">₹{{ estimatedReport().gstTax }}</span>
+                <span class="text-zinc-500 dark:text-zinc-400">Setup Cost:</span>
+                <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().setupCost }}</span>
               </div>
-              <div class="flex justify-between border-t border-zinc-200 dark:border-zinc-800 pt-1 col-span-2">
-                <span class="text-blue-600 dark:text-blue-400 font-bold">TOTAL:</span>
-                <span class="text-blue-600 dark:text-blue-400 font-black">₹{{ estimatedReport().totalCost }}</span>
+              <div class="flex justify-between">
+                <span class="text-zinc-500 dark:text-zinc-400">GST ({{ serviceConfig()?.gstTaxRate || 18 }}%):</span>
+                <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().gstTax }}</span>
+              </div>
+              <div class="flex justify-between col-span-2 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                <span class="text-zinc-550 dark:text-zinc-400 font-bold">Shipping:</span>
+                <span class="text-zinc-800 dark:text-zinc-200 font-bold font-mono">
+                  {{ estimatedReport().shipping === 0 ? 'FREE Shipping' : '₹' + estimatedReport().shipping }}
+                </span>
+              </div>
+              <div class="flex justify-between border-t border-zinc-250 dark:border-zinc-700 pt-3.5 col-span-2 text-sm">
+                <span class="text-blue-600 dark:text-blue-400 font-black uppercase tracking-wider">Estimated Total:</span>
+                <span class="text-blue-600 dark:text-blue-400 font-black text-base">₹{{ estimatedReport().totalCost }}</span>
               </div>
             </div>
           </div>
 
           <app-button (btnClick)="submitQuotation()" [loading]="isSubmitting()" text="Calculate Cost & Request Dispatch"
             loadingText="Dispatching..." icon="rocket"
-            btnClass="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+            btnClass="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
           </app-button>
-          } @else {
-          <div
-            class="p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl text-center text-xs text-yellow-600 dark:text-yellow-400">
-            ⚠️ Ingest/Upload an STL file to calculate slicing costs.
-          </div>
-          }
-
-          <div class="text-center">
-            <button
-              class="text-[10px] text-blue-500 hover:text-blue-400 font-extrabold uppercase hover:underline transition-all cursor-pointer">
-              For Bulk Production Orders - Click Here
-            </button>
-          </div>
-
         </div>
-        }
+      }
+    </div>
 
-      </div>
+  </div>
 
-      <!-- RECENT SUBMITTED QUOTES LOG (COLLAPSIBLE DISPATCH HISTORY) -->
-      @if (customerQuotes().length > 0) {
-      <div class="p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-3">
-        <span class="text-[9px] font-black text-zinc-500 uppercase tracking-wider block">Fleet Dispatch Logs ({{
-          customerQuotes().length }} entries)</span>
-        <div class="space-y-2.5 max-h-[220px] overflow-y-auto pr-1.5 scrollbar-thin">
-          @for (q of customerQuotes(); track q.id) {
-          <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-2">
-            <div class="flex justify-between text-[9px] font-mono">
+  <!-- RECENT SUBMITTED QUOTES LOG (FLEET DISPATCH HISTORY) -->
+  @if (customerQuotes().length > 0) {
+    <div class="max-w-7xl mx-auto mt-12 p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-4">
+      <h3 class="text-xs font-black text-zinc-500 uppercase tracking-wider block flex items-center gap-1.5">
+        <mat-icon class="scale-75 text-zinc-500">history</mat-icon> Fleet Dispatch & Estimate History ({{ customerQuotes().length }} entries)
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[400px] overflow-y-auto pr-1.5 scrollbar-thin">
+        @for (q of customerQuotes(); track q.id) {
+          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3.5 relative shadow-sm">
+            <div class="flex justify-between text-[10px] font-mono">
               <span class="font-bold text-blue-500">{{ q.quoteNumber }}</span>
               <span class="text-zinc-400">{{ q.date.split('T')[0] }}</span>
             </div>
             <div>
-              <h4 class="text-xs font-black text-zinc-800 dark:text-zinc-100 font-mono truncate">{{ q.fileName }}</h4>
-              <p class="text-[9px] text-zinc-500 dark:text-zinc-400">{{ q.materialType }} | Color: {{ q.color }} |
-                Infill: {{ q.infill }}%</p>
+              <h4 class="text-xs font-black text-zinc-800 dark:text-zinc-100 font-mono truncate mb-1" [title]="q.fileName">{{ q.fileName }}</h4>
+              <p class="text-[10px] text-zinc-500 dark:text-zinc-400">{{ q.materialType }} | Color: {{ q.color }} | Infill: {{ q.infill }}%</p>
             </div>
-            <div class="flex justify-between items-center pt-1.5 border-t border-zinc-100 dark:border-zinc-850">
+            
+            @if (q.notes && q.notes.includes('=== SLICER PARAMETERS ===')) {
+              <div class="p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl text-[9px] font-mono text-zinc-500 leading-normal max-h-24 overflow-y-auto whitespace-pre-line border border-zinc-100 dark:border-zinc-850">
+                {{ q.notes }}
+              </div>
+            } @else if (q.notes) {
+              <p class="text-[10px] text-zinc-400 italic bg-zinc-50 dark:bg-zinc-950 p-2 rounded-xl border border-zinc-150 dark:border-zinc-900 truncate">Notes: {{ q.notes }}</p>
+            }
+
+            <div class="flex justify-between items-center pt-2.5 border-t border-zinc-100 dark:border-zinc-850">
               <div>
-                <span class="text-[8px] text-zinc-400 block font-mono">ESTIMATED PRICE:</span>
+                <span class="text-[9px] text-zinc-450 block font-mono">ESTIMATED PRICE:</span>
                 <span class="text-xs font-black text-zinc-800 dark:text-zinc-100">₹{{ q.estimatedCost }}</span>
               </div>
-              <span [class]="'px-2 py-0.5 text-[8px] font-bold rounded uppercase ' + getQuoteStatusClass(q.status)">
+              <span [class]="'px-2 py-0.5 text-[9px] font-bold rounded uppercase ' + getQuoteStatusClass(q.status)">
                 {{ q.status }}
               </span>
             </div>
 
             @if (q.status === 'estimated') {
-            <div class="pt-1.5 flex gap-1.5">
-              <button (click)="approveQuote(q.id)"
-                class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-extrabold uppercase rounded-lg transition-all cursor-pointer">
-                Accept Cost
-              </button>
-              <button (click)="rejectQuote(q.id)"
-                class="py-1.5 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-300 text-[9px] font-bold rounded-lg transition-all cursor-pointer">
-                Discard
-              </button>
-            </div>
+              <div class="pt-2 flex gap-2">
+                <button (click)="approveQuote(q.id)"
+                  class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase rounded-xl transition-all cursor-pointer">
+                  Accept Cost
+                </button>
+                <button (click)="rejectQuote(q.id)"
+                  class="py-2 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-550 dark:text-zinc-300 text-[10px] font-bold rounded-xl transition-all cursor-pointer">
+                  Discard
+                </button>
+              </div>
             } @else if (q.status === 'approved_by_customer') {
-            <div
-              class="p-2 bg-emerald-500/10 border border-emerald-500/15 rounded-lg text-[9px] text-emerald-500 font-bold text-center">
-              ✓ Approved! Ready to fabricate.
-            </div>
+              <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/15 rounded-xl text-[10px] text-emerald-500 font-bold text-center">
+                ✓ Approved! Ready to fabricate.
+              </div>
             }
           </div>
-          }
-        </div>
+        }
       </div>
-      }
-
     </div>
-  </div>
+  }
+
 </div>

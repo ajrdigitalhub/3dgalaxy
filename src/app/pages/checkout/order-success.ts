@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {CommonModule, Location} from '@angular/common';
 import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
@@ -6,6 +6,7 @@ import {DatastoreService} from '../../services/datastore';
 
 @Component({
   selector: 'app-order-success',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, MatIconModule],
   template: `
     <div class="min-h-[70vh] flex flex-col items-center justify-center p-4">

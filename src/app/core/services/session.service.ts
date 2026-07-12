@@ -168,7 +168,7 @@ export class SessionService {
     this.showWarning.set(false);
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     if (this.idleTimeout) clearTimeout(this.idleTimeout);
-    this.ds.logout();
+    this.ds.logout(false, false);
     this.router.navigateByUrl('/login');
   }
 }

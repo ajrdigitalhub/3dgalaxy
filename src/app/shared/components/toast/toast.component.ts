@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Toast, ToastService } from './toast.service';
@@ -47,7 +47,8 @@ import { Toast, ToastService } from './toast.service';
         ></div>
       </div>
     </div>
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ToastItemComponent implements OnInit, OnDestroy {
   @Input({ required: true }) toast!: Toast;
@@ -112,6 +113,7 @@ export class ToastItemComponent implements OnInit, OnDestroy {
 @Component({
   selector: 'app-toast-container',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ToastItemComponent],
   template: `
     <div class="fixed bottom-0 left-0 right-0 sm:left-auto sm:bottom-4 sm:right-4 w-full sm:w-auto flex flex-col items-center sm:items-end gap-2 p-4 sm:p-0 z-[9999] pointer-events-none">

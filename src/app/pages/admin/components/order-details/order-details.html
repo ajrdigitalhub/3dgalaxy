@@ -315,6 +315,12 @@
               <p><span class="text-neutral-500 uppercase font-semibold">MOBILE:</span> {{ ord.guestPhone || ord.customer?.user?.mobile || ord.customer?.phone || ord.shippingAddress?.phone || 'Not logged' }}</p>
               <p><span class="text-neutral-500 uppercase font-semibold">LOYALTY SCORE:</span> <strong class="text-blue-400">{{ ord.customer?.rewardPoints || 0 }} pts</strong></p>
               <p><span class="text-neutral-500 uppercase font-semibold">GROUP TIER:</span> <strong class="text-amber-400 uppercase">{{ ord.customerType || 'RETAIL' }}</strong></p>
+              @if (ord.gstNumber) {
+                <p><span class="text-neutral-500 uppercase font-semibold">GSTIN:</span> <strong class="text-white">{{ ord.gstNumber }}</strong></p>
+              }
+              @if (ord.companyName) {
+                <p><span class="text-neutral-500 uppercase font-semibold">COMPANY:</span> <strong class="text-white">{{ ord.companyName }}</strong></p>
+              }
             </div>
           </div>
 

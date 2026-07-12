@@ -16,10 +16,16 @@ import settingsRoutes from './routes/settings';
 import orderRoutes from './routes/order';
 import customerRoutes from './routes/customer';
 import whatsappRoutes from './routes/whatsapp';
+import paymentRoutes from './routes/payment';
+import abandonedCheckoutRoutes from './routes/abandonedCheckout';
+import { getServiceConfig } from './controllers/settings';
+import { getConsolidatedHome, getFeaturedProducts } from './controllers/homepage';
+import compression from 'compression';
 
 const app = express();
 
 // Middleware
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
@@ -28,6 +34,9 @@ const uploadsPath = path.resolve(__dirname, '../../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
 // API Routing Configurations
+app.get('/api/home', getConsolidatedHome);
+app.get('/api/home/featured-products', getFeaturedProducts);
+app.get('/api/service-config', getServiceConfig);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -39,7 +48,10 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api', whatsappRoutes);
+app.use('/api', abandonedCheckoutRoutes);
+app.use('/api', paymentRoutes);
+
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {
