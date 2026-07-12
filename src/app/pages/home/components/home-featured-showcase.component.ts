@@ -202,15 +202,15 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
     const textElements = container.querySelectorAll('.showcase-anim');
     const imageElement = container.querySelector('img.animate-float-slow');
 
-    // Reset styles
-    animate(textElements, { opacity: 0, y: 15, filter: 'blur(5px)' }, { duration: 0 });
+    // Reset styles to left side (-30px for text, -50px for image) for left-to-right slide in
+    animate(textElements, { opacity: 0, x: -30, filter: 'blur(5px)' }, { duration: 0 });
     if (imageElement) {
-      animate(imageElement, { opacity: 0, scale: 0.9, rotate: 0 }, { duration: 0 });
+      animate(imageElement, { opacity: 0, x: -50, scale: 0.95, rotate: 0 }, { duration: 0 });
     }
 
     // Determine motion props
-    let textProps: any = { opacity: [0, 1], y: [15, 0], filter: ['blur(5px)', 'blur(0px)'] };
-    let imageProps: any = { opacity: [0, 1], scale: [0.93, 1] };
+    let textProps: any = { opacity: [0, 1], x: [-30, 0], filter: ['blur(5px)', 'blur(0px)'] };
+    let imageProps: any = { opacity: [0, 1], x: [-50, 0], scale: [0.95, 1] };
 
     // Animate text elements with a staggered reveal
     textElements.forEach((el: any, index: number) => {
@@ -223,7 +223,7 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
 
     // Animate large image frame with floating effect and rotation
     if (imageElement) {
-      const rotateVal = dir === 'next' ? [5, 0] : [-5, 0];
+      const rotateVal = dir === 'next' ? [3, 0] : [-3, 0];
       animate(imageElement, { 
         ...imageProps,
         rotate: rotateVal
