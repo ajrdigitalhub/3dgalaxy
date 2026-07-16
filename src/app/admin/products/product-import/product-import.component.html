@@ -1,0 +1,529 @@
+<div class="space-y-8 animate-fadeIn max-w-6xl mx-auto p-6">
+  <div class="flex flex-col gap-2">
+    <div class="text-xs font-black uppercase tracking-wide text-zinc-400">
+      Catalog
+    </div>
+    <h1 class="text-3xl font-black text-zinc-900 dark:text-white">
+      Bulk Product Import
+    </h1>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
+      Upload a Shopify-compatible CSV file to preview and import products with
+      variants, images, categories, brands, and SEO data.
+    </p>
+  </div>
+
+  <div class="grid gap-6 md:grid-cols-[1fr_320px]">
+    <div class="space-y-6">
+      <div
+        class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+      >
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white mb-4">
+          Import Settings
+        </h2>
+        <div class="space-y-4">
+          <div
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-4"
+          >
+            <p class="text-sm text-blue-900 dark:text-blue-200 mb-3">
+              <strong>Get started:</strong> Download a sample CSV file to see
+              the required format and edit it with your product data.
+            </p>
+            <button
+              (click)="downloadSampleCsv()"
+              type="button"
+              class="w-full px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download Sample CSV
+            </button>
+          </div>
+
+          <label
+            class="block text-sm font-bold text-zinc-700 dark:text-zinc-300"
+            >CSV file</label
+          >
+          <div class="flex items-center gap-3">
+            <input
+              type="file"
+              accept=".csv"
+              (change)="onFileSelected($event)"
+              class="text-sm text-zinc-600 dark:text-zinc-200"
+            />
+            <span class="text-xs text-zinc-500 dark:text-zinc-400">{{
+              selectedFileName()
+            }}</span>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="text-xs uppercase tracking-widest text-zinc-500"
+                >Import Mode</label
+              >
+              <select
+                class="w-full h-11 mt-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100"
+                [ngModel]="modeValue()"
+                (ngModelChange)="modeValue.set($event)"
+              >
+                <option value="create_update">Create or update existing</option>
+                <option value="update_existing">Update existing only</option>
+                <option value="create_only">Create only</option>
+                <option value="skip_existing">Skip existing records</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs uppercase tracking-widest text-zinc-500"
+                >Match by</label
+              >
+              <select
+                class="w-full h-11 mt-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm text-zinc-900 dark:text-zinc-100"
+                [ngModel]="matchByValue()"
+                (ngModelChange)="matchByValue.set($event)"
+              >
+                <option value="sku">SKU</option>
+                <option value="slug">Slug</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <button
+              (click)="previewImport()"
+              type="button"
+              [disabled]="loadingPreview()"
+              class="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition"
+            >
+              {{ loadingPreview() ? "Generating Preview..." : "Preview CSV" }}
+            </button>
+            <button
+              (click)="submitImport()"
+              type="button"
+              [disabled]="loadingImport()"
+              class="px-4 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition"
+            >
+              {{ loadingImport() ? "Importing..." : "Import Products" }}
+            </button>
+          </div>
+
+          <div
+            *ngIf="importProgress() > 0"
+            class="rounded-3xl border border-blue-200 bg-blue-50 text-blue-700 p-4 text-sm"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <span>Import progress</span>
+              <span class="font-bold">{{ importProgress() }}%</span>
+            </div>
+            <div
+              class="h-3 w-full rounded-full bg-white/80 overflow-hidden border border-blue-100"
+            >
+              <div
+                class="h-full rounded-full bg-blue-600 transition-all duration-300"
+                [style.width.%]="importProgress()"
+              ></div>
+            </div>
+          </div>
+          <div
+            *ngIf="importError()"
+            class="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm"
+          >
+            {{ importError() }}
+          </div>
+        </div>
+      </div>
+
+      <div
+        *ngIf="previewData()"
+        class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+      >
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white mb-4">
+          Preview Summary
+        </h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Products
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ previewData().summary?.productCount || 0 }}
+            </div>
+          </div>
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Variants
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ previewData().summary?.variantCount || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 space-y-4">
+          <div
+            *ngIf="previewData().summary?.errors?.length"
+            class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
+          >
+            <div class="font-bold">Preview Warnings</div>
+            <ul class="list-disc pl-5 mt-2">
+              <li *ngFor="let warning of previewData().summary.errors">
+                {{ warning }}
+              </li>
+            </ul>
+          </div>
+
+          <div
+            *ngFor="let item of previewData().preview"
+            class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-5"
+          >
+            <div
+              class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+            >
+              <div>
+                <h3 class="text-xl font-bold text-zinc-900 dark:text-white">
+                  {{ item.name || item.slug || "Untitled Product" }}
+                </h3>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Handle / Slug: {{ item.slug || "-" }}
+                </p>
+              </div>
+              <div
+                class="flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-400"
+              >
+                <span>Rows: {{ item.rowCount || 0 }}</span>
+                <span>Variants: {{ item.variants?.length || 0 }}</span>
+                <span>Images: {{ item.images?.length || 0 }}</span>
+              </div>
+            </div>
+
+            <div class="grid gap-4 mt-4 sm:grid-cols-2">
+              <div class="space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
+                <div><strong>Vendor:</strong> {{ item.vendor || "-" }}</div>
+                <div>
+                  <strong>Category:</strong>
+                  <div class="mt-1 space-y-0.5">
+                    <ng-container
+                      *ngFor="
+                        let segment of formatCategoryPath(
+                          item.productCategory || item.product_type || '-'
+                        );
+                        let idx = index
+                      "
+                    >
+                      <div
+                        [class]="
+                          idx === 0
+                            ? 'text-zinc-900 dark:text-white font-semibold'
+                            : 'ml-4 text-zinc-500 dark:text-zinc-400'
+                        "
+                      >
+                        {{ segment }}
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+                <div>
+                  <strong>Type:</strong>
+                  {{ item.productType || item.type || "-" }}
+                </div>
+                <div>
+                  <strong>Published:</strong>
+                  {{ item.published ? "Yes" : "No" }}
+                </div>
+              </div>
+              <div class="space-y-2 text-sm text-zinc-700 dark:text-zinc-200">
+                <div>
+                  <strong>Tags:</strong> {{ item.tags?.join(", ") || "-" }}
+                </div>
+                <div>
+                  <strong>SEO Title:</strong> {{ item.seoTitle || "-" }}
+                </div>
+                <div>
+                  <strong>SEO Description:</strong>
+                  {{ item.seoDescription || "-" }}
+                </div>
+                <div>
+                  <strong>Errors:</strong> {{ item.errors?.length || 0 }}
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <h4
+                class="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400"
+              >
+                Description
+              </h4>
+              <div
+                class="prose prose-sm max-w-none text-zinc-700 dark:text-zinc-200 break-words"
+                [innerHTML]="item.description || item.body_html || '-'"
+              ></div>
+            </div>
+
+            <div class="mt-4">
+              <h4
+                class="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400"
+              >
+                Options
+              </h4>
+              <div
+                *ngIf="item.options?.length; else noOptions"
+                class="mt-2 space-y-2 text-sm text-zinc-700 dark:text-zinc-200"
+              >
+                <div *ngFor="let option of item.options">
+                  <strong>{{ option.name }}:</strong>
+                  {{ option.values?.join(", ") || "-" }}
+                </div>
+              </div>
+              <ng-template #noOptions>
+                <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                  No option metadata.
+                </div>
+              </ng-template>
+            </div>
+
+            <div class="mt-4 overflow-x-auto">
+              <h4
+                class="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-3"
+              >
+                Variants
+              </h4>
+              <table
+                class="min-w-full text-left text-sm border-collapse border border-zinc-200 dark:border-zinc-800"
+              >
+                <thead class="bg-zinc-100 dark:bg-zinc-900">
+                  <tr>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      SKU
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Name
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Price
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Stock
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Weight
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Barcode
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Options
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let variant of item.variants">
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.sku || "-" }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.name || "-" }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.price || 0 }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.stock || 0 }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.weight || 0 }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      {{ variant.barcode || "-" }}
+                    </td>
+                    <td
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      <div
+                        *ngIf="
+                          variant.optionValues &&
+                            (variant.optionValues | keyvalue)?.length;
+                          else noVariantOptions
+                        "
+                      >
+                        <div
+                          *ngFor="let opt of variant.optionValues | keyvalue"
+                        >
+                          {{ opt.key }}: {{ opt.value }}
+                        </div>
+                      </div>
+                      <ng-template #noVariantOptions>-</ng-template>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <h4
+                  class="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400"
+                >
+                  Images
+                </h4>
+                <div
+                  *ngIf="item.images?.length; else noImages"
+                  class="mt-2 flex flex-wrap gap-2"
+                >
+                  <img
+                    *ngFor="let image of item.images"
+                    [src]="image"
+                    alt="product image"
+                    class="w-24 h-24 object-cover rounded border"
+                  />
+                </div>
+                <ng-template #noImages>
+                  <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    No image URLs found.
+                  </div>
+                </ng-template>
+              </div>
+              <div>
+                <h4
+                  class="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400"
+                >
+                  Additional Attributes
+                </h4>
+                <div
+                  *ngIf="item.extraAttributes?.length; else noAttrs"
+                  class="mt-2 text-sm text-zinc-700 dark:text-zinc-200 space-y-1"
+                >
+                  <div *ngFor="let attr of item.extraAttributes">
+                    {{ attr.name }}: {{ attr.value }}
+                  </div>
+                </div>
+                <ng-template #noAttrs>
+                  <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    No extra attributes.
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        *ngIf="importResult()"
+        class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+      >
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white mb-4">
+          Import Result
+        </h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Created
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ importResult().createdCount || 0 }}
+            </div>
+          </div>
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Updated
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ importResult().updatedCount || 0 }}
+            </div>
+          </div>
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Skipped
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ importResult().skippedCount || 0 }}
+            </div>
+          </div>
+          <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-900 p-4">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Failed
+            </div>
+            <div class="text-3xl font-black text-zinc-900 dark:text-white">
+              {{ importResult().failedCount || 0 }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div
+        class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+      >
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white mb-4">
+          Quick Start
+        </h2>
+        <ul
+          class="space-y-3 text-sm text-zinc-600 dark:text-zinc-300 list-disc list-inside"
+        >
+          <li>Upload a Shopify CSV file with products and variant rows.</li>
+          <li>Preview the import before committing to database changes.</li>
+          <li>Choose match mode by SKU or slug.</li>
+          <li>
+            Import products in batches with variant and image upload support.
+          </li>
+        </ul>
+      </div>
+
+      <div
+        class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+      >
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white mb-4">
+          Supported Shopify Fields
+        </h2>
+        <div class="text-sm text-zinc-600 dark:text-zinc-300 space-y-2">
+          <p>
+            Handle, Title, Body HTML, Vendor, Product Type, Tags, Published,
+            Option1 Name, Option1 Value, Variant SKU, Variant Price, Variant
+            Inventory Qty, Variant Weight, Variant Barcode, Image Src
+          </p>
+          <p>
+            Other CSV columns are parsed if present and mapped into the import
+            preview groups.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

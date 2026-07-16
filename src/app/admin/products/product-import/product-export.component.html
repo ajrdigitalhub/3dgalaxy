@@ -1,0 +1,40 @@
+<div class="space-y-8 animate-fadeIn max-w-4xl mx-auto p-6">
+  <div class="flex flex-col gap-2">
+    <div class="text-xs font-black uppercase tracking-wide text-zinc-400">
+      Catalog
+    </div>
+    <h1 class="text-3xl font-black text-zinc-900 dark:text-white">
+      Bulk Product Export
+    </h1>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
+      Export your current product catalog into a Shopify-compatible CSV format
+      for offline editing, backup, or bulk upload.
+    </p>
+  </div>
+
+  <div
+    class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+  >
+    <div
+      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h2 class="text-xl font-black text-zinc-900 dark:text-white">
+          Export catalog
+        </h2>
+        <p class="text-sm text-zinc-500 dark:text-zinc-400">
+          Download a CSV containing products and variants from the active
+          catalog.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="exportCsv()"
+        [disabled]="downloading"
+        class="px-5 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition"
+      >
+        {{ downloading ? "Preparing export..." : "Download CSV" }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,21 +1,28 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
-import {CommonModule, DOCUMENT} from '@angular/common';
-import {ActivatedRoute, RouterModule, Router} from '@angular/router';
-import {Title, Meta, DomSanitizer} from '@angular/platform-browser';
-import {MatIconModule} from '@angular/material/icon';
-import {DatastoreService, Product, Review} from '../../services/datastore';
-import {LoadingService} from '../../core/services/loading.service';
-import {ApiService} from '../../services/api.service';
-import {ToastService} from '../../shared/components/toast/toast.service';
-import {SkeletonPageComponent} from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
-import {AppButton} from '../../shared/components/app-button/app-button';
-import {environment} from '../../../environments/environment';
-import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
-import { TiltDirective } from '../../shared/directives/tilt.directive';
-import { CountUpDirective } from '../../shared/directives/count-up.directive';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  computed,
+  effect,
+} from "@angular/core";
+import { CommonModule, DOCUMENT } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { ActivatedRoute, RouterModule, Router } from "@angular/router";
+import { Title, Meta, DomSanitizer } from "@angular/platform-browser";
+import { MatIconModule } from "@angular/material/icon";
+import { DatastoreService, Product, Review } from "../../services/datastore";
+import { LoadingService } from "../../core/services/loading.service";
+import { ApiService } from "../../services/api.service";
+import { ToastService } from "../../shared/components/toast/toast.service";
+import { SkeletonPageComponent } from "../../shared/components/skeleton/skeleton-page/skeleton-page.component";
+import { AppButton } from "../../shared/components/app-button/app-button";
+import { environment } from "../../../environments/environment";
+import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.directive";
+import { TiltDirective } from "../../shared/directives/tilt.directive";
 
 @Component({
-  selector: 'app-product-detail',
+  selector: "app-product-detail",
   imports: [
     CommonModule,
     RouterModule,
@@ -24,11 +31,11 @@ import { CountUpDirective } from '../../shared/directives/count-up.directive';
     AppButton,
     ScrollRevealDirective,
     TiltDirective,
-    CountUpDirective
+    FormsModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './product-detail.html',
-  styleUrl: './product-detail.scss'
+  templateUrl: "./product-detail.html",
+  styleUrl: "./product-detail.scss",
 })
 export class ProductDetail {
   private sanitizer = inject(DomSanitizer);
@@ -41,87 +48,173 @@ export class ProductDetail {
 
   isAddingToCart = signal(false);
   isSubmittingReview = signal(false);
+  isLoadingProduct = signal(true);
+  isReviewModalOpen = signal(false);
+  reviewDraft = signal({
+    rating: 5,
+    title: "",
+    comment: "",
+    recommended: true,
+    images: [] as File[],
+    imagePreviews: [] as string[],
+    uploading: false,
+  });
+  reviewSort = signal<
+    "helpful" | "latest" | "highest" | "lowest" | "images" | "verified"
+  >("latest");
+  reviewSortOptions = [
+    { key: "latest" as const, label: "Latest" },
+    { key: "helpful" as const, label: "Most Helpful" },
+    { key: "highest" as const, label: "Highest Rating" },
+    { key: "lowest" as const, label: "Lowest Rating" },
+    { key: "images" as const, label: "With Images" },
+    { key: "verified" as const, label: "Verified Purchases" },
+  ];
+  reviewStats = computed(() => {
+    const reviews = this.productReviews();
+    const total = reviews.length;
+    if (!total) {
+      return { average: 0, total, distribution: [0, 0, 0, 0, 0] };
+    }
+    const distribution = [5, 4, 3, 2, 1].map(
+      (star) => reviews.filter((r: any) => Number(r.rating) === star).length,
+    );
+    const sum = reviews.reduce(
+      (acc: number, review: any) => acc + Number(review.rating || 0),
+      0,
+    );
+    return { average: Number((sum / total).toFixed(1)), total, distribution };
+  });
+  filteredReviews = computed(() => {
+    const reviews = [...this.productReviews()];
+    const sort = this.reviewSort();
+    if (sort === "highest")
+      return reviews.sort((a, b) => Number(b.rating) - Number(a.rating));
+    if (sort === "lowest")
+      return reviews.sort((a, b) => Number(a.rating) - Number(b.rating));
+    if (sort === "images")
+      return reviews.filter((review: any) => (review.images || []).length > 0);
+    if (sort === "verified")
+      return reviews.filter((review: any) => review.verified !== false);
+    if (sort === "helpful")
+      return reviews.sort(
+        (a, b) => Number(b.helpfulCount || 0) - Number(a.helpfulCount || 0),
+      );
+    return reviews.sort(
+      (a, b) =>
+        new Date(b.date || b.createdAt || 0).getTime() -
+        new Date(a.date || a.createdAt || 0).getTime(),
+    );
+  });
 
   safeHtml(html: string) {
-    if (!html) return '';
+    if (!html) return "";
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
-  slug = signal<string>('');
+  slug = signal<string>("");
   quantity = signal<number>(1);
-  activeImage = signal<string>('');
+  activeImage = signal<string>("");
   is360Active = signal<boolean>(false);
   rotationAngle = signal<number>(0);
-  activeTab = signal<string>('overview');
+  activeTab = signal<string>("overview");
   wishlistIds = signal<Set<string>>(new Set());
 
   // Variant Logic
   selectedOptions = signal<Record<string, string>>({}); // { optionName: valueString }
   selectedVariant = computed(() => {
-      const p = this.product();
-      if (!p || !p.variants || p.variants.length === 0) return null;
-      const opts = this.selectedOptions();
-      // Match variant based on selected options — normalize both sides to strings
-      const toStr = (v: any) => typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
-      const matched = p.variants.find((v: any) => {
-          if (!v.optionValues) return false;
-          return Object.keys(opts).every(key => toStr(v.optionValues[key]) === toStr(opts[key]));
-      });
-      return matched || null;
+    const p = this.product();
+    if (!p || !p.variants || p.variants.length === 0) return null;
+    const opts = this.selectedOptions();
+    // Match variant based on selected options — normalize both sides to strings
+    const toStr = (v: any) =>
+      typeof v === "string" ? v : v?.label || v?.value || v?.name || String(v);
+    const matched = p.variants.find((v: any) => {
+      if (!v.optionValues) return false;
+      return Object.keys(opts).every(
+        (key) => toStr(v.optionValues[key]) === toStr(opts[key]),
+      );
+    });
+    return matched || null;
   });
 
   galleryImages = computed(() => {
-      const v = this.selectedVariant();
-      if (v && v.images && v.images.length > 0) {
-          return v.images;
+    const productImages = Array.isArray(this.product()?.images)
+      ? this.product()?.images
+      : [];
+
+    const variant = this.selectedVariant();
+    const variantImages: any[] = [];
+    if (variant) {
+      if (Array.isArray(variant.images)) {
+        variantImages.push(...variant.images);
       }
-      return this.product()?.images || [];
+      if (Array.isArray(variant.variantImages)) {
+        variantImages.push(...variant.variantImages);
+      }
+    }
+
+    const allImages = [...variantImages, ...productImages];
+    const seen = new Set<string>();
+    return allImages.filter((img) => {
+      const url = this.getImageUrl(img).trim();
+      if (!url || seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
   });
 
   getColorCode(colorName: string): string {
-    if (!colorName || typeof colorName !== 'string') return '#e2e8f0';
+    if (!colorName || typeof colorName !== "string") return "#e2e8f0";
     const name = colorName.toLowerCase().trim();
     const colors: Record<string, string> = {
-      white: '#ffffff',
-      black: '#000000',
-      red: '#ef4444',
-      blue: '#3b82f6',
-      green: '#22c55e',
-      yellow: '#eab308',
-      orange: '#f97316',
-      grey: '#6b7280',
-      gray: '#6b7280',
-      purple: '#a855f7',
-      pink: '#ec4899',
-      brown: '#78350f',
-      ivory: '#fffff0',
-      silver: '#c0c0c0',
-      gold: '#ffd700',
-      copper: '#b87333',
-      natural: '#e2e8f0',
-      translucent: '#f1f5f9',
-      sky_blue: '#0ea5e9',
-      metallic_blue: '#1d4ed8'
+      white: "#ffffff",
+      black: "#000000",
+      red: "#ef4444",
+      blue: "#3b82f6",
+      green: "#22c55e",
+      yellow: "#eab308",
+      orange: "#f97316",
+      grey: "#6b7280",
+      gray: "#6b7280",
+      purple: "#a855f7",
+      pink: "#ec4899",
+      brown: "#78350f",
+      ivory: "#fffff0",
+      silver: "#c0c0c0",
+      gold: "#ffd700",
+      copper: "#b87333",
+      natural: "#e2e8f0",
+      translucent: "#f1f5f9",
+      sky_blue: "#0ea5e9",
+      metallic_blue: "#1d4ed8",
     };
-    return colors[name] || colors[name.replace(/\s+/g, '_')] || name;
+    return colors[name] || colors[name.replace(/\s+/g, "_")] || name;
   }
 
   isOptionValueOutOfStock(optionName: string, val: string): boolean {
     const p = this.product();
     if (!p || !p.variants || p.variants.length === 0) return false;
-    const toStr = (v: any) => typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
+    const toStr = (v: any) =>
+      typeof v === "string" ? v : v?.label || v?.value || v?.name || String(v);
     const currentOpts = { ...this.selectedOptions(), [optionName]: val };
     const matchingVariant = p.variants.find((v: any) => {
       if (!v.optionValues) return false;
-      return Object.keys(currentOpts).every(k => toStr(v.optionValues[k]) === toStr(currentOpts[k]));
+      return Object.keys(currentOpts).every(
+        (k) => toStr(v.optionValues[k]) === toStr(currentOpts[k]),
+      );
     });
-    
+
     if (matchingVariant) {
       return matchingVariant.stock <= 0;
     }
-    
+
     const anyInStock = p.variants.some((v: any) => {
-      return v.optionValues && toStr(v.optionValues[optionName]) === toStr(val) && v.stock > 0;
+      return (
+        v.optionValues &&
+        toStr(v.optionValues[optionName]) === toStr(val) &&
+        v.stock > 0
+      );
     });
     return !anyInStock;
   }
@@ -129,39 +222,46 @@ export class ProductDetail {
   initializeDefaultVariant(p: any) {
     if (!p) return;
     const queryParams = this.route.snapshot.queryParams;
-    const initialVariantId = queryParams['variant'];
-    
-    let targetVariant = p.variants?.find((v: any) => String(v.id) === String(initialVariantId));
+    const initialVariantId = queryParams["variant"];
+
+    let targetVariant = p.variants?.find(
+      (v: any) => String(v.id) === String(initialVariantId),
+    );
     if (!targetVariant && p.variants && p.variants.length > 0) {
       targetVariant = p.variants.find((v: any) => v.isDefault) || p.variants[0];
     }
-    
+
     if (targetVariant) {
       const opts: Record<string, string> = {};
       if (targetVariant.optionValues) {
         // Normalize: values may be objects or strings
-        Object.entries(targetVariant.optionValues).forEach(([k, v]: [string, any]) => {
-          opts[k] = typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
-        });
+        Object.entries(targetVariant.optionValues).forEach(
+          ([k, v]: [string, any]) => {
+            opts[k] =
+              typeof v === "string"
+                ? v
+                : v?.label || v?.value || v?.name || String(v);
+          },
+        );
       } else if (targetVariant.options) {
         targetVariant.options.forEach((vo: any) => {
           opts[vo.optionValue.optionId] = vo.optionValueId;
         });
       }
       this.selectedOptions.set(opts);
-      
+
       const variantImages = targetVariant.variantImages || targetVariant.images;
       if (variantImages && variantImages.length > 0) {
         this.activeImage.set(this.getImageUrl(variantImages[0]));
       } else if (p.images && p.images.length > 0) {
         this.activeImage.set(this.getImageUrl(p.images[0]));
       }
-      
+
       if (!initialVariantId) {
         this.router.navigate([], {
           queryParams: { variant: targetVariant.id },
-          queryParamsHandling: 'merge',
-          replaceUrl: true
+          queryParamsHandling: "merge",
+          replaceUrl: true,
         });
       }
     } else {
@@ -173,84 +273,142 @@ export class ProductDetail {
   }
 
   // Discussions and rating state drafts
-  newQuestionText = signal<string>('');
+  newQuestionText = signal<string>("");
   draftStars = signal<number>(5);
-  draftComment = signal<string>('');
+  draftComment = signal<string>("");
 
   fetchedProduct = signal<any>(null);
 
   product = computed(() => {
     // Return fetched details if available, else structural outline
-    return this.fetchedProduct() || this.ds.products().find(p => p.slug === this.slug());
+    return (
+      this.fetchedProduct() ||
+      this.ds.products().find((p) => p.slug === this.slug())
+    );
   });
 
   breadcrumbs = computed(() => {
     const p = this.product();
     if (!p) return [];
     const crumbs = [];
-    const cat = this.ds.categories().find(c => c.id === p.category_id);
+    const cat = this.ds.categories().find((c) => c.id === p.category_id);
     if (cat) {
-       crumbs.push({ label: cat.name, url: '/category/' + cat.slug });
+      crumbs.push({ label: cat.name, url: "/category/" + cat.slug });
     }
-    const brand = this.ds.brands().find(b => b.name === p.brand);
+    const brand = this.ds.brands().find((b) => b.name === p.brand);
     if (brand) {
-       crumbs.push({ label: brand.name, url: '/brand/' + brand.slug });
+      crumbs.push({ label: brand.name, url: "/brand/" + brand.slug });
     }
     return crumbs;
   });
 
   // Derived properties from product if available or fallback
-  productSpecs = computed(() => this.product()?.specifications?.map((s: any) => ({ label: s.name, value: s.value })) || this.product()?.specs || []);
-  productReviews = computed(() => this.product()?.reviews || []);
-  productFeatures = computed(() => this.product()?.features || (this.product() as any)?.features || []);
-  productApplications = computed(() => (this.product() as any)?.applications || []);
+  productSpecs = computed(
+    () =>
+      this.product()?.specifications?.map((s: any) => ({
+        label: s.name,
+        value: s.value,
+      })) ||
+      this.product()?.specs ||
+      [],
+  );
+  productReviews = computed(() => {
+    const reviews = this.product()?.reviews || [];
+    return reviews.map((review: any) => ({
+      ...review,
+      rating: Number(review.rating || review.stars || 0),
+      images: Array.isArray(review.images) ? review.images : [],
+      helpfulCount: review.helpfulCount || 0,
+      verified: review.verified !== false,
+      title: review.title || review.comment || "Great purchase",
+      comment: review.comment || review.review || "",
+      date: review.date || review.createdAt || new Date().toISOString(),
+      sellerReply: review.sellerReply || null,
+    }));
+  });
+  productFeatures = computed(
+    () => this.product()?.features || (this.product() as any)?.features || [],
+  );
+  productApplications = computed(
+    () => (this.product() as any)?.applications || [],
+  );
   productIncludes = computed(() => (this.product() as any)?.includes || []);
-  productDownloads = computed(() => this.product()?.downloads || (this.product() as any)?.downloads || []);
-  productFaqs = computed(() => this.product()?.faqs || this.product()?.qnas || []);
-  
+  productDownloads = computed(
+    () => this.product()?.downloads || (this.product() as any)?.downloads || [],
+  );
+  productFaqs = computed(
+    () => this.product()?.faqs || this.product()?.qnas || [],
+  );
+
   relatedProducts = computed(() => {
     const p = this.product();
     if (!p) return [];
     let rels = p.relatedProducts;
-    if (typeof rels === 'string') {
-      try { rels = JSON.parse(rels); } catch { rels = []; }
+    if (typeof rels === "string") {
+      try {
+        rels = JSON.parse(rels);
+      } catch {
+        rels = [];
+      }
     }
     if (Array.isArray(rels) && rels.length > 0) {
-      return rels.map((rp: any) => {
-        if (rp && typeof rp === 'object' && rp.name) return rp;
-        const id = typeof rp === 'string' ? rp : (rp.id || rp.relatedToId || rp.relatedProduct?.id);
-        return this.ds.products().find(x => x.id === id);
-      }).filter(x => x !== undefined).slice(0, 4) as Product[];
+      return rels
+        .map((rp: any) => {
+          if (rp && typeof rp === "object" && rp.name) return rp;
+          const id =
+            typeof rp === "string"
+              ? rp
+              : rp.id || rp.relatedToId || rp.relatedProduct?.id;
+          return this.ds.products().find((x) => x.id === id);
+        })
+        .filter((x) => x !== undefined)
+        .slice(0, 4) as Product[];
     }
-    return this.ds.products().filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 4);
+    return this.ds
+      .products()
+      .filter((x) => x.category_id === p.category_id && x.id !== p.id)
+      .slice(0, 4);
   });
 
   optionalFilaments = computed(() => {
-    return this.ds.products().filter(p => p.category_id === 'cat-2').slice(0, 4);
+    return this.ds
+      .products()
+      .filter((p) => p.category_id === "cat-2")
+      .slice(0, 4);
   });
 
   bundleProductsList = computed(() => {
     const p = this.product();
     if (!p || !p.bundleProducts) return [];
-    const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
+    const list =
+      typeof p.bundleProducts === "string"
+        ? JSON.parse(p.bundleProducts)
+        : p.bundleProducts;
     if (!Array.isArray(list)) return [];
-    return list.map((item: any) => {
-      if (item && typeof item === 'object' && item.name) return item;
-      const id = typeof item === 'string' ? item : item.id;
-      return this.ds.products().find(x => x.id === id);
-    }).filter(x => x !== undefined) as Product[];
+    return list
+      .map((item: any) => {
+        if (item && typeof item === "object" && item.name) return item;
+        const id = typeof item === "string" ? item : item.id;
+        return this.ds.products().find((x) => x.id === id);
+      })
+      .filter((x) => x !== undefined) as Product[];
   });
 
   recommendedFilamentsList = computed(() => {
     const p = this.product();
     if (!p || !p.recommendedFilaments) return [];
-    const list = typeof p.recommendedFilaments === 'string' ? JSON.parse(p.recommendedFilaments) : p.recommendedFilaments;
+    const list =
+      typeof p.recommendedFilaments === "string"
+        ? JSON.parse(p.recommendedFilaments)
+        : p.recommendedFilaments;
     if (!Array.isArray(list)) return [];
-    return list.map((item: any) => {
-      if (item && typeof item === 'object' && item.name) return item;
-      const id = typeof item === 'string' ? item : item.id;
-      return this.ds.products().find(x => x.id === id);
-    }).filter(x => x !== undefined) as Product[];
+    return list
+      .map((item: any) => {
+        if (item && typeof item === "object" && item.name) return item;
+        const id = typeof item === "string" ? item : item.id;
+        return this.ds.products().find((x) => x.id === id);
+      })
+      .filter((x) => x !== undefined) as Product[];
   });
 
   addRecommendedFilamentToCart(filament: Product) {
@@ -264,7 +422,11 @@ export class ProductDetail {
 
   isDealerActive = computed(() => {
     const r = this.ds.userRole();
-    return r === 'admin' || r === 'super-admin' || (this.ds.activeUser()?.rewardPoints || 0) > 300;
+    return (
+      r === "admin" ||
+      r === "super-admin" ||
+      (this.ds.activeUser()?.rewardPoints || 0) > 300
+    );
   });
 
   titleService = inject(Title);
@@ -273,8 +435,12 @@ export class ProductDetail {
 
   activePrice(p: any): number {
     const variant = this.selectedVariant();
-    const dealerPrice = variant ? (variant.price) : (p.dealerPrice || p.dealer_price); // dealer fallback or variant price
-    const salePrice = variant ? (variant.salePrice || variant.price) : (p.salePrice || p.sale_price);
+    const dealerPrice = variant
+      ? variant.price
+      : p.dealerPrice || p.dealer_price; // dealer fallback or variant price
+    const salePrice = variant
+      ? variant.salePrice || variant.price
+      : p.salePrice || p.sale_price;
 
     return this.isDealerActive() ? dealerPrice : salePrice;
   }
@@ -292,7 +458,7 @@ export class ProductDetail {
   }
 
   getImageUrl(img: any): string {
-    return typeof img === 'string' ? img : img?.url || '';
+    return typeof img === "string" ? img : img?.url || "";
   }
 
   currentActiveImageUrl = computed(() => {
@@ -300,13 +466,13 @@ export class ProductDetail {
     if (actImg) return this.getImageUrl(actImg);
     const imgs = this.galleryImages();
     if (imgs && imgs.length > 0) return this.getImageUrl(imgs[0]);
-    return '';
+    return "";
   });
 
   isZoomActive = signal<boolean>(false);
   lensLeft = signal<number>(0);
   lensTop = signal<number>(0);
-  zoomBgPosition = signal<string>('0% 0%');
+  zoomBgPosition = signal<string>("0% 0%");
 
   onMouseEnter() {
     if (!this.is360Active()) {
@@ -331,9 +497,9 @@ export class ProductDetail {
 
     const lensWidthPct = 30;
     const lensHeightPct = 30;
-    
-    let leftPct = (boundedX / rect.width) * 100 - (lensWidthPct / 2);
-    let topPct = (boundedY / rect.height) * 100 - (lensHeightPct / 2);
+
+    let leftPct = (boundedX / rect.width) * 100 - lensWidthPct / 2;
+    let topPct = (boundedY / rect.height) * 100 - lensHeightPct / 2;
 
     leftPct = Math.max(0, Math.min(leftPct, 100 - lensWidthPct));
     topPct = Math.max(0, Math.min(topPct, 100 - lensHeightPct));
@@ -348,65 +514,77 @@ export class ProductDetail {
   }
 
   selectOption(optionName: string, value: string) {
-      this.selectedOptions.update(opts => ({...opts, [optionName]: value}));
-      
-      // Update variant images and URL query params if variant matches
-      const variant = this.selectedVariant();
-      if (variant) {
-          const variantImages = variant.variantImages || variant.images;
-          if (variantImages && variantImages.length > 0) {
-              this.activeImage.set(this.getImageUrl(variantImages[0]));
-          }
-          this.router.navigate([], {
-              queryParams: { variant: variant.id },
-              queryParamsHandling: 'merge',
-              replaceUrl: true
-          });
+    this.selectedOptions.update((opts) => ({ ...opts, [optionName]: value }));
+
+    // Update variant images and URL query params if variant matches
+    const variant = this.selectedVariant();
+    if (variant) {
+      const variantImages = variant.variantImages || variant.images;
+      if (variantImages && variantImages.length > 0) {
+        this.activeImage.set(this.getImageUrl(variantImages[0]));
       }
+      this.router.navigate([], {
+        queryParams: { variant: variant.id },
+        queryParamsHandling: "merge",
+        replaceUrl: true,
+      });
+    }
   }
 
   getOptionValueName(values: any[], selectedId: string): string {
-     return selectedId || '';
+    return selectedId || "";
   }
 
   /** Safely extract a plain string label from an option value that may be a string or object */
   getOptionValueStr(val: any): string {
-    if (!val) return '';
-    if (typeof val === 'string') return val;
-    if (typeof val === 'number') return String(val);
+    if (!val) return "";
+    if (typeof val === "string") return val;
+    if (typeof val === "number") return String(val);
     // Handle objects — prefer label > value > name > toString
-    return val.label || val.value || val.name || val.title || JSON.stringify(val);
+    return (
+      val.label || val.value || val.name || val.title || JSON.stringify(val)
+    );
   }
 
   constructor() {
-    this.route.params.subscribe(p => {
-      if (p['slug']) {
-        const slugStr = p['slug'];
+    this.route.params.subscribe((p) => {
+      if (p["slug"]) {
+        const slugStr = p["slug"];
         this.slug.set(slugStr);
-        
+
         // Fetch detailed product data
+        this.isLoadingProduct.set(true);
         fetch(`${environment.apiUrl}/products/slug/${slugStr}`)
-          .then(res => res.json())
-          .then(detailedProd => {
+          .then((res) => res.json())
+          .then((detailedProd) => {
             if (detailedProd && !detailedProd.error) {
-               // Reconstruct flat object for existing frontend properties mapped to it
-               const merged = { 
-                 ...detailedProd.product, 
-                 options: detailedProd.options || detailedProd.product?.options || [],
-                 images: detailedProd.images, 
-                 variants: detailedProd.variants, 
-                 reviews: detailedProd.reviews, 
-                 relatedProducts: detailedProd.relatedProducts 
-               };
-               this.fetchedProduct.set(merged);
-               this.initializeDefaultVariant(merged);
+              // Reconstruct flat object for existing frontend properties mapped to it
+              const merged = {
+                ...detailedProd.product,
+                options:
+                  detailedProd.options || detailedProd.product?.options || [],
+                images: detailedProd.images,
+                variants: detailedProd.variants,
+                reviews: detailedProd.reviews,
+                relatedProducts: detailedProd.relatedProducts,
+              };
+              this.fetchedProduct.set(merged);
+              this.initializeDefaultVariant(merged);
             }
           })
-          .catch(err => console.error("Could not fetch product details:", err));
+          .catch((err) =>
+            console.error("Could not fetch product details:", err),
+          )
+          .finally(() => {
+            this.isLoadingProduct.set(false);
+          });
 
-        const matched = this.ds.products().find(x => x.slug === slugStr);
+        const matched = this.ds.products().find((x) => x.slug === slugStr);
         if (matched) {
-          const firstImg = matched.images && matched.images.length > 0 ? this.getImageUrl(matched.images[0]) : '';
+          const firstImg =
+            matched.images && matched.images.length > 0
+              ? this.getImageUrl(matched.images[0])
+              : "";
           this.activeImage.set(firstImg);
           this.quantity.set(1);
           this.is360Active.set(false);
@@ -415,30 +593,51 @@ export class ProductDetail {
           this.initializeDefaultVariant(matched);
 
           // Update SEO
-          const pageTitle = (matched as any).seoTitle || `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
-          const pageDesc = (matched as any).seoDescription || `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
+          const pageTitle =
+            (matched as any).seoTitle ||
+            `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
+          const pageDesc =
+            (matched as any).seoDescription ||
+            `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
           this.titleService.setTitle(pageTitle);
-          this.metaService.updateTag({ name: 'description', content: pageDesc });
-          this.metaService.updateTag({ property: 'og:title', content: pageTitle });
-          this.metaService.updateTag({ property: 'og:description', content: pageDesc });
+          this.metaService.updateTag({
+            name: "description",
+            content: pageDesc,
+          });
+          this.metaService.updateTag({
+            property: "og:title",
+            content: pageTitle,
+          });
+          this.metaService.updateTag({
+            property: "og:description",
+            content: pageDesc,
+          });
           if (firstImg) {
-             this.metaService.updateTag({ property: 'og:image', content: firstImg });
+            this.metaService.updateTag({
+              property: "og:image",
+              content: firstImg,
+            });
           }
 
-          let link: HTMLLinkElement | null = this.document.querySelector("link[rel='canonical']");
+          let link: HTMLLinkElement | null = this.document.querySelector(
+            "link[rel='canonical']",
+          );
           if (!link) {
-             link = this.document.createElement('link');
-             link.setAttribute('rel', 'canonical');
-             this.document.head.appendChild(link);
+            link = this.document.createElement("link");
+            link.setAttribute("rel", "canonical");
+            this.document.head.appendChild(link);
           }
-          link.setAttribute('href', `https://3dgalaxy.com/product/${matched.slug}`);
+          link.setAttribute(
+            "href",
+            `https://3dgalaxy.com/product/${matched.slug}`,
+          );
         }
       }
     });
 
     // When query parameters change, update selected options if a variant matches
-    this.route.queryParams.subscribe(q => {
-      const varId = q['variant'];
+    this.route.queryParams.subscribe((q) => {
+      const varId = q["variant"];
       if (varId) {
         const prod = this.product();
         const currentVariant = this.selectedVariant();
@@ -446,12 +645,19 @@ export class ProductDetail {
           return; // Already matched
         }
         if (prod && prod.variants) {
-          const matchedVar = prod.variants.find((v: any) => String(v.id) === String(varId));
+          const matchedVar = prod.variants.find(
+            (v: any) => String(v.id) === String(varId),
+          );
           if (matchedVar && matchedVar.optionValues) {
             const normalized: Record<string, string> = {};
-            Object.entries(matchedVar.optionValues).forEach(([k, v]: [string, any]) => {
-              normalized[k] = typeof v === 'string' ? v : (v?.label || v?.value || v?.name || String(v));
-            });
+            Object.entries(matchedVar.optionValues).forEach(
+              ([k, v]: [string, any]) => {
+                normalized[k] =
+                  typeof v === "string"
+                    ? v
+                    : v?.label || v?.value || v?.name || String(v);
+              },
+            );
             this.selectedOptions.set(normalized);
             const variantImages = matchedVar.variantImages || matchedVar.images;
             if (variantImages && variantImages.length > 0) {
@@ -476,12 +682,12 @@ export class ProductDetail {
   }
 
   toggle360Sensor() {
-    this.is360Active.update(v => !v);
+    this.is360Active.update((v) => !v);
     this.rotationAngle.set(0);
   }
 
   rotateAngle(deg: number) {
-    this.rotationAngle.update(current => {
+    this.rotationAngle.update((current) => {
       let next = current + deg;
       if (next >= 360) next = 0;
       if (next < 0) next = 315;
@@ -494,32 +700,32 @@ export class ProductDetail {
     const angle = this.rotationAngle();
     // Simulate high precision angles by modifying lighting hues in picsum photos
     if (angle === 45 || angle === 225) {
-      return 'https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=400';
+      return "https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=400";
     }
     if (angle === 90 || angle === 270) {
-      return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=400';
+      return "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=400";
     }
-    return 'https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=450';
+    return "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=450";
   }
 
   addToCart(p: Product) {
     if (this.isAddingToCart()) return;
-    
+
     if (p.variants && p.variants.length > 0) {
       const selected = this.selectedVariant();
       if (!selected) {
-        this.toastService.error('Please select all variant options.');
+        this.toastService.error("Please select all variant options.");
         return;
       }
       if (selected.stock <= 0) {
-        this.toastService.error('Selected variant is out of stock.');
+        this.toastService.error("Selected variant is out of stock.");
         return;
       }
       this.isAddingToCart.set(true);
       this.ds.addToCart(p, this.quantity(), selected);
     } else {
       if (p.stock <= 0) {
-        this.toastService.error('Product is out of stock.');
+        this.toastService.error("Product is out of stock.");
         return;
       }
       this.isAddingToCart.set(true);
@@ -530,18 +736,33 @@ export class ProductDetail {
     const bundleItems = this.bundleProductsList();
     if (bundleItems && bundleItems.length > 0) {
       for (const item of bundleItems) {
-        this.ds.cart.update(items => {
-          const isExist = items.some(i => i.product.id === item.id && i.isFree);
+        this.ds.cart.update((items) => {
+          const isExist = items.some(
+            (i) => i.product.id === item.id && i.isFree,
+          );
           if (isExist) {
-            return items.map(i => (i.product.id === item.id && i.isFree) ? { ...i, quantity: i.quantity + this.quantity() } : i);
+            return items.map((i) =>
+              i.product.id === item.id && i.isFree
+                ? { ...i, quantity: i.quantity + this.quantity() }
+                : i,
+            );
           }
           const role = this.ds.userRole();
-          const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
-          return [...items, { product: item, quantity: this.quantity(), selectedPriceType: priceType, isFree: true }];
+          const priceType =
+            role === "admin" || role === "super-admin" ? "dealer" : "sale";
+          return [
+            ...items,
+            {
+              product: item,
+              quantity: this.quantity(),
+              selectedPriceType: priceType,
+              isFree: true,
+            },
+          ];
         });
       }
     }
-    
+
     setTimeout(() => {
       this.isAddingToCart.set(false);
       this.toastService.success(`${p.name} added to cart!`);
@@ -553,23 +774,26 @@ export class ProductDetail {
   }
 
   async loadWishlist() {
-    if (this.ds.userRole() !== 'guest') {
-      try {
-        const res: any = await this.api.get('/wishlist').toPromise();
-        if (res?.success && res.data) {
-          const ids = new Set<string>();
-          // Handle response array
-          res.data.forEach((i: any) => ids.add(i.productId));
-          this.wishlistIds.set(ids);
-        }
-      } catch(e) {}
+    if (this.ds.userRole() === "guest") {
+      this.wishlistIds.set(new Set());
+      return;
     }
+
+    try {
+      const res: any = await this.api.get("/wishlist").toPromise();
+      if (res?.success && res.data) {
+        const ids = new Set<string>();
+        // Handle response array
+        res.data.forEach((i: any) => ids.add(i.productId));
+        this.wishlistIds.set(ids);
+      }
+    } catch (e) {}
   }
 
   async toggleWishlist(productId: string) {
-    if (this.ds.userRole() === 'guest') {
-      this.toastService.info('Please log in to manage your wishlist');
-      this.router.navigate(['/login']);
+    if (this.ds.userRole() === "guest") {
+      this.toastService.info("Please log in to manage your wishlist");
+      this.router.navigate(["/login"]);
       return;
     }
     const current = this.wishlistIds();
@@ -579,16 +803,16 @@ export class ProductDetail {
         const newSet = new Set(current);
         newSet.delete(productId);
         this.wishlistIds.set(newSet);
-        this.toastService.success('Removed from Wishlist');
+        this.toastService.success("Removed from Wishlist");
       } else {
-        await this.api.post('/wishlist', { productId }).toPromise();
+        await this.api.post("/wishlist", { productId }).toPromise();
         const newSet = new Set(current);
         newSet.add(productId);
         this.wishlistIds.set(newSet);
-        this.toastService.success('Added to Wishlist');
+        this.toastService.success("Added to Wishlist");
       }
-    } catch(e) {
-      this.toastService.error('Wishlist action failed');
+    } catch (e) {
+      this.toastService.error("Wishlist action failed");
     }
   }
 
@@ -596,33 +820,71 @@ export class ProductDetail {
     if (p.variants && p.variants.length > 0) {
       const selected = this.selectedVariant();
       if (!selected) {
-        this.toastService.error('Please select all variant options.');
+        this.toastService.error("Please select all variant options.");
         return;
       }
       if (selected.stock <= 0) {
-        this.toastService.error('Selected variant is out of stock.');
+        this.toastService.error("Selected variant is out of stock.");
         return;
       }
-      this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity(), variant: selected } });
+      this.router.navigate(["/checkout"], {
+        state: { product: p, quantity: this.quantity(), variant: selected },
+      });
     } else {
       if (p.stock <= 0) {
-        this.toastService.error('Product is out of stock.');
+        this.toastService.error("Product is out of stock.");
         return;
       }
-      this.router.navigate(['/checkout'], { state: { product: p, quantity: this.quantity() } });
+      this.router.navigate(["/checkout"], {
+        state: { product: p, quantity: this.quantity() },
+      });
     }
   }
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION
+  async shareProduct(p: Product) {
+    const origin = this.document.location?.origin || "https://3dgalaxy.com";
+    const shareUrl = `${origin}/product/${p.slug}`;
+    const shareText = `Check out ${p.name} on 3D Galaxy.`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: p.name,
+          text: shareText,
+          url: shareUrl,
+        });
+        this.toastService.success("Product shared successfully.");
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        this.toastService.success("Product link copied to clipboard.");
+      } else {
+        this.toastService.info("Sharing is unavailable on this device.");
+      }
+    } catch (error) {
+      console.error("Share failed:", error);
+      if (navigator.clipboard) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          this.toastService.success("Product link copied to clipboard.");
+          return;
+        } catch (clipboardError) {
+          console.error("Clipboard copy failed:", clipboardError);
+        }
+      }
+      this.toastService.error("Unable to share this product right now.");
+    }
+  }
+
   triggerWhatsAppInquiry(p: Product) {
-    const contact = '919876543210'; // Demo 3D Galaxy WhatsApp business number
+    const contact = "919876543210"; // Demo 3D Galaxy WhatsApp business number
     const price = this.activePrice(p);
     const textMessage = `Hi 3D Galaxy Team! I am interested in purchasing ${p.name} (SKU: ${p.sku}) for ₹${price} / each. Quantity needed: ${this.quantity()}. Kindly advise on bulk delivery times. Thanks!`;
     const targetUrl = `https://wa.me/${contact}?text=${encodeURIComponent(textMessage)}`;
-    
+
     // Attempt non-blocking window redirect or notification log
-    if (typeof window !== 'undefined') {
-      window.open(targetUrl, '_blank');
+    if (typeof window !== "undefined") {
+      window.open(targetUrl, "_blank");
     }
   }
 
@@ -635,14 +897,14 @@ export class ProductDetail {
     const desc = this.newQuestionText().trim();
     if (!desc) return;
 
-    this.ds.products.update(all => {
-      return all.map(p => {
+    this.ds.products.update((all) => {
+      return all.map((p) => {
         if (p.id === productId) {
           const newQA = {
-            id: 'qa-' + Date.now(),
+            id: "qa-" + Date.now(),
             question: desc,
-            askedBy: this.ds.activeUser().name || 'Anonymous Maker',
-            date: new Date().toISOString().split('T')[0]
+            askedBy: this.ds.activeUser().name || "Anonymous Maker",
+            date: new Date().toISOString().split("T")[0],
           };
           return { ...p, qnas: [newQA, ...p.qnas] };
         }
@@ -650,7 +912,7 @@ export class ProductDetail {
       });
     });
 
-    this.newQuestionText.set('');
+    this.newQuestionText.set("");
   }
 
   selectDraftStar(val: number) {
@@ -661,40 +923,151 @@ export class ProductDetail {
     this.draftComment.set((event.target as HTMLInputElement).value);
   }
 
-  submitReview(productId: string) {
+  setReviewRating(rating: number) {
+    this.reviewDraft.update((value) => ({ ...value, rating }));
+  }
+
+  updateReviewTitle(title: string) {
+    this.reviewDraft.update((value) => ({ ...value, title }));
+  }
+
+  updateReviewComment(comment: string) {
+    this.reviewDraft.update((value) => ({ ...value, comment }));
+  }
+
+  updateReviewRecommended(recommended: boolean) {
+    this.reviewDraft.update((value) => ({ ...value, recommended }));
+  }
+
+  openReviewModal() {
+    this.isReviewModalOpen.set(true);
+  }
+
+  closeReviewModal() {
+    this.isReviewModalOpen.set(false);
+    this.reviewDraft.set({
+      rating: 5,
+      title: "",
+      comment: "",
+      recommended: true,
+      images: [],
+      imagePreviews: [],
+      uploading: false,
+    });
+  }
+
+  async submitReview(productId: string) {
     if (this.isSubmittingReview()) return;
-    if (!this.ds.activeUser()) {
-      this.toastService.error('Please log in to write a review.');
-      this.router.navigate(['/login']);
+    const draft = this.reviewDraft();
+    if (!draft.comment.trim() || !draft.title.trim()) {
+      this.toastService.error(
+        "Please add a title and detailed review before submitting.",
+      );
       return;
     }
-    const text = this.draftComment().trim();
-    if (!text) return;
 
     this.isSubmittingReview.set(true);
+    this.reviewDraft.update((value) => ({ ...value, uploading: true }));
 
-    this.ds.products.update(all => {
-      return all.map(p => {
-        if (p.id === productId) {
-          const newRev: Review = {
-            id: 'rev-' + Date.now(),
-            userName: this.ds.activeUser().name || 'Anonymous Customer',
-            rating: this.draftStars(),
-            comment: text,
-            date: new Date().toISOString().split('T')[0],
-            verified: true
-          };
-          return { ...p, reviews: [newRev, ...p.reviews] };
-        }
-        return p;
-      });
-    });
+    try {
+      const payload: any = {
+        productId,
+        orderId:
+          (this.router.getCurrentNavigation()?.extras?.state as any)?.orderId ||
+          "",
+        rating: draft.rating,
+        title: draft.title,
+        review: draft.comment,
+        recommended: draft.recommended,
+        images: [],
+      };
 
-    setTimeout(() => {
-      this.draftComment.set('');
-      this.draftStars.set(5);
+      const res: any = await this.api.post("/reviews", payload).toPromise();
+      if (res?.success) {
+        this.toastService.success(
+          "Thanks! Your review has been submitted for approval.",
+        );
+        this.closeReviewModal();
+        this.loadReviews(productId);
+      } else {
+        this.toastService.error(
+          res?.error || "Unable to submit your review right now.",
+        );
+      }
+    } catch (error: any) {
+      this.toastService.error(
+        error?.message || "Unable to submit your review right now.",
+      );
+    } finally {
       this.isSubmittingReview.set(false);
-      this.toastService.success('Thank you! Your verified review was added.');
-    }, 600);
+      this.reviewDraft.update((value) => ({ ...value, uploading: false }));
+    }
+  }
+
+  async loadReviews(productId: string) {
+    try {
+      const res: any = await this.api
+        .get(`/products/${productId}/reviews`)
+        .toPromise();
+      const reviews = res?.data || [];
+      const current = this.fetchedProduct();
+      this.fetchedProduct.set({ ...current, reviews });
+    } catch (error) {
+      console.error("Review load failed", error);
+    }
+  }
+
+  onReviewImageSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files || []);
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    const validFiles = files.filter((file) => allowed.includes(file.type));
+    if (!validFiles.length) {
+      this.toastService.error("Only JPG, PNG, and WEBP images are supported.");
+      return;
+    }
+
+    const previews = validFiles.map((file) => URL.createObjectURL(file));
+    this.reviewDraft.update((value) => ({
+      ...value,
+      images: [...value.images, ...validFiles],
+      imagePreviews: [...value.imagePreviews, ...previews],
+    }));
+  }
+
+  removeReviewImage(index: number) {
+    this.reviewDraft.update((value) => ({
+      ...value,
+      images: value.images.filter((_, idx) => idx !== index),
+      imagePreviews: value.imagePreviews.filter((_, idx) => idx !== index),
+    }));
+  }
+
+  trackReview(index: number, review: any) {
+    return review?.id || index;
+  }
+
+  getReviewPercentage(star: number) {
+    const { total, distribution } = this.reviewStats();
+    if (!total) return 0;
+    return Math.round((distribution[5 - star] / total) * 100);
+  }
+
+  formatRatingValue(value: number) {
+    return Number(value || 0).toFixed(1);
+  }
+
+  getReviewStars(rating: number) {
+    return Array.from({ length: 5 }, (_, index) => index < rating);
+  }
+
+  setReviewSort(
+    sort: "helpful" | "latest" | "highest" | "lowest" | "images" | "verified",
+  ) {
+    this.reviewSort.set(sort);
+  }
+
+  isReviewEligible() {
+    return true;
   }
 }

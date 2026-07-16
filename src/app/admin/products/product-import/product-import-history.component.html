@@ -1,0 +1,86 @@
+<div class="space-y-8 animate-fadeIn max-w-6xl mx-auto p-6">
+  <div class="flex flex-col gap-2">
+    <div class="text-xs font-black uppercase tracking-wide text-zinc-400">
+      Catalog
+    </div>
+    <h1 class="text-3xl font-black text-zinc-900 dark:text-white">
+      Import History
+    </h1>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
+      Review recent product import batches, including counts, errors, and status
+      details.
+    </p>
+  </div>
+
+  <div
+    class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-sm"
+  >
+    <div *ngIf="loading()" class="text-sm text-zinc-500">
+      Loading import history...
+    </div>
+    <div
+      *ngIf="error()"
+      class="rounded-2xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm"
+    >
+      {{ error() }}
+    </div>
+
+    <div
+      *ngIf="!loading() && history().length === 0"
+      class="py-10 text-center text-zinc-500"
+    >
+      No import history available yet.
+    </div>
+
+    <div *ngIf="!loading() && history().length > 0" class="overflow-x-auto">
+      <table
+        class="min-w-full text-left text-sm border-collapse border border-zinc-200 dark:border-zinc-800"
+      >
+        <thead class="bg-zinc-100 dark:bg-zinc-900">
+          <tr>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              Date
+            </th>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              File
+            </th>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              Created
+            </th>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              Updated
+            </th>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              Failed
+            </th>
+            <th class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              Mode
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of history()">
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ formatDate(item.importedAt) }}
+            </td>
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ item.filename }}
+            </td>
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ item.createdCount }}
+            </td>
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ item.updatedCount }}
+            </td>
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ item.failedCount }}
+            </td>
+            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              {{ item.mode }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,264 +1,373 @@
-<div class="flex flex-col lg:flex-row -mx-4 sm:-mx-6 lg:-mx-8 -mt-8 md:-mt-12 min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 antialiased font-sans">
-  
-  @if (ds.authReady()) {
-    @if (ds.userRole() === 'admin' || ds.userRole() === 'super-admin') {
-      
-      <!-- COLLAPSED/FLYOUT SHOPIFY-STYLE LEFT SIDEBAR -->
-      <!-- Desktop Sidebar -->
-      <aside class="hidden lg:flex w-64 bg-zinc-900 text-zinc-400 border-r border-white/5 flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40">
-        <div class="p-6 border-b border-white/5 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <mat-icon class="text-white text-lg">rocket_launch</mat-icon>
-            </div>
-            <div>
-              <h2 class="text-sm font-black tracking-tight text-white uppercase leading-none">Console</h2>
-              <span class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest">3D GALAXY OS</span>
-            </div>
-          </div>
-          <div class="h-2 w-2 bg-emerald-400 rounded-full animate-ping"></div>
+<div
+  class="flex flex-col lg:flex-row -mx-4 sm:-mx-6 lg:-mx-8 -mt-8 md:-mt-12 min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 antialiased font-sans"
+>
+  @if (!ds.authReady()) {
+  <app-skeleton-page />
+  } @else if (ds.userRole() === 'admin' || ds.userRole() === 'super-admin') {
+
+  <!-- COLLAPSED/FLYOUT SHOPIFY-STYLE LEFT SIDEBAR -->
+  <!-- Desktop Sidebar -->
+  <aside
+    class="hidden lg:flex w-64 bg-zinc-900 text-zinc-400 border-r border-white/5 flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40"
+  >
+    <div class="p-6 border-b border-white/5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div
+          class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20"
+        >
+          <mat-icon class="text-white text-lg">rocket_launch</mat-icon>
         </div>
-
-        <!-- COLLAPSIBLE GROUPS -->
-        <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth">
-          @for (grp of sidebarMenu; track grp.group) {
-            <div class="space-y-0.5">
-              <button (click)="toggleGroup(grp.group)" class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
-                <span>{{ grp.group }}</span>
-                <mat-icon class="text-xs transition-transform duration-200" [class.rotate-180]="!collapsedGroups()[grp.group]">expand_more</mat-icon>
-              </button>
-
-              @if (!collapsedGroups()[grp.group]) {
-                <div class="space-y-0.5 pl-1 transition-all">
-                  @for (item of grp.items; track item.id) {
-                    <button (click)="setActiveTab(item.id)"
-                            [class]="activeTab() === item.id 
-                              ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
-                              : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'">
-                      <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
-                      <span class="truncate">{{ item.label }}</span>
-                      @if (item.id === 'orders' && ds.orders().length > 0) {
-                        <span class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md">{{ ds.orders().length }}</span>
-                      }
-                      @if (item.id === 'quotes' && ds.quotes().length > 0) {
-                        <span class="ml-auto h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                      }
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </nav>
-
-        <div class="p-4 border-t border-white/5 mt-auto bg-zinc-950/40 font-sans">
-          <div class="flex items-center gap-3">
-            <div class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white shadow-md shadow-purple-600/20 uppercase">
-              {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-xs font-black text-white truncate">{{ ds.userProfile()?.name || 'Administrator' }}</p>
-              <p class="text-[9px] text-zinc-500 truncate uppercase tracking-widest">{{ ds.userRole() }} Node</p>
-            </div>
-            <button (click)="logout()" class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer">
-              <mat-icon class="text-base">logout</mat-icon>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Mobile/Tablet Drawer Sidebar -->
-      @if (isAdminSidebarOpen()) {
-        <div class="fixed inset-0 z-50 lg:hidden flex">
-          <!-- Backdrop -->
-          <div class="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm" (click)="isAdminSidebarOpen.set(false)" (keydown.escape)="isAdminSidebarOpen.set(false)" role="button" tabindex="-1"></div>
-          
-          <!-- Drawer -->
-          <aside class="relative w-72 max-w-[85%] bg-zinc-900 text-zinc-400 flex flex-col h-full shadow-2xl z-50 animate-slide-in-left">
-            <div class="p-6 border-b border-white/5 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <mat-icon class="text-white text-lg">rocket_launch</mat-icon>
-                </div>
-                <div>
-                  <h2 class="text-sm font-black tracking-tight text-white uppercase leading-none">Console</h2>
-                  <span class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest">3D GALAXY OS</span>
-                </div>
-              </div>
-              <button (click)="isAdminSidebarOpen.set(false)" class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white cursor-pointer">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-            
-            <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth">
-              @for (grp of sidebarMenu; track grp.group) {
-                <div class="space-y-0.5">
-                  <button (click)="toggleGroup(grp.group)" class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
-                    <span>{{ grp.group }}</span>
-                    <mat-icon class="text-xs transition-transform duration-200" [class.rotate-180]="!collapsedGroups()[grp.group]">expand_more</mat-icon>
-                  </button>
-
-                  @if (!collapsedGroups()[grp.group]) {
-                    <div class="space-y-0.5 pl-1 transition-all">
-                      @for (item of grp.items; track item.id) {
-                        <button (click)="setActiveTab(item.id); isAdminSidebarOpen.set(false)"
-                                [class]="activeTab() === item.id 
-                                  ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
-                                  : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'">
-                          <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
-                          <span class="truncate">{{ item.label }}</span>
-                          @if (item.id === 'orders' && ds.orders().length > 0) {
-                            <span class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md">{{ ds.orders().length }}</span>
-                          }
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-            </nav>
-            
-            <div class="p-4 border-t border-white/5 bg-zinc-950/40">
-              <div class="flex items-center gap-3">
-                <div class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white uppercase">
-                  {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="text-xs font-black text-white truncate">{{ ds.userProfile()?.name || 'Administrator' }}</p>
-                  <p class="text-[9px] text-zinc-500 truncate uppercase tracking-widest">{{ ds.userRole() }} Node</p>
-                </div>
-                <button (click)="logout(); isAdminSidebarOpen.set(false)" class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer">
-                  <mat-icon class="text-base">logout</mat-icon>
-                </button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      }
-
-    } @else {
-      <!-- RESTRICTED COVER SCREEN -->
-      <div class="flex-1 flex items-center justify-center p-8 bg-zinc-950 text-white">
-        <div class="max-w-md w-full p-10 bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl text-center space-y-6 animate-pulse animate-duration-1000">
-          <div class="h-16 w-16 bg-blue-600/15 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto shadow-md">
-            <mat-icon class="text-blue-400 text-3xl">shield_lock</mat-icon>
-          </div>
-          <div class="space-y-1">
-            <h1 class="text-xl font-black uppercase tracking-tight">Access Restricted</h1>
-            <p class="text-xs text-zinc-400">Secure 3D Galaxy Enclave requires authorized Administrative authorization.</p>
-          </div>
-          
-          @if (ds.currentUser()) {
-            <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-1">
-              <p class="text-[10px] font-black text-red-400 uppercase tracking-wider">Access Denied</p>
-              <p class="text-[9px] text-zinc-400">Account "{{ ds.currentUser()?.email }}" does not have clearance keys.</p>
-            </div>
-            <button (click)="logout()" class="w-full py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all">Authenticate Different Account</button>
-          } @else {
-            <button (click)="login()" [disabled]="loginLoading()" class="w-full py-4.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
-              @if (loginLoading()) {
-                <span class="h-3 w-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                Authorizing...
-              } @else {
-                <mat-icon class="text-base">fingerprint</mat-icon>
-                Authenticate via Google
-              }
-            </button>
-          }
+        <div>
+          <h2
+            class="text-sm font-black tracking-tight text-white uppercase leading-none"
+          >
+            Console
+          </h2>
+          <span
+            class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest"
+            >3D GALAXY OS</span
+          >
         </div>
       </div>
-    }
-  } @else {
-    <!-- SPLASH CONSOLE SPINNER -->
-    <div class="flex-1 flex flex-col items-center justify-center bg-zinc-950">
-      <div class="h-1 w-32 bg-white/5 rounded-full overflow-hidden">
-        <div class="h-full bg-blue-500 animate-pulse" style="width: 60%"></div>
-      </div>
-      <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-3">Booting Console Framework...</p>
+      <div class="h-2 w-2 bg-emerald-400 rounded-full animate-ping"></div>
     </div>
+
+    <!-- COLLAPSIBLE GROUPS -->
+    <nav
+      class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth"
+    >
+      @for (grp of sidebarMenu; track grp.group) {
+      <div class="space-y-0.5">
+        <button
+          (click)="toggleGroup(grp.group)"
+          class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer"
+        >
+          <span>{{ grp.group }}</span>
+          <mat-icon
+            class="text-xs transition-transform duration-200"
+            [class.rotate-180]="!collapsedGroups()[grp.group]"
+            >expand_more</mat-icon
+          >
+        </button>
+
+        @if (!collapsedGroups()[grp.group]) {
+        <div class="space-y-0.5 pl-1 transition-all">
+          @for (item of grp.items; track item.id) {
+          <button
+            (click)="setActiveTab(item.id)"
+            [class]="activeTab() === item.id 
+                              ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
+                              : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'"
+          >
+            <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
+            <span class="truncate">{{ item.label }}</span>
+            @if (item.id === 'orders' && ds.orders().length > 0) {
+            <span
+              class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md"
+              >{{ ds.orders().length }}</span
+            >
+            } @if (item.id === 'quotes' && ds.quotes().length > 0) {
+            <span
+              class="ml-auto h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"
+            ></span>
+            }
+          </button>
+          }
+        </div>
+        }
+      </div>
+      }
+    </nav>
+
+    <div class="p-4 border-t border-white/5 mt-auto bg-zinc-950/40 font-sans">
+      <div class="flex items-center gap-3">
+        <div
+          class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white shadow-md shadow-purple-600/20 uppercase"
+        >
+          {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-black text-white truncate">
+            {{ ds.userProfile()?.name || 'Administrator' }}
+          </p>
+          <p
+            class="text-[9px] text-zinc-500 truncate uppercase tracking-widest"
+          >
+            {{ ds.userRole() }} Node
+          </p>
+        </div>
+        <button
+          (click)="logout()"
+          class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer"
+        >
+          <mat-icon class="text-base">logout</mat-icon>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile/Tablet Drawer Sidebar -->
+  @if (isAdminSidebarOpen()) {
+  <div class="fixed inset-0 z-50 lg:hidden flex">
+    <!-- Backdrop -->
+    <div
+      class="fixed inset-0 bg-neutral-950/60 backdrop-blur-sm"
+      (click)="isAdminSidebarOpen.set(false)"
+      (keydown.escape)="isAdminSidebarOpen.set(false)"
+      role="button"
+      tabindex="-1"
+    ></div>
+
+    <!-- Drawer -->
+    <aside
+      class="relative w-72 max-w-[85%] bg-zinc-900 text-zinc-400 flex flex-col h-full shadow-2xl z-50 animate-slide-in-left"
+    >
+      <div
+        class="p-6 border-b border-white/5 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20"
+          >
+            <mat-icon class="text-white text-lg">rocket_launch</mat-icon>
+          </div>
+          <div>
+            <h2
+              class="text-sm font-black tracking-tight text-white uppercase leading-none"
+            >
+              Console
+            </h2>
+            <span
+              class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest"
+              >3D GALAXY OS</span
+            >
+          </div>
+        </div>
+        <button
+          (click)="isAdminSidebarOpen.set(false)"
+          class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white cursor-pointer"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <nav
+        class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth"
+      >
+        @for (grp of sidebarMenu; track grp.group) {
+        <div class="space-y-0.5">
+          <button
+            (click)="toggleGroup(grp.group)"
+            class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer"
+          >
+            <span>{{ grp.group }}</span>
+            <mat-icon
+              class="text-xs transition-transform duration-200"
+              [class.rotate-180]="!collapsedGroups()[grp.group]"
+              >expand_more</mat-icon
+            >
+          </button>
+
+          @if (!collapsedGroups()[grp.group]) {
+          <div class="space-y-0.5 pl-1 transition-all">
+            @for (item of grp.items; track item.id) {
+            <button
+              (click)="setActiveTab(item.id); isAdminSidebarOpen.set(false)"
+              [class]="activeTab() === item.id 
+                                  ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
+                                  : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'"
+            >
+              <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
+              <span class="truncate">{{ item.label }}</span>
+              @if (item.id === 'orders' && ds.orders().length > 0) {
+              <span
+                class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md"
+                >{{ ds.orders().length }}</span
+              >
+              }
+            </button>
+            }
+          </div>
+          }
+        </div>
+        }
+      </nav>
+
+      <div class="p-4 border-t border-white/5 bg-zinc-950/40">
+        <div class="flex items-center gap-3">
+          <div
+            class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white uppercase"
+          >
+            {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-black text-white truncate">
+              {{ ds.userProfile()?.name || 'Administrator' }}
+            </p>
+            <p
+              class="text-[9px] text-zinc-500 truncate uppercase tracking-widest"
+            >
+              {{ ds.userRole() }} Node
+            </p>
+          </div>
+          <button
+            (click)="logout(); isAdminSidebarOpen.set(false)"
+            class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer"
+          >
+            <mat-icon class="text-base">logout</mat-icon>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  } } @else {
+  <!-- RESTRICTED COVER SCREEN -->
+  <div
+    class="flex-1 flex items-center justify-center p-8 bg-zinc-950 text-white"
+  >
+    <div
+      class="max-w-md w-full p-10 bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl text-center space-y-6 animate-pulse animate-duration-1000"
+    >
+      <div
+        class="h-16 w-16 bg-blue-600/15 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto shadow-md"
+      >
+        <mat-icon class="text-blue-400 text-3xl">shield_lock</mat-icon>
+      </div>
+      <div class="space-y-1">
+        <h1 class="text-xl font-black uppercase tracking-tight">
+          Access Restricted
+        </h1>
+        <p class="text-xs text-zinc-400">
+          Secure 3D Galaxy Enclave requires authorized Administrative
+          authorization.
+        </p>
+      </div>
+
+      @if (ds.currentUser()) {
+      <div
+        class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-1"
+      >
+        <p class="text-[10px] font-black text-red-400 uppercase tracking-wider">
+          Access Denied
+        </p>
+        <p class="text-[9px] text-zinc-400">
+          Account "{{ ds.currentUser()?.email }}" does not have clearance keys.
+        </p>
+      </div>
+      <button
+        (click)="logout()"
+        class="w-full py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+      >
+        Authenticate Different Account
+      </button>
+      } @else {
+      <button
+        (click)="login()"
+        [disabled]="loginLoading()"
+        class="w-full py-4.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        @if (loginLoading()) {
+        <span
+          class="h-3 w-3 border-2 border-white/20 border-t-white rounded-full animate-spin"
+        ></span>
+        Authorizing... } @else {
+        <mat-icon class="text-base">fingerprint</mat-icon>
+        Authenticate via Google }
+      </button>
+      }
+    </div>
+  </div>
   }
 
   <!-- MAIN SCROLLABLE DASHBOARD PANEL -->
-  @if (ds.authReady() && (ds.userRole() === 'admin' || ds.userRole() === 'super-admin')) {
-    <main class="flex-1 min-w-0 flex flex-col bg-zinc-50 dark:bg-zinc-950">
-      
-      <!-- TOP STATUS BAR -->
-      <header class="h-16 px-6 lg:px-8 border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button (click)="isAdminSidebarOpen.set(true)" class="lg:hidden h-10 w-10 flex shrink-0 items-center justify-center text-zinc-650 dark:text-zinc-300 hover:bg-neutral-150/50 dark:hover:bg-zinc-900 rounded-lg cursor-pointer">
-            <mat-icon>menu</mat-icon>
-          </button>
-          <div class="flex items-center gap-1.5 text-zinc-400 text-xs uppercase font-mono font-black">
-            <span>{{ activeTab() }}</span>
-            <mat-icon class="text-sm">chevron_right</mat-icon>
-          </div>
+  @if (ds.authReady() && (ds.userRole() === 'admin' || ds.userRole() ===
+  'super-admin')) {
+  <main class="flex-1 min-w-0 flex flex-col bg-zinc-50 dark:bg-zinc-950">
+    <!-- TOP STATUS BAR -->
+    <header
+      class="h-16 px-6 lg:px-8 border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-3">
+        <button
+          (click)="isAdminSidebarOpen.set(true)"
+          class="lg:hidden h-10 w-10 flex shrink-0 items-center justify-center text-zinc-650 dark:text-zinc-300 hover:bg-neutral-150/50 dark:hover:bg-zinc-900 rounded-lg cursor-pointer"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+        <div
+          class="flex items-center gap-1.5 text-zinc-400 text-xs uppercase font-mono font-black"
+        >
+          <span>{{ activeTab() }}</span>
+          <mat-icon class="text-sm">chevron_right</mat-icon>
         </div>
-
-        <div class="flex items-center gap-4">
-          <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-            <span class="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping"></span>
-            <span class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Network Live</span>
-          </div>
-          <div class="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800"></div>
-          <div class="text-right">
-            <p class="text-[10px] font-black text-zinc-900 dark:text-white uppercase leading-none">{{ storeName() }}</p>
-            <span class="text-[8px] font-mono text-zinc-400 uppercase tracking-widest">Industrial Node</span>
-          </div>
-        </div>
-      </header>
-
-      <!-- CONTENT BODY PANEL -->
-      <div class="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
-
-        @if (loading()) {
-           <app-skeleton-page />
-        } @else {
-          @if (activeTab() === 'dashboard') {
-            <app-admin-dashboard-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'products' || activeTab() === 'categories' || activeTab() === 'collections' || activeTab() === 'brands' || activeTab() === 'inventory') {
-            <app-admin-catalog-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'orders' || activeTab() === 'draft-orders' || activeTab() === 'quotes') {
-            <app-admin-sales-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'abandoned-carts') {
-            <app-admin-abandoned-checkouts-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'customer-list' || activeTab() === 'customer-groups' || activeTab() === 'reviews') {
-            <app-admin-customers-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'pages' || activeTab() === 'blogs' || activeTab() === 'faqs' || activeTab() === 'banners' || activeTab() === 'homepage-builder' || activeTab() === 'menu-builder') {
-            <app-admin-content-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'coupons' || activeTab() === 'promotions' || activeTab() === 'email-campaigns' || activeTab() === 'push-notifications') {
-            <app-admin-marketing-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'sales-reports' || activeTab() === 'product-reports' || activeTab() === 'customer-reports') {
-            <app-admin-analytics-tab [admin]="this" />
-          }
-
-          @if (activeTab().endsWith('-settings') || activeTab() === 'user-management' || activeTab() === 'active-sessions') {
-            <app-admin-settings-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'transactions' || activeTab() === 'webhook-logs') {
-            <app-admin-payments-tab [admin]="this" />
-          }
-
-          @if (activeTab() === 'whatsapp-logs' || activeTab() === 'whatsapp-campaign') {
-            <app-admin-communication-tab [admin]="this" />
-          }
-        }
-
       </div>
-    </main>
+
+      <div class="flex items-center gap-4">
+        <div
+          class="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full"
+        >
+          <span
+            class="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-ping"
+          ></span>
+          <span
+            class="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest"
+            >Network Live</span
+          >
+        </div>
+        <div class="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800"></div>
+        <div class="text-right">
+          <p
+            class="text-[10px] font-black text-zinc-900 dark:text-white uppercase leading-none"
+          >
+            {{ storeName() }}
+          </p>
+          <span
+            class="text-[8px] font-mono text-zinc-400 uppercase tracking-widest"
+            >Industrial Node</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY PANEL -->
+    <div class="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
+      @if (loading()) {
+      <app-skeleton-page />
+      } @else { @if (activeTab() === 'dashboard') {
+      <app-admin-dashboard-tab [admin]="this" />
+      } @if (activeTab() === 'products' || activeTab() === 'bulk-import' ||
+      activeTab() === 'categories' || activeTab() === 'collections' ||
+      activeTab() === 'brands' || activeTab() === 'inventory') {
+      <app-admin-catalog-tab [admin]="this" />
+      } @if (activeTab() === 'orders' || activeTab() === 'draft-orders' ||
+      activeTab() === 'quotes') {
+      <app-admin-sales-tab [admin]="this" />
+      } @if (activeTab() === 'abandoned-carts') {
+      <app-admin-abandoned-checkouts-tab [admin]="this" />
+      } @if (activeTab() === 'customer-list' || activeTab() ===
+      'customer-groups' || activeTab() === 'reviews') {
+      <app-admin-customers-tab [admin]="this" />
+      } @if (activeTab() === 'pages' || activeTab() === 'blogs' || activeTab()
+      === 'faqs' || activeTab() === 'banners' || activeTab() ===
+      'homepage-builder' || activeTab() === 'menu-builder') {
+      <app-admin-content-tab [admin]="this" />
+      } @if (activeTab() === 'coupons' || activeTab() === 'promotions' ||
+      activeTab() === 'email-campaigns' || activeTab() === 'push-notifications')
+      {
+      <app-admin-marketing-tab [admin]="this" />
+      } @if (activeTab() === 'sales-reports' || activeTab() ===
+      'product-reports' || activeTab() === 'customer-reports') {
+      <app-admin-analytics-tab [admin]="this" />
+      } @if (activeTab().endsWith('-settings') || activeTab() ===
+      'user-management' || activeTab() === 'active-sessions') {
+      <app-admin-settings-tab [admin]="this" />
+      } @if (activeTab() === 'transactions' || activeTab() === 'webhook-logs') {
+      <app-admin-payments-tab [admin]="this" />
+      } @if (activeTab() === 'whatsapp-logs' || activeTab() ===
+      'whatsapp-campaign') {
+      <app-admin-communication-tab [admin]="this" />
+      } }
+    </div>
+  </main>
   }
 </div>

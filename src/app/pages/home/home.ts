@@ -1,17 +1,23 @@
-import { Component, ChangeDetectionStrategy, inject, computed, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { CommonModule } from '@angular/common';
-import { Title, Meta } from '@angular/platform-browser';
-import { DatastoreService } from '../../services/datastore';
-import { LoadingService } from '../../core/services/loading.service';
-import { SkeletonPageComponent } from '../../shared/components/skeleton/skeleton-page/skeleton-page.component';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  computed,
+  PLATFORM_ID,
+} from "@angular/core";
+import { isPlatformBrowser } from "@angular/common";
+import { CommonModule } from "@angular/common";
+import { Title, Meta } from "@angular/platform-browser";
+import { DatastoreService } from "../../services/datastore";
+import { LoadingService } from "../../core/services/loading.service";
+import { SkeletonPageComponent } from "../../shared/components/skeleton/skeleton-page/skeleton-page.component";
 
 // Import subcomponents
-import { HomeHeroComponent } from './components/home-hero.component';
-import { HomeCategoriesComponent } from './components/home-categories.component';
-import { HomeFeaturedProductsComponent } from './components/home-featured-products.component';
-import { HomeBrandsComponent } from './components/home-brands.component';
-import { HomeFeaturedShowcaseComponent } from './components/home-featured-showcase.component';
+import { HomeHeroComponent } from "./components/home-hero.component";
+import { HomeCategoriesComponent } from "./components/home-categories.component";
+import { HomeFeaturedProductsComponent } from "./components/home-featured-products.component";
+import { HomeBrandsComponent } from "./components/home-brands.component";
+import { HomeFeaturedShowcaseComponent } from "./components/home-featured-showcase.component";
 import {
   HomeShowcaseTwoComponent,
   HomeCategoryViewFilamentComponent,
@@ -21,15 +27,15 @@ import {
   HomeShopByCategoryComponent,
   HomeTechnologyHubsComponent,
   HomeEnterpriseSolutionsComponent,
-
   HomeServicesComponent,
   HomeWhyChooseUsComponent,
   HomeStatisticsComponent,
   HomeTestimonialsComponent,
-} from './components/home-sections.component';
+  HomeInstagramFeedComponent,
+} from "./components/home-sections.component";
 
 @Component({
-  selector: 'app-home',
+  selector: "app-home",
   standalone: true,
   imports: [
     CommonModule,
@@ -51,10 +57,11 @@ import {
     HomeWhyChooseUsComponent,
     HomeStatisticsComponent,
     HomeTestimonialsComponent,
+    HomeInstagramFeedComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './home.html',
-  styleUrl: './home.scss'
+  templateUrl: "./home.html",
+  styleUrl: "./home.scss",
 })
 export class Home {
   ds = inject(DatastoreService);
@@ -62,22 +69,41 @@ export class Home {
   titleService = inject(Title);
   metaService = inject(Meta);
 
-  loading = computed(() => {
-    if (this.ds.homeLayout().length === 0 && this.ds.homepageLoading()) return true;
-    return false;
-  });
+  loading = computed(() => this.ds.homepageLoading());
 
-  activeTopAd = computed(() => this.ds.advertisements().find(a => a.position === 'top-banner' && a.status === 'active'));
-  activeFooterAd = computed(() => this.ds.advertisements().find(a => a.position === 'footer' && a.status === 'active'));
+  activeTopAd = computed(() =>
+    this.ds
+      .advertisements()
+      .find((a) => a.position === "top-banner" && a.status === "active"),
+  );
+  activeFooterAd = computed(() =>
+    this.ds
+      .advertisements()
+      .find((a) => a.position === "footer" && a.status === "active"),
+  );
 
   constructor() {
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
     // Set dynamic sales-focused SEO tags
-    this.titleService.setTitle('3D Galaxy | Buy 3D Printers, Filaments & Custom 3D Printing Service Online');
-    this.metaService.updateTag({ name: 'description', content: "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!" });
-    this.metaService.updateTag({ property: 'og:title', content: '3D Galaxy | Buy 3D Printers, Filaments & 3D Printing Services Online' });
-    this.metaService.updateTag({ property: 'og:description', content: "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!" });
+    this.titleService.setTitle(
+      "3D Galaxy | Buy 3D Printers, Filaments & Custom 3D Printing Service Online",
+    );
+    this.metaService.updateTag({
+      name: "description",
+      content:
+        "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!",
+    });
+    this.metaService.updateTag({
+      property: "og:title",
+      content:
+        "3D Galaxy | Buy 3D Printers, Filaments & 3D Printing Services Online",
+    });
+    this.metaService.updateTag({
+      property: "og:description",
+      content:
+        "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!",
+    });
 
     // Record top impressions when component boots
     if (isBrowser) {

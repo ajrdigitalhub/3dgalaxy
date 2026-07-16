@@ -4,6 +4,7 @@ import {
   verifyRazorpayPayment,
   createCashfreeOrder,
   createCODOrder,
+  createOrderAndPayment,
   handleRazorpayWebhook,
   handleCashfreeWebhook,
   getCustomerHistory,
@@ -21,7 +22,11 @@ const router = Router();
 router.post('/webhooks/razorpay', handleRazorpayWebhook);
 router.post('/webhooks/cashfree', handleCashfreeWebhook);
 
-// Authenticated / Guest payment endpoints
+// Unified payment endpoints matching frontend
+router.post('/payment/create-order', optionalAuthenticateToken, createOrderAndPayment);
+router.post('/payment/verify-payment', optionalAuthenticateToken, verifyRazorpayPayment);
+
+// Authenticated / Guest payment endpoints (legacy/specific)
 router.post('/payments/razorpay/create-order', optionalAuthenticateToken, createRazorpayOrder);
 router.post('/payments/razorpay/verify', optionalAuthenticateToken, verifyRazorpayPayment);
 router.post('/payments/cashfree/create-order', optionalAuthenticateToken, createCashfreeOrder);

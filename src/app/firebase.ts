@@ -1,40 +1,46 @@
-import { FirebaseApp } from 'firebase/app';
-import { Auth } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
+import { FirebaseApp } from "firebase/app";
+import { Auth } from "firebase/auth";
+import { Firestore } from "firebase/firestore";
+import { FirebaseStorage } from "firebase/storage";
 
 export let app: FirebaseApp | any;
 export let db: Firestore | any;
 export let auth: Auth | any;
+export let storage: FirebaseStorage | any;
 
 export const initFirebase = async () => {
-  if (typeof window === 'undefined') return { app, db, auth };
-  if (app) return { app, db, auth }; // Already initialized
-  
-  const [fbApp, fbAuth, fbFirestore] = await Promise.all([
-    import('firebase/app'),
-    import('firebase/auth'),
-    import('firebase/firestore')
+  if (typeof window === "undefined") return { app, db, auth, storage };
+  if (app) return { app, db, auth, storage }; // Already initialized
+
+  const [fbApp, fbAuth, fbFirestore, fbStorage] = await Promise.all([
+    import("firebase/app"),
+    import("firebase/auth"),
+    import("firebase/firestore"),
+    import("firebase/storage"),
   ]);
 
   let firebaseConfig: any = null;
   try {
-    const res = await fetch('/firebase-applet-config.json');
+    const res = await fetch("/firebase-applet-config.json");
     if (res.ok) {
       firebaseConfig = await res.json();
     } else {
       throw new Error(`HTTP status ${res.status}`);
     }
   } catch (err) {
-    console.warn('Failed to dynamically load Firebase configurations:', err);
+    console.warn("Failed to dynamically load Firebase configurations:", err);
   }
 
   if (!firebaseConfig) {
-    throw new Error('Firebase configuration could not be loaded.');
+    throw new Error("Firebase configuration could not be loaded.");
   }
 
   app = fbApp.initializeApp(firebaseConfig);
   const dbId = (firebaseConfig as any).firestoreDatabaseId;
-  db = dbId ? fbFirestore.getFirestore(app, dbId) : fbFirestore.getFirestore(app);
+  db = dbId
+    ? fbFirestore.getFirestore(app, dbId)
+    : fbFirestore.getFirestore(app);
   auth = fbAuth.getAuth(app);
-  return { app, db, auth };
+  storage = fbStorage.getStorage(app);
+  return { app, db, auth, storage };
 };

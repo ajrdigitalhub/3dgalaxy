@@ -1,549 +1,1188 @@
-@if(!product() && loadingService.isLoading()) {
-  <app-skeleton-page />
-} @else {
-@if (product(); as p) {
-  <div class="space-y-12 animate-fadeIn pb-24">
-    <!-- BREADCRUMBS -->
-    <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none]" appScrollReveal="fade">
-      <a [routerLink]="['/']" class="hover:text-[#d65108] transition-colors shrink-0">Home</a>
-      
-      @for (crumb of breadcrumbs(); track crumb.label) {
-        <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
-        <a [routerLink]="[crumb.url]" class="hover:text-[#d65108] transition-colors shrink-0">{{ crumb.label }}</a>
-      }
+@if(isLoadingProduct()) {
+<app-skeleton-page />
+} @else { @if (product(); as p) {
+<div class="space-y-12 animate-fadeIn pb-24">
+  <!-- BREADCRUMBS -->
+  <nav
+    class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-neutral-400 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none]"
+    appScrollReveal="fade"
+  >
+    <a
+      [routerLink]="['/']"
+      class="hover:text-[#d65108] transition-colors shrink-0"
+      >Home</a
+    >
 
-      <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
-      <span class="text-neutral-900 dark:text-neutral-200 truncate shrink-0">{{ p.name }}</span>
-    </nav>
+    @for (crumb of breadcrumbs(); track crumb.label) {
+    <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
+    <a
+      [routerLink]="[crumb.url]"
+      class="hover:text-[#d65108] transition-colors shrink-0"
+      >{{ crumb.label }}</a
+    >
+    }
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-start relative">
-      <!-- LEFT: GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
-      <div class="space-y-4 lg:space-y-8 lg:sticky lg:top-24 lg:self-start" [class.z-30]="isZoomActive()" appScrollReveal="scale-in">
-        
-        <!-- Main Image Wrapper (supports Flipkart hover zoom popup layout) -->
-        <div class="relative w-full aspect-[4/3] sm:aspect-square isolate">
-          <div (mouseenter)="onMouseEnter()" 
-               (mousemove)="onMouseMove($event)" 
-               (mouseleave)="onMouseLeave()"
-               class="relative w-full h-full bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-hidden group shadow-sm transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5">
-            
-            <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
-            <div class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible">
-              @for (img of galleryImages(); track img?.url || img || $index) {
-                <div [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:transition-transform md:duration-500' : 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:hidden'">
-                  <img [src]="getImageUrl(img)" 
-                    class="max-h-[90%] max-w-[90%] object-contain md:pointer-events-auto transition-all duration-500"
-                    loading="lazy"
-                    alt="{{ p.name }}"
-                    referrerpolicy="no-referrer">
-                </div>
-              }
+    <mat-icon class="text-[12px] h-3 w-3 shrink-0">chevron_right</mat-icon>
+    <span class="text-neutral-900 dark:text-neutral-200 truncate shrink-0"
+      >{{ p.name }}</span
+    >
+  </nav>
+
+  <div
+    class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-start relative"
+  >
+    <!-- LEFT: GALLERY (Mobile Swipeable, Desktop Thumbnails) -->
+    <div
+      class="space-y-4 lg:space-y-8 lg:sticky lg:top-24 lg:self-start"
+      [class.z-30]="isZoomActive()"
+      appScrollReveal="scale-in"
+    >
+      <!-- Main Image Wrapper (supports Flipkart hover zoom popup layout) -->
+      <div class="relative w-full aspect-[4/3] sm:aspect-square isolate">
+        <div
+          (mouseenter)="onMouseEnter()"
+          (mousemove)="onMouseMove($event)"
+          (mouseleave)="onMouseLeave()"
+          class="relative w-full h-full bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-hidden group shadow-sm transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5"
+        >
+          <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
+          <div
+            class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible"
+          >
+            @for (img of galleryImages(); track img?.url || img || $index) {
+            <div
+              [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:transition-transform md:duration-500' : 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:hidden'"
+            >
+              <img
+                [src]="getImageUrl(img)"
+                class="max-h-[90%] max-w-[90%] object-contain md:pointer-events-auto transition-all duration-500"
+                loading="lazy"
+                alt="{{ p.name }}"
+                referrerpolicy="no-referrer"
+              />
             </div>
-            
-            @if (is360Active()) {
-              <div class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
-                <button (click)="rotateAngle(-45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
-                  <mat-icon class="scale-75 sm:scale-100">chevron_left</mat-icon>
-                </button>
-                <button (click)="rotateAngle(45); $event.stopPropagation()" class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90">
-                  <mat-icon class="scale-75 sm:scale-100">chevron_right</mat-icon>
-                </button>
-              </div>
-            }
-
-            <!-- Magnifying Lens Overlay -->
-            @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
-              <div [style.left.%]="lensLeft()" 
-                   [style.top.%]="lensTop()" 
-                   class="absolute w-[30%] h-[30%] bg-orange-500/10 border-2 border-[#d65108] pointer-events-none z-30 rounded-xl shadow-inner backdrop-blur-[1px] hidden md:block">
-              </div>
             }
           </div>
 
-          <!-- Flipkart-style Zoomed Detail Popup -->
+          @if (is360Active()) {
+          <div
+            class="absolute inset-0 flex items-center justify-between px-4 pointer-events-none"
+          >
+            <button
+              (click)="rotateAngle(-45); $event.stopPropagation()"
+              class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90"
+            >
+              <mat-icon class="scale-75 sm:scale-100">chevron_left</mat-icon>
+            </button>
+            <button
+              (click)="rotateAngle(45); $event.stopPropagation()"
+              class="p-2 sm:p-4 bg-white/80 dark:bg-black/50 backdrop-blur rounded-full shadow-lg pointer-events-auto hover:bg-[#d65108] hover:text-white transition-all transform active:scale-90"
+            >
+              <mat-icon class="scale-75 sm:scale-100">chevron_right</mat-icon>
+            </button>
+          </div>
+          }
+
+          <!-- Magnifying Lens Overlay -->
           @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
-            <div class="absolute left-[103%] top-0 w-full h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl z-50 hidden lg:block">
-              <div class="w-full h-full" 
-                   [style.backgroundImage]="'url(' + currentActiveImageUrl() + ')'" 
-                   [style.backgroundPosition]="zoomBgPosition()" 
-                   [style.backgroundSize]="'330%'" 
-                   style="background-repeat: no-repeat;">
-              </div>
-            </div>
+          <div
+            [style.left.%]="lensLeft()"
+            [style.top.%]="lensTop()"
+            class="absolute w-[30%] h-[30%] bg-orange-500/10 border-2 border-[#d65108] pointer-events-none z-30 rounded-xl shadow-inner backdrop-blur-[1px] hidden md:block"
+          ></div>
           }
         </div>
 
-        <!-- Thumbnails (Hidden on purely mobile screens since it's swipeable) -->
-        <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
-          @for (img of galleryImages(); track img?.url || img || $index) {
-            <button (click)="selectImage(img)" 
-                    [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10 scale-105 transition-all' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 hover:scale-105 transition-all'">
-              <img [src]="getImageUrl(img)" class="h-full w-full object-contain" referrerpolicy="no-referrer" alt="thumb">
+        <!-- Flipkart-style Zoomed Detail Popup -->
+        @if (isZoomActive() && !is360Active() && currentActiveImageUrl()) {
+        <div
+          class="absolute left-[103%] top-0 w-full h-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl z-50 hidden lg:block"
+        >
+          <div
+            class="w-full h-full"
+            [style.backgroundImage]="'url(' + currentActiveImageUrl() + ')'"
+            [style.backgroundPosition]="zoomBgPosition()"
+            [style.backgroundSize]="'330%'"
+            style="background-repeat: no-repeat"
+          ></div>
+        </div>
+        }
+      </div>
+
+      <!-- Thumbnails (Hidden on purely mobile screens since it's swipeable) -->
+      <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
+        @for (img of galleryImages(); track img?.url || img || $index) {
+        <button
+          (click)="selectImage(img)"
+          [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10 scale-105 transition-all' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 hover:scale-105 transition-all'"
+        >
+          <img
+            [src]="getImageUrl(img)"
+            class="h-full w-full object-contain"
+            referrerpolicy="no-referrer"
+            alt="thumb"
+          />
+        </button>
+        } @if (p.is360Supported) {
+        <button
+          (click)="toggle360Sensor()"
+          [class]="is360Active() ? 'h-24 px-6 bg-[#d65108] text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-orange-600/40 scale-105 transition-all' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:scale-105 transition-all'"
+        >
+          <mat-icon class="scale-125 mb-1 animate-spin-slow">360</mat-icon>
+          <span class="text-[10px] font-black uppercase tracking-wider"
+            >360° Vision</span
+          >
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT: PURCHASING -->
+    <div
+      class="space-y-6 lg:space-y-10 pb-28 md:pb-0 relative z-10"
+      appScrollReveal="fade"
+    >
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span
+              class="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-md"
+              >{{ p.brand }}</span
+            >
+            <span
+              class="px-3 py-1 bg-neutral-50 dark:bg-neutral-900 text-neutral-400 text-[10px] font-black uppercase tracking-[0.2em] border border-neutral-200 dark:border-neutral-800 rounded-md"
+              >SKU: {{ selectedVariant()?.sku || p.sku || 'N/A' }}</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              (click)="toggleWishlist(p.id)"
+              [class]="wishlistIds().has(p.id) ? 'h-10 w-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-500 rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all' : 'h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-red-500 hover:text-red-500 hover:scale-110 active:scale-95 transition-all shadow-sm'"
+            >
+              <mat-icon class="scale-75"
+                >{{ wishlistIds().has(p.id) ? 'favorite' : 'favorite_border'
+                }}</mat-icon
+              >
             </button>
-          }
-          @if (p.is360Supported) {
-            <button (click)="toggle360Sensor()"
-                    [class]="is360Active() ? 'h-24 px-6 bg-[#d65108] text-white rounded-[1.5rem] flex flex-col items-center justify-center gap-1 shadow-2xl shadow-orange-600/40 scale-105 transition-all' : 'h-24 px-6 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] flex flex-col items-center justify-center gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:scale-105 transition-all'">
-              <mat-icon class="scale-125 mb-1 animate-spin-slow">360</mat-icon>
-              <span class="text-[10px] font-black uppercase tracking-wider">360° Vision</span>
+            <button
+              (click)="shareProduct(p)"
+              class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-blue-500 hover:text-blue-500 hover:scale-110 active:scale-95 transition-colors transition-transform shadow-sm"
+              type="button"
+              title="Share product"
+            >
+              <mat-icon class="scale-75">share</mat-icon>
             </button>
+          </div>
+        </div>
+
+        <h1
+          class="text-3xl md:text-5xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]"
+        >
+          {{ selectedVariant()?.name || p.name }}
+        </h1>
+
+        <div class="flex items-center gap-4 text-sm font-semibold">
+          <div
+            class="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg animate-pulse"
+          >
+            <mat-icon class="scale-75">star</mat-icon>
+            <span>{{ p.reviews.length > 0 ? '4.9' : 'New' }}</span>
+          </div>
+          <a
+            href="#reviews"
+            class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors underline decoration-neutral-200 underline-offset-4"
+            >{{ p.reviews.length }} Reviews</a
+          >
+
+          <div class="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
+
+          @if((selectedVariant()?.stock ?? p.stock) > 0) {
+          <span class="text-emerald-600 flex items-center gap-1.5"
+            ><mat-icon class="scale-75 animate-bounce">check_circle</mat-icon>
+            In Stock ({{ selectedVariant()?.stock ?? p.stock }})</span
+          >
+          } @else {
+          <span class="text-red-500 flex items-center gap-1.5"
+            ><mat-icon class="scale-75">error</mat-icon> Out of Stock</span
+          >
           }
+        </div>
+
+        <!-- Animated Glow/Pulse COD Badge -->
+        @if (p.codAvailable !== false) {
+        <div
+          class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black uppercase tracking-wider border border-blue-500/20 animate-pulse shadow-[0_0_12px_rgba(59,130,246,0.15)]"
+        >
+          <mat-icon class="text-sm scale-90">verified</mat-icon>
+          <span>✓ Cash on Delivery Available</span>
+        </div>
+        }
+
+        <!-- Mobile expandable description -->
+        <details
+          class="md:hidden group text-sm text-neutral-500 font-medium mt-4"
+        >
+          <summary
+            class="list-none outline-none cursor-pointer flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2"
+          >
+            <span
+              class="text-xs font-black uppercase tracking-widest text-[#d65108]"
+              >Brief Overview</span
+            >
+            <mat-icon
+              class="text-neutral-400 group-open:rotate-180 transition-transform"
+              >expand_more</mat-icon
+            >
+          </summary>
+          <div
+            class="pt-3 leading-relaxed text-neutral-600 dark:text-neutral-400"
+            [innerHTML]="safeHtml(p.description || '')"
+          ></div>
+        </details>
+
+        <!-- Desktop description -->
+        <!-- <div
+          class="hidden md:block text-base sm:text-lg text-neutral-500 leading-relaxed font-medium mt-4"
+          [innerHTML]="safeHtml(p.description || '')"
+        ></div> -->
+
+        <!-- Variant Options -->
+        @if (p.options && p.options.length > 0) {
+        <div
+          class="space-y-6 pt-4 border-t border-neutral-100 dark:border-neutral-800"
+        >
+          @for (opt of p.options; track opt.name) {
+          <div class="space-y-3">
+            <h4
+              class="text-xs font-black uppercase text-neutral-900 dark:text-white tracking-widest"
+            >
+              {{ opt.name }}:
+              <span class="text-neutral-500 ml-2 font-medium"
+                >{{ selectedOptions()[opt.name] }}</span
+              >
+            </h4>
+
+            <div
+              class="flex overflow-x-auto gap-3 pb-2 hide-scroll -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none]"
+            >
+              @for (val of opt.values; track val) { @if (opt.name.toLowerCase()
+              === 'color' || opt.name.toLowerCase() === 'colour') {
+              <button
+                (click)="selectOption(opt.name, getOptionValueStr(val))"
+                [style.backgroundColor]="getColorCode(getOptionValueStr(val))"
+                [disabled]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+                [class]="selectedOptions()[opt.name] === getOptionValueStr(val) ? 'shrink-0 h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md scale-110 transition-all relative' : 'shrink-0 h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 active:scale-95 transition-all relative'"
+                [class.opacity-45]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+                [class.cursor-not-allowed]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+                [title]="getOptionValueStr(val)"
+              >
+                @if (isOptionValueOutOfStock(opt.name, getOptionValueStr(val)))
+                {
+                <span
+                  class="absolute inset-0 flex items-center justify-center pointer-events-none"
+                >
+                  <span
+                    class="w-[80%] h-[1.5px] bg-red-500/70 rotate-45"
+                  ></span>
+                </span>
+                }
+              </button>
+              } @else {
+              <button
+                (click)="selectOption(opt.name, getOptionValueStr(val))"
+                [disabled]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+                [class]="selectedOptions()[opt.name] === getOptionValueStr(val) ? 
+                                         'shrink-0 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md scale-102 transition-all relative' : 
+                                         'shrink-0 px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:scale-102 text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm relative'"
+                [class.opacity-45]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+                [class.cursor-not-allowed]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
+              >
+                {{ getOptionValueStr(val) }} @if
+                (isOptionValueOutOfStock(opt.name, getOptionValueStr(val))) {
+                <span
+                  class="absolute inset-0 flex items-center justify-center pointer-events-none"
+                >
+                  <span
+                    class="w-[85%] h-[1.5px] bg-neutral-400 dark:bg-neutral-600 rotate-12"
+                  ></span>
+                </span>
+                }
+              </button>
+              } }
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Sticky Buy Box Desktop card -->
+      <div
+        class="sticky-buy-box p-6 md:p-8 bg-neutral-50/50 dark:bg-neutral-900/20 rounded-[1.5rem] md:rounded-[2rem] border border-neutral-200/60 dark:border-neutral-800/60 space-y-6 sm:space-y-8 shadow-sm hover:shadow-xl transition-all duration-300"
+      >
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap items-end gap-3 sm:gap-4">
+            <span
+              class="text-4xl sm:text-5xl font-black text-neutral-950 dark:text-white transition-all"
+              >{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span
+            >
+            @if (getMrp(p) > activePrice(p)) {
+            <span
+              class="text-lg sm:text-2xl line-through text-neutral-400 font-bold decoration-2 mb-1"
+              >{{ getMrp(p) | currency:'INR':'symbol':'1.0-0' }}</span
+            >
+            <span
+              class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-1 rounded-md mb-1.5"
+              >-{{ mrpDiscountPercent(p) }}% OFF</span
+            >
+            }
+          </div>
+          <p class="text-xs font-bold text-neutral-400">
+            Inclusive of all taxes. EMI starting from ₹2,499/mo.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap lg:flex-nowrap gap-3 sm:gap-4">
+          <div
+            class="inline-flex items-center shrink-0 bg-white dark:bg-neutral-950 border border-neutral-200/80 dark:border-neutral-800 shadow-sm rounded-xl px-2 h-14"
+          >
+            <button
+              (click)="adjustQty(-1)"
+              class="h-full w-12 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg flex items-center justify-center transition-all text-neutral-500"
+            >
+              <mat-icon class="scale-75">remove</mat-icon>
+            </button>
+            <span
+              class="w-12 text-center text-lg font-black text-neutral-950 dark:text-white"
+              >{{ quantity() }}</span
+            >
+            <button
+              (click)="adjustQty(1)"
+              class="h-full w-12 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg flex items-center justify-center transition-all text-neutral-500"
+            >
+              <mat-icon class="scale-75">add</mat-icon>
+            </button>
+          </div>
+          <div class="flex flex-1 gap-3 sm:gap-4 w-full lg:w-auto">
+            <app-button
+              [loading]="isAddingToCart()"
+              text="Add To Cart"
+              loadingText="Adding..."
+              icon="shopping_cart"
+              variant="primary"
+              class="flex-1"
+              [isFullWidth]="true"
+              (btnClick)="addToCart(p)"
+            >
+            </app-button>
+            <button
+              (click)="buyNow(p)"
+              class="app-button flex-1 lg:flex-none h-[3rem] px-4 lg:px-8 font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl whitespace-nowrap cursor-pointer"
+            >
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT: PURCHASING -->
-      <div class="space-y-6 lg:space-y-10 pb-28 md:pb-0 relative z-10" appScrollReveal="fade">
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-             <div class="flex items-center gap-3">
-               <span class="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-md">{{ p.brand }}</span>
-               <span class="px-3 py-1 bg-neutral-50 dark:bg-neutral-900 text-neutral-400 text-[10px] font-black uppercase tracking-[0.2em] border border-neutral-200 dark:border-neutral-800 rounded-md">SKU: {{ selectedVariant()?.sku || p.sku || 'N/A' }}</span>
-             </div>
-             <div class="flex items-center gap-2">
-                  <button (click)="toggleWishlist(p.id)" [class]="wishlistIds().has(p.id) ? 'h-10 w-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-500 rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all' : 'h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-red-500 hover:text-red-500 hover:scale-110 active:scale-95 transition-all shadow-sm'">
-                    <mat-icon class="scale-75">{{ wishlistIds().has(p.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
-                  </button>
-                 <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-full flex items-center justify-center hover:border-blue-500 hover:text-blue-500 hover:scale-110 active:scale-95 transition-colors transition-transform shadow-sm"><mat-icon class="scale-75">share</mat-icon></button>
-             </div>
+      <!-- Included with this Product (Bundle Products) -->
+      @if (bundleProductsList().length > 0) {
+      <div
+        class="p-6 bg-blue-50/20 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-900/30 rounded-[1.5rem] md:rounded-[2rem] space-y-4 animate-fadeIn"
+      >
+        <h3
+          class="text-xs font-black uppercase text-blue-500 tracking-widest flex items-center gap-2"
+        >
+          <mat-icon class="scale-75">card_giftcard</mat-icon>
+          FREE Included with this Product
+        </h3>
+        <div class="divide-y divide-blue-100/30 dark:divide-blue-900/20">
+          @for (item of bundleProductsList(); track item.id) {
+          <div class="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+            <img
+              [src]="item.images && item.images[0]?.url || item.images && item.images[0] || 'https://via.placeholder.com/80'"
+              class="w-12 h-12 object-contain bg-white dark:bg-neutral-900 rounded-lg border border-neutral-100 dark:border-neutral-800"
+              referrerpolicy="no-referrer"
+            />
+            <div class="flex-1 min-w-0">
+              <span
+                class="block text-xs font-black text-neutral-900 dark:text-white truncate uppercase"
+                >{{ item.name }}</span
+              >
+              <span
+                class="text-[9px] text-neutral-400 font-mono tracking-wide uppercase"
+                >{{ item.brand }}</span
+              >
+            </div>
+            <span
+              class="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider rounded-md border border-emerald-500/15"
+              >FREE Included</span
+            >
           </div>
-          
-          <h1 class="text-3xl md:text-5xl font-extrabold text-neutral-950 dark:text-white tracking-tight leading-[1.1]">{{ selectedVariant()?.name || p.name }}</h1>
-          
-          <div class="flex items-center gap-4 text-sm font-semibold">
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg animate-pulse">
-               <mat-icon class="scale-75">star</mat-icon>
-               <span>{{ p.reviews.length > 0 ? '4.9' : 'New' }}</span>
-            </div>
-            <a href="#reviews" class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors underline decoration-neutral-200 underline-offset-4">{{ p.reviews.length }} Reviews</a>
-            
-            <div class="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
-            
-            @if((selectedVariant()?.stock ?? p.stock) > 0) {
-                <span class="text-emerald-600 flex items-center gap-1.5"><mat-icon class="scale-75 animate-bounce">check_circle</mat-icon> In Stock ({{ selectedVariant()?.stock ?? p.stock }})</span>
-            } @else {
-                <span class="text-red-500 flex items-center gap-1.5"><mat-icon class="scale-75">error</mat-icon> Out of Stock</span>
-            }
-          </div>
-
-          <!-- Animated Glow/Pulse COD Badge -->
-          @if (p.codAvailable !== false) {
-            <div class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black uppercase tracking-wider border border-blue-500/20 animate-pulse shadow-[0_0_12px_rgba(59,130,246,0.15)]">
-              <mat-icon class="text-sm scale-90">verified</mat-icon>
-              <span>✓ Cash on Delivery Available</span>
-            </div>
-          }
-
-          <!-- Mobile expandable description -->
-          <details class="md:hidden group text-sm text-neutral-500 font-medium mt-4">
-            <summary class="list-none outline-none cursor-pointer flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-2">
-              <span class="text-xs font-black uppercase tracking-widest text-[#d65108]">Brief Overview</span>
-              <mat-icon class="text-neutral-400 group-open:rotate-180 transition-transform">expand_more</mat-icon>
-            </summary>
-            <div class="pt-3 leading-relaxed text-neutral-600 dark:text-neutral-400" [innerHTML]="safeHtml(p.description || '')">
-            </div>
-          </details>
-
-          <!-- Desktop description -->
-          <div class="hidden md:block text-base sm:text-lg text-neutral-500 leading-relaxed font-medium mt-4" [innerHTML]="safeHtml(p.description || '')"></div>
-          
-          <!-- Variant Options -->
-          @if (p.options && p.options.length > 0) {
-            <div class="space-y-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-              @for (opt of p.options; track opt.name) {
-                <div class="space-y-3">
-                  <h4 class="text-xs font-black uppercase text-neutral-900 dark:text-white tracking-widest">{{ opt.name }}: <span class="text-neutral-500 ml-2 font-medium">{{ selectedOptions()[opt.name] }}</span></h4>
-                  
-                  <div class="flex overflow-x-auto gap-3 pb-2 hide-scroll -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:pb-0 [scrollbar-width:none] [-ms-overflow-style:none]">
-                    @for (val of opt.values; track val) {
-                      @if (opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour') {
-                        <button (click)="selectOption(opt.name, getOptionValueStr(val))"
-                                [style.backgroundColor]="getColorCode(getOptionValueStr(val))"
-                                [disabled]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
-                                [class]="selectedOptions()[opt.name] === getOptionValueStr(val) ? 'shrink-0 h-10 w-10 rounded-full border-2 border-[#d65108] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-black ring-[#d65108] shadow-md scale-110 transition-all relative' : 'shrink-0 h-10 w-10 rounded-full border border-neutral-200 shadow-sm hover:scale-110 active:scale-95 transition-all relative'"
-                                [class.opacity-45]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
-                                [class.cursor-not-allowed]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
-                                [title]="getOptionValueStr(val)">
-                          @if (isOptionValueOutOfStock(opt.name, getOptionValueStr(val))) {
-                            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span class="w-[80%] h-[1.5px] bg-red-500/70 rotate-45"></span>
-                            </span>
-                          }
-                        </button>
-                      } @else {
-                        <button (click)="selectOption(opt.name, getOptionValueStr(val))" 
-                                [disabled]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
-                                [class]="selectedOptions()[opt.name] === getOptionValueStr(val) ? 
-                                         'shrink-0 px-5 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black tracking-wide rounded-xl border border-neutral-900 dark:border-white shadow-md scale-102 transition-all relative' : 
-                                         'shrink-0 px-5 py-2.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:scale-102 text-sm font-bold tracking-wide rounded-xl transition-all shadow-sm relative'"
-                                [class.opacity-45]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))"
-                                [class.cursor-not-allowed]="isOptionValueOutOfStock(opt.name, getOptionValueStr(val))">
-                          {{ getOptionValueStr(val) }}
-                          @if (isOptionValueOutOfStock(opt.name, getOptionValueStr(val))) {
-                            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span class="w-[85%] h-[1.5px] bg-neutral-400 dark:bg-neutral-600 rotate-12"></span>
-                            </span>
-                          }
-                        </button>
-                      }
-                    }
-                  </div>
-                </div>
-              }
-            </div>
           }
         </div>
+      </div>
+      }
 
-        <!-- Sticky Buy Box Desktop card -->
-        <div class="sticky-buy-box p-6 md:p-8 bg-neutral-50/50 dark:bg-neutral-900/20 rounded-[1.5rem] md:rounded-[2rem] border border-neutral-200/60 dark:border-neutral-800/60 space-y-6 sm:space-y-8 shadow-sm hover:shadow-xl transition-all duration-300">
-          <div class="flex flex-col gap-2">
-            <div class="flex flex-wrap items-end gap-3 sm:gap-4">
-              <span class="text-4xl sm:text-5xl font-black text-neutral-950 dark:text-white transition-all">{{ activePrice(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-              @if (getMrp(p) > activePrice(p)) {
-                <span class="text-lg sm:text-2xl line-through text-neutral-400 font-bold decoration-2 mb-1">{{ getMrp(p) | currency:'INR':'symbol':'1.0-0' }}</span>
-                <span class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-1 rounded-md mb-1.5">-{{ mrpDiscountPercent(p) }}% OFF</span>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
+        <div
+          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
+        >
+          <mat-icon class="text-neutral-700 dark:text-neutral-300"
+            >verified_user</mat-icon
+          >
+          <span class="text-[10px] font-bold text-neutral-500 uppercase"
+            >{{ p.warranty?.warrantyPeriod || '1 Year Warranty' }}</span
+          >
+        </div>
+        <div
+          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
+        >
+          <mat-icon class="text-neutral-700 dark:text-neutral-300"
+            >support_agent</mat-icon
+          >
+          <span class="text-[10px] font-bold text-neutral-500 uppercase"
+            >Tech Support</span
+          >
+        </div>
+        <div
+          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
+        >
+          <mat-icon class="text-neutral-700 dark:text-neutral-300"
+            >local_shipping</mat-icon
+          >
+          <span class="text-[10px] font-bold text-neutral-500 uppercase"
+            >{{ p.shipping?.deliveryTime || 'Fast Delivery' }}</span
+          >
+        </div>
+        <div
+          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
+        >
+          <mat-icon class="text-neutral-700 dark:text-neutral-300"
+            >security</mat-icon
+          >
+          <span class="text-[10px] font-bold text-neutral-500 uppercase"
+            >Secure Pay</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="pt-16 sm:pt-24 space-y-12 sm:space-y-16">
+    <div
+      class="flex items-center gap-6 sm:gap-10 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll pb-2"
+      appScrollReveal="fade"
+    >
+      @for (tab of [ { id: 'overview', label: 'Overview' }, { id: 'specs',
+      label: 'Technical Specifications', visible: productSpecs().length > 0 }, {
+      id: 'features', label: 'Features', visible: productFeatures().length > 0
+      }, { id: 'downloads', label: 'Downloads', visible:
+      productDownloads().length > 0 }, { id: 'reviews', label: 'Reviews &
+      Ratings' }, { id: 'faqs', label: 'Frequently Asked Questions', visible:
+      productFaqs().length > 0 } ]; track tab.id) { @if (tab.visible !== false)
+      {
+      <button
+        (click)="activeTab.set(tab.id)"
+        class="shrink-0 flex items-center justify-center relative pb-3 transition-colors text-xs font-black uppercase tracking-[0.2em]"
+        [class]="activeTab() === tab.id ? 'text-neutral-950 dark:text-white' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'"
+      >
+        {{ tab.label }} @if(activeTab() === tab.id) {
+        <div
+          class="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-950 dark:bg-white animate-fadeIn"
+        ></div>
+        }
+      </button>
+      } }
+    </div>
+
+    <div class="min-h-[200px] sm:min-h-[300px]" appScrollReveal="fade">
+      @switch (activeTab()) { @case ('overview') {
+      <div
+        class="prose dark:prose-invert max-w-none animate-slideUp space-y-10"
+      >
+        <div class="max-w-4xl">
+          <h2 class="text-3xl font-black mb-6">Product Overview</h2>
+          <div
+            class="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed prose dark:prose-invert max-w-none"
+            [innerHTML]="safeHtml(p.long_description || p.description || '')"
+          ></div>
+        </div>
+      </div>
+      } @case ('specs') {
+      <div class="animate-slideUp max-w-4xl">
+        @if (productSpecs().length) {
+        <div
+          class="rounded-[2rem] border border-neutral-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-sm"
+        >
+          <table class="w-full text-left border-collapse">
+            <tbody>
+              @for (spec of productSpecs(); track spec.label) {
+              <tr
+                class="border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors"
+              >
+                <th
+                  class="py-4 px-6 md:py-6 md:px-8 text-xs font-black text-neutral-400 uppercase tracking-widest"
+                >
+                  {{ spec.label }}
+                </th>
+                <td
+                  class="py-4 px-6 md:py-6 md:px-8 text-sm font-semibold text-neutral-900 dark:text-neutral-100"
+                >
+                  {{ spec.value }}
+                </td>
+              </tr>
               }
+            </tbody>
+          </table>
+        </div>
+        }
+      </div>
+      } @case ('features') {
+      <div class="animate-slideUp max-w-5xl space-y-8">
+        @if(productFeatures().length) {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          @for (feat of productFeatures(); track feat.title; let idx = $index) {
+          <div
+            appTilt
+            [tiltMax]="5"
+            class="p-8 rounded-[2rem] bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 hover:border-orange-500/20 transition-all duration-300"
+          >
+            <h3 class="text-xl font-bold mb-3">{{ feat.title }}</h3>
+            <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              {{ feat.description }}
+            </p>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      } @case ('downloads') {
+      <div class="animate-slideUp max-w-4xl">
+        @if(productDownloads().length) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          @for(d of productDownloads(); track d.id || d.title; let idx = $index)
+          {
+          <a
+            [href]="d.fileUrl || '#'"
+            target="_blank"
+            appTilt
+            [tiltMax]="4"
+            class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group group-hover:text-[#d65108]"
+          >
+            <div
+              class="flex items-center gap-4 text-neutral-800 dark:text-neutral-200"
+            >
+              <mat-icon class="text-neutral-400 group-hover:text-[#d65108]"
+                >insert_drive_file</mat-icon
+              >
+              <span class="font-bold">{{ d.title }}</span>
             </div>
-            <p class="text-xs font-bold text-neutral-400">Inclusive of all taxes. EMI starting from ₹2,499/mo.</p>
+            <mat-icon class="text-neutral-300">download</mat-icon>
+          </a>
+          }
+        </div>
+        }
+      </div>
+      } @case ('reviews') {
+      <div id="reviews" class="animate-slideUp max-w-5xl space-y-8">
+        <div
+          class="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 md:p-8"
+        >
+          <div
+            class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between"
+          >
+            <div class="space-y-3">
+              <div
+                class="flex items-center gap-2 text-sm font-semibold text-emerald-600"
+              >
+                <mat-icon class="text-base">verified</mat-icon>
+                <span>Verified purchase reviews</span>
+              </div>
+              <div class="flex items-end gap-3">
+                <span
+                  class="text-5xl font-black text-neutral-950 dark:text-white"
+                  >{{ reviewStats().average || '0.0' }}</span
+                >
+                <div class="flex items-center text-amber-500">
+                  @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon class="text-lg"
+                    >{{ star <= (reviewStats().average || 0) ? 'star' :
+                    'star_border' }}</mat-icon
+                  >
+                  }
+                </div>
+              </div>
+              <p class="text-sm text-neutral-500">
+                Based on {{ reviewStats().total }} verified reviews
+              </p>
+            </div>
+            <button
+              type="button"
+              (click)="openReviewModal()"
+              class="inline-flex items-center justify-center rounded-full bg-[#d65108] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b74306]"
+            >
+              <mat-icon class="mr-2 text-base">edit</mat-icon>
+              Rate & Review Product
+            </button>
           </div>
 
-          <div class="flex flex-wrap lg:flex-nowrap gap-3 sm:gap-4">
-            <div class="inline-flex items-center shrink-0 bg-white dark:bg-neutral-950 border border-neutral-200/80 dark:border-neutral-800 shadow-sm rounded-xl px-2 h-14">
-              <button (click)="adjustQty(-1)" class="h-full w-12 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg flex items-center justify-center transition-all text-neutral-500"><mat-icon class="scale-75">remove</mat-icon></button>
-              <span class="w-12 text-center text-lg font-black text-neutral-950 dark:text-white">{{ quantity() }}</span>
-              <button (click)="adjustQty(1)" class="h-full w-12 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg flex items-center justify-center transition-all text-neutral-500"><mat-icon class="scale-75">add</mat-icon></button>
-            </div>
-            <div class="flex flex-1 gap-3 sm:gap-4 w-full lg:w-auto">
-              <app-button
-                [loading]="isAddingToCart()"
-                text="Add To Cart"
-                loadingText="Adding..."
-                icon="shopping_cart"
-                variant="primary"
-                class="flex-1"
-                [isFullWidth]="true"
-                (btnClick)="addToCart(p)"
+          <div class="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div class="space-y-3">
+              @for (star of [5,4,3,2,1]; track star) {
+              <div
+                class="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300"
               >
-              </app-button>
-              <button (click)="buyNow(p)" class="app-button flex-1 lg:flex-none h-[3rem] px-4 lg:px-8 font-black text-xs sm:text-sm uppercase tracking-widest sm:tracking-[0.2em] rounded-xl whitespace-nowrap cursor-pointer">
-                Buy Now
+                <span class="w-10 font-semibold">{{ star }}★</span>
+                <div
+                  class="h-2 flex-1 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+                >
+                  <div
+                    class="h-full rounded-full bg-amber-500"
+                    [style.width.%]="getReviewPercentage(star)"
+                  ></div>
+                </div>
+                <span class="w-10 text-right text-neutral-500"
+                  >{{ getReviewPercentage(star) }}%</span
+                >
+              </div>
+              }
+            </div>
+            <div
+              class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900"
+            >
+              <p
+                class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+              >
+                Sort reviews
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                @for (option of reviewSortOptions; track option.key) {
+                <button
+                  type="button"
+                  (click)="setReviewSort(option.key)"
+                  class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+                  [class.bg-[#d65108]]="reviewSort() === option.key"
+                  [class.text-white]="reviewSort() === option.key"
+                  [class.border-neutral-200]="reviewSort() !== option.key"
+                  [class.dark:border-neutral-700]="reviewSort() !== option.key"
+                >
+                  {{ option.label }}
+                </button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (filteredReviews().length) {
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          @for (rev of filteredReviews(); track trackReview($index, rev)) {
+          <div
+            [appScrollReveal]="'slide-up'"
+            [delay]="($index % 2) * 100"
+            appTilt
+            [tiltMax]="5"
+            class="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-bold text-neutral-900 dark:text-white">
+                    {{ rev.userName || 'Customer' }}
+                  </p>
+                  @if (rev.verified !== false) {
+                  <span
+                    class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:bg-emerald-500/10"
+                    >Verified Purchase</span
+                  >
+                  }
+                </div>
+                <p class="mt-1 text-xs font-medium text-neutral-500">
+                  {{ rev.date | date:'mediumDate' }}
+                </p>
+              </div>
+              <div class="flex text-amber-500">
+                @for (star of getReviewStars(rev.rating || 0); track star) {
+                <mat-icon class="text-lg"
+                  >{{ star ? 'star' : 'star_border' }}</mat-icon
+                >
+                }
+              </div>
+            </div>
+            <h4
+              class="mt-4 text-base font-semibold text-neutral-900 dark:text-white"
+            >
+              {{ rev.title || 'Great purchase' }}
+            </h4>
+            <p
+              class="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300"
+            >
+              {{ rev.comment }}
+            </p>
+            @if ((rev.images || []).length) {
+            <div class="mt-4 grid grid-cols-3 gap-2">
+              @for (image of rev.images; track image) {
+              <img
+                [src]="image"
+                class="h-20 w-full rounded-xl object-cover"
+                alt="Review image"
+              />
+              }
+            </div>
+            } @if (rev.sellerReply) {
+            <div
+              class="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10"
+            >
+              <p class="font-semibold">Seller reply</p>
+              <p class="mt-1">{{ rev.sellerReply }}</p>
+            </div>
+            }
+            <div
+              class="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4 text-sm text-neutral-500 dark:border-neutral-800"
+            >
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 font-semibold hover:text-[#d65108]"
+              >
+                <mat-icon class="text-base">thumb_up</mat-icon>
+                Helpful ({{ rev.helpfulCount || 0 }})
+              </button>
+              <button type="button" class="font-semibold hover:text-rose-500">
+                Report
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <div
+          class="rounded-[2rem] border border-dashed border-neutral-300 bg-neutral-50 py-12 text-center dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <mat-icon class="text-neutral-400 text-5xl">rate_review</mat-icon>
+          <p
+            class="mt-3 text-lg font-semibold text-neutral-800 dark:text-neutral-200"
+          >
+            No reviews yet
+          </p>
+          <p class="mt-2 text-sm text-neutral-500">
+            Be the first to share your experience after delivery.
+          </p>
+        </div>
+        } @if (isReviewModalOpen()) {
+        <div
+          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 py-6"
+        >
+          <div
+            class="w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl dark:bg-neutral-950"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-xl font-black text-neutral-950 dark:text-white">
+                  Rate & Review
+                </h3>
+                <p class="mt-1 text-sm text-neutral-500">
+                  Share your honest feedback with photos and a recommendation.
+                </p>
+              </div>
+              <button
+                type="button"
+                (click)="closeReviewModal()"
+                class="rounded-full border border-neutral-200 p-2 text-neutral-500 hover:text-neutral-900 dark:border-neutral-800 dark:hover:text-white"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <div class="mt-6 space-y-5">
+              <div>
+                <p
+                  class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                >
+                  Your rating
+                </p>
+                <div class="mt-2 flex items-center gap-1 text-amber-500">
+                  @for (star of [1,2,3,4,5]; track star) {
+                  <button type="button" (click)="setReviewRating(star)">
+                    <mat-icon
+                      >{{ star <= reviewDraft().rating ? 'star' : 'star_border'
+                      }}</mat-icon
+                    >
+                  </button>
+                  }
+                </div>
+              </div>
+              <div>
+                <label
+                  class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                  >Review title</label
+                >
+                <input
+                  [ngModel]="reviewDraft().title"
+                  (ngModelChange)="updateReviewTitle($event)"
+                  name="reviewTitle"
+                  class="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none focus:border-[#d65108] dark:border-neutral-800 dark:bg-neutral-900"
+                  placeholder="Great quality and fast delivery"
+                />
+              </div>
+              <div>
+                <label
+                  class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                  >Detailed review</label
+                >
+                <textarea
+                  [ngModel]="reviewDraft().comment"
+                  (ngModelChange)="updateReviewComment($event)"
+                  name="reviewComment"
+                  rows="4"
+                  class="mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm outline-none focus:border-[#d65108] dark:border-neutral-800 dark:bg-neutral-900"
+                  placeholder="Tell us what you loved or what could be improved."
+                ></textarea>
+              </div>
+              <div>
+                <label
+                  class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                  >Upload images (max 5)</label
+                >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  (change)="onReviewImageSelect($event)"
+                  class="mt-2 block w-full text-sm text-neutral-500"
+                />
+                @if (reviewDraft().imagePreviews.length) {
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                  @for (image of reviewDraft().imagePreviews; track image; let
+                  idx = $index) {
+                  <div class="relative">
+                    <img
+                      [src]="image"
+                      class="h-20 w-full rounded-xl object-cover"
+                    />
+                    <button
+                      type="button"
+                      (click)="removeReviewImage(idx)"
+                      class="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                    >
+                      <mat-icon class="text-sm">close</mat-icon>
+                    </button>
+                  </div>
+                  }
+                </div>
+                }
+              </div>
+              <div
+                class="flex items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 dark:border-neutral-800"
+              >
+                <span
+                  class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
+                  >Would you recommend this product?</span
+                >
+                <label class="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    [ngModel]="reviewDraft().recommended"
+                    (ngModelChange)="updateReviewRecommended($event)"
+                    name="recommended"
+                  />
+                  Yes
+                </label>
+              </div>
+            </div>
+            <div
+              class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+            >
+              <button
+                type="button"
+                (click)="closeReviewModal()"
+                class="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                (click)="submitReview(p.id)"
+                [disabled]="isSubmittingReview()"
+                class="rounded-full bg-[#d65108] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b74306] disabled:opacity-60"
+              >
+                {{ isSubmittingReview() ? 'Submitting...' : 'Submit review' }}
               </button>
             </div>
           </div>
         </div>
-
-        <!-- Included with this Product (Bundle Products) -->
-        @if (bundleProductsList().length > 0) {
-          <div class="p-6 bg-blue-50/20 dark:bg-blue-950/10 border border-blue-100 dark:border-blue-900/30 rounded-[1.5rem] md:rounded-[2rem] space-y-4 animate-fadeIn">
-            <h3 class="text-xs font-black uppercase text-blue-500 tracking-widest flex items-center gap-2">
-              <mat-icon class="scale-75">card_giftcard</mat-icon>
-              FREE Included with this Product
-            </h3>
-            <div class="divide-y divide-blue-100/30 dark:divide-blue-900/20">
-              @for (item of bundleProductsList(); track item.id) {
-                <div class="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                  <img [src]="item.images && item.images[0]?.url || item.images && item.images[0] || 'https://via.placeholder.com/80'" class="w-12 h-12 object-contain bg-white dark:bg-neutral-900 rounded-lg border border-neutral-100 dark:border-neutral-800" referrerpolicy="no-referrer">
-                  <div class="flex-1 min-w-0">
-                    <span class="block text-xs font-black text-neutral-900 dark:text-white truncate uppercase">{{ item.name }}</span>
-                    <span class="text-[9px] text-neutral-400 font-mono tracking-wide uppercase">{{ item.brand }}</span>
-                  </div>
-                  <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider rounded-md border border-emerald-500/15">FREE Included</span>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
-               <mat-icon class="text-neutral-700 dark:text-neutral-300">verified_user</mat-icon>
-               <span class="text-[10px] font-bold text-neutral-500 uppercase">{{ p.warranty?.warrantyPeriod || '1 Year Warranty' }}</span>
-           </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
-               <mat-icon class="text-neutral-700 dark:text-neutral-300">support_agent</mat-icon>
-               <span class="text-[10px] font-bold text-neutral-500 uppercase">Tech Support</span>
-           </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
-               <mat-icon class="text-neutral-700 dark:text-neutral-300">local_shipping</mat-icon>
-               <span class="text-[10px] font-bold text-neutral-500 uppercase">{{ p.shipping?.deliveryTime || 'Fast Delivery' }}</span>
-           </div>
-           <div class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors">
-               <mat-icon class="text-neutral-700 dark:text-neutral-300">security</mat-icon>
-               <span class="text-[10px] font-bold text-neutral-500 uppercase">Secure Pay</span>
-           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TABS -->
-    <div class="pt-16 sm:pt-24 space-y-12 sm:space-y-16">
-      <div class="flex items-center gap-6 sm:gap-10 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll pb-2" appScrollReveal="fade">
-        @for (tab of [
-          { id: 'overview', label: 'Overview' },
-          { id: 'specs', label: 'Technical Specifications', visible: productSpecs().length > 0 },
-          { id: 'features', label: 'Features', visible: productFeatures().length > 0 },
-          { id: 'downloads', label: 'Downloads', visible: productDownloads().length > 0 },
-          { id: 'reviews', label: 'Reviews & Ratings' },
-          { id: 'faqs', label: 'Frequently Asked Questions', visible: productFaqs().length > 0 }
-        ]; track tab.id) {
-          @if (tab.visible !== false) {
-            <button (click)="activeTab.set(tab.id)"
-                    class="shrink-0 flex items-center justify-center relative pb-3 transition-colors text-xs font-black uppercase tracking-[0.2em]"
-                    [class]="activeTab() === tab.id ? 'text-neutral-950 dark:text-white' : 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300'">
-              {{ tab.label }}
-              @if(activeTab() === tab.id) {
-                <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-950 dark:bg-white animate-fadeIn"></div>
-              }
-            </button>
-          }
         }
       </div>
-
-      <div class="min-h-[200px] sm:min-h-[300px]" appScrollReveal="fade">
-        @switch (activeTab()) {
-          
-          @case ('overview') {
-            <div class="prose dark:prose-invert max-w-none animate-slideUp space-y-10">
-              <div class="max-w-4xl">
-                 <h2 class="text-3xl font-black mb-6">Product Overview</h2>
-                 <div class="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed prose dark:prose-invert max-w-none" [innerHTML]="safeHtml(p.long_description || p.description || '')"></div>
-              </div>
-            </div>
-          }
-          
-          @case ('specs') {
-            <div class="animate-slideUp max-w-4xl">
-              @if (productSpecs().length) {
-                <div class="rounded-[2rem] border border-neutral-200 dark:border-neutral-800 overflow-hidden bg-white dark:bg-neutral-950 shadow-sm">
-                  <table class="w-full text-left border-collapse">
-                    <tbody>
-                      @for (spec of productSpecs(); track spec.label) {
-                        <tr class="border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
-                          <th class="py-4 px-6 md:py-6 md:px-8 text-xs font-black text-neutral-400 uppercase tracking-widest">{{ spec.label }}</th>
-                          <td class="py-4 px-6 md:py-6 md:px-8 text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ spec.value }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              }
-            </div>
-          }
-
-          @case ('features') {
-             <div class="animate-slideUp max-w-5xl space-y-8">
-               @if(productFeatures().length) {
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   @for (feat of productFeatures(); track feat.title; let idx = $index) {
-                     <div appTilt [tiltMax]="5" class="p-8 rounded-[2rem] bg-neutral-50 dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 hover:border-orange-500/20 transition-all duration-300">
-                       <h3 class="text-xl font-bold mb-3">{{ feat.title }}</h3>
-                       <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">{{ feat.description }}</p>
-                     </div>
-                   }
-                 </div>
-               }
-             </div>
-          }
-
-          @case ('downloads') {
-             <div class="animate-slideUp max-w-4xl">
-               @if(productDownloads().length) {
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    @for(d of productDownloads(); track d.id || d.title; let idx = $index) {
-                       <a [href]="d.fileUrl || '#'" target="_blank" appTilt [tiltMax]="4" class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group group-hover:text-[#d65108]">
-                          <div class="flex items-center gap-4 text-neutral-800 dark:text-neutral-200">
-                             <mat-icon class="text-neutral-400 group-hover:text-[#d65108]">insert_drive_file</mat-icon>
-                             <span class="font-bold">{{ d.title }}</span>
-                          </div>
-                          <mat-icon class="text-neutral-300">download</mat-icon>
-                       </a>
-                    }
-                  </div>
-               }
-             </div>
-          }
-
-          @case ('reviews') {
-            <div id="reviews" class="animate-slideUp max-w-5xl space-y-12">
-               @if (productReviews().length) {
-                 <div class="flex items-center gap-8 p-10 bg-neutral-50 dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800">
-                    <div class="flex flex-col items-center justify-center shrink-0 border-r border-neutral-200 dark:border-neutral-800 pr-8">
-                       <span class="text-5xl font-black text-neutral-950 dark:text-white">4.9</span>
-                       <div class="flex text-amber-500 mt-2 mb-1">
-                          <mat-icon class="scale-75">star</mat-icon><mat-icon class="scale-75">star</mat-icon><mat-icon class="scale-75">star</mat-icon><mat-icon class="scale-75">star</mat-icon><mat-icon class="scale-75">star</mat-icon>
-                       </div>
-                       <span class="text-xs font-bold text-neutral-500">Based on {{ productReviews().length }} Reviews</span>
-                    </div>
-                    <!-- summary stats -->
-                    <div class="flex-1 space-y-2 hidden md:block">
-                      @for(s of [5,4,3,2,1]; track s) {
-                         <div class="flex items-center gap-3 text-xs font-bold text-neutral-500">
-                           <span>{{s}} Star</span>
-                           <div class="flex-1 max-w-[200px] h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
-                             <div class="h-full bg-amber-500 rounded-full" [style.width]="s===5 ? '85%' : (s===4 ? '10%' : '5%')"></div>
-                           </div>
-                         </div>
-                      }
-                    </div>
-                    <button class="shrink-0 h-14 px-8 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 font-black uppercase text-xs tracking-widest rounded-xl hover:bg-neutral-800 transition-colors">Write a Review</button>
-                 </div>
-                 
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   @for (rev of productReviews(); track rev.id; let idx = $index) {
-                     <div [appScrollReveal]="'slide-up'" [delay]="(idx % 2) * 100" appTilt [tiltMax]="5"
-                          class="p-8 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm rounded-[2rem] space-y-4 hover:shadow-xl hover:border-orange-500/30 transition-all duration-300">
-                        <div class="flex items-center justify-between">
-                           <div class="flex flex-col">
-                             <div class="flex items-center gap-2">
-                               <span class="text-sm font-black">{{ rev.userName }}</span>
-                               <span class="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 text-[9px] uppercase font-black tracking-widest border border-emerald-100 rounded">Verified</span>
-                             </div>
-                             <span class="text-[10px] text-neutral-400 font-bold mt-0.5">{{ rev.date }}</span>
-                           </div>
-                           <div class="flex text-amber-500 scale-75">
-                             @for (s of [1,2,3,4,5]; track s) { <mat-icon [class.text-neutral-200]="s > rev.rating">star</mat-icon> }
-                           </div>
-                        </div>
-                        <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed font-medium">"{{ rev.comment }}"</p>
-                        <div class="flex items-center text-neutral-400 gap-2 border-t border-neutral-100 pt-4 cursor-pointer hover:text-[#d65108] transition-colors">
-                           <mat-icon class="scale-[60%]">thumb_up</mat-icon> <span class="text-[10px] font-bold uppercase">Helpful</span>
-                        </div>
-                     </div>
-                   }
-                 </div>
-               } @else {
-                 <div class="py-16 text-center space-y-4">
-                    <mat-icon class="text-neutral-300 scale-150">reviews</mat-icon>
-                    <p class="text-neutral-500 font-bold">No reviews available yet.</p>
-                 </div>
-               }
-            </div>
-          }
-
-          @case ('faqs') {
-             <div class="animate-slideUp max-w-4xl space-y-4">
-                @if (productFaqs().length) {
-                   @for (faq of productFaqs(); track faq.question; let idx = $index) {
-                     <details [appScrollReveal]="'slide-up'" [delay]="idx * 80" class="group bg-white dark:bg-neutral-955 border border-neutral-250 dark:border-neutral-800 rounded-[1.5rem] [&_summary::-webkit-details-marker]:hidden transition-all">
-                       <summary class="flex items-center justify-between p-6 cursor-pointer outline-none hover:text-[#d65108] transition-colors">
-                         <span class="font-bold text-lg text-left">{{ faq.question }}</span>
-                         <span class="transition group-open:rotate-180">
-                           <mat-icon>expand_more</mat-icon>
-                         </span>
-                       </summary>
-                       <div class="text-neutral-650 dark:text-neutral-400 px-6 pb-6 leading-relaxed text-left border-t border-neutral-100 dark:border-neutral-900 pt-4 mt-2">
-                         {{ faq.answer }}
-                       </div>
-                     </details>
-                   }
-                }
-             </div>
-          }
-        }
-      </div>
-    </div>
-
-    <!-- RECOMMENDED FILAMENTS -->
-    @if (recommendedFilamentsList().length > 0) {
-      <div class="pt-24 space-y-16 animate-fadeIn" appScrollReveal="fade">
-        <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
-          <div class="flex items-center justify-between mb-8">
-            <div>
-              <h2 class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white">Recommended Filaments</h2>
-              <p class="text-xs text-neutral-550 font-semibold mt-1">Recommended for printing with compatible setups like the {{ p.name }}.</p>
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            @for (f of recommendedFilamentsList(); track f.id; let idx = $index) {
-              <div [appScrollReveal]="'slide-up'" [delay]="(idx % 4) * 100" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-emerald-200 transition-all flex flex-col h-full relative">
-                <a [routerLink]="['/product', f.slug]" class="block relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4">
-                  <img [src]="getImageUrl(f.images[0])" class="w-[90%] h-[90%] object-contain group-hover:scale-105 transition-transform" referrerpolicy="no-referrer" />
-                </a>
-                <div class="flex flex-col flex-1">
-                  <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2">{{ f.brand }}</span>
-                  <a [routerLink]="['/product', f.slug]" class="font-bold text-neutral-900 dark:text-white leading-tight mb-4 flex-1 text-left line-clamp-2 hover:text-[#d65108] transition-colors">{{ f.name }}</a>
-                  <div class="flex items-center justify-between mt-auto">
-                    <span class="text-lg font-black text-neutral-955 dark:text-white">{{ activePrice(f) | currency:'INR':'symbol':'1.0-0' }}</span>
-                    <button (click)="addRecommendedFilamentToCart(f)" class="h-10 px-4 bg-neutral-950 dark:bg-neutral-800 hover:bg-[#d65108] dark:hover:bg-[#d65108] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none flex items-center justify-center gap-1">
-                      <mat-icon class="scale-75 -ml-1">shopping_cart</mat-icon> Add
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- RELATED PRODUCTS -->
-    <div class="pt-24 space-y-16" appScrollReveal="fade">
-      <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
-         <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white">Related Products</h2>
-            <div class="flex gap-2">
-               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"><mat-icon>chevron_left</mat-icon></button>
-               <button class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"><mat-icon>chevron_right</mat-icon></button>
-            </div>
-         </div>
-         
-         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-            @for (rp of relatedProducts(); track rp.id; let idx = $index) {
-               <a [routerLink]="['/product', rp.slug]" [appScrollReveal]="'slide-up'" [delay]="(idx % 4) * 100" appTilt [tiltMax]="5" class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-orange-200 transition-all flex flex-col h-full">
-                  <div class="relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4">
-                     <img [src]="getImageUrl(rp.images[0])" class="w-[90%] h-[90%] object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform" />
-                  </div>
-                  <div class="flex flex-col flex-1">
-                     <span class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2">{{ rp.brand }}</span>
-                     <h3 class="font-bold text-neutral-900 dark:text-white leading-tight mb-4 flex-1 text-left line-clamp-2 hover:text-[#d65108] transition-colors">{{ rp.name }}</h3>
-                     <div class="flex items-end justify-between mt-auto">
-                        <span class="text-lg font-black text-neutral-950 dark:text-white">{{ activePrice(rp) | currency:'INR':'symbol':'1.0-0' }}</span>
-                        <div class="h-10 w-10 bg-neutral-950 dark:bg-neutral-800 text-white rounded-xl flex items-center justify-center opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all"><mat-icon class="scale-75">shopping_cart</mat-icon></div>
-                     </div>
-                  </div>
-               </a>
-            }
-         </div>
-         @if (relatedProducts().length === 0) {
-            <div class="py-12 text-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-[2rem]">
-               <p class="text-neutral-500 font-bold uppercase text-xs tracking-widest">No related products found</p>
-            </div>
-         }
-      </div>
-    </div>
-  </div>
-
-  <!-- Mobile Sticky Add To Cart Bottom Bar -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp">
-    <div class="flex items-center gap-4 max-w-xl mx-auto text-left">
-      <div class="flex flex-col">
-        <span class="text-[9px] font-black uppercase tracking-widest text-[#d65108]">Total Value</span>
-        <span class="text-xl font-black text-neutral-900 dark:text-white">{{ activePrice(p) * quantity() | currency:'INR':'symbol':'1.0-0' }}</span>
-      </div>
-      <div class="flex-1 flex gap-2">
-        <div class="inline-flex items-center bg-neutral-100 dark:bg-neutral-900 rounded-xl p-1 shrink-0">
-          <button (click)="adjustQty(-1)" class="h-full w-10 flex items-center justify-center font-bold" aria-label="Decrease quantity"><mat-icon class="scale-75">remove</mat-icon></button>
-          <span class="w-8 text-center text-sm font-black">{{ quantity() }}</span>
-          <button (click)="adjustQty(1)" class="h-full w-10 flex items-center justify-center font-bold" aria-label="Increase quantity"><mat-icon class="scale-75">add</mat-icon></button>
-        </div>
-        <app-button
-          [loading]="isAddingToCart()"
-          text="ADD"
-          loadingText="Adding..."
-          icon="shopping_cart"
-          btnClass="flex-1 h-12 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#d65108]/20 flex items-center justify-center gap-2 cursor-pointer"
-          (btnClick)="addToCart(p)"
+      } @case ('faqs') {
+      <div class="animate-slideUp max-w-4xl space-y-4">
+        @if (productFaqs().length) { @for (faq of productFaqs(); track
+        faq.question; let idx = $index) {
+        <details
+          [appScrollReveal]="'slide-up'"
+          [delay]="idx * 80"
+          class="group bg-white dark:bg-neutral-955 border border-neutral-250 dark:border-neutral-800 rounded-[1.5rem] [&_summary::-webkit-details-marker]:hidden transition-all"
         >
-        </app-button>
+          <summary
+            class="flex items-center justify-between p-6 cursor-pointer outline-none hover:text-[#d65108] transition-colors"
+          >
+            <span class="font-bold text-lg text-left">{{ faq.question }}</span>
+            <span class="transition group-open:rotate-180">
+              <mat-icon>expand_more</mat-icon>
+            </span>
+          </summary>
+          <div
+            class="text-neutral-650 dark:text-neutral-400 px-6 pb-6 leading-relaxed text-left border-t border-neutral-100 dark:border-neutral-900 pt-4 mt-2"
+          >
+            {{ faq.answer }}
+          </div>
+        </details>
+        } }
+      </div>
+      } }
+    </div>
+  </div>
+
+  <!-- RECOMMENDED FILAMENTS -->
+  @if (recommendedFilamentsList().length > 0) {
+  <div class="pt-24 space-y-16 animate-fadeIn" appScrollReveal="fade">
+    <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h2
+            class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white"
+          >
+            Recommended Filaments
+          </h2>
+          <p class="text-xs text-neutral-550 font-semibold mt-1">
+            Recommended for printing with compatible setups like the {{ p.name
+            }}.
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
+      >
+        @for (f of recommendedFilamentsList(); track f.id; let idx = $index) {
+        <div
+          [appScrollReveal]="'slide-up'"
+          [delay]="(idx % 4) * 100"
+          class="group bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] p-6 hover:shadow-xl hover:border-emerald-200 transition-all flex flex-col h-full relative"
+        >
+          <a
+            [routerLink]="['/product', f.slug]"
+            class="block relative aspect-square bg-neutral-50 dark:bg-neutral-950 rounded-[1.5rem] mb-6 overflow-hidden flex items-center justify-center p-4"
+          >
+            <img
+              [src]="getImageUrl(f.images[0])"
+              class="w-[90%] h-[90%] object-contain group-hover:scale-105 transition-transform"
+              referrerpolicy="no-referrer"
+            />
+          </a>
+          <div class="flex flex-col flex-1">
+            <span
+              class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-2"
+              >{{ f.brand }}</span
+            >
+            <a
+              [routerLink]="['/product', f.slug]"
+              class="font-bold text-neutral-900 dark:text-white leading-tight mb-4 flex-1 text-left line-clamp-2 hover:text-[#d65108] transition-colors"
+              >{{ f.name }}</a
+            >
+            <div class="flex items-center justify-between mt-auto">
+              <span class="text-lg font-black text-neutral-955 dark:text-white"
+                >{{ activePrice(f) | currency:'INR':'symbol':'1.0-0' }}</span
+              >
+              <button
+                (click)="addRecommendedFilamentToCart(f)"
+                class="h-10 px-4 bg-neutral-950 dark:bg-neutral-800 hover:bg-[#d65108] dark:hover:bg-[#d65108] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-none flex items-center justify-center gap-1"
+              >
+                <mat-icon class="scale-75 -ml-1">shopping_cart</mat-icon> Add
+              </button>
+            </div>
+          </div>
+        </div>
+        }
       </div>
     </div>
   </div>
+  }
+
+  <!-- RELATED PRODUCTS -->
+  <div class="pt-24 space-y-16" appScrollReveal="fade">
+    <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
+      <div class="flex items-center justify-between mb-8">
+        <h2
+          class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white"
+        >
+          Related Products
+        </h2>
+        <div class="flex gap-2">
+          <button
+            class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"
+          >
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button
+            class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"
+          >
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+      >
+        @for (rp of relatedProducts(); track rp.id; let idx = $index) {
+        <a
+          [routerLink]="['/product', rp.slug]"
+          [appScrollReveal]="'slide-up'"
+          [delay]="(idx % 4) * 100"
+          appTilt
+          [tiltMax]="5"
+          class="group block bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all"
+        >
+          <div
+            class="relative overflow-hidden bg-neutral-50 dark:bg-neutral-950 p-4 aspect-square flex items-center justify-center"
+          >
+            <img
+              [src]="getImageUrl(rp.images[0])"
+              class="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            />
+            @if (rp.mrp && activePrice(rp) < getMrp(rp)) {
+            <span
+              class="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-black uppercase tracking-[0.25em] px-2 py-1 rounded-full shadow-lg"
+            >
+              {{ mrpDiscountPercent(rp) }}% off
+            </span>
+            }
+          </div>
+          <div class="p-5 flex flex-col gap-3 h-full">
+            <div class="flex items-center justify-between gap-3">
+              <span
+                class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400"
+              >
+                {{ rp.brand }}
+              </span>
+              @if (rp.category?.name) {
+              <span
+                class="text-[10px] px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-300 uppercase tracking-[0.2em]"
+              >
+                {{ rp.category.name }}
+              </span>
+              }
+            </div>
+            <h3
+              class="font-black text-sm md:text-base leading-tight text-neutral-950 dark:text-white line-clamp-2"
+            >
+              {{ rp.name }}
+            </h3>
+            @if (rp.tags.length) {
+            <div class="flex flex-wrap gap-2">
+              @for (tag of rp.tags.slice(0, 3); track tag) {
+              <span
+                class="text-[9px] uppercase tracking-[0.2em] bg-neutral-100 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-300 px-2 py-1 rounded-full"
+              >
+                {{ tag }}
+              </span>
+              }
+            </div>
+            }
+            <div
+              class="mt-auto pt-3 border-t border-neutral-100 dark:border-neutral-800"
+            >
+              <div class="flex items-baseline gap-2">
+                <span
+                  class="text-lg font-black text-neutral-950 dark:text-white"
+                >
+                  {{ activePrice(rp) | currency:'INR':'symbol':'1.0-0' }}
+                </span>
+                @if (rp.mrp && activePrice(rp) < getMrp(rp)) {
+                <span class="text-xs line-through text-neutral-400">
+                  ₹{{ getMrp(rp) | number:'1.0-0' }}
+                </span>
+                }
+              </div>
+              <p
+                class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-[0.25em] mt-2"
+              >
+                View product details
+              </p>
+            </div>
+          </div>
+        </a>
+        }
+      </div>
+      @if (relatedProducts().length === 0) {
+      <div
+        class="py-12 text-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-[2rem]"
+      >
+        <p class="text-neutral-500 font-bold uppercase text-xs tracking-widest">
+          No related products found
+        </p>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Sticky Add To Cart Bottom Bar -->
+<div
+  class="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-xl border-t border-neutral-100 dark:border-neutral-900 z-40 transform transition-transform animate-slideUp"
+>
+  <div class="flex items-center gap-4 max-w-xl mx-auto text-left">
+    <div class="flex flex-col">
+      <span
+        class="text-[9px] font-black uppercase tracking-widest text-[#d65108]"
+        >Total Value</span
+      >
+      <span class="text-xl font-black text-neutral-900 dark:text-white"
+        >{{ activePrice(p) * quantity() | currency:'INR':'symbol':'1.0-0'
+        }}</span
+      >
+    </div>
+    <div class="flex-1 flex gap-2">
+      <div
+        class="inline-flex items-center bg-neutral-100 dark:bg-neutral-900 rounded-xl p-1 shrink-0"
+      >
+        <button
+          (click)="adjustQty(-1)"
+          class="h-full w-10 flex items-center justify-center font-bold"
+          aria-label="Decrease quantity"
+        >
+          <mat-icon class="scale-75">remove</mat-icon>
+        </button>
+        <span class="w-8 text-center text-sm font-black">{{ quantity() }}</span>
+        <button
+          (click)="adjustQty(1)"
+          class="h-full w-10 flex items-center justify-center font-bold"
+          aria-label="Increase quantity"
+        >
+          <mat-icon class="scale-75">add</mat-icon>
+        </button>
+      </div>
+      <app-button
+        [loading]="isAddingToCart()"
+        text="ADD"
+        loadingText="Adding..."
+        icon="shopping_cart"
+        btnClass="flex-1 h-12 bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[#d65108]/20 flex items-center justify-center gap-2 cursor-pointer"
+        (btnClick)="addToCart(p)"
+      >
+      </app-button>
+    </div>
+  </div>
+</div>
 
 } @else {
-  <div class="py-32 text-center space-y-8 animate-fadeIn">
-    <mat-icon class="text-neutral-300 scale-[2]">inventory_2</mat-icon>
-    <h2 class="text-3xl font-black">Profile Not Found</h2>
-    <a [routerLink]="['/products']" class="inline-flex px-10 py-4 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest">Back To Catalog</a>
-  </div>
-}
-}
+<div class="py-32 text-center space-y-8 animate-fadeIn">
+  <mat-icon class="text-neutral-300 scale-[2]">inventory_2</mat-icon>
+  <h2 class="text-3xl font-black">Profile Not Found</h2>
+  <a
+    [routerLink]="['/products']"
+    class="inline-flex px-10 py-4 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest"
+    >Back To Catalog</a
+  >
+</div>
+} }

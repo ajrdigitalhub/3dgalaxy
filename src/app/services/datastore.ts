@@ -546,6 +546,7 @@ export class DatastoreService {
   // Groups cart items: main products with their bundle sub-products nested underneath
   groupedCartItems = computed(() => {
     const items = this.resolvedCartItems();
+    const allProds = this.products();
     const grouped: any[] = [];
 
     // Find main items (not free)
@@ -555,14 +556,33 @@ export class DatastoreService {
       const p = item.product;
       let bundleSubs: any[] = [];
 
-      // Find any items in the cart that are free and are bundled by this parent product
+      // Find any items in the cart that are free and are bundled by this parent product,
+      // or automatically load them from the product list if they aren't in the cart!
       if (p.bundleProducts) {
         try {
           const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
           if (Array.isArray(list)) {
             const listIds = list.map((bp: any) => typeof bp === 'string' ? bp : bp.id);
-            // Match with items in the cart marked as free
-            bundleSubs = items.filter(i => i.isFree && listIds.includes(i.product.id));
+            
+            // First try matching items already in the cart (so if there's specific variants etc. they are preserved)
+            const inCartSubs = items.filter(i => i.isFree && listIds.includes(i.product.id));
+            const inCartProdIds = new Set(inCartSubs.map(i => i.product.id));
+
+            bundleSubs = [...inCartSubs];
+
+            // For any bundled products not in the cart, load their details from the database
+            for (const subId of listIds) {
+              if (!inCartProdIds.has(subId)) {
+                const subProd = allProds.find(prod => prod.id === subId);
+                if (subProd) {
+                  bundleSubs.push({
+                    product: subProd,
+                    quantity: item.quantity,
+                    isFree: true
+                  });
+                }
+              }
+            }
           }
         } catch (e) { /* ignore parse errors */ }
       }

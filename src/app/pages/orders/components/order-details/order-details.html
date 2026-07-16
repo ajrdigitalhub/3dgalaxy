@@ -1,480 +1,733 @@
 <div class="space-y-8 text-left max-w-6xl mx-auto py-4 px-4 sm:px-6">
-  
   <!-- BREADCRUMBS & ACTION BAR -->
   <div class="flex items-center justify-between">
-    <button (click)="location.back()" class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
+    <button
+      (click)="location.back()"
+      class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
+    >
       <mat-icon class="scale-75">arrow_back</mat-icon> Back to My Orders
     </button>
-    <div class="text-xs text-neutral-400 font-semibold" id="current_time_display">
+    <div
+      class="text-xs text-neutral-400 font-semibold"
+      id="current_time_display"
+    >
       Local Time: 2026-06-20 23:49 UTC
     </div>
   </div>
 
   @if (loading()) {
-    <div class="flex flex-col items-center justify-center p-24 space-y-4 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-sm">
-      <div class="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-xs font-mono text-neutral-450 animate-pulse uppercase tracking-widest">Compiling active order parameters...</p>
-    </div>
+  <div
+    class="flex flex-col items-center justify-center p-24 space-y-4 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-sm"
+  >
+    <div
+      class="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"
+    ></div>
+    <p
+      class="text-xs font-mono text-neutral-450 animate-pulse uppercase tracking-widest"
+    >
+      Compiling active order parameters...
+    </p>
+  </div>
   } @else if (error()) {
-    <div class="p-8 bg-rose-500/5 border border-rose-500/10 rounded-3xl text-center space-y-4 max-w-md mx-auto shadow-sm">
-      <mat-icon class="text-rose-500 scale-125">error_outline</mat-icon>
-      <h3 class="text-sm font-bold text-rose-500">Retrieval Failure</h3>
-      <p class="text-xs text-neutral-500 line-clamp-3">{{ error() }}</p>
-      <button (click)="location.back()" class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all">
-        Go Back
-      </button>
+  <div
+    class="p-8 bg-rose-500/5 border border-rose-500/10 rounded-3xl text-center space-y-4 max-w-md mx-auto shadow-sm"
+  >
+    <mat-icon class="text-rose-500 scale-125">error_outline</mat-icon>
+    <h3 class="text-sm font-bold text-rose-500">Retrieval Failure</h3>
+    <p class="text-xs text-neutral-500 line-clamp-3">{{ error() }}</p>
+    <button
+      (click)="location.back()"
+      class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all"
+    >
+      Go Back
+    </button>
+  </div>
+  } @else { @if (order(); as ord) {
+  <!-- TOP MARQUEE (ORDER OVERVIEW) -->
+  <section
+    class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm"
+  >
+    <div class="text-left space-y-2">
+      <div class="flex items-center gap-3">
+        <span
+          [class]="'px-3 py-1 text-[11px] font-mono font-black uppercase rounded-lg ' + getStatusBadgeClass(ord.status)"
+        >
+          {{ ord.status }}
+        </span>
+        <p class="text-[10px] font-mono text-neutral-450 tracking-wider">
+          ORDER OVERVIEW
+        </p>
+      </div>
+      <h1
+        class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight"
+      >
+        Invoice Ref: <span class="text-blue-500">{{ ord.orderNumber }}</span>
+      </h1>
+      <div
+        class="text-xs text-neutral-500 flex flex-wrap items-center gap-x-4 gap-y-1"
+      >
+        <span
+          >Date Placed:
+          <strong
+            >{{ ord.createdAt | date:'LLL dd, yyyy • hh:mm a' }}</strong
+          ></span
+        >
+        <span>•</span>
+        <span>Recipient: <strong>{{ customerName() }}</strong></span>
+      </div>
     </div>
-  } @else {
-    @if (order(); as ord) {
-    <!-- TOP MARQUEE (ORDER OVERVIEW) -->
-    <section class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
-      <div class="text-left space-y-2">
-        <div class="flex items-center gap-3">
-          <span [class]="'px-3 py-1 text-[11px] font-mono font-black uppercase rounded-lg ' + getStatusBadgeClass(ord.status)">
-            {{ ord.status }}
-          </span>
-          <p class="text-[10px] font-mono text-neutral-450 tracking-wider">SECURED PRECISION CONTRACT</p>
-        </div>
-        <h1 class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-          Invoice Ref: <span class="text-blue-500">{{ ord.orderNumber }}</span>
-        </h1>
-        <div class="text-xs text-neutral-500 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span>Date Placed: <strong>{{ ord.createdAt | date:'LLL dd, yyyy • hh:mm a' }}</strong></span>
-          <span>•</span>
-          <span>Recipient: <strong>{{ customerName() }}</strong></span>
-        </div>
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-3">
-        <button (click)="printInvoice()" class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-850 border border-neutral-250 dark:border-neutral-800 text-neutral-800 dark:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
-          <mat-icon class="text-sm scale-95">download</mat-icon> Download Invoice
-        </button>
-        <a href="#support-box" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
-          <mat-icon class="text-sm scale-95">help_outline</mat-icon> Contact Support
-        </a>
-      </div>
-    </section>
 
-    <!-- LIVE WORKFLOW ORDER TRACKING TIMELINE -->
-    <div class="p-8 bg-neutral-950 text-white rounded-3xl border border-white/5 space-y-8 shadow-md">
+    <div class="flex flex-wrap items-center gap-3">
+      <button
+        (click)="printInvoice()"
+        class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-850 border border-neutral-250 dark:border-neutral-800 text-neutral-800 dark:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+      >
+        <mat-icon class="text-sm scale-95">download</mat-icon> Download Invoice
+      </button>
+      <a
+        href="#support-box"
+        class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+      >
+        <mat-icon class="text-sm scale-95">help_outline</mat-icon> Contact
+        Support
+      </a>
+    </div>
+  </section>
+
+  <!-- LIVE WORKFLOW ORDER TRACKING TIMELINE -->
+  <div
+    class="p-8 bg-neutral-950 text-white rounded-3xl border border-white/5 space-y-8 shadow-md"
+  >
+    <div>
+      <h3
+        class="text-xs font-mono font-bold tracking-widest text-blue-400 uppercase"
+      >
+        DELIVERY TRACKING
+      </h3>
+      <p class="text-neutral-400 text-[11px] mt-1">
+        Live updates from our delivery network.
+      </p>
+    </div>
+
+    <!-- Timeline visual track -->
+    @if (['cancelled', 'returned',
+    'refunded'].includes(ord.status?.toLowerCase())) {
+    <div
+      class="p-6 bg-rose-500/10 border border-rose-500/15 rounded-2xl flex items-center gap-4 text-left"
+    >
+      <mat-icon class="text-rose-500 scale-125">cancel_presentation</mat-icon>
       <div>
-        <h3 class="text-xs font-mono font-bold tracking-widest text-blue-400 uppercase">REAL-TIME DISPATCH MILESTONES</h3>
-        <p class="text-neutral-400 text-[11px] mt-1">Live updates retrieved from Delta-Logistics distribution nodes.</p>
+        <h4 class="text-xs font-bold text-rose-500 uppercase font-mono">
+          TRACKING SUSPENDED
+        </h4>
+        <p class="text-[11px] text-neutral-400 mt-0.5">
+          This shipment progress bar was closed because the order was archived
+          under status <strong>{{ ord.status }}</strong>.
+        </p>
+      </div>
+    </div>
+    } @else {
+    <!-- Desktop and Tablet horizontal track -->
+    <div class="hidden md:grid grid-cols-7 gap-4 relative">
+      <!-- Connecting background progress bar line -->
+      <div class="absolute left-[7%] right-[7%] top-6 h-1 bg-white/10 z-0">
+        <div
+          class="h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
+          [style.width.%]="(getCurrentStepIndex() / 5) * 100"
+        ></div>
       </div>
 
-      <!-- Timeline visual track -->
-      @if (['cancelled', 'returned', 'refunded'].includes(ord.status?.toLowerCase())) {
-        <div class="p-6 bg-rose-500/10 border border-rose-500/15 rounded-2xl flex items-center gap-4 text-left">
-          <mat-icon class="text-rose-500 scale-125">cancel_presentation</mat-icon>
-          <div>
-            <h4 class="text-xs font-bold text-rose-500 uppercase font-mono">TRACKING SUSPENDED</h4>
-            <p class="text-[11px] text-neutral-400 mt-0.5">This shipment progress bar was closed because the order was archived under status <strong>{{ ord.status }}</strong>.</p>
-          </div>
-        </div>
-      } @else {
-        <!-- Desktop and Tablet horizontal track -->
-        <div class="hidden md:grid grid-cols-7 gap-4 relative">
-          <!-- Connecting background progress bar line -->
-          <div class="absolute left-[7%] right-[7%] top-6 h-1 bg-white/10 z-0">
-            <div class="h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full" 
-                 [style.width.%]="(getCurrentStepIndex() / 6) * 100">
-            </div>
-          </div>
-
-          <!-- Staggered stages -->
-          @for (step of trackingSteps; track step.key; let i = $index) {
-            <div class="text-center space-y-3 z-1 flex flex-col items-center">
-              <!-- Animated Circle badge -->
-              <div class="h-12 w-12 rounded-full flex items-center justify-center border-2 transition-all duration-500"
-                   [class.bg-blue-500]="isStepCompleted(i)"
-                   [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
-                   [class.text-white]="isStepCompleted(i) || isStepActive(i)"
-                   [class.bg-neutral-900]="isStepActive(i)"
-                   [class.ring-4]="isStepActive(i)"
-                   [class.ring-blue-500]="isStepActive(i)"
-                   [class.border-neutral-800]="isStepPending(i)"
-                   [class.bg-neutral-950]="isStepPending(i)"
-                   [class.text-neutral-500]="isStepPending(i)">
-                @if (isStepCompleted(i)) {
-                  <mat-icon class="scale-90 font-bold">check</mat-icon>
-                } @else if (isStepActive(i)) {
-                  <mat-icon class="scale-90 animate-pulse text-blue-400">sync</mat-icon>
-                } @else {
-                  <mat-icon class="scale-90">{{ step.icon }}</mat-icon>
-                }
-              </div>
-
-              <div class="space-y-0.5 text-center">
-                <p class="text-xs font-black tracking-tight" 
-                   [class.text-blue-400]="isStepActive(i)"
-                   [class.text-white]="isStepCompleted(i)"
-                   [class.text-neutral-500]="isStepPending(i)">
-                  {{ step.label }}
-                </p>
-                <p class="text-[9px] text-neutral-400 leading-tight line-clamp-2 px-1">
-                  {{ step.desc }}
-                </p>
-              </div>
-            </div>
+      <!-- Staggered stages -->
+      @for (step of trackingSteps; track step.key; let i = $index) {
+      <div class="text-center space-y-3 z-1 flex flex-col items-center">
+        <!-- Animated Circle badge -->
+        <div
+          class="h-12 w-12 rounded-full flex items-center justify-center border-2 transition-all duration-500"
+          [class.bg-blue-500]="isStepCompleted(i)"
+          [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
+          [class.text-white]="isStepCompleted(i) || isStepActive(i)"
+          [class.bg-neutral-900]="isStepActive(i)"
+          [class.ring-4]="isStepActive(i)"
+          [class.ring-blue-500]="isStepActive(i)"
+          [class.border-neutral-800]="isStepPending(i)"
+          [class.bg-neutral-950]="isStepPending(i)"
+          [class.text-neutral-500]="isStepPending(i)"
+        >
+          @if (isStepCompleted(i)) {
+          <mat-icon class="scale-90 font-bold">check</mat-icon>
+          } @else if (isStepActive(i)) {
+          <mat-icon class="scale-90 animate-pulse text-blue-400">sync</mat-icon>
+          } @else {
+          <mat-icon class="scale-90">{{ step.icon }}</mat-icon>
           }
         </div>
 
-        <!-- Mobile vertical stacking timeline -->
-        <div class="grid md:hidden grid-cols-1 gap-6 pl-4 border-l-2 border-white/10 relative">
-          @for (step of trackingSteps; track step.key; let i = $index) {
-            <div class="flex gap-4 items-start relative">
-              <!-- Connecting segment lights up if active/completed -->
-              <div class="absolute -left-[21px] top-6 bottom-0 w-0.5 z-0"
-                   [class.bg-blue-500]="isStepCompleted(i)">
-              </div>
-
-              <!-- State Bullet -->
-              <div class="h-8 w-8 rounded-full flex items-center justify-center border-2 z-1 shrink-0"
-                   [class.bg-blue-500]="isStepCompleted(i)"
-                   [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
-                   [class.text-white]="isStepCompleted(i) || isStepActive(i)"
-                   [class.bg-neutral-900]="isStepActive(i)"
-                   [class.text-blue-400]="isStepActive(i)"
-                   [class.border-neutral-800]="isStepPending(i)"
-                   [class.bg-neutral-950]="isStepPending(i)"
-                   [class.text-neutral-500]="isStepPending(i)">
-                @if (isStepCompleted(i)) {
-                  <mat-icon class="scale-75 font-semibold">check</mat-icon>
-                } @else if (isStepActive(i)) {
-                  <mat-icon class="scale-75 animate-bounce text-blue-400 font-bold">sync</mat-icon>
-                } @else {
-                  <mat-icon class="scale-75">{{ step.icon }}</mat-icon>
-                }
-              </div>
-
-              <!-- Description text -->
-              <div class="text-left py-0.5">
-                <p class="text-xs font-bold" 
-                   [class.text-blue-400]="isStepActive(i)"
-                   [class.text-white]="isStepCompleted(i)"
-                   [class.text-neutral-500]="isStepPending(i)">
-                  {{ step.label }}
-                </p>
-                <p class="text-[10px] text-neutral-455">
-                  {{ step.desc }}
-                </p>
-              </div>
-            </div>
-          }
+        <div class="space-y-0.5 text-center">
+          <p
+            class="text-xs font-black tracking-tight"
+            [class.text-blue-400]="isStepActive(i)"
+            [class.text-white]="isStepCompleted(i)"
+            [class.text-neutral-500]="isStepPending(i)"
+          >
+            {{ step.label }}
+          </p>
+          <p
+            class="text-[9px] text-neutral-400 leading-tight line-clamp-2 px-1"
+          >
+            {{ step.desc }}
+          </p>
         </div>
+      </div>
       }
     </div>
 
-    <!-- MAIN TWO COLUMN GRID LAYOUT -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- LEFT: ORDERED ITEMS & TRANSACTION MATRIX (2 COLUMNS) -->
-      <div class="lg:col-span-2 space-y-8">
-        
-        <!-- MODULE: PRODUCT SHIPMENT CATALOG BREAKDOWN -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-6 shadow-sm">
-          <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">SPECIFIED PRODUCT LINE ITEMS</h3>
-          
-          <div class="divide-y divide-neutral-100 dark:divide-neutral-900">
-            @for (item of ord.items; track item.id) {
-              <div class="py-5 flex items-start gap-4 text-left first:pt-0 last:pb-0">
-                <!-- Thumbnail -->
-                <div class="h-16 w-16 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center">
-                  @if (item.variant?.imageUrl || (item.product?.images && item.product?.images[0]?.url)) {
-                    <img [src]="item.variant?.imageUrl || item.product?.images[0]?.url" 
-                         [alt]="item.product?.name || 'Line Item'"
-                         class="h-full w-full object-cover"
-                         referrerpolicy="no-referrer">
-                  } @else {
-                    <mat-icon class="text-neutral-400 scale-125">image</mat-icon>
-                  }
-                </div>
+    <!-- Mobile vertical stacking timeline -->
+    <div
+      class="grid md:hidden grid-cols-1 gap-6 pl-4 border-l-2 border-white/10 relative"
+    >
+      @for (step of trackingSteps; track step.key; let i = $index) {
+      <div class="flex gap-4 items-start relative">
+        <!-- Connecting segment lights up if active/completed -->
+        <div
+          class="absolute -left-[21px] top-6 bottom-0 w-0.5 z-0"
+          [class.bg-blue-500]="isStepCompleted(i)"
+        ></div>
 
-                <!-- Product Text parameters -->
-                <div class="space-y-1 flex-1">
-                  <h4 class="text-sm font-bold text-neutral-900 dark:text-white hover:text-blue-500 transition-colors">
-                    <a [routerLink]="['/product', item.product?.slug]">{{ item.product?.name }}</a>
-                  </h4>
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-450 font-medium">
-                    @if (item.variant) {
-                      <span class="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-[10px] font-bold text-neutral-600 dark:text-neutral-400">
-                        {{ item.variant.name }}
-                      </span>
-                    }
-                    <span>SKU: <strong>{{ item.variant?.sku || item.product?.sku }}</strong></span>
-                    <span>•</span>
-                    <span>Qty: <strong>{{ item.quantity }}</strong></span>
-                  </div>
-                </div>
-
-                <!-- Line calculations -->
-                <div class="text-right whitespace-nowrap shrink-0">
-                  <p class="text-sm font-bold font-mono text-neutral-900 dark:text-white">
-                    {{ item.unitPrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
-                  </p>
-                  <p class="text-[10px] font-mono text-neutral-455">
-                    {{ item.unitPrice | currency:'INR':'symbol':'1.0-0' }} each
-                  </p>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- GRID: ADDRESS BI-MATRIX -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <!-- Shipping Address card -->
-          @if (shippingAddressObj(); as ship) {
-          <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm">
-            <div class="flex items-center gap-2">
-              <mat-icon class="text-blue-500 scale-90">location_on</mat-icon>
-              <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">SHIPPING DESTINATION</h3>
-            </div>
-            
-            <div class="text-xs text-neutral-650 dark:text-neutral-300 space-y-1.5 leading-relaxed">
-              <p class="font-bold text-neutral-950 dark:text-white text-sm">
-                {{ ship.fullName }}
-              </p>
-              <p>{{ ship.addressLine1 }}</p>
-              @if (ship.addressLine2) {
-                <p>{{ ship.addressLine2 }}</p>
-              }
-              <p>{{ ship.city }}, {{ ship.state }} - {{ ship.postalCode }}</p>
-              @if (ship.phone && ship.phone !== 'Not provided') {
-                <p class="font-mono text-[11px] text-neutral-450 pt-1">
-                  Contact Phone: {{ ship.phone }}
-                </p>
-              }
-            </div>
-          </div>
+        <!-- State Bullet -->
+        <div
+          class="h-8 w-8 rounded-full flex items-center justify-center border-2 z-1 shrink-0"
+          [class.bg-blue-500]="isStepCompleted(i)"
+          [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
+          [class.text-white]="isStepCompleted(i) || isStepActive(i)"
+          [class.bg-neutral-900]="isStepActive(i)"
+          [class.text-blue-400]="isStepActive(i)"
+          [class.border-neutral-800]="isStepPending(i)"
+          [class.bg-neutral-950]="isStepPending(i)"
+          [class.text-neutral-500]="isStepPending(i)"
+        >
+          @if (isStepCompleted(i)) {
+          <mat-icon class="scale-75 font-semibold">check</mat-icon>
+          } @else if (isStepActive(i)) {
+          <mat-icon class="scale-75 animate-bounce text-blue-400 font-bold"
+            >sync</mat-icon
+          >
+          } @else {
+          <mat-icon class="scale-75">{{ step.icon }}</mat-icon>
           }
-
-          <!-- Billing Details Address card -->
-          @if (billingAddressObj(); as bill) {
-          <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm">
-            <div class="flex items-center gap-2">
-              <mat-icon class="text-blue-500 scale-90">receipt</mat-icon>
-              <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">BILLING STATEMENT INFO</h3>
-            </div>
-            
-            <div class="text-xs text-neutral-650 dark:text-neutral-300 space-y-1.5 leading-relaxed">
-              <p class="font-bold text-neutral-950 dark:text-white text-sm">
-                {{ bill.fullName }}
-              </p>
-              <p>{{ bill.addressLine1 }}</p>
-              @if (bill.addressLine2) {
-                <p>{{ bill.addressLine2 }}</p>
-              }
-              <p>{{ bill.city }}, {{ bill.state }} - {{ bill.postalCode }}</p>
-              @if (bill.country) {
-                <p class="font-mono text-[11px] text-neutral-450 pt-1">Country: {{ bill.country }}</p>
-              }
-              @if (ord.gstNumber) {
-                <p class="pt-1"><span class="font-bold text-neutral-950 dark:text-white">GSTIN:</span> {{ ord.gstNumber }}</p>
-              }
-              @if (ord.companyName) {
-                <p><span class="font-bold text-neutral-950 dark:text-white">Company Name:</span> {{ ord.companyName }}</p>
-              }
-            </div>
-          </div>
-          }
-
         </div>
 
-        <!-- MODULE: PAYMENT METHOD & GATEWAY SUMMARY -->
-        @if (ord.payments && ord.payments.length > 0) {
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-6 shadow-sm">
-          <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">PAYMENT SETTLEMENT DETAIL</h3>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider">Method Secured</span>
-              <p class="text-xs font-bold text-neutral-850 dark:text-white font-mono uppercase">
-                {{ ord.payments[0]?.paymentMethod || 'Razorpay Online' }}
-              </p>
-            </div>
-
-            <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider">Settlement status</span>
-              <span [class]="'px-2 py-0.5 text-[9px] font-bold rounded font-mono uppercase block w-fit ' + getStatusBadgeClass(ord.payments[0]?.status)">
-                {{ ord.payments[0]?.status || 'Pending' }}
-              </span>
-            </div>
-
-            <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider">Transaction code</span>
-              <p class="text-xs font-bold text-neutral-850 dark:text-white font-mono truncate">
-                {{ ord.payments[0]?.transactionId || 'N/A' }}
-              </p>
-            </div>
-          </div>
+        <!-- Description text -->
+        <div class="text-left py-0.5">
+          <p
+            class="text-xs font-bold"
+            [class.text-blue-400]="isStepActive(i)"
+            [class.text-white]="isStepCompleted(i)"
+            [class.text-neutral-500]="isStepPending(i)"
+          >
+            {{ step.label }}
+          </p>
+          <p class="text-[10px] text-neutral-455">{{ step.desc }}</p>
         </div>
-        }
-
       </div>
+      }
+    </div>
+    }
+  </div>
 
-      <!-- RIGHT: ORDER SUMMARY, COURIER TRACKING & Support Ticket (1 COLUMN) -->
-      <div class="space-y-8">
-        
-        <!-- MODULE: CASH FLOW STATEMENT SUMMARY -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-4 shadow-sm">
-          <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">PRICE DETAILS</h3>
-          
-          <div class="space-y-2.5 pt-1 font-mono text-xs">
-            <div class="flex justify-between text-neutral-500">
-              <span>Price (Items subtotal):</span>
-              <span>{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount + ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span>
-            </div>
-            
-            @if (ord.discountAmount > 0) {
-              <div class="flex justify-between text-emerald-500">
-                <span>Loyalty discount applied:</span>
-                <span>-{{ ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span>
-              </div>
-            }
+  <!-- MAIN TWO COLUMN GRID LAYOUT -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- LEFT: ORDERED ITEMS & TRANSACTION MATRIX (2 COLUMNS) -->
+    <div class="lg:col-span-2 space-y-8">
+      <!-- MODULE: PRODUCT SHIPMENT CATALOG BREAKDOWN -->
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-6 shadow-sm"
+      >
+        <h3
+          class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+        >
+          ITEMS IN THIS ORDER
+        </h3>
 
-            <div class="flex justify-between text-neutral-500">
-              <span>Delivery charges:</span>
-              <span>
-                @if (ord.shippingAmount > 0) {
-                  {{ ord.shippingAmount | currency:'INR':'symbol':'1.0-0' }}
-                } @else {
-                  <span class="text-emerald-500 font-bold uppercase">FREE SHIPPING</span>
-                }
-              </span>
-            </div>
-
-            <div class="flex justify-between text-neutral-500">
-              <span>Tax (GST 18% included):</span>
-              <span>{{ ord.taxAmount | currency:'INR':'symbol':'1.0-0' }}</span>
-            </div>
-
-            <div class="flex justify-between text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-100 dark:border-neutral-850">
-              <span>Total Amount:</span>
-              <span class="text-blue-500 font-bold font-mono">{{ ord.totalAmount | currency:'INR':'symbol':'1.0-0' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- MODULE: COURIER DETAILS & ATTACHED TRACKING NUMBER -->
-        @if (ord.shipments && ord.shipments.length > 0) {
-          <div class="p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl text-left space-y-4 shadow-sm">
-            <div class="flex items-center gap-2">
-              <mat-icon class="text-blue-500 scale-90">local_shipping</mat-icon>
-              <h3 class="text-xs font-mono font-bold tracking-widest text-blue-500 uppercase">COURIER DISPATCH</h3>
-            </div>
-            
-            <div class="space-y-3 pt-1 text-xs text-neutral-600 dark:text-neutral-300">
-              <div class="flex justify-between border-b border-neutral-100 dark:border-neutral-850 pb-1.5">
-                <span>Logistic Carrier partner:</span>
-                <span class="font-bold text-neutral-850 dark:text-white font-mono">{{ ord.shipments[0].carrier || 'Delhivery Co.' }}</span>
-              </div>
-              <div class="flex justify-between border-b border-neutral-100 dark:border-neutral-850 pb-1.5">
-                <span>WAYBILL tracking number:</span>
-                <span class="font-bold text-blue-500 font-mono tracking-wider">{{ ord.shipments[0].trackingNumber }}</span>
-              </div>
-              @if (ord.shipments[0].estimatedDelivery) {
-                <div class="flex justify-between pb-1.5">
-                  <span>Estimated delivery slot:</span>
-                  <span class="font-bold text-emerald-500 font-mono">{{ ord.shipments[0].estimatedDelivery | date:'LLL dd, yyyy' }}</span>
-                </div>
-              }
-              
-              @if (ord.shipments[0].trackingUrl || ord.shipments[0].trackingNumber) {
-                <a [href]="ord.shipments[0].trackingUrl || 'https://www.delhivery.com/'" 
-                   target="_blank" 
-                   class="w-full text-center block py-2 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-[10px] uppercase rounded-xl transition-all shadow-xs">
-                  Access delhivery node tracker
-                </a>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- MODULE: DETAILED LIFE HISTORY LOGS -->
-        @if (ord.statusHistory && ord.statusHistory.length > 0) {
-          <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-4 shadow-sm">
-            <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">TRANSITION CHRONOLOGY</h3>
-            
-            <div class="space-y-4 relative pl-3 border-l-2 border-neutral-100 dark:border-neutral-850 pt-1">
-              @for (log of ord.statusHistory; track log.id) {
-                <div class="text-xs text-left text-neutral-600 dark:text-neutral-400 relative">
-                  <!-- Bullet marker -->
-                  <div class="absolute -left-[17px] top-1 h-2 w-2 rounded-full border border-white bg-blue-500 dark:border-neutral-950"></div>
-                  
-                  <div class="flex justify-between font-bold text-neutral-850 dark:text-white">
-                    <span class="font-semibold uppercase tracking-wider text-[10px]">{{ log.status }}</span>
-                    <span class="text-[9px] text-neutral-450 font-mono font-normal">{{ log.createdAt | date:'LLL dd, yyyy hh:mm a' }}</span>
-                  </div>
-                  @if (log.comments) {
-                    <p class="text-[10px] text-neutral-500 leading-normal mt-0.5 whitespace-pre-wrap">{{ log.comments }}</p>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- MODULE: ACCESSIBLE HELP SUPPORT CONTACT TICKET -->
-        <div id="support-box" class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm">
-          <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">CONTACT TECH SUPPORT</h3>
-          <p class="text-[10px] text-neutral-500 leading-relaxed">Need custom slicing advice, cancellation support, or have delivery package complaints? Direct contact details to the lab crew.</p>
-          
-          <div class="space-y-3 pt-1">
-            <div class="space-y-1">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Category issue:</span>
-              <select [value]="ticketCat()" (change)="ticketCat.set($any($event.target).value)" 
-                      class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:ring-1 focus:ring-blue-500">
-                <option value="Logistic delays">Track Package & Carrier delays</option>
-                <option value="Nozzle extruder clogging">3D Printed layer extrusion support</option>
-                <option value="Billing discrepancies">Invoice taxes or merchant billing corrections</option>
-                <option value="System return request">Fulfill return/refund query</option>
-              </select>
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Subject:</span>
-              <input type="text" [value]="ticketSub()" (input)="ticketSub.set($any($event.target).value)"
-                     placeholder="e.g. Splicing parameters for rigid dental filaments" 
-                     class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Elaborated Query Details:</span>
-              <textarea rows="3" [value]="ticketDesc()" (input)="ticketDesc.set($any($event.target).value)"
-                        placeholder="Detail extruder layer temperatures, filaments used, support needs..." 
-                        class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <a [href]="supportWhatsAppUrl()" target="_blank"
-                 class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer">
-                <mat-icon class="text-sm scale-90">chat</mat-icon> Chat on WhatsApp
-              </a>
-              <a [href]="supportEmailUrl()"
-                 class="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer">
-                <mat-icon class="text-sm scale-90">mail</mat-icon> Send Email Support
-              </a>
-            </div>
-
-            <button (click)="submitSupportTicket()" 
-                    [disabled]="ticketSubmitting()"
-                    class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md mt-3 cursor-pointer">
-              @if (ticketSubmitting()) {
-                <div class="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                DISPATCHING HELPDESK RECORD...
+        <div class="divide-y divide-neutral-100 dark:divide-neutral-900">
+          @for (item of ord.items; track item.id) {
+          <div
+            class="py-5 flex items-start gap-4 text-left first:pt-0 last:pb-0"
+          >
+            <!-- Thumbnail -->
+            <div
+              class="h-16 w-16 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center"
+            >
+              @if (item.variant?.imageUrl || (item.product?.images &&
+              item.product?.images[0]?.url)) {
+              <img
+                [src]="item.variant?.imageUrl || item.product?.images[0]?.url"
+                [alt]="item.product?.name || 'Line Item'"
+                class="h-full w-full object-cover"
+                referrerpolicy="no-referrer"
+              />
               } @else {
-                <mat-icon class="text-sm scale-90">contact_support</mat-icon> SUBMIT LOCAL TICKET FORM
+              <mat-icon class="text-neutral-400 scale-125">image</mat-icon>
               }
-            </button>
-          </div>
-        </div>
+            </div>
 
+            <!-- Product Text parameters -->
+            <div class="space-y-1 flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h4
+                  class="text-sm font-bold text-neutral-900 dark:text-white hover:text-blue-500 transition-colors"
+                >
+                  <a [routerLink]="['/product', item.product?.slug]"
+                    >{{ item.product?.name }}</a
+                  >
+                </h4>
+                @if (canReviewOrder()) {
+                <button
+                  type="button"
+                  (click)="openProductReview(item)"
+                  class="rounded-full border border-neutral-200 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-700 transition hover:border-blue-500 hover:text-blue-500 dark:border-neutral-800 dark:text-neutral-300"
+                >
+                  Write review
+                </button>
+                }
+              </div>
+              <div
+                class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-450 font-medium"
+              >
+                @if (item.variant) {
+                <span
+                  class="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-[10px] font-bold text-neutral-600 dark:text-neutral-400"
+                >
+                  {{ item.variant.name }}
+                </span>
+                }
+                <span
+                  >SKU:
+                  <strong
+                    >{{ item.variant?.sku || item.product?.sku }}</strong
+                  ></span
+                >
+                <span>•</span>
+                <span>Qty: <strong>{{ item.quantity }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Line calculations -->
+            <div class="text-right whitespace-nowrap shrink-0">
+              <p
+                class="text-sm font-bold font-mono text-neutral-900 dark:text-white"
+              >
+                {{ item.unitPrice * item.quantity |
+                currency:'INR':'symbol':'1.0-0' }}
+              </p>
+              <p class="text-[10px] font-mono text-neutral-455">
+                {{ item.unitPrice | currency:'INR':'symbol':'1.0-0' }} each
+              </p>
+            </div>
+          </div>
+          }
+        </div>
       </div>
 
+      <!-- GRID: ADDRESS BI-MATRIX -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Shipping Address card -->
+        @if (shippingAddressObj(); as ship) {
+        <div
+          class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm"
+        >
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-blue-500 scale-90">location_on</mat-icon>
+            <h3
+              class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+            >
+              SHIPPING DESTINATION
+            </h3>
+          </div>
+
+          <div
+            class="text-xs text-neutral-650 dark:text-neutral-300 space-y-1.5 leading-relaxed"
+          >
+            <p class="font-bold text-neutral-950 dark:text-white text-sm">
+              {{ ship.fullName }}
+            </p>
+            <p>{{ ship.addressLine1 }}</p>
+            @if (ship.addressLine2) {
+            <p>{{ ship.addressLine2 }}</p>
+            }
+            <p>{{ ship.city }}, {{ ship.state }} - {{ ship.postalCode }}</p>
+            @if (ship.phone && ship.phone !== 'Not provided') {
+            <p class="font-mono text-[11px] text-neutral-450 pt-1">
+              Contact Phone: {{ ship.phone }}
+            </p>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Billing Details Address card -->
+        @if (billingAddressObj(); as bill) {
+        <div
+          class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm"
+        >
+          <div class="flex items-center gap-2">
+            <mat-icon class="text-blue-500 scale-90">receipt</mat-icon>
+            <h3
+              class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+            >
+              BILLING STATEMENT INFO
+            </h3>
+          </div>
+
+          <div
+            class="text-xs text-neutral-650 dark:text-neutral-300 space-y-1.5 leading-relaxed"
+          >
+            <p class="font-bold text-neutral-950 dark:text-white text-sm">
+              {{ bill.fullName }}
+            </p>
+            <p>{{ bill.addressLine1 }}</p>
+            @if (bill.addressLine2) {
+            <p>{{ bill.addressLine2 }}</p>
+            }
+            <p>{{ bill.city }}, {{ bill.state }} - {{ bill.postalCode }}</p>
+            @if (bill.country) {
+            <p class="font-mono text-[11px] text-neutral-450 pt-1">
+              Country: {{ bill.country }}
+            </p>
+            } @if (ord.gstNumber) {
+            <p class="pt-1">
+              <span class="font-bold text-neutral-950 dark:text-white"
+                >GSTIN:</span
+              >
+              {{ ord.gstNumber }}
+            </p>
+            } @if (ord.companyName) {
+            <p>
+              <span class="font-bold text-neutral-950 dark:text-white"
+                >Company Name:</span
+              >
+              {{ ord.companyName }}
+            </p>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- MODULE: PAYMENT METHOD & GATEWAY SUMMARY -->
+      @if (ord.payments && ord.payments.length > 0) {
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-6 shadow-sm"
+      >
+        <h3
+          class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+        >
+          PAYMENT SETTLEMENT DETAIL
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left"
+          >
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider"
+              >Method Secured</span
+            >
+            <p
+              class="text-xs font-bold text-neutral-850 dark:text-white font-mono uppercase"
+            >
+              {{ ord.payments[0]?.paymentMethod || 'Razorpay Online' }}
+            </p>
+          </div>
+
+          <div
+            class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left"
+          >
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider"
+              >Settlement status</span
+            >
+            <span
+              [class]="'px-2 py-0.5 text-[9px] font-bold rounded font-mono uppercase block w-fit ' + getStatusBadgeClass(ord.payments[0]?.status)"
+            >
+              {{ ord.payments[0]?.status || 'Pending' }}
+            </span>
+          </div>
+
+          <div
+            class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-850/50 space-y-1.5 text-left"
+          >
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 tracking-wider"
+              >Transaction code</span
+            >
+            <p
+              class="text-xs font-bold text-neutral-850 dark:text-white font-mono truncate"
+            >
+              {{ ord.payments[0]?.transactionId || 'N/A' }}
+            </p>
+          </div>
+        </div>
+      </div>
+      }
     </div>
 
-    }
-  }
+    <!-- RIGHT: ORDER SUMMARY, COURIER TRACKING & Support Ticket (1 COLUMN) -->
+    <div class="space-y-8">
+      <!-- MODULE: CASH FLOW STATEMENT SUMMARY -->
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-4 shadow-sm"
+      >
+        <h3
+          class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+        >
+          PRICE DETAILS
+        </h3>
+
+        <div class="space-y-2.5 pt-1 font-mono text-xs">
+          <div class="flex justify-between text-neutral-500">
+            <span>Price (Items subtotal):</span>
+            <span
+              >{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount +
+              ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span
+            >
+          </div>
+
+          @if (ord.discountAmount > 0) {
+          <div class="flex justify-between text-emerald-500">
+            <span>Loyalty discount applied:</span>
+            <span
+              >-{{ ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span
+            >
+          </div>
+          }
+
+          <div class="flex justify-between text-neutral-500">
+            <span>Delivery charges:</span>
+            <span>
+              @if (ord.shippingAmount > 0) { {{ ord.shippingAmount |
+              currency:'INR':'symbol':'1.0-0' }} } @else {
+              <span class="text-emerald-500 font-bold uppercase"
+                >FREE SHIPPING</span
+              >
+              }
+            </span>
+          </div>
+
+          <div class="flex justify-between text-neutral-500">
+            <span>Tax (GST 18% included):</span>
+            <span>{{ ord.taxAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+          </div>
+
+          <div
+            class="flex justify-between text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-100 dark:border-neutral-850"
+          >
+            <span>Total Amount:</span>
+            <span class="text-blue-500 font-bold font-mono"
+              >{{ ord.totalAmount | currency:'INR':'symbol':'1.0-0' }}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULE: COURIER DETAILS & ATTACHED TRACKING NUMBER -->
+      @if (ord.shipments && ord.shipments.length > 0) {
+      <div
+        class="p-6 bg-blue-500/5 border border-blue-500/10 rounded-3xl text-left space-y-4 shadow-sm"
+      >
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-blue-500 scale-90">local_shipping</mat-icon>
+          <h3
+            class="text-xs font-mono font-bold tracking-widest text-blue-500 uppercase"
+          >
+            COURIER DISPATCH
+          </h3>
+        </div>
+
+        <div
+          class="space-y-3 pt-1 text-xs text-neutral-600 dark:text-neutral-300"
+        >
+          <div
+            class="flex justify-between border-b border-neutral-100 dark:border-neutral-850 pb-1.5"
+          >
+            <span>Logistic Carrier partner:</span>
+            <span class="font-bold text-neutral-850 dark:text-white font-mono"
+              >{{ ord.shipments[0].carrier || 'Delhivery Co.' }}</span
+            >
+          </div>
+          <div
+            class="flex justify-between border-b border-neutral-100 dark:border-neutral-850 pb-1.5"
+          >
+            <span>WAYBILL tracking number:</span>
+            <span class="font-bold text-blue-500 font-mono tracking-wider"
+              >{{ ord.shipments[0].trackingNumber }}</span
+            >
+          </div>
+          @if (ord.shipments[0].estimatedDelivery) {
+          <div class="flex justify-between pb-1.5">
+            <span>Estimated delivery slot:</span>
+            <span class="font-bold text-emerald-500 font-mono"
+              >{{ ord.shipments[0].estimatedDelivery | date:'LLL dd, yyyy'
+              }}</span
+            >
+          </div>
+          } @if (ord.shipments[0].trackingUrl ||
+          ord.shipments[0].trackingNumber) {
+          <a
+            [href]="ord.shipments[0].trackingUrl || 'https://www.delhivery.com/'"
+            target="_blank"
+            class="w-full text-center block py-2 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-[10px] uppercase rounded-xl transition-all shadow-xs"
+          >
+            Access delhivery node tracker
+          </a>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- MODULE: DETAILED LIFE HISTORY LOGS -->
+      @if (ord.statusHistory && ord.statusHistory.length > 0) {
+      <div
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-4 shadow-sm"
+      >
+        <h3
+          class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+        >
+          TRANSITION CHRONOLOGY
+        </h3>
+
+        <div
+          class="space-y-4 relative pl-3 border-l-2 border-neutral-100 dark:border-neutral-850 pt-1"
+        >
+          @for (log of ord.statusHistory; track log.id) {
+          <div
+            class="text-xs text-left text-neutral-600 dark:text-neutral-400 relative"
+          >
+            <!-- Bullet marker -->
+            <div
+              class="absolute -left-[17px] top-1 h-2 w-2 rounded-full border border-white bg-blue-500 dark:border-neutral-950"
+            ></div>
+
+            <div
+              class="flex justify-between font-bold text-neutral-850 dark:text-white"
+            >
+              <span class="font-semibold uppercase tracking-wider text-[10px]"
+                >{{ log.status }}</span
+              >
+              <span class="text-[9px] text-neutral-450 font-mono font-normal"
+                >{{ log.createdAt | date:'LLL dd, yyyy hh:mm a' }}</span
+              >
+            </div>
+            @if (log.comments) {
+            <p
+              class="text-[10px] text-neutral-500 leading-normal mt-0.5 whitespace-pre-wrap"
+            >
+              {{ log.comments }}
+            </p>
+            }
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- MODULE: ACCESSIBLE HELP SUPPORT CONTACT TICKET -->
+      <div
+        id="support-box"
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm"
+      >
+        <h3
+          class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase"
+        >
+          CONTACT TECH SUPPORT
+        </h3>
+        <p class="text-[10px] text-neutral-500 leading-relaxed">
+          Need help with delivery, an address update, or a billing issue? Our
+          support team can help you resolve it quickly.
+        </p>
+
+        <div class="space-y-3 pt-1">
+          <div class="space-y-1">
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block"
+              >Category issue:</span
+            >
+            <select
+              [value]="ticketCat()"
+              (change)="ticketCat.set($any($event.target).value)"
+              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="Delivery delay">Delivery or shipment delay</option>
+              <option value="Address update">Address or contact update</option>
+              <option value="Billing discrepancies">
+                Billing or payment issue
+              </option>
+              <option value="Return request">Return or refund request</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block"
+              >Subject:</span
+            >
+            <input
+              type="text"
+              [value]="ticketSub()"
+              (input)="ticketSub.set($any($event.target).value)"
+              placeholder="e.g. My shipment is delayed beyond the expected date"
+              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <span
+              class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block"
+              >Elaborated Query Details:</span
+            >
+            <textarea
+              rows="3"
+              [value]="ticketDesc()"
+              (input)="ticketDesc.set($any($event.target).value)"
+              placeholder="Share the issue details and any relevant order information..."
+              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <a
+              [href]="supportWhatsAppUrl()"
+              target="_blank"
+              class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer"
+            >
+              <mat-icon class="text-sm scale-90">chat</mat-icon> Chat on
+              WhatsApp
+            </a>
+            <a
+              [href]="supportEmailUrl()"
+              class="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer"
+            >
+              <mat-icon class="text-sm scale-90">mail</mat-icon> Send Email
+              Support
+            </a>
+          </div>
+
+          <button
+            (click)="submitSupportTicket()"
+            [disabled]="ticketSubmitting()"
+            class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md mt-3 cursor-pointer"
+          >
+            @if (ticketSubmitting()) {
+            <div
+              class="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></div>
+            DISPATCHING HELPDESK RECORD... } @else {
+            <mat-icon class="text-sm scale-90">contact_support</mat-icon> SUBMIT
+            LOCAL TICKET FORM }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  } }
 </div>

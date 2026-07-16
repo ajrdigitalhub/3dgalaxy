@@ -1,51 +1,143 @@
 <div class="space-y-8 animate-fadeIn">
-  <app-admin-page-header 
+  <app-admin-page-header
     title="Catalog Registry"
     description="Program and configure inventory assets, dealer overrides, and specifications."
   >
-    <a routerLink="/admin/products/create" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer decoration-none">
+    <a
+      routerLink="/admin/products/create"
+      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer decoration-none"
+    >
       Register SKU
     </a>
   </app-admin-page-header>
 
-  <div class="flex items-center justify-between gap-4">
-    <app-admin-search-filter
-      placeholder="Search catalog by name, sku..."
-      [value]="searchQuery()"
-      (search)="onSearch($event)"
-    ></app-admin-search-filter>
+  <div
+    class="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 shadow-sm"
+  >
+    <div class="grid gap-4 md:grid-cols-[1fr_auto] items-center">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p
+              class="text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400"
+            >
+              Catalog Filters
+            </p>
+            <h2 class="text-lg font-black text-zinc-900 dark:text-white">
+              Search products
+            </h2>
+          </div>
+          @if (searchQuery()) {
+            <button
+              (click)="onSearch('')"
+              class="px-3 py-2 text-[10px] uppercase font-black tracking-widest text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition"
+            >
+              Clear search
+            </button>
+          }
+        </div>
+        <app-admin-search-filter
+          placeholder="Search catalog by name, sku..."
+          [value]="searchQuery()"
+          (search)="onSearch($event)"
+        ></app-admin-search-filter>
+      </div>
+
+      <div
+        class="flex items-center justify-end text-right text-xs text-zinc-500 dark:text-zinc-400"
+      >
+        <p class="font-bold uppercase tracking-widest">Search by name or SKU</p>
+      </div>
+    </div>
   </div>
 
   <app-admin-data-table [headers]="headers">
-    @for (p of filteredProducts(); track p.id) {
-      <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors">
+    @for (p of paginatedProducts(); track p.id) {
+      <tr
+        class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors cursor-pointer"
+        (click)="viewProductPage(p.slug)"
+      >
         <td class="py-4">
-          <div class="flex items-center gap-3 cursor-pointer" (click)="viewProductDetails(p.id)">
-            <img [src]="p.images[0]?.url || p.images[0] || 'https://picsum.photos/100/100'" alt="Product thumbnail" class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800" referrerpolicy="no-referrer">
+          <div class="flex items-center gap-3">
+            <img
+              [src]="
+                p.images[0]?.url ||
+                p.images[0] ||
+                'https://picsum.photos/100/100'
+              "
+              alt="Product thumbnail"
+              class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800"
+              referrerpolicy="no-referrer"
+            />
             <div>
-              <p class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors">{{ p.name }}</p>
-              <p class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase mt-0.5">{{ p.brand }} alliance</p>
+              <p
+                class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors"
+              >
+                {{ p.name }}
+              </p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                @if (p.tags.length) {
+                  @for (tag of p.tags; track tag) {
+                    <span
+                      class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-zinc-100 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800"
+                    >
+                      {{ tag }}
+                    </span>
+                  }
+                }
+              </div>
+              <p
+                class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase mt-2"
+              >
+                {{ p.brand }} alliance
+              </p>
             </div>
           </div>
         </td>
-        <td class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold">{{ p.categoryId || p.category_id || p.category?.name }}</td>
-        <td class="py-4 font-mono text-zinc-500 text-[10px] uppercase">{{ p.sku }}</td>
+        <td
+          class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold"
+        >
+          {{ p.categoryId || p.category_id || p.category?.name }}
+        </td>
+        <td class="py-4 font-mono text-zinc-500 text-[10px] uppercase">
+          {{ p.sku }}
+        </td>
         <td class="py-4">
-          <span [class]="p.stock > 10 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase select-none">
+          <span
+            [class]="
+              p.stock > 10
+                ? 'bg-emerald-500/10 text-emerald-500'
+                : 'bg-red-500/10 text-red-500'
+            "
+            class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase select-none"
+          >
             {{ p.stock }} units
           </span>
         </td>
-        <td class="py-4 font-mono font-bold">₹{{ (p.salePrice || p.sale_price) | number }}</td>
-        <td class="py-4 font-mono text-emerald-500 font-bold">₹{{ (p.dealerPrice || p.dealer_price) | number }}</td>
+        <td class="py-4 font-mono font-bold">
+          ₹{{ p.salePrice || p.sale_price | number }}
+        </td>
+        <td class="py-4 font-mono text-emerald-500 font-bold">
+          ₹{{ p.dealerPrice || p.dealer_price | number }}
+        </td>
         <td class="py-4 text-right">
           <div class="inline-flex gap-2">
-            <button (click)="viewProductDetails(p.id)" class="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer border-none bg-none">
+            <button
+              (click)="viewProductDetails(p.id, $event)"
+              class="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer border-none bg-none"
+            >
               <mat-icon class="text-base">visibility</mat-icon>
             </button>
-            <button (click)="editProduct(p.id)" class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer border-none bg-none">
+            <button
+              (click)="editProduct(p.id)"
+              class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer border-none bg-none"
+            >
               <mat-icon class="text-base">edit</mat-icon>
             </button>
-            <button (click)="openDeleteDialog(p.id, $event)" class="text-red-400 hover:text-red-600 p-1 cursor-pointer border-none bg-none">
+            <button
+              (click)="openDeleteDialog(p.id, $event)"
+              class="text-red-400 hover:text-red-600 p-1 cursor-pointer border-none bg-none"
+            >
               <mat-icon class="text-base">delete_outline</mat-icon>
             </button>
           </div>
@@ -53,12 +145,88 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="7" class="py-8 text-center text-zinc-400 font-sans font-medium uppercase tracking-wide">
+        <td
+          colspan="7"
+          class="py-8 text-center text-zinc-400 font-sans font-medium uppercase tracking-wide"
+        >
           No matches found in catalog.
         </td>
       </tr>
     }
   </app-admin-data-table>
+
+  <div
+    class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <div class="space-y-2 sm:space-y-0">
+      <p
+        class="text-[10px] uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-400 font-black"
+      >
+        Showing
+        <span class="font-mono text-zinc-900 dark:text-white">{{
+          paginatedProducts().length
+            ? (currentPageValid() - 1) * itemsPerPage() + 1
+            : 0
+        }}</span>
+        to
+        <span class="font-mono text-zinc-900 dark:text-white">{{
+          (currentPageValid() - 1) * itemsPerPage() + paginatedProducts().length
+        }}</span>
+        of
+        <span class="font-mono text-zinc-900 dark:text-white">{{
+          filteredProducts().length
+        }}</span>
+        products
+      </p>
+      <div class="flex items-center gap-2">
+        <span
+          class="text-[10px] uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-400 font-black"
+          >Per page</span
+        >
+        <select
+          [value]="itemsPerPage()"
+          (change)="
+            itemsPerPage.set(Number($any($event.target).value));
+            currentPage.set(1)
+          "
+          class="text-[10px] font-black uppercase tracking-widest bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white"
+        >
+          @for (option of itemsPerPageOptions; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        (click)="setPage(currentPageValid() - 1)"
+        [disabled]="currentPageValid() === 1"
+        class="px-3 py-2 text-[10px] uppercase font-black tracking-widest text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Prev
+      </button>
+      @for (page of pageNumbers(); track page) {
+        <button
+          (click)="setPage(page)"
+          [class]="
+            page === currentPageValid()
+              ? 'px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest'
+              : 'px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-200 dark:hover:bg-zinc-800 transition'
+          "
+        >
+          {{ page }}
+        </button>
+      }
+      <button
+        (click)="setPage(currentPageValid() + 1)"
+        [disabled]="currentPageValid() === totalPages()"
+        class="px-3 py-2 text-[10px] uppercase font-black tracking-widest text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Next
+      </button>
+    </div>
+  </div>
 
   <!-- Delete Dialog -->
   <app-admin-confirmation-dialog
