@@ -116,7 +116,6 @@ export class CustomerOrderDetailsComponent implements OnInit {
     return `mailto:support@3dgalaxy.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 
-  // Define order tracking lifecycle steps
   trackingSteps = [
     {
       key: "Pending",
@@ -153,6 +152,18 @@ export class CustomerOrderDetailsComponent implements OnInit {
       label: "Delivered",
       icon: "task_alt",
       desc: "Your order was delivered successfully.",
+    },
+    {
+      key: "Cancelled",
+      label: "Cancelled",
+      icon: "cancel",
+      desc: "The order was cancelled before dispatch.",
+    },
+    {
+      key: "Returned",
+      label: "Returned",
+      icon: "undo",
+      desc: "The order was returned and processed.",
     },
   ];
 
@@ -206,14 +217,14 @@ export class CustomerOrderDetailsComponent implements OnInit {
     const searchStatus = currentStatus.toLowerCase();
 
     if (["cancelled", "returned", "refunded"].includes(searchStatus)) {
-      return -1;
+      return -2;
     }
 
-    if (searchStatus === "confirmed" || searchStatus === "processing") {
+    if (searchStatus === "confirmed") {
       return 1;
     }
 
-    if (searchStatus === "packed") {
+    if (searchStatus === "packed" || searchStatus === "processing") {
       return 2;
     }
 
@@ -234,7 +245,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
 
   isStepCompleted(index: number): boolean {
     const currentIndex = this.getCurrentStepIndex();
-    if (currentIndex === -1) return false;
+    if (currentIndex === -2) return false;
     return index < currentIndex;
   }
 
@@ -245,8 +256,15 @@ export class CustomerOrderDetailsComponent implements OnInit {
 
   isStepPending(index: number): boolean {
     const currentIndex = this.getCurrentStepIndex();
-    if (currentIndex === -1) return true;
+    if (currentIndex === -2) return false;
     return index > currentIndex;
+  }
+
+  getOverrideState(): string {
+    const status = (this.order()?.status || "").toLowerCase();
+    if (status === "cancelled") return "cancelled";
+    if (status === "returned" || status === "refunded") return "returned";
+    return "standard";
   }
 
   getStatusBadgeClass(status: string): string {

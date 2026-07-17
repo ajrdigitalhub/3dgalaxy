@@ -245,7 +245,7 @@ import { firstValueFrom } from "rxjs";
                     >{{ p.brand }}</span
                   >
                   <a
-                    [routerLink]="['/products', p.slug]"
+                    [routerLink]="['/product', p.slug]"
                     class="block text-sm font-black text-neutral-800 dark:text-neutral-100 leading-snug hover:text-orange-500 min-h-[40px] line-clamp-2 transition-colors font-display"
                   >
                     {{ p.name }}
@@ -296,7 +296,7 @@ import { firstValueFrom } from "rxjs";
                       Buy Now
                     </button>
                     <a
-                      [routerLink]="['/products', p.slug]"
+                      [routerLink]="['/product', p.slug]"
                       class="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center backdrop-blur-xl"
                     >
                       Details

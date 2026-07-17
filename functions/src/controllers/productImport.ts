@@ -266,19 +266,33 @@ const uploadImageUrls = async (urls: string[]) => {
     .map((entry) => entry.value);
 };
 
+const collectVariantImageUrls = (variant: any): string[] => {
+  const sources = [
+    ...(Array.isArray(variant?.variantImages) ? variant.variantImages : []),
+    ...(Array.isArray(variant?.images) ? variant.images : []),
+    ...(Array.isArray(variant?.uploadedImages) ? variant.uploadedImages : []),
+  ];
+  return uniqueArray(
+    sources
+      .map((image: any) =>
+        typeof image === "string" ? image : image?.url || image?.imageUrl || "",
+      )
+      .map((image) => image.trim())
+      .filter(Boolean),
+  );
+};
+
 const prepareGroupImageUploads = async (group: any) => {
   group.uploadedImages = await uploadImageUrls(group.images || []);
 
   await mapWithConcurrency(group.variants || [], 4, async (variant: any) => {
-    const rawVariantImages = (variant.images || [])
-      .map((img: string) => img.trim())
-      .filter(Boolean);
+    const rawVariantImages = collectVariantImageUrls(variant);
     variant.uploadedImages = await uploadImageUrls(rawVariantImages);
     return variant;
   });
 };
 
-const buildProductPayload = async (
+export const buildProductPayload = async (
   group: any,
   tx: any,
   brandCache: Map<string, string>,

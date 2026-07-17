@@ -76,6 +76,7 @@ export class Products implements OnInit {
   compatSearchTerm = signal<string>("");
 
   // Active query parameters (mirrored for convenience)
+  queryParams = signal<Record<string, any>>({});
   activeSearch = signal<string>("");
   activeCategory = signal<string>("");
   activeSubcategory = signal<string>("");
@@ -98,6 +99,7 @@ export class Products implements OnInit {
   ngOnInit() {
     // Listen to query parameters to trigger API fetch
     this.route.queryParams.subscribe((params) => {
+      this.queryParams.set((params || {}) as Record<string, any>);
       this.syncParamsToSignals(params);
       this.fetchFilteredProducts();
     });
@@ -241,7 +243,7 @@ export class Products implements OnInit {
 
   // URL Manipulation Helpers
   updateUrlQueryParam(key: string, value: string | null) {
-    const currentParams = { ...this.route.snapshot.queryParams };
+    const currentParams = { ...this.queryParams() };
     if (value) {
       currentParams[key] = value;
     } else {
@@ -259,7 +261,7 @@ export class Products implements OnInit {
   }
 
   toggleFilter(key: string, value: string) {
-    const currentParams = { ...this.route.snapshot.queryParams };
+    const currentParams = { ...this.queryParams() };
     let values = currentParams[key] ? currentParams[key].split(",") : [];
 
     if (values.includes(value)) {
@@ -284,13 +286,13 @@ export class Products implements OnInit {
   }
 
   isFilterActive(key: string, value: string): boolean {
-    const param = this.route.snapshot.queryParams[key];
+    const param = this.queryParams()[key];
     if (!param) return false;
     return param.split(",").includes(value);
   }
 
   setPriceRange(min: string, max: string) {
-    const currentParams = { ...this.route.snapshot.queryParams };
+    const currentParams = { ...this.queryParams() };
     if (min || max) {
       currentParams["price"] = `${min}-${max}`;
     } else {
@@ -313,6 +315,7 @@ export class Products implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
+      queryParamsHandling: "merge",
       replaceUrl: true,
     });
   }
@@ -445,7 +448,7 @@ export class Products implements OnInit {
   // Active filter display labels mapping
   getActiveFilterChips(): { key: string; value: string; display: string }[] {
     const chips: { key: string; value: string; display: string }[] = [];
-    const params = this.route.snapshot.queryParams;
+    const params = this.queryParams();
 
     if (params["search"]) {
       chips.push({

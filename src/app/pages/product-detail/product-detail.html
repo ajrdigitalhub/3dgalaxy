@@ -181,18 +181,22 @@
           {{ selectedVariant()?.name || p.name }}
         </h1>
 
-        <div class="flex items-center gap-4 text-sm font-semibold">
-          <div
-            class="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 rounded-lg animate-pulse"
+        <div class="flex flex-wrap items-center gap-4 text-sm font-semibold">
+          <button
+            type="button"
+            (click)="scrollToReviews($event)"
+            class="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1 text-amber-600 transition hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-500 dark:hover:bg-amber-500/20"
           >
             <mat-icon class="scale-75">star</mat-icon>
             <span>{{ p.reviews.length > 0 ? '4.9' : 'New' }}</span>
-          </div>
-          <a
-            href="#reviews"
-            class="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors underline decoration-neutral-200 underline-offset-4"
-            >{{ p.reviews.length }} Reviews</a
+          </button>
+          <button
+            type="button"
+            (click)="scrollToReviews($event)"
+            class="text-neutral-400 underline decoration-neutral-200 underline-offset-4 transition hover:text-neutral-900 dark:hover:text-white"
           >
+            {{ p.reviews.length }} Reviews
+          </button>
 
           <div class="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
 
@@ -475,14 +479,7 @@
       class="flex items-center gap-6 sm:gap-10 border-b border-neutral-100 dark:border-neutral-800 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] hide-scroll pb-2"
       appScrollReveal="fade"
     >
-      @for (tab of [ { id: 'overview', label: 'Overview' }, { id: 'specs',
-      label: 'Technical Specifications', visible: productSpecs().length > 0 }, {
-      id: 'features', label: 'Features', visible: productFeatures().length > 0
-      }, { id: 'downloads', label: 'Downloads', visible:
-      productDownloads().length > 0 }, { id: 'reviews', label: 'Reviews &
-      Ratings' }, { id: 'faqs', label: 'Frequently Asked Questions', visible:
-      productFaqs().length > 0 } ]; track tab.id) { @if (tab.visible !== false)
-      {
+      @for (tab of detailTabs(); track tab.id) { @if (tab.visible !== false) {
       <button
         (click)="activeTab.set(tab.id)"
         class="shrink-0 flex items-center justify-center relative pb-3 transition-colors text-xs font-black uppercase tracking-[0.2em]"
@@ -498,19 +495,23 @@
     </div>
 
     <div class="min-h-[200px] sm:min-h-[300px]" appScrollReveal="fade">
-      @switch (activeTab()) { @case ('overview') {
-      <div
-        class="prose dark:prose-invert max-w-none animate-slideUp space-y-10"
-      >
-        <div class="max-w-4xl">
-          <h2 class="text-3xl font-black mb-6">Product Overview</h2>
-          <div
-            class="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed prose dark:prose-invert max-w-none"
-            [innerHTML]="safeHtml(p.long_description || p.description || '')"
-          ></div>
+      @if (activeTab() === 'overview') {
+      <div class="animate-slideUp">
+        <div
+          class="mx-auto max-w-5xl rounded-[2rem] border border-neutral-200/70 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/60 sm:p-10"
+        >
+          <div class="mx-auto max-w-3xl space-y-6 text-center sm:text-left">
+            <h2 class="text-3xl font-black text-neutral-950 dark:text-white">
+              Product Overview
+            </h2>
+            <div
+              class="product-overview-content prose prose-neutral max-w-none text-left text-lg leading-8 text-neutral-600 dark:prose-invert dark:text-neutral-400"
+              [innerHTML]="safeHtml(p.long_description || p.description || '')"
+            ></div>
+          </div>
         </div>
       </div>
-      } @case ('specs') {
+      } @if (activeTab() === 'specs') {
       <div class="animate-slideUp max-w-4xl">
         @if (productSpecs().length) {
         <div
@@ -539,9 +540,9 @@
         </div>
         }
       </div>
-      } @case ('features') {
+      } @if (activeTab() === 'features') {
       <div class="animate-slideUp max-w-5xl space-y-8">
-        @if(productFeatures().length) {
+        @if (productFeatures().length) {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           @for (feat of productFeatures(); track feat.title; let idx = $index) {
           <div
@@ -558,12 +559,12 @@
         </div>
         }
       </div>
-      } @case ('downloads') {
+      } @if (activeTab() === 'downloads') {
       <div class="animate-slideUp max-w-4xl">
-        @if(productDownloads().length) {
+        @if (productDownloads().length) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          @for(d of productDownloads(); track d.id || d.title; let idx = $index)
-          {
+          @for (d of productDownloads(); track d.id || d.title; let idx =
+          $index) {
           <a
             [href]="d.fileUrl || '#'"
             target="_blank"
@@ -585,8 +586,8 @@
         </div>
         }
       </div>
-      } @case ('reviews') {
-      <div id="reviews" class="animate-slideUp max-w-5xl space-y-8">
+      } @if (activeTab() === 'reviews') {
+      <div class="animate-slideUp max-w-5xl space-y-8">
         <div
           class="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 md:p-8"
         >
@@ -627,63 +628,12 @@
               Rate & Review Product
             </button>
           </div>
-
-          <div class="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div class="space-y-3">
-              @for (star of [5,4,3,2,1]; track star) {
-              <div
-                class="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300"
-              >
-                <span class="w-10 font-semibold">{{ star }}★</span>
-                <div
-                  class="h-2 flex-1 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
-                >
-                  <div
-                    class="h-full rounded-full bg-amber-500"
-                    [style.width.%]="getReviewPercentage(star)"
-                  ></div>
-                </div>
-                <span class="w-10 text-right text-neutral-500"
-                  >{{ getReviewPercentage(star) }}%</span
-                >
-              </div>
-              }
-            </div>
-            <div
-              class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900"
-            >
-              <p
-                class="text-sm font-semibold text-neutral-700 dark:text-neutral-300"
-              >
-                Sort reviews
-              </p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                @for (option of reviewSortOptions; track option.key) {
-                <button
-                  type="button"
-                  (click)="setReviewSort(option.key)"
-                  class="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
-                  [class.bg-[#d65108]]="reviewSort() === option.key"
-                  [class.text-white]="reviewSort() === option.key"
-                  [class.border-neutral-200]="reviewSort() !== option.key"
-                  [class.dark:border-neutral-700]="reviewSort() !== option.key"
-                >
-                  {{ option.label }}
-                </button>
-                }
-              </div>
-            </div>
-          </div>
         </div>
 
         @if (filteredReviews().length) {
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           @for (rev of filteredReviews(); track trackReview($index, rev)) {
           <div
-            [appScrollReveal]="'slide-up'"
-            [delay]="($index % 2) * 100"
-            appTilt
-            [tiltMax]="5"
             class="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
           >
             <div class="flex items-start justify-between gap-3">
@@ -739,20 +689,6 @@
               <p class="mt-1">{{ rev.sellerReply }}</p>
             </div>
             }
-            <div
-              class="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4 text-sm text-neutral-500 dark:border-neutral-800"
-            >
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 font-semibold hover:text-[#d65108]"
-              >
-                <mat-icon class="text-base">thumb_up</mat-icon>
-                Helpful ({{ rev.helpfulCount || 0 }})
-              </button>
-              <button type="button" class="font-semibold hover:text-rose-500">
-                Report
-              </button>
-            </div>
           </div>
           }
         </div>
@@ -913,7 +849,7 @@
         </div>
         }
       </div>
-      } @case ('faqs') {
+      } @if (activeTab() === 'faqs') {
       <div class="animate-slideUp max-w-4xl space-y-4">
         @if (productFaqs().length) { @for (faq of productFaqs(); track
         faq.question; let idx = $index) {
@@ -938,7 +874,7 @@
         </details>
         } }
       </div>
-      } }
+      }
     </div>
   </div>
 
@@ -1009,22 +945,33 @@
   }
 
   <!-- RELATED PRODUCTS -->
-  <div class="pt-24 space-y-16" appScrollReveal="fade">
-    <div class="border-t border-neutral-100 dark:border-neutral-800 pt-16">
-      <div class="flex items-center justify-between mb-8">
-        <h2
-          class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white"
-        >
-          Related Products
-        </h2>
+  <div class="pt-24 space-y-8" appScrollReveal="fade">
+    <div class="border-t border-neutral-100 pt-16 dark:border-neutral-800">
+      <div class="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h2
+            class="text-2xl font-black uppercase tracking-widest text-neutral-900 dark:text-white"
+          >
+            Related Products
+          </h2>
+          <p
+            class="mt-1 text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500"
+          >
+            Curated picks from the same category and top-rated companions
+          </p>
+        </div>
         <div class="flex gap-2">
           <button
-            class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"
+            type="button"
+            (click)="scrollRelatedProducts(-1)"
+            class="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm transition hover:scale-105 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800"
           >
             <mat-icon>chevron_left</mat-icon>
           </button>
           <button
-            class="h-10 w-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center hover:bg-neutral-50 shadow-sm hover:scale-105 active:scale-95 transition-all"
+            type="button"
+            (click)="scrollRelatedProducts(1)"
+            class="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white shadow-sm transition hover:scale-105 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800"
           >
             <mat-icon>chevron_right</mat-icon>
           </button>
@@ -1032,93 +979,112 @@
       </div>
 
       <div
-        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
+        #relatedScroll
+        class="related-carousel flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none]"
       >
-        @for (rp of relatedProducts(); track rp.id; let idx = $index) {
-        <a
-          [routerLink]="['/product', rp.slug]"
+        @for (rp of relatedProducts(); track rp.id || rp.slug || $index; let idx
+        = $index) {
+        <article
           [appScrollReveal]="'slide-up'"
           [delay]="(idx % 4) * 100"
           appTilt
           [tiltMax]="5"
-          class="group block bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all"
+          class="related-card group min-w-[260px] max-w-[280px] flex-shrink-0 overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
         >
           <div
-            class="relative overflow-hidden bg-neutral-50 dark:bg-neutral-950 p-4 aspect-square flex items-center justify-center"
+            class="relative aspect-square overflow-hidden bg-neutral-50 p-4 dark:bg-neutral-950"
           >
             <img
-              [src]="getImageUrl(rp.images[0])"
-              class="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+              [src]="getImageUrl((rp.images && rp.images[0]) || (rp.images && rp.images[0]?.url))"
+              class="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+              loading="lazy"
+              alt="{{ rp.name }}"
             />
             @if (rp.mrp && activePrice(rp) < getMrp(rp)) {
             <span
-              class="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-black uppercase tracking-[0.25em] px-2 py-1 rounded-full shadow-lg"
+              class="absolute right-4 top-4 rounded-full bg-orange-500 px-2 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-white shadow-lg"
             >
               {{ mrpDiscountPercent(rp) }}% off
             </span>
             }
+            <button
+              type="button"
+              (click)="$event.preventDefault(); toggleWishlist(rp.id)"
+              class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-neutral-700 shadow-sm transition hover:scale-105"
+            >
+              <mat-icon class="text-base"
+                >{{ wishlistIds().has(rp.id) ? 'favorite' : 'favorite_border'
+                }}</mat-icon
+              >
+            </button>
           </div>
-          <div class="p-5 flex flex-col gap-3 h-full">
-            <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-col gap-3 p-5">
+            <div class="flex items-center justify-between gap-2">
               <span
                 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400"
+                >{{ rp.brand }}</span
               >
-                {{ rp.brand }}
-              </span>
               @if (rp.category?.name) {
               <span
-                class="text-[10px] px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-300 uppercase tracking-[0.2em]"
+                class="rounded-full bg-neutral-100 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-neutral-500 dark:bg-neutral-950 dark:text-neutral-300"
               >
                 {{ rp.category.name }}
               </span>
               }
             </div>
             <h3
-              class="font-black text-sm md:text-base leading-tight text-neutral-950 dark:text-white line-clamp-2"
+              class="line-clamp-2 text-sm font-black leading-tight text-neutral-950 dark:text-white"
             >
               {{ rp.name }}
             </h3>
-            @if (rp.tags.length) {
-            <div class="flex flex-wrap gap-2">
-              @for (tag of rp.tags.slice(0, 3); track tag) {
-              <span
-                class="text-[9px] uppercase tracking-[0.2em] bg-neutral-100 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-300 px-2 py-1 rounded-full"
+            <div class="flex items-center gap-1 text-sm text-amber-500">
+              <mat-icon class="text-base">star</mat-icon>
+              <span class="font-semibold text-neutral-600 dark:text-neutral-300"
+                >4.7</span
               >
-                {{ tag }}
-              </span>
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-lg font-black text-neutral-950 dark:text-white"
+                >{{ activePrice(rp) | currency:'INR':'symbol':'1.0-0' }}</span
+              >
+              @if (rp.mrp && activePrice(rp) < getMrp(rp)) {
+              <span class="text-xs text-neutral-400 line-through"
+                >₹{{ getMrp(rp) | number:'1.0-0' }}</span
+              >
               }
             </div>
-            }
-            <div
-              class="mt-auto pt-3 border-t border-neutral-100 dark:border-neutral-800"
-            >
-              <div class="flex items-baseline gap-2">
-                <span
-                  class="text-lg font-black text-neutral-950 dark:text-white"
-                >
-                  {{ activePrice(rp) | currency:'INR':'symbol':'1.0-0' }}
-                </span>
-                @if (rp.mrp && activePrice(rp) < getMrp(rp)) {
-                <span class="text-xs line-through text-neutral-400">
-                  ₹{{ getMrp(rp) | number:'1.0-0' }}
-                </span>
-                }
-              </div>
-              <p
-                class="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-[0.25em] mt-2"
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="$event.preventDefault(); quickViewRelatedProduct(rp)"
+                class="rounded-full border border-neutral-200 px-3 py-1.5 text-[11px] font-semibold text-neutral-600 transition hover:border-[#d65108] hover:text-[#d65108] dark:border-neutral-800 dark:text-neutral-300"
               >
-                View product details
-              </p>
+                Quick View
+              </button>
+              <button
+                type="button"
+                (click)="$event.preventDefault(); addRelatedToCart(rp)"
+                class="rounded-full bg-neutral-950 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#d65108] dark:bg-neutral-800"
+              >
+                Add to Cart
+              </button>
             </div>
+            <button
+              type="button"
+              (click)="$event.preventDefault(); buyRelatedNow(rp)"
+              class="rounded-full border border-[#d65108]/25 bg-[#d65108]/10 px-3 py-1.5 text-[11px] font-semibold text-[#d65108] transition hover:bg-[#d65108] hover:text-white"
+            >
+              Buy Now
+            </button>
           </div>
-        </a>
+        </article>
         }
       </div>
       @if (relatedProducts().length === 0) {
       <div
-        class="py-12 text-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-[2rem]"
+        class="rounded-[2rem] border border-dashed border-neutral-200 py-12 text-center dark:border-neutral-800"
       >
-        <p class="text-neutral-500 font-bold uppercase text-xs tracking-widest">
+        <p class="text-xs font-bold uppercase tracking-widest text-neutral-500">
           No related products found
         </p>
       </div>

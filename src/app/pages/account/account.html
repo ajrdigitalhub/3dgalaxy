@@ -1,139 +1,376 @@
-<div class="min-h-screen bg-neutral-50 dark:bg-neutral-950 pt-24 pb-12">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col lg:flex-row gap-8">
-      
-      <!-- Sidebar Navigation -->
-      <div class="lg:w-64 shrink-0">
-        <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-4 sticky top-24">
-          <div class="flex items-center gap-4 mb-6 px-2">
-            <div class="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden shrink-0">
-              <mat-icon class="text-neutral-500">person</mat-icon>
+<div
+  class="min-h-screen bg-[linear-gradient(135deg,_#f8fbff_0%,_#f4f7fb_45%,_#eef4ff_100%)] pt-24 pb-12 transition-colors dark:bg-neutral-950"
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-8 lg:flex-row">
+      <aside class="lg:w-72 lg:shrink-0">
+        <div
+          class="sticky top-24 rounded-[1.75rem] border border-neutral-200/70 bg-white/90 p-4 shadow-[0_20px_60px_-25px_rgba(15,23,42,0.25)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90"
+        >
+          <div
+            class="mb-6 flex items-center gap-4 rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-950/70"
+          >
+            <div
+              class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 text-white"
+            >
+              @if (profile()?.profileImage) {
+              <img
+                [src]="profile()?.profileImage"
+                alt="Profile"
+                class="h-full w-full object-cover"
+              />
+              } @else {
+              <mat-icon>person</mat-icon>
+              }
             </div>
             <div class="min-w-0">
-              <h3 class="font-bold text-neutral-900 dark:text-white truncate">{{ profile()?.name || 'User' }}</h3>
-              <p class="text-xs text-neutral-500 truncate">{{ profile()?.email }}</p>
+              <h3 class="truncate font-bold text-neutral-900 dark:text-white">
+                {{ profile()?.name || 'User' }}
+              </h3>
+              <p class="truncate text-xs text-neutral-500">
+                {{ profile()?.email }}
+              </p>
             </div>
           </div>
           <nav class="space-y-1">
-            @for (tab of tabs; track tab.id) {
-              <button (click)="switchTab(tab.id)"
-                      [class.bg-blue-50]="activeTab() === tab.id"
-                      [class.text-blue-600]="activeTab() === tab.id"
-                      [class.dark:bg-blue-500_10]="activeTab() === tab.id"
-                      [class.dark:text-blue-400]="activeTab() === tab.id"
-                      class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                <mat-icon class="scale-90" [class.text-blue-600]="activeTab() === tab.id">{{ tab.icon }}</mat-icon>
-                {{ tab.label }}
-              </button>
-            }
-            <div class="h-px bg-neutral-200 dark:bg-neutral-800 my-2"></div>
-            <button (click)="logout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-              <mat-icon class="scale-90">logout</mat-icon>
-              Logout
+            <button
+              *ngFor="let tab of tabs; trackBy: trackTabId"
+              type="button"
+              (click)="switchTab(tab.id)"
+              [class.bg-blue-50]="activeTab() === tab.id"
+              [class.text-blue-600]="activeTab() === tab.id"
+              class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            >
+              <span class="text-base">{{ tab.icon }}</span>
+              <span>{{ tab.label }}</span>
+            </button>
+            <div class="my-2 h-px bg-neutral-200 dark:bg-neutral-800"></div>
+            <button
+              type="button"
+              (click)="logout()"
+              class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <span class="text-base">logout</span>
+              <span>Logout</span>
             </button>
           </nav>
         </div>
-      </div>
+      </aside>
 
-      <!-- Main Content Area -->
-      <div class="flex-1 min-w-0">
-        
+      <div class="min-w-0 flex-1">
         <!-- DASHBOARD -->
         <ng-container *ngIf="activeTab() === 'dashboard'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Dashboard</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
-                <p class="text-sm font-medium text-neutral-500 mb-1">Total Orders</p>
-                <p class="text-3xl font-black text-neutral-900 dark:text-white">{{ myOrders().length }}</p>
+          <div
+            class="rounded-[2rem] border border-neutral-200/70 bg-white/90 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-8"
+          >
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+            >
+              <div>
+                <p
+                  class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+                >
+                  Your account overview
+                </p>
+                <h2
+                  class="mt-2 text-2xl font-black tracking-tight text-neutral-950 dark:text-white"
+                >
+                  Welcome back, {{ profile()?.name || 'there' }}
+                </h2>
               </div>
-              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
-                <p class="text-sm font-medium text-neutral-500 mb-1">Wishlist</p>
-                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
-              </div>
-              <div class="p-6 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
-                <p class="text-sm font-medium text-neutral-500 mb-1">Reviews</p>
-                <p class="text-3xl font-black text-neutral-900 dark:text-white">0</p>
+              <div
+                class="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+              >
+                Member since {{ profile()?.createdAt ? (profile()?.createdAt |
+                date:'MMM yyyy') : 'recently' }}
               </div>
             </div>
-            
-            <div class="mt-8">
-              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Recent Orders</h3>
-              <ng-container *ngIf="myOrders().length > 0; else noRecentDash">
-                <div class="space-y-3">
-                  @for (ord of myOrders().slice(0, 3); track ord.orderNumber) {
-                    <div class="flex items-center justify-between p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50 dark:bg-neutral-800/20">
-                      <div>
-                        <p class="text-sm font-bold text-neutral-900 dark:text-white">Order {{ ord.orderNumber }}</p>
-                        <p class="text-xs text-neutral-500">{{ ord.date }}</p>
-                      </div>
-                      <div class="text-right">
-                        <p class="text-sm font-bold text-neutral-900 dark:text-white">₹{{ ord.grandTotal }}</p>
-                        <span [ngClass]="{
-                          'text-emerald-600': ord.status === 'delivered',
-                          'text-blue-600': ord.status === 'processing',
-                          'text-yellow-600': ord.status === 'pending'
-                        }" class="text-xs font-bold uppercase tracking-wider">{{ ord.status }}</span>
-                      </div>
-                    </div>
+
+            <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div
+                class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <p class="text-sm font-medium text-neutral-500">Orders</p>
+                @if (isOrdersLoading()) {
+                <div
+                  class="mt-3 h-8 w-20 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+                ></div>
+                } @else {
+                <p
+                  class="mt-2 text-3xl font-black text-neutral-950 dark:text-white"
+                >
+                  {{ myOrders().length }}
+                </p>
+                }
+              </div>
+              <div
+                class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <p class="text-sm font-medium text-neutral-500">Wishlist</p>
+                @if (isWishlistLoading()) {
+                <div
+                  class="mt-3 h-8 w-20 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+                ></div>
+                } @else {
+                <p
+                  class="mt-2 text-3xl font-black text-neutral-950 dark:text-white"
+                >
+                  {{ wishlist().length }}
+                </p>
+                }
+              </div>
+              <div
+                class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <p class="text-sm font-medium text-neutral-500">
+                  Saved addresses
+                </p>
+                <p
+                  class="mt-2 text-3xl font-black text-neutral-950 dark:text-white"
+                >
+                  1
+                </p>
+              </div>
+              <div
+                class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <p class="text-sm font-medium text-neutral-500">Support</p>
+                <p
+                  class="mt-2 text-3xl font-black text-neutral-950 dark:text-white"
+                >
+                  24/7
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <div
+                class="rounded-[1.5rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <div class="flex items-center justify-between">
+                  <h3
+                    class="text-lg font-bold text-neutral-950 dark:text-white"
+                  >
+                    Recent orders
+                  </h3>
+                  <a
+                    routerLink="/account/orders"
+                    class="text-sm font-semibold text-blue-600 dark:text-blue-300"
+                    >View all</a
+                  >
+                </div>
+                @if (isOrdersLoading()) {
+                <div class="mt-4 space-y-3">
+                  @for (item of [1,2,3]; track item) {
+                  <div
+                    class="h-16 animate-pulse rounded-2xl bg-neutral-200/80 dark:bg-neutral-800"
+                  ></div>
                   }
                 </div>
-              </ng-container>
-              <ng-template #noRecentDash>
-                <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
-                  <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
-                  <p class="text-neutral-500 font-medium">No recent orders found.</p>
-                  <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
+                } @else if (myOrders().length > 0) {
+                <div class="mt-4 space-y-3">
+                  @for (ord of myOrders().slice(0, 3); track ord.orderNumber) {
+                  <div
+                    class="flex items-center justify-between rounded-[1.1rem] border border-neutral-200/70 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                  >
+                    <div>
+                      <p
+                        class="text-sm font-bold text-neutral-950 dark:text-white"
+                      >
+                        Order {{ ord.orderNumber }}
+                      </p>
+                      <p class="text-xs text-neutral-500">{{ ord.date }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p
+                        class="text-sm font-bold text-neutral-950 dark:text-white"
+                      >
+                        ₹{{ ord.grandTotal }}
+                      </p>
+                      <span
+                        [ngClass]="{'text-emerald-600': ord.status === 'delivered','text-blue-600': ord.status === 'processing' || ord.status === 'shipped','text-yellow-600': ord.status === 'pending','text-rose-600': ord.status === 'cancelled'}"
+                        class="text-xs font-bold uppercase tracking-wider"
+                        >{{ ord.status }}</span
+                      >
+                    </div>
+                  </div>
+                  }
                 </div>
-              </ng-template>
+                } @else {
+                <div
+                  class="mt-4 rounded-[1.25rem] border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  You have no orders yet. Once you place one, it will appear
+                  here instantly.
+                </div>
+                }
+              </div>
+
+              <div
+                class="rounded-[1.5rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <div class="flex items-center justify-between">
+                  <h3
+                    class="text-lg font-bold text-neutral-950 dark:text-white"
+                  >
+                    Wishlist
+                  </h3>
+                  <a
+                    routerLink="/account/wishlist"
+                    class="text-sm font-semibold text-blue-600 dark:text-blue-300"
+                    >Manage</a
+                  >
+                </div>
+                @if (isWishlistLoading()) {
+                <div class="mt-4 space-y-3">
+                  @for (item of [1,2]; track item) {
+                  <div
+                    class="h-14 animate-pulse rounded-2xl bg-neutral-200/80 dark:bg-neutral-800"
+                  ></div>
+                  }
+                </div>
+                } @else if (wishlist().length > 0) {
+                <div class="mt-4 space-y-3">
+                  @for (item of wishlist().slice(0, 2); track item.productId) {
+                  <div
+                    class="flex items-center justify-between rounded-[1.1rem] border border-neutral-200/70 bg-white px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+                  >
+                    <div>
+                      <p
+                        class="text-sm font-semibold text-neutral-950 dark:text-white"
+                      >
+                        {{ item.product?.name || 'Saved item' }}
+                      </p>
+                      <p class="text-xs text-neutral-500">
+                        {{ item.product?.salePrice ? '₹' +
+                        item.product.salePrice : 'Ready to buy' }}
+                      </p>
+                    </div>
+                    <mat-icon class="text-red-500">favorite</mat-icon>
+                  </div>
+                  }
+                </div>
+                } @else {
+                <div
+                  class="mt-4 rounded-[1.25rem] border border-dashed border-neutral-300 p-8 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+                >
+                  Save products you love to build a wishlist.
+                </div>
+                }
+              </div>
             </div>
           </div>
         </ng-container>
 
         <!-- PROFILE SETTINGS -->
         <ng-container *ngIf="activeTab() === 'profile'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Profile Settings</h2>
-            
-            <div class="flex items-center gap-6 mb-8">
-              <div class="relative w-24 h-24 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden border-2 border-white dark:border-neutral-900 shadow-md">
-                <mat-icon class="text-neutral-500 scale-150">person</mat-icon>
-                <label class="absolute inset-x-0 bottom-0 py-1 bg-black/50 hover:bg-black/70 cursor-pointer text-center text-white transition-colors">
-                  <span class="text-[10px] font-bold uppercase tracking-wider">Edit</span>
-                  <input type="file" class="hidden" accept="image/*" (change)="uploadImage($event)">
+          <div
+            class="rounded-[2rem] border border-neutral-200/70 bg-white/90 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-8"
+          >
+            <h2
+              class="text-2xl font-bold tracking-tight text-neutral-950 dark:text-white"
+            >
+              Profile Settings
+            </h2>
+
+            <div class="mb-8 flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div
+                class="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-neutral-200 shadow-md dark:border-neutral-900 dark:bg-neutral-800"
+              >
+                @if (profile()?.profileImage) {
+                <img
+                  [src]="profile()?.profileImage"
+                  alt="Profile"
+                  class="h-full w-full object-cover"
+                />
+                } @else {
+                <mat-icon class="scale-150 text-neutral-500">person</mat-icon>
+                }
+                <label
+                  class="absolute inset-x-0 bottom-0 cursor-pointer bg-black/50 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-black/70"
+                >
+                  <span>Edit</span>
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept="image/*"
+                    (change)="uploadImage($event)"
+                  />
                 </label>
               </div>
               <div>
-                <h3 class="font-bold text-neutral-900 dark:text-white">Profile Photo</h3>
-                <p class="text-xs text-neutral-500">JPG, GIF or PNG. Max size of 5MB.</p>
+                <h3 class="font-bold text-neutral-950 dark:text-white">
+                  Profile Photo
+                </h3>
+                <p class="text-xs text-neutral-500">
+                  JPG, GIF or PNG. Max size of 5MB.
+                </p>
               </div>
             </div>
 
-            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="space-y-5 max-w-2xl">
+            <form
+              [formGroup]="profileForm"
+              (ngSubmit)="saveProfile()"
+              class="max-w-2xl space-y-5"
+            >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">First Name</label>
-                  <input type="text" formControlName="firstName" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >First Name</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="firstName"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
                 </div>
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Last Name</label>
-                  <input type="text" formControlName="lastName" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >Last Name</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="lastName"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
                 </div>
               </div>
-              
+
               <div class="space-y-1">
-                <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Email Address</label>
-                <input type="email" formControlName="email" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                <label
+                  class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                  >Email Address</label
+                >
+                <input
+                  type="email"
+                  formControlName="email"
+                  class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Mobile Number</label>
-                  <input type="tel" formControlName="phone" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >Mobile Number</label
+                  >
+                  <input
+                    type="tel"
+                    formControlName="phone"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
                 </div>
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Gender</label>
-                  <select formControlName="gender" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white appearance-none">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >Gender</label
+                  >
+                  <select
+                    formControlName="gender"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white appearance-none"
+                  >
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -143,8 +380,16 @@
               </div>
 
               <div class="pt-4">
-                <button type="submit" [disabled]="profileForm.invalid" class="px-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">
-                  Save Changes
+                <button
+                  type="submit"
+                  [disabled]="profileForm.invalid || isProfileSaving()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 disabled:opacity-50"
+                >
+                  @if (isProfileSaving()) {
+                  <span
+                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent dark:border-neutral-900/70"
+                  ></span>
+                  } {{ isProfileSaving() ? 'Saving...' : 'Save Changes' }}
                 </button>
               </div>
             </form>
@@ -153,27 +398,68 @@
 
         <!-- SECURITY SETTINGS -->
         <ng-container *ngIf="activeTab() === 'security'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">Security Settings</h2>
-            
+          <div
+            class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8"
+          >
+            <h2
+              class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight"
+            >
+              Security Settings
+            </h2>
+
             <div class="max-w-2xl mb-12">
-              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Change Password</h3>
-              <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4">
+              <h3
+                class="text-lg font-bold text-neutral-900 dark:text-white mb-4"
+              >
+                Change Password
+              </h3>
+              <form
+                [formGroup]="passwordForm"
+                (ngSubmit)="changePassword()"
+                class="space-y-4"
+              >
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Current Password</label>
-                  <input type="password" formControlName="currentPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >Current Password</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="currentPassword"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
                 </div>
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">New Password</label>
-                  <input type="password" formControlName="newPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
-                  <p class="text-[10px] text-neutral-500 mt-1">Must be at least 8 characters long.</p>
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >New Password</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="newPassword"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
+                  <p class="text-[10px] text-neutral-500 mt-1">
+                    Must be at least 8 characters long.
+                  </p>
                 </div>
                 <div class="space-y-1">
-                  <label class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider">Confirm New Password</label>
-                  <input type="password" formControlName="confirmPassword" class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white">
+                  <label
+                    class="text-xs font-bold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider"
+                    >Confirm New Password</label
+                  >
+                  <input
+                    type="password"
+                    formControlName="confirmPassword"
+                    class="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  />
                 </div>
                 <div class="pt-2">
-                  <button type="submit" [disabled]="passwordForm.invalid" class="px-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50">
+                  <button
+                    type="submit"
+                    [disabled]="passwordForm.invalid"
+                    class="px-8 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                  >
                     Update Password
                   </button>
                 </div>
@@ -181,17 +467,32 @@
             </div>
 
             <div class="max-w-2xl">
-              <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-4">Active Sessions</h3>
-              <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
+              <h3
+                class="text-lg font-bold text-neutral-900 dark:text-white mb-4"
+              >
+                Active Sessions
+              </h3>
+              <div
+                class="rounded-xl border border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800"
+              >
                 <div class="p-4 flex items-center justify-between">
                   <div class="flex items-center gap-4">
                     <mat-icon class="text-neutral-400">computer</mat-icon>
                     <div>
-                      <p class="text-sm font-bold text-neutral-900 dark:text-white">Mac OS • Chrome</p>
-                      <p class="text-xs text-neutral-500">Active now • IP: 192.168.1.1</p>
+                      <p
+                        class="text-sm font-bold text-neutral-900 dark:text-white"
+                      >
+                        Mac OS • Chrome
+                      </p>
+                      <p class="text-xs text-neutral-500">
+                        Active now • IP: 192.168.1.1
+                      </p>
                     </div>
                   </div>
-                  <span class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider">Current</span>
+                  <span
+                    class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold rounded-lg uppercase tracking-wider"
+                    >Current</span
+                  >
                 </div>
               </div>
             </div>
@@ -200,130 +501,292 @@
 
         <!-- ORDERS TAB -->
         <ng-container *ngIf="activeTab() === 'orders'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Orders</h2>
-            
-            <div class="space-y-4">
-              <ng-container *ngIf="myOrders().length > 0; else noOrders">
-              @for (ord of myOrders(); track ord.orderNumber) {
-                <div class="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-neutral-50 dark:bg-neutral-800/20">
-                  <div class="px-6 py-4 bg-white dark:bg-neutral-800/60 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
-                    <div>
-                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order Placed</p>
-                      <p class="text-sm text-neutral-900 dark:text-white font-medium">{{ ord.date }}</p>
-                    </div>
-                    <div>
-                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Total</p>
-                      <p class="text-sm text-neutral-900 dark:text-white font-medium">₹{{ ord.grandTotal }}</p>
-                    </div>
-                    <div>
-                      <p class="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1">Order #</p>
-                      <p class="text-sm text-neutral-900 dark:text-white font-mono">{{ ord.orderNumber }}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span [ngClass]="{
-                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': ord.status === 'delivered',
-                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': ord.status === 'processing',
-                        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': ord.status === 'shipped',
-                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': ord.status === 'pending',
-                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': ord.status === 'cancelled'
-                      }" class="px-3 py-1 text-xs font-bold rounded-lg uppercase tracking-wider">{{ ord.status }}</span>
-                    </div>
-                  </div>
-                  <div class="px-6 py-5">
-                    <div class="flex items-center gap-4">
-                      <div class="w-16 h-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg p-1 flex items-center justify-center shrink-0">
-                        <mat-icon class="text-3xl text-neutral-400">inventory_2</mat-icon>
-                      </div>
-                      <div class="flex-1">
-                        <h4 class="font-bold text-neutral-900 dark:text-white">{{ ord.items[0].name || 'Items' }}</h4>
-                        <p class="text-sm text-neutral-500 mt-0.5" *ngIf="ord.items.length > 1">+ {{ ord.items.length - 1 }} other items</p>
-                        <p class="text-sm text-neutral-500 mt-0.5" *ngIf="ord.items.length === 1">Quantity: {{ ord.items[0].quantity || 1 }}</p>
-                      </div>
-                      <a [routerLink]="['/orders', ord.orderNumber]" class="px-6 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-bold rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors inline-block text-center select-none">
-                        View Details
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              }
-              </ng-container>
-              
-              <ng-template #noOrders>
-                <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
-                  <mat-icon class="text-4xl text-neutral-400 mb-2">inbox</mat-icon>
-                  <p class="text-neutral-500 font-medium">No recent orders found.</p>
-                  <p class="text-xs text-neutral-400 mt-1">When you place an order, it will appear here.</p>
-                </div>
-              </ng-template>
+          <div
+            class="rounded-[2rem] border border-neutral-200/70 bg-white/90 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-8"
+          >
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+            >
+              <div>
+                <p
+                  class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+                >
+                  Order history
+                </p>
+                <h2
+                  class="mt-2 text-2xl font-black tracking-tight text-neutral-950 dark:text-white"
+                >
+                  My Orders
+                </h2>
+              </div>
+              <div
+                class="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+              >
+                Track every purchase in one place
+              </div>
             </div>
 
+            <div class="mt-6 space-y-4">
+              @if (isOrdersLoading()) { @for (item of [1,2]; track item) {
+              <div
+                class="h-32 animate-pulse rounded-[1.5rem] bg-neutral-200/80 dark:bg-neutral-800"
+              ></div>
+              } } @else if (myOrders().length > 0) { @for (ord of myOrders();
+              track ord.orderNumber) {
+              <div
+                class="overflow-hidden rounded-[1.5rem] border border-neutral-200/70 bg-neutral-50 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70"
+              >
+                <div
+                  class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/70 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-neutral-900/60"
+                >
+                  <div>
+                    <p
+                      class="mb-1 text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+                    >
+                      Order placed
+                    </p>
+                    <p
+                      class="text-sm font-medium text-neutral-900 dark:text-white"
+                    >
+                      {{ ord.date }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="mb-1 text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+                    >
+                      Total
+                    </p>
+                    <p
+                      class="text-sm font-semibold text-neutral-900 dark:text-white"
+                    >
+                      ₹{{ ord.grandTotal }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="mb-1 text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+                    >
+                      Order #
+                    </p>
+                    <p
+                      class="font-mono text-sm font-semibold text-neutral-900 dark:text-white"
+                    >
+                      {{ ord.orderNumber }}
+                    </p>
+                  </div>
+                  <span
+                    [ngClass]="{'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': ord.status === 'delivered','bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': ord.status === 'processing' || ord.status === 'shipped','bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': ord.status === 'packed','bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': ord.status === 'pending','bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400': ord.status === 'cancelled'}"
+                    class="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider"
+                    >{{ ord.status }}</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-900"
+                    >
+                      <mat-icon class="text-3xl text-neutral-400"
+                        >inventory_2</mat-icon
+                      >
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-neutral-950 dark:text-white">
+                        {{ ord.items[0].name || 'Items' }}
+                      </h4>
+                      <p
+                        class="mt-1 text-sm text-neutral-500"
+                        *ngIf="ord.items.length > 1"
+                      >
+                        + {{ ord.items.length - 1 }} other items
+                      </p>
+                      <p
+                        class="mt-1 text-sm text-neutral-500"
+                        *ngIf="ord.items.length === 1"
+                      >
+                        Quantity: {{ ord.items[0].quantity || 1 }}
+                      </p>
+                    </div>
+                  </div>
+                  <a
+                    [routerLink]="['/orders', ord.orderNumber]"
+                    class="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                    >View Details</a
+                  >
+                </div>
+              </div>
+              } } @else {
+              <div
+                class="rounded-[1.5rem] border border-dashed border-neutral-300 p-10 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
+              >
+                <mat-icon class="mb-3 text-4xl text-neutral-400"
+                  >inbox</mat-icon
+                >
+                <p class="font-semibold text-neutral-950 dark:text-white">
+                  No orders yet
+                </p>
+                <p class="mt-2">
+                  Your recent purchases will show up here with tracking details.
+                </p>
+              </div>
+              }
+            </div>
           </div>
         </ng-container>
 
         <!-- WISHLIST TAB -->
         <ng-container *ngIf="activeTab() === 'wishlist'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Wishlist</h2>
-            
-            @if (wishlist().length === 0) {
-              <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-12 text-center">
-                <mat-icon class="text-5xl text-red-300 dark:text-red-900 mb-4">favorite_border</mat-icon>
-                <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-2">Your wishlist is empty</h3>
-                <p class="text-neutral-500 mb-6 text-sm">Save items you like and they'll appear here.</p>
-                <a routerLink="/products" class="inline-block px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wider text-sm rounded-xl transition-colors">Start Shopping</a>
-              </div>
+          <div
+            class="rounded-[2rem] border border-neutral-200/70 bg-white/90 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-8"
+          >
+            <h2
+              class="text-2xl font-bold tracking-tight text-neutral-950 dark:text-white"
+            >
+              My Wishlist
+            </h2>
+
+            @if (isWishlistLoading()) {
+            <div class="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              @for (item of [1,2,3]; track item) {
+              <div
+                class="h-56 animate-pulse rounded-[1.5rem] bg-neutral-200/80 dark:bg-neutral-800"
+              ></div>
+              }
+            </div>
+            } @else if (wishlist().length === 0) {
+            <div
+              class="mt-6 rounded-[1.5rem] border border-dashed border-neutral-300 bg-neutral-50 p-12 text-center dark:border-neutral-700 dark:bg-neutral-950/70"
+            >
+              <mat-icon class="mb-4 text-5xl text-red-300 dark:text-red-900"
+                >favorite_border</mat-icon
+              >
+              <h3
+                class="mb-2 text-lg font-bold text-neutral-950 dark:text-white"
+              >
+                Your wishlist is empty
+              </h3>
+              <p class="mb-6 text-sm text-neutral-500">
+                Save products you love and they’ll appear here instantly.
+              </p>
+              <a
+                routerLink="/products"
+                class="inline-block rounded-full bg-blue-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-blue-500"
+                >Start Shopping</a
+              >
+            </div>
             } @else {
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                @for (item of wishlist(); track item.productId) {
-                  <div class="group border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 hover:shadow-md transition-shadow relative">
-                    <button (click)="removeFromWishlist(item.productId)" class="absolute top-3 right-3 h-8 w-8 bg-white dark:bg-neutral-800 shadow-sm rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors z-10">
-                      <mat-icon class="scale-90">delete</mat-icon>
-                    </button>
-                    <div class="aspect-square bg-neutral-100 dark:bg-neutral-900 relative">
-                      <img [src]="item.product.images[0]?.url || 'https://via.placeholder.com/400x400?text=No+Image'" [alt]="item.product.name" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 space-y-2">
-                       <h3 class="font-bold text-neutral-900 dark:text-white text-sm line-clamp-1 truncate">{{ item.product.name }}</h3>
-                       <div class="flex items-center justify-between">
-                         <span class="font-mono font-bold text-blue-600 dark:text-blue-400">₹{{ item.product.salePrice }}</span>
-                         <span *ngIf="item.product.stock > 0" class="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-sm">In Stock</span>
-                         <span *ngIf="item.product.stock <= 0" class="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-sm">Out of Stock</span>
-                       </div>
-                       <button (click)="addToCartFromWishlist(item)" [disabled]="item.product.stock <= 0" class="w-full py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex justify-center items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                         <mat-icon class="scale-75">shopping_cart</mat-icon> Add to Cart
-                       </button>
-                    </div>
+            <div
+              class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              @for (item of wishlist(); track item.productId) {
+              <div
+                class="group border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden bg-white dark:bg-neutral-900 hover:shadow-md transition-shadow relative"
+              >
+                <button
+                  (click)="removeFromWishlist(item.productId)"
+                  class="absolute top-3 right-3 h-8 w-8 bg-white dark:bg-neutral-800 shadow-sm rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors z-10"
+                >
+                  <mat-icon class="scale-90">delete</mat-icon>
+                </button>
+                <div
+                  class="aspect-square bg-neutral-100 dark:bg-neutral-900 relative"
+                >
+                  <img
+                    [src]="item.product.images[0]?.url || 'https://via.placeholder.com/400x400?text=No+Image'"
+                    [alt]="item.product.name"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div class="p-4 space-y-2">
+                  <h3
+                    class="font-bold text-neutral-900 dark:text-white text-sm line-clamp-1 truncate"
+                  >
+                    {{ item.product.name }}
+                  </h3>
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="font-mono font-bold text-blue-600 dark:text-blue-400"
+                      >₹{{ item.product.salePrice }}</span
+                    >
+                    <span
+                      *ngIf="item.product.stock > 0"
+                      class="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-sm"
+                      >In Stock</span
+                    >
+                    <span
+                      *ngIf="item.product.stock <= 0"
+                      class="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-sm"
+                      >Out of Stock</span
+                    >
                   </div>
-                }
+                  <button
+                    (click)="addToCartFromWishlist(item)"
+                    [disabled]="item.product.stock <= 0"
+                    class="w-full py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-[11px] font-bold uppercase tracking-wider rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex justify-center items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <mat-icon class="scale-75">shopping_cart</mat-icon> Add to
+                    Cart
+                  </button>
+                </div>
               </div>
+              }
+            </div>
             }
           </div>
         </ng-container>
 
         <!-- ADDRESSES TAB -->
         <ng-container *ngIf="activeTab() === 'addresses'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
+          <div
+            class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8"
+          >
             <div class="flex items-center justify-between mb-6">
-              <h2 class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">Saved Addresses</h2>
-              <button class="px-6 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold text-sm tracking-wider rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-2">
+              <h2
+                class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight"
+              >
+                Saved Addresses
+              </h2>
+              <button
+                class="px-6 py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold text-sm tracking-wider rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center gap-2"
+              >
                 <mat-icon class="scale-90">add</mat-icon> Add New
               </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="border-2 border-blue-500 rounded-xl p-5 relative bg-blue-50 dark:bg-blue-900/10 dark:border-blue-500/50">
-                <span class="absolute top-4 right-4 text-[10px] font-black tracking-widest uppercase px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-md">Default</span>
-                <p class="font-bold text-neutral-900 dark:text-white mb-2">{{ profile()?.name }}</p>
-                <div class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 mb-4">
+              <div
+                class="border-2 border-blue-500 rounded-xl p-5 relative bg-blue-50 dark:bg-blue-900/10 dark:border-blue-500/50"
+              >
+                <span
+                  class="absolute top-4 right-4 text-[10px] font-black tracking-widest uppercase px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-md"
+                  >Default</span
+                >
+                <p class="font-bold text-neutral-900 dark:text-white mb-2">
+                  {{ profile()?.name }}
+                </p>
+                <div
+                  class="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 mb-4"
+                >
                   <p>123 3D Galaxy Drive</p>
                   <p>Maker Space Suite 42</p>
                   <p>Tech City, TC 400001</p>
                   <p>India</p>
-                  <p class="pt-2 text-neutral-500">Phone: {{ profile()?.phone || 'Not adding phone yet' }}</p>
+                  <p class="pt-2 text-neutral-500">
+                    Phone: {{ profile()?.phone || 'Not adding phone yet' }}
+                  </p>
                 </div>
                 <div class="flex items-center gap-4 text-sm font-bold">
-                  <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 uppercase tracking-wider">Edit</button>
-                  <button class="text-red-500 hover:text-red-600 uppercase tracking-wider">Remove</button>
+                  <button
+                    class="text-blue-600 hover:text-blue-700 dark:text-blue-400 uppercase tracking-wider"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    class="text-red-500 hover:text-red-600 uppercase tracking-wider"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             </div>
@@ -332,130 +795,192 @@
 
         <!-- NOTIFICATIONS TAB -->
         <ng-container *ngIf="activeTab() === 'notifications'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 space-y-6">
-            
-            <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-4">
+          <div
+            class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 space-y-6"
+          >
+            <div
+              class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-4"
+            >
               <div>
-                <h2 class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">Notifications Center</h2>
-                <p class="text-xs text-neutral-500 mt-1">Manage system alerts and push preferences</p>
+                <h2
+                  class="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight"
+                >
+                  Notifications Center
+                </h2>
+                <p class="text-xs text-neutral-500 mt-1">
+                  Manage system alerts and push preferences
+                </p>
               </div>
-              
+
               @if (notifications.length > 0) {
-                <button (click)="markAllNotificationsRead()" 
-                        class="text-xs font-black text-[#f54f00] hover:text-orange-700 uppercase tracking-widest cursor-pointer">
-                  Mark all read
-                </button>
+              <button
+                (click)="markAllNotificationsRead()"
+                class="text-xs font-black text-[#f54f00] hover:text-orange-700 uppercase tracking-widest cursor-pointer"
+              >
+                Mark all read
+              </button>
               }
             </div>
 
             <!-- Permission Status Widget -->
-            <div class="p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-2xl border border-neutral-100 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between">
+            <div
+              class="p-4 bg-neutral-50 dark:bg-neutral-800/40 rounded-2xl border border-neutral-100 dark:border-neutral-800 flex flex-wrap gap-4 items-center justify-between"
+            >
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                     [ngClass]="{
+                <div
+                  class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                  [ngClass]="{
                        'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-450': notificationPermission === 'granted',
                        'bg-orange-100 text-orange-650 dark:bg-orange-950/40 dark:text-orange-450': notificationPermission !== 'granted'
-                     }">
-                  <mat-icon>{{ notificationPermission === 'granted' ? 'notifications_active' : 'notifications_paused' }}</mat-icon>
+                     }"
+                >
+                  <mat-icon
+                    >{{ notificationPermission === 'granted' ?
+                    'notifications_active' : 'notifications_paused' }}</mat-icon
+                  >
                 </div>
                 <div>
-                  <h4 class="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white">Push Notifications</h4>
+                  <h4
+                    class="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white"
+                  >
+                    Push Notifications
+                  </h4>
                   <p class="text-xs text-neutral-500 mt-0.5">
-                    {{ notificationPermission === 'granted' ? 'Status: Active and registered' : 'Status: Paused / Blocked' }}
+                    {{ notificationPermission === 'granted' ? 'Status: Active
+                    and registered' : 'Status: Paused / Blocked' }}
                   </p>
                 </div>
               </div>
 
               @if (notificationPermission !== 'granted') {
-                <button (click)="enableNotifications()" 
-                        class="px-5 py-2.5 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer transition-transform hover:scale-[1.02]">
-                  Enable Notifications
-                </button>
+              <button
+                (click)="enableNotifications()"
+                class="px-5 py-2.5 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer transition-transform hover:scale-[1.02]"
+              >
+                Enable Notifications
+              </button>
               } @else {
-                <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded border border-emerald-500/15">
-                  Enabled
-                </span>
+              <span
+                class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded border border-emerald-500/15"
+              >
+                Enabled
+              </span>
               }
             </div>
 
             <!-- Notifications Inbox List -->
             <div class="divide-y divide-neutral-100 dark:divide-neutral-850">
               @if (notifications.length === 0) {
-                <div class="py-12 text-center text-neutral-500">
-                  <mat-icon class="text-5xl text-neutral-300 mb-2">notifications_off</mat-icon>
-                  <h3 class="text-sm font-bold text-neutral-800 dark:text-neutral-200">No Notifications</h3>
-                  <p class="text-xs text-neutral-500 mt-1">We will notify you about updates and alerts here.</p>
-                </div>
-              } @else {
-                @for (item of notifications; track item.id) {
-                  <div class="py-4 flex gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/10 p-3 rounded-xl transition-all relative group"
-                       [style.background-color]="!item.isRead ? 'rgba(245,79,0,0.02)' : 'transparent'">
-                    
-                    @if (!item.isRead) {
-                      <span class="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#f54f00] rounded-full"></span>
-                    }
-
-                    <div class="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 shrink-0 overflow-hidden">
-                      @if (item.image) {
-                        <img [src]="item.image" alt="banner" class="w-full h-full object-cover">
-                      } @else {
-                        <mat-icon>info</mat-icon>
-                      }
-                    </div>
-
-                    <div class="flex-1 min-w-0">
-                      <h4 class="font-bold text-sm text-neutral-900 dark:text-white leading-snug">
-                        {{ item.title }}
-                      </h4>
-                      <p class="text-xs text-neutral-500 mt-1 leading-relaxed">
-                        {{ item.body }}
-                      </p>
-                      
-                      <div class="flex items-center gap-4 mt-2">
-                        <span class="text-[10px] text-neutral-450 font-bold uppercase tracking-wider">
-                          {{ item.createdAt | date:'mediumDate' }} • {{ item.createdAt | date:'shortTime' }}
-                        </span>
-
-                        @if (item.actionUrl) {
-                          <a [routerLink]="item.actionUrl" (click)="markNotificationRead(item.id)"
-                             class="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer">
-                            <span>Open URL</span>
-                            <mat-icon class="scale-50">arrow_forward</mat-icon>
-                          </a>
-                        }
-
-                        @if (!item.isRead) {
-                          <button (click)="markNotificationRead(item.id)"
-                                  class="text-[10px] font-black text-neutral-500 hover:text-[#f54f00] uppercase tracking-widest cursor-pointer">
-                            Mark Read
-                          </button>
-                        }
-                      </div>
-                    </div>
-
-                    <button (click)="deleteNotification(item.id)" 
-                            class="text-neutral-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100 cursor-pointer self-start">
-                      <mat-icon class="scale-75">delete</mat-icon>
-                    </button>
-                  </div>
+              <div class="py-12 text-center text-neutral-500">
+                <mat-icon class="text-5xl text-neutral-300 mb-2"
+                  >notifications_off</mat-icon
+                >
+                <h3
+                  class="text-sm font-bold text-neutral-800 dark:text-neutral-200"
+                >
+                  No Notifications
+                </h3>
+                <p class="text-xs text-neutral-500 mt-1">
+                  We will notify you about updates and alerts here.
+                </p>
+              </div>
+              } @else { @for (item of notifications; track item.id) {
+              <div
+                class="py-4 flex gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/10 p-3 rounded-xl transition-all relative group"
+                [style.background-color]="!item.isRead ? 'rgba(245,79,0,0.02)' : 'transparent'"
+              >
+                @if (!item.isRead) {
+                <span
+                  class="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#f54f00] rounded-full"
+                ></span>
                 }
-              }
-            </div>
 
+                <div
+                  class="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 shrink-0 overflow-hidden"
+                >
+                  @if (item.image) {
+                  <img
+                    [src]="item.image"
+                    alt="banner"
+                    class="w-full h-full object-cover"
+                  />
+                  } @else {
+                  <mat-icon>info</mat-icon>
+                  }
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <h4
+                    class="font-bold text-sm text-neutral-900 dark:text-white leading-snug"
+                  >
+                    {{ item.title }}
+                  </h4>
+                  <p class="text-xs text-neutral-500 mt-1 leading-relaxed">
+                    {{ item.body }}
+                  </p>
+
+                  <div class="flex items-center gap-4 mt-2">
+                    <span
+                      class="text-[10px] text-neutral-450 font-bold uppercase tracking-wider"
+                    >
+                      {{ item.createdAt | date:'mediumDate' }} • {{
+                      item.createdAt | date:'shortTime' }}
+                    </span>
+
+                    @if (item.actionUrl) {
+                    <a
+                      [routerLink]="item.actionUrl"
+                      (click)="markNotificationRead(item.id)"
+                      class="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Open URL</span>
+                      <mat-icon class="scale-50">arrow_forward</mat-icon>
+                    </a>
+                    } @if (!item.isRead) {
+                    <button
+                      (click)="markNotificationRead(item.id)"
+                      class="text-[10px] font-black text-neutral-500 hover:text-[#f54f00] uppercase tracking-widest cursor-pointer"
+                    >
+                      Mark Read
+                    </button>
+                    }
+                  </div>
+                </div>
+
+                <button
+                  (click)="deleteNotification(item.id)"
+                  class="text-neutral-400 hover:text-red-500 transition-colors p-1 opacity-0 group-hover:opacity-100 cursor-pointer self-start"
+                >
+                  <mat-icon class="scale-75">delete</mat-icon>
+                </button>
+              </div>
+              } }
+            </div>
           </div>
         </ng-container>
 
         <!-- REVIEWS TAB -->
         <ng-container *ngIf="activeTab() === 'reviews'">
-          <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8">
-            <h2 class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight">My Reviews</h2>
-            <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center">
-              <mat-icon class="text-4xl text-yellow-400 mb-2">star_border</mat-icon>
-              <p class="text-neutral-500 font-medium">You haven't reviewed any products yet.</p>
+          <div
+            class="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8"
+          >
+            <h2
+              class="text-2xl font-bold text-neutral-900 dark:text-white mb-6 tracking-tight"
+            >
+              My Reviews
+            </h2>
+            <div
+              class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-8 text-center"
+            >
+              <mat-icon class="text-4xl text-yellow-400 mb-2"
+                >star_border</mat-icon
+              >
+              <p class="text-neutral-500 font-medium">
+                You haven't reviewed any products yet.
+              </p>
             </div>
           </div>
         </ng-container>
-
       </div>
     </div>
   </div>

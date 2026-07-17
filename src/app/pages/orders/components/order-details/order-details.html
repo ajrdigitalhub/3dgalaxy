@@ -110,19 +110,33 @@
     </div>
 
     <!-- Timeline visual track -->
-    @if (['cancelled', 'returned',
-    'refunded'].includes(ord.status?.toLowerCase())) {
+    @if (getOverrideState() === 'cancelled') {
     <div
       class="p-6 bg-rose-500/10 border border-rose-500/15 rounded-2xl flex items-center gap-4 text-left"
     >
       <mat-icon class="text-rose-500 scale-125">cancel_presentation</mat-icon>
       <div>
         <h4 class="text-xs font-bold text-rose-500 uppercase font-mono">
-          TRACKING SUSPENDED
+          ORDER CANCELLED
         </h4>
         <p class="text-[11px] text-neutral-400 mt-0.5">
-          This shipment progress bar was closed because the order was archived
-          under status <strong>{{ ord.status }}</strong>.
+          The order was cancelled before dispatch and the timeline is shown as a
+          terminal state.
+        </p>
+      </div>
+    </div>
+    } @else if (getOverrideState() === 'returned') {
+    <div
+      class="p-6 bg-amber-500/10 border border-amber-500/15 rounded-2xl flex items-center gap-4 text-left"
+    >
+      <mat-icon class="text-amber-500 scale-125">undo</mat-icon>
+      <div>
+        <h4 class="text-xs font-bold text-amber-500 uppercase font-mono">
+          ORDER RETURNED
+        </h4>
+        <p class="text-[11px] text-neutral-400 mt-0.5">
+          The return process has been initiated and the tracking flow is now
+          shown as a completed return state.
         </p>
       </div>
     </div>
@@ -143,10 +157,12 @@
         <!-- Animated Circle badge -->
         <div
           class="h-12 w-12 rounded-full flex items-center justify-center border-2 transition-all duration-500"
-          [class.bg-blue-500]="isStepCompleted(i)"
-          [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
-          [class.text-white]="isStepCompleted(i) || isStepActive(i)"
-          [class.bg-neutral-900]="isStepActive(i)"
+          [class.bg-emerald-500]="isStepCompleted(i)"
+          [class.border-emerald-500]="isStepCompleted(i)"
+          [class.text-white]="isStepCompleted(i)"
+          [class.bg-blue-500]="isStepActive(i)"
+          [class.border-blue-500]="isStepActive(i)"
+          [class.text-white]="isStepActive(i)"
           [class.ring-4]="isStepActive(i)"
           [class.ring-blue-500]="isStepActive(i)"
           [class.border-neutral-800]="isStepPending(i)"
@@ -156,7 +172,7 @@
           @if (isStepCompleted(i)) {
           <mat-icon class="scale-90 font-bold">check</mat-icon>
           } @else if (isStepActive(i)) {
-          <mat-icon class="scale-90 animate-pulse text-blue-400">sync</mat-icon>
+          <mat-icon class="scale-90 animate-pulse text-white">sync</mat-icon>
           } @else {
           <mat-icon class="scale-90">{{ step.icon }}</mat-icon>
           }
@@ -196,11 +212,12 @@
         <!-- State Bullet -->
         <div
           class="h-8 w-8 rounded-full flex items-center justify-center border-2 z-1 shrink-0"
-          [class.bg-blue-500]="isStepCompleted(i)"
-          [class.border-blue-500]="isStepCompleted(i) || isStepActive(i)"
-          [class.text-white]="isStepCompleted(i) || isStepActive(i)"
-          [class.bg-neutral-900]="isStepActive(i)"
-          [class.text-blue-400]="isStepActive(i)"
+          [class.bg-emerald-500]="isStepCompleted(i)"
+          [class.border-emerald-500]="isStepCompleted(i)"
+          [class.text-white]="isStepCompleted(i)"
+          [class.bg-blue-500]="isStepActive(i)"
+          [class.border-blue-500]="isStepActive(i)"
+          [class.text-white]="isStepActive(i)"
           [class.border-neutral-800]="isStepPending(i)"
           [class.bg-neutral-950]="isStepPending(i)"
           [class.text-neutral-500]="isStepPending(i)"
@@ -208,7 +225,7 @@
           @if (isStepCompleted(i)) {
           <mat-icon class="scale-75 font-semibold">check</mat-icon>
           } @else if (isStepActive(i)) {
-          <mat-icon class="scale-75 animate-bounce text-blue-400 font-bold"
+          <mat-icon class="scale-75 animate-bounce text-white font-bold"
             >sync</mat-icon
           >
           } @else {

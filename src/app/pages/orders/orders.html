@@ -1,290 +1,231 @@
-<div class="space-y-12 text-left max-w-6xl mx-auto">
-  
-  <!-- TITLE -->
-  <section class="space-y-2 pt-4">
-    <h1 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tight">Accounts & Track Order</h1>
-    <p class="text-neutral-500 text-xs text-left">Track guest packages, inspect completed invoices, or download sliced model parameters.</p>
+<div class="mx-auto max-w-6xl space-y-8 px-4 py-6 text-left sm:px-6 lg:py-10">
+  <section
+    class="space-y-3 rounded-[2rem] border border-neutral-200/70 bg-white/90 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-8"
+  >
+    <p
+      class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+    >
+      Orders & tracking
+    </p>
+    <h1
+      class="text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+    >
+      Manage your orders with clarity
+    </h1>
+    <p
+      class="max-w-2xl text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+    >
+      Follow recent purchases, inspect order details, and get a polished
+      overview that feels as smooth as your shopping experience.
+    </p>
   </section>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    
-    <!-- LEFT: ACCOUNT CONTEXT / ORDER HISTORY (2 COLUMNS) -->
-    <div class="lg:col-span-2 space-y-6">
-      
-      <!-- MEMBER CONTEXT DISPLAY -->
-      @if (ds.userRole() !== 'guest') {
-        <div class="p-6 bg-linear-to-r from-neutral-900 to-black text-white rounded-3xl border border-white/5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div class="text-left space-y-2">
-            <div class="flex items-center gap-2">
-              <span class="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
-              <p class="text-[10px] text-blue-400 font-mono tracking-widest uppercase">3D GALAXY REGISTERED MEMBER</p>
-            </div>
-            <h2 class="text-xl font-bold">{{ ds.activeUser().name }}</h2>
-            <div class="text-xs text-neutral-450 space-y-0.5">
-              <p>Email: {{ ds.activeUser().email }} | Phone: {{ ds.activeUser().phone }}</p>
-              <p class="line-clamp-1">Address: {{ ds.shippingAddress() }}</p>
-            </div>
-          </div>
-          
-          <!-- Loyalty Rewards Balance badge -->
-          <div class="p-4 bg-white/5 border border-white/10 rounded-2xl text-center min-w-[130px]">
-            <mat-icon class="text-amber-400 scale-110">stars</mat-icon>
-            <p class="text-2xl font-mono font-black text-blue-400 mt-1">{{ ds.activeUser().rewardPoints || 0 }}</p>
-            <span class="text-[9px] uppercase font-mono text-neutral-450 tracking-widest">LOYALTY REWARDS POINTS</span>
-          </div>
-        </div>
-
-        <!-- MEMBER HISTORICAL DISPATCH LOGS -->
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl space-y-6">
-          <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-455 uppercase">INSPECT RECENT INVOICES WITH STATUS</h3>
-          
-          <div class="space-y-4">
-            @for (ord of memberOrders(); track ord.id) {
-              <div class="p-5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-250 dark:border-neutral-850 rounded-2xl space-y-4 text-left">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                  <div>
-                    <span class="font-bold text-neutral-500">Order Ref:</span>
-                    <span class="font-mono font-black text-blue-500 text-sm ml-1">{{ ord.orderNumber }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-neutral-400 font-medium">{{ ord.date }}</span>
-                    <span class="text-neutral-300">|</span>
-                    <span [class]="'px-2.5 py-0.5 text-[9px] font-black uppercase rounded-sm ' + getStatusStyle(ord.status)">
-                      {{ ord.status }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Items breakdown link -->
-                <div class="space-y-1.5 pl-3 border-l-2 border-neutral-200 dark:border-neutral-800">
-                  @for (item of ord.items; track item.productId) {
-                    <div class="flex justify-between text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                      <span>{{ item.name }} <span class="text-neutral-400">x{{ item.quantity }}</span></span>
-                      <span class="font-mono text-neutral-600 dark:text-neutral-400">{{ item.price | currency:'INR':'symbol':'1.0-0' }}</span>
-                    </div>
-                  }
-                </div>
-
-                <!-- Footers -->
-                <div class="flex flex-wrap items-center justify-between border-t border-neutral-200/50 dark:border-neutral-800/50 pt-3 text-xs gap-3">
-                  <div class="text-left space-y-0.5">
-                    <span class="text-[9px] text-neutral-400 uppercase font-mono block">Grand Total Paid:</span>
-                    <span class="font-bold text-neutral-800 dark:text-white font-mono text-base">{{ ord.grandTotal | currency:'INR':'symbol':'1.0-0' }}</span>
-                  </div>
-                  
-                  <!-- Action click triggers -->
-                  <div class="flex gap-1.5">
-                    <a [routerLink]="['/orders', ord.orderNumber]" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1">
-                      <mat-icon class="text-xs scale-90">location_searching</mat-icon> Track & Details
-                    </a>
-                    <button (click)="openInvoiceSimulation(ord)" class="px-4 py-2 bg-neutral-150 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-700 dark:text-neutral-300 font-bold text-[10px] rounded-lg transition-colors flex items-center gap-1 flex-1">
-                      <mat-icon class="text-xs scale-90">receipt</mat-icon> PDF Invoice
-                    </button>
-                  </div>
-                </div>
-              </div>
-            } @empty {
-              <p class="text-xs text-neutral-500 py-6 text-center">No catalog orders placed under this membership. Visit the showroom to add precision tools!</p>
-            }
-          </div>
-        </div>
-      } @else {
-        <!-- GUEST NOT LOGGED IN DEFAULT INFO -->
-        <div class="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-3xl text-left space-y-3">
-          <h3 class="text-sm font-bold text-yellow-600 dark:text-yellow-400">⚠️ MEMBER PANEL DEACTIVATED</h3>
-          <p class="text-xs text-neutral-500 leading-relaxed">
-            You are currently in **Guest Mode**. You can place e-commerce orders without creating an account under guest terms. 
-            If you have recently submitted a guest order, scan its status on the right panel using your WhatsApp phone number!
-          </p>
-        </div>
-      }
-
-      <!-- SLICED MODEL REPOSITORIES DOWNLOAD SECTION -->
-      <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl text-left space-y-6">
-        <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-455 uppercase">3D GALAXY CURATED FIRMWARES & SLICES</h3>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 flex items-center justify-between gap-2">
-            <div>
-              <h4 class="text-xs font-bold text-neutral-850 dark:text-slate-100 font-mono">Bambu_X1C_Klipper_Firmware.zip</h4>
-              <p class="text-[9px] text-neutral-450 mt-0.5">High Speed Input Shaping Parameters • 12MB</p>
-            </div>
-            <button (click)="simulateDownload('Bambu_X1C_Klipper_Firmware.zip')" class="h-8 w-8 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center">
-              <mat-icon class="text-sm scale-90">download</mat-icon>
-            </button>
-          </div>
-
-          <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 flex items-center justify-between gap-2">
-            <div>
-              <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100 font-mono">Cura_Ender3V3SE_GalaxyPLA.curaprofile</h4>
-              <p class="text-[9px] text-neutral-450 mt-0.5">Z-hop Retractions & Fine Extruder flows • 1.2MB</p>
-            </div>
-            <button (click)="simulateDownload('Cura_Ender3V3SE_GalaxyPLA.curaprofile')" class="h-8 w-8 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center">
-              <mat-icon class="text-sm scale-90">download</mat-icon>
-            </button>
-          </div>
-        </div>
+  <section
+    class="rounded-[2rem] border border-neutral-200/70 bg-white/90 p-5 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/90 sm:p-6"
+  >
+    <div
+      class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div class="flex flex-1 flex-col gap-3 sm:flex-row">
+        <label
+          class="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+        >
+          <mat-icon class="text-base">search</mat-icon>
+          <input
+            type="text"
+            [value]="searchTerm()"
+            (input)="setSearch($any($event.target).value)"
+            placeholder="Search orders"
+            class="w-full bg-transparent outline-none"
+          />
+        </label>
+        <select
+          [value]="selectedStatus()"
+          (change)="setStatus($any($event.target).value)"
+          class="rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-700 outline-none dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+        >
+          <option value="all">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="packed">Packed</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
       </div>
-
-      <!-- RECIPIENT TECHNICAL SUPPORT CHAT TICKET PORTAL -->
-      <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl text-left space-y-4">
-        <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-455 uppercase">SUBMIT TECHNICAL SUPPORT HELPDESK TICKET</h3>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="space-y-1">
-            <span class="text-[10px] uppercase font-bold text-neutral-400">Category Issue:</span>
-            <select [value]="ticketCat()" (change)="ticketCat.set($any($event.target).value)" class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-750 dark:text-white">
-              <option value="Nozzle Clog">Nozzle Filament Clogging</option>
-              <option value="Bed Leveling">Bed Adhesion & CR-Touch calibration</option>
-              <option value="Couriers">Logistic Dispatch queries</option>
-              <option value="B2B Dealer">Dealer volume orders discount</option>
-            </select>
-          </div>
-          <div class="space-y-1">
-            <span class="text-[10px] uppercase font-bold text-neutral-400">Subject:</span>
-            <input type="text" [value]="ticketSub()" (input)="ticketSub.set($any($event.target).value)" placeholder="e.g. Extreme stringing with high-flow PLA" class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-          </div>
-        </div>
-        
-        <div class="space-y-1">
-          <span class="text-[10px] uppercase font-bold text-neutral-400">Problem Description:</span>
-          <textarea rows="2" [value]="ticketDesc()" (input)="ticketDesc.set($any($event.target).value)" placeholder="Include printer model, slicer temperatures used..." class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-lg text-neutral-850 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
-        </div>
-        
-        <button (click)="submitTicket()" class="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1">
-          <mat-icon class="text-sm scale-90">contact_support</mat-icon> Submit Ticket to Tech Labs
+      <div
+        class="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-700 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+      >
+        <span class="font-semibold">Sort</span>
+        <button
+          type="button"
+          (click)="setSort('newest')"
+          [class.bg-blue-600]="sortOrder() === 'newest'"
+          [class.text-white]="sortOrder() === 'newest'"
+          class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
+        >
+          Newest
+        </button>
+        <button
+          type="button"
+          (click)="setSort('oldest')"
+          [class.bg-blue-600]="sortOrder() === 'oldest'"
+          [class.text-white]="sortOrder() === 'oldest'"
+          class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
+        >
+          Oldest
         </button>
       </div>
-
     </div>
+  </section>
 
-    <!-- RIGHT: GUEST ORDER TRACK & TRACE TERMINAL (1 COLUMN) -->
-    <div class="space-y-6">
-      
-      <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 rounded-3xl shadow-xs space-y-4 text-left">
-        <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-455 uppercase">GUEST ORDER TRACK & TRACE</h3>
-        <p class="text-[11px] text-neutral-500">Scan any order status (Guest or Member) using recipient's WhatsApp contact phone number!</p>
-        
-        <div class="space-y-3 pt-1">
-          <!-- Phone scanner input -->
-          <div class="space-y-1">
-            <label for="searchPhoneQuery" class="text-[10px] font-bold text-neutral-400 block">WhatsApp Mobile Number:</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-neutral-450 text-xs font-semibold">+91</span>
-              <input id="searchPhoneQuery" type="text"
-                     [value]="searchPhoneQuery()"
-                     (input)="onPhoneInput($event)"
-                     placeholder="9876543210"
-                     class="w-full pl-11 pr-3 py-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl text-neutral-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono">
-            </div>
-          </div>
-
-          <!-- Filtered Guest Orders stack -->
-          @if (tracedOrders().length > 0) {
-            <div class="space-y-3 pt-2">
-              <span class="text-[9px] font-extrabold text-blue-500 block uppercase font-mono">RECENT SHIPMENTS LOCATED:</span>
-              @for (ord of tracedOrders(); track ord.id) {
-                <div class="p-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl space-y-2 text-xs">
-                  <div class="flex justify-between items-center text-[10px]">
-                    <span class="font-mono font-black text-blue-500">{{ ord.orderNumber }}</span>
-                    <span [class]="'px-1.5 py-0.5 text-[8px] font-black rounded-xs uppercase ' + getStatusStyle(ord.status)">
-                      {{ ord.status }}
-                    </span>
-                  </div>
-                  <div class="text-left font-semibold text-neutral-700 dark:text-neutral-350 truncate">
-                    {{ ord.items[0].name }} 
-                    @if (ord.items.length > 1) {
-                      <span>(+{{ ord.items.length - 1 }} other items)</span>
-                    }
-                  </div>
-                  <div class="flex justify-between items-baseline pt-1.5 border-t border-neutral-200/50 dark:border-neutral-800/50 text-[10px]">
-                    <span class="text-neutral-500 font-medium">Method: {{ ord.paymentMethod }}</span>
-                    <span class="font-bold font-mono text-neutral-800 dark:text-neutral-200">Total Paid: ₹{{ ord.grandTotal }}</span>
-                  </div>
-                  <div class="pt-2 border-t border-dashed border-neutral-150 dark:border-neutral-850 flex justify-end">
-                    <a [routerLink]="['/orders', ord.orderNumber]" class="text-[9px] uppercase tracking-wide text-blue-500 font-black hover:underline flex items-center gap-0.5">
-                      Timeline & invoice details <mat-icon class="scale-50 translate-y-[2px]">chevron_right</mat-icon>
-                    </a>
-                  </div>
-                </div>
-              }
-            </div>
-          } @else if (searchPhoneQuery().length >= 10) {
-            <p class="text-[10px] text-red-500 font-bold bg-red-500/5 border border-red-500/10 p-2.5 rounded text-center">
-              ⚠️ No records located matching phone +91{{ searchPhoneQuery() }}
-            </p>
-          }
-        </div>
-      </div>
-
-      <!-- MOCKED DETAILED ACTIVE INVOICE DIALOG PREVIEW -->
-      @if (activeInvoice(); as ord) {
-        <div class="p-6 bg-white dark:bg-neutral-950 border border-emerald-500/20 rounded-3xl shadow-lg text-left text-xs space-y-4 animate-fadeIn relative">
-          <div class="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full"></div>
-          
-          <div class="flex items-center justify-between border-b pb-2 mb-2 dark:border-neutral-800">
-            <div>
-              <h4 class="font-mono font-black text-xs text-neutral-850 dark:text-neutral-100">3D GALAXY LABS</h4>
-              <p class="text-[8px] text-neutral-400">GSTIN: 06AABCT8812N1Z9</p>
-            </div>
-            <button (click)="activeInvoice.set(null)" class="text-neutral-400 hover:text-red-500 text-xs font-bold leading-none">✕</button>
-          </div>
-
-          <!-- Invoice details -->
-          <div class="space-y-1 font-mono text-[9px] text-neutral-500">
-            <p><span class="font-bold text-neutral-700 dark:text-neutral-300">INVOICE:</span> {{ ord.orderNumber }}</p>
-            <p><span class="font-bold text-neutral-700 dark:text-neutral-300">DATE:</span> {{ ord.date }}</p>
-            <p><span class="font-bold text-neutral-700 dark:text-neutral-300">CLIENT:</span> {{ ord.customerName }}</p>
-            @if (ord.gstNumber) {
-              <p><span class="font-bold text-neutral-700 dark:text-neutral-300">GSTIN:</span> {{ ord.gstNumber }}</p>
-            }
-            @if (ord.companyName) {
-              <p><span class="font-bold text-neutral-700 dark:text-neutral-300">COMPANY:</span> {{ ord.companyName }}</p>
-            }
-            <p class="truncate"><span class="font-bold text-neutral-700 dark:text-neutral-300">SHIPPING:</span> {{ ord.shippingAddress }}</p>
-          </div>
-
-          <div class="space-y-1 pt-1.5 border-t border-neutral-150 dark:border-neutral-850">
-            @for (item of ord.items; track item.productId) {
-              <div class="flex justify-between text-[10px] font-mono text-neutral-650 dark:text-neutral-300">
-                <span>{{ item.name }} x{{ item.quantity }}</span>
-                <span>₹{{ item.price * item.quantity }}</span>
-              </div>
-            }
-          </div>
-
-          <div class="space-y-1 text-[9px] font-mono text-neutral-500 pt-1.5 border-t border-dashed dark:border-neutral-800">
-            <div class="flex justify-between">
-              <span>Gross Subtotal:</span>
-              <span>₹{{ ord.subtotal }}</span>
-            </div>
-            @if (ord.discount > 0) {
-              <div class="flex justify-between text-emerald-500">
-                <span>Discount:</span>
-                <span>-₹{{ ord.discount }}</span>
-              </div>
-            }
-            <div class="flex justify-between">
-              <span>Shipping:</span>
-              <span>₹{{ ord.shippingFee }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>18% GST Tax included:</span>
-              <span>₹{{ ord.tax }}</span>
-            </div>
-            <div class="flex justify-between text-xs font-bold text-neutral-850 dark:text-neutral-100 pt-1 border-t border-neutral-100 dark:border-neutral-800">
-              <span>Total Paid (INR):</span>
-              <span>₹{{ ord.grandTotal }}</span>
-            </div>
-          </div>
-
-          <button (click)="triggerPrintInvoice(ord)" class="w-full py-2 bg-linear-to-r from-neutral-900 to-black hover:from-neutral-800 text-white font-mono font-bold text-[9px] uppercase rounded-lg text-center transition-all">
-            Print Official Invoice PDF
-          </button>
-        </div>
-      }
-
-    </div>
+  @if (isLoading()) {
+  <div class="space-y-4">
+    @for (item of [1,2,3]; track item) {
+    <div
+      class="h-36 animate-pulse rounded-[1.75rem] border border-neutral-200/70 bg-white/80 dark:border-neutral-800 dark:bg-neutral-900/80"
+    ></div>
+    }
   </div>
-
+  } @else if (error()) {
+  <div
+    class="rounded-[2rem] border border-rose-200 bg-rose-50 p-10 text-center text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+  >
+    <p class="text-base font-semibold">
+      We hit a snag while loading your orders.
+    </p>
+    <p class="mt-2">{{ error() }}</p>
+    <button
+      type="button"
+      (click)="fetchMyOrders()"
+      class="mt-5 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-500"
+    >
+      Retry
+    </button>
+  </div>
+  } @else if (groupedOrders().length === 0) {
+  <div
+    class="rounded-[2rem] border border-dashed border-neutral-300 bg-neutral-50 p-12 text-center text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-950/70 dark:text-neutral-300"
+  >
+    <mat-icon class="mb-3 text-5xl text-neutral-400">inventory_2</mat-icon>
+    <p class="text-lg font-semibold text-neutral-950 dark:text-white">
+      No orders match your current filters
+    </p>
+    <p class="mt-2">
+      Try adjusting the search or status filters to see more orders.
+    </p>
+  </div>
+  } @else {
+  <div class="space-y-8">
+    @for (group of groupedOrders(); track group[0]) {
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-bold text-neutral-950 dark:text-white">
+          {{ group[0] }}
+        </h2>
+        <span class="text-sm font-medium text-neutral-500"
+          >{{ group[1].length }} order{{ group[1].length === 1 ? '' : 's'
+          }}</span
+        >
+      </div>
+      <div class="space-y-4">
+        @for (ord of group[1]; track ord.orderNumber) {
+        <article
+          class="overflow-hidden rounded-[1.75rem] border border-neutral-200/70 bg-white/90 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900/90"
+        >
+          <div
+            class="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/70 bg-neutral-50 px-5 py-4 dark:border-neutral-800 dark:bg-neutral-950/70"
+          >
+            <div>
+              <p
+                class="text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+              >
+                Order placed
+              </p>
+              <p
+                class="mt-1 text-sm font-semibold text-neutral-950 dark:text-white"
+              >
+                {{ ord.date }}
+              </p>
+            </div>
+            <div>
+              <p
+                class="text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+              >
+                Order ID
+              </p>
+              <p
+                class="mt-1 font-mono text-sm font-semibold text-neutral-950 dark:text-white"
+              >
+                {{ ord.orderNumber }}
+              </p>
+            </div>
+            <div>
+              <p
+                class="text-[11px] font-bold uppercase tracking-[0.28em] text-neutral-500"
+              >
+                Total
+              </p>
+              <p
+                class="mt-1 text-sm font-semibold text-neutral-950 dark:text-white"
+              >
+                ₹{{ ord.grandTotal }}
+              </p>
+            </div>
+            <span
+              [ngClass]="{'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': ord.status === 'delivered','bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': ord.status === 'processing' || ord.status === 'shipped','bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': ord.status === 'packed','bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400': ord.status === 'pending','bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400': ord.status === 'cancelled'}"
+              class="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider"
+              >{{ ord.status }}</span
+            >
+          </div>
+          <div
+            class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-center gap-4">
+              <div
+                class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-900"
+              >
+                <mat-icon class="text-3xl text-neutral-400"
+                  >inventory_2</mat-icon
+                >
+              </div>
+              <div>
+                <h3 class="font-bold text-neutral-950 dark:text-white">
+                  {{ ord.items[0].name || 'Items' }}
+                </h3>
+                <p
+                  class="mt-1 text-sm text-neutral-500"
+                  *ngIf="ord.items.length > 1"
+                >
+                  + {{ ord.items.length - 1 }} other items
+                </p>
+                <p
+                  class="mt-1 text-sm text-neutral-500"
+                  *ngIf="ord.items.length === 1"
+                >
+                  Quantity: {{ ord.items[0].quantity || 1 }}
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <a
+                [routerLink]="['/orders', ord.orderNumber]"
+                class="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                >View details</a
+              >
+              <button
+                type="button"
+                class="inline-flex items-center justify-center rounded-xl border border-neutral-200 px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-blue-500 hover:text-blue-600 dark:border-neutral-800 dark:text-neutral-300"
+              >
+                Buy again
+              </button>
+            </div>
+          </div>
+        </article>
+        }
+      </div>
+    </section>
+    }
+  </div>
+  }
 </div>

@@ -6,7 +6,7 @@ import {
   signal,
   effect,
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, NgFor } from "@angular/common";
 import { Router, ActivatedRoute, RouterModule } from "@angular/router";
 import {
   FormBuilder,
@@ -25,7 +25,13 @@ import { environment } from "../../../environments/environment";
   selector: "app-account",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatIconModule, RouterModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatIconModule,
+    RouterModule,
+    NgFor,
+  ],
   templateUrl: "./account.html",
 })
 export class Account {
@@ -41,6 +47,9 @@ export class Account {
   profile = this.ds.userProfile;
   myOrders = signal<any[]>([]);
   wishlist = signal<any[]>([]);
+  isOrdersLoading = signal(true);
+  isWishlistLoading = signal(true);
+  isProfileSaving = signal(false);
 
   activeTab = signal("dashboard");
 
@@ -140,6 +149,7 @@ export class Account {
   }
 
   async fetchMyOrders() {
+    this.isOrdersLoading.set(true);
     try {
       const resp = await this.api.get<any>("/orders/my-orders").toPromise();
       const orders = Array.isArray(resp)
@@ -147,55 +157,63 @@ export class Account {
         : resp && Array.isArray(resp.data)
           ? resp.data
           : [];
-      if (orders) {
-        this.myOrders.set(
-          orders.map((o: any) => ({
-            id: o.id,
-            orderNumber: o.orderNumber,
-            date: new Date(o.createdAt).toLocaleDateString(),
-            status: o.status ? o.status.toLowerCase() : "pending",
-            items: (o.items || []).map((i: any) => ({
-              productId: i.productId,
-              name: i.product?.name || "Product",
-              quantity: i.quantity,
-              price: i.unitPrice || i.price,
-            })),
-            grandTotal: Number(o.totalAmount) || 0,
-            subtotal:
-              (Number(o.totalAmount) || 0) -
-              (Number(o.taxAmount) || 0) -
-              (Number(o.shippingAmount) || 0) +
-              (Number(o.discountAmount) || 0),
-            tax: Number(o.taxAmount) || 0,
-            shippingFee: Number(o.shippingAmount) || 0,
-            discount: Number(o.discountAmount) || 0,
-            trackingNumber: null,
-            paymentMethod:
-              o.payments && o.payments.length > 0
-                ? o.payments[0].paymentMethod
-                : "Unknown",
-            shippingAddress: "See details in actual invoice",
+      this.myOrders.set(
+        orders.map((o: any) => ({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          date: new Date(o.createdAt).toLocaleDateString(),
+          status: o.status ? o.status.toLowerCase() : "pending",
+          items: (o.items || []).map((i: any) => ({
+            productId: i.productId,
+            name: i.product?.name || "Product",
+            quantity: i.quantity,
+            price: i.unitPrice || i.price,
           })),
-        );
-      }
+          grandTotal: Number(o.totalAmount) || 0,
+          subtotal:
+            (Number(o.totalAmount) || 0) -
+            (Number(o.taxAmount) || 0) -
+            (Number(o.shippingAmount) || 0) +
+            (Number(o.discountAmount) || 0),
+          tax: Number(o.taxAmount) || 0,
+          shippingFee: Number(o.shippingAmount) || 0,
+          discount: Number(o.discountAmount) || 0,
+          trackingNumber: null,
+          paymentMethod:
+            o.payments && o.payments.length > 0
+              ? o.payments[0].paymentMethod
+              : "Unknown",
+          shippingAddress: "See details in actual invoice",
+        })),
+      );
     } catch (e) {
-      this.toastService.warning("Failed to load orders");
+      this.myOrders.set([]);
+      this.toastService.warning("We couldn’t load your orders right now.");
+    } finally {
+      this.isOrdersLoading.set(false);
     }
   }
 
   async fetchWishlist() {
+    this.isWishlistLoading.set(true);
     if (this.ds.userRole() === "guest") {
       this.wishlist.set([]);
+      this.isWishlistLoading.set(false);
       return;
     }
 
     try {
       const resp: any = await this.api.get("/wishlist").toPromise();
       if (resp?.success) {
-        this.wishlist.set(resp.data);
+        this.wishlist.set(resp.data || []);
+      } else {
+        this.wishlist.set([]);
       }
     } catch (e) {
+      this.wishlist.set([]);
       this.toastService.warning("Failed to load wishlist");
+    } finally {
+      this.isWishlistLoading.set(false);
     }
   }
 
@@ -227,6 +245,10 @@ export class Account {
     this.router.navigate(["/cart"]);
   }
 
+  trackTabId(index: number, tab: { id: string }) {
+    return tab?.id || index;
+  }
+
   switchTab(tabId: string) {
     this.activeTab.set(tabId);
     if (tabId === "dashboard") {
@@ -243,6 +265,7 @@ export class Account {
 
   async saveProfile() {
     if (this.profileForm.valid) {
+      this.isProfileSaving.set(true);
       const { firstName, lastName, phone } = this.profileForm.value;
       const currentPic = this.profile()?.profileImage || "";
       try {
@@ -257,6 +280,8 @@ export class Account {
         this.toastService.error(
           `Failed to update profile: ${err.message || err}`,
         );
+      } finally {
+        this.isProfileSaving.set(false);
       }
     }
   }

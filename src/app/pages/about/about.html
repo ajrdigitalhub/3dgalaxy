@@ -1,0 +1,415 @@
+<section
+  class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.18),_transparent_28%),linear-gradient(135deg,_#f8fbff_0%,_#f5f7fb_40%,_#eef4ff_100%)] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors duration-300"
+>
+  <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+    @if (isLoading()) {
+    <div
+      class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-[0_25px_80px_-30px_rgba(15,23,42,0.35)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+    >
+      <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="space-y-4">
+          <div
+            class="h-4 w-36 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+          ></div>
+          <div
+            class="h-10 w-4/5 animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
+          ></div>
+          <div
+            class="h-24 animate-pulse rounded-2xl bg-neutral-200/80 dark:bg-neutral-800"
+          ></div>
+        </div>
+        <div
+          class="h-72 animate-pulse rounded-[2rem] bg-neutral-200/80 dark:bg-neutral-800"
+        ></div>
+      </div>
+    </div>
+    } @else {
+    <div class="space-y-10">
+      <header
+        class="overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_30px_90px_-28px_rgba(15,23,42,0.3)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+      >
+        <div class="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <div class="p-8 sm:p-10 lg:p-12">
+            <div
+              class="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
+            >
+              <mat-icon class="text-base">auto_awesome</mat-icon>
+              About {{ siteName() }}
+            </div>
+            <h1
+              class="mt-6 text-4xl font-black tracking-tight text-neutral-950 sm:text-5xl dark:text-white"
+            >
+              {{ aboutContent().headline }}
+            </h1>
+            <p
+              class="mt-5 max-w-2xl text-lg leading-8 text-neutral-600 dark:text-neutral-300"
+            >
+              {{ aboutContent().intro }}
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a
+                routerLink="/products"
+                class="rounded-full bg-neutral-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+                >Explore Products</a
+              >
+              <a
+                routerLink="/contact"
+                class="rounded-full border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-blue-500 hover:text-blue-600 dark:border-neutral-700 dark:text-neutral-200"
+                >Contact Us</a
+              >
+            </div>
+          </div>
+          <div class="relative min-h-[320px] overflow-hidden">
+            <img
+              [src]="aboutContent().heroImage"
+              alt="About us hero"
+              class="h-full w-full object-cover"
+              loading="lazy"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent"
+            ></div>
+            <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
+              <p
+                class="text-sm font-semibold uppercase tracking-[0.32em] text-blue-200"
+              >
+                Trusted by creators & businesses
+              </p>
+              <p class="mt-2 text-2xl font-semibold">
+                Precision manufacturing with a premium customer experience.
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid gap-6 lg:grid-cols-3">
+        <article
+          class="rounded-[1.75rem] border border-neutral-200/70 bg-white/80 p-7 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+        >
+          <div
+            class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300"
+          >
+            <mat-icon>history_edu</mat-icon>
+          </div>
+          <h2 class="text-xl font-bold text-neutral-950 dark:text-white">
+            Our Story
+          </h2>
+          <p
+            class="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+          >
+            {{ aboutContent().story }}
+          </p>
+        </article>
+        <article
+          class="rounded-[1.75rem] border border-neutral-200/70 bg-white/80 p-7 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+        >
+          <div
+            class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+          >
+            <mat-icon>flag</mat-icon>
+          </div>
+          <h2 class="text-xl font-bold text-neutral-950 dark:text-white">
+            Mission
+          </h2>
+          <p
+            class="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+          >
+            {{ aboutContent().mission }}
+          </p>
+        </article>
+        <article
+          class="rounded-[1.75rem] border border-neutral-200/70 bg-white/80 p-7 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+        >
+          <div
+            class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300"
+          >
+            <mat-icon>visibility</mat-icon>
+          </div>
+          <h2 class="text-xl font-bold text-neutral-950 dark:text-white">
+            Vision
+          </h2>
+          <p
+            class="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+          >
+            {{ aboutContent().vision }}
+          </p>
+        </article>
+      </div>
+
+      <section
+        class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+      >
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div>
+            <p
+              class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+            >
+              Meet the team
+            </p>
+            <h2
+              class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+            >
+              Builders behind the brand
+            </h2>
+          </div>
+          <p
+            class="max-w-2xl text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+          >
+            Our experienced specialists combine engineering, design, and
+            customer care to deliver exceptional results.
+          </p>
+        </div>
+        <div class="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          @for (member of aboutContent().teamMembers; track member.name) {
+          <div
+            class="rounded-[1.5rem] border border-neutral-200/70 bg-neutral-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950/70"
+          >
+            <div
+              class="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500"
+            ></div>
+            <h3 class="mt-4 text-lg font-bold text-neutral-950 dark:text-white">
+              {{ member.name }}
+            </h3>
+            <p
+              class="mt-1 text-sm font-medium text-blue-600 dark:text-blue-300"
+            >
+              {{ member.role }}
+            </p>
+            <p
+              class="mt-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+            >
+              {{ member.bio }}
+            </p>
+          </div>
+          } @empty {
+          <div
+            class="rounded-[1.5rem] border border-dashed border-neutral-300 p-8 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300 md:col-span-2 xl:col-span-3"
+          >
+            Team details are being managed from the admin settings and will
+            appear here automatically.
+          </div>
+          }
+        </div>
+      </section>
+
+      <section
+        class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+      >
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div>
+            <p
+              class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+            >
+              Workshop gallery
+            </p>
+            <h2
+              class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+            >
+              A glimpse into our production space
+            </h2>
+          </div>
+        </div>
+        <div class="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          @for (item of aboutContent().gallery; track item.image || item.title)
+          {
+          <div
+            class="overflow-hidden rounded-[1.5rem] border border-neutral-200/70 bg-neutral-50 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70"
+          >
+            <img
+              [src]="item.image"
+              [alt]="item.title || 'Workshop image'"
+              class="h-56 w-full object-cover"
+              loading="lazy"
+            />
+            <div class="p-4">
+              <p class="text-sm font-semibold text-neutral-950 dark:text-white">
+                {{ item.title }}
+              </p>
+              <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
+                {{ item.description }}
+              </p>
+            </div>
+          </div>
+          } @empty {
+          <div
+            class="rounded-[1.5rem] border border-dashed border-neutral-300 p-8 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300 sm:col-span-2 xl:col-span-3"
+          >
+            Add workshop images in your admin settings to populate this gallery.
+          </div>
+          }
+        </div>
+      </section>
+
+      <section class="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div
+          class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+        >
+          <p
+            class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+          >
+            Achievements
+          </p>
+          <h2
+            class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+          >
+            Milestones that matter
+          </h2>
+          <div class="mt-8 grid gap-4 sm:grid-cols-2">
+            @for (item of aboutContent().achievements; track item.label) {
+            <div
+              class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-5 dark:border-neutral-800 dark:bg-neutral-950/70"
+            >
+              <p class="text-3xl font-black text-blue-600 dark:text-blue-300">
+                {{ item.value }}
+              </p>
+              <p
+                class="mt-2 text-sm font-semibold text-neutral-950 dark:text-white"
+              >
+                {{ item.label }}
+              </p>
+              <p
+                class="mt-2 text-sm leading-7 text-neutral-600 dark:text-neutral-300"
+              >
+                {{ item.description }}
+              </p>
+            </div>
+            } @empty {
+            <div
+              class="rounded-[1.25rem] border border-dashed border-neutral-300 p-6 text-sm text-neutral-600 dark:border-neutral-700 dark:text-neutral-300 sm:col-span-2"
+            >
+              Add achievements from admin settings to highlight your impact.
+            </div>
+            }
+          </div>
+        </div>
+        <div
+          class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+        >
+          <p
+            class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+          >
+            Connect with us
+          </p>
+          <h2
+            class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+          >
+            Visit our studio or reach out anytime
+          </h2>
+          <div
+            class="mt-8 space-y-5 text-sm text-neutral-600 dark:text-neutral-300"
+          >
+            <div
+              class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/70"
+            >
+              <p class="font-semibold text-neutral-950 dark:text-white">
+                Phone
+              </p>
+              <a
+                [href]="'tel:' + aboutContent().contact.phone"
+                class="mt-1 inline-flex text-blue-600 dark:text-blue-300"
+                >{{ aboutContent().contact.phone }}</a
+              >
+            </div>
+            <div
+              class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/70"
+            >
+              <p class="font-semibold text-neutral-950 dark:text-white">
+                Email
+              </p>
+              <a
+                [href]="'mailto:' + aboutContent().contact.email"
+                class="mt-1 inline-flex text-blue-600 dark:text-blue-300"
+                >{{ aboutContent().contact.email }}</a
+              >
+            </div>
+            <div
+              class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/70"
+            >
+              <p class="font-semibold text-neutral-950 dark:text-white">
+                Address
+              </p>
+              <p class="mt-1 leading-7">{{ aboutContent().contact.address }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+      >
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div>
+            <p
+              class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+            >
+              Find us
+            </p>
+            <h2
+              class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+            >
+              Google map location
+            </h2>
+          </div>
+        </div>
+        <div
+          class="mt-8 overflow-hidden rounded-[1.5rem] border border-neutral-200/70 dark:border-neutral-800"
+        >
+          <iframe
+            [src]="getMapUrl(aboutContent().contact.address)"
+            class="h-[320px] w-full"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            frameborder="0"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </section>
+
+      <section
+        class="rounded-[2rem] border border-neutral-200/70 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80"
+      >
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div>
+            <p
+              class="text-sm font-semibold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-300"
+            >
+              Social links
+            </p>
+            <h2
+              class="mt-2 text-3xl font-black tracking-tight text-neutral-950 dark:text-white"
+            >
+              Stay connected with the brand
+            </h2>
+          </div>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-3">
+          @for (item of getSocialItems(); track item.key) {
+          <a
+            [href]="item.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700 transition hover:border-blue-500 hover:text-blue-600 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-300"
+          >
+            <mat-icon class="text-base">{{ item.icon }}</mat-icon>
+            {{ item.label }}
+          </a>
+          } @empty {
+          <p class="text-sm text-neutral-600 dark:text-neutral-300">
+            Social media settings will appear here once configured.
+          </p>
+          }
+        </div>
+      </section>
+    </div>
+    }
+  </div>
+</section>

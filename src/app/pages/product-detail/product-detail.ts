@@ -4,7 +4,8 @@ import {
   inject,
   signal,
   computed,
-  effect,
+  ElementRef,
+  ViewChild,
 } from "@angular/core";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -50,6 +51,8 @@ export class ProductDetail {
   isSubmittingReview = signal(false);
   isLoadingProduct = signal(true);
   isReviewModalOpen = signal(false);
+  reviewsHighlight = signal(false);
+  @ViewChild("relatedScroll") relatedScroll?: ElementRef<HTMLElement>;
   reviewDraft = signal({
     rating: 5,
     title: "",
@@ -122,18 +125,131 @@ export class ProductDetail {
 
   // Variant Logic
   selectedOptions = signal<Record<string, string>>({}); // { optionName: valueString }
+
+  private normalizeOptionKey(value: unknown): string {
+    return String(value ?? "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  private normalizeOptionValue(value: unknown): string {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string" || typeof value === "number") {
+      return String(value).trim();
+    }
+    return this.getOptionValueStr(value);
+  }
+
+  private getVariantOptionValues(variant: any): Record<string, string> {
+    const values: Record<string, string> = {};
+    const rawValues = variant?.optionValues || {};
+    Object.entries(rawValues).forEach(([key, value]) => {
+      values[this.normalizeOptionKey(key)] = this.normalizeOptionValue(value);
+    });
+
+    const optionItems = Array.isArray(variant?.options) ? variant.options : [];
+    optionItems.forEach((item: any) => {
+      const key =
+        item?.optionName || item?.optionValue?.optionName || item?.name || "";
+      const value =
+        item?.optionValue?.value ||
+        item?.value ||
+        item?.optionValue?.label ||
+        item?.label ||
+        "";
+      if (key) {
+        values[this.normalizeOptionKey(key)] = this.normalizeOptionValue(value);
+      }
+    });
+
+    return values;
+  }
+
+  private getSelectedOptionsFromVariant(
+    product: any,
+    variant: any,
+  ): Record<string, string> {
+    const opts: Record<string, string> = {};
+    const optionNames = Array.isArray(product?.options)
+      ? product.options.map((item: any) => this.getOptionValueStr(item.name))
+      : [];
+    const variantEntries = Object.entries(this.getVariantOptionValues(variant));
+
+    if (!variantEntries.length) return opts;
+
+    if (!optionNames.length) {
+      const [firstKey, firstValue] = variantEntries[0];
+      if (firstKey) opts[firstKey] = firstValue;
+      return opts;
+    }
+
+    variantEntries.forEach(([key, value], index) => {
+      const matchingName =
+        optionNames[index] ||
+        optionNames.find((name: unknown) => {
+          const normalizedName = this.normalizeOptionKey(name);
+          return (
+            normalizedName === key ||
+            normalizedName.includes(key) ||
+            key.includes(normalizedName)
+          );
+        }) ||
+        key;
+      if (matchingName) {
+        opts[matchingName] = value;
+      }
+    });
+
+    return opts;
+  }
+
+  private extractVariantImages(variant: any): any[] {
+    const images: any[] = [];
+    if (!variant) return images;
+    if (Array.isArray(variant.images)) images.push(...variant.images);
+    if (Array.isArray(variant.variantImages))
+      images.push(...variant.variantImages);
+    return images.filter(Boolean);
+  }
+
+  private syncVariantSelection(product: any, variant: any) {
+    const variantImages = this.extractVariantImages(variant);
+    if (variantImages.length > 0) {
+      this.activeImage.set(this.getImageUrl(variantImages[0]));
+    } else if (product?.images?.length) {
+      this.activeImage.set(this.getImageUrl(product.images[0]));
+    }
+
+    const mappedOptions = this.getSelectedOptionsFromVariant(product, variant);
+    if (Object.keys(mappedOptions).length > 0) {
+      this.selectedOptions.set(mappedOptions);
+    }
+  }
+
   selectedVariant = computed(() => {
     const p = this.product();
     if (!p || !p.variants || p.variants.length === 0) return null;
     const opts = this.selectedOptions();
-    // Match variant based on selected options — normalize both sides to strings
-    const toStr = (v: any) =>
-      typeof v === "string" ? v : v?.label || v?.value || v?.name || String(v);
-    const matched = p.variants.find((v: any) => {
-      if (!v.optionValues) return false;
-      return Object.keys(opts).every(
-        (key) => toStr(v.optionValues[key]) === toStr(opts[key]),
-      );
+    const matched = p.variants.find((variant: any) => {
+      const variantOptions = this.getVariantOptionValues(variant);
+      if (!Object.keys(variantOptions).length) return false;
+      return Object.keys(opts).every((key) => {
+        const normalizedKey = this.normalizeOptionKey(key);
+        const matchedKey = Object.keys(variantOptions).find((variantKey) => {
+          const normalizedVariantKey = this.normalizeOptionKey(variantKey);
+          return (
+            normalizedVariantKey === normalizedKey ||
+            normalizedVariantKey.includes(normalizedKey) ||
+            normalizedKey.includes(normalizedVariantKey)
+          );
+        });
+        if (!matchedKey) return false;
+        return (
+          this.normalizeOptionValue(variantOptions[matchedKey]) ===
+          this.normalizeOptionValue(opts[key])
+        );
+      });
     });
     return matched || null;
   });
@@ -232,30 +348,7 @@ export class ProductDetail {
     }
 
     if (targetVariant) {
-      const opts: Record<string, string> = {};
-      if (targetVariant.optionValues) {
-        // Normalize: values may be objects or strings
-        Object.entries(targetVariant.optionValues).forEach(
-          ([k, v]: [string, any]) => {
-            opts[k] =
-              typeof v === "string"
-                ? v
-                : v?.label || v?.value || v?.name || String(v);
-          },
-        );
-      } else if (targetVariant.options) {
-        targetVariant.options.forEach((vo: any) => {
-          opts[vo.optionValue.optionId] = vo.optionValueId;
-        });
-      }
-      this.selectedOptions.set(opts);
-
-      const variantImages = targetVariant.variantImages || targetVariant.images;
-      if (variantImages && variantImages.length > 0) {
-        this.activeImage.set(this.getImageUrl(variantImages[0]));
-      } else if (p.images && p.images.length > 0) {
-        this.activeImage.set(this.getImageUrl(p.images[0]));
-      }
+      this.syncVariantSelection(p, targetVariant);
 
       if (!initialVariantId) {
         this.router.navigate([], {
@@ -286,6 +379,31 @@ export class ProductDetail {
       this.ds.products().find((p) => p.slug === this.slug())
     );
   });
+
+  detailTabs = computed(() => [
+    { id: "overview", label: "Overview" },
+    {
+      id: "specs",
+      label: "Technical Specifications",
+      visible: this.productSpecs().length > 0,
+    },
+    {
+      id: "features",
+      label: "Features",
+      visible: this.productFeatures().length > 0,
+    },
+    {
+      id: "downloads",
+      label: "Downloads",
+      visible: this.productDownloads().length > 0,
+    },
+    { id: "reviews", label: "Reviews & Ratings" },
+    {
+      id: "faqs",
+      label: "Frequently Asked Questions",
+      visible: this.productFaqs().length > 0,
+    },
+  ]);
 
   breadcrumbs = computed(() => {
     const p = this.product();
@@ -343,6 +461,20 @@ export class ProductDetail {
   relatedProducts = computed(() => {
     const p = this.product();
     if (!p) return [];
+
+    const normalizeProduct = (item: any) => {
+      if (!item) return null;
+      if (typeof item === "object" && item.name) return item;
+      if (typeof item === "object" && item.relatedProduct)
+        return item.relatedProduct;
+      const id =
+        typeof item === "string"
+          ? item
+          : item.id || item.relatedToId || item.relatedProduct?.id;
+      if (!id) return null;
+      return this.ds.products().find((x) => x.id === id || x.slug === id);
+    };
+
     let rels = p.relatedProducts;
     if (typeof rels === "string") {
       try {
@@ -351,23 +483,26 @@ export class ProductDetail {
         rels = [];
       }
     }
-    if (Array.isArray(rels) && rels.length > 0) {
-      return rels
-        .map((rp: any) => {
-          if (rp && typeof rp === "object" && rp.name) return rp;
-          const id =
-            typeof rp === "string"
-              ? rp
-              : rp.id || rp.relatedToId || rp.relatedProduct?.id;
-          return this.ds.products().find((x) => x.id === id);
-        })
-        .filter((x) => x !== undefined)
-        .slice(0, 4) as Product[];
+
+    const explicitProducts = Array.isArray(rels)
+      ? rels.map(normalizeProduct).filter((x): x is Product => Boolean(x))
+      : [];
+
+    if (explicitProducts.length > 0) {
+      return Array.from(
+        new Map(
+          explicitProducts.map((product) => [
+            product.id || product.slug,
+            product,
+          ]),
+        ).values(),
+      ).slice(0, 8);
     }
+
     return this.ds
       .products()
       .filter((x) => x.category_id === p.category_id && x.id !== p.id)
-      .slice(0, 4);
+      .slice(0, 8);
   });
 
   optionalFilaments = computed(() => {
@@ -410,6 +545,56 @@ export class ProductDetail {
       })
       .filter((x) => x !== undefined) as Product[];
   });
+
+  scrollRelatedProducts(direction: number) {
+    this.relatedScroll?.nativeElement.scrollBy({
+      left: direction * 320,
+      behavior: "smooth",
+    });
+  }
+
+  scrollToReviews(event?: Event) {
+    event?.preventDefault();
+    this.activeTab.set("reviews");
+    this.reviewsHighlight.set(true);
+    setTimeout(() => this.reviewsHighlight.set(false), 1600);
+
+    const currentFragment = this.route.snapshot.fragment;
+    if (currentFragment !== "reviews") {
+      this.router.navigate([], {
+        fragment: "reviews",
+        queryParamsHandling: "merge",
+      });
+    }
+
+    setTimeout(() => {
+      const reviewSection = this.document.getElementById("reviews");
+      if (reviewSection) {
+        const top =
+          reviewSection.getBoundingClientRect().top + window.scrollY - 96;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    }, 0);
+  }
+
+  addRelatedToCart(product: Product) {
+    if (product.stock <= 0) {
+      this.toastService.error(`${product.name} is out of stock.`);
+      return;
+    }
+    this.ds.addToCart(product, 1);
+    this.toastService.success(`${product.name} added to cart.`);
+  }
+
+  buyRelatedNow(product: Product) {
+    this.router.navigate(["/checkout"], {
+      state: { product, quantity: 1 },
+    });
+  }
+
+  quickViewRelatedProduct(product: Product) {
+    this.router.navigate(["/product", product.slug]);
+  }
 
   addRecommendedFilamentToCart(filament: Product) {
     if (filament.stock <= 0) {
@@ -516,13 +701,13 @@ export class ProductDetail {
   selectOption(optionName: string, value: string) {
     this.selectedOptions.update((opts) => ({ ...opts, [optionName]: value }));
 
-    // Update variant images and URL query params if variant matches
+    const product = this.product();
     const variant = this.selectedVariant();
+    if (product) {
+      this.syncVariantSelection(product, variant);
+    }
+
     if (variant) {
-      const variantImages = variant.variantImages || variant.images;
-      if (variantImages && variantImages.length > 0) {
-        this.activeImage.set(this.getImageUrl(variantImages[0]));
-      }
       this.router.navigate([], {
         queryParams: { variant: variant.id },
         queryParamsHandling: "merge",
@@ -648,23 +833,17 @@ export class ProductDetail {
           const matchedVar = prod.variants.find(
             (v: any) => String(v.id) === String(varId),
           );
-          if (matchedVar && matchedVar.optionValues) {
-            const normalized: Record<string, string> = {};
-            Object.entries(matchedVar.optionValues).forEach(
-              ([k, v]: [string, any]) => {
-                normalized[k] =
-                  typeof v === "string"
-                    ? v
-                    : v?.label || v?.value || v?.name || String(v);
-              },
-            );
-            this.selectedOptions.set(normalized);
-            const variantImages = matchedVar.variantImages || matchedVar.images;
-            if (variantImages && variantImages.length > 0) {
-              this.activeImage.set(this.getImageUrl(variantImages[0]));
-            }
+          if (matchedVar) {
+            this.syncVariantSelection(prod, matchedVar);
           }
         }
+      }
+    });
+
+    this.route.fragment.subscribe((fragment) => {
+      if (fragment === "reviews") {
+        this.activeTab.set("reviews");
+        setTimeout(() => this.scrollToReviews(), 0);
       }
     });
   }

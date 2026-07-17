@@ -1,0 +1,38 @@
+[debug] [2026-07-17T12:56:10.343Z] ----------------------------------------------------------------------
+[debug] [2026-07-17T12:56:10.345Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-07-17T12:56:10.345Z] CLI Version:   15.19.1
+[debug] [2026-07-17T12:56:10.345Z] Platform:      win32
+[debug] [2026-07-17T12:56:10.345Z] Node Version:  v22.22.3
+[debug] [2026-07-17T12:56:10.345Z] Time:          Fri Jul 17 2026 18:26:10 GMT+0530 (India Standard Time)
+[debug] [2026-07-17T12:56:10.345Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-17T12:56:12.039Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-17T12:56:12.040Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
+[debug] [2026-07-17T12:56:12.040Z] [iam] checking project ajr3dgalaxy for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-07-17T12:56:12.041Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:12.041Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:12.042Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
+[debug] [2026-07-17T12:56:12.042Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
+[debug] [2026-07-17T12:56:12.042Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-17T12:56:13.468Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions 200
+[debug] [2026-07-17T12:56:13.469Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-17T12:56:13.469Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:13.470Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:13.470Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/ajr3dgalaxy/serviceAccounts/ajr3dgalaxy@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-07-17T12:56:13.470Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/ajr3dgalaxy/serviceAccounts/ajr3dgalaxy@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-07-17T12:56:35.790Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/ajr3dgalaxy/serviceAccounts/ajr3dgalaxy@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-07-17T12:56:35.791Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/ajr3dgalaxy/serviceAccounts/ajr3dgalaxy@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'ajr3dgalaxy'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-07-17T12:56:35.796Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:35.796Z] Checked if tokens are valid: true, expires at: 1784296489017
+[debug] [2026-07-17T12:56:35.797Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy [none]
+[debug] [2026-07-17T12:56:51.293Z] *** [apiv2] error from fetch(https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy, {"headers":{},"method":"GET"}): FetchError: request to https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy failed, reason: read ECONNRESET
+[debug] [2026-07-17T12:56:56.303Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:310:49)
+    at listOnTimeout (node:internal/timers:585:17)
+    at process.processTimers (node:internal/timers:521:7)
+[error] 
+[error] Error: An unexpected error has occurred.
