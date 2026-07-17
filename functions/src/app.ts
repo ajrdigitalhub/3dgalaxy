@@ -21,6 +21,7 @@ import {
 } from "./modules/settings/settings.routes";
 import orderRoutes from "./routes/order";
 import customerRoutes from "./routes/customer";
+import reviewRoutes from "./routes/reviews";
 import whatsappRoutes from "./routes/whatsapp";
 import sitemapRoutes from "./routes/sitemap";
 import profileRoutes from "./routes/profile";
@@ -111,6 +112,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api", reviewRoutes);
 app.use("/api", whatsappRoutes);
 app.use("/api", abandonedCheckoutRoutes);
 app.use("/api/profile", profileRoutes);
@@ -118,8 +120,10 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", notificationRoutes);
 import searchRoutes from "./routes/search";
+import supportRoutes from "./routes/support";
 
 app.use("/api/search", searchRoutes);
+app.use("/api/support", supportRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

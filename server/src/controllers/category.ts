@@ -98,7 +98,7 @@ export const getCategories = async (req: Request, res: Response) => {
 };
 
 export const createCategory = async (req: Request, res: Response) => {
-  const { name, slug, parentId, description, image } = req.body;
+  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Category name and slug represent mandatory specifications' });
   }
@@ -111,6 +111,13 @@ export const createCategory = async (req: Request, res: Response) => {
         parentId: parentId || null,
         description,
         image,
+        banner,
+        icon,
+        sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
+        isActive: isActive !== undefined ? !!isActive : undefined,
+        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
+        seoTitle,
+        seoDescription,
       },
     });
     const mapped = { ...created, parent_id: created.parentId };
@@ -122,7 +129,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const updateCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, parentId, description, image } = req.body;
+  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription } = req.body;
 
   try {
     const updated = await prisma.category.update({
@@ -133,6 +140,13 @@ export const updateCategory = async (req: Request, res: Response) => {
         parentId: parentId || null,
         description,
         image,
+        banner,
+        icon,
+        sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
+        isActive: isActive !== undefined ? !!isActive : undefined,
+        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
+        seoTitle,
+        seoDescription,
       },
     });
     const mapped = { ...updated, parent_id: updated.parentId };

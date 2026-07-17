@@ -2169,11 +2169,9 @@ export class AdminPanel {
     );
   });
 
-  draftTax = computed(() =>
-    Math.round(this.draftSubtotal() * (this.taxRate() / 100)),
-  );
+  draftTax = computed(() => 0);
   draftGrandTotal = computed(
-    () => this.draftSubtotal() + this.draftTax() - this.draftDiscountPercent(),
+    () => this.draftSubtotal() - this.draftDiscountPercent(),
   );
 
   async submitDraftOrder() {

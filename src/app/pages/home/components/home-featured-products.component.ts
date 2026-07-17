@@ -13,6 +13,7 @@ import { isPlatformBrowser, CommonModule } from "@angular/common";
 import { RouterModule, Router } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { MatIconModule } from "@angular/material/icon";
+import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { DatastoreService, Product } from "../../../services/datastore";
 import { SettingsService } from "../../../core/services/settings.service";
 import { ToastService } from "../../../shared/components/toast/toast.service";
@@ -80,8 +81,14 @@ import { firstValueFrom } from "rxjs";
 
       <!-- Slider Container with drag and swipe handlers -->
       <div class="relative w-full overflow-hidden pb-6">
-        <div
-          class="flex gap-6 select-none cursor-grab active:cursor-grabbing transition-transform"
+        @if (originalProductsLength() === 0) {
+          <div class="w-full text-center py-16 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-3xl animate-fadeIn">
+            <mat-icon class="scale-150 text-neutral-400 dark:text-neutral-500 mb-3">category</mat-icon>
+            <p class="text-xs font-mono font-bold tracking-wider text-neutral-500">No featured products in this category</p>
+          </div>
+        } @else {
+          <div
+            class="flex gap-6 select-none cursor-grab active:cursor-grabbing transition-transform"
           (mousedown)="onMouseDown($event)"
           (mousemove)="onMouseMove($event)"
           (mouseup)="onMouseUp()"
@@ -254,12 +261,8 @@ import { firstValueFrom } from "rxjs";
                   <!-- Short Description -->
                   <p
                     class="text-xs text-neutral-500 dark:text-neutral-400 font-medium line-clamp-2 min-h-[32px] leading-relaxed"
+                    [innerHTML]="getSafeDescription(p.shortDescription || p.description)"
                   >
-                    {{
-                      p.shortDescription ||
-                        p.description ||
-                        "Premium quality 3D fabrication component."
-                    }}
                   </p>
 
                   <div class="flex items-center justify-between mt-auto pt-2">
@@ -306,7 +309,8 @@ import { firstValueFrom } from "rxjs";
               </div>
             </div>
           }
-        </div>
+          </div>
+        }
       </div>
     </section>
   `,
@@ -317,6 +321,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
   router = inject(Router);
   http = inject(HttpClient);
   toastService = inject(ToastService);
+  sanitizer = inject(DomSanitizer);
   private platformId = inject(PLATFORM_ID);
 
   // Responsive Width & Carousel States
@@ -355,16 +360,40 @@ export class HomeFeaturedProductsComponent implements OnInit {
   });
 
   originalProductsLength = computed(() => {
-    const list = this.ds.products().filter((p) => p.isFeatured || p.featured);
-    return list.length > 0
-      ? list.length
-      : Math.min(this.ds.products().length, 8);
+    const activeCat = this.ds.filterCategory();
+    let list = this.ds.products().filter((p) => p.isFeatured || p.featured);
+    
+    if (activeCat) {
+      const childIds = this.ds.categories()
+        .filter((c) => c.parentId === activeCat || c.parent_id === activeCat)
+        .map((c) => c.id);
+      const allowedIds = [activeCat, ...childIds];
+      list = list.filter((p) => {
+        const pCatId = p.categoryId || p.category_id || (p.category && p.category.id);
+        return allowedIds.includes(pCatId);
+      });
+    }
+
+    return list.length;
   });
 
   // Appends copies of the first cards at the end for smooth loop animation
   featuredProducts = computed(() => {
-    const list = this.ds.products().filter((p) => p.isFeatured || p.featured);
-    const result = list.length > 0 ? list : this.ds.products().slice(0, 8);
+    const activeCat = this.ds.filterCategory();
+    let list = this.ds.products().filter((p) => p.isFeatured || p.featured);
+    
+    if (activeCat) {
+      const childIds = this.ds.categories()
+        .filter((c) => c.parentId === activeCat || c.parent_id === activeCat)
+        .map((c) => c.id);
+      const allowedIds = [activeCat, ...childIds];
+      list = list.filter((p) => {
+        const pCatId = p.categoryId || p.category_id || (p.category && p.category.id);
+        return allowedIds.includes(pCatId);
+      });
+    }
+
+    const result = list.length > 0 ? list : [];
     const isDealer = this.isDealerPriceActive();
 
     const mapped = result.map((p) => {
@@ -392,6 +421,21 @@ export class HomeFeaturedProductsComponent implements OnInit {
     }
     return [];
   });
+
+  getSafeDescription(description: string): SafeHtml {
+    if (!description) return this.sanitizer.bypassSecurityTrustHtml("Premium quality 3D fabrication component.");
+    
+    // Replace block-level tags that might break layout with space or simple styles
+    let cleaned = description
+      .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '$1 ')
+      .replace(/<div[^>]*>([\s\S]*?)<\/div>/gi, '$1 ')
+      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1 ')
+      .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
+      .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
+      .replace(/<iframe[^>]*>([\s\S]*?)<\/iframe>/gi, '');
+      
+    return this.sanitizer.bypassSecurityTrustHtml(cleaned);
+  }
 
   @HostListener("window:resize", [])
   onResize() {

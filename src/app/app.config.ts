@@ -34,7 +34,7 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withRouterConfig({ paramsInheritanceStrategy: "always" }),
       withInMemoryScrolling({
-        scrollPositionRestoration: "enabled",
+        scrollPositionRestoration: "disabled",
         anchorScrolling: "enabled",
       }),
       withPreloading(IdlePreloadStrategy),

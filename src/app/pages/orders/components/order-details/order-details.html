@@ -109,10 +109,10 @@
       </p>
     </div>
 
-    <!-- Timeline visual track -->
+    <!-- Timeline visual track info card headers -->
     @if (getOverrideState() === 'cancelled') {
     <div
-      class="p-6 bg-rose-500/10 border border-rose-500/15 rounded-2xl flex items-center gap-4 text-left"
+      class="p-6 bg-rose-500/10 border border-rose-500/15 rounded-2xl flex items-center gap-4 text-left mb-6"
     >
       <mat-icon class="text-rose-500 scale-125">cancel_presentation</mat-icon>
       <div>
@@ -120,14 +120,13 @@
           ORDER CANCELLED
         </h4>
         <p class="text-[11px] text-neutral-400 mt-0.5">
-          The order was cancelled before dispatch and the timeline is shown as a
-          terminal state.
+          This order was cancelled.
         </p>
       </div>
     </div>
     } @else if (getOverrideState() === 'returned') {
     <div
-      class="p-6 bg-amber-500/10 border border-amber-500/15 rounded-2xl flex items-center gap-4 text-left"
+      class="p-6 bg-amber-500/10 border border-amber-500/15 rounded-2xl flex items-center gap-4 text-left mb-6"
     >
       <mat-icon class="text-amber-500 scale-125">undo</mat-icon>
       <div>
@@ -135,24 +134,24 @@
           ORDER RETURNED
         </h4>
         <p class="text-[11px] text-neutral-400 mt-0.5">
-          The return process has been initiated and the tracking flow is now
-          shown as a completed return state.
+          This order was returned.
         </p>
       </div>
     </div>
-    } @else {
+    }
+
     <!-- Desktop and Tablet horizontal track -->
-    <div class="hidden md:grid grid-cols-7 gap-4 relative">
+    <div class="hidden md:grid gap-4 relative" [style.gridTemplateColumns]="'repeat(' + getVisibleSteps().length + ', minmax(0, 1fr))'">
       <!-- Connecting background progress bar line -->
       <div class="absolute left-[7%] right-[7%] top-6 h-1 bg-white/10 z-0">
         <div
           class="h-full bg-blue-500 transition-all duration-1000 ease-out rounded-full"
-          [style.width.%]="(getCurrentStepIndex() / 5) * 100"
+          [style.width.%]="getLineProgressWidth()"
         ></div>
       </div>
 
       <!-- Staggered stages -->
-      @for (step of trackingSteps; track step.key; let i = $index) {
+      @for (step of getVisibleSteps(); track step.key; let i = $index) {
       <div class="text-center space-y-3 z-1 flex flex-col items-center">
         <!-- Animated Circle badge -->
         <div
@@ -201,7 +200,7 @@
     <div
       class="grid md:hidden grid-cols-1 gap-6 pl-4 border-l-2 border-white/10 relative"
     >
-      @for (step of trackingSteps; track step.key; let i = $index) {
+      @for (step of getVisibleSteps(); track step.key; let i = $index) {
       <div class="flex gap-4 items-start relative">
         <!-- Connecting segment lights up if active/completed -->
         <div
@@ -243,12 +242,13 @@
           >
             {{ step.label }}
           </p>
-          <p class="text-[10px] text-neutral-455">{{ step.desc }}</p>
+          <p class="text-[10px] text-neutral-400 mt-0.5">
+            {{ step.desc }}
+          </p>
         </div>
       </div>
       }
     </div>
-    }
   </div>
 
   <!-- MAIN TWO COLUMN GRID LAYOUT -->
@@ -410,20 +410,6 @@
             <p class="font-mono text-[11px] text-neutral-450 pt-1">
               Country: {{ bill.country }}
             </p>
-            } @if (ord.gstNumber) {
-            <p class="pt-1">
-              <span class="font-bold text-neutral-950 dark:text-white"
-                >GSTIN:</span
-              >
-              {{ ord.gstNumber }}
-            </p>
-            } @if (ord.companyName) {
-            <p>
-              <span class="font-bold text-neutral-950 dark:text-white"
-                >Company Name:</span
-              >
-              {{ ord.companyName }}
-            </p>
             }
           </div>
         </div>
@@ -530,10 +516,6 @@
             </span>
           </div>
 
-          <div class="flex justify-between text-neutral-500">
-            <span>Tax (GST 18% included):</span>
-            <span>{{ ord.taxAmount | currency:'INR':'symbol':'1.0-0' }}</span>
-          </div>
 
           <div
             class="flex justify-between text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-100 dark:border-neutral-850"
@@ -711,14 +693,13 @@
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <a
-              [href]="supportWhatsAppUrl()"
-              target="_blank"
-              class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer"
+            <button
+              (click)="openWhatsAppSupport($event)"
+              class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer border-none"
             >
               <mat-icon class="text-sm scale-90">chat</mat-icon> Chat on
               WhatsApp
-            </a>
+            </button>
             <a
               [href]="supportEmailUrl()"
               class="py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer"

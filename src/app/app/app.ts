@@ -10,6 +10,7 @@ import { SkeletonMenuComponent } from '../shared/components/skeleton/skeleton-me
 import { ToastContainerComponent } from '../shared/components/toast/toast.component';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
+import { ScrollRestorationService } from '../core/services/scroll-restoration.service';
 import { ThemeService } from '../core/services/theme.service';
 import { RecentPurchasePopupComponent } from '../shared/components/recent-purchase-popup/recent-purchase-popup';
 import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell';
@@ -43,6 +44,7 @@ export class App {
   public router = inject(Router);
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
+  private scrollRestoration = inject(ScrollRestorationService);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
@@ -58,6 +60,8 @@ export class App {
   isHome = signal(true);
 
   constructor() {
+    this.scrollRestoration.init();
+
     // Keep isHome updated with active path
     this.router.events.subscribe((val) => {
       if (val instanceof NavigationEnd) {

@@ -276,61 +276,7 @@
             </div>
           </div>
 
-          <!-- Business / GST Toggle -->
-          <div
-            class="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800"
-          >
-            <div class="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="businessPurchase"
-                [checked]="isBusinessPurchase()"
-                (change)="isBusinessPurchase.set($any($event.target).checked)"
-                class="w-4 h-4 text-[#d65108] bg-zinc-150 border-zinc-300 rounded focus:ring-[#d65108] cursor-pointer"
-              />
-              <label
-                for="businessPurchase"
-                class="text-xs font-black text-neutral-700 dark:text-neutral-350 cursor-pointer uppercase select-none tracking-wider"
-                >This is a Business Purchase (GST Invoice)</label
-              >
-            </div>
 
-            @if (isBusinessPurchase()) {
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <div class="space-y-1.5">
-                <label
-                  class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                  >GST Number *</label
-                >
-                <input
-                  type="text"
-                  [value]="gstNumber()"
-                  (input)="gstNumber.set($any($event.target).value)"
-                  placeholder="e.g. 27AAAAA1111A1Z1"
-                  class="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] transition-all uppercase"
-                />
-                @if (gstNumber().trim() && !isGstValid()) {
-                <span class="text-[9px] font-semibold text-red-500 block mt-1"
-                  >Invalid GSTIN format.</span
-                >
-                }
-              </div>
-              <div class="space-y-1.5">
-                <label
-                  class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                  >Company Name *</label
-                >
-                <input
-                  type="text"
-                  [value]="companyName()"
-                  (input)="companyName.set($any($event.target).value)"
-                  placeholder="e.g. Acme Corporation"
-                  class="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] transition-all"
-                />
-              </div>
-            </div>
-            }
-          </div>
 
           <!-- Order Notes -->
           <div class="space-y-1.5">
@@ -646,10 +592,6 @@
               <li>6-digit PIN code required</li>
               } @if (paymentMethod() === 'COD' && !isCodAllowed()) {
               <li>{{ codError() || 'COD not permitted' }}</li>
-              } @if (isBusinessPurchase() && !companyName().trim()) {
-              <li>Company name is required for Business purchase</li>
-              } @if (isBusinessPurchase() && !isGstValid()) {
-              <li>Invalid GSTIN format</li>
               }
             </ul>
           </div>

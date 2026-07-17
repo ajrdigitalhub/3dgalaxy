@@ -32,6 +32,7 @@ import {
   HomeStatisticsComponent,
   HomeTestimonialsComponent,
   HomeInstagramFeedComponent,
+  HomeCategoryShowcaseRowComponent,
 } from "./components/home-sections.component";
 
 @Component({
@@ -49,6 +50,7 @@ import {
     HomeCategoryViewFilamentComponent,
     HomeCategoryViewSparePartsComponent,
     HomeCategoryView3DPrinterComponent,
+    HomeCategoryShowcaseRowComponent,
     HomeNewsletterComponent,
     HomeShopByCategoryComponent,
     HomeTechnologyHubsComponent,
@@ -70,6 +72,12 @@ export class Home {
   metaService = inject(Meta);
 
   loading = computed(() => this.ds.homepageLoading());
+
+  featuredCategories = computed(() => {
+    return this.ds.categories().filter(
+      (c) => c.isFeatured === true && c.isActive !== false
+    );
+  });
 
   activeTopAd = computed(() =>
     this.ds

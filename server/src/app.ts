@@ -19,6 +19,9 @@ import reviewRoutes from "./routes/reviews";
 import whatsappRoutes from "./routes/whatsapp";
 import paymentRoutes from "./routes/payment";
 import abandonedCheckoutRoutes from "./routes/abandonedCheckout";
+import searchRoutes from "./routes/search";
+import supportRoutes from "./routes/support";
+import adminRoutes from "./routes/admin";
 import { getServiceConfig } from "./controllers/settings";
 import {
   getConsolidatedHome,
@@ -56,12 +59,15 @@ app.use("/api/homepage", homepageRoutes);
 app.use("/api/menus", menuRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/admin/settings", settingsRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", whatsappRoutes);
 app.use("/api", abandonedCheckoutRoutes);
 app.use("/api", paymentRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/support", supportRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

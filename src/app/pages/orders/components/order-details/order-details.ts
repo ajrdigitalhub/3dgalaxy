@@ -12,7 +12,8 @@ import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { ToastService } from "../../../../shared/components/toast/toast.service";
 import { catchError } from "rxjs/operators";
-import { of } from "rxjs";
+import { of, firstValueFrom } from "rxjs";
+import { SettingsService } from "../../../../core/services/settings.service";
 
 @Component({
   selector: "app-customer-order-details",
@@ -27,6 +28,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
   public location = inject(Location);
   private router = inject(Router);
   private toastService = inject(ToastService);
+  private settingsService = inject(SettingsService);
 
   order = signal<any>(null);
   loading = signal(true);
@@ -89,18 +91,53 @@ export class CustomerOrderDetailsComponent implements OnInit {
   ticketDesc = signal<string>("");
   ticketSubmitting = signal(false);
 
-  supportWhatsAppUrl = computed(() => {
+  async openWhatsAppSupport(event: MouseEvent) {
+    event.preventDefault();
     const ord = this.order();
-    if (!ord) return "";
-    const name = this.customerName();
-    const orderNo = ord.orderNumber;
-    const itemsText =
-      ord.items
+    if (!ord) return;
+    
+    const sub = this.ticketSub().trim();
+    const desc = this.ticketDesc().trim();
+    if (!sub || !desc) {
+      this.toastService.warning("Kindly input both subject and description parameters to prepare your WhatsApp message.");
+      return;
+    }
+    
+    this.ticketSubmitting.set(true);
+    
+    try {
+      const payload = {
+        orderId: ord.id || ord.orderNumber,
+        issueType: this.ticketCat(),
+        subject: sub,
+        description: desc
+      };
+      
+      const res: any = await firstValueFrom(
+        this.http.post<any>("/api/support/generate", payload)
+      );
+      
+      if (res && res.success && res.data?.whatsappUrl) {
+        window.open(res.data.whatsappUrl, "_blank");
+      } else {
+        throw new Error("Invalid response format");
+      }
+    } catch (err) {
+      console.warn("Backend WhatsApp message generator failed, using client fallback", err);
+      const name = this.customerName();
+      const orderNo = ord.orderNumber;
+      const itemsText = ord.items
         ?.map((i: any) => `${i.product?.name} (Qty: ${i.quantity})`)
         .join(", ") || "";
-    const text = `Hi 3D Galaxy Team! I need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\nIssue category: ${this.ticketCat()}\nSubject: ${this.ticketSub()}\nDetails: ${this.ticketDesc()}`;
-    return `https://wa.me/919876543210?text=${encodeURIComponent(text)}`;
-  });
+      const text = `Hi 3D Galaxy Team! I need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\nIssue category: ${this.ticketCat()}\nSubject: ${sub}\nDetails: ${desc}`;
+      const supportPhone = this.settingsService.settingsData()?.support_phone || this.settingsService.whatsappSettings()?.adminPhoneNumber || "919999999999";
+      const formattedPhone = supportPhone.replace(/[\s\+\-]/g, '');
+      const fallbackUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
+      window.open(fallbackUrl, "_blank");
+    } finally {
+      this.ticketSubmitting.set(false);
+    }
+  }
 
   supportEmailUrl = computed(() => {
     const ord = this.order();
@@ -212,51 +249,97 @@ export class CustomerOrderDetailsComponent implements OnInit {
       });
   }
 
+  getVisibleSteps(): any[] {
+    const status = (this.order()?.status || "").toLowerCase();
+    const baseSteps = [
+      { key: "pending", label: "Order Placed", icon: "shopping_bag", desc: "Your order was received successfully." },
+      { key: "confirmed", label: "Confirmed", icon: "fact_check", desc: "The order was verified and prepared for packing." },
+      { key: "processing", label: "Packed", icon: "inventory_2", desc: "Your items are packed and ready for dispatch." },
+      { key: "shipped", label: "Shipped", icon: "local_shipping", desc: "The shipment is on its way to your address." },
+      { key: "out for delivery", label: "Out for Delivery", icon: "moped", desc: "The courier is on the final delivery leg." },
+      { key: "delivered", label: "Delivered", icon: "task_alt", desc: "Your order was delivered successfully." }
+    ];
+
+    if (status === "cancelled") {
+      return [
+        baseSteps[0],
+        baseSteps[1],
+        { key: "cancelled", label: "Cancelled", icon: "cancel", desc: "The order was cancelled." }
+      ];
+    }
+
+    if (status === "returned" || status === "refunded") {
+      return [
+        ...baseSteps,
+        { key: "returned", label: "Returned", icon: "undo", desc: "The order was returned successfully." }
+      ];
+    }
+
+    return baseSteps;
+  }
+
   getCurrentStepIndex(): number {
-    const currentStatus = this.order()?.status || "Pending";
-    const searchStatus = currentStatus.toLowerCase();
-
-    if (["cancelled", "returned", "refunded"].includes(searchStatus)) {
-      return -2;
-    }
-
-    if (searchStatus === "confirmed") {
-      return 1;
-    }
-
-    if (searchStatus === "packed" || searchStatus === "processing") {
+    const status = (this.order()?.status || "Pending").toLowerCase();
+    if (status === "cancelled") {
       return 2;
     }
-
-    if (searchStatus === "shipped") {
-      return 3;
+    if (status === "returned" || status === "refunded") {
+      return 6;
     }
-
-    if (searchStatus === "out for delivery") {
-      return 4;
-    }
-
-    if (searchStatus === "delivered") {
+    if (status === "delivered") {
       return 5;
     }
-
+    if (status === "out for delivery") {
+      return 4;
+    }
+    if (status === "shipped") {
+      return 3;
+    }
+    if (status === "packed" || status === "processing") {
+      return 2;
+    }
+    if (status === "confirmed") {
+      return 1;
+    }
     return 0;
   }
 
   isStepCompleted(index: number): boolean {
     const currentIndex = this.getCurrentStepIndex();
-    if (currentIndex === -2) return false;
+    const status = (this.order()?.status || "Pending").toLowerCase();
+    if (status === "delivered" && index <= 5) {
+      return true;
+    }
+    if (status === "cancelled" && index < 2) {
+      return true;
+    }
+    if ((status === "returned" || status === "refunded") && index < 6) {
+      return true;
+    }
     return index < currentIndex;
   }
 
   isStepActive(index: number): boolean {
     const currentIndex = this.getCurrentStepIndex();
+    const status = (this.order()?.status || "Pending").toLowerCase();
+    if (status === "delivered") {
+      return false;
+    }
     return index === currentIndex;
   }
 
   isStepPending(index: number): boolean {
     const currentIndex = this.getCurrentStepIndex();
-    if (currentIndex === -2) return false;
+    const status = (this.order()?.status || "Pending").toLowerCase();
+    if (status === "delivered") {
+      return false;
+    }
+    if (status === "cancelled" && index === 2) {
+      return false;
+    }
+    if ((status === "returned" || status === "refunded") && index === 6) {
+      return false;
+    }
     return index > currentIndex;
   }
 
@@ -265,6 +348,15 @@ export class CustomerOrderDetailsComponent implements OnInit {
     if (status === "cancelled") return "cancelled";
     if (status === "returned" || status === "refunded") return "returned";
     return "standard";
+  }
+
+  getLineProgressWidth(): number {
+    const visibleSteps = this.getVisibleSteps();
+    const currentIndex = this.getCurrentStepIndex();
+    if (visibleSteps.length <= 1) return 0;
+    const status = (this.order()?.status || "").toLowerCase();
+    if (status === "delivered") return 100;
+    return (currentIndex / (visibleSteps.length - 1)) * 100;
   }
 
   getStatusBadgeClass(status: string): string {

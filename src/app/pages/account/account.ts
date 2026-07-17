@@ -51,6 +51,10 @@ export class Account {
   isWishlistLoading = signal(true);
   isProfileSaving = signal(false);
 
+  totalOrdersCount = computed(() => this.myOrders().length);
+  totalSpentAmount = computed(() => this.myOrders().reduce((sum, o) => sum + o.grandTotal, 0));
+  activeOrdersCount = computed(() => this.myOrders().filter(o => ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'out for delivery'].includes(o.status.toLowerCase())).length);
+
   activeTab = signal("dashboard");
 
   tabs = [

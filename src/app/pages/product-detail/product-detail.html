@@ -45,22 +45,36 @@
           (mouseleave)="onMouseLeave()"
           class="relative w-full h-full bg-[#F9FAFB] dark:bg-neutral-900/40 rounded-[2rem] sm:rounded-[3rem] border border-neutral-100 dark:border-neutral-800 flex overflow-hidden group shadow-sm transition-shadow duration-700 hover:shadow-2xl hover:shadow-[#d65108]/5"
         >
-          <!-- Iterate all images for mobile swipe, on desktop just activeImage is visible. -->
+          <!-- Main image (desktop) + swipeable gallery (mobile) -->
           <div
             class="flex overflow-x-auto w-full h-full snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] md:overflow-visible"
           >
-            @for (img of galleryImages(); track img?.url || img || $index) {
+            @if (currentActiveImageUrl()) {
             <div
-              [class]="(getImageUrl(activeImage()) === getImageUrl(img) || (!activeImage() && $first)) ? 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:transition-transform md:duration-500' : 'min-w-full h-full snap-start flex items-center justify-center p-2 relative md:hidden'"
+              class="min-w-full h-full snap-start flex items-center justify-center p-2 relative"
             >
               <img
-                [src]="getImageUrl(img)"
+                [src]="currentActiveImageUrl()"
                 class="max-h-[90%] max-w-[90%] object-contain md:pointer-events-auto transition-all duration-500"
                 loading="lazy"
                 alt="{{ p.name }}"
                 referrerpolicy="no-referrer"
               />
             </div>
+            } @else {
+            @for (img of galleryImages(); track trackGalleryImage($index, img)) {
+            <div
+              class="min-w-full h-full snap-start flex items-center justify-center p-2 relative"
+            >
+              <img
+                [src]="getImageUrl(img)"
+                class="max-h-[90%] max-w-[90%] object-contain transition-all duration-500"
+                loading="lazy"
+                alt="{{ p.name }}"
+                referrerpolicy="no-referrer"
+              />
+            </div>
+            }
             }
           </div>
 
@@ -111,7 +125,7 @@
 
       <!-- Thumbnails (Hidden on purely mobile screens since it's swipeable) -->
       <div class="hidden md:flex flex-wrap items-center justify-center gap-5">
-        @for (img of galleryImages(); track img?.url || img || $index) {
+        @for (img of galleryImages(); track trackGalleryImage($index, img)) {
         <button
           (click)="selectImage(img)"
           [class]="getImageUrl(activeImage()) === getImageUrl(img) && !is360Active() ? 'h-24 w-24 bg-white dark:bg-neutral-900 border-2 border-[#d65108] rounded-[1.5rem] p-3 shadow-xl shadow-[#d65108]/10 scale-105 transition-all' : 'h-24 w-24 bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-[1.5rem] p-3 hover:border-orange-300 dark:hover:border-orange-800 hover:scale-105 transition-all'"
@@ -188,14 +202,14 @@
             class="flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1 text-amber-600 transition hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-500 dark:hover:bg-amber-500/20"
           >
             <mat-icon class="scale-75">star</mat-icon>
-            <span>{{ p.reviews.length > 0 ? '4.9' : 'New' }}</span>
+            <span>{{ reviewStats().total > 0 ? formatRatingValue(reviewStats().average) : 'New' }}</span>
           </button>
           <button
             type="button"
             (click)="scrollToReviews($event)"
             class="text-neutral-400 underline decoration-neutral-200 underline-offset-4 transition hover:text-neutral-900 dark:hover:text-white"
           >
-            {{ p.reviews.length }} Reviews
+            {{ reviewStats().total }} Reviews
           </button>
 
           <div class="h-4 w-[1px] bg-neutral-200 dark:bg-neutral-800"></div>
@@ -498,14 +512,14 @@
       @if (activeTab() === 'overview') {
       <div class="animate-slideUp">
         <div
-          class="mx-auto max-w-5xl rounded-[2rem] border border-neutral-200/70 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/60 sm:p-10"
+          class="product-overview-shell mx-auto max-w-5xl rounded-[2rem] border border-neutral-200/70 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/60 sm:p-10"
         >
-          <div class="mx-auto max-w-3xl space-y-6 text-center sm:text-left">
+          <div class="mx-auto max-w-3xl space-y-6 text-center">
             <h2 class="text-3xl font-black text-neutral-950 dark:text-white">
               Product Overview
             </h2>
             <div
-              class="product-overview-content prose prose-neutral max-w-none text-left text-lg leading-8 text-neutral-600 dark:prose-invert dark:text-neutral-400"
+              class="product-overview-content prose prose-neutral mx-auto max-w-none text-base leading-8 text-neutral-600 dark:prose-invert dark:text-neutral-400 sm:text-lg"
               [innerHTML]="safeHtml(p.long_description || p.description || '')"
             ></div>
           </div>
@@ -587,7 +601,11 @@
         }
       </div>
       } @if (activeTab() === 'reviews') {
-      <div class="animate-slideUp max-w-5xl space-y-8">
+      <div
+        id="reviews"
+        class="animate-slideUp max-w-5xl space-y-8"
+        [class.reviews-highlight]="reviewsHighlight()"
+      >
         <div
           class="rounded-[2rem] border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 md:p-8"
         >
@@ -982,8 +1000,7 @@
         #relatedScroll
         class="related-carousel flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none]"
       >
-        @for (rp of relatedProducts(); track rp.id || rp.slug || $index; let idx
-        = $index) {
+        @for (rp of relatedProducts(); track trackRelatedProduct($index, rp); let idx = $index) {
         <article
           [appScrollReveal]="'slide-up'"
           [delay]="(idx % 4) * 100"
@@ -991,11 +1008,12 @@
           [tiltMax]="5"
           class="related-card group min-w-[260px] max-w-[280px] flex-shrink-0 overflow-hidden rounded-[2rem] border border-neutral-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <div
-            class="relative aspect-square overflow-hidden bg-neutral-50 p-4 dark:bg-neutral-950"
+          <a
+            [routerLink]="['/product', rp.slug]"
+            class="relative block aspect-square overflow-hidden bg-neutral-50 p-4 dark:bg-neutral-950"
           >
             <img
-              [src]="getImageUrl((rp.images && rp.images[0]) || (rp.images && rp.images[0]?.url))"
+              [src]="getRelatedProductImage(rp)"
               class="h-full w-full object-contain transition duration-500 group-hover:scale-105"
               loading="lazy"
               alt="{{ rp.name }}"
@@ -1009,7 +1027,7 @@
             }
             <button
               type="button"
-              (click)="$event.preventDefault(); toggleWishlist(rp.id)"
+              (click)="$event.preventDefault(); $event.stopPropagation(); toggleWishlist(rp.id)"
               class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-neutral-700 shadow-sm transition hover:scale-105"
             >
               <mat-icon class="text-base"
@@ -1017,8 +1035,9 @@
                 }}</mat-icon
               >
             </button>
-          </div>
+          </a>
           <div class="flex flex-col gap-3 p-5">
+            <a [routerLink]="['/product', rp.slug]" class="space-y-2">
             <div class="flex items-center justify-between gap-2">
               <span
                 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400"
@@ -1033,14 +1052,15 @@
               }
             </div>
             <h3
-              class="line-clamp-2 text-sm font-black leading-tight text-neutral-950 dark:text-white"
+              class="line-clamp-2 text-sm font-black leading-tight text-neutral-950 transition hover:text-[#d65108] dark:text-white"
             >
               {{ rp.name }}
             </h3>
+            </a>
             <div class="flex items-center gap-1 text-sm text-amber-500">
               <mat-icon class="text-base">star</mat-icon>
               <span class="font-semibold text-neutral-600 dark:text-neutral-300"
-                >4.7</span
+                >{{ getRelatedProductRating(rp) }}</span
               >
             </div>
             <div class="flex items-baseline gap-2">

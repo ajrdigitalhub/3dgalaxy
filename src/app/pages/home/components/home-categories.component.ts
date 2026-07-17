@@ -34,7 +34,7 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
             <button (click)="selectFilterCategory(item.id)" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
               [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-1.5 p-2 md:p-3 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-2xl md:rounded-[1.5rem] transition-all h-36 w-32 md:h-48 md:w-full border border-neutral-200/50 dark:border-neutral-800/40 cursor-pointer relative overflow-hidden ' + 
                        (ds.filterCategory() === item.id 
-                         ? 'border-orange-500 shadow-md shadow-orange-500/10' 
+                         ? 'border-orange-500 bg-orange-500/5 dark:bg-orange-500/10 shadow-md shadow-orange-500/10' 
                          : 'hover:border-orange-500 hover:scale-[1.04] hover:shadow-lg hover:shadow-orange-500/5')"
               [attr.aria-label]="'Filter by ' + item.name">
               
@@ -44,7 +44,7 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
               <div [class]="'h-20 w-20 md:h-26 md:w-26 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ' + 
                             (ds.filterCategory() === item.id 
-                              ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white' 
+                              ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20' 
                               : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-amber-500 group-hover:text-white group-hover:rotate-6')">
                 @if (item.image) {
                   <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-1.5 logo-img"
@@ -57,7 +57,7 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
               <div class="flex flex-col items-center gap-0.5 mt-1">
                 <span [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
                                (ds.filterCategory() === item.id 
-                                 ? 'text-neutral-900 dark:text-white' 
+                                 ? 'text-orange-600 dark:text-orange-400 font-bold' 
                                  : 'text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white')">{{ item.name }}</span>
                 <span class="text-[8px] text-neutral-400 font-bold uppercase tracking-wide">
                   {{ ds.productCountMap()[item.id] || 0 }} Items
@@ -106,14 +106,17 @@ export class HomeCategoriesComponent {
   }
 
   selectFilterCategory(cat: string) {
+    const isSelected = this.ds.filterCategory() === cat;
+    const finalCat = isSelected ? "" : cat;
+
     const layout = this.ds.homeLayout();
     const isCatalogVisible = layout.some(s => s.id === 'featured-innovations' && s.visible);
     if (isCatalogVisible) {
-      this.ds.filterCategory.set(cat);
+      this.ds.filterCategory.set(finalCat);
       const el = document.getElementById('products-catalog');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      this.router.navigate(['/products'], { queryParams: { category: cat } });
+      this.router.navigate(['/products'], { queryParams: { category: finalCat } });
     }
   }
 

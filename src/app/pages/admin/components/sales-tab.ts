@@ -148,10 +148,7 @@ import { AdminPanel } from '../admin';
                   <span class="text-zinc-400">Inventory Subtotal:</span>
                   <span>₹{{ admin.draftSubtotal() | number }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-zinc-400">GST/VAT Tax ({{ admin.taxRate() }}%):</span>
-                  <span>₹{{ admin.draftTax() | number }}</span>
-                </div>
+
                 <div class="flex justify-between items-center py-2 border-t border-b border-white/5 font-black text-white">
                   <span class="text-zinc-300">Grand Invoice Total:</span>
                   <span class="text-emerald-400">₹{{ admin.draftGrandTotal() | number }}</span>

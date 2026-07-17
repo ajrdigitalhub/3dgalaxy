@@ -2152,6 +2152,177 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
               </div>
             }
 
+            <!-- RECENT PURCHASE POPUP SETTINGS -->
+            @if (activeSubTab() === "Recent Purchase Settings") {
+              <div class="space-y-6 font-sans">
+                <div
+                  class="p-4 bg-zinc-50 dark:bg-zinc-955 rounded-2xl border border-zinc-250 dark:border-zinc-850 flex items-center justify-between"
+                >
+                  <div>
+                    <span
+                      class="block text-xs font-black uppercase text-zinc-900 dark:text-white"
+                      >Enable Recent Purchase Popup</span
+                    >
+                    <p class="text-[10px] text-zinc-450 dark:text-zinc-500">
+                      Enable or disable the interactive popup notification at the bottom-left of the screen.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    [checked]="draft().recentPurchasePopup?.enabled !== false"
+                    (change)="
+                      setNested(
+                        'recentPurchasePopup',
+                        'enabled',
+                        $any($event.target).checked
+                      )
+                    "
+                    class="w-5 h-5 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+
+                <div
+                  class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs"
+                >
+                  <h3
+                    class="text-xs font-black uppercase tracking-wider text-zinc-450 dark:text-zinc-500"
+                  >
+                    Popup Configuration
+                  </h3>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                      <span
+                        class="block text-[9px] font-black text-zinc-400 uppercase"
+                        >Rotation Interval (Milliseconds)</span
+                      >
+                      <input
+                        type="number"
+                        [value]="draft().recentPurchasePopup?.interval || 8000"
+                        (input)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'interval',
+                            +$any($event.target).value
+                          )
+                        "
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        placeholder="8000"
+                      />
+                      <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Time between rotating to the next popup message.</p>
+                    </div>
+
+                    <div class="space-y-1">
+                      <span
+                        class="block text-[9px] font-black text-zinc-400 uppercase"
+                        >Display Duration (Milliseconds)</span
+                      >
+                      <input
+                        type="number"
+                        [value]="draft().recentPurchasePopup?.displayDuration || 5000"
+                        (input)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'displayDuration',
+                            +$any($event.target).value
+                          )
+                        "
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        placeholder="5000"
+                      />
+                      <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Duration each popup remains visible on the screen.</p>
+                    </div>
+
+                    <div class="space-y-1">
+                      <span
+                        class="block text-[9px] font-black text-zinc-400 uppercase"
+                        >Maximum Items to Display</span
+                      >
+                      <input
+                        type="number"
+                        [value]="draft().recentPurchasePopup?.maxItems || 20"
+                        (input)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'maxItems',
+                            +$any($event.target).value
+                          )
+                        "
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        placeholder="20"
+                      />
+                      <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Limits the maximum queue count of recent purchase items.</p>
+                    </div>
+
+                    <div class="space-y-1">
+                      <span
+                        class="block text-[9px] font-black text-zinc-400 uppercase"
+                        >Recent Purchases Window (Minutes)</span
+                      >
+                      <input
+                        type="number"
+                        [value]="draft().recentPurchasePopup?.recentPurchaseMinutes || 10"
+                        (input)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'recentPurchaseMinutes',
+                            +$any($event.target).value
+                          )
+                        "
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        placeholder="10"
+                      />
+                      <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Only orders placed in the last N minutes will be fetched (defaults to 10 minutes).</p>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div
+                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="draft().recentPurchasePopup?.showLocation !== false"
+                        (change)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'showLocation',
+                            $any($event.target).checked
+                          )
+                        "
+                        class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span
+                        class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300"
+                        >Show Customer Location</span
+                      >
+                    </div>
+
+                    <div
+                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="draft().recentPurchasePopup?.showTime !== false"
+                        (change)="
+                          setNested(
+                            'recentPurchasePopup',
+                            'showTime',
+                            $any($event.target).checked
+                          )
+                        "
+                        class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span
+                        class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300"
+                        >Show Time Ago Label</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
             <!-- 15. WHATSAPP SETTINGS -->
             @if (activeSubTab() === "WhatsApp Settings") {
               <div class="space-y-6 font-sans">
@@ -2367,6 +2538,147 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                             "
                             class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Message Templates -->
+                    <div
+                      class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs"
+                    >
+                      <h3
+                        class="text-xs font-black uppercase tracking-wider text-zinc-400"
+                      >
+                        Message Templates
+                      </h3>
+
+                      <div class="grid grid-cols-1 gap-4">
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >WhatsApp API URL</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.apiUrl || ''"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'apiUrl',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            placeholder="https://graph.facebook.com/..."
+                          />
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >API Key</span
+                          >
+                          <input
+                            type="password"
+                            [value]="draft().whatsappSettings?.apiKey || ''"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'apiKey',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            placeholder="API Key / Access Token"
+                          />
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Welcome Message Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.welcomeMessageTemplateName || 'welcome_message'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'welcomeMessageTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template for new user signup. Use 1 for customer name, 2 for site link.
+                          </p>
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Order Confirmation (Client) Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.orderConfirmationClientTemplateName || 'order_confirmation_client'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'orderConfirmationClientTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template for customer order confirmation.
+                          </p>
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Order Confirmation (Admin) Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.orderConfirmationAdminTemplateName || 'order_confirmation_admin'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'orderConfirmationAdminTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template for admin new order notification.
+                          </p>
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Order Status Update Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.orderStatusUpdateTemplateName || 'order_status_update'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'orderStatusUpdateTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template for when an order status changes (Shipped, Delivered, Cancelled, etc.).
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -4003,23 +4315,7 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                         class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >GST Tax Rate (%)</span
-                      >
-                      <input
-                        type="number"
-                        [value]="draft().printServiceSettings?.gstTaxRate || 18"
-                        (input)="
-                          setPrintServiceSettingsField(
-                            'gstTaxRate',
-                            +$any($event.target).value
-                          )
-                        "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
-                      />
-                    </div>
+
                   </div>
                 </div>
 
@@ -4801,6 +5097,7 @@ export class AdminSettingsTab {
     { name: "Social Links", icon: "share" },
     { name: "Email Settings", icon: "email" },
     { name: "WhatsApp Settings", icon: "chat" },
+    { name: "Recent Purchase Settings", icon: "add_shopping_cart" },
     { name: "Push Settings", icon: "notifications" },
     { name: "Shipping", icon: "local_shipping" },
     { name: "Payment Gateway", icon: "payment" },

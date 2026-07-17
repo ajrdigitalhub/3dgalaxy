@@ -173,7 +173,7 @@ export const generateInvoicePDF = async (order: any): Promise<string> => {
 // Meta Dispatch Service
 export const dispatchMetaNotification = async (logId: string, settings: any, payload: any) => {
   const apiUrl = settings.apiUrl || `https://graph.facebook.com/v19.0/${settings.phoneNumberId}/messages`;
-  const accessToken = settings.accessToken;
+  const accessToken = settings.apiKey || settings.accessToken;
   
   if (!settings.apiEnabled || !accessToken) {
     // Simulated Sandbox dispatch
@@ -261,66 +261,268 @@ export const triggerWhatsAppNotification = async (
     // Check if trigger is enabled (defaulting to true if not specified)
     const triggerEnabled = settings.triggers?.[triggerKey] !== false;
     if (!triggerEnabled) return;
-    
-    const template = settings.templates?.[triggerKey];
-    if (!template || !template.name) return;
-    
+
     // Format recipient number (add default country code if missing)
     let formattedPhone = recipientNumber.replace(/\s+/g, '');
     if (!formattedPhone.startsWith('+')) {
       const code = settings.defaultCountryCode || '+91';
       formattedPhone = `${code}${formattedPhone}`;
     }
-    
-    const resolvedVars = resolvePlaceholders(order, customer, settings, extraParams);
-    
-    const keys = getPlaceholderKeys(template.body || '');
-    const parameters = keys.map(k => {
-      const val = resolvedVars[k as keyof typeof resolvedVars] || '';
-      return { type: 'text', text: String(val) };
-    });
+
+    let templateName = '';
+    let components: any[] = [];
+    let isStandardTemplate = false;
+
+    const siteName = settings.storeName || '3D Galaxy';
+    const siteUrl = extraParams.origin || process.env.APP_URL || 'http://localhost:4200';
+    const currency = settings.currency || '₹';
+
+    const isAdmin = !!extraParams.is_admin || triggerKey === 'admin_new_order';
+
+    if (isAdmin) {
+      templateName = settings.orderConfirmationAdminTemplateName || 'order_confirmation_admin';
+      isStandardTemplate = true;
+
+      const paymentMethodMap: any = {
+        'razorpay': 'Online Payment',
+        'cod': 'Cash on Delivery',
+        'manual': 'Manual Payment'
+      };
+      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
+      const isPaid = !!order?.paymentId || (order?.status !== 'Pending Payment' && order?.paymentMethod !== 'cod');
+      const paymentStatus = isPaid ? 'Paid' : 'Pending';
+
+      let shippingAddress = order?.shippingAddress;
+      if (typeof shippingAddress === 'string') {
+        try { shippingAddress = JSON.parse(shippingAddress); } catch { shippingAddress = {}; }
+      }
+      const fullAddress = shippingAddress 
+        ? `${shippingAddress.name || ''}, ${shippingAddress.addressLine1 || ''}, ${shippingAddress.city || ''}, ${shippingAddress.state || ''}, ${shippingAddress.pincode || ''}`
+        : 'N/A';
+      
+      let itemsSummary = '';
+      if (order?.items && order.items.length > 0) {
+        itemsSummary = order.items.map((i: any) => `${i.quantity} x ${i.product?.name || 'Product'}`).join(', ');
+      }
+      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+
+      components = [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: custName },
+            { type: "text", text: recipientNumber || 'N/A' },
+            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
+            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
+            { type: "text", text: `${paymentMethod} (${paymentStatus})` },
+            { type: "text", text: new Date(order?.createdAt || Date.now()).toLocaleDateString('en-IN') },
+            { type: "text", text: fullAddress },
+            { type: "text", text: itemsSummary },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [
+            { type: "text", text: order ? `admin/orders/${order.id}` : '' }
+          ]
+        }
+      ];
+    } else if (triggerKey === 'registration' || triggerKey === 'welcome') {
+      templateName = settings.welcomeMessageTemplateName || 'welcome_message';
+      isStandardTemplate = true;
+      components = [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: customer?.firstName ? `${customer.firstName} ${customer.lastName || ''}`.trim() : (customer?.name || "Customer") },
+            { type: "text", text: siteUrl },
+          ],
+        },
+      ];
+    } else if (triggerKey === 'order_placed') {
+      templateName = settings.orderConfirmationClientTemplateName || 'order_confirmation_client';
+      isStandardTemplate = true;
+      
+      const paymentMethodMap: any = {
+        'razorpay': 'Online Payment',
+        'cod': 'Cash on Delivery',
+        'manual': 'Manual Payment'
+      };
+      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
+      const isPaid = !!order?.paymentId || (order?.status !== 'Pending Payment' && order?.paymentMethod !== 'cod');
+      const paymentStatus = isPaid ? 'Paid ✅' : 'Pending ⏳';
+      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+
+      components = [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: custName },
+            { type: "text", text: siteName },
+            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
+            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
+            { type: "text", text: paymentMethod },
+            { type: "text", text: paymentStatus },
+            { type: "text", text: custName },
+            { type: "text", text: siteName },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [
+            { type: "text", text: order ? `account/orders/${order.id}` : '' }
+          ]
+        }
+      ];
+    } else if (['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(triggerKey)) {
+      templateName = settings.orderStatusUpdateTemplateName || 'order_status_update';
+      isStandardTemplate = true;
+
+      let orderDetails = "";
+      const statusTitle = triggerKey.charAt(0).toUpperCase() + triggerKey.slice(1);
+      switch (triggerKey) {
+        case "processing":
+          orderDetails = "Your order is currently being processed by our team. We are getting everything ready for you! ⏳";
+          break;
+        case "shipped":
+          orderDetails = `Great news! Your order has been shipped. 🚚\nTracking ID: ${order?.trackingNumber || 'N/A'}\nEstimated Delivery: ${order?.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN') : 'N/A'}`;
+          break;
+        case "delivered":
+          orderDetails = "Yay! Your order has been delivered successfully. We hope you love it! 🎉";
+          break;
+        case "cancelled":
+          orderDetails = `Your order has been cancelled. ❌\nReason: ${order?.cancellationReason || 'Not provided'}`;
+          break;
+        default:
+          orderDetails = `Your order status is now: ${statusTitle}.`;
+      }
+
+      const paymentMethodMap: any = {
+        'razorpay': 'Online Payment',
+        'cod': 'Cash on Delivery',
+        'manual': 'Manual Payment'
+      };
+      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
+      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+
+      components = [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: custName },
+            { type: "text", text: siteName },
+            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
+            { type: "text", text: statusTitle },
+            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
+            { type: "text", text: paymentMethod },
+            { type: "text", text: orderDetails },
+            { type: "text", text: custName },
+            { type: "text", text: siteName },
+            { type: "text", text: siteName },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [
+            { type: "text", text: order ? `account/orders/${order.id}` : '' }
+          ]
+        }
+      ];
+    } else if (triggerKey === 'order_delivered_review') {
+      templateName = settings.orderDeliveredReviewTemplateName || 'order_delivered_review_template';
+      isStandardTemplate = true;
+      
+      const fileName = `invoice_${order?.orderNumber || order?.id}.pdf`;
+      const invoiceUrl = order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : `${siteUrl}/uploads/invoices/${fileName}`;
+      const reviewLink = order ? `${siteUrl}/feedback?orderId=${order.id}` : '';
+      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+
+      components = [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "document",
+              document: {
+                link: invoiceUrl,
+                filename: `Invoice_${order?.orderNumber || 'Download'}.pdf`
+              }
+            }
+          ]
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: custName },
+            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
+            { type: "text", text: reviewLink }
+          ]
+        }
+      ];
+    }
+
+    if (!isStandardTemplate) {
+      const template = settings.templates?.[triggerKey];
+      if (!template || !template.name) return;
+      templateName = template.name;
+      
+      const resolvedVars = resolvePlaceholders(order, customer, settings, extraParams);
+      const keys = getPlaceholderKeys(template.body || '');
+      const parameters = keys.map(k => {
+        const val = resolvedVars[k as keyof typeof resolvedVars] || '';
+        return { type: 'text', text: String(val) };
+      });
+
+      components = [
+        {
+          type: 'body',
+          parameters,
+        },
+      ];
+
+      // Attach document if template type is Document
+      if (template.headerType === 'Document' && resolvedVars.invoice_url && resolvedVars.invoice_url !== 'N/A') {
+        components.push({
+          type: 'header',
+          parameters: [
+            {
+              type: 'document',
+              document: {
+                link: resolvedVars.invoice_url,
+                filename: `Invoice_${order?.orderNumber || 'Download'}.pdf`,
+              },
+            },
+          ],
+        });
+      }
+    }
     
     const metaPayload: any = {
       messaging_product: 'whatsapp',
       to: formattedPhone,
       type: 'template',
       template: {
-        name: template.name,
+        name: templateName,
         language: {
-          code: template.language || 'en',
+          code: 'en',
         },
-        components: [
-          {
-            type: 'body',
-            parameters,
-          },
-        ],
+        components,
       },
     };
-    
-    // Attach document if template type is Document
-    if (template.headerType === 'Document' && resolvedVars.invoice_url && resolvedVars.invoice_url !== 'N/A') {
-      metaPayload.template.components.push({
-        type: 'header',
-        parameters: [
-          {
-            type: 'document',
-            document: {
-              link: resolvedVars.invoice_url,
-              filename: `Invoice_${order?.orderNumber || 'Download'}.pdf`,
-            },
-          },
-        ],
-      });
-    }
     
     const log = await prisma.whatsappLog.create({
       data: {
         customerId: customer?.id || order?.customerId || null,
         orderId: order?.id || null,
         phone: formattedPhone,
-        templateName: template.name,
-        templateLanguage: template.language || 'en',
+        templateName: templateName,
+        templateLanguage: 'en',
         messageType: triggerKey.includes('otp') ? 'otp' : 'transactional',
         provider: settings.provider || 'meta',
         status: 'Queued',
@@ -344,7 +546,7 @@ export const triggerWhatsAppNotification = async (
           });
           
           // Trigger Invoice Sent Template
-          await triggerWhatsAppNotification('invoice_sent', formattedPhone, updatedOrder, customer, extraParams);
+          await triggerWhatsAppNotification('order_delivered_review', formattedPhone, updatedOrder, customer, extraParams);
         } catch (pdfErr) {
           console.error('Failed to auto generate invoice PDF on delivery:', pdfErr);
         }
@@ -352,17 +554,14 @@ export const triggerWhatsAppNotification = async (
     }
     
     // Handle Admin notifications trigger if enabled
-    if (settings.sendAdminNotification && settings.adminPhoneNumber) {
+    if (settings.sendAdminNotification && settings.adminPhoneNumber && !isAdmin) {
       const adminTriggers = ['order_placed', 'payment_success', 'cancelled', 'refund_completed'];
       if (adminTriggers.includes(triggerKey)) {
         let adminTemplateKey = 'admin_new_order';
         if (triggerKey === 'payment_success') adminTemplateKey = 'admin_payment_received';
         if (triggerKey === 'cancelled') adminTemplateKey = 'admin_order_cancelled';
         
-        const adminTemplate = settings.templates?.[adminTemplateKey];
-        if (adminTemplate && adminTemplate.name) {
-          await triggerWhatsAppNotification(adminTemplateKey, settings.adminPhoneNumber, order, customer, { ...extraParams, is_admin: true });
-        }
+        await triggerWhatsAppNotification(adminTemplateKey, settings.adminPhoneNumber, order, customer, { ...extraParams, is_admin: true });
       }
     }
   } catch (error) {

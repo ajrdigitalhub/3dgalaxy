@@ -84,6 +84,15 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   rotationX = signal<number>(25);
   rotationY = signal<number>(-45);
   scaleFactor = signal<number>(1.0);
+  panX = signal<number>(0);
+  panY = signal<number>(0);
+  showGrid = signal<boolean>(true);
+  showBoundingBox = signal<boolean>(false);
+  ambientLight = signal<number>(0.25);
+  keyLight = signal<number>(0.55);
+  fillLight = signal<number>(0.20);
+
+  dragMode: "rotate" | "pan" = "rotate";
   modelVertices: number[][] = [];
   modelFaces: number[][] = [];
   modelDimensions = signal<{ x: number; y: number; z: number }>({
@@ -399,7 +408,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     const subtotal = (materialCost + printingCost + setupCost) * qty;
 
     // GST
-    const gstTax = Math.round(subtotal * (gstRate / 100));
+    const gstTax = 0;
 
     // Shipping
     const shippingThreshold =
@@ -407,7 +416,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     const shippingFee = subtotal >= shippingThreshold ? 0 : 120;
 
     // Grand Total
-    const totalCost = subtotal + gstTax + shippingFee;
+    const totalCost = subtotal + shippingFee;
 
     return {
       weightGrams: estimatedWeight,
@@ -598,6 +607,8 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.rotationX.set(25);
     this.rotationY.set(-45);
     this.scaleFactor.set(1.0);
+    this.panX.set(0);
+    this.panY.set(0);
   }
 
   zoomIn() {
@@ -697,6 +708,8 @@ ${this.notesText().trim()}
       },
       { passive: false },
     );
+
+    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
 
     const renderLoop = () => {
       if (this.canvasContext) {
@@ -809,89 +822,142 @@ ${this.notesText().trim()}
       const perspective = 350 / (350 + z1_rotated);
       const scale = (width / 640) * this.scaleFactor() * perspective * 2.8;
       return {
-        x: cx + x1 * scale,
-        y: cy + y2 * scale,
+        x: cx + x1 * scale + this.panX() * dpr,
+        y: cy + y2 * scale + this.panY() * dpr,
         depth: z1_rotated,
       };
     };
 
-    // Draw 3D print bed grid
-    ctx.strokeStyle = isDark
-      ? "rgba(30, 41, 59, 0.4)"
-      : "rgba(226, 232, 240, 0.9)";
-    ctx.lineWidth = 1 * dpr;
+    if (this.showGrid()) {
+      // Draw 3D print bed grid
+      ctx.strokeStyle = isDark
+        ? "rgba(30, 41, 59, 0.4)"
+        : "rgba(226, 232, 240, 0.9)";
+      ctx.lineWidth = 1 * dpr;
 
-    // The model max Y is scaled to fit in 35. So bottom is at Y = 17.5. Let's place bed at Y = 18.
-    const bedY = 18;
-    const bedSize = 45;
-    const step = 7.5;
+      // The model max Y is scaled to fit in 35. So bottom is at Y = 17.5. Let's place bed at Y = 18.
+      const bedY = 18;
+      const bedSize = 45;
+      const step = 7.5;
 
-    // Draw lines parallel to Z axis (changing X)
-    for (let x = -bedSize; x <= bedSize; x += step) {
-      const pStart = project(x, bedY, -bedSize);
-      const pEnd = project(x, bedY, bedSize);
+      // Draw lines parallel to Z axis (changing X)
+      for (let x = -bedSize; x <= bedSize; x += step) {
+        const pStart = project(x, bedY, -bedSize);
+        const pEnd = project(x, bedY, bedSize);
+        ctx.beginPath();
+        ctx.moveTo(pStart.x, pStart.y);
+        ctx.lineTo(pEnd.x, pEnd.y);
+        ctx.stroke();
+      }
+
+      // Draw lines parallel to X axis (changing Z)
+      for (let z = -bedSize; z <= bedSize; z += step) {
+        const pStart = project(-bedSize, bedY, z);
+        const pEnd = project(bedSize, bedY, z);
+        ctx.beginPath();
+        ctx.moveTo(pStart.x, pStart.y);
+        ctx.lineTo(pEnd.x, pEnd.y);
+        ctx.stroke();
+      }
+
+      // Draw compact Slicers BED Axes at the corner of the grid bed
+      const oX = -bedSize;
+      const oY = bedY;
+      const oZ = -bedSize;
+
+      const o = project(oX, oY, oZ);
+      const ax = project(oX + 15, oY, oZ);
+      const ay = project(oX, oY - 15, oZ);
+      const az = project(oX, oY, oZ + 15);
+
+      ctx.lineWidth = 2 * dpr;
+      ctx.strokeStyle = "#ef4444"; // X (Red)
       ctx.beginPath();
-      ctx.moveTo(pStart.x, pStart.y);
-      ctx.lineTo(pEnd.x, pEnd.y);
+      ctx.moveTo(o.x, o.y);
+      ctx.lineTo(ax.x, ax.y);
       ctx.stroke();
-    }
+      ctx.fillStyle = "#ef4444";
+      ctx.font = "bold " + Math.round(9 * dpr) + "px monospace";
+      ctx.fillText("X", ax.x + 3 * dpr, ax.y + 3 * dpr);
 
-    // Draw lines parallel to X axis (changing Z)
-    for (let z = -bedSize; z <= bedSize; z += step) {
-      const pStart = project(-bedSize, bedY, z);
-      const pEnd = project(bedSize, bedY, z);
+      ctx.strokeStyle = "#22c55e"; // Y (Green)
       ctx.beginPath();
-      ctx.moveTo(pStart.x, pStart.y);
-      ctx.lineTo(pEnd.x, pEnd.y);
+      ctx.moveTo(o.x, o.y);
+      ctx.lineTo(ay.x, ay.y);
       ctx.stroke();
+      ctx.fillStyle = "#22c55e";
+      ctx.fillText("Y", ay.x + 3 * dpr, ay.y - 3 * dpr);
+
+      ctx.strokeStyle = "#3b82f6"; // Z (Blue)
+      ctx.beginPath();
+      ctx.moveTo(o.x, o.y);
+      ctx.lineTo(az.x, az.y);
+      ctx.stroke();
+      ctx.fillStyle = "#3b82f6";
+      ctx.fillText("Z", az.x + 3 * dpr, az.y + 3 * dpr);
     }
-
-    // Draw compact Slicers BED Axes at the corner of the grid bed
-    const oX = -bedSize;
-    const oY = bedY;
-    const oZ = -bedSize;
-
-    const o = project(oX, oY, oZ);
-    const ax = project(oX + 15, oY, oZ);
-    const ay = project(oX, oY - 15, oZ);
-    const az = project(oX, oY, oZ + 15);
-
-    ctx.lineWidth = 2 * dpr;
-    ctx.strokeStyle = "#ef4444"; // X (Red)
-    ctx.beginPath();
-    ctx.moveTo(o.x, o.y);
-    ctx.lineTo(ax.x, ax.y);
-    ctx.stroke();
-    ctx.fillStyle = "#ef4444";
-    ctx.font = "bold " + Math.round(9 * dpr) + "px monospace";
-    ctx.fillText("X", ax.x + 3 * dpr, ax.y + 3 * dpr);
-
-    ctx.strokeStyle = "#22c55e"; // Y (Green)
-    ctx.beginPath();
-    ctx.moveTo(o.x, o.y);
-    ctx.lineTo(ay.x, ay.y);
-    ctx.stroke();
-    ctx.fillStyle = "#22c55e";
-    ctx.fillText("Y", ay.x + 3 * dpr, ay.y - 3 * dpr);
-
-    ctx.strokeStyle = "#3b82f6"; // Z (Blue)
-    ctx.beginPath();
-    ctx.moveTo(o.x, o.y);
-    ctx.lineTo(az.x, az.y);
-    ctx.stroke();
-    ctx.fillStyle = "#3b82f6";
-    ctx.fillText("Z", az.x + 3 * dpr, az.y + 3 * dpr);
 
     if (this.modelVertices.length === 0) return;
 
-    // Calculate Z threshold for slicing simulation
-    let minZ = Infinity;
-    let maxZ = -Infinity;
+    // Calculate bounding box bounds and Z threshold for slicing simulation
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
     for (const v of this.modelVertices) {
+      if (v[0] < minX) minX = v[0];
+      if (v[0] > maxX) maxX = v[0];
+      if (v[1] < minY) minY = v[1];
+      if (v[1] > maxY) maxY = v[1];
       if (v[2] < minZ) minZ = v[2];
       if (v[2] > maxZ) maxZ = v[2];
     }
     const zThreshold = minZ + (maxZ - minZ) * (this.simulationLayer() / 100);
+
+    // Draw 3D Bounding Box Outline if enabled
+    if (this.showBoundingBox()) {
+      const corners = [
+        project(minX, minY, minZ), // 0
+        project(maxX, minY, minZ), // 1
+        project(maxX, maxY, minZ), // 2
+        project(minX, maxY, minZ), // 3
+        project(minX, minY, maxZ), // 4
+        project(maxX, minY, maxZ), // 5
+        project(maxX, maxY, maxZ), // 6
+        project(minX, maxY, maxZ), // 7
+      ];
+
+      ctx.strokeStyle = "rgba(249, 115, 22, 0.85)";
+      ctx.lineWidth = 1 * dpr;
+      ctx.setLineDash([4 * dpr, 4 * dpr]);
+
+      // Bottom face
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      ctx.lineTo(corners[1].x, corners[1].y);
+      ctx.lineTo(corners[2].x, corners[2].y);
+      ctx.lineTo(corners[3].x, corners[3].y);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Top face
+      ctx.beginPath();
+      ctx.moveTo(corners[4].x, corners[4].y);
+      ctx.lineTo(corners[5].x, corners[5].y);
+      ctx.lineTo(corners[6].x, corners[6].y);
+      ctx.lineTo(corners[7].x, corners[7].y);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Vertical edges
+      ctx.beginPath();
+      for (let i = 0; i < 4; i++) {
+        ctx.moveTo(corners[i].x, corners[i].y);
+        ctx.lineTo(corners[i + 4].x, corners[i + 4].y);
+      }
+      ctx.stroke();
+
+      ctx.setLineDash([]); // Reset line dash
+    }
 
     // Compute rotated coordinates in camera space first
     const rotatedVerts = this.modelVertices.map((v) => {
@@ -914,8 +980,8 @@ ${this.notesText().trim()}
       const perspective = 350 / (350 + rv[2]);
       const scale = (width / 640) * this.scaleFactor() * perspective * 2.8;
       return {
-        x: cx + rv[0] * scale,
-        y: cy + rv[1] * scale,
+        x: cx + rv[0] * scale + this.panX() * dpr,
+        y: cy + rv[1] * scale + this.panY() * dpr,
         depth: rv[2],
       };
     });
@@ -1005,7 +1071,7 @@ ${this.notesText().trim()}
               0,
               normalX * -0.5 + normalY * -0.5 + normalZ * 0.7,
             );
-            intensity = 0.25 + 0.55 * dot1 + 0.2 * dot2;
+            intensity = this.ambientLight() + this.keyLight() * dot1 + this.fillLight() * dot2;
           }
 
           const rgb = this.hexToRgb(fillHex);
@@ -1270,6 +1336,12 @@ ${this.notesText().trim()}
     this.isDragging = true;
     this.previousMouseX = event.clientX;
     this.previousMouseY = event.clientY;
+
+    if (event.shiftKey || event.button === 1 || event.button === 2) {
+      this.dragMode = "pan";
+    } else {
+      this.dragMode = "rotate";
+    }
   }
 
   onMouseMove(event: MouseEvent) {
@@ -1277,8 +1349,13 @@ ${this.notesText().trim()}
     const deltaX = event.clientX - this.previousMouseX;
     const deltaY = event.clientY - this.previousMouseY;
 
-    this.rotationY.update((ry) => ry + deltaX * 0.6);
-    this.rotationX.update((rx) => rx + deltaY * 0.6);
+    if (this.dragMode === "pan") {
+      this.panX.update((px) => px + deltaX);
+      this.panY.update((py) => py + deltaY);
+    } else {
+      this.rotationY.update((ry) => ry + deltaX * 0.6);
+      this.rotationX.update((rx) => rx + deltaY * 0.6);
+    }
 
     this.previousMouseX = event.clientX;
     this.previousMouseY = event.clientY;
@@ -1294,5 +1371,9 @@ ${this.notesText().trim()}
 
   onSliderYChange(event: Event) {
     this.rotationY.set(parseFloat((event.target as HTMLInputElement).value));
+  }
+
+  autoFit() {
+    this.resetRotation();
   }
 }

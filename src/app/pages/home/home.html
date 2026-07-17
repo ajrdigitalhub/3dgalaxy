@@ -46,19 +46,25 @@
     class="h-[400px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[3rem] animate-pulse"
   ></div>
   } } @case ('CATEGORY-VIEW-FILAMENT') { @defer (on viewport) {
-  <app-home-category-view-filament [section]="section" />
+    @if (featuredCategories()[0]; as cat) {
+      <app-home-category-showcase-row [category]="cat" />
+    }
   } @placeholder {
   <div
     class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"
   ></div>
   } } @case ('CATEGORY-VIEW-SPARE-PARTS') { @defer (on viewport) {
-  <app-home-category-view-spare-parts [section]="section" />
+    @if (featuredCategories()[1]; as cat) {
+      <app-home-category-showcase-row [category]="cat" />
+    }
   } @placeholder {
   <div
     class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"
   ></div>
   } } @case ('CATEGORY-VIEW-3D-PRINTER') { @defer (on viewport) {
-  <app-home-category-view-3d-printer [section]="section" />
+    @if (featuredCategories()[2]; as cat) {
+      <app-home-category-showcase-row [category]="cat" />
+    }
   } @placeholder {
   <div
     class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"
@@ -112,6 +118,17 @@
     class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"
   ></div>
   } } } } }
+
+  <!-- Loop to display additional featured categories if there are more than 3 -->
+  @for (cat of featuredCategories(); track cat.id; let idx = $index) {
+    @if (idx >= 3) {
+      @defer (on viewport) {
+        <app-home-category-showcase-row [category]="cat" />
+      } @placeholder {
+        <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
+      }
+    }
+  }
 </div>
 
 <app-home-instagram-feed />

@@ -312,6 +312,12 @@ const buildVariantFromRow = (row: Record<string, string>): any => {
     getValue(row, "grams") ||
     getValue(row, "weight");
 
+  const variantImageSources = uniqueArray([
+    ...splitCsvArray(getValue(row, "variant_image")),
+    ...splitCsvArray(getValue(row, "image_src")),
+    ...splitCsvArray(getValue(row, "image_url")),
+  ]);
+
   return {
     name:
       [getValue(row, "variant_title"), getValue(row, "title")]
@@ -327,11 +333,8 @@ const buildVariantFromRow = (row: Record<string, string>): any => {
     weight: parseFloat(rawWeight) || 0,
     barcode: getValue(row, "variant_barcode") || getValue(row, "barcode") || "",
     optionValues,
-    images: uniqueArray(
-      splitCsvArray(getValue(row, "variant_image"))
-        .concat(splitCsvArray(getValue(row, "image_src")))
-        .concat(splitCsvArray(getValue(row, "image_url"))),
-    ),
+    images: variantImageSources,
+    variantImages: variantImageSources,
     raw: row,
   };
 };
@@ -575,7 +578,10 @@ export const buildShopifyImportGroups = (
 
     product.variants.push({
       ...variant,
-      images: uniqueArray(variant.images),
+      images: uniqueArray(variant.images || variant.variantImages || []),
+      variantImages: uniqueArray(
+        variant.variantImages || variant.images || [],
+      ),
     });
   }
 
@@ -622,6 +628,33 @@ export const buildShopifyImportGroups = (
         ),
       })),
     };
+  }).map((product) => {
+    const variantsMissingImages = product.variants.filter(
+      (variant) =>
+        !(variant.variantImages || variant.images || []).length,
+    );
+    if (
+      variantsMissingImages.length > 0 &&
+      product.images.length >= product.variants.length
+    ) {
+      product.variants = product.variants.map((variant, index) => {
+        const existing = uniqueArray(
+          variant.variantImages || variant.images || [],
+        );
+        if (existing.length > 0) {
+          return { ...variant, variantImages: existing, images: existing };
+        }
+        const inferred = product.images[index]
+          ? [product.images[index]]
+          : [];
+        return {
+          ...variant,
+          variantImages: inferred,
+          images: inferred,
+        };
+      });
+    }
+    return product;
   });
 
   const allErrors = result.reduce<string[]>(

@@ -111,6 +111,9 @@
             <button (click)="resetRotation()" class="absolute top-4 right-4 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Reset View"><mat-icon class="scale-75">refresh</mat-icon></button>
             <button (click)="zoomIn()" class="absolute top-4 right-14 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Zoom In"><mat-icon class="scale-75">zoom_in</mat-icon></button>
             <button (click)="zoomOut()" class="absolute top-4 right-24 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Zoom Out"><mat-icon class="scale-75">zoom_out</mat-icon></button>
+            <button (click)="autoFit()" class="absolute top-4 right-34 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Auto Fit"><mat-icon class="scale-75">center_focus_strong</mat-icon></button>
+            <button (click)="showGrid.set(!showGrid())" [class.text-blue-600]="showGrid()" class="absolute top-4 left-4 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Toggle Grid"><mat-icon class="scale-75">grid_on</mat-icon></button>
+            <button (click)="showBoundingBox.set(!showBoundingBox())" [class.text-blue-600]="showBoundingBox()" class="absolute top-4 left-14 bg-white dark:bg-zinc-800 border border-zinc-250 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer shadow-sm transition-colors z-10" title="Toggle Bounding Box"><mat-icon class="scale-75">border_outer</mat-icon></button>
           </div>
 
           <!-- Mesh Telemetry Statistics -->
@@ -130,6 +133,61 @@
             <div>
               <span class="block text-[8px] text-zinc-450 uppercase font-black">Dimensions</span>
               <span class="text-zinc-800 dark:text-zinc-100 font-bold truncate block" [title]="modelDimensions().x + ' x ' + modelDimensions().y + ' x ' + modelDimensions().z + ' mm'">{{ modelDimensions().x }}x{{ modelDimensions().y }}x{{ modelDimensions().z }} mm</span>
+            </div>
+          </div>
+
+          <!-- Viewport Settings & Lighting Studio controls panel -->
+          <div class="bg-zinc-50 dark:bg-zinc-900/40 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+            <div class="flex items-center gap-1.5 pb-1 border-b border-zinc-200/60 dark:border-zinc-850">
+              <mat-icon class="text-zinc-400 scale-75">tune</mat-icon>
+              <span class="text-[9px] uppercase font-black tracking-wider text-zinc-500">Viewport Settings & Lighting Studio</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="space-y-1">
+                <div class="flex justify-between items-center text-[8px] uppercase font-black text-zinc-400">
+                  <span>Ambient Light</span>
+                  <span class="font-mono">{{ ambientLight() | percent:'1.0-0' }}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0.0" 
+                  max="1.0" 
+                  step="0.05" 
+                  [value]="ambientLight()" 
+                  (input)="ambientLight.set($any($event.target).valueAsNumber)" 
+                  class="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+              <div class="space-y-1">
+                <div class="flex justify-between items-center text-[8px] uppercase font-black text-zinc-400">
+                  <span>Key Light</span>
+                  <span class="font-mono">{{ keyLight() | percent:'1.0-0' }}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0.0" 
+                  max="1.0" 
+                  step="0.05" 
+                  [value]="keyLight()" 
+                  (input)="keyLight.set($any($event.target).valueAsNumber)" 
+                  class="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+              <div class="space-y-1">
+                <div class="flex justify-between items-center text-[8px] uppercase font-black text-zinc-400">
+                  <span>Fill Light</span>
+                  <span class="font-mono">{{ fillLight() | percent:'1.0-0' }}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0.0" 
+                  max="1.0" 
+                  step="0.05" 
+                  [value]="fillLight()" 
+                  (input)="fillLight.set($any($event.target).valueAsNumber)" 
+                  class="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -333,10 +391,7 @@
                 <span class="text-zinc-500 dark:text-zinc-400">Setup Cost:</span>
                 <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().setupCost }}</span>
               </div>
-              <div class="flex justify-between">
-                <span class="text-zinc-500 dark:text-zinc-400">GST ({{ serviceConfig()?.gstTaxRate || 18 }}%):</span>
-                <span class="text-zinc-800 dark:text-zinc-200 font-bold">₹{{ estimatedReport().gstTax }}</span>
-              </div>
+
               <div class="flex justify-between col-span-2 border-t border-zinc-200 dark:border-zinc-800 pt-3">
                 <span class="text-zinc-550 dark:text-zinc-400 font-bold">Shipping:</span>
                 <span class="text-zinc-800 dark:text-zinc-200 font-bold font-mono">

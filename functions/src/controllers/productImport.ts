@@ -313,7 +313,10 @@ export const buildProductPayload = async (
   const variantItems = [];
   for (const variant of group.variants) {
     const images = uniqueArray(
-      (variant.uploadedImages || variant.images || [])
+      (variant.uploadedImages ||
+        variant.variantImages ||
+        variant.images ||
+        [])
         .map((img: string) => img.trim())
         .filter(Boolean),
     );

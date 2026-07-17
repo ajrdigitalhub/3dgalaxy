@@ -190,19 +190,12 @@ export class OrdersTracking {
   }
 
   triggerPrintInvoice(ord: Order) {
-    const gstInfo = ord.gstNumber
-      ? `
-Company Name: ${ord.companyName}
-GSTIN: ${ord.gstNumber}
-`
-      : "";
     const pdfData = `
-3D GALAXY PRINTING LABS - OFFICIAL SALES TAX INVOICE
+3D GALAXY PRINTING LABS - OFFICIAL INVOICE
 ===================================================
 Invoice Number: ${ord.orderNumber}
-Issued To: ${ord.customerName} (Email: ${ord.customerEmail}, Phone: ${ord.customerPhone})${gstInfo}
+Issued To: ${ord.customerName} (Email: ${ord.customerEmail}, Phone: ${ord.customerPhone})
 Date of Invoice: ${ord.date}
-GSTIN Registration Type: ${ord.gstNumber ? "B2B Taxable Business Supply" : "Taxable Business Supply B2C / B2B"}
 
 Particular Component list:
 ${ord.items.map((i) => `- ${i.name} (x${i.quantity}) @ ₹${i.price} each.`).join("\n")}
@@ -210,7 +203,6 @@ ${ord.items.map((i) => `- ${i.name} (x${i.quantity}) @ ₹${i.price} each.`).joi
 Subtotal Net: ₹${ord.subtotal}
 Loyalty Code Rebates: -₹${ord.discount}
 Secured Logistics Shipping Run: ₹${ord.shippingFee}
-Gross Included GST Taxes (18%): ₹${ord.tax}
 ---------------------------------------------------
 Grand Net Payable (INR): ₹${ord.grandTotal} (Paid via ${ord.paymentMethod})
 ===================================================

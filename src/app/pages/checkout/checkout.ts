@@ -344,10 +344,6 @@ export class CheckoutComponent implements OnInit {
       );
       return false;
     }
-    if (this.isBusinessPurchase() && !this.isGstValid()) {
-      this.toast.error("Please enter valid GST details for business purchase.");
-      return false;
-    }
     return true;
   }
 
@@ -392,12 +388,7 @@ export class CheckoutComponent implements OnInit {
       paymentMethod: this.paymentMethod(),
       couponCode: this.ds.activeCouponCode() || null,
       notes: this.orderNotes(),
-      businessPurchase: this.isBusinessPurchase()
-        ? {
-            gstNumber: this.gstNumber(),
-            companyName: this.companyName(),
-          }
-        : null,
+      businessPurchase: null,
       totalAmount: this.grandTotal(),
     };
 

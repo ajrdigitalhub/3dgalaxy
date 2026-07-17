@@ -766,14 +766,26 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, data: recentPurchasesCache.data, cached: true });
     }
 
-    const allowedStatuses = ['paid', 'PAID', 'confirmed', 'CONFIRMED', 'processing', 'PROCESSING', 'completed', 'COMPLETED'];
+    const rawSettings = await prisma.themeSetting.findUnique({
+      where: { keyName: 'global-settings' }
+    });
+    const settings = rawSettings ? (typeof rawSettings.value === 'string' ? JSON.parse(rawSettings.value) : rawSettings.value) as any : null;
+    const config = settings?.recentPurchasePopup ?? {};
 
+    const maxItems = Number(config.maxItems || 20);
+    const windowMinutes = Number(config.recentPurchaseMinutes || 10);
+    const timeWindow = new Date(Date.now() - windowMinutes * 60 * 1000);
+
+    const allowedStatuses = ['paid', 'PAID', 'confirmed', 'CONFIRMED', 'processing', 'PROCESSING', 'completed', 'COMPLETED', 'pending', 'PENDING'];
+
+    // 1. Fetch real orders in the window
     const orders = await prisma.order.findMany({
       where: {
-        status: { in: allowedStatuses }
+        status: { in: allowedStatuses },
+        createdAt: { gte: timeWindow }
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: maxItems,
       include: {
         customer: {
           include: { user: true }
@@ -801,7 +813,6 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
         user?.email || null
       );
 
-      // Extract location from address or customer record
       let city = 'India';
       let state = '';
       let country = 'India';
@@ -817,7 +828,6 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
         } catch (_) {}
       }
 
-      // Get product image
       let productImage = 'https://picsum.photos/seed/product/80/80';
       if (firstItem.product) {
         try {
@@ -842,17 +852,65 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
         productSlug: firstItem.product?.slug || '',
         minutesAgo: getMinutesAgo(order.createdAt)
       });
-
-      if (items.length >= 20) break;
     }
 
-    const finalData = items.length > 0 ? items : DEMO_PURCHASES;
-    recentPurchasesCache = { data: finalData, expiresAt: Date.now() + RECENT_PURCHASES_TTL };
+    let finalData = items;
+    if (finalData.length === 0) {
+      // 2. Fetch active catalog products to dynamically mock recent purchases
+      const activeProducts = await prisma.product.findMany({
+        where: { isActive: true },
+        take: maxItems,
+        select: { id: true, name: true, slug: true, images: true }
+      });
 
+      const mockNames = ['T*** S', 'R*** K', 'A*** M', 'V*** P', 'M*** D', 'S*** A', 'N*** C', 'P*** G'];
+      const mockCities = [
+        { city: 'Mumbai', state: 'Maharashtra', country: 'India' },
+        { city: 'Bangalore', state: 'Karnataka', country: 'India' },
+        { city: 'Chennai', state: 'Tamil Nadu', country: 'India' },
+        { city: 'Gaya', state: 'Bihar', country: 'India' },
+        { city: 'New Delhi', state: 'Delhi', country: 'India' },
+        { city: 'Hyderabad', state: 'Telangana', country: 'India' },
+        { city: 'Pune', state: 'Maharashtra', country: 'India' }
+      ];
+
+      const count = Math.min(maxItems, activeProducts.length);
+      for (let i = 0; i < count; i++) {
+        const p = activeProducts[i];
+        const name = mockNames[i % mockNames.length];
+        const loc = mockCities[i % mockCities.length];
+        
+        let productImage = 'https://picsum.photos/seed/product/80/80';
+        try {
+          const imgs = typeof p.images === 'string' ? JSON.parse(p.images as any) : (p.images as any[]);
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            const img = imgs[0];
+            productImage = typeof img === 'string' ? img : (img.url || productImage);
+          }
+        } catch (_) {}
+
+        finalData.push({
+          id: `mock_${p.id}_${i}`,
+          customerName: name,
+          city: loc.city,
+          state: loc.state,
+          country: loc.country,
+          productName: p.name,
+          productImage,
+          productSlug: p.slug,
+          minutesAgo: Math.floor(Math.random() * (windowMinutes - 1)) + 1
+        });
+      }
+    }
+
+    if (finalData.length === 0) {
+      finalData = DEMO_PURCHASES;
+    }
+
+    recentPurchasesCache = { data: finalData, expiresAt: Date.now() + RECENT_PURCHASES_TTL };
     return res.status(200).json({ success: true, data: finalData });
   } catch (err: any) {
     console.error('recent-purchases error:', err.message);
-    // Fallback gracefully to demo data
     return res.status(200).json({ success: true, data: DEMO_PURCHASES, fallback: true });
   }
 });

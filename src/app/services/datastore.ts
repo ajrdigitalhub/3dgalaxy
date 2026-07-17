@@ -1263,7 +1263,7 @@ export class DatastoreService {
   async addCategory(cat: Omit<Category, 'id'>) {
     return new Promise((resolve, reject) => {
       this.api.post('/categories', cat).subscribe({
-        next: (res) => { this.reloadCategories(); resolve(res); },
+        next: (res) => { this.reloadCategories(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1272,7 +1272,7 @@ export class DatastoreService {
   async editCategory(id: string, updated: Partial<Category>) {
     return new Promise((resolve, reject) => {
       this.api.put(`/categories/${id}`, updated).subscribe({
-        next: (res) => { this.reloadCategories(); resolve(res); },
+        next: (res) => { this.reloadCategories(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1281,7 +1281,7 @@ export class DatastoreService {
   async deleteCategory(id: string) {
     return new Promise((resolve, reject) => {
       this.api.delete(`/categories/${id}`).subscribe({
-        next: (res) => { this.reloadCategories(); resolve(res); },
+        next: (res) => { this.reloadCategories(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1291,7 +1291,7 @@ export class DatastoreService {
   async addBrand(brand: Omit<Brand, 'id'>) {
     return new Promise((resolve, reject) => {
       this.api.post('/brands', brand).subscribe({
-        next: (res) => { this.reloadBrands(); resolve(res); },
+        next: (res) => { this.reloadBrands(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1300,7 +1300,7 @@ export class DatastoreService {
   async editBrand(id: string, updated: Partial<Brand>) {
     return new Promise((resolve, reject) => {
       this.api.put(`/brands/${id}`, updated).subscribe({
-        next: (res) => { this.reloadBrands(); resolve(res); },
+        next: (res) => { this.reloadBrands(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1309,7 +1309,7 @@ export class DatastoreService {
   async deleteBrand(id: string) {
     return new Promise((resolve, reject) => {
       this.api.delete(`/brands/${id}`).subscribe({
-        next: (res) => { this.reloadBrands(); resolve(res); },
+        next: (res) => { this.reloadBrands(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1319,7 +1319,7 @@ export class DatastoreService {
   async addMenuItem(item: Omit<MenuItem, 'id'>) {
     return new Promise((resolve, reject) => {
       this.api.post('/menus', item).subscribe({
-        next: (res) => { this.reloadMenus(); resolve(res); },
+        next: (res) => { this.reloadMenus(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1328,7 +1328,7 @@ export class DatastoreService {
   async editMenuItem(id: string, updated: Partial<MenuItem>) {
     return new Promise((resolve, reject) => {
       this.api.put(`/menus/${id}`, updated).subscribe({
-        next: (res) => { this.reloadMenus(); resolve(res); },
+        next: (res) => { this.reloadMenus(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1337,7 +1337,7 @@ export class DatastoreService {
   async deleteMenuItem(id: string) {
     return new Promise((resolve, reject) => {
       this.api.delete(`/menus/${id}`).subscribe({
-        next: (res) => { this.reloadMenus(); resolve(res); },
+        next: (res) => { this.reloadMenus(true); resolve(res); },
         error: (err) => reject(err)
       });
     });
@@ -1352,7 +1352,7 @@ export class DatastoreService {
         sku: p.sku || `SKU-${Date.now()}`
       }).subscribe({
         next: (res) => {
-           this.reloadProducts(false);
+           this.reloadProducts(false, true);
            resolve(res);
         },
         error: (e) => reject(e)
@@ -1364,7 +1364,7 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.put(`/products/${id}`, updated).subscribe({
         next: (res) => {
-           this.reloadProducts(false);
+           this.reloadProducts(false, true);
            resolve(res);
         },
         error: (e) => reject(e)
@@ -1376,7 +1376,7 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.delete(`/products/${id}`).subscribe({
         next: () => {
-           this.reloadProducts(false);
+           this.reloadProducts(false, true);
            resolve(true);
         },
         error: (e) => reject(e)
@@ -1406,6 +1406,7 @@ export class DatastoreService {
         if (res && res.data) {
            this.products.set(res.data.map((p: any) => ({
              id: p.id,
+             createdAt: p.createdAt,
              name: p.name,
              slug: p.slug,
              sku: p.sku || '',
@@ -1444,6 +1445,7 @@ export class DatastoreService {
              codAvailable: !!p.codAvailable,
              freeShippingEligible: !!p.freeShippingEligible,
              is360Supported: p.is360Supported || false,
+             variants: p.variants || [],
              tags: []
            })));
         } 
@@ -2034,9 +2036,8 @@ export class DatastoreService {
     const machineFee = estimatedHours * machineRate;
 
     const baseCost = Math.round(materialCost + machineFee);
-    const gstRate = config.gstTaxRate !== undefined ? config.gstTaxRate : 18;
-    const gstTax = Math.round(baseCost * (gstRate / 100));
-    const grandCost = baseCost + gstTax;
+    const gstTax = 0;
+    const grandCost = baseCost;
 
     return {
       weightGrams: estimatedWeight,

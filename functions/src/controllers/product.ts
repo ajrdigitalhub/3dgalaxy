@@ -543,6 +543,19 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 
     const relations = await populateProductRelations(item);
 
+    if (relations.relatedProducts.length === 0 && item.categoryId) {
+      relations.relatedProducts = await prisma.product.findMany({
+        where: {
+          categoryId: item.categoryId,
+          id: { not: item.id },
+          deletedAt: null,
+          isActive: true,
+        },
+        take: 8,
+        include: { brand: true, category: true },
+      });
+    }
+
     const masterData = {
       images: safeParseArray(item.images),
       specifications: safeParseArray(item.specifications),

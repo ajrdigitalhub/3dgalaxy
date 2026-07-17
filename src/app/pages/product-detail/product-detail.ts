@@ -6,6 +6,7 @@ import {
   computed,
   ElementRef,
   ViewChild,
+  effect,
 } from "@angular/core";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -213,27 +214,14 @@ export class ProductDetail {
     return images.filter(Boolean);
   }
 
-  private syncVariantSelection(product: any, variant: any) {
-    const variantImages = this.extractVariantImages(variant);
-    if (variantImages.length > 0) {
-      this.activeImage.set(this.getImageUrl(variantImages[0]));
-    } else if (product?.images?.length) {
-      this.activeImage.set(this.getImageUrl(product.images[0]));
-    }
+  private findBestVariantForOptions(product: any, opts: Record<string, string>) {
+    if (!product?.variants?.length) return null;
 
-    const mappedOptions = this.getSelectedOptionsFromVariant(product, variant);
-    if (Object.keys(mappedOptions).length > 0) {
-      this.selectedOptions.set(mappedOptions);
-    }
-  }
-
-  selectedVariant = computed(() => {
-    const p = this.product();
-    if (!p || !p.variants || p.variants.length === 0) return null;
-    const opts = this.selectedOptions();
-    const matched = p.variants.find((variant: any) => {
+    const exact = product.variants.find((variant: any) => {
       const variantOptions = this.getVariantOptionValues(variant);
-      if (!Object.keys(variantOptions).length) return false;
+      if (!Object.keys(variantOptions).length || !Object.keys(opts).length) {
+        return false;
+      }
       return Object.keys(opts).every((key) => {
         const normalizedKey = this.normalizeOptionKey(key);
         const matchedKey = Object.keys(variantOptions).find((variantKey) => {
@@ -251,7 +239,91 @@ export class ProductDetail {
         );
       });
     });
-    return matched || null;
+    if (exact) return exact;
+
+    let bestVariant: any = null;
+    let bestScore = -1;
+    product.variants.forEach((variant: any) => {
+      const variantOptions = this.getVariantOptionValues(variant);
+      let score = 0;
+      Object.entries(opts).forEach(([key, value]) => {
+        const normalizedKey = this.normalizeOptionKey(key);
+        const matchedKey = Object.keys(variantOptions).find((variantKey) => {
+          const normalizedVariantKey = this.normalizeOptionKey(variantKey);
+          return (
+            normalizedVariantKey === normalizedKey ||
+            normalizedVariantKey.includes(normalizedKey) ||
+            normalizedKey.includes(normalizedVariantKey)
+          );
+        });
+        if (
+          matchedKey &&
+          this.normalizeOptionValue(variantOptions[matchedKey]) ===
+            this.normalizeOptionValue(value)
+        ) {
+          score += 1;
+        }
+      });
+      if (score > bestScore) {
+        bestScore = score;
+        bestVariant = variant;
+      }
+    });
+
+    return bestScore > 0 ? bestVariant : null;
+  }
+
+  private syncActiveImageFromVariant(variant: any, product?: any) {
+    const variantImages = this.extractVariantImages(variant);
+    if (variantImages.length > 0) {
+      this.activeImage.set(this.getImageUrl(variantImages[0]));
+      this.is360Active.set(false);
+      return;
+    }
+
+    const fallbackProduct = product || this.product();
+    if (fallbackProduct?.images?.length) {
+      this.activeImage.set(this.getImageUrl(fallbackProduct.images[0]));
+      this.is360Active.set(false);
+    }
+  }
+
+  private syncVariantSelection(product: any, variant: any) {
+    this.syncActiveImageFromVariant(variant, product);
+
+    const mappedOptions = this.getSelectedOptionsFromVariant(product, variant);
+    if (Object.keys(mappedOptions).length > 0) {
+      this.selectedOptions.set(mappedOptions);
+    }
+
+    if (variant?.id) {
+      this.lastSyncedVariantId.set(String(variant.id));
+    }
+  }
+
+  selectedVariant = computed(() => {
+    const p = this.product();
+    if (!p?.variants?.length) return null;
+
+    const opts = this.selectedOptions();
+    const optionNames = Array.isArray(p.options)
+      ? p.options.map((option: any) => this.getOptionValueStr(option.name))
+      : [];
+
+    if (
+      optionNames.length > 0 &&
+      !optionNames.every((name: string) => Boolean(opts[name]))
+    ) {
+      return null;
+    }
+
+    return this.findBestVariantForOptions(p, opts);
+  });
+
+  galleryVariant = computed(() => {
+    const p = this.product();
+    if (!p?.variants?.length) return null;
+    return this.findBestVariantForOptions(p, this.selectedOptions());
   });
 
   galleryImages = computed(() => {
@@ -259,7 +331,7 @@ export class ProductDetail {
       ? this.product()?.images
       : [];
 
-    const variant = this.selectedVariant();
+    const variant = this.galleryVariant();
     const variantImages: any[] = [];
     if (variant) {
       if (Array.isArray(variant.images)) {
@@ -371,6 +443,9 @@ export class ProductDetail {
   draftComment = signal<string>("");
 
   fetchedProduct = signal<any>(null);
+  fetchedRelatedProducts = signal<Product[]>([]);
+  isLoadingRelatedProducts = signal(false);
+  private lastSyncedVariantId = signal<string | null>(null);
 
   product = computed(() => {
     // Return fetched details if available, else structural outline
@@ -459,51 +534,99 @@ export class ProductDetail {
   );
 
   relatedProducts = computed(() => {
+    const explicit = this.fetchedRelatedProducts();
+    if (explicit.length > 0) {
+      return explicit.slice(0, 8);
+    }
+
     const p = this.product();
     if (!p) return [];
 
-    const normalizeProduct = (item: any) => {
-      if (!item) return null;
-      if (typeof item === "object" && item.name) return item;
-      if (typeof item === "object" && item.relatedProduct)
-        return item.relatedProduct;
-      const id =
-        typeof item === "string"
-          ? item
-          : item.id || item.relatedToId || item.relatedProduct?.id;
-      if (!id) return null;
-      return this.ds.products().find((x) => x.id === id || x.slug === id);
-    };
-
-    let rels = p.relatedProducts;
-    if (typeof rels === "string") {
-      try {
-        rels = JSON.parse(rels);
-      } catch {
-        rels = [];
-      }
-    }
-
-    const explicitProducts = Array.isArray(rels)
-      ? rels.map(normalizeProduct).filter((x): x is Product => Boolean(x))
-      : [];
-
-    if (explicitProducts.length > 0) {
-      return Array.from(
-        new Map(
-          explicitProducts.map((product) => [
-            product.id || product.slug,
-            product,
-          ]),
-        ).values(),
-      ).slice(0, 8);
-    }
-
+    const categoryId = p.category_id || p.categoryId;
     return this.ds
       .products()
-      .filter((x) => x.category_id === p.category_id && x.id !== p.id)
+      .filter((x) => {
+        const itemCategory = x.category_id || (x as any).categoryId;
+        return itemCategory === categoryId && x.id !== p.id;
+      })
       .slice(0, 8);
   });
+
+  private normalizeRelatedProduct(item: any): Product | null {
+    if (!item) return null;
+    if (typeof item === "object" && item.name && item.slug) {
+      return {
+        ...(item as Product),
+        category_id: item.category_id || item.categoryId || "",
+        brand: item.brand?.name || item.brand || "",
+        mrp: item.mrp || item.basePrice || 0,
+        sale_price: item.sale_price || item.salePrice || item.basePrice || 0,
+        salePrice: item.salePrice || item.sale_price || item.basePrice || 0,
+        dealer_price: item.dealer_price || item.dealerPrice || 0,
+        images: Array.isArray(item.images)
+          ? item.images.map((img: any) =>
+              typeof img === "string" ? img : img?.url || img,
+            )
+          : [],
+      } as Product;
+    }
+
+    const id =
+      typeof item === "string"
+        ? item
+        : item.id || item.relatedToId || item.relatedProduct?.id;
+    if (!id) return null;
+    const fromStore = this.ds.products().find((x) => x.id === id || x.slug === id);
+    return fromStore ? this.normalizeRelatedProduct(fromStore) : null;
+  }
+
+  private normalizeRelatedProducts(items: any[]): Product[] {
+    const normalized = (Array.isArray(items) ? items : [])
+      .map((item) => this.normalizeRelatedProduct(item))
+      .filter((item): item is Product => Boolean(item));
+
+    return Array.from(
+      new Map(
+        normalized.map((product) => [product.id || product.slug, product]),
+      ).values(),
+    );
+  }
+
+  private async loadRelatedProducts(product: any, explicit: any[] = []) {
+    const normalizedExplicit = this.normalizeRelatedProducts(explicit);
+    if (normalizedExplicit.length > 0) {
+      this.fetchedRelatedProducts.set(normalizedExplicit);
+      return;
+    }
+
+    const categoryId = product?.categoryId || product?.category_id;
+    if (!categoryId) {
+      this.fetchedRelatedProducts.set([]);
+      return;
+    }
+
+    this.isLoadingRelatedProducts.set(true);
+    try {
+      const res = await fetch(
+        `${environment.apiUrl}/products?category=${encodeURIComponent(categoryId)}&limit=8`,
+      );
+      const payload = await res.json();
+      const rows = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.products)
+          ? payload.products
+          : [];
+      const related = this.normalizeRelatedProducts(
+        rows.filter((item: any) => item.id !== product.id),
+      );
+      this.fetchedRelatedProducts.set(related.slice(0, 8));
+    } catch (error) {
+      console.error("Failed to load related products:", error);
+      this.fetchedRelatedProducts.set([]);
+    } finally {
+      this.isLoadingRelatedProducts.set(false);
+    }
+  }
 
   optionalFilaments = computed(() => {
     return this.ds
@@ -564,17 +687,20 @@ export class ProductDetail {
       this.router.navigate([], {
         fragment: "reviews",
         queryParamsHandling: "merge",
+        replaceUrl: true,
       });
     }
 
-    setTimeout(() => {
-      const reviewSection = this.document.getElementById("reviews");
-      if (reviewSection) {
-        const top =
-          reviewSection.getBoundingClientRect().top + window.scrollY - 96;
-        window.scrollTo({ top, behavior: "smooth" });
-      }
-    }, 0);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const reviewSection = this.document.getElementById("reviews");
+        if (reviewSection) {
+          const top =
+            reviewSection.getBoundingClientRect().top + window.scrollY - 96;
+          window.scrollTo({ top, behavior: "smooth" });
+        }
+      }, 120);
+    });
   }
 
   addRelatedToCart(product: Product) {
@@ -702,14 +828,18 @@ export class ProductDetail {
     this.selectedOptions.update((opts) => ({ ...opts, [optionName]: value }));
 
     const product = this.product();
-    const variant = this.selectedVariant();
-    if (product) {
-      this.syncVariantSelection(product, variant);
-    }
+    if (!product) return;
 
-    if (variant) {
+    const variant =
+      this.galleryVariant() ||
+      this.findBestVariantForOptions(product, this.selectedOptions());
+    this.syncActiveImageFromVariant(variant, product);
+
+    const purchaseVariant = this.selectedVariant();
+    if (purchaseVariant) {
+      this.lastSyncedVariantId.set(String(purchaseVariant.id));
       this.router.navigate([], {
-        queryParams: { variant: variant.id },
+        queryParams: { variant: purchaseVariant.id },
         queryParamsHandling: "merge",
         replaceUrl: true,
       });
@@ -731,11 +861,45 @@ export class ProductDetail {
     );
   }
 
+  trackGalleryImage(index: number, img: any) {
+    return this.getImageUrl(img) || index;
+  }
+
+  trackRelatedProduct(index: number, product: Product) {
+    return product.id || product.slug || index;
+  }
+
+  getRelatedProductImage(product: Product): string {
+    const first = product.images?.[0];
+    return this.getImageUrl(first);
+  }
+
+  getRelatedProductRating(product: Product): string {
+    const reviews = product.reviews || [];
+    if (!reviews.length) return "New";
+    const sum = reviews.reduce(
+      (acc: number, review: any) =>
+        acc + Number(review.rating || review.stars || 0),
+      0,
+    );
+    return (sum / reviews.length).toFixed(1);
+  }
+
   constructor() {
+    effect(() => {
+      const variant = this.galleryVariant();
+      const variantId = variant?.id ? String(variant.id) : null;
+      if (!variantId || variantId === this.lastSyncedVariantId()) return;
+      this.syncActiveImageFromVariant(variant);
+      this.lastSyncedVariantId.set(variantId);
+    });
+
     this.route.params.subscribe((p) => {
       if (p["slug"]) {
         const slugStr = p["slug"];
         this.slug.set(slugStr);
+        this.fetchedRelatedProducts.set([]);
+        this.lastSyncedVariantId.set(null);
 
         // Fetch detailed product data
         this.isLoadingProduct.set(true);
@@ -746,6 +910,9 @@ export class ProductDetail {
               // Reconstruct flat object for existing frontend properties mapped to it
               const merged = {
                 ...detailedProd.product,
+                category_id:
+                  detailedProd.product?.categoryId ||
+                  detailedProd.product?.category_id,
                 options:
                   detailedProd.options || detailedProd.product?.options || [],
                 images: detailedProd.images,
@@ -755,6 +922,10 @@ export class ProductDetail {
               };
               this.fetchedProduct.set(merged);
               this.initializeDefaultVariant(merged);
+              void this.loadRelatedProducts(
+                merged,
+                detailedProd.relatedProducts || merged.relatedProducts || [],
+              );
             }
           })
           .catch((err) =>
@@ -843,7 +1014,20 @@ export class ProductDetail {
     this.route.fragment.subscribe((fragment) => {
       if (fragment === "reviews") {
         this.activeTab.set("reviews");
-        setTimeout(() => this.scrollToReviews(), 0);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const reviewSection = this.document.getElementById("reviews");
+            if (reviewSection) {
+              this.reviewsHighlight.set(true);
+              const top =
+                reviewSection.getBoundingClientRect().top +
+                window.scrollY -
+                96;
+              window.scrollTo({ top, behavior: "smooth" });
+              setTimeout(() => this.reviewsHighlight.set(false), 1600);
+            }
+          }, 150);
+        });
       }
     });
   }
@@ -855,8 +1039,8 @@ export class ProductDetail {
     }
   }
 
-  selectImage(img: string) {
-    this.activeImage.set(img);
+  selectImage(img: any) {
+    this.activeImage.set(this.getImageUrl(img));
     this.is360Active.set(false);
   }
 

@@ -45,8 +45,8 @@ export class OrderListComponent {
     return this.draftSelectedItemsList().reduce((sum, item) => sum + (item.product.sale_price * item.qty), 0);
   });
 
-  draftTax = computed(() => Math.round(this.draftSubtotal() * (this.taxRate() / 100)));
-  draftGrandTotal = computed(() => this.draftSubtotal() + this.draftTax() - this.draftDiscountPercent());
+  draftTax = computed(() => 0);
+  draftGrandTotal = computed(() => this.draftSubtotal() - this.draftDiscountPercent());
 
   setSubTab(tab: 'orders' | 'draft-orders' | 'abandoned-carts' | 'quotes') {
     this.activeSubTab.set(tab);

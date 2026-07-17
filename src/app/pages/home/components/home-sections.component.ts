@@ -136,41 +136,122 @@ export class HomeShowcaseTwoComponent {
 @Component({
   selector: "app-home-category-view-filament",
   standalone: true,
-  imports: [CommonModule, ScrollRevealDirective],
+  imports: [CommonModule, RouterModule, ScrollRevealDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section
-      [id]="section.id"
-      class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
-      appScrollReveal="scale-in"
-    >
-      <div class="space-y-2">
-        <h1
-          class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none"
-        >
-          {{ section.config["title"] || "PREMIUM FILAMENT" }}
-        </h1>
-        <h2
-          class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]"
-        >
-          {{ section.config["subtitle"] || "Ecosystem Materials" }}
-        </h2>
-      </div>
-      <div class="pt-4">
-        <button
-          (click)="selectFilterCategory('materials')"
-          class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer"
-        >
-          {{ section.config["buttonText"] || "VIEW ALL" }}
-        </button>
-      </div>
-    </section>
+    @if (isVisible()) {
+      <section
+        [id]="section.id"
+        class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center space-y-12 select-none"
+        appScrollReveal="fade"
+      >
+        <div class="text-center space-y-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-650 font-display">
+            {{ section.config["subtitle"] || "Premium Collection" }}
+          </h2>
+          <h3 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter font-display uppercase font-serif">
+            {{ category()?.name || section.config["title"] || "Filament" }}
+          </h3>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 w-full">
+          @for (p of products(); track p.id) {
+            <a
+              [routerLink]="['/product', p.slug]"
+              class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
+            >
+              <!-- Image container -->
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+                <img
+                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [alt]="p.name"
+                  class="max-w-full max-h-full object-contain"
+                />
+                @if (p.stock <= 0) {
+                  <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
+                    Sold out
+                  </span>
+                }
+              </div>
+
+              <!-- Title & Price -->
+              <div class="flex-1 flex flex-col justify-between w-full px-1">
+                <h4 class="text-xs font-semibold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
+                  {{ p.name }}
+                </h4>
+                <p class="text-xs font-black text-[#d65108] dark:text-orange-400 mt-2 font-mono">
+                  {{ formatPrice(p) }}
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+
+        <div class="pt-4">
+          <button
+            (click)="selectFilterCategory(category()?.slug || 'materials')"
+            class="h-11 px-8 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-xs font-black uppercase tracking-widest hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all shadow-md cursor-pointer border-none rounded-none font-sans min-w-[150px]"
+          >
+            {{ section.config["buttonText"] || "View all" }}
+          </button>
+        </div>
+      </section>
+    }
   `,
 })
 export class HomeCategoryViewFilamentComponent {
   ds = inject(DatastoreService);
   router = inject(Router);
   @Input() section!: any;
+
+  category = computed(() => {
+    return this.ds.categories().find(c => c.slug === 'materials' || c.id === 'materials');
+  });
+
+  isVisible = computed(() => {
+    return this.category()?.isActive !== false && this.category()?.isFeatured !== false;
+  });
+
+  isDealerPriceActive = computed(() => {
+    const r = this.ds.userRole();
+    return (
+      r === "admin" ||
+      r === "super-admin" ||
+      (this.ds.activeUser()?.rewardPoints || 0) > 300
+    );
+  });
+
+  products = computed(() => {
+    const cat = this.category();
+    if (!cat) return [];
+    
+    const categories = this.ds.categories();
+    const childIds = categories
+      .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
+      .map((c) => c.id);
+    const targetIds = [cat.id, ...childIds];
+    
+    return this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+      .slice(0, 6);
+  });
+
+  formatPrice(p: any): string {
+    const isDealer = this.isDealerPriceActive();
+    const price = isDealer
+      ? p.dealer_price || p.sale_price || p.mrp
+      : p.sale_price || p.mrp;
+      
+    const hasVariants = p.variants && p.variants.length > 0;
+    const formatted = Number(price).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    const prefix = hasVariants ? 'From ' : '';
+    return `${prefix}Rs. ${formatted}`;
+  }
 
   selectFilterCategory(cat: string) {
     this.router.navigate(["/products"], { queryParams: { category: cat } });
@@ -180,41 +261,122 @@ export class HomeCategoryViewFilamentComponent {
 @Component({
   selector: "app-home-category-view-spare-parts",
   standalone: true,
-  imports: [CommonModule, ScrollRevealDirective],
+  imports: [CommonModule, RouterModule, ScrollRevealDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section
-      [id]="section.id"
-      class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
-      appScrollReveal="scale-in"
-    >
-      <div class="space-y-2">
-        <h1
-          class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none"
-        >
-          {{ section.config["title"] || "SPARE PARTS" }}
-        </h1>
-        <h2
-          class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]"
-        >
-          {{ section.config["subtitle"] || "Original Components" }}
-        </h2>
-      </div>
-      <div class="pt-4">
-        <button
-          (click)="selectFilterCategory('spare-parts')"
-          class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer"
-        >
-          {{ section.config["buttonText"] || "VIEW ALL" }}
-        </button>
-      </div>
-    </section>
+    @if (isVisible()) {
+      <section
+        [id]="section.id"
+        class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center space-y-12 select-none"
+        appScrollReveal="fade"
+      >
+        <div class="text-center space-y-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-650 font-display">
+            {{ section.config["subtitle"] || "Premium Components" }}
+          </h2>
+          <h3 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter font-display uppercase font-serif">
+            {{ category()?.name || section.config["title"] || "Spare Parts" }}
+          </h3>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 w-full">
+          @for (p of products(); track p.id) {
+            <a
+              [routerLink]="['/product', p.slug]"
+              class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
+            >
+              <!-- Image container -->
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+                <img
+                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [alt]="p.name"
+                  class="max-w-full max-h-full object-contain"
+                />
+                @if (p.stock <= 0) {
+                  <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
+                    Sold out
+                  </span>
+                }
+              </div>
+
+              <!-- Title & Price -->
+              <div class="flex-1 flex flex-col justify-between w-full px-1">
+                <h4 class="text-xs font-semibold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
+                  {{ p.name }}
+                </h4>
+                <p class="text-xs font-black text-[#d65108] dark:text-orange-400 mt-2 font-mono">
+                  {{ formatPrice(p) }}
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+
+        <div class="pt-4">
+          <button
+            (click)="selectFilterCategory(category()?.slug || 'spare-parts')"
+            class="h-11 px-8 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-xs font-black uppercase tracking-widest hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all shadow-md cursor-pointer border-none rounded-none font-sans min-w-[150px]"
+          >
+            {{ section.config["buttonText"] || "View all" }}
+          </button>
+        </div>
+      </section>
+    }
   `,
 })
 export class HomeCategoryViewSparePartsComponent {
   ds = inject(DatastoreService);
   router = inject(Router);
   @Input() section!: any;
+
+  category = computed(() => {
+    return this.ds.categories().find(c => c.slug === 'spare-parts' || c.id === 'spare-parts');
+  });
+
+  isVisible = computed(() => {
+    return this.category()?.isActive !== false && this.category()?.isFeatured !== false;
+  });
+
+  isDealerPriceActive = computed(() => {
+    const r = this.ds.userRole();
+    return (
+      r === "admin" ||
+      r === "super-admin" ||
+      (this.ds.activeUser()?.rewardPoints || 0) > 300
+    );
+  });
+
+  products = computed(() => {
+    const cat = this.category();
+    if (!cat) return [];
+    
+    const categories = this.ds.categories();
+    const childIds = categories
+      .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
+      .map((c) => c.id);
+    const targetIds = [cat.id, ...childIds];
+    
+    return this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+      .slice(0, 6);
+  });
+
+  formatPrice(p: any): string {
+    const isDealer = this.isDealerPriceActive();
+    const price = isDealer
+      ? p.dealer_price || p.sale_price || p.mrp
+      : p.sale_price || p.mrp;
+      
+    const hasVariants = p.variants && p.variants.length > 0;
+    const formatted = Number(price).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    const prefix = hasVariants ? 'From ' : '';
+    return `${prefix}Rs. ${formatted}`;
+  }
 
   selectFilterCategory(cat: string) {
     this.router.navigate(["/products"], { queryParams: { category: cat } });
@@ -224,41 +386,122 @@ export class HomeCategoryViewSparePartsComponent {
 @Component({
   selector: "app-home-category-view-3d-printer",
   standalone: true,
-  imports: [CommonModule, ScrollRevealDirective],
+  imports: [CommonModule, RouterModule, ScrollRevealDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section
-      [id]="section.id"
-      class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center justify-center text-center space-y-6"
-      appScrollReveal="scale-in"
-    >
-      <div class="space-y-2">
-        <h1
-          class="text-5xl md:text-6xl font-black tracking-widest text-neutral-950 dark:text-white uppercase font-display select-text leading-none"
-        >
-          {{ section.config["title"] || "3D PRINTERS" }}
-        </h1>
-        <h2
-          class="text-[10px] font-black uppercase tracking-[0.3em] text-[#d65108]"
-        >
-          {{ section.config["subtitle"] || "Flagship Systems" }}
-        </h2>
-      </div>
-      <div class="pt-4">
-        <button
-          (click)="selectFilterCategory('3d-printers')"
-          class="h-11 px-8 bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg font-black text-xs uppercase tracking-widest transition-all shadow-md cursor-pointer"
-        >
-          {{ section.config["buttonText"] || "VIEW ALL" }}
-        </button>
-      </div>
-    </section>
+    @if (isVisible()) {
+      <section
+        [id]="section.id"
+        class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center space-y-12 select-none"
+        appScrollReveal="fade"
+      >
+        <div class="text-center space-y-2">
+          <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-650 font-display">
+            {{ section.config["subtitle"] || "Flagship Systems" }}
+          </h2>
+          <h3 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter font-display uppercase font-serif">
+            {{ category()?.name || section.config["title"] || "3D Printers" }}
+          </h3>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 md:gap-8 w-full">
+          @for (p of products(); track p.id) {
+            <a
+              [routerLink]="['/product', p.slug]"
+              class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
+            >
+              <!-- Image container -->
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+                <img
+                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [alt]="p.name"
+                  class="max-w-full max-h-full object-contain"
+                />
+                @if (p.stock <= 0) {
+                  <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
+                    Sold out
+                  </span>
+                }
+              </div>
+
+              <!-- Title & Price -->
+              <div class="flex-1 flex flex-col justify-between w-full px-1">
+                <h4 class="text-xs font-semibold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
+                  {{ p.name }}
+                </h4>
+                <p class="text-xs font-black text-[#d65108] dark:text-orange-400 mt-2 font-mono">
+                  {{ formatPrice(p) }}
+                </p>
+              </div>
+            </a>
+          }
+        </div>
+
+        <div class="pt-4">
+          <button
+            (click)="selectFilterCategory(category()?.slug || '3d-printers')"
+            class="h-11 px-8 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-xs font-black uppercase tracking-widest hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all shadow-md cursor-pointer border-none rounded-none font-sans min-w-[150px]"
+          >
+            {{ section.config["buttonText"] || "View all" }}
+          </button>
+        </div>
+      </section>
+    }
   `,
 })
 export class HomeCategoryView3DPrinterComponent {
   ds = inject(DatastoreService);
   router = inject(Router);
   @Input() section!: any;
+
+  category = computed(() => {
+    return this.ds.categories().find(c => c.slug === '3d-printers' || c.id === '3d-printers');
+  });
+
+  isVisible = computed(() => {
+    return this.category()?.isActive !== false && this.category()?.isFeatured !== false;
+  });
+
+  isDealerPriceActive = computed(() => {
+    const r = this.ds.userRole();
+    return (
+      r === "admin" ||
+      r === "super-admin" ||
+      (this.ds.activeUser()?.rewardPoints || 0) > 300
+    );
+  });
+
+  products = computed(() => {
+    const cat = this.category();
+    if (!cat) return [];
+    
+    const categories = this.ds.categories();
+    const childIds = categories
+      .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
+      .map((c) => c.id);
+    const targetIds = [cat.id, ...childIds];
+    
+    return this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+      .slice(0, 6);
+  });
+
+  formatPrice(p: any): string {
+    const isDealer = this.isDealerPriceActive();
+    const price = isDealer
+      ? p.dealer_price || p.sale_price || p.mrp
+      : p.sale_price || p.mrp;
+      
+    const hasVariants = p.variants && p.variants.length > 0;
+    const formatted = Number(price).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    const prefix = hasVariants ? 'From ' : '';
+    return `${prefix}Rs. ${formatted}`;
+  }
 
   selectFilterCategory(cat: string) {
     this.router.navigate(["/products"], { queryParams: { category: cat } });
@@ -1443,5 +1686,121 @@ export class HomeInstagramFeedComponent {
         next: () => {},
         error: () => {},
       });
+  }
+}
+
+@Component({
+  selector: "app-home-category-showcase-row",
+  standalone: true,
+  imports: [CommonModule, RouterModule, ScrollRevealDirective],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section
+      class="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center space-y-12 select-none"
+      appScrollReveal="fade"
+    >
+      <div class="text-center space-y-2">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-650 font-display">
+          Featured Collection
+        </h2>
+        <h3 class="text-4xl md:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter font-display uppercase font-serif">
+          {{ category.name }}
+        </h3>
+      </div>
+
+      <!-- Products Grid (Recent 5 Products) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 w-full justify-center">
+        @for (p of products(); track p.id) {
+          <a
+            [routerLink]="['/product', p.slug]"
+            class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
+          >
+            <!-- Image container -->
+            <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+              <img
+                [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                [alt]="p.name"
+                class="max-w-full max-h-full object-contain"
+              />
+              @if (p.stock <= 0) {
+                <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
+                  Sold out
+                </span>
+              }
+            </div>
+
+            <!-- Title & Price -->
+            <div class="flex-1 flex flex-col justify-between w-full px-1">
+              <h4 class="text-xs font-semibold text-neutral-800 dark:text-neutral-200 line-clamp-2 leading-snug group-hover:text-orange-500 transition-colors">
+                {{ p.name }}
+              </h4>
+              <p class="text-xs font-black text-[#d65108] dark:text-orange-400 mt-2 font-mono">
+                {{ formatPrice(p) }}
+              </p>
+            </div>
+          </a>
+        }
+      </div>
+
+      <div class="pt-4">
+        <button
+          (click)="selectFilterCategory(category.slug)"
+          class="h-11 px-8 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-xs font-black uppercase tracking-widest hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-all shadow-md cursor-pointer border-none rounded-none font-sans min-w-[150px]"
+        >
+          View all
+        </button>
+      </div>
+    </section>
+  `,
+})
+export class HomeCategoryShowcaseRowComponent {
+  ds = inject(DatastoreService);
+  router = inject(Router);
+  
+  @Input() category!: Category;
+
+  isDealerPriceActive = computed(() => {
+    const r = this.ds.userRole();
+    return (
+      r === "admin" ||
+      r === "super-admin" ||
+      (this.ds.activeUser()?.rewardPoints || 0) > 300
+    );
+  });
+
+  products = computed(() => {
+    const cat = this.category;
+    if (!cat) return [];
+    
+    const categories = this.ds.categories();
+    const childIds = categories
+      .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
+      .map((c) => c.id);
+    const targetIds = [cat.id, ...childIds];
+    
+    return this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+      .slice(0, 5);
+  });
+
+  formatPrice(p: any): string {
+    const isDealer = this.isDealerPriceActive();
+    const price = isDealer
+      ? p.dealer_price || p.sale_price || p.mrp
+      : p.sale_price || p.mrp;
+      
+    const hasVariants = p.variants && p.variants.length > 0;
+    const formatted = Number(price).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    const prefix = hasVariants ? 'From ' : '';
+    return `${prefix}Rs. ${formatted}`;
+  }
+
+  selectFilterCategory(slug: string) {
+    this.router.navigate(["/products"], { queryParams: { category: slug } });
   }
 }
