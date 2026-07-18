@@ -28,7 +28,7 @@ export const generateSupportMessage = async (req: Request, res: Response) => {
     const supportPhone = settingsVal.support_phone || settingsVal.whatsappSettings?.adminPhoneNumber || '919999999999';
 
     const customerName = order.customer
-      ? [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ')
+      ? [order.customer.user?.firstName, order.customer.user?.lastName].filter(Boolean).join(' ')
       : 'Customer';
 
     const itemsText = order.items

@@ -484,10 +484,26 @@ export class ProductDetail {
     const p = this.product();
     if (!p) return [];
     const crumbs = [];
-    const cat = this.ds.categories().find((c) => c.id === p.category_id);
-    if (cat) {
-      crumbs.push({ label: cat.name, url: "/category/" + cat.slug });
+
+    const leafCategory = this.ds.categories().find((c) => c.id === (p.category_id || p.categoryId));
+    if (leafCategory) {
+      const categoryHierarchy = [];
+      let current: any = leafCategory;
+      const visited = new Set<string>();
+
+      while (current && !visited.has(current.id)) {
+        visited.add(current.id);
+        categoryHierarchy.unshift(current);
+
+        const parentId = current.parentId || current.parent_id;
+        current = parentId ? this.ds.categories().find((c) => c.id === parentId) : null;
+      }
+
+      categoryHierarchy.forEach((cat) => {
+        crumbs.push({ label: cat.name, url: "/category/" + cat.slug });
+      });
     }
+
     const brand = this.ds.brands().find((b) => b.name === p.brand);
     if (brand) {
       crumbs.push({ label: brand.name, url: "/brand/" + brand.slug });
@@ -825,17 +841,16 @@ export class ProductDetail {
   }
 
   selectOption(optionName: string, value: string) {
-    this.selectedOptions.update((opts) => ({ ...opts, [optionName]: value }));
+    const updatedOptions = { ...this.selectedOptions(), [optionName]: value };
+    this.selectedOptions.set(updatedOptions);
 
     const product = this.product();
     if (!product) return;
 
-    const variant =
-      this.galleryVariant() ||
-      this.findBestVariantForOptions(product, this.selectedOptions());
+    const variant = this.findBestVariantForOptions(product, updatedOptions);
     this.syncActiveImageFromVariant(variant, product);
 
-    const purchaseVariant = this.selectedVariant();
+    const purchaseVariant = this.findBestVariantForOptions(product, updatedOptions);
     if (purchaseVariant) {
       this.lastSyncedVariantId.set(String(purchaseVariant.id));
       this.router.navigate([], {

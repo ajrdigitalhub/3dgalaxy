@@ -1061,7 +1061,7 @@ export class DatastoreService {
   }
 
   private consolidatedHomeCache$?: Observable<any>;
-  private productsCache$?: Observable<{data: any[]}>;
+  private productsCache$?: Observable<any>;
   private brandsCache$?: Observable<Brand[]>;
   private menusCache$?: Observable<MenuItem[]>;
   private blogsCache$?: Observable<any>;
@@ -1119,7 +1119,7 @@ export class DatastoreService {
           }
 
           // 4. Initial Products
-          if (d.featuredProducts) {
+          if (d.featuredProducts && this.products().length <= d.featuredProducts.length) {
             this.products.set(d.featuredProducts);
           }
         }
@@ -1389,12 +1389,12 @@ export class DatastoreService {
       this.productsLoading.set(true);
     }
     if (force || !this.productsCache$) {
-      this.productsCache$ = this.api?.get<{data: any[]}>('/products').pipe(
+      this.productsCache$ = this.api?.get<any>('/products', { limit: 1000 }).pipe(
         shareReplay(1),
         catchError((err) => {
           console.error('Error loading products:', err);
           this.productsCache$ = undefined;
-          return of({ data: [] });
+          return of({ products: [] });
         }),
         finalize(() => {
           this.productsLoading.set(false);
@@ -1403,8 +1403,9 @@ export class DatastoreService {
     }
     this.productsCache$.subscribe({
       next: (res) => { 
-        if (res && res.data) {
-           this.products.set(res.data.map((p: any) => ({
+        const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
+        if (list) {
+           this.products.set(list.map((p: any) => ({
              id: p.id,
              createdAt: p.createdAt,
              name: p.name,
@@ -1900,15 +1901,18 @@ export class DatastoreService {
     }, 0);
   });
 
+  freeShippingThreshold = computed(() => {
+    const globalSettings = this.settingsService.shippingSettings() || {};
+    return globalSettings.freeShippingMinSpent !== undefined 
+      ? Number(globalSettings.freeShippingMinSpent) 
+      : (globalSettings.freeShippingThreshold !== undefined ? Number(globalSettings.freeShippingThreshold) : 3000);
+  });
+
   cartShipping = computed(() => {
     const sub = this.cartSubtotal();
     if (sub === 0) return 0;
 
-    const globalSettings = this.settingsService.shippingSettings() || {};
-    const threshold = globalSettings.freeShippingMinSpent !== undefined 
-      ? Number(globalSettings.freeShippingMinSpent) 
-      : (globalSettings.freeShippingThreshold !== undefined ? Number(globalSettings.freeShippingThreshold) : 3000);
-    
+    const threshold = this.freeShippingThreshold();
     if (sub >= threshold) return 0;
 
     const productShipping = this.resolvedCartItems().reduce((sum, item) => {
@@ -1916,6 +1920,7 @@ export class DatastoreService {
       return sum + (item.product.baseShippingCharge ? Number(item.product.baseShippingCharge) : 0);
     }, 0);
 
+    const globalSettings = this.settingsService.shippingSettings() || {};
     const baseRate = globalSettings.fixedCourierRate !== undefined ? Number(globalSettings.fixedCourierRate) : 150;
     return productShipping > 0 ? productShipping : baseRate;
   });
@@ -2267,5 +2272,71 @@ export class DatastoreService {
     }).subscribe({
       error: (err) => console.warn('Activity logging failed:', err)
     });
+  }
+
+  getProductImage(item: any): string {
+    if (!item) return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+    
+    // Check variant first
+    const variant = item.variant;
+    if (variant && variant.images && variant.images.length > 0) {
+      const vImg = variant.images[0];
+      if (typeof vImg === 'string') {
+        try {
+          if (vImg.trim().startsWith('[') || vImg.trim().startsWith('{')) {
+            const parsed = JSON.parse(vImg);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const sub = parsed[0];
+              return typeof sub === 'object' && sub ? (sub.url || sub) : sub;
+            }
+            if (parsed && typeof parsed === 'object') return parsed.url || parsed;
+          }
+        } catch {}
+        return vImg;
+      }
+      if (typeof vImg === 'object' && vImg) {
+        return vImg.url || vImg;
+      }
+    }
+
+    const p = item.product || item;
+    if (!p) return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
+
+    let imgs = p.images;
+    if (typeof imgs === 'string') {
+      try {
+        const parsed = JSON.parse(imgs);
+        if (Array.isArray(parsed)) imgs = parsed;
+        else if (parsed) imgs = [parsed];
+      } catch {
+        if (imgs.includes(',')) {
+          imgs = imgs.split(',');
+        } else {
+          imgs = [imgs];
+        }
+      }
+    }
+
+    if (Array.isArray(imgs) && imgs.length > 0) {
+      const first = imgs[0];
+      if (typeof first === 'string') {
+        try {
+          if (first.trim().startsWith('[') || first.trim().startsWith('{')) {
+            const parsedSub = JSON.parse(first);
+            if (Array.isArray(parsedSub) && parsedSub.length > 0) {
+              const sub = parsedSub[0];
+              return typeof sub === 'object' && sub ? (sub.url || sub) : sub;
+            }
+            if (parsedSub && typeof parsedSub === 'object') return parsedSub.url || parsedSub;
+          }
+        } catch {}
+        return first;
+      }
+      if (typeof first === 'object' && first) {
+        return first.url || first;
+      }
+    }
+
+    return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
   }
 }

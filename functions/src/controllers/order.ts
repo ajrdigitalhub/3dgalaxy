@@ -2,6 +2,41 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { triggerWhatsAppNotification } from './whatsapp';
 
+const safeParseArray = (val: any): any[] => {
+  if (!val) return [];
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(val) ? val : [];
+};
+
+const mapOrderWithVariantDetails = (order: any) => {
+  if (!order) return order;
+  if (order.items) {
+    order.items = order.items.map((item: any) => {
+      if (item.variant) {
+        const variantImages = safeParseArray(item.variant.variantImages || item.variant.images);
+        let firstImg = '';
+        if (variantImages && variantImages.length > 0) {
+          firstImg = typeof variantImages[0] === 'string' ? variantImages[0] : (variantImages[0].url || '');
+        }
+        
+        item.variant = {
+          ...item.variant,
+          imageUrl: firstImg || (item.product?.images && safeParseArray(item.product.images).length > 0 ? (typeof safeParseArray(item.product.images)[0] === 'string' ? safeParseArray(item.product.images)[0] : safeParseArray(item.product.images)[0].url) : '')
+        };
+      }
+      return item;
+    });
+  }
+  return order;
+};
+
 export const getOrders = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
@@ -20,13 +55,22 @@ export const getOrders = async (req: Request, res: Response) => {
           shippingAddress: true,
           statusHistory: true,
           items: {
-            include: { product: true },
+            include: { 
+              product: true,
+              variant: {
+                include: {
+                  inventory: {
+                    include: { warehouse: true }
+                  }
+                }
+              }
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
       })
     ]);
-    return res.status(200).json({ total, page, limit: limitNum, data: list });
+    return res.status(200).json({ total, page, limit: limitNum, data: list.map(mapOrderWithVariantDetails) });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find orders index', details: error.message });
   }
@@ -52,13 +96,22 @@ export const getMyOrders = async (req: any, res: Response) => {
         where: { customerId: customer.id },
         include: {
           items: {
-            include: { product: true },
+            include: { 
+              product: true,
+              variant: {
+                include: {
+                  inventory: {
+                    include: { warehouse: true }
+                  }
+                }
+              }
+            },
           },
         },
         orderBy: { createdAt: 'desc' },
       })
     ]);
-    return res.status(200).json({ total, page, limit: limitNum, data: list });
+    return res.status(200).json({ total, page, limit: limitNum, data: list.map(mapOrderWithVariantDetails) });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve your orders', details: error.message });
   }
@@ -123,7 +176,7 @@ export const getOrderById = async (req: any, res: Response) => {
       }
     }
 
-    return res.status(200).json(order);
+    return res.status(200).json(mapOrderWithVariantDetails(order));
   } catch (error: any) {
     return res.status(500).json({ error: 'Order detail retrieval failed', details: error.message });
   }

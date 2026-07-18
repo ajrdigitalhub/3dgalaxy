@@ -5,6 +5,7 @@ import {
   signal,
   inject,
   computed,
+  effect,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -1503,7 +1504,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
               </div>
 
               <div
-                class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar"
+                class="p-6 bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar shadow-xs"
               >
                 <table class="w-full text-left text-xs whitespace-nowrap">
                   <thead>
@@ -1520,101 +1521,193 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    @for (p of admin.ds.products(); track p.id) {
-                      @if (
-                        !admin.searchQueryProducts() ||
-                        p.name
-                          .toLowerCase()
-                          .includes(
-                            admin.searchQueryProducts().toLowerCase()
-                          ) ||
-                        p.sku
-                          .toLowerCase()
-                          .includes(admin.searchQueryProducts().toLowerCase())
-                      ) {
-                        <tr
-                          class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100"
-                        >
-                          <td class="py-4">
-                            <div class="flex items-center gap-3">
-                              <img
-                                [src]="
-                                  (p.images && p.images[0]?.url) ||
-                                  (p.images && p.images[0]) ||
-                                  'https://picsum.photos/100/100'
-                                "
-                                alt="Product thumbnail"
-                                class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800"
-                                referrerpolicy="no-referrer"
-                              />
-                              <div>
-                                <p
-                                  class="font-black uppercase text-zinc-900 dark:text-white"
-                                >
-                                  {{ p.name }}
-                                </p>
-                                <p
-                                  class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase"
-                                >
-                                  {{ p.brand }} alliance
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td
-                            class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold"
-                          >
-                            {{
-                              getCategoryPath(p.category_id) || p.category_id
-                            }}
-                          </td>
-                          <td
-                            class="py-4 font-mono text-zinc-500 text-[10px] uppercase"
-                          >
-                            {{ p.sku }}
-                          </td>
-                          <td class="py-4">
-                            <span
-                              [class]="
-                                p.stock > 10
-                                  ? 'bg-emerald-500/10 text-emerald-500'
-                                  : 'bg-red-500/10 text-red-500'
+                    @for (p of paginatedProducts(); track p.id) {
+                      <tr
+                        class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors"
+                      >
+                        <td class="py-4">
+                          <div class="flex items-center gap-3">
+                            <img
+                              [src]="
+                                (p.images && p.images[0]?.url) ||
+                                (p.images && p.images[0]) ||
+                                'https://picsum.photos/100/100'
                               "
-                              class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase"
-                            >
-                              {{ p.stock }} units
-                            </span>
-                          </td>
-                          <td class="py-4 font-mono font-bold">
-                            ₹{{ p.sale_price | number }}
-                          </td>
-                          <td class="py-4 font-mono text-emerald-500 font-bold">
-                            ₹{{ p.dealer_price | number }}
-                          </td>
-                          <td class="py-4 text-right">
-                            <div class="inline-flex gap-2">
-                              <button
-                                (click)="admin.startProductEdit(p)"
-                                class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer"
+                              alt="Product thumbnail"
+                              class="h-9 w-9 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800"
+                              referrerpolicy="no-referrer"
+                            />
+                            <div class="min-w-0">
+                              <p
+                                class="font-black uppercase text-zinc-900 dark:text-white truncate max-w-[220px] block"
+                                [title]="p.name"
                               >
-                                <mat-icon class="text-base">edit</mat-icon>
-                              </button>
-                              <button
-                                (click)="admin.deleteProduct(p.id)"
-                                [disabled]="admin.isDeletingProduct()"
-                                class="text-red-400 hover:text-red-600 p-1 cursor-pointer disabled:opacity-40"
+                                {{ p.name }}
+                              </p>
+                              <p
+                                class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono tracking-wide uppercase mt-1"
                               >
-                                <mat-icon class="text-base"
-                                  >delete_outline</mat-icon
-                                >
-                              </button>
+                                {{ p.brand }} alliance
+                              </p>
                             </div>
-                          </td>
-                        </tr>
-                      }
+                          </div>
+                        </td>
+                        <td
+                          class="py-4 text-zinc-500 dark:text-zinc-400 uppercase text-[10px] font-bold"
+                        >
+                          {{
+                            getCategoryPath(p.category_id) || p.category_id
+                          }}
+                        </td>
+                        <td
+                          class="py-4 font-mono text-zinc-500 text-[10px] uppercase"
+                        >
+                          {{ p.sku }}
+                        </td>
+                        <td class="py-4">
+                          <span
+                            [class]="
+                              p.stock === 0
+                                ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                                : p.stock <= 10
+                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                            "
+                            class="px-2 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5"
+                          >
+                            <span
+                              class="h-1.5 w-1.5 rounded-full"
+                              [class]="
+                                p.stock === 0
+                                  ? 'bg-rose-500'
+                                  : p.stock <= 10
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                              "
+                            ></span>
+                            {{ p.stock === 0 ? 'Out of stock' : p.stock + ' units' }}
+                          </span>
+                        </td>
+                        <td class="py-4 font-mono font-bold">
+                          ₹{{ p.sale_price | number }}
+                        </td>
+                        <td class="py-4 font-mono text-emerald-500 font-bold">
+                          ₹{{ p.dealer_price | number }}
+                        </td>
+                        <td class="py-4 text-right">
+                          <div class="inline-flex gap-1.5">
+                            <button
+                              (click)="admin.startProductEdit(p)"
+                              class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+                              title="Edit Asset"
+                            >
+                              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">edit</mat-icon>
+                            </button>
+                            <button
+                              (click)="admin.deleteProduct(p.id)"
+                              [disabled]="admin.isDeletingProduct()"
+                              class="h-8 w-8 rounded-lg text-red-400 hover:text-red-650 hover:bg-red-50 dark:hover:bg-red-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent disabled:opacity-40"
+                              title="Delete SKU"
+                            >
+                              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">delete_outline</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td
+                          colspan="7"
+                          class="py-8 text-center text-zinc-400 font-sans font-medium uppercase tracking-wide"
+                        >
+                          No matches found in catalog.
+                        </td>
+                      </tr>
                     }
                   </tbody>
                 </table>
+
+                <!-- Pagination Footer -->
+                <div
+                  class="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-6 mt-4 flex-wrap gap-4"
+                >
+                  <div class="flex items-center gap-4 flex-wrap">
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                      Showing
+                      <span class="font-semibold text-zinc-900 dark:text-white">{{
+                        paginatedProducts().length
+                          ? (currentPageValid() - 1) * itemsPerPage() + 1
+                          : 0
+                      }}</span>
+                      to
+                      <span class="font-semibold text-zinc-900 dark:text-white">{{
+                        (currentPageValid() - 1) * itemsPerPage() + paginatedProducts().length
+                      }}</span>
+                      of
+                      <span class="font-semibold text-zinc-900 dark:text-white">{{
+                        filteredProducts().length
+                      }}</span>
+                      products
+                    </p>
+                    
+                    <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block"></div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-zinc-550 dark:text-zinc-450 font-medium">Per page</span>
+                      <select
+                        [value]="itemsPerPage()"
+                        (change)="
+                          itemsPerPage.set(Number($any($event.target).value));
+                          currentPage.set(1)
+                        "
+                        class="text-xs font-semibold bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition cursor-pointer"
+                      >
+                        @for (option of itemsPerPageOptions; track option) {
+                          <option [value]="option">{{ option }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      (click)="setPage(currentPageValid() - 1)"
+                      [disabled]="currentPageValid() === 1"
+                      class="h-9 w-9 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+                      title="Previous Page"
+                    >
+                      <mat-icon class="text-lg">chevron_left</mat-icon>
+                    </button>
+
+                    @for (page of visiblePages(); track $index) {
+                      @if (page === '...') {
+                        <span class="h-9 w-9 flex items-center justify-center text-zinc-400 font-medium text-xs select-none">
+                          ...
+                        </span>
+                      } @else {
+                        <button
+                          (click)="setPage($any(page))"
+                          [class]="
+                            page === currentPageValid()
+                              ? 'h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 cursor-pointer border-none'
+                              : 'h-9 w-9 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-medium transition cursor-pointer bg-transparent border-none'
+                          "
+                        >
+                          {{ page }}
+                        </button>
+                      }
+                    }
+
+                    <button
+                      (click)="setPage(currentPageValid() + 1)"
+                      [disabled]="currentPageValid() === totalPages()"
+                      class="h-9 w-9 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+                      title="Next Page"
+                    >
+                      <mat-icon class="text-lg">chevron_right</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           }
@@ -2694,6 +2787,86 @@ export class AdminCatalogTab {
     this.uploadProgress = 100;
     setTimeout(() => (this.uploadProgress = 0), 1000);
     input.value = ""; // Reset input
+  }
+
+  currentPage = signal<number>(1);
+  itemsPerPage = signal<number>(10);
+  itemsPerPageOptions = [10, 20, 50, 100];
+  Math = Math;
+  Number = Number;
+
+  filteredProducts = computed(() => {
+    const query = this.admin.searchQueryProducts().toLowerCase().trim();
+    const list = this.admin.ds.products() || [];
+    if (!query) return list;
+    return list.filter(
+      (p) =>
+        (p.name && p.name.toLowerCase().includes(query)) ||
+        (p.sku && p.sku.toLowerCase().includes(query))
+    );
+  });
+
+  paginatedProducts = computed(() => {
+    const items = this.filteredProducts();
+    const page = this.currentPageValid();
+    const start = (page - 1) * this.itemsPerPage();
+    return items.slice(start, start + this.itemsPerPage());
+  });
+
+  totalPages = computed(() => {
+    return Math.max(
+      1,
+      Math.ceil(this.filteredProducts().length / this.itemsPerPage())
+    );
+  });
+
+  currentPageValid = computed(() => {
+    const page = this.currentPage();
+    const total = this.totalPages();
+    return Math.min(Math.max(1, page), total);
+  });
+
+  visiblePages = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPageValid();
+    const pages: (number | string)[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      if (current > 3) {
+        pages.push('...');
+      }
+      
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (current < total - 2) {
+        pages.push('...');
+      }
+      
+      pages.push(total);
+    }
+    return pages;
+  });
+
+  setPage(page: number) {
+    this.currentPage.set(Math.min(Math.max(1, page), this.totalPages()));
+  }
+
+  constructor() {
+    effect(() => {
+      this.admin.searchQueryProducts();
+      this.currentPage.set(1);
+    }, { allowSignalWrites: true });
   }
 
   activeEditTab = signal("general");

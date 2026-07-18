@@ -77,44 +77,68 @@ const resolveOrCreateCategory = async (
   cache: Map<string, string>,
 ): Promise<string | null> => {
   if (!label) return null;
-  const normalized = label.trim();
-  if (!normalized) return null;
+  const normalizedPath = label.trim();
+  if (!normalizedPath) return null;
 
-  if (cache.has(normalized)) {
-    return cache.get(normalized)!;
+  if (cache.has(normalizedPath)) {
+    return cache.get(normalizedPath)!;
   }
 
-  const slug =
-    normalizeSlug(normalized) ||
-    `category-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-  let category: any = null;
+  const parts = normalizedPath.split(/\s*>\s*/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return null;
 
-  if (isUuid(normalized)) {
-    category = await tx.category.findUnique({ where: { id: normalized } });
-  }
+  let parentId: string | null = null;
+  let currentPathAccumulator = "";
 
-  if (!category) {
-    category = await tx.category.findFirst({
+  for (let level = 0; level < parts.length; level++) {
+    const partName = parts[level];
+    currentPathAccumulator = currentPathAccumulator
+      ? `${currentPathAccumulator} > ${partName}`
+      : partName;
+
+    if (cache.has(currentPathAccumulator)) {
+      parentId = cache.get(currentPathAccumulator)!;
+      continue;
+    }
+
+    let category: any = await tx.category.findFirst({
       where: {
-        OR: [{ slug }, { name: normalized }],
+        name: partName,
+        parentId: parentId,
+        deletedAt: null,
       },
     });
+
+    if (!category) {
+      const baseSlug = normalizeSlug(partName) || `cat-${Date.now()}`;
+      let slug = baseSlug;
+      let attempts = 0;
+      while (true) {
+        const existingSlug = await tx.category.findUnique({
+          where: { slug },
+        });
+        if (!existingSlug) break;
+        attempts++;
+        slug = `${baseSlug}-${attempts}-${Math.round(Math.random() * 100)}`;
+      }
+
+      category = await tx.category.create({
+        data: {
+          name: partName,
+          slug,
+          parentId,
+          sortOrder: level,
+          isActive: true,
+        },
+      });
+    }
+
+    parentId = category.id;
+    cache.set(currentPathAccumulator, category.id);
   }
 
-  if (!category) {
-    category = await tx.category.create({
-      data: {
-        name: normalized,
-        slug,
-        description: null,
-        isActive: true,
-      },
-    });
-  }
-
-  cache.set(normalized, category.id);
-  cache.set(slug, category.id);
-  return category.id;
+  cache.set(normalizedPath, parentId!);
+  return parentId;
 };
 
 const resolveOrCreateBrand = async (
@@ -283,13 +307,97 @@ const collectVariantImageUrls = (variant: any): string[] => {
 };
 
 const prepareGroupImageUploads = async (group: any) => {
-  group.uploadedImages = await uploadImageUrls(group.images || []);
+  const allUrls = uniqueArray([
+    ...(group.images || []),
+    ...(group.variants || []).flatMap((v: any) => collectVariantImageUrls(v)),
+  ]);
 
-  await mapWithConcurrency(group.variants || [], 4, async (variant: any) => {
-    const rawVariantImages = collectVariantImageUrls(variant);
-    variant.uploadedImages = await uploadImageUrls(rawVariantImages);
-    return variant;
+  const urlMap = new Map<string, string>();
+  await mapWithConcurrency(allUrls, 4, async (url: string) => {
+    const uploaded = await uploadRemoteImage(url);
+    if (uploaded) {
+      urlMap.set(url, uploaded);
+    }
   });
+
+  group.imageMap = urlMap;
+
+  group.uploadedImages = (group.images || [])
+    .map((url: string) => urlMap.get(url))
+    .filter(Boolean) as string[];
+
+  for (const variant of group.variants || []) {
+    const variantUrls = collectVariantImageUrls(variant);
+    variant.uploadedImages = variantUrls
+      .map((url: string) => urlMap.get(url))
+      .filter(Boolean) as string[];
+  }
+};
+
+const matchImagesToVariant = (
+  variant: any,
+  productImages: string[],
+  group: any,
+): string[] => {
+  const matched = new Set<string>();
+
+  if (Array.isArray(variant.uploadedImages)) {
+    variant.uploadedImages.forEach((img: string) => matched.add(img));
+  }
+
+  const rawRow = variant.raw || {};
+
+  const imagePositionStr = rawRow.image_position;
+  if (imagePositionStr) {
+    const pos = parseInt(imagePositionStr, 10);
+    if (!isNaN(pos) && pos > 0 && pos <= productImages.length) {
+      matched.add(productImages[pos - 1]);
+    }
+  }
+
+  const variantImageSrc = rawRow.variant_image || rawRow.variant_image_url;
+  if (variantImageSrc && group.imageMap) {
+    const uploadedUrl = group.imageMap.get(variantImageSrc);
+    if (uploadedUrl) {
+      matched.add(uploadedUrl);
+    }
+  }
+
+  const searchTerms: string[] = [];
+
+  if (variant.sku) {
+    searchTerms.push(variant.sku.toLowerCase());
+  }
+
+  if (variant.optionValues) {
+    Object.entries(variant.optionValues).forEach(([optName, optVal]) => {
+      const valStr = String(optVal).trim().toLowerCase();
+      if (valStr && valStr !== "default" && valStr !== "title") {
+        searchTerms.push(valStr);
+      }
+    });
+  }
+
+  for (const imgUrl of productImages) {
+    let filename = "";
+    try {
+      const u = new URL(imgUrl);
+      filename = path.basename(u.pathname).toLowerCase();
+    } catch {
+      filename = imgUrl.toLowerCase();
+    }
+
+    const isMatch = searchTerms.some((term) => {
+      if (term.length < 2) return false;
+      return filename.includes(term);
+    });
+
+    if (isMatch) {
+      matched.add(imgUrl);
+    }
+  }
+
+  return Array.from(matched);
 };
 
 export const buildProductPayload = async (
@@ -321,6 +429,11 @@ export const buildProductPayload = async (
         .filter(Boolean),
     );
 
+    let matchedImages = images;
+    if (matchedImages.length === 0) {
+      matchedImages = matchImagesToVariant(variant, productImages, group);
+    }
+
     variantItems.push({
       name: variant.name || sku,
       sku: variant.sku || `${sku}-${variant.name || "default"}`,
@@ -332,7 +445,7 @@ export const buildProductPayload = async (
       stock: variant.stock || 0,
       weight: variant.weight || 0,
       barcode: variant.barcode || "",
-      variantImages: images,
+      variantImages: matchedImages,
       optionValues: variant.optionValues || {},
     });
   }
@@ -674,6 +787,9 @@ export const importProducts = async (req: Request, res: Response) => {
     let actualVariantCount = 0;
     const errors: any[] = [];
     const importedProductIds: string[] = [];
+    const filename = req.file.originalname || "unknown.csv";
+    const fileSize = req.file.size || 0;
+    let historyRecord: any = null;
     const brandCache = new Map<string, string>();
     const categoryCache = new Map<string, string>();
 
@@ -945,9 +1061,6 @@ export const importProducts = async (req: Request, res: Response) => {
 
               // Existing product found
               if (mode === "update_existing" || mode === "create_update") {
-                await tx.productVariant.deleteMany({
-                  where: { productId: existing.id },
-                });
                 const updated = await tx.product.update({
                   where: { id: existing.id },
                   data: {
@@ -984,6 +1097,12 @@ export const importProducts = async (req: Request, res: Response) => {
                   },
                 });
 
+                const existingVariants = await tx.productVariant.findMany({
+                  where: { productId: existing.id },
+                });
+                const existingVariantMap = new Map(existingVariants.map((v) => [v.sku, v]));
+                const processedVariantIds = new Set<string>();
+
                 const usedSkus = new Set<string>([payload.sku]);
                 let variantSuccessCount = 0;
                 for (const variant of payload.variants) {
@@ -999,34 +1118,71 @@ export const importProducts = async (req: Request, res: Response) => {
                         `[IMPORT] adjusted SKU for variant of product ${updated.id}: from='${variant.sku}' to='${uniqueSku}'`,
                       );
                     }
-                    await tx.productVariant.create({
-                      data: {
-                        productId: updated.id,
-                        name: variant.name,
-                        sku: uniqueSku,
-                        price: variant.price || 0,
-                        salePrice: variant.salePrice || null,
-                        stock: variant.stock || 0,
-                        weight: variant.weight || 0,
-                        variantImages: variant.variantImages || [],
-                        optionValues: variant.optionValues || {},
-                      },
-                    });
+
+                    const existingV = existingVariantMap.get(variant.sku) || existingVariantMap.get(uniqueSku);
+                    if (existingV) {
+                      await tx.productVariant.update({
+                        where: { id: existingV.id },
+                        data: {
+                          name: variant.name,
+                          sku: uniqueSku,
+                          price: variant.price || 0,
+                          salePrice: variant.salePrice || null,
+                          stock: variant.stock || 0,
+                          weight: variant.weight || 0,
+                          variantImages: variant.variantImages || [],
+                          optionValues: variant.optionValues || {},
+                        },
+                      });
+                      processedVariantIds.add(existingV.id);
+                    } else {
+                      const createdV = await tx.productVariant.create({
+                        data: {
+                          productId: updated.id,
+                          name: variant.name,
+                          sku: uniqueSku,
+                          price: variant.price || 0,
+                          salePrice: variant.salePrice || null,
+                          stock: variant.stock || 0,
+                          weight: variant.weight || 0,
+                          variantImages: variant.variantImages || [],
+                          optionValues: variant.optionValues || {},
+                        },
+                      });
+                      processedVariantIds.add(createdV.id);
+                    }
                     variantSuccessCount += 1;
                   } catch (variantErr: any) {
                     console.warn(
-                      `[IMPORT] Failed to create variant for product ${updated.id}:`,
+                      `[IMPORT] Failed to upsert variant for product ${updated.id}:`,
                       variantErr.message,
                     );
                     errors.push({
                       rowNumber: group.rowCount,
                       sku: variant.sku || "unknown",
-                      reason: `Variant creation failed: ${variantErr.message}`,
+                      reason: `Variant upsert failed: ${variantErr.message}`,
                     });
                   }
                 }
+
+                const obsoleteVariants = existingVariants.filter((v) => !processedVariantIds.has(v.id));
+                for (const ob of obsoleteVariants) {
+                  try {
+                    await tx.productVariant.delete({ where: { id: ob.id } });
+                  } catch (delErr: any) {
+                    try {
+                      await tx.productVariant.update({
+                        where: { id: ob.id },
+                        data: { isActive: false },
+                      });
+                    } catch (updErr) {
+                      console.warn(`[IMPORT] Failed to deactivate obsolete variant ${ob.id}:`, updErr);
+                    }
+                  }
+                }
+
                 console.log(
-                  `[IMPORT] Created ${variantSuccessCount}/${payload.variants.length} variants for product ${updated.id}`,
+                  `[IMPORT] Created/Updated ${variantSuccessCount}/${payload.variants.length} variants for product ${updated.id}`,
                 );
 
                 importedProductIds.push(updated.id);
@@ -1062,9 +1218,17 @@ export const importProducts = async (req: Request, res: Response) => {
       }
     }
 
+    const postProcessingSummary = await runPostImportProcessor(importedProductIds);
+    const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+    const progressPercentage = 100;
+
     try {
       historyRecord = await prisma.productImportHistory.create({
         data: {
+          filename,
+          fileSize,
+          mode,
+          matchBy,
           importedBy: (req as any).user?.id || null,
           productCount: actualProductCount,
           variantCount: actualVariantCount,

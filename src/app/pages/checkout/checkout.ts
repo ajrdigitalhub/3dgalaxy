@@ -80,7 +80,7 @@ export class CheckoutComponent implements OnInit {
   companyName = signal("");
 
   // Coupon
-  discount = signal(0);
+  discount = computed(() => this.ds.couponDiscountAmount());
   couponCode = signal("");
   couponApplied = signal(false);
 
@@ -98,38 +98,11 @@ export class CheckoutComponent implements OnInit {
     );
   });
 
-  subtotal = computed(() => {
-    return this.groupedCheckoutItems().reduce((sum, item) => {
-      return sum + this.getPrice(item) * item.quantity;
-    }, 0);
-  });
+  subtotal = computed(() => this.ds.cartSubtotal());
 
-  shipping = computed(() => {
-    const sub = this.subtotal();
-    const globalSettings = this.settingsService.shippingSettings() || {};
-    const threshold =
-      globalSettings.freeShippingMinSpent !== undefined
-        ? Number(globalSettings.freeShippingMinSpent)
-        : globalSettings.freeShippingThreshold !== undefined
-          ? Number(globalSettings.freeShippingThreshold)
-          : 3000;
-    if (sub >= threshold) return 0;
-    const baseRate =
-      globalSettings.baseShippingRate !== undefined
-        ? Number(globalSettings.baseShippingRate)
-        : 99;
-    const productShipping = this.groupedCheckoutItems().reduce((sum, item) => {
-      return (
-        sum +
-        (item.product.baseShippingCharge
-          ? Number(item.product.baseShippingCharge)
-          : 0)
-      );
-    }, 0);
-    return productShipping > 0 ? productShipping : baseRate;
-  });
+  shipping = computed(() => this.ds.cartShipping());
 
-  tax = computed(() => 0);
+  tax = computed(() => this.ds.cartTax());
 
   // COD checks
   codError = computed(() => {
@@ -190,6 +163,7 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit() {
     this.restoreDraftState();
+    this.ds.reloadProducts(false);
   }
 
   constructor() {

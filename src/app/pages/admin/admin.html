@@ -1,5 +1,5 @@
 <div
-  class="flex flex-col lg:flex-row -mx-4 sm:-mx-6 lg:-mx-8 -mt-8 md:-mt-12 min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 antialiased font-sans"
+  class="flex flex-col lg:flex-row min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300 antialiased font-sans w-full"
 >
   @if (!ds.authReady()) {
   <app-skeleton-page />
@@ -330,7 +330,7 @@
     </header>
 
     <!-- CONTENT BODY PANEL -->
-    <div class="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto w-full">
+    <div class="p-6 lg:p-8 space-y-8 w-full max-w-none">
       @if (loading()) {
       <app-skeleton-page />
       } @else { @if (activeTab() === 'dashboard') {

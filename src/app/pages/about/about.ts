@@ -46,7 +46,7 @@ export class AboutPage implements OnInit {
         about.bodyText ||
         about.intro ||
         about.description ||
-        `We create precision 3D printing solutions for makers, businesses, and creators with reliable production quality and premium service.`,
+        `Certainly, we offer services that include 3D Printing, 3D Scanning, Creating 3D Miniatures, 3D Customization, 3D Printers, 3D Pen, 3D Filaments, PLA Filaments, 3D Selfies, 3D Miniatures and many more at the modest price. We are Filament and create the best quality 3D Printer Filaments at the best price. Contact us to get further details.`,
       story:
         about.story ||
         about.storyText ||
@@ -72,7 +72,8 @@ export class AboutPage implements OnInit {
         email: contact.email || "galaxy.3d@hotmail.com",
         address:
           contact.address ||
-          "374/1 Budana Compound, Udyog Nagar, Palda, Indore, MP 452001",
+          "374/1 Budana Compound, Udyog Nagar Palda, Indore (M.P)- 452001",
+        workingHours: contact.workingHours || "Mon-Sat - 11:00 AM - 7:00 PM"
       },
       socialLinks: {
         facebook: social.facebook || "",

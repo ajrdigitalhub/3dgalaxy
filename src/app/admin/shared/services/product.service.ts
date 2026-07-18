@@ -15,9 +15,10 @@ export class ProductService {
   }
 
   loadProducts() {
-    this.api.get<{data: Product[]}>('/products').subscribe({
+    this.api.get<any>('/products', { limit: 1000 }).subscribe({
       next: (res) => {
-        if (res && res.data) this.products.set(res.data);
+        const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
+        this.products.set(list);
       }
     });
   }

@@ -234,6 +234,10 @@ export class App {
     return ['/login', '/register', '/forgot-password', '/reset-password'].some(r => this.currentUrl().includes(r));
   });
 
+  isAdminRoute = computed(() => {
+    return this.currentUrl().split('?')[0].startsWith('/admin');
+  });
+
   isMobileMenuOpen = signal(false);
   isMobileSearchOpen = signal(false);
   isRoleDropdownOpen = signal<boolean>(false);

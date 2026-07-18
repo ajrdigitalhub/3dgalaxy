@@ -257,7 +257,7 @@ const parseSpecificationsField = (
         }
         return null;
       })
-      .filter((item: any) => item && item.name && item.value);
+      .filter((item: any): item is { name: string; value: string } => !!(item && item.name && item.value));
   }
 
   if (parsedJson && typeof parsedJson === "object") {

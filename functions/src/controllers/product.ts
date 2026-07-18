@@ -37,6 +37,25 @@ const safeParseObject = (val: any): any => {
   return val;
 };
 
+const getCategoryPath = async (categoryId: string | null): Promise<string[]> => {
+  if (!categoryId) return [];
+  const path: string[] = [];
+  let currentId: string | null = categoryId;
+  const visited = new Set<string>();
+
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const cat: any = await prisma.category.findUnique({
+      where: { id: currentId },
+      select: { name: true, parentId: true },
+    });
+    if (!cat) break;
+    path.unshift(cat.name);
+    currentId = cat.parentId;
+  }
+  return path;
+};
+
 export const getProducts = async (req: Request, res: Response) => {
   try {
     const cacheKey = 'products_list_' + JSON.stringify(req.query);
@@ -568,9 +587,16 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       relatedProducts: relations.relatedProducts
     };
 
+    const catPath = await getCategoryPath(item.categoryId);
     const finalResponse = {
+      categoryPath: catPath,
+      variantImages: (item.variants || []).map((v: any) => ({
+        variantId: v.id,
+        imageIds: safeParseArray(v.variantImages || v.images || [])
+      })),
       product: {
         ...item,
+        categoryPath: catPath,
         bundleProducts: relations.bundleProducts,
         recommendedFilaments: relations.recommendedFilaments,
         relatedProducts: relations.relatedProducts
@@ -655,9 +681,16 @@ export const getProductById = async (req: Request, res: Response) => {
       relatedProducts: relations.relatedProducts
     };
 
+    const catPath = await getCategoryPath(item.categoryId);
     const finalResponse = {
+      categoryPath: catPath,
+      variantImages: (item.variants || []).map((v: any) => ({
+        variantId: v.id,
+        imageIds: safeParseArray(v.variantImages || v.images || [])
+      })),
       product: {
         ...item,
+        categoryPath: catPath,
         bundleProducts: relations.bundleProducts,
         recommendedFilaments: relations.recommendedFilaments,
         relatedProducts: relations.relatedProducts

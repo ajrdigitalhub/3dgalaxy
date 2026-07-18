@@ -23,10 +23,13 @@ export class ProductDetailsComponent implements OnInit {
 
   productId = signal<string | null>(null);
   product = signal<Product | null>(null);
+  activeImageIndex = signal<number>(0);
+  Math = Math;
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     this.productId.set(id);
+    this.activeImageIndex.set(0);
 
     if (id) {
       const found = this.productService.products().find(p => p.id === id);
@@ -44,6 +47,7 @@ export class ProductDetailsComponent implements OnInit {
         const found = products.find(p => p.id === id);
         if (found) {
           this.product.set(found);
+          this.activeImageIndex.set(0);
         }
       }
     }, { allowSignalWrites: true });

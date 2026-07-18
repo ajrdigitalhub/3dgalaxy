@@ -75,7 +75,7 @@ router.post("/reviews", optionalAuthenticateToken, async (req, res) => {
       recommended = true,
       customerName,
     } = req.body;
-    const userId = req.user?.id;
+    const userId = (req as any).user?.id;
 
     if (!productId || !rating) {
       return res

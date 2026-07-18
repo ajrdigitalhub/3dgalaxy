@@ -7,7 +7,7 @@
   <div class="top-loader-progress">
     <div class="top-loader-bar"></div>
   </div>
-  } @if (!isAuthRoute()) {
+  } @if (!isAuthRoute() && !isAdminRoute()) {
   <!-- INTERACTIVE TOP MARKETING SLIDER BANNER -->
   @if (topAd(); as ad) {
   <div
@@ -183,6 +183,14 @@
             >
               <mat-icon class="text-neutral-400">support_agent</mat-icon>
               Support & Returns
+            </a>
+            <a
+              [routerLink]="['/about']"
+              (click)="isMobileMenuOpen.set(false)"
+              class="flex items-center gap-3 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2 hover:text-blue-500 transition-colors"
+            >
+              <mat-icon class="text-neutral-400">info_outline</mat-icon>
+              About Us
             </a>
           </div>
         </div>
@@ -562,6 +570,30 @@
             />
           </svg>
           <span>Support</span>
+        </a>
+
+        <!-- About Link -->
+        <a
+          [routerLink]="['/about']"
+          routerLinkActive="text-[#d65108]"
+          class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-6 font-bold cursor-pointer"
+        >
+          <!-- Info Circle SVG -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.8"
+            stroke="currentColor"
+            class="w-4.5 h-4.5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M11.25 11.25l.041-.02a.75.75 0 111.085 1.085l-.04.02m0 0a.75.75 0 11-1.085-1.085l.04-.02M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>About Us</span>
         </a>
       </nav>
       }
@@ -1302,7 +1334,7 @@
 
   <!-- MAIN VIEWPORT ROUTER OUTLET SLOT -->
   <main
-    [class]="isHome() ? 'w-full relative min-h-screen -mt-16 sm:-mt-20' : (isAuthRoute() ? 'w-full relative min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-8 md:pb-12 relative min-h-[60vh]')"
+    [class]="isHome() ? 'w-full relative min-h-screen -mt-16 sm:-mt-20' : (isAuthRoute() || isAdminRoute() ? 'w-full relative min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 pb-8 md:pb-12 relative min-h-[60vh]')"
   >
     <router-outlet />
   </main>
@@ -1351,7 +1383,7 @@
       </div>
     </div>
   </div>
-  } @if (!isAuthRoute()) {
+  } @if (!isAuthRoute() && !isAdminRoute()) {
   <!-- FOOTER SPOTS AND ADVERTISEMENT LOGO CODES -->
   <footer
     class="border-t border-neutral-200 dark:border-neutral-900/60 bg-white dark:bg-neutral-950 select-none text-left py-12 sm:py-16 text-[10px] sm:text-xs relative overflow-hidden"

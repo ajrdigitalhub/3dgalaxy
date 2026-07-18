@@ -66,20 +66,21 @@
                 'https://picsum.photos/100/100'
               "
               alt="Product thumbnail"
-              class="h-8 w-8 object-contain bg-zinc-50 dark:bg-zinc-950 rounded border dark:border-zinc-800"
+              class="h-9 w-9 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 group-hover:scale-105 transition-transform duration-200"
               referrerpolicy="no-referrer"
             />
-            <div>
+            <div class="min-w-0">
               <p
-                class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors"
+                class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors truncate max-w-[240px] block"
+                [title]="p.name"
               >
                 {{ p.name }}
               </p>
-              <div class="mt-2 flex flex-wrap gap-2">
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
                 @if (p.tags.length) {
                   @for (tag of p.tags; track tag) {
                     <span
-                      class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-zinc-100 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-zinc-100 dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-800"
                     >
                       {{ tag }}
                     </span>
@@ -87,7 +88,7 @@
                 }
               </div>
               <p
-                class="text-[9px] text-zinc-400 font-mono tracking-wide uppercase mt-2"
+                class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono tracking-wide uppercase mt-1.5"
               >
                 {{ p.brand }} alliance
               </p>
@@ -105,13 +106,25 @@
         <td class="py-4">
           <span
             [class]="
-              p.stock > 10
-                ? 'bg-emerald-500/10 text-emerald-500'
-                : 'bg-red-500/10 text-red-500'
+              p.stock === 0
+                ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                : p.stock <= 10
+                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
             "
-            class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase select-none"
+            class="px-2 py-1 rounded-full text-[9px] font-black uppercase select-none inline-flex items-center gap-1.5"
           >
-            {{ p.stock }} units
+            <span
+              class="h-1.5 w-1.5 rounded-full"
+              [class]="
+                p.stock === 0
+                  ? 'bg-rose-500'
+                  : p.stock <= 10
+                  ? 'bg-amber-500'
+                  : 'bg-emerald-500'
+              "
+            ></span>
+            {{ p.stock === 0 ? 'Out of stock' : p.stock + ' units' }}
           </span>
         </td>
         <td class="py-4 font-mono font-bold">
@@ -120,25 +133,28 @@
         <td class="py-4 font-mono text-emerald-500 font-bold">
           ₹{{ p.dealerPrice || p.dealer_price | number }}
         </td>
-        <td class="py-4 text-right">
-          <div class="inline-flex gap-2">
+        <td class="py-4 text-right" (click)="$event.stopPropagation()">
+          <div class="inline-flex gap-1.5">
             <button
               (click)="viewProductDetails(p.id, $event)"
-              class="p-1 text-zinc-400 hover:text-zinc-650 cursor-pointer border-none bg-none"
+              class="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 hover:bg-zinc-150/50 dark:hover:bg-zinc-800 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+              title="View Details"
             >
-              <mat-icon class="text-base">visibility</mat-icon>
+              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">visibility</mat-icon>
             </button>
             <button
               (click)="editProduct(p.id)"
-              class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer border-none bg-none"
+              class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+              title="Edit Asset"
             >
-              <mat-icon class="text-base">edit</mat-icon>
+              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">edit</mat-icon>
             </button>
             <button
               (click)="openDeleteDialog(p.id, $event)"
-              class="text-red-400 hover:text-red-600 p-1 cursor-pointer border-none bg-none"
+              class="h-8 w-8 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+              title="Delete SKU"
             >
-              <mat-icon class="text-base">delete_outline</mat-icon>
+              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">delete_outline</mat-icon>
             </button>
           </div>
         </td>
@@ -156,40 +172,38 @@
   </app-admin-data-table>
 
   <div
-    class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    class="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-6 mt-6 flex-wrap gap-4"
   >
-    <div class="space-y-2 sm:space-y-0">
-      <p
-        class="text-[10px] uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-400 font-black"
-      >
+    <div class="flex items-center gap-4 flex-wrap">
+      <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
         Showing
-        <span class="font-mono text-zinc-900 dark:text-white">{{
+        <span class="font-semibold text-zinc-900 dark:text-white">{{
           paginatedProducts().length
             ? (currentPageValid() - 1) * itemsPerPage() + 1
             : 0
         }}</span>
         to
-        <span class="font-mono text-zinc-900 dark:text-white">{{
+        <span class="font-semibold text-zinc-900 dark:text-white">{{
           (currentPageValid() - 1) * itemsPerPage() + paginatedProducts().length
         }}</span>
         of
-        <span class="font-mono text-zinc-900 dark:text-white">{{
+        <span class="font-semibold text-zinc-900 dark:text-white">{{
           filteredProducts().length
         }}</span>
         products
       </p>
+      
+      <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block"></div>
+
       <div class="flex items-center gap-2">
-        <span
-          class="text-[10px] uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-400 font-black"
-          >Per page</span
-        >
+        <span class="text-xs text-zinc-550 dark:text-zinc-450 font-medium">Per page</span>
         <select
           [value]="itemsPerPage()"
           (change)="
             itemsPerPage.set(Number($any($event.target).value));
             currentPage.set(1)
           "
-          class="text-[10px] font-black uppercase tracking-widest bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-zinc-900 dark:text-white"
+          class="text-xs font-semibold bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition cursor-pointer"
         >
           @for (option of itemsPerPageOptions; track option) {
             <option [value]="option">{{ option }}</option>
@@ -198,32 +212,42 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex items-center gap-1.5">
       <button
         (click)="setPage(currentPageValid() - 1)"
         [disabled]="currentPageValid() === 1"
-        class="px-3 py-2 text-[10px] uppercase font-black tracking-widest text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        class="h-9 w-9 rounded-lg border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+        title="Previous Page"
       >
-        Prev
+        <mat-icon class="text-lg">chevron_left</mat-icon>
       </button>
-      @for (page of pageNumbers(); track page) {
-        <button
-          (click)="setPage(page)"
-          [class]="
-            page === currentPageValid()
-              ? 'px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest'
-              : 'px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 font-black text-[10px] uppercase tracking-widest hover:bg-zinc-200 dark:hover:bg-zinc-800 transition'
-          "
-        >
-          {{ page }}
-        </button>
+
+      @for (page of visiblePages(); track $index) {
+        @if (page === '...') {
+          <span class="h-9 w-9 flex items-center justify-center text-zinc-400 font-medium text-xs select-none">
+            ...
+          </span>
+        } @else {
+          <button
+            (click)="setPage($any(page))"
+            [class]="
+              page === currentPageValid()
+                ? 'h-9 w-9 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm shadow-blue-500/20 cursor-pointer border-none'
+                : 'h-9 w-9 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-xs font-medium transition cursor-pointer bg-transparent border-none'
+            "
+          >
+            {{ page }}
+          </button>
+        }
       }
+
       <button
         (click)="setPage(currentPageValid() + 1)"
         [disabled]="currentPageValid() === totalPages()"
-        class="px-3 py-2 text-[10px] uppercase font-black tracking-widest text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        class="h-9 w-9 rounded-lg border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+        title="Next Page"
       >
-        Next
+        <mat-icon class="text-lg">chevron_right</mat-icon>
       </button>
     </div>
   </div>

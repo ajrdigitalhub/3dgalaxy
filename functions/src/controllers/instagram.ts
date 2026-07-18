@@ -50,7 +50,7 @@ export const getInstagramFeed = async (req: Request, res: Response) => {
     const url = `https://graph.instagram.com/${profileId}/media?fields=id,caption,media_url,thumbnail_url,permalink,media_type,timestamp&access_token=${token}&limit=${limit}`;
 
     const response = await fetch(url);
-    const data = await response.json();
+    const data = (await response.json()) as any;
 
     if (!response.ok || data.error) {
       const message =

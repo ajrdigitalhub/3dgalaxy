@@ -98,7 +98,7 @@
                   class="block w-full h-full"
                 >
                   <img
-                    [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]"
+                    [src]="ds.getProductImage(item)"
                     class="w-full h-full object-contain"
                     referrerpolicy="no-referrer"
                     alt="item"
@@ -317,7 +317,7 @@
           >
             Add
             <span class="text-neutral-800 dark:text-neutral-200 font-bold"
-              >{{ 1500 - ds.cartSubtotal() | currency:'INR':'symbol':'1.0-0'
+              >{{ ds.freeShippingThreshold() - ds.cartSubtotal() | currency:'INR':'symbol':'1.0-0'
               }}</span
             >
             more to unlock free shipping!
@@ -374,10 +374,10 @@
               class="flex justify-between text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               <span>Delivery Charges</span>
-              @if (freeShippingProgress() >= 100) {
+              @if (ds.cartShipping() === 0) {
               <span class="text-emerald-600 dark:text-emerald-400">Free</span>
               } @else {
-              <span>Calculated at checkout</span>
+              <span>{{ ds.cartShipping() | currency:'INR':'symbol':'1.0-0' }}</span>
               }
             </div>
           </div>

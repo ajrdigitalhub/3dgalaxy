@@ -1,4 +1,4 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect} from '@angular/core';
+import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule, Router} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
@@ -13,7 +13,7 @@ import {SettingsService} from '../../core/services/settings.service';
   templateUrl: './cart.html',
   styleUrl: './cart.scss'
 })
-export class CartCheckout {
+export class CartCheckout implements OnInit {
   toastService = inject(ToastService);
   ds = inject(DatastoreService);
   router = inject(Router);
@@ -21,6 +21,10 @@ export class CartCheckout {
 
   couponInputText = signal<string>('');
   showOffers = signal(false);
+
+  ngOnInit() {
+    this.ds.reloadProducts(false);
+  }
 
   accruedPoints = computed(() => {
     return Math.floor(this.ds.cartGrandTotal() / 100);
@@ -35,7 +39,7 @@ export class CartCheckout {
   });
 
   freeShippingProgress = computed(() => {
-    const threshold = 1500; // Hardcoded for demo, could be from settings
+    const threshold = this.ds.freeShippingThreshold();
     const current = this.ds.cartSubtotal();
     return Math.min(100, Math.round((current / threshold) * 100));
   });

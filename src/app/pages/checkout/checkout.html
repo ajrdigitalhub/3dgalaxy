@@ -1,22 +1,15 @@
-<div
-  class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 bg-neutral-50 dark:bg-neutral-950 min-h-screen"
->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 bg-neutral-50 dark:bg-neutral-950 min-h-screen">
   <!-- Back Button & Header -->
   <div
     class="flex items-center gap-3 mb-2 cursor-pointer w-max text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors"
-    (click)="router.navigate(['/cart'])"
-  >
+    (click)="router.navigate(['/cart'])">
     <mat-icon class="text-sm">arrow_back</mat-icon>
-    <span class="font-bold text-xs uppercase tracking-widest"
-      >Back to Cart</span
-    >
+    <span class="font-bold text-xs uppercase tracking-widest">Back to Cart</span>
   </div>
 
   <div class="flex items-end justify-between mb-8">
     <div>
-      <h1
-        class="text-3xl font-black text-neutral-900 dark:text-white tracking-tight"
-      >
+      <h1 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tight">
         Secure Checkout
       </h1>
       <p class="text-neutral-500 text-sm mt-1">
@@ -26,15 +19,12 @@
     <!-- Step Indicator (Desktop) -->
     <div class="hidden md:flex items-center gap-2">
       @if (ds.groupedCartItems().length > 0) {
-      <a
-        [routerLink]="['/product', ds.groupedCartItems()[0].product.slug]"
-        class="block w-full h-full"
-      >
-        <img
-          [src]="ds.groupedCartItems()[0].variant?.images?.[0]?.url || ds.groupedCartItems()[0].variant?.images?.[0] || ds.groupedCartItems()[0].product.images[0]?.url || ds.groupedCartItems()[0].product.images[0]"
+      <a [routerLink]="['/product', ds.groupedCartItems()[0].product.slug]" class="block w-full h-full">
+        <!-- <img
+          [src]="ds.getProductImage(ds.groupedCartItems()[0])"
           class="w-full h-full object-contain"
           referrerpolicy="no-referrer"
-        />
+        /> -->
       </a>
       }
     </div>
@@ -44,28 +34,20 @@
     <!-- LEFT: MULTI-STEP ACCORDION -->
     <div class="lg:col-span-7 space-y-4">
       <!-- ====== STEP 1: CONTACT DETAILS ====== -->
-      <div
-        class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
         [class]="activeStep() === 1
           ? 'border-[#d65108]/30'
           : activeStep() > 1
             ? 'border-emerald-200 dark:border-emerald-900/50'
-            : 'border-neutral-200 dark:border-neutral-800'"
-      >
+            : 'border-neutral-200 dark:border-neutral-800'">
         <!-- Step Header -->
-        <div
-          class="flex items-center justify-between p-5 cursor-pointer"
-          (click)="goToStep(1)"
-        >
+        <div class="flex items-center justify-between p-5 cursor-pointer" (click)="goToStep(1)">
           <div class="flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              [class]="activeStep() > 1
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [class]="activeStep() > 1
                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
                 : activeStep() === 1
                   ? 'bg-[#d65108]/10 text-[#d65108]'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'"
-            >
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'">
               @if (activeStep() > 1) {
               <mat-icon class="scale-90">check_circle</mat-icon>
               } @else {
@@ -73,9 +55,7 @@
               }
             </div>
             <div>
-              <h2
-                class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white"
-              >
+              <h2 class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white">
                 1. Contact Details
               </h2>
               @if (activeStep() > 1 && name()) {
@@ -86,9 +66,7 @@
             </div>
           </div>
           @if (activeStep() > 1) {
-          <button
-            class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline"
-          >
+          <button class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline">
             Change
           </button>
           }
@@ -96,53 +74,29 @@
 
         <!-- Step Body -->
         @if (activeStep() === 1) {
-        <div
-          class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5"
-        >
+        <div class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Full Name *</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="name"
-                placeholder="e.g. Sumit Sharma"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Full Name *</label>
+              <input type="text" [(ngModel)]="name" placeholder="e.g. Sumit Sharma"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Email Address *</label
-              >
-              <input
-                type="email"
-                [(ngModel)]="email"
-                [readonly]="isLoggedIn()"
-                placeholder="e.g. sumit@3dgalaxy.co.in"
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Email Address
+                *</label>
+              <input type="email" [(ngModel)]="email" [readonly]="isLoggedIn()" placeholder="e.g. sumit@3dgalaxy.co.in"
                 [class.opacity-60]="isLoggedIn()"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5 sm:col-span-2">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Mobile Number *</label
-              >
-              <input
-                type="tel"
-                [(ngModel)]="phone"
-                placeholder="e.g. 9876543210"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Mobile Number
+                *</label>
+              <input type="tel" [(ngModel)]="phone" placeholder="e.g. 9876543210"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
           </div>
-          <button
-            (click)="goToStep(2)"
-            class="w-full sm:w-auto bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-          >
+          <button (click)="goToStep(2)"
+            class="w-full sm:w-auto bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
             Continue <mat-icon class="scale-75">arrow_forward</mat-icon>
           </button>
         </div>
@@ -150,27 +104,19 @@
       </div>
 
       <!-- ====== STEP 2: SHIPPING ADDRESS ====== -->
-      <div
-        class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
         [class]="activeStep() === 2
           ? 'border-[#d65108]/30'
           : activeStep() > 2
             ? 'border-emerald-200 dark:border-emerald-900/50'
-            : 'border-neutral-200 dark:border-neutral-800'"
-      >
-        <div
-          class="flex items-center justify-between p-5 cursor-pointer"
-          (click)="goToStep(2)"
-        >
+            : 'border-neutral-200 dark:border-neutral-800'">
+        <div class="flex items-center justify-between p-5 cursor-pointer" (click)="goToStep(2)">
           <div class="flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              [class]="activeStep() > 2
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [class]="activeStep() > 2
                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
                 : activeStep() === 2
                   ? 'bg-[#d65108]/10 text-[#d65108]'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'"
-            >
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'">
               @if (activeStep() > 2) {
               <mat-icon class="scale-90">check_circle</mat-icon>
               } @else {
@@ -178,9 +124,7 @@
               }
             </div>
             <div>
-              <h2
-                class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white"
-              >
+              <h2 class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white">
                 2. Shipping Address
               </h2>
               @if (activeStep() > 2 && accAddr1()) {
@@ -192,87 +136,47 @@
             </div>
           </div>
           @if (activeStep() > 2) {
-          <button
-            class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline"
-          >
+          <button class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline">
             Change
           </button>
           }
         </div>
 
         @if (activeStep() === 2) {
-        <div
-          class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5"
-        >
+        <div class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-1.5 md:col-span-2">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Address Line 1 *</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accAddr1"
-                placeholder="House/Flat No., Building Name, Street"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line 1
+                *</label>
+              <input type="text" [(ngModel)]="accAddr1" placeholder="House/Flat No., Building Name, Street"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5 md:col-span-2">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Address Line 2</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accAddr2"
-                placeholder="Locality, Area, Landmark (Optional)"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line
+                2</label>
+              <input type="text" [(ngModel)]="accAddr2" placeholder="Locality, Area, Landmark (Optional)"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >City *</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accCity"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">City *</label>
+              <input type="text" [(ngModel)]="accCity"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >State *</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accState"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">State *</label>
+              <input type="text" [(ngModel)]="accState"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >PIN / Pincode *</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accPin"
-                placeholder="6-digit ZIP"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">PIN / Pincode
+                *</label>
+              <input type="text" [(ngModel)]="accPin" placeholder="6-digit ZIP"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
             <div class="space-y-1.5">
-              <label
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-                >Country</label
-              >
-              <input
-                type="text"
-                [(ngModel)]="accCountry"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all"
-              />
+              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Country</label>
+              <input type="text" [(ngModel)]="accCountry"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
             </div>
           </div>
 
@@ -280,29 +184,19 @@
 
           <!-- Order Notes -->
           <div class="space-y-1.5">
-            <label
-              class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block"
-              >Order Notes (Optional)</label
-            >
-            <textarea
-              rows="2"
-              [(ngModel)]="orderNotes"
-              placeholder="Delivery requests, packaging notes, etc..."
-              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all resize-none"
-            ></textarea>
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Order Notes
+              (Optional)</label>
+            <textarea rows="2" [(ngModel)]="orderNotes" placeholder="Delivery requests, packaging notes, etc..."
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all resize-none"></textarea>
           </div>
 
           <div class="flex gap-3">
-            <button
-              (click)="goToStep(1)"
-              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-            >
+            <button (click)="goToStep(1)"
+              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
               Back
             </button>
-            <button
-              (click)="goToStep(3)"
-              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            >
+            <button (click)="goToStep(3)"
+              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
               Continue <mat-icon class="scale-75">arrow_forward</mat-icon>
             </button>
           </div>
@@ -311,27 +205,19 @@
       </div>
 
       <!-- ====== STEP 3: PAYMENT METHOD ====== -->
-      <div
-        class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
         [class]="activeStep() === 3
           ? 'border-[#d65108]/30'
           : activeStep() > 3
             ? 'border-emerald-200 dark:border-emerald-900/50'
-            : 'border-neutral-200 dark:border-neutral-800'"
-      >
-        <div
-          class="flex items-center justify-between p-5 cursor-pointer"
-          (click)="goToStep(3)"
-        >
+            : 'border-neutral-200 dark:border-neutral-800'">
+        <div class="flex items-center justify-between p-5 cursor-pointer" (click)="goToStep(3)">
           <div class="flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              [class]="activeStep() > 3
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [class]="activeStep() > 3
                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
                 : activeStep() === 3
                   ? 'bg-[#d65108]/10 text-[#d65108]'
-                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'"
-            >
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'">
               @if (activeStep() > 3) {
               <mat-icon class="scale-90">check_circle</mat-icon>
               } @else {
@@ -339,9 +225,7 @@
               }
             </div>
             <div>
-              <h2
-                class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white"
-              >
+              <h2 class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white">
                 3. Payment Method
               </h2>
               @if (activeStep() > 3 && paymentMethod()) {
@@ -354,79 +238,54 @@
             </div>
           </div>
           @if (activeStep() > 3) {
-          <button
-            class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline"
-          >
+          <button class="text-[10px] font-black text-[#d65108] uppercase tracking-widest hover:underline">
             Change
           </button>
           }
         </div>
 
         @if (activeStep() === 3) {
-        <div
-          class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5"
-        >
+        <div class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5">
           <div class="space-y-3">
             @for (method of availableGateways(); track method.gatewayCode) { @if
             (method.gatewayCode === 'COD' && !isCodAllowed()) {
             <!-- COD Disabled -->
             <div class="relative">
               <div
-                class="flex items-center gap-4 p-4 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-950/50 opacity-60 cursor-not-allowed"
-              >
+                class="flex items-center gap-4 p-4 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-neutral-100/60 dark:bg-neutral-950/50 opacity-60 cursor-not-allowed">
                 <div
-                  class="h-12 w-12 rounded-xl bg-neutral-200/80 dark:bg-neutral-800 flex items-center justify-center shrink-0"
-                >
-                  <mat-icon class="text-neutral-400 dark:text-neutral-600"
-                    >{{ method.icon }}</mat-icon
-                  >
+                  class="h-12 w-12 rounded-xl bg-neutral-200/80 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                  <mat-icon class="text-neutral-400 dark:text-neutral-600">{{ method.icon }}</mat-icon>
                 </div>
                 <div class="flex-1">
                   <h4
-                    class="text-sm font-black text-neutral-400 dark:text-neutral-500 line-through decoration-red-400/60"
-                  >
+                    class="text-sm font-black text-neutral-400 dark:text-neutral-500 line-through decoration-red-400/60">
                     {{ method.displayName }}
                   </h4>
                   <p class="text-[10px] text-neutral-400 mt-0.5 font-bold">
                     {{ method.description }}
                   </p>
                 </div>
-                <mat-icon
-                  class="text-neutral-300 dark:text-neutral-600 scale-75"
-                  >block</mat-icon
-                >
+                <mat-icon class="text-neutral-300 dark:text-neutral-600 scale-75">block</mat-icon>
               </div>
-              <div
-                class="mt-1.5 ml-2 flex items-start gap-1.5 text-[10px] font-semibold text-red-500/90"
-              >
-                <mat-icon class="scale-[0.6] mt-0.5 text-red-400 shrink-0"
-                  >info</mat-icon
-                >
-                <span
-                  >{{ codError() || 'COD is not available for this order.'
-                  }}</span
-                >
+              <div class="mt-1.5 ml-2 flex items-start gap-1.5 text-[10px] font-semibold text-red-500/90">
+                <mat-icon class="scale-[0.6] mt-0.5 text-red-400 shrink-0">info</mat-icon>
+                <span>{{ codError() || 'COD is not available for this order.'
+                  }}</span>
               </div>
             </div>
             } @else {
             <!-- Selectable Method -->
-            <button
-              (click)="paymentMethod.set(method.gatewayCode)"
+            <button (click)="paymentMethod.set(method.gatewayCode)"
               class="w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 hover:shadow-md"
               [class]="paymentMethod() === method.gatewayCode
                 ? 'border-[#d65108] bg-orange-500/5 dark:bg-[#d65108]/5 shadow-md'
-                : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700'"
-            >
-              <div
-                class="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors"
-                [class]="paymentMethod() === method.gatewayCode
+                : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700'">
+              <div class="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors" [class]="paymentMethod() === method.gatewayCode
                   ? 'bg-[#d65108]/10 border border-[#d65108]/20'
-                  : 'bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700'"
-              >
-                <mat-icon
-                  [class]="paymentMethod() === method.gatewayCode ? 'text-[#d65108]' : 'text-neutral-500'"
-                  >{{ method.icon }}</mat-icon
-                >
+                  : 'bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/50 dark:border-neutral-700'">
+                <mat-icon [class]="paymentMethod() === method.gatewayCode ? 'text-[#d65108]' : 'text-neutral-500'">{{
+                  method.icon }}</mat-icon>
               </div>
               <div class="flex-1">
                 <h4 class="text-sm font-black text-neutral-900 dark:text-white">
@@ -442,8 +301,7 @@
             </button>
             } } @if (availableGateways().length === 0) {
             <div
-              class="p-4 text-center text-[10px] font-bold text-red-500 bg-red-50/50 dark:bg-red-950/20 border border-red-200/30 dark:border-red-800/20 rounded-2xl"
-            >
+              class="p-4 text-center text-[10px] font-bold text-red-500 bg-red-50/50 dark:bg-red-950/20 border border-red-200/30 dark:border-red-800/20 rounded-2xl">
               <mat-icon class="scale-75 text-red-400 mb-1">warning</mat-icon>
               <p>No payment methods currently enabled in admin settings.</p>
             </div>
@@ -452,8 +310,7 @@
 
           @if (paymentMethod() === 'COD' && codSurcharge() > 0) {
           <div
-            class="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl"
-          >
+            class="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
             <mat-icon class="text-amber-600 scale-75">info</mat-icon>
             <p class="text-xs font-semibold text-amber-800 dark:text-amber-300">
               A COD handling charge of {{ codSurcharge() |
@@ -463,16 +320,12 @@
           }
 
           <div class="flex gap-3">
-            <button
-              (click)="goToStep(2)"
-              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-            >
+            <button (click)="goToStep(2)"
+              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
               Back
             </button>
-            <button
-              (click)="goToStep(4)"
-              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            >
+            <button (click)="goToStep(4)"
+              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
               Review Order <mat-icon class="scale-75">arrow_forward</mat-icon>
             </button>
           </div>
@@ -481,43 +334,31 @@
       </div>
 
       <!-- ====== STEP 4: REVIEW & PLACE ORDER ====== -->
-      <div
-        class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl border shadow-sm overflow-hidden transition-all duration-300"
         [class]="activeStep() === 4
           ? 'border-[#d65108]/30'
-          : 'border-neutral-200 dark:border-neutral-800'"
-      >
+          : 'border-neutral-200 dark:border-neutral-800'">
         <div class="flex items-center justify-between p-5">
           <div class="flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              [class]="activeStep() === 4
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" [class]="activeStep() === 4
                 ? 'bg-[#d65108]/10 text-[#d65108]'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'"
-            >
+                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'">
               <mat-icon class="scale-90">verified</mat-icon>
             </div>
-            <h2
-              class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white"
-            >
+            <h2 class="text-sm font-black uppercase tracking-wider text-neutral-900 dark:text-white">
               4. Review & Place Order
             </h2>
           </div>
         </div>
 
         @if (activeStep() === 4) {
-        <div
-          class="px-5 pb-6 space-y-5 border-t border-neutral-100 dark:border-neutral-800 pt-5"
-        >
+        <div class="px-5 pb-6 space-y-5 border-t border-neutral-100 dark:border-neutral-800 pt-5">
           <!-- Review Summary Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Contact -->
             <div
-              class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800"
-            >
-              <p
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2"
-              >
+              class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800">
+              <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2">
                 Contact
               </p>
               <p class="text-sm font-bold text-neutral-900 dark:text-white">
@@ -528,16 +369,11 @@
             </div>
             <!-- Address -->
             <div
-              class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800"
-            >
-              <p
-                class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2"
-              >
+              class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800">
+              <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2">
                 Shipping
               </p>
-              <p
-                class="text-sm font-bold text-neutral-900 dark:text-white line-clamp-2"
-              >
+              <p class="text-sm font-bold text-neutral-900 dark:text-white line-clamp-2">
                 {{ accAddr1() }} {{ accAddr2() }}
               </p>
               <p class="text-xs text-neutral-500 mt-0.5">
@@ -548,30 +384,19 @@
 
           <!-- Terms -->
           <div
-            class="flex items-center gap-2.5 p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800"
-          >
-            <input
-              type="checkbox"
-              [(ngModel)]="termsAccepted"
-              id="termsCheck"
-              class="w-4 h-4 text-[#d65108] bg-zinc-100 border-zinc-300 rounded focus:ring-[#d65108] cursor-pointer"
-            />
-            <label
-              for="termsCheck"
-              class="text-[11px] font-bold text-neutral-600 dark:text-neutral-350 cursor-pointer"
-              >I accept the
-              <a routerLink="/terms" class="text-[#d65108] hover:underline"
-                >terms and conditions</a
-              >
-              of purchase.</label
-            >
+            class="flex items-center gap-2.5 p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800">
+            <input type="checkbox" [(ngModel)]="termsAccepted" id="termsCheck"
+              class="w-4 h-4 text-[#d65108] bg-zinc-100 border-zinc-300 rounded focus:ring-[#d65108] cursor-pointer" />
+            <label for="termsCheck"
+              class="text-[11px] font-bold text-neutral-600 dark:text-neutral-350 cursor-pointer">I accept the
+              <a routerLink="/terms" class="text-[#d65108] hover:underline">terms and conditions</a>
+              of purchase.</label>
           </div>
 
           <!-- Validation Errors -->
           @if (!isValid() && termsAccepted()) {
           <div
-            class="p-3 bg-red-500/10 text-red-500 border border-red-500/15 rounded-2xl text-[10px] font-bold space-y-1"
-          >
+            class="p-3 bg-red-500/10 text-red-500 border border-red-500/15 rounded-2xl text-[10px] font-bold space-y-1">
             <p class="uppercase text-[9px] tracking-wide text-red-600">
               Please correct:
             </p>
@@ -580,41 +405,30 @@
               <li>Name is required</li>
               } @if (!email().trim() || !email().includes('@')) {
               <li>Valid email required</li>
-              } @if (phone().trim().length < 10) {
-              <li>Valid 10-12 digit phone number required</li>
-              } @if (!accAddr1().trim()) {
-              <li>Address Line 1 is required</li>
-              } @if (!accCity().trim()) {
-              <li>City is required</li>
-              } @if (!accState().trim()) {
-              <li>State is required</li>
-              } @if (accPin().trim().length !== 6) {
-              <li>6-digit PIN code required</li>
-              } @if (paymentMethod() === 'COD' && !isCodAllowed()) {
-              <li>{{ codError() || 'COD not permitted' }}</li>
-              }
+              } @if (phone().trim().length < 10) { <li>Valid 10-12 digit phone number required</li>
+                } @if (!accAddr1().trim()) {
+                <li>Address Line 1 is required</li>
+                } @if (!accCity().trim()) {
+                <li>City is required</li>
+                } @if (!accState().trim()) {
+                <li>State is required</li>
+                } @if (accPin().trim().length !== 6) {
+                <li>6-digit PIN code required</li>
+                } @if (paymentMethod() === 'COD' && !isCodAllowed()) {
+                <li>{{ codError() || 'COD not permitted' }}</li>
+                }
             </ul>
           </div>
           }
 
           <div class="flex gap-3">
-            <button
-              (click)="goToStep(3)"
-              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-            >
+            <button (click)="goToStep(3)"
+              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
               Back
             </button>
-            <app-button
-              [loading]="isSubmitting()"
-              text="Place Order"
-              loadingText="Processing Payment..."
-              icon="lock"
-              variant="primary"
-              [isFullWidth]="true"
-              [disabled]="!isValid() || isSubmitting()"
-              class="block flex-1 text-center"
-              (btnClick)="placeOrder()"
-            >
+            <app-button [loading]="isSubmitting()" text="Place Order" loadingText="Processing Payment..." icon="lock"
+              variant="primary" [isFullWidth]="true" [disabled]="!isValid() || isSubmitting()"
+              class="block flex-1 text-center" (btnClick)="placeOrder()">
             </app-button>
           </div>
         </div>
@@ -626,11 +440,9 @@
     <div class="lg:col-span-5 relative">
       <div class="sticky top-24 space-y-6">
         <div
-          class="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5"
-        >
+          class="bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-5">
           <h3
-            class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-100 dark:border-neutral-800 pb-3"
-          >
+            class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em] border-b border-neutral-100 dark:border-neutral-800 pb-3">
             Order Summary
           </h3>
 
@@ -641,69 +453,50 @@
             <div class="space-y-2">
               <div class="flex gap-3 items-start">
                 <div
-                  class="w-14 h-14 bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden shrink-0 p-1 relative"
-                >
-                  <img
-                    [src]="item.variant?.images?.[0]?.url || item.variant?.images?.[0] || item.product.images[0]?.url || item.product.images[0]"
-                    class="w-full h-full object-contain"
-                    referrerpolicy="no-referrer"
-                  />
+                  class="w-14 h-14 bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden shrink-0 p-1 relative">
+                  <img [src]="ds.getProductImage(item)" class="w-full h-full object-contain"
+                    referrerpolicy="no-referrer" />
                   @if (item.bundleSubs && item.bundleSubs.length > 0) {
                   <div class="absolute -bottom-1 -left-1 flex -space-x-1">
                     @for (sub of item.bundleSubs; track sub.product.id; let idx
-                    = $index) { @if (idx < 2) {
-                    <img
-                      [src]="sub.variant?.images?.[0]?.url || sub.variant?.images?.[0] || sub.product.images?.[0]?.url || sub.product.images?.[0] || 'https://via.placeholder.com/40'"
+                    = $index) { @if (idx
+                    < 2) { <img [src]="ds.getProductImage(sub)"
                       class="w-5 h-5 object-cover rounded-full border-2 border-white dark:border-neutral-900"
-                      referrerpolicy="no-referrer"
-                      alt="child"
-                    />
+                      referrerpolicy="no-referrer" alt="child" />
                     } }
                   </div>
                   }
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
-                    <h4
-                      class="text-xs font-bold text-neutral-900 dark:text-white truncate"
-                    >
+                    <h4 class="text-xs font-bold text-neutral-900 dark:text-white truncate">
                       {{ item.product.name }}
                     </h4>
                     @if (item.product.codAvailable === false) {
                     <span
-                      class="inline-flex items-center text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded"
-                      >No COD</span
-                    >
+                      class="inline-flex items-center text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">No
+                      COD</span>
                     } @else {
                     <span
-                      class="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded"
-                      >COD Available</span
-                    >
+                      class="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">COD
+                      Available</span>
                     }
                   </div>
                   @if (item.variant) {
-                  <span
-                    class="text-[10px] text-neutral-400 font-medium uppercase"
-                    >{{ item.variant.name }}</span
-                  >
+                  <span class="text-[10px] text-neutral-400 font-medium uppercase">{{ item.variant.name }}</span>
                   }
                   <p class="text-[10px] text-neutral-500 font-semibold mt-0.5">
                     Qty: {{ item.quantity }}
                   </p>
                   @if (item.bundleSubs && item.bundleSubs.length > 0) {
                   <span
-                    class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-black uppercase"
-                  >
-                    <mat-icon class="scale-[0.55] -ml-0.5"
-                      >inventory_2</mat-icon
-                    >
+                    class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-full text-[9px] font-black uppercase">
+                    <mat-icon class="scale-[0.55] -ml-0.5">inventory_2</mat-icon>
                     Bundle · {{ item.bundleSubs.length }} free
                   </span>
                   }
                 </div>
-                <div
-                  class="font-bold text-xs text-neutral-900 dark:text-white shrink-0"
-                >
+                <div class="font-bold text-xs text-neutral-900 dark:text-white shrink-0">
                   {{ getPrice(item) * item.quantity |
                   currency:'INR':'symbol':'1.0-0' }}
                 </div>
@@ -711,29 +504,19 @@
 
               <!-- Bundle sub-products -->
               @if (item.bundleSubs && item.bundleSubs.length > 0) {
-              <div
-                class="mt-2 ml-4 pl-3 border-l-2 border-emerald-500/30 space-y-2"
-              >
+              <div class="mt-2 ml-4 pl-3 border-l-2 border-emerald-500/30 space-y-2">
                 @for (sub of item.bundleSubs; track sub.product.id) {
                 <div class="flex gap-2.5 items-center">
                   <div
-                    class="w-8 h-8 relative rounded bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 p-0.5 shrink-0 flex items-center justify-center"
-                  >
-                    <img
-                      [src]="sub.variant?.images?.[0]?.url || sub.variant?.images?.[0] || sub.product.images?.[0]?.url || sub.product.images?.[0] || 'https://via.placeholder.com/60'"
-                      class="max-w-full max-h-full object-contain"
-                      referrerpolicy="no-referrer"
-                      alt="sub"
-                    />
+                    class="w-8 h-8 relative rounded bg-neutral-50 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-800 p-0.5 shrink-0 flex items-center justify-center">
+                    <img [src]="ds.getProductImage(sub)" class="max-w-full max-h-full object-contain"
+                      referrerpolicy="no-referrer" alt="sub" />
                   </div>
                   <span
-                    class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 truncate flex-1 uppercase tracking-wide"
-                    >{{ sub.product.name }}</span
-                  >
+                    class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 truncate flex-1 uppercase tracking-wide">{{
+                    sub.product.name }}</span>
                   <span
-                    class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider"
-                    >Free</span
-                  >
+                    class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider">Free</span>
                 </div>
                 }
               </div>
@@ -743,60 +526,43 @@
           </div>
 
           <!-- Calculations -->
-          <div
-            class="space-y-2.5 pt-4 border-t border-neutral-100 dark:border-neutral-800 text-xs"
-          >
+          <div class="space-y-2.5 pt-4 border-t border-neutral-100 dark:border-neutral-800 text-xs">
             <div class="flex justify-between text-neutral-500 font-semibold">
               <span>Subtotal</span>
-              <span class="text-neutral-900 dark:text-white font-bold"
-                >{{ subtotal() | currency:'INR':'symbol':'1.0-0' }}</span
-              >
+              <span class="text-neutral-900 dark:text-white font-bold">{{ subtotal() | currency:'INR':'symbol':'1.0-0'
+                }}</span>
             </div>
             <div class="flex justify-between text-neutral-500 font-semibold">
               <span>Delivery Charges</span>
-              <span
-                class="font-bold"
-                [class]="shipping() === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-900 dark:text-white'"
-                >{{ shipping() === 0 ? 'Free' : (shipping() |
-                currency:'INR':'symbol':'1.0-0') }}</span
-              >
+              <span class="font-bold"
+                [class]="shipping() === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-900 dark:text-white'">{{
+                shipping() === 0 ? 'Free' : (shipping() |
+                currency:'INR':'symbol':'1.0-0') }}</span>
             </div>
             @if (paymentMethod() === 'COD' && codSurcharge() > 0) {
             <div class="flex justify-between text-neutral-500 font-semibold">
               <span>COD Surcharge</span>
-              <span class="text-neutral-900 dark:text-white font-bold"
-                >{{ codSurcharge() | currency:'INR':'symbol':'1.0-0' }}</span
-              >
+              <span class="text-neutral-900 dark:text-white font-bold">{{ codSurcharge() |
+                currency:'INR':'symbol':'1.0-0' }}</span>
             </div>
             } @if (discount() > 0) {
             <div class="flex justify-between text-emerald-600 font-semibold">
               <span>Discount Applied</span>
-              <span class="font-bold"
-                >-{{ discount() | currency:'INR':'symbol':'1.0-0' }}</span
-              >
+              <span class="font-bold">-{{ discount() | currency:'INR':'symbol':'1.0-0' }}</span>
             </div>
             }
           </div>
 
-          <div
-            class="flex justify-between items-end pt-4 border-t border-neutral-900 dark:border-white"
-          >
-            <span
-              class="text-xs font-black text-neutral-400 uppercase tracking-wider"
-              >Grand Total</span
-            >
-            <span
-              class="text-2xl font-black text-neutral-900 dark:text-white leading-none"
-              >{{ grandTotal() | currency:'INR':'symbol':'1.0-0' }}</span
-            >
+          <div class="flex justify-between items-end pt-4 border-t border-neutral-900 dark:border-white">
+            <span class="text-xs font-black text-neutral-400 uppercase tracking-wider">Grand Total</span>
+            <span class="text-2xl font-black text-neutral-900 dark:text-white leading-none">{{ grandTotal() |
+              currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
 
           <!-- Trust Badges -->
           <div class="flex flex-wrap gap-3 justify-center pt-2">
             <div class="flex items-center gap-1.5 text-neutral-400">
-              <mat-icon class="scale-[0.6] text-emerald-500"
-                >verified_user</mat-icon
-              >
+              <mat-icon class="scale-[0.6] text-emerald-500">verified_user</mat-icon>
               <span class="text-[10px] font-semibold">SSL Secure</span>
             </div>
             <div class="flex items-center gap-1.5 text-neutral-400">
@@ -804,9 +570,7 @@
               <span class="text-[10px] font-semibold">Encrypted</span>
             </div>
             <div class="flex items-center gap-1.5 text-neutral-400">
-              <mat-icon class="scale-[0.6] text-[#d65108]"
-                >support_agent</mat-icon
-              >
+              <mat-icon class="scale-[0.6] text-[#d65108]">support_agent</mat-icon>
               <span class="text-[10px] font-semibold">24/7 Support</span>
             </div>
           </div>
@@ -817,29 +581,19 @@
 
   <!-- Auth Modal -->
   @if (showAuthModal()) {
-  <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-  >
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div
-      class="bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800 max-w-md w-full p-8 shadow-2xl relative overflow-hidden"
-    >
-      <div
-        class="absolute -top-24 -right-24 w-48 h-48 bg-[#d65108]/10 rounded-full blur-3xl"
-      ></div>
-      <div
-        class="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-600/15 rounded-full blur-2xl"
-      ></div>
+      class="bg-white dark:bg-neutral-900 rounded-[2rem] border border-neutral-100 dark:border-neutral-800 max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#d65108]/10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-600/15 rounded-full blur-2xl"></div>
 
       <div class="relative z-10 space-y-6">
         <div class="text-center">
           <div
-            class="w-16 h-16 bg-orange-50 dark:bg-orange-950/30 text-[#d65108] rounded-full flex items-center justify-center mx-auto mb-4"
-          >
+            class="w-16 h-16 bg-orange-50 dark:bg-orange-950/30 text-[#d65108] rounded-full flex items-center justify-center mx-auto mb-4">
             <mat-icon class="scale-125">shopping_bag</mat-icon>
           </div>
-          <h2
-            class="text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white"
-          >
+          <h2 class="text-2xl font-black uppercase tracking-tight text-neutral-900 dark:text-white">
             Checkout Options
           </h2>
           <p class="text-sm text-neutral-500 mt-1">
@@ -847,17 +601,11 @@
           </p>
         </div>
 
-        <div
-          class="border-t border-b border-neutral-100 dark:border-neutral-800 py-6 space-y-3"
-        >
-          <h3
-            class="text-xs font-black text-[#d65108] uppercase tracking-widest text-center mb-2"
-          >
+        <div class="border-t border-b border-neutral-100 dark:border-neutral-800 py-6 space-y-3">
+          <h3 class="text-xs font-black text-[#d65108] uppercase tracking-widest text-center mb-2">
             Benefits of Login:
           </h3>
-          <ul
-            class="space-y-2 text-sm font-bold text-neutral-700 dark:text-neutral-300"
-          >
+          <ul class="space-y-2 text-sm font-bold text-neutral-700 dark:text-neutral-300">
             <li class="flex items-center gap-3">
               <mat-icon class="text-emerald-500 text-sm">check_circle</mat-icon>
               Track Orders
@@ -878,16 +626,12 @@
         </div>
 
         <div class="flex flex-col gap-3">
-          <button
-            (click)="continueAsGuest()"
-            class="w-full bg-[#d65108] hover:bg-orange-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
-          >
+          <button (click)="continueAsGuest()"
+            class="w-full bg-[#d65108] hover:bg-orange-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-none">
             Continue as Guest <mat-icon class="text-sm">arrow_forward</mat-icon>
           </button>
-          <button
-            (click)="router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } })"
-            class="w-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest cursor-pointer border-none"
-          >
+          <button (click)="router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } })"
+            class="w-full bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black py-4 rounded-xl transition-all text-xs uppercase tracking-widest cursor-pointer border-none">
             Login / Register
           </button>
         </div>
