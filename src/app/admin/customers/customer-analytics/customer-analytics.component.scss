@@ -1,0 +1,339 @@
+// Customer Analytics Styles
+.analytics-container {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-primary, #fafbfe);
+  color: var(--text-primary, #1e293b);
+  font-family: 'Outfit', sans-serif;
+  min-height: calc(100vh - 4rem);
+
+  .page-header {
+    margin-bottom: 0.5rem;
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.025em;
+      color: var(--text-heading, #0f172a);
+    }
+    p {
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary, #64748b);
+    }
+  }
+
+  // Metrics Grid
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+
+    @media(max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media(max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+
+    .metric-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border-color, #e2e8f0);
+      padding: 1.25rem;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+      }
+
+      .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        mat-icon {
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+
+        &.blue { background: rgba(59, 130, 246, 0.08); color: #2563eb; }
+        &.green { background: rgba(34, 197, 94, 0.08); color: #16a34a; }
+        &.purple { background: rgba(168, 85, 247, 0.08); color: #7c3aed; }
+        &.orange { background: rgba(249, 115, 22, 0.08); color: #ea580c; }
+      }
+
+      .details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+
+        .label {
+          font-size: 0.75rem;
+          color: var(--text-secondary, #64748b);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--text-heading, #0f172a);
+          line-height: 1.2;
+        }
+
+        .subtext {
+          font-size: 0.7rem;
+          color: var(--text-secondary, #94a3b8);
+        }
+      }
+    }
+  }
+
+  // Charts and Segment Grid
+  .charts-and-lists-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+
+    @media(max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .chart-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+
+      h3 {
+        margin: 0 0 1.5rem 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-heading, #0f172a);
+      }
+
+      // Bar Chart Simulation
+      .bar-chart-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        height: 200px;
+        padding-top: 1rem;
+        border-bottom: 2px solid var(--border-color, #e2e8f0);
+
+        .bar-column {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          flex: 1;
+
+          .bar-fill {
+            width: 36px;
+            background: linear-gradient(0deg, #f97316 0%, #ea580c 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            transition: height 0.5s ease-out;
+
+            @media(max-width: 576px) {
+              width: 24px;
+            }
+
+            .val-pop {
+              position: absolute;
+              top: -1.25rem;
+              font-size: 0.75rem;
+              color: var(--text-primary, #1e293b);
+            }
+          }
+
+          .bar-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary, #64748b);
+          }
+        }
+      }
+
+      .chart-info {
+        margin: 0.75rem 0 0 0;
+        font-size: 0.75rem;
+        color: var(--text-secondary, #94a3b8);
+      }
+
+      // Tier Breakdown
+      .segment-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .segment-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.75rem 1rem;
+          background: var(--bg-primary, #f8fafc);
+          border: 1px solid var(--border-color, #e2e8f0);
+          border-radius: 12px;
+          align-items: center;
+
+          .tier-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+
+            &.retail { background: rgba(14, 165, 233, 0.08); color: #0284c7; }
+            &.guest { background: rgba(100, 116, 139, 0.08); color: #475569; }
+            &.active { background: rgba(34, 197, 94, 0.08); color: #16a34a; }
+          }
+
+          .count {
+            font-size: 0.85rem;
+            color: var(--text-primary, #334155);
+          }
+        }
+      }
+    }
+  }
+
+  // Leaderboards Section
+  .leaderboards-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-heading, #0f172a);
+    margin-top: 1rem;
+  }
+
+  .leaderboards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+
+    @media(max-width: 992px) {
+      grid-template-columns: 1fr;
+    }
+
+    .leaderboard-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 20px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color, #f1f5f9);
+        padding-bottom: 0.75rem;
+
+        mat-icon {
+          color: #ea580c;
+          font-size: 1.35rem;
+          width: 1.35rem;
+          height: 1.35rem;
+        }
+
+        h3 {
+          margin: 0;
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: var(--text-heading, #0f172a);
+        }
+      }
+
+      .board-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .board-row {
+          display: flex;
+          align-items: center;
+          padding: 0.625rem 0.875rem;
+          background: var(--bg-primary, #f8fafc);
+          border: 1px solid var(--border-color, #f1f5f9);
+          border-radius: 12px;
+          gap: 0.75rem;
+
+          .rank {
+            font-size: 0.8rem;
+            color: #ea580c;
+            width: 24px;
+            text-align: center;
+          }
+
+          .details {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+
+            .name {
+              font-size: 0.85rem;
+              color: var(--text-heading, #0f172a);
+              display: -webkit-box;
+              -webkit-line-clamp: 1;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+
+            .email {
+              font-size: 0.7rem;
+              color: var(--text-secondary, #94a3b8);
+              display: -webkit-box;
+              -webkit-line-clamp: 1;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            }
+          }
+
+          .metric {
+            font-size: 0.85rem;
+            color: var(--text-primary, #1e293b);
+            text-align: right;
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+  }
+
+  // Loading Overlay
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #f1f5f9;
+      border-top-color: #ea580c;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+// Animations
+@keyframes spin { to { transform: rotate(360deg); } }

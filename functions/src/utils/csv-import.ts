@@ -284,11 +284,19 @@ const parseIncludedItemsField = (value: string): string[] => {
   return splitCsvArray(value);
 };
 
-const buildVariantFromRow = (row: Record<string, string>): any => {
+const buildVariantFromRow = (
+  row: Record<string, string>,
+  firstRow?: Record<string, string>,
+): any => {
   const optionValues: Record<string, string> = {};
   [1, 2, 3].forEach((index) => {
     const optionName =
-      getValue(row, `option${index}_name`) || getValue(row, `option${index}`);
+      getValue(row, `option${index}_name`) ||
+      getValue(row, `option${index}`) ||
+      (firstRow
+        ? getValue(firstRow, `option${index}_name`) ||
+          getValue(firstRow, `option${index}`)
+        : "");
     const optionValue =
       getValue(row, `option${index}_value`) || getValue(row, `option${index}`);
     if (optionName && optionValue) {
@@ -318,17 +326,32 @@ const buildVariantFromRow = (row: Record<string, string>): any => {
     ...splitCsvArray(getValue(row, "image_url")),
   ]);
 
+  const parsedPrice = parseFloat(rawPrice) || 0;
+  const parsedCompare = rawCompare ? parseFloat(rawCompare) : 0;
+
+  let price = parsedPrice;
+  let salePrice = null;
+
+  if (parsedCompare > parsedPrice) {
+    price = parsedCompare;
+    salePrice = parsedPrice;
+  }
+
+  const optionValuesList = Object.values(optionValues).filter(Boolean);
+  const variantTitle = getValue(row, "variant_title");
+  const name =
+    variantTitle ||
+    (optionValuesList.length > 0 ? optionValuesList.join(" / ") : "") ||
+    getValue(row, "title") ||
+    getValue(row, "variant_sku") ||
+    "Default Title";
+
   return {
-    name:
-      [getValue(row, "variant_title"), getValue(row, "title")]
-        .filter(Boolean)
-        .join(" / ") ||
-      getValue(row, "variant_sku") ||
-      "",
+    name,
     sku: getValue(row, "variant_sku") || getValue(row, "sku") || "",
-    price: parseFloat(rawPrice) || 0,
-    salePrice: parseFloat(rawPrice) || 0,
-    comparePrice: rawCompare ? parseFloat(rawCompare) : null,
+    price,
+    salePrice,
+    comparePrice: parsedCompare > 0 ? parsedCompare : null,
     stock: parseInt(rawStock, 10) || 0,
     weight: parseFloat(rawWeight) || 0,
     barcode: getValue(row, "variant_barcode") || getValue(row, "barcode") || "",
@@ -513,7 +536,6 @@ export const buildShopifyImportGroups = (
       ...splitCsvArray(getValue(row, "image_url")),
       ...splitCsvArray(getValue(row, "variant_image")),
     ]);
-    const variant = buildVariantFromRow(row);
     const relatedProducts = splitCsvArray(getValue(row, "related_products"));
     const complementaryProducts = splitCsvArray(
       getValue(row, "complementary_products"),
@@ -523,16 +545,9 @@ export const buildShopifyImportGroups = (
     );
     const extraAttributes = extractAdditionalAttributes(row);
 
-    const duplicateCheck = variant.sku ? variant.sku : undefined;
-    if (duplicateCheck) {
-      if (skuRegistry.has(duplicateCheck)) {
-        duplicateSkuRegistry.add(duplicateCheck);
-      } else {
-        skuRegistry.add(duplicateCheck);
-      }
-    }
+    const isNewProduct = !groups[key];
 
-    if (!groups[key]) {
+    if (isNewProduct) {
       groups[key] = {
         key,
         name: title || key,
@@ -562,27 +577,56 @@ export const buildShopifyImportGroups = (
         rawRows: [],
         errors: [],
       };
+    } else {
+      if (imageUrls.length > 0) {
+        groups[key].images.push(...imageUrls);
+      }
     }
 
     const product = groups[key];
     product.rowCount += 1;
     product.rawRows.push(row);
 
-    if (variant.sku && duplicateSkuRegistry.has(variant.sku)) {
-      product.errors.push(`Duplicate SKU in file: ${variant.sku}`);
-    }
+    // Differentiate variant row from image-only row:
+    // First row of a product is always a variant.
+    // Subsequent rows are variants only if they specify variant details.
+    const hasVariantDetails =
+      getValue(row, "variant_sku") !== "" ||
+      getValue(row, "sku") !== "" ||
+      getValue(row, "option1_value") !== "" ||
+      getValue(row, "option2_value") !== "" ||
+      getValue(row, "option3_value") !== "" ||
+      (getValue(row, "variant_price") !== "" && getValue(row, "variant_price") !== "0") ||
+      (getValue(row, "price") !== "" && getValue(row, "price") !== "0");
 
-    if (variant.images.length > 0) {
-      product.images.push(...variant.images);
-    }
+    if (isNewProduct || hasVariantDetails) {
+      const variant = buildVariantFromRow(row, product.rawRows[0]);
 
-    product.variants.push({
-      ...variant,
-      images: uniqueArray(variant.images || variant.variantImages || []),
-      variantImages: uniqueArray(
-        variant.variantImages || variant.images || [],
-      ),
-    });
+      const duplicateCheck = variant.sku ? variant.sku : undefined;
+      if (duplicateCheck) {
+        if (skuRegistry.has(duplicateCheck)) {
+          duplicateSkuRegistry.add(duplicateCheck);
+        } else {
+          skuRegistry.add(duplicateCheck);
+        }
+      }
+
+      if (variant.sku && duplicateSkuRegistry.has(variant.sku)) {
+        product.errors.push(`Duplicate SKU in file: ${variant.sku}`);
+      }
+
+      if (variant.images.length > 0) {
+        product.images.push(...variant.images);
+      }
+
+      product.variants.push({
+        ...variant,
+        images: uniqueArray(variant.images || variant.variantImages || []),
+        variantImages: uniqueArray(
+          variant.variantImages || variant.images || [],
+        ),
+      });
+    }
   }
 
   const result = Object.values(groups).map((product) => {

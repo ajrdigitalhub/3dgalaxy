@@ -2,9 +2,23 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
+import { sysCache } from '../config/cache';
+
+export const clearSettingsCache = () => {
+  sysCache.del('theme_settings');
+  sysCache.del('security_settings');
+  sysCache.del('service_config');
+  sysCache.del('consolidated_home_payload');
+  clearCache();
+};
 
 export const getThemeSettings = async (req: Request, res: Response) => {
   try {
+    let cached = sysCache.get('theme_settings');
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     let settingRecord = await prisma.themeSetting.findUnique({
       where: { keyName: 'global-settings' },
     });
@@ -36,7 +50,9 @@ export const getThemeSettings = async (req: Request, res: Response) => {
       });
     }
 
-    return res.status(200).json(JSON.parse(settingRecord.value as string));
+    const data = JSON.parse(settingRecord.value as string);
+    sysCache.set('theme_settings', data, 1800);
+    return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find storefront visual presets', details: error.message });
   }
@@ -66,6 +82,11 @@ export const updatePaymentGateway = async (req: Request, res: Response) => {
 
 export const getSecuritySettings = async (req: Request, res: Response) => {
   try {
+    let cached = sysCache.get('security_settings');
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     let settingRecord = await prisma.themeSetting.findUnique({
       where: { keyName: 'security-settings' },
     });
@@ -84,7 +105,9 @@ export const getSecuritySettings = async (req: Request, res: Response) => {
       });
     }
 
-    return res.status(200).json(JSON.parse(settingRecord.value as string));
+    const data = JSON.parse(settingRecord.value as string);
+    sysCache.set('security_settings', data, 1800);
+    return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to get security settings', details: error.message });
   }
@@ -115,7 +138,7 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
       },
     });
 
-    clearCache();
+    clearSettingsCache();
     return res.status(200).json(JSON.parse(updated.value as string));
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update security settings', details: error.message });
@@ -141,7 +164,7 @@ export const updateThemeSettings = async (req: Request, res: Response) => {
       },
     });
 
-    clearCache();
+    clearSettingsCache();
     return res.status(200).json(JSON.parse(updated.value as string));
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to write storefront visual presets', details: error.message });
@@ -150,6 +173,11 @@ export const updateThemeSettings = async (req: Request, res: Response) => {
 
 export const getServiceConfig = async (req: Request, res: Response) => {
   try {
+    let cached = sysCache.get('service_config');
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     const settings = await getSettingsService();
     const config = settings?.printServiceSettings || {};
 
@@ -206,6 +234,7 @@ export const getServiceConfig = async (req: Request, res: Response) => {
       machineFeePerHour: config.machineFeePerHour !== undefined ? config.machineFeePerHour : 150
     };
 
+    sysCache.set('service_config', responseData, 1800);
     return res.status(200).json(responseData);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve printing service configuration', details: error.message });

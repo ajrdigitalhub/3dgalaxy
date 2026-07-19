@@ -41,26 +41,17 @@ export const registerDevice = async (req: Request, res: Response) => {
   }
 
   try {
-    const whereClause: any = {
-      OR: [
-        { fcmToken },
-        ...(userId ? [{ userId }] : []),
-        ...(guestId ? [{ guestId }] : []),
-      ],
-    };
-
-    const existing = await prisma.notificationDevice.findFirst({
-      where: whereClause,
+    const existing = await prisma.notificationDevice.findUnique({
+      where: { fcmToken },
     });
 
     if (existing) {
       const updated = await prisma.notificationDevice.update({
         where: { id: existing.id },
         data: {
-          userId: userId || existing.userId,
-          guestId: guestId || existing.guestId,
-          sessionId: sessionId || existing.sessionId,
-          fcmToken,
+          userId: userId !== undefined ? userId : existing.userId,
+          guestId: guestId !== undefined ? guestId : existing.guestId,
+          sessionId: sessionId !== undefined ? sessionId : existing.sessionId,
           browser: browser || existing.browser,
           device: device || existing.device,
           os: os || existing.os,

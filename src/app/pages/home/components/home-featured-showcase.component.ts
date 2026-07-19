@@ -146,9 +146,8 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                   }
                   <p
                     class="showcase-anim text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed max-w-xl select-none line-clamp-4 mt-4"
-                  >
-                    {{ product.description || product.shortDescription }}
-                  </p>
+                    [innerHTML]="product.description || product.shortDescription"
+                  ></p>
 
                   <div
                     class="showcase-anim flex items-baseline gap-3 select-none"

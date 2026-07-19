@@ -1,271 +1,545 @@
 @if(isLoading()) {
 <!-- Shimmer Loading Stage -->
-<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-  <div class="w-full h-16 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"></div>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-    <div class="lg:col-span-3 space-y-6">
-      @for(i of [1,2,3,4]; track i) {
-        <div class="h-24 w-full bg-neutral-100 dark:bg-neutral-800 rounded-xl animate-pulse"></div>
-      }
-    </div>
-    <div class="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-6">
-      @for(i of [1,2,3,4,5,6]; track i) {
-        <app-skeleton-product-card />
-      }
-    </div>
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <div class="w-full h-14 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"></div>
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+    @for(i of [1,2,3,4,5,6,7,8,9,10]; track i) {
+      <app-skeleton-product-card />
+    }
   </div>
 </div>
 } @else {
 <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 select-none text-neutral-800 dark:text-neutral-100">
 
-  <!-- Main View Grid -->
-  <div class="flex flex-col lg:flex-row gap-8 items-start relative">
+  <div class="space-y-6">
 
-    <!-- 1. DESKTOP FILTER SIDEBAR (Left Column - Sticky) -->
-    <aside class="hidden lg:block w-[280px] shrink-0 sticky top-24 max-h-[85vh] overflow-y-auto space-y-5 pr-4 border-r border-neutral-200/50 dark:border-neutral-800/50 scrollbar-thin bg-transparent">
+    <!-- 1. STICKY TOP FILTER BAR -->
+    <div class="sticky top-18 bg-[#fafafa] dark:bg-[#121212] z-30 py-3 border-b border-neutral-200/50 dark:border-neutral-800/50 space-y-3">
       
-      <!-- Search Filters input -->
-      <div class="space-y-1 pb-4 border-b border-neutral-200/50 dark:border-neutral-800/50">
-        <span class="text-[10px] font-black uppercase tracking-wider text-neutral-400">Search Filters</span>
-        <div class="relative">
-          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
-          <input type="text" 
-                 [value]="activeSearch()" 
-                 (input)="onSearchInput($event)" 
-                 placeholder="Search products..."
-                 class="w-full h-10 pl-9 pr-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none transition-all">
-        </div>
-      </div>
-
-      <!-- Category Accordion -->
-      <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-        <button (click)="toggleGroup('category')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Categories</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('category')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-        </button>
+      <!-- Desktop & Tablet Layout -->
+      <div class="hidden md:flex items-center justify-between gap-4">
         
-        <div [class.hidden]="!isGroupExpanded('category')" class="accordion-content pt-2 space-y-2 max-h-60 overflow-y-auto scrollbar-thin">
-          @for (cat of filterListOptions(getParentCategories(), categorySearchTerm()); track cat.id) {
-            <div class="space-y-1">
-              <button (click)="toggleFilter('category', cat.id)"
-                      [class.text-orange-500]="isFilterActive('category', cat.id)"
-                      class="w-full flex items-center justify-between text-left text-xs font-bold text-neutral-600 dark:text-neutral-400 hover:text-orange-500 transition-colors border-none bg-transparent cursor-pointer py-1">
-                <span>{{ cat.name }}</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 font-bold font-mono">{{ cat.count }}</span>
-              </button>
-              
-              <!-- Subcategories -->
-              @if (isFilterActive('category', cat.id)) {
-                <div class="pl-3 border-l border-neutral-100 dark:border-neutral-800 space-y-1.5 pt-1">
-                  @for (sub of getChildCategories(cat.id); track sub.id) {
-                    <button (click)="toggleFilter('subcategory', sub.id)"
-                            [class.text-orange-500]="isFilterActive('subcategory', sub.id)"
-                            class="w-full flex items-center justify-between text-left text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 hover:text-orange-500 transition-colors border-none bg-transparent cursor-pointer">
-                      <span>• {{ sub.name }}</span>
-                      <span class="text-[8px] text-neutral-400 font-mono">({{ sub.count }})</span>
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </div>
-      </div>
+        <!-- Left: Filter Summary & General Filter Trigger -->
+        <div class="flex items-center gap-3">
+          <button (click)="showFilterDrawer.set(true)"
+                  class="h-10 px-4 border border-neutral-200 dark:border-neutral-850 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 text-neutral-700 dark:text-neutral-200 cursor-pointer shadow-2xs hover:shadow-xs transition-all duration-200">
+            <mat-icon class="scale-90 text-orange-500">filter_list</mat-icon>
+            <span>Filters</span>
+            @if (getActiveFilterChips().length > 0) {
+              <span class="h-4.5 min-w-4.5 px-1 flex items-center justify-center bg-orange-500 text-white rounded-full text-[9px] font-black leading-none ml-1">{{ getActiveFilterChips().length }}</span>
+            }
+          </button>
 
-      <!-- Brand Accordion -->
-      <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-        <button (click)="toggleGroup('brand')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Brand</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('brand')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-        </button>
-        
-        <div [class.hidden]="!isGroupExpanded('brand')" class="accordion-content pt-2 space-y-3">
-          <!-- Search brand -->
+          <!-- Quick Filters: Brand, Category, Material Dropdowns -->
+          <div class="h-5 w-px bg-neutral-200 dark:bg-neutral-800 mx-1"></div>
+
+          <!-- Brand Quick Dropdown -->
           <div class="relative">
-            <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
-            <input type="text" 
-                   [value]="brandSearchTerm()" 
-                   (input)="brandSearchTerm.set($any($event.target).value)" 
-                   placeholder="Search brands..."
-                   class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none transition-all">
+            <button (click)="toggleQuickDropdown('brand', $event)"
+                    class="h-10 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 hover:border-neutral-350 dark:hover:border-neutral-750 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all">
+              <span>Brand</span>
+              <mat-icon class="scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            @if (activeQuickDropdown() === 'brand') {
+              <div (click)="$event.stopPropagation()"
+                   class="absolute left-0 mt-2 w-56 max-h-64 overflow-y-auto bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl z-40 p-3 space-y-2 animate-fadeIn scrollbar-thin">
+                @for (b of availableFilters().brands; track b.name) {
+                  <label class="flex items-center gap-2.5 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-1.5 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">
+                    <input type="checkbox"
+                           [checked]="isFilterActive('brand', b.name)"
+                           (change)="toggleFilter('brand', b.name)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span class="truncate flex-1">{{ b.name }}</span>
+                    <span class="text-[9px] font-mono text-neutral-400">({{ b.count }})</span>
+                  </label>
+                }
+              </div>
+            }
           </div>
 
-          <div class="space-y-2 max-h-48 overflow-y-auto scrollbar-thin pr-1">
-            @for (brand of filterListOptions(availableFilters().brands, brandSearchTerm()); track brand.id) {
-              <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" 
-                         [checked]="isFilterActive('brand', brand.name)"
-                         (change)="toggleFilter('brand', brand.name)"
-                         class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                  <span>{{ brand.name }}</span>
-                </div>
-                <span class="text-[9px] font-mono text-neutral-400">({{ brand.count }})</span>
-              </label>
+          <!-- Category Quick Dropdown -->
+          <div class="relative">
+            <button (click)="toggleQuickDropdown('category', $event)"
+                    class="h-10 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 hover:border-neutral-350 dark:hover:border-neutral-750 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all">
+              <span>Category</span>
+              <mat-icon class="scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            @if (activeQuickDropdown() === 'category') {
+              <div (click)="$event.stopPropagation()"
+                   class="absolute left-0 mt-2 w-64 max-h-64 overflow-y-auto bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl z-40 p-3 space-y-2 animate-fadeIn scrollbar-thin">
+                @for (cat of getParentCategories(); track cat.id) {
+                  <label class="flex items-center gap-2.5 text-xs font-bold text-neutral-700 dark:text-neutral-350 cursor-pointer py-1.5 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">
+                    <input type="checkbox"
+                           [checked]="isFilterActive('category', cat.id)"
+                           (change)="toggleFilter('category', cat.id)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span class="truncate flex-1">{{ cat.name }}</span>
+                    <span class="text-[9px] font-mono text-neutral-400">({{ cat.count }})</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Material Quick Dropdown -->
+          <div class="relative">
+            <button (click)="toggleQuickDropdown('material', $event)"
+                    class="h-10 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 hover:border-neutral-350 dark:hover:border-neutral-750 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all">
+              <span>Material</span>
+              <mat-icon class="scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            @if (activeQuickDropdown() === 'material') {
+              <div (click)="$event.stopPropagation()"
+                   class="absolute left-0 mt-2 w-56 max-h-64 overflow-y-auto bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl z-40 p-3 space-y-2 animate-fadeIn scrollbar-thin">
+                @for (m of availableFilters().materials; track m.name) {
+                  <label class="flex items-center gap-2.5 text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-1.5 px-1 hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg">
+                    <input type="checkbox"
+                           [checked]="isFilterActive('material', m.name)"
+                           (change)="toggleFilter('material', m.name)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span class="truncate flex-1">{{ m.name }}</span>
+                    <span class="text-[9px] font-mono text-neutral-400">({{ m.count }})</span>
+                  </label>
+                }
+              </div>
             }
           </div>
         </div>
-      </div>
 
-      <!-- Price Accordion -->
-      <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-        <button (click)="toggleGroup('price')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Price Range</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('price')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-        </button>
-        
-        <div [class.hidden]="!isGroupExpanded('price')" class="accordion-content pt-2 space-y-4">
-          <div class="flex items-center gap-2">
-            <div class="relative flex-1">
-              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-neutral-400 font-bold">₹</span>
-              <input type="number" 
-                     #minVal
-                     [value]="activePriceMin()" 
-                     placeholder="Min"
-                     class="w-full h-8 pl-6 pr-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-            </div>
-            <span class="text-xs text-neutral-400">to</span>
-            <div class="relative flex-1">
-              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-neutral-400 font-bold">₹</span>
-              <input type="number" 
-                     #maxVal
-                     [value]="activePriceMax()" 
-                     placeholder="Max"
-                     class="w-full h-8 pl-6 pr-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-            </div>
-            <button (click)="setPriceRange(minVal.value, maxVal.value)"
-                    class="h-8 px-3 bg-neutral-900 dark:bg-neutral-800 text-white rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors border-none cursor-pointer">
-              Go
-            </button>
+        <!-- Right: Sort, View, Page Size -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Outlined Sort Dropdown -->
+          <div class="relative w-44">
+            <select (change)="updateUrlQueryParam('sort', $any($event.target).value)"
+                    class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-855 hover:border-neutral-350 dark:hover:border-neutral-750 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 outline-none cursor-pointer appearance-none premium-select transition-all">
+              <option value="popularity" [selected]="activeSort() === 'popularity'">Popularity</option>
+              <option value="newest" [selected]="activeSort() === 'newest'">Newest</option>
+              <option value="price-asc" [selected]="activeSort() === 'price-asc'">Price: Low to High</option>
+              <option value="price-desc" [selected]="activeSort() === 'price-desc'">Price: High to Low</option>
+              <option value="rating-desc" [selected]="activeSort() === 'rating-desc'">Highest Rated</option>
+              <option value="name-asc" [selected]="activeSort() === 'name-asc'">Name: A-Z</option>
+            </select>
+            <mat-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
           </div>
 
-          <!-- Quick price buttons -->
-          <div class="grid grid-cols-2 gap-1.5">
-            <button (click)="setPriceRange('', '500')" 
-                    [class.border-orange-500]="activePriceMax() === '500' && !activePriceMin()"
-                    class="py-1.5 px-2 text-[10px] font-extrabold uppercase tracking-wide bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-              Under ₹500
+          <!-- Items per page size -->
+          <div class="relative w-28">
+            <select (change)="updateUrlQueryParam('limit', $any($event.target).value)"
+                    class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-855 hover:border-neutral-350 dark:hover:border-neutral-750 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 outline-none cursor-pointer appearance-none premium-select transition-all">
+              <option value="12" [selected]="itemsPerPage() === 12">12 Per Page</option>
+              <option value="24" [selected]="itemsPerPage() === 24">24 Per Page</option>
+              <option value="36" [selected]="itemsPerPage() === 36">36 Per Page</option>
+              <option value="48" [selected]="itemsPerPage() === 48">48 Per Page</option>
+            </select>
+            <mat-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
+          </div>
+
+          <!-- Premium Square View Toggle Buttons -->
+          <div class="flex items-center border border-neutral-200 dark:border-neutral-855 rounded-xl overflow-hidden bg-white dark:bg-neutral-900 shadow-2xs">
+            <button (click)="isListView.set(false)" 
+                    [class.active]="!isListView()"
+                    class="h-10 w-10 flex items-center justify-center text-neutral-450 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer transition-all duration-200 premium-view-btn"
+                    title="Grid View">
+              <mat-icon class="scale-85">grid_view</mat-icon>
             </button>
-            <button (click)="setPriceRange('500', '1000')" 
-                    [class.border-orange-500]="activePriceMin() === '500' && activePriceMax() === '1000'"
-                    class="py-1.5 px-2 text-[10px] font-extrabold uppercase tracking-wide bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-              ₹500 - ₹1K
+            <button (click)="isListView.set(true)" 
+                    [class.active]="isListView()"
+                    class="h-10 w-10 flex items-center justify-center text-neutral-450 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer transition-all duration-200 premium-view-btn"
+                    title="List View">
+              <mat-icon class="scale-85">view_headline</mat-icon>
             </button>
-            <button (click)="setPriceRange('1000', '5000')" 
-                    [class.border-orange-500]="activePriceMin() === '1000' && activePriceMax() === '5000'"
-                    class="py-1.5 px-2 text-[10px] font-extrabold uppercase tracking-wide bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-              ₹1K - ₹5K
-            </button>
-            <button (click)="setPriceRange('5000', '')" 
-                    [class.border-orange-500]="activePriceMin() === '5000' && !activePriceMax()"
-                    class="py-1.5 px-2 text-[10px] font-extrabold uppercase tracking-wide bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
-              ₹5K+
-            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Mobile Layout Header Control Bar -->
+      <div class="flex md:hidden flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <!-- Mobile Filter Summary -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-black text-neutral-800 dark:text-neutral-200 tracking-wide font-mono">
+              {{ totalProducts() }} Products
+            </span>
+            @if (getActiveFilterChips().length > 0) {
+              <span class="text-[10px] text-neutral-400">•</span>
+              <span class="text-[10px] font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                {{ getActiveFilterChips().length }} Filtered
+              </span>
+            }
+          </div>
+
+          <!-- View Toggle for Mobile -->
+          <button (click)="isListView.set(!isListView())"
+                  class="h-8 w-8 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-500 flex items-center justify-center cursor-pointer">
+            <mat-icon class="scale-85">{{ isListView() ? 'grid_view' : 'view_headline' }}</mat-icon>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Filter Trigger -->
+          <button (click)="showFilterDrawer.set(true)"
+                  class="h-10 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 text-neutral-700 dark:text-neutral-200 cursor-pointer transition-all active:scale-98">
+            <mat-icon class="scale-85 text-orange-500">filter_list</mat-icon>
+            <span>Filter</span>
+            @if (getActiveFilterChips().length > 0) {
+              <span class="h-4.5 w-4.5 flex items-center justify-center bg-orange-500 text-white rounded-full text-[9px] font-black">{{ getActiveFilterChips().length }}</span>
+            }
+          </button>
+
+          <!-- Sort Select wrapper -->
+          <div class="relative w-full">
+            <select (change)="updateUrlQueryParam('sort', $any($event.target).value)"
+                    class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-black uppercase tracking-wider text-neutral-700 dark:text-neutral-200 outline-none cursor-pointer appearance-none text-center">
+              <option value="popularity" [selected]="activeSort() === 'popularity'">Popularity</option>
+              <option value="newest" [selected]="activeSort() === 'newest'">Newest</option>
+              <option value="price-asc" [selected]="activeSort() === 'price-asc'">Price ▲</option>
+              <option value="price-desc" [selected]="activeSort() === 'price-desc'">Price ▼</option>
+              <option value="rating-desc" [selected]="activeSort() === 'rating-desc'">Rating</option>
+              <option value="name-asc" [selected]="activeSort() === 'name-asc'">Name A-Z</option>
+            </select>
+            <mat-icon class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
           </div>
         </div>
       </div>
 
-      <!-- Rating Accordion -->
-      <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-        <button (click)="toggleGroup('rating')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Customer Ratings</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('rating')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-        </button>
+    </div>
+
+    <!-- 2. REDESIGNED ACTIVE FILTER CHIPS ROW -->
+    @if (getActiveFilterChips().length > 0) {
+      <div class="flex items-center gap-3 pt-1 pb-2 border-b border-neutral-100 dark:border-neutral-900/50 w-full overflow-x-auto hide-scrollbar flex-nowrap scroll-smooth select-none">
         
-        <div [class.hidden]="!isGroupExpanded('rating')" class="accordion-content pt-2 space-y-1.5">
-          @for (ratingOption of getRatingOptions(); track ratingOption.rating) {
-            <button (click)="updateUrlQueryParam('rating', ratingOption.rating.toString())"
-                    [class.bg-neutral-100]="activeRating() === ratingOption.rating.toString()"
-                    [class.dark:bg-neutral-800]="activeRating() === ratingOption.rating.toString()"
-                    class="w-full flex items-center justify-between py-1.5 px-2 rounded-lg text-left text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-orange-500 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors border-none bg-transparent cursor-pointer">
-              <div class="flex items-center gap-1">
-                <div class="flex items-center text-amber-500">
-                  @for (star of getStarsArray(5); track $index) {
-                    <mat-icon class="scale-[0.7] -mx-0.5">{{ $index < ratingOption.rating ? 'star' : 'star_border' }}</mat-icon>
-                  }
+        <!-- Filter Summary Label -->
+        <div class="hidden md:flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider shrink-0 select-none">
+          <mat-icon class="text-[15px] w-[15px] h-[15px] flex items-center justify-center text-orange-500">local_offer</mat-icon>
+          <span>{{ totalProducts() }} Products Found</span>
+          <span class="text-neutral-350 dark:text-neutral-700">•</span>
+          <span class="text-orange-500">{{ getActiveFilterChips().length }} Filter{{ getActiveFilterChips().length > 1 ? 's' : '' }} Applied</span>
+        </div>
+
+        <!-- Scrollable Chips Loop -->
+        @for (chip of getActiveFilterChips(); track chip.key + '-' + chip.value) {
+          <div class="inline-flex items-center gap-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 pl-3 pr-1 py-1 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-200 shadow-2xs hover:shadow-xs hover:border-orange-200 dark:hover:border-orange-950/60 transition-all shrink-0 hover:scale-[1.02] duration-200">
+            <span class="text-xs text-orange-500 flex items-center justify-center scale-90">{{ chip.icon === 'search' ? '🔍' : (chip.icon === 'category' ? '📦' : (chip.icon === 'sell' ? '🏷️' : (chip.icon === 'payments' ? '💰' : (chip.icon === 'star' ? '⭐' : (chip.icon === 'palette' ? '🎨' : '⚙️'))))) }}</span>
+            <span class="font-extrabold uppercase text-[9px] text-neutral-450 dark:text-neutral-500 tracking-wider">{{ chip.label }}:</span>
+            <span class="font-black dark:text-white">{{ chip.display }}</span>
+            <button (click)="removeSingleFilter(chip.key, chip.value)" 
+                    class="h-5.5 w-5.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-red-500 hover:text-white dark:hover:bg-red-650 rounded-lg flex items-center justify-center text-neutral-400 hover:shadow-md transition-all border-none cursor-pointer p-0 ml-1"
+                    title="Remove Filter">
+              <mat-icon class="text-[12px] w-3 h-3 flex items-center justify-center font-bold">close</mat-icon>
+            </button>
+          </div>
+        }
+
+        <!-- Clear All Button -->
+        <button (click)="clearAllFilters()"
+                class="h-7 px-3 text-[9px] font-black uppercase tracking-widest bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white border border-red-500/20 rounded-xl transition-all duration-200 cursor-pointer shrink-0 flex items-center gap-1 hover:shadow-sm">
+          <mat-icon class="text-[11px] w-[11px] h-[11px] flex items-center justify-center">clear_all</mat-icon>
+          <span>Clear All</span>
+        </button>
+
+      </div>
+    }
+
+    <!-- 3. PRODUCT GRID / LIST VIEW -->
+    <main class="w-full mt-6">
+      @if (productsList().length > 0) {
+        
+        <div [class]="isListView() 
+             ? 'space-y-4' 
+             : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6'">
+          
+          @for (p of productsList(); track p.id) {
+            <div [class]="isListView() 
+                 ? 'flex flex-col sm:flex-row gap-4 p-4 border border-neutral-100 dark:border-neutral-800/60 bg-white dark:bg-neutral-900/50 rounded-2xl hover:shadow-lg transition-all duration-300' 
+                 : 'group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_4px_16px_rgb(0,0,0,0.02)] hover:shadow-xl dark:shadow-none hover:-translate-y-1.5 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-300 p-4 flex flex-col justify-between text-left relative overflow-hidden'">
+              
+              <!-- Product Badges -->
+              <div class="absolute top-3 left-3 z-20 flex flex-col gap-1.5">
+                @if (p.isExclusive) {
+                  <span class="px-2 py-0.5 bg-amber-500 text-neutral-900 text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Exclusive</span>
+                }
+                @if (p.isFeatured) {
+                  <span class="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Featured</span>
+                }
+                @if (p.isOnSale) {
+                  <span class="px-2 py-0.5 bg-red-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Sale</span>
+                }
+                @if (p.stockStatus === 'PRE_ORDER') {
+                  <span class="px-2 py-0.5 bg-purple-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Pre Order</span>
+                } @else if (p.stockStatus === 'COMING_SOON') {
+                  <span class="px-2 py-0.5 bg-teal-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Coming Soon</span>
+                }
+              </div>
+
+              <!-- Wishlist Heart Button -->
+              <button class="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 hover:text-red-500 dark:hover:text-red-400 text-neutral-400 flex items-center justify-center shadow-sm border-none cursor-pointer transition-colors"
+                      title="Add to Wishlist">
+                <mat-icon class="scale-75">favorite_border</mat-icon>
+              </button>
+
+              <!-- Product Image Frame -->
+              <a [routerLink]="['/product', p.slug]"
+                 [class]="isListView() ? 'w-full sm:w-48 shrink-0' : 'w-full'"
+                 class="block relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-3 mb-4">
+                <div class="shimmer-effect"></div>
+                <img [src]="p.thumbnail || 'https://picsum.photos/seed/' + p.slug + '/400/400'"
+                     [alt]="p.name"
+                     class="max-w-[90%] max-h-[90%] object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
+                     loading="lazy">
+              </a>
+
+              <!-- Product Details -->
+              <div class="flex-1 flex flex-col justify-between" [class.w-full]="isListView()">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-[#d65108]">{{ p.brand?.name || p.brand || '3D GALAXY' }}</span>
+                    @if (p.codAvailable) {
+                      <span class="text-[8px] font-extrabold text-green-600 dark:text-green-400 uppercase bg-green-500/10 px-1.5 py-0.5 rounded-sm">COD</span>
+                    }
+                  </div>
+
+                  <a [routerLink]="['/product', p.slug]"
+                     class="block text-xs md:text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-snug hover:text-orange-500 transition-colors line-clamp-2">
+                    {{ p.name }}
+                  </a>
+
+                  <!-- Rating Stars -->
+                  <div class="flex items-center gap-1">
+                    <div class="flex items-center text-amber-500">
+                      @for (star of getStarsArray(5); track $index) {
+                        <mat-icon class="scale-65 -mx-1.5">{{ $index < floorValue(p.avgRating) ? 'star' : 'star_border' }}</mat-icon>
+                      }
+                    </div>
+                    <span class="text-[10px] font-black text-neutral-400 ml-1">({{ p.reviews?.length || 1 }})</span>
+                  </div>
                 </div>
-                <span class="text-[11px] font-bold text-neutral-500 dark:text-neutral-400">& Up</span>
+
+                <!-- Price & Action buttons -->
+                <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col gap-3">
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-sm md:text-lg font-black text-neutral-900 dark:text-white font-mono">
+                      ₹{{ activePrice(p) | number:'1.0-0' }}
+                    </span>
+                    @if (getMrp(p) > activePrice(p)) {
+                      <span class="text-[10px] md:text-xs text-neutral-450 line-through font-medium font-mono">
+                        ₹{{ getMrp(p) | number:'1.0-0' }}
+                      </span>
+                      <span class="text-[9px] font-black text-red-500 uppercase tracking-wide">
+                        {{ mrpDiscountPercent(p) }}% OFF
+                      </span>
+                    }
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button (click)="addToCart(p)"
+                            class="flex-1 h-9 bg-neutral-950 dark:bg-neutral-800 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 border-none hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors cursor-pointer">
+                      <mat-icon class="scale-75">add_shopping_cart</mat-icon>
+                      <span>Cart</span>
+                    </button>
+                    <a [routerLink]="['/product', p.slug]"
+                       class="h-9 w-9 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg flex items-center justify-center transition-colors">
+                      <mat-icon class="scale-75">visibility</mat-icon>
+                    </a>
+                  </div>
+                </div>
               </div>
-              <span class="text-[9px] font-mono text-neutral-400">({{ ratingOption.count }})</span>
+
+            </div>
+          }
+
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <div class="flex items-center justify-center gap-2 pt-12">
+            <button (click)="updateUrlQueryParam('page', (currentPage() - 1).toString())"
+                    [disabled]="currentPage() === 1"
+                    class="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer">
+              Previous
             </button>
+            
+            @for (pageIdx of [].constructor(totalPages()); track $index) {
+              <button (click)="updateUrlQueryParam('page', ($index + 1).toString())"
+                      [class.bg-orange-500]="$index + 1 === currentPage()"
+                      [class.text-white]="$index + 1 === currentPage()"
+                      [class.border-orange-500]="$index + 1 === currentPage()"
+                      class="h-10 w-10 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 font-bold transition-all cursor-pointer">
+                {{ $index + 1 }}
+              </button>
+            }
+
+            <button (click)="updateUrlQueryParam('page', (currentPage() + 1).toString())"
+                    [disabled]="currentPage() === totalPages()"
+                    class="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer">
+                Next
+            </button>
+          </div>
+        }
+
+      } @else {
+        <!-- Empty Results State -->
+        <div class="py-24 text-center space-y-6 bg-white dark:bg-neutral-900/50 border border-neutral-200/50 dark:border-neutral-800/50 rounded-3xl p-6">
+          <div class="h-20 w-20 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto border border-neutral-200 dark:border-neutral-800">
+            <mat-icon class="text-neutral-400 scale-[1.5]">search_off</mat-icon>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-xl font-black text-neutral-800 dark:text-white uppercase tracking-wider">No Products Found</h3>
+            <p class="text-neutral-500 dark:text-neutral-400 text-xs max-w-sm mx-auto">There are currently no products matching your selected search query or active filters.</p>
+          </div>
+          <button (click)="clearAllFilters()"
+                  class="h-11 px-8 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer">
+            Reset All Filters
+          </button>
+        </div>
+      }
+    </main>
+
+  </div>
+</div>
+}
+
+<!-- 4. UNIFIED SLIDE-OUT FILTER DRAWER -->
+@if (showFilterDrawer()) {
+  <div class="fixed inset-0 z-50 flex">
+    <!-- Backdrop overlay -->
+    <div (click)="showFilterDrawer.set(false)"
+         class="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity animate-fadeIn"></div>
+
+    <!-- Drawer Panel (Slides out from Left on Desktop, Bottom Sheet on Mobile) -->
+    <div class="fixed md:relative bg-white dark:bg-neutral-950 w-full md:max-w-[420px] h-[85vh] bottom-0 md:bottom-auto md:h-full shadow-2xl flex flex-col z-50 animate-slideUp md:animate-slideInLeft overflow-hidden rounded-t-3xl md:rounded-t-none md:rounded-r-3xl">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/20">
+        <div class="flex items-center gap-2.5">
+          <mat-icon class="text-orange-500 flex items-center justify-center">tune</mat-icon>
+          <h3 class="text-sm font-black uppercase tracking-widest text-neutral-900 dark:text-white">Filters</h3>
+          @if (getActiveFilterChips().length > 0) {
+            <span class="bg-orange-500 text-white rounded-full text-[10px] font-black h-5 w-5 flex items-center justify-center">{{ getActiveFilterChips().length }}</span>
           }
+        </div>
+        <div class="flex items-center gap-2">
+          @if (getActiveFilterChips().length > 0) {
+            <button (click)="clearAllFilters()"
+                    class="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 bg-transparent border-none cursor-pointer">
+              Reset
+            </button>
+            <div class="h-3 w-px bg-neutral-200 dark:bg-neutral-800 mx-1"></div>
+          }
+          <button (click)="showFilterDrawer.set(false)"
+                  class="h-8 w-8 bg-neutral-100 hover:bg-neutral-200/60 dark:bg-neutral-900 dark:hover:bg-neutral-800 rounded-xl flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white border-none cursor-pointer transition-colors">
+            <mat-icon class="scale-75">close</mat-icon>
+          </button>
         </div>
       </div>
 
-      <!-- Availability/Stock Accordion -->
-      <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-        <button (click)="toggleGroup('availability')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Availability</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('availability')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-        </button>
+      <!-- Filter Sections (Scrollable Accordions) -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-thin">
         
-        <div [class.hidden]="!isGroupExpanded('availability')" class="accordion-content pt-2 space-y-2">
-          @for (item of availableFilters().stock; track item.status) {
-            <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" 
-                       [checked]="isFilterActive('stock', item.status)"
-                       (change)="toggleFilter('stock', item.status)"
-                       class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                <span>{{ item.status === 'IN_STOCK' ? 'In Stock' : (item.status === 'OUT_OF_STOCK' ? 'Out of Stock' : (item.status === 'PRE_ORDER' ? 'Pre Order' : 'Coming Soon')) }}</span>
-              </div>
-              <span class="text-[9px] font-mono text-neutral-400">({{ item.count }})</span>
-            </label>
-          }
-        </div>
-      </div>
-
-      <!-- Circular Color Swatches Accordion -->
-      @if (availableFilters().colors.length > 0) {
-        <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-          <button (click)="toggleGroup('color')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-            <span>Color</span>
-            <mat-icon [class.rotate-180]="isGroupExpanded('color')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+        <!-- 1. Categories Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('category')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">📦 Categories</span>
+            <mat-icon [class.rotate-180]="isGroupExpanded('category')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
           </button>
           
-          <div [class.hidden]="!isGroupExpanded('color')" class="accordion-content pt-2">
-            <div class="flex flex-wrap gap-2.5">
-              @for (c of availableFilters().colors; track c.name) {
-                <button (click)="toggleFilter('color', c.name)"
-                        [title]="c.name + ' (' + c.count + ')'"
-                        [class.color-active]="isFilterActive('color', c.name)"
-                        [class.color-white]="c.name.toLowerCase() === 'white'"
-                        [style.background]="c.name.toLowerCase() === 'multicolor' 
-                          ? 'linear-gradient(45deg, red, yellow, blue, green)' 
-                          : (c.name.toLowerCase() === 'gray' || c.name.toLowerCase() === 'grey' ? '#888' : c.name.toLowerCase())"
-                        class="w-6 h-6 rounded-full border border-neutral-200 dark:border-neutral-700 cursor-pointer relative hover:scale-110 transition-transform duration-200 shadow-sm">
-                  @if (isFilterActive('color', c.name)) {
-                    <mat-icon class="scale-50 absolute inset-0 m-auto text-white" [style.color]="c.name.toLowerCase() === 'white' ? '#000' : '#fff'">check</mat-icon>
-                  }
-                </button>
+          <div [class.hidden]="!isGroupExpanded('category')" class="accordion-content pt-3 space-y-2.5 max-h-60 overflow-y-auto scrollbar-thin">
+            @for (cat of filterListOptions(getParentCategories(), categorySearchTerm()); track cat.id) {
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between py-0.5">
+                  <label class="flex items-center gap-2.5 text-xs font-bold text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                    <input type="checkbox"
+                           [checked]="isFilterActive('category', cat.id)"
+                           (change)="toggleFilter('category', cat.id)"
+                           class="rounded border-neutral-300 dark:border-neutral-855 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span>{{ cat.name }}</span>
+                  </label>
+                  <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-neutral-50 dark:bg-neutral-900 text-neutral-400 dark:text-neutral-550 font-bold font-mono">{{ cat.count }}</span>
+                </div>
+                
+                <!-- Subcategories -->
+                @if (isFilterActive('category', cat.id)) {
+                  <div class="pl-5 border-l border-neutral-100 dark:border-neutral-855 space-y-2 pt-1 pb-1">
+                    @for (sub of getChildCategories(cat.id); track sub.id) {
+                      <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-2 text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 hover:text-orange-550 cursor-pointer">
+                          <input type="checkbox"
+                                 [checked]="isFilterActive('subcategory', sub.id)"
+                                 (change)="toggleFilter('subcategory', sub.id)"
+                                 class="rounded border-neutral-300 dark:border-neutral-855 text-orange-500 focus:ring-orange-500 h-4 w-4 cursor-pointer accent-orange-500">
+                          <span>{{ sub.name }}</span>
+                        </label>
+                        <span class="text-[8px] font-mono text-neutral-400">({{ sub.count }})</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 2. Brands Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('brand')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">🏷️ Brands</span>
+            <mat-icon [class.rotate-180]="isGroupExpanded('brand')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+          </button>
+          
+          <div [class.hidden]="!isGroupExpanded('brand')" class="accordion-content pt-3 space-y-3">
+            <!-- Search Brand input -->
+            <div class="relative">
+              <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
+              <input type="text" 
+                     [value]="brandSearchTerm()" 
+                     (input)="brandSearchTerm.set($any($event.target).value)" 
+                     placeholder="Search brands..."
+                     class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800/80 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/15 outline-none transition-all">
+            </div>
+
+            <div class="space-y-2 max-h-48 overflow-y-auto scrollbar-thin pr-1">
+              @for (brand of filterListOptions(availableFilters().brands, brandSearchTerm()); track brand.id) {
+                <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
+                  <div class="flex items-center gap-2.5">
+                    <input type="checkbox" 
+                           [checked]="isFilterActive('brand', brand.name)"
+                           (change)="toggleFilter('brand', brand.name)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span>{{ brand.name }}</span>
+                  </div>
+                  <span class="text-[9px] font-mono text-neutral-400">({{ brand.count }})</span>
+                </label>
               }
             </div>
           </div>
         </div>
-      }
 
-      <!-- Material Accordion -->
-      @if (availableFilters().materials.length > 0) {
-        <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-          <button (click)="toggleGroup('material')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-            <span>Material</span>
+        <!-- 3. Materials Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('material')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">🎨 Materials</span>
             <mat-icon [class.rotate-180]="isGroupExpanded('material')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
           </button>
           
-          <div [class.hidden]="!isGroupExpanded('material')" class="accordion-content pt-2 space-y-3">
+          <div [class.hidden]="!isGroupExpanded('material')" class="accordion-content pt-3 space-y-3">
+            <!-- Search Materials input -->
             <div class="relative">
               <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
               <input type="text" 
                      [value]="materialSearchTerm()" 
                      (input)="materialSearchTerm.set($any($event.target).value)" 
                      placeholder="Search materials..."
-                     class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 outline-none w-full transition-all">
+                     class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800/80 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/15 outline-none transition-all">
             </div>
 
             <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin pr-1">
               @for (m of filterListOptions(availableFilters().materials, materialSearchTerm()); track m.name) {
                 <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2.5">
                     <input type="checkbox" 
                            [checked]="isFilterActive('material', m.name)"
                            (change)="toggleFilter('material', m.name)"
@@ -278,475 +552,250 @@
             </div>
           </div>
         </div>
-      }
 
-      <!-- Technology Accordion -->
-      @if (availableFilters().technologies.length > 0) {
-        <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-          <button (click)="toggleGroup('technology')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-            <span>Print Technology</span>
-            <mat-icon [class.rotate-180]="isGroupExpanded('technology')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+        <!-- 4. Price Range Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('price')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">💰 Price Range</span>
+            <mat-icon [class.rotate-180]="isGroupExpanded('price')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
           </button>
           
-          <div [class.hidden]="!isGroupExpanded('technology')" class="accordion-content pt-2 space-y-2">
-            @for (tech of availableFilters().technologies; track tech.name) {
-              <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" 
-                         [checked]="isFilterActive('technology', tech.name)"
-                         (change)="toggleFilter('technology', tech.name)"
-                         class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                  <span>{{ tech.name }}</span>
-                </div>
-                <span class="text-[9px] font-mono text-neutral-400">({{ tech.count }})</span>
-              </label>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Printer Type Accordion -->
-      @if (availableFilters().printerTypes.length > 0) {
-        <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-          <button (click)="toggleGroup('printerType')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-            <span>Printer Type</span>
-            <mat-icon [class.rotate-180]="isGroupExpanded('printerType')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-          </button>
-          
-          <div [class.hidden]="!isGroupExpanded('printerType')" class="accordion-content pt-2 space-y-2">
-            @for (type of availableFilters().printerTypes; track type.name) {
-              <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" 
-                         [checked]="isFilterActive('printerType', type.name)"
-                         (change)="toggleFilter('printerType', type.name)"
-                         class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                  <span>{{ type.name }}</span>
-                </div>
-                <span class="text-[9px] font-mono text-neutral-400">({{ type.count }})</span>
-              </label>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Compatibility Accordion -->
-      @if (availableFilters().compatibilities.length > 0) {
-        <div class="accordion-group border-b border-neutral-200/50 dark:border-neutral-800/50 pb-4">
-          <button (click)="toggleGroup('compatibility')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-            <span>Compatible Products</span>
-            <mat-icon [class.rotate-180]="isGroupExpanded('compatibility')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
-          </button>
-          
-          <div [class.hidden]="!isGroupExpanded('compatibility')" class="accordion-content pt-2 space-y-3">
-            <div class="relative">
-              <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
-              <input type="text" 
-                     [value]="compatSearchTerm()" 
-                     (input)="compatSearchTerm.set($any($event.target).value)" 
-                     placeholder="Search models..."
-                     class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 outline-none w-full transition-all">
+          <div [class.hidden]="!isGroupExpanded('price')" class="accordion-content pt-3 space-y-4">
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-neutral-450 font-bold">₹</span>
+                <input type="number" 
+                       #minValDrawer
+                       [value]="activePriceMin()" 
+                       placeholder="Min"
+                       class="w-full h-8 pl-6 pr-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 outline-none">
+              </div>
+              <span class="text-xs text-neutral-400">to</span>
+              <div class="relative flex-1">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-neutral-455 font-bold">₹</span>
+                <input type="number" 
+                       #maxValDrawer
+                       [value]="activePriceMax()" 
+                       placeholder="Max"
+                       class="w-full h-8 pl-6 pr-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 outline-none">
+              </div>
+              <button (click)="setPriceRange(minValDrawer.value, maxValDrawer.value)"
+                      class="h-8 px-3 bg-neutral-900 dark:bg-neutral-850 hover:bg-orange-500 dark:hover:bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors border-none cursor-pointer">
+                Go
+              </button>
             </div>
 
-            <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin pr-1">
-              @for (comp of filterListOptions(availableFilters().compatibilities, compatSearchTerm()); track comp.name) {
-                <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-                  <div class="flex items-center gap-2">
-                    <input type="checkbox" 
-                           [checked]="isFilterActive('compatibility', comp.name)"
-                           (change)="toggleFilter('compatibility', comp.name)"
-                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                    <span>{{ comp.name }}</span>
+            <!-- Quick Price buttons -->
+            <div class="grid grid-cols-2 gap-2">
+              <button (click)="setPriceRange('', '500')" 
+                      [class.border-orange-500]="activePriceMax() === '500' && !activePriceMin()"
+                      class="py-2 px-2 text-[10px] font-bold uppercase tracking-wide bg-neutral-50 dark:bg-neutral-900/55 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
+                Under ₹500
+              </button>
+              <button (click)="setPriceRange('500', '1000')" 
+                      [class.border-orange-500]="activePriceMin() === '500' && activePriceMax() === '1000'"
+                      class="py-2 px-2 text-[10px] font-bold uppercase tracking-wide bg-neutral-50 dark:bg-neutral-900/55 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
+                ₹500 - ₹1K
+              </button>
+              <button (click)="setPriceRange('1000', '5000')" 
+                      [class.border-orange-500]="activePriceMin() === '1000' && activePriceMax() === '5000'"
+                      class="py-2 px-2 text-[10px] font-bold uppercase tracking-wide bg-neutral-50 dark:bg-neutral-900/55 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
+                ₹1K - ₹5K
+              </button>
+              <button (click)="setPriceRange('5000', '')" 
+                      [class.border-orange-500]="activePriceMin() === '5000' && !activePriceMax()"
+                      class="py-2 px-2 text-[10px] font-bold uppercase tracking-wide bg-neutral-50 dark:bg-neutral-900/55 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:border-orange-500 hover:text-orange-500 transition-colors cursor-pointer">
+                ₹5K+
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Customer Ratings Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('rating')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">⭐ Customer Ratings</span>
+            <mat-icon [class.rotate-180]="isGroupExpanded('rating')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+          </button>
+          
+          <div [class.hidden]="!isGroupExpanded('rating')" class="accordion-content pt-3 space-y-1.5">
+            @for (rOpt of getRatingOptions(); track rOpt.rating) {
+              <button (click)="updateUrlQueryParam('rating', rOpt.rating.toString())"
+                      [class.active]="activeRating() === rOpt.rating.toString()"
+                      class="w-full flex items-center justify-between py-2 px-2.5 rounded-xl text-left text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-orange-555 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors border-none bg-transparent cursor-pointer">
+                <div class="flex items-center gap-1.5">
+                  <div class="flex items-center text-amber-500">
+                    @for (star of getStarsArray(5); track $index) {
+                      <mat-icon class="scale-[0.75] -mx-0.5">{{ $index < rOpt.rating ? 'star' : 'star_border' }}</mat-icon>
+                    }
                   </div>
-                  <span class="text-[9px] font-mono text-neutral-400">({{ comp.count }})</span>
+                  <span class="text-[11px] font-bold text-neutral-500 dark:text-neutral-455">& Up</span>
+                </div>
+                <span class="text-[9px] font-mono text-neutral-400">({{ rOpt.count }})</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- 6. Availability Accordion -->
+        <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+          <button (click)="toggleGroup('availability')" 
+                  class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+            <span class="flex items-center gap-2">📦 Availability</span>
+            <mat-icon [class.rotate-180]="isGroupExpanded('availability')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+          </button>
+          
+          <div [class.hidden]="!isGroupExpanded('availability')" class="accordion-content pt-3 space-y-2">
+            @for (item of availableFilters().stock; track item.status) {
+              <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
+                <div class="flex items-center gap-2.5">
+                  <input type="checkbox" 
+                         [checked]="isFilterActive('stock', item.status)"
+                         (change)="toggleFilter('stock', item.status)"
+                         class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                  <span>{{ item.status === 'IN_STOCK' ? 'In Stock' : (item.status === 'OUT_OF_STOCK' ? 'Out of Stock' : (item.status === 'PRE_ORDER' ? 'Pre Order' : 'Coming Soon')) }}</span>
+                </div>
+                <span class="text-[9px] font-mono text-neutral-400">({{ item.count }})</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- 7. Colors Accordion -->
+        @if (availableFilters().colors.length > 0) {
+          <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+            <button (click)="toggleGroup('color')" 
+                    class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+              <span class="flex items-center gap-2">🎨 Colors</span>
+              <mat-icon [class.rotate-180]="isGroupExpanded('color')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            
+            <div [class.hidden]="!isGroupExpanded('color')" class="accordion-content pt-3">
+              <div class="flex flex-wrap gap-2.5">
+                @for (c of availableFilters().colors; track c.name) {
+                  <button (click)="toggleFilter('color', c.name)"
+                          [title]="c.name + ' (' + c.count + ')'"
+                          [class.color-active]="isFilterActive('color', c.name)"
+                          [class.color-white]="c.name.toLowerCase() === 'white'"
+                          [style.background]="c.name.toLowerCase() === 'multicolor' 
+                            ? 'linear-gradient(45deg, red, yellow, blue, green)' 
+                            : (c.name.toLowerCase() === 'gray' || c.name.toLowerCase() === 'grey' ? '#888' : c.name.toLowerCase())"
+                          class="w-6.5 h-6.5 rounded-full border border-neutral-200 dark:border-neutral-700 cursor-pointer relative hover:scale-110 transition-transform duration-200 shadow-2xs">
+                    @if (isFilterActive('color', c.name)) {
+                      <mat-icon class="scale-[0.55] absolute inset-0 m-auto text-white" [style.color]="c.name.toLowerCase() === 'white' ? '#000' : '#fff'">check</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 8. Print Technology Accordion -->
+        @if (availableFilters().technologies.length > 0) {
+          <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+            <button (click)="toggleGroup('technology')" 
+                    class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+              <span class="flex items-center gap-2">⚙️ Print Technology</span>
+              <mat-icon [class.rotate-180]="isGroupExpanded('technology')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            
+            <div [class.hidden]="!isGroupExpanded('technology')" class="accordion-content pt-3 space-y-2">
+              @for (tech of availableFilters().technologies; track tech.name) {
+                <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
+                  <div class="flex items-center gap-2.5">
+                    <input type="checkbox" 
+                           [checked]="isFilterActive('technology', tech.name)"
+                           (change)="toggleFilter('technology', tech.name)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span>{{ tech.name }}</span>
+                  </div>
+                  <span class="text-[9px] font-mono text-neutral-400">({{ tech.count }})</span>
                 </label>
               }
             </div>
           </div>
-        </div>
-      }
+        }
 
-      <!-- Featured / Offers Accordion -->
-      <div class="accordion-group pb-4">
-        <button (click)="toggleGroup('featured')" class="w-full flex items-center justify-between py-2 text-left font-bold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer">
-          <span>Offers & Badges</span>
-          <mat-icon [class.rotate-180]="isGroupExpanded('featured')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+        <!-- 9. Compatibility Accordion -->
+        @if (availableFilters().compatibilities.length > 0) {
+          <div class="accordion-group border-b border-neutral-100 dark:border-neutral-900 pb-4">
+            <button (click)="toggleGroup('printerType')" 
+                    class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+              <span class="flex items-center gap-2">🔌 Compatibility</span>
+              <mat-icon [class.rotate-180]="isGroupExpanded('printerType')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            
+            <div [class.hidden]="!isGroupExpanded('printerType')" class="accordion-content pt-3 space-y-3">
+              <div class="relative">
+                <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 scale-75">search</mat-icon>
+                <input type="text" 
+                       [value]="compatSearchTerm()" 
+                       (input)="compatSearchTerm.set($any($event.target).value)" 
+                       placeholder="Search models..."
+                       class="w-full h-8 pl-8 pr-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 focus:border-orange-500 outline-none transition-all">
+              </div>
+
+              <div class="space-y-2 max-h-40 overflow-y-auto scrollbar-thin pr-1">
+                @for (comp of filterListOptions(availableFilters().compatibilities, compatSearchTerm()); track comp.name) {
+                  <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
+                    <div class="flex items-center gap-2.5">
+                      <input type="checkbox" 
+                             [checked]="isFilterActive('compatibility', comp.name)"
+                             (change)="toggleFilter('compatibility', comp.name)"
+                             class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                      <span>{{ comp.name }}</span>
+                    </div>
+                    <span class="text-[9px] font-mono text-neutral-400">({{ comp.count }})</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 10. Offers & Badges Accordion -->
+        @if (availableFilters().featured.length > 0) {
+          <div class="accordion-group pb-4">
+            <button (click)="toggleGroup('featured')" 
+                    class="w-full flex items-center justify-between py-1 text-left font-extrabold text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-300 border-none bg-transparent cursor-pointer hover:text-orange-500 transition-colors">
+              <span class="flex items-center gap-2">🏷️ Offers & Featured</span>
+              <mat-icon [class.rotate-180]="isGroupExpanded('featured')" class="transition-transform duration-300 scale-75 text-neutral-400">expand_more</mat-icon>
+            </button>
+            
+            <div [class.hidden]="!isGroupExpanded('featured')" class="accordion-content pt-3 space-y-2">
+              @for (item of availableFilters().featured; track item.type) {
+                <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
+                  <div class="flex items-center gap-2.5">
+                    <input type="checkbox" 
+                           [checked]="isFilterActive('featured', item.type)"
+                           (change)="toggleFilter('featured', item.type)"
+                           class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
+                    <span class="capitalize">{{ item.type.replace('_', ' ') }}</span>
+                  </div>
+                  <span class="text-[9px] font-mono text-neutral-400">({{ item.count }})</span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer Apply Pane -->
+      <div class="p-5 border-t border-neutral-200 dark:border-neutral-800 flex gap-4 bg-neutral-50/50 dark:bg-neutral-950">
+        <button (click)="clearAllFilters()"
+                class="flex-1 h-12 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-neutral-700 dark:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border-none shadow-2xs">
+          Reset All
         </button>
-        
-        <div [class.hidden]="!isGroupExpanded('featured')" class="accordion-content pt-2 space-y-2">
-          @for (item of availableFilters().featured; track item.type) {
-            <label class="flex items-center justify-between text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer py-0.5">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" 
-                       [checked]="isFilterActive('featured', item.type)"
-                       (change)="toggleFilter('featured', item.type)"
-                       class="rounded border-neutral-300 dark:border-neutral-800 text-orange-500 focus:ring-orange-500 h-4.5 w-4.5 cursor-pointer accent-orange-500">
-                <span class="capitalize">{{ item.type.replace('_', ' ') }}</span>
-              </div>
-              <span class="text-[9px] font-mono text-neutral-400">({{ item.count }})</span>
-            </label>
-          }
-        </div>
+        <button (click)="showFilterDrawer.set(false)"
+                class="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer border-none shadow-md hover:shadow-lg shadow-orange-500/20">
+          Apply Filters
+        </button>
       </div>
-
-    </aside>
-
-    <!-- 2. PRODUCT GRID COLUMN (Right Column) -->
-    <div class="flex-1 w-full space-y-6">
-
-      <!-- Sticky Header Control Bar -->
-      <div class="sticky top-18 bg-[#fafafa] dark:bg-[#121212] z-30 py-3 border-b border-neutral-200/50 dark:border-neutral-800/50 space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          
-          <div class="flex items-center gap-3">
-            <button (click)="showMobileFilters.set(true)"
-                    class="lg:hidden h-10 px-4 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 text-neutral-700 dark:text-neutral-200 cursor-pointer">
-              <mat-icon class="scale-90">filter_list</mat-icon>
-              <span>Filters</span>
-            </button>
-
-            <span class="text-xs font-bold text-neutral-400 tracking-wide font-mono">
-              Showing {{ productsList().length > 0 ? (currentPage() - 1) * itemsPerPage() + 1 : 0 }}–{{ (currentPage() - 1) * itemsPerPage() + productsList().length }} of {{ totalProducts() }} products
-            </span>
-          </div>
-
-          <!-- Controls: Grid/List + Sort -->
-          <div class="flex items-center gap-4 justify-end">
-            <div class="hidden sm:flex items-center border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden bg-white dark:bg-neutral-900">
-              <button (click)="isListView.set(false)" 
-                      [class.bg-neutral-100]="!isListView()" 
-                      [class.dark:bg-neutral-800]="!isListView()" 
-                      [class.text-orange-500]="!isListView()"
-                      class="h-10 w-10 flex items-center justify-center text-neutral-400 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer"
-                      title="Grid View">
-                <mat-icon class="scale-85">grid_view</mat-icon>
-              </button>
-              <button (click)="isListView.set(true)" 
-                      [class.bg-neutral-100]="isListView()" 
-                      [class.dark:bg-neutral-800]="isListView()" 
-                      [class.text-orange-500]="isListView()"
-                      class="h-10 w-10 flex items-center justify-center text-neutral-400 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer"
-                      title="List View">
-                <mat-icon class="scale-85">view_headline</mat-icon>
-              </button>
-            </div>
-
-            <!-- Page Size -->
-            <div class="relative w-28">
-              <select (change)="updateUrlQueryParam('limit', $any($event.target).value)"
-                      class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none cursor-pointer appearance-none">
-                <option value="12" [selected]="itemsPerPage() === 12">12 Per Page</option>
-                <option value="24" [selected]="itemsPerPage() === 24">24 Per Page</option>
-                <option value="36" [selected]="itemsPerPage() === 36">36 Per Page</option>
-                <option value="48" [selected]="itemsPerPage() === 48">48 Per Page</option>
-              </select>
-              <mat-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
-            </div>
-
-            <!-- Sort dropdown -->
-            <div class="relative w-44">
-              <select (change)="updateUrlQueryParam('sort', $any($event.target).value)"
-                      class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 outline-none cursor-pointer appearance-none">
-                <option value="popularity" [selected]="activeSort() === 'popularity'">Popularity</option>
-                <option value="newest" [selected]="activeSort() === 'newest'">Newest</option>
-                <option value="price-asc" [selected]="activeSort() === 'price-asc'">Price: Low to High</option>
-                <option value="price-desc" [selected]="activeSort() === 'price-desc'">Price: High to Low</option>
-                <option value="rating-desc" [selected]="activeSort() === 'rating-desc'">Highest Rated</option>
-                <option value="name-asc" [selected]="activeSort() === 'name-asc'">Name: A-Z</option>
-              </select>
-              <mat-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
-            </div>
-          </div>
-        </div>
-
-        <!-- Active Filter Badge Chips row -->
-        @if (getActiveFilterChips().length > 0) {
-          <div class="flex flex-wrap items-center gap-2 pt-2 transition-all">
-            <span class="text-[10px] font-black uppercase tracking-wider text-neutral-400 mr-1">Active Filters:</span>
-            
-            @for (chip of getActiveFilterChips(); track chip.key + '-' + chip.value) {
-              <span class="inline-flex items-center gap-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 pl-3 pr-1.5 py-1 rounded-full text-[10px] font-extrabold uppercase text-neutral-600 dark:text-neutral-300 shadow-sm">
-                <span>{{ chip.display }}</span>
-                <button (click)="removeSingleFilter(chip.key, chip.value)" 
-                        class="h-5 w-5 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors border-none cursor-pointer p-0">
-                  <mat-icon class="scale-50">close</mat-icon>
-                </button>
-              </span>
-            }
-
-            <button (click)="clearAllFilters()"
-                    class="h-7 px-3 text-[10px] font-black uppercase tracking-wider bg-red-50 hover:bg-red-100 text-red-600 rounded-full transition-colors border-none cursor-pointer">
-              Clear All
-            </button>
-          </div>
-        }
-      </div>
-
-      <!-- Main Products Grid / List View -->
-      <main class="w-full">
-        @if (productsList().length > 0) {
-          
-          <div [class]="isListView() 
-               ? 'space-y-4' 
-               : 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6'">
-            
-            @for (p of productsList(); track p.id) {
-              <div [class]="isListView() 
-                   ? 'flex flex-col sm:flex-row gap-4 p-4 border border-neutral-100 dark:border-neutral-800/60 bg-white dark:bg-neutral-900/50 rounded-2xl hover:shadow-lg transition-all duration-300' 
-                   : 'group relative bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-2xl shadow-[0_4px_16px_rgb(0,0,0,0.02)] hover:shadow-xl dark:shadow-none hover:-translate-y-1.5 hover:border-orange-500/30 dark:hover:border-orange-500/30 transition-all duration-300 p-4 flex flex-col justify-between text-left relative overflow-hidden'">
-                
-                <!-- Product Badges -->
-                <div class="absolute top-3 left-3 z-20 flex flex-col gap-1.5">
-                  @if (p.isExclusive) {
-                    <span class="px-2 py-0.5 bg-amber-500 text-neutral-900 text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Exclusive</span>
-                  }
-                  @if (p.isFeatured) {
-                    <span class="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Featured</span>
-                  }
-                  @if (p.isOnSale) {
-                    <span class="px-2 py-0.5 bg-red-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Sale</span>
-                  }
-                  @if (p.stockStatus === 'PRE_ORDER') {
-                    <span class="px-2 py-0.5 bg-purple-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Pre Order</span>
-                  } @else if (p.stockStatus === 'COMING_SOON') {
-                    <span class="px-2 py-0.5 bg-teal-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Coming Soon</span>
-                  }
-                </div>
-
-                <!-- Wishlist Heart Button -->
-                <button class="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 hover:text-red-500 dark:hover:text-red-400 text-neutral-400 flex items-center justify-center shadow-sm border-none cursor-pointer transition-colors"
-                        title="Add to Wishlist">
-                  <mat-icon class="scale-75">favorite_border</mat-icon>
-                </button>
-
-                <!-- Product Image Frame -->
-                <a [routerLink]="['/product', p.slug]"
-                   [class]="isListView() ? 'w-full sm:w-48 shrink-0' : 'w-full'"
-                   class="block relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-3 mb-4">
-                  <div class="shimmer-effect"></div>
-                  <img [src]="p.thumbnail || 'https://picsum.photos/seed/' + p.slug + '/400/400'"
-                       [alt]="p.name"
-                       class="max-w-[90%] max-h-[90%] object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
-                       loading="lazy">
-                </a>
-
-                <!-- Product Details -->
-                <div class="flex-1 flex flex-col justify-between" [class.w-full]="isListView()">
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="text-[9px] font-black uppercase tracking-widest text-[#d65108]">{{ p.brand?.name || p.brand || '3D GALAXY' }}</span>
-                      @if (p.codAvailable) {
-                        <span class="text-[8px] font-extrabold text-green-600 dark:text-green-400 uppercase bg-green-500/10 px-1.5 py-0.5 rounded-sm">COD</span>
-                      }
-                    </div>
-
-                    <a [routerLink]="['/product', p.slug]"
-                       class="block text-xs md:text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-snug hover:text-orange-500 transition-colors line-clamp-2">
-                      {{ p.name }}
-                    </a>
-
-                    <!-- Rating Stars -->
-                    <div class="flex items-center gap-1">
-                      <div class="flex items-center text-amber-500">
-                        @for (star of getStarsArray(5); track $index) {
-                          <mat-icon class="scale-65 -mx-1.5">{{ $index < floorValue(p.avgRating) ? 'star' : 'star_border' }}</mat-icon>
-                        }
-                      </div>
-                      <span class="text-[10px] font-black text-neutral-400 ml-1">({{ p.reviews?.length || 1 }})</span>
-                    </div>
-                  </div>
-
-                  <!-- Price & Action buttons -->
-                  <div class="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex flex-col gap-3">
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-sm md:text-lg font-black text-neutral-900 dark:text-white font-mono">
-                        ₹{{ activePrice(p) | number:'1.0-0' }}
-                      </span>
-                      @if (getMrp(p) > activePrice(p)) {
-                        <span class="text-[10px] md:text-xs text-neutral-400 line-through font-medium font-mono">
-                          ₹{{ getMrp(p) | number:'1.0-0' }}
-                        </span>
-                        <span class="text-[9px] font-black text-red-500 uppercase tracking-wide">
-                          {{ mrpDiscountPercent(p) }}% OFF
-                        </span>
-                      }
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                      <button (click)="addToCart(p)"
-                              class="flex-1 h-9 bg-neutral-950 dark:bg-neutral-800 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 border-none hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors cursor-pointer">
-                        <mat-icon class="scale-75">add_shopping_cart</mat-icon>
-                        <span>Cart</span>
-                      </button>
-                      <a [routerLink]="['/product', p.slug]"
-                         class="h-9 w-9 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg flex items-center justify-center transition-colors">
-                        <mat-icon class="scale-75">visibility</mat-icon>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            }
-
-          </div>
-
-          <!-- Pagination -->
-          @if (totalPages() > 1) {
-            <div class="flex items-center justify-center gap-2 pt-12">
-              <button (click)="updateUrlQueryParam('page', (currentPage() - 1).toString())"
-                      [disabled]="currentPage() === 1"
-                      class="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer">
-                Previous
-              </button>
-              
-              @for (pageIdx of [].constructor(totalPages()); track $index) {
-                <button (click)="updateUrlQueryParam('page', ($index + 1).toString())"
-                        [class.bg-orange-500]="$index + 1 === currentPage()"
-                        [class.text-white]="$index + 1 === currentPage()"
-                        [class.border-orange-500]="$index + 1 === currentPage()"
-                        class="h-10 w-10 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 font-bold transition-all cursor-pointer">
-                  {{ $index + 1 }}
-                </button>
-              }
-
-              <button (click)="updateUrlQueryParam('page', (currentPage() + 1).toString())"
-                      [disabled]="currentPage() === totalPages()"
-                      class="h-10 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer">
-                Next
-              </button>
-            </div>
-          }
-
-        } @else {
-          <!-- Empty Results State -->
-          <div class="py-24 text-center space-y-6 bg-white dark:bg-neutral-900/50 border border-neutral-200/50 dark:border-neutral-800/50 rounded-3xl p-6">
-            <div class="h-20 w-20 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto border border-neutral-200 dark:border-neutral-800">
-              <mat-icon class="text-neutral-400 scale-[1.5]">search_off</mat-icon>
-            </div>
-            <div class="space-y-2">
-              <h3 class="text-xl font-black text-neutral-800 dark:text-white uppercase tracking-wider">No Products Found</h3>
-              <p class="text-neutral-500 dark:text-neutral-400 text-xs max-w-sm mx-auto">There are currently no products matching your selected search query or active filters.</p>
-            </div>
-            <button (click)="clearAllFilters()"
-                    class="h-11 px-8 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer">
-              Reset All Filters
-            </button>
-          </div>
-        }
-      </main>
 
     </div>
-
   </div>
-
-  <!-- 3. MOBILE FILTERS BOTTOM SHEET / DRAWER -->
-  @if (showMobileFilters()) {
-    <div class="fixed inset-0 z-50 flex flex-col justify-end lg:hidden">
-      <!-- Backdrop overlay -->
-      <div (click)="showMobileFilters.set(false)"
-           class="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm transition-opacity animate-fadeIn"></div>
-
-      <!-- Drawer Panel -->
-      <div class="relative bg-white dark:bg-neutral-950 w-full max-h-[85vh] rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slideUp">
-        <div class="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-          <h3 class="text-sm font-black uppercase tracking-widest text-neutral-900 dark:text-white flex items-center gap-2">
-            <mat-icon class="scale-90">filter_list</mat-icon>
-            <span>Filters</span>
-          </h3>
-          <button (click)="showMobileFilters.set(false)"
-                  class="h-8 w-8 bg-neutral-100 dark:bg-neutral-900 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white border-none cursor-pointer">
-            <mat-icon class="scale-75">close</mat-icon>
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-5 space-y-6">
-          
-          <!-- Category List -->
-          <div class="space-y-3">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-1">Categories</h4>
-            <div class="flex flex-wrap gap-2">
-              @for (cat of availableFilters().categories; track cat.id) {
-                <button (click)="toggleFilter('category', cat.id)"
-                        [class.bg-orange-500]="isFilterActive('category', cat.id)"
-                        [class.text-white]="isFilterActive('category', cat.id)"
-                        [class.border-orange-500]="isFilterActive('category', cat.id)"
-                        class="px-3.5 py-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-xl text-xs font-bold transition-all cursor-pointer">
-                  {{ cat.name }} ({{ cat.count }})
-                </button>
-              }
-            </div>
-          </div>
-
-          <!-- Brand checkboxes -->
-          <div class="space-y-3">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-1">Brands</h4>
-            <div class="flex flex-wrap gap-2">
-              @for (brand of availableFilters().brands; track brand.id) {
-                <button (click)="toggleFilter('brand', brand.name)"
-                        [class.bg-orange-500]="isFilterActive('brand', brand.name)"
-                        [class.text-white]="isFilterActive('brand', brand.name)"
-                        [class.border-orange-500]="isFilterActive('brand', brand.name)"
-                        class="px-3.5 py-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-xl text-xs font-bold transition-all cursor-pointer">
-                  {{ brand.name }} ({{ brand.count }})
-                </button>
-              }
-            </div>
-          </div>
-
-          <!-- Availability -->
-          <div class="space-y-3">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-1">Availability</h4>
-            <div class="flex flex-wrap gap-2">
-              @for (item of availableFilters().stock; track item.status) {
-                <button (click)="toggleFilter('stock', item.status)"
-                        [class.bg-orange-500]="isFilterActive('stock', item.status)"
-                        [class.text-white]="isFilterActive('stock', item.status)"
-                        [class.border-orange-500]="isFilterActive('stock', item.status)"
-                        class="px-3.5 py-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-xl text-xs font-bold transition-all cursor-pointer">
-                  {{ item.status === 'IN_STOCK' ? 'In Stock' : (item.status === 'OUT_OF_STOCK' ? 'Out of Stock' : 'Pre Order') }} ({{ item.count }})
-                </button>
-              }
-            </div>
-          </div>
-
-          <!-- Price Inputs -->
-          <div class="space-y-3">
-            <h4 class="text-[10px] font-black uppercase tracking-wider text-neutral-400 border-b border-neutral-100 dark:border-neutral-900 pb-1">Price Range</h4>
-            <div class="flex items-center gap-3">
-              <input type="number" 
-                     #minMobile
-                     [value]="activePriceMin()" 
-                     placeholder="Min"
-                     class="flex-1 h-10 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold outline-none">
-              <span class="text-xs text-neutral-400">to</span>
-              <input type="number" 
-                     #maxMobile
-                     [value]="activePriceMax()" 
-                     placeholder="Max"
-                     class="flex-1 h-10 px-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold outline-none">
-              <button (click)="setPriceRange(minMobile.value, maxMobile.value)"
-                      class="h-10 px-4 bg-neutral-950 dark:bg-neutral-800 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer border-none">
-                Apply
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="p-5 border-t border-neutral-200 dark:border-neutral-800 flex gap-4 bg-white dark:bg-neutral-950">
-          <button (click)="clearAllFilters(); showMobileFilters.set(false)"
-                  class="flex-1 h-12 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border-none">
-            Reset
-          </button>
-          <button (click)="showMobileFilters.set(false)"
-                  class="flex-1 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-colors cursor-pointer border-none shadow-lg shadow-orange-500/20">
-            Apply
-          </button>
-        </div>
-      </div>
-    </div>
-  }
-
-</div>
 }

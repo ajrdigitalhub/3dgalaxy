@@ -1,0 +1,158 @@
+<div class="analytics-container" *ngIf="analyticsData() as data">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Customer Analytics</h1>
+      <p>Analyze storefront buyer segments, registration growth, and top customer engagement.</p>
+    </div>
+  </div>
+
+  <!-- KPI Cards Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="icon-box blue">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="details">
+        <span class="label">Total Customers</span>
+        <span class="value">{{ data.summary.totalCustomers }}</span>
+        <span class="subtext font-semibold text-success">+{{ data.summary.growthPercent }}% this month</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="icon-box green">
+        <mat-icon>person_add</mat-icon>
+      </div>
+      <div class="details">
+        <span class="label">New Customers (30d)</span>
+        <span class="value">{{ data.summary.newCustomers }}</span>
+        <span class="subtext">Registered buyers</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="icon-box purple">
+        <mat-icon>loop</mat-icon>
+      </div>
+      <div class="details">
+        <span class="label">Returning Rate</span>
+        <span class="value">
+          {{ data.summary.totalCustomers > 0 ? mathMin(100, mathRound((data.summary.returningCustomers / data.summary.totalCustomers) * 100)) : 0 }}%
+        </span>
+        <span class="subtext font-semibold text-primary">{{ data.summary.returningCustomers }} repeat buyers</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="icon-box orange">
+        <mat-icon>shopping_cart</mat-icon>
+      </div>
+      <div class="details">
+        <span class="label">Guest Accounts</span>
+        <span class="value">{{ data.summary.guestCustomers }}</span>
+        <span class="subtext">One-time checkouts</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-and-lists-grid">
+    <!-- Registration Growth Trend Chart -->
+    <div class="chart-card">
+      <h3>Monthly Registration Growth</h3>
+      <div class="bar-chart-container">
+        <div class="bar-column" *ngFor="let month of data.charts.registrationTrend">
+          <div class="bar-fill" [style.height.%]="mathMin(100, (month.value / 10) * 100)">
+            <span class="val-pop font-semibold">{{ month.value }}</span>
+          </div>
+          <span class="bar-label font-semibold">{{ month.label }}</span>
+        </div>
+      </div>
+      <p class="chart-info font-semibold">
+        * Growth represents accounts signed up or created via storefront/admin channel.
+      </p>
+    </div>
+
+    <!-- Segments Breakdown -->
+    <div class="chart-card list-card">
+      <h3>Customer Account Tiers</h3>
+      <div class="segment-rows">
+        <div class="segment-item">
+          <span class="tier-badge retail">Retail Creator</span>
+          <span class="count font-semibold">{{ data.summary.registeredCustomers }} accounts</span>
+        </div>
+        <div class="segment-item">
+          <span class="tier-badge guest">Guest Buyer</span>
+          <span class="count font-semibold">{{ data.summary.guestCustomers }} accounts</span>
+        </div>
+        <div class="segment-item">
+          <span class="tier-badge active">Active Status</span>
+          <span class="count font-semibold">{{ data.summary.activeCustomers }} accounts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboards Grid -->
+  <div class="leaderboards-title font-semibold">Customer Engagement Leaderboards</div>
+  <div class="leaderboards-grid">
+    <!-- Leaderboard 1: Top Spend -->
+    <div class="leaderboard-card">
+      <div class="header">
+        <mat-icon>payments</mat-icon>
+        <h3>Top Customers by Spending</h3>
+      </div>
+      <div class="board-list">
+        <div class="board-row" *ngFor="let c of data.leaderboards.bySpend; let i = index">
+          <span class="rank font-semibold">#{{ i + 1 }}</span>
+          <div class="details">
+            <span class="name font-semibold">{{ c.name }}</span>
+            <span class="email">{{ c.email }}</span>
+          </div>
+          <span class="metric font-semibold">₹{{ c.value | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard 2: Top Orders -->
+    <div class="leaderboard-card">
+      <div class="header">
+        <mat-icon>shopping_bag</mat-icon>
+        <h3>Top Customers by Orders</h3>
+      </div>
+      <div class="board-list">
+        <div class="board-row" *ngFor="let c of data.leaderboards.byOrders; let i = index">
+          <span class="rank font-semibold">#{{ i + 1 }}</span>
+          <div class="details">
+            <span class="name font-semibold">{{ c.name }}</span>
+            <span class="email">{{ c.email }}</span>
+          </div>
+          <span class="metric font-semibold">{{ c.value }} orders</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard 3: Top Reviews -->
+    <div class="leaderboard-card">
+      <div class="header">
+        <mat-icon>rate_review</mat-icon>
+        <h3>Top Customers by Reviews</h3>
+      </div>
+      <div class="board-list">
+        <div class="board-row" *ngFor="let c of data.leaderboards.byReviews; let i = index">
+          <span class="rank font-semibold">#{{ i + 1 }}</span>
+          <div class="details">
+            <span class="name font-semibold">{{ c.name }}</span>
+            <span class="email">{{ c.email }}</span>
+          </div>
+          <span class="metric font-semibold">{{ c.value }} reviews</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" *ngIf="isLoading()">
+  <span class="spinner"></span>
+</div>

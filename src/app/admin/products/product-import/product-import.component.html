@@ -175,16 +175,18 @@
           >
             <div class="font-bold">Preview Warnings</div>
             <ul class="list-disc pl-5 mt-2">
-              <li *ngFor="let warning of previewData().summary.errors">
-                {{ warning }}
-              </li>
+              @for (warning of previewData().summary.errors; track warning) {
+                <li>
+                  {{ warning }}
+                </li>
+              }
             </ul>
           </div>
 
-          <div
-            *ngFor="let item of previewData().preview"
-            class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-5"
-          >
+          @for (item of previewData().preview; track item.slug || item.name) {
+            <div
+              class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-5 mb-4"
+            >
             <div
               class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
             >
@@ -211,14 +213,13 @@
                 <div>
                   <strong>Category:</strong>
                   <div class="mt-1 space-y-0.5">
-                    <ng-container
-                      *ngFor="
-                        let segment of formatCategoryPath(
-                          item.productCategory || item.product_type || '-'
-                        );
-                        let idx = index
-                      "
-                    >
+                    @for (
+                      segment of formatCategoryPath(
+                        item.productCategory || item.product_type || '-'
+                      );
+                      track segment;
+                      let idx = $index
+                    ) {
                       <div
                         [class]="
                           idx === 0
@@ -228,7 +229,7 @@
                       >
                         {{ segment }}
                       </div>
-                    </ng-container>
+                    }
                   </div>
                 </div>
                 <div>
@@ -279,10 +280,12 @@
                 *ngIf="item.options?.length; else noOptions"
                 class="mt-2 space-y-2 text-sm text-zinc-700 dark:text-zinc-200"
               >
-                <div *ngFor="let option of item.options">
-                  <strong>{{ option.name }}:</strong>
-                  {{ option.values?.join(", ") || "-" }}
-                </div>
+                @for (option of item.options; track option.name) {
+                  <div>
+                    <strong>{{ option.name }}:</strong>
+                    {{ option.values?.join(", ") || "-" }}
+                  </div>
+                }
               </div>
               <ng-template #noOptions>
                 <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -305,6 +308,11 @@
                     <th
                       class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
                     >
+                      Image
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
                       SKU
                     </th>
                     <th
@@ -316,6 +324,11 @@
                       class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
                     >
                       Price
+                    </th>
+                    <th
+                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                    >
+                      Sale Price
                     </th>
                     <th
                       class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
@@ -340,56 +353,74 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let variant of item.variants">
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.sku || "-" }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.name || "-" }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.price || 0 }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.stock || 0 }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.weight || 0 }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      {{ variant.barcode || "-" }}
-                    </td>
-                    <td
-                      class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
-                    >
-                      <div
-                        *ngIf="
-                          variant.optionValues &&
-                            (variant.optionValues | keyvalue)?.length;
-                          else noVariantOptions
-                        "
+                  @for (variant of item.variants; track variant.sku || variant.name) {
+                    <tr>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        <img
+                          *ngIf="variant.images?.[0] || variant.variantImages?.[0]"
+                          [src]="variant.images?.[0] || variant.variantImages?.[0]"
+                          class="w-8 h-8 object-cover rounded border"
+                          alt="variant"
+                        />
+                        <span *ngIf="!(variant.images?.[0] || variant.variantImages?.[0])">-</span>
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.sku || "-" }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.name || "-" }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.price || 0 }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2 text-emerald-600 dark:text-emerald-400 font-medium"
+                      >
+                        {{ variant.salePrice !== null && variant.salePrice !== undefined ? variant.salePrice : "-" }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.stock || 0 }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.weight || 0 }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                      >
+                        {{ variant.barcode || "-" }}
+                      </td>
+                      <td
+                        class="border border-zinc-200 dark:border-zinc-800 px-3 py-2"
                       >
                         <div
-                          *ngFor="let opt of variant.optionValues | keyvalue"
+                          *ngIf="
+                            variant.optionValues &&
+                              (variant.optionValues | keyvalue)?.length;
+                            else noVariantOptions
+                          "
                         >
-                          {{ opt.key }}: {{ opt.value }}
+                          @for (opt of variant.optionValues | keyvalue; track opt.key) {
+                            <div>
+                              {{ opt.key }}: {{ opt.value }}
+                            </div>
+                          }
                         </div>
-                      </div>
-                      <ng-template #noVariantOptions>-</ng-template>
-                    </td>
-                  </tr>
+                        <ng-template #noVariantOptions>-</ng-template>
+                      </td>
+                    </tr>
+                  }
                 </tbody>
               </table>
             </div>
@@ -405,12 +436,13 @@
                   *ngIf="item.images?.length; else noImages"
                   class="mt-2 flex flex-wrap gap-2"
                 >
-                  <img
-                    *ngFor="let image of item.images"
-                    [src]="image"
-                    alt="product image"
-                    class="w-24 h-24 object-cover rounded border"
-                  />
+                  @for (image of item.images; track image) {
+                    <img
+                      [src]="image"
+                      alt="product image"
+                      class="w-24 h-24 object-cover rounded border"
+                    />
+                  }
                 </div>
                 <ng-template #noImages>
                   <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -428,9 +460,11 @@
                   *ngIf="item.extraAttributes?.length; else noAttrs"
                   class="mt-2 text-sm text-zinc-700 dark:text-zinc-200 space-y-1"
                 >
-                  <div *ngFor="let attr of item.extraAttributes">
-                    {{ attr.name }}: {{ attr.value }}
-                  </div>
+                  @for (attr of item.extraAttributes; track attr.name || attr) {
+                    <div>
+                      {{ attr.name }}: {{ attr.value }}
+                    </div>
+                  }
                 </div>
                 <ng-template #noAttrs>
                   <div class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -440,6 +474,7 @@
               </div>
             </div>
           </div>
+        }
         </div>
       </div>
 

@@ -198,6 +198,12 @@ export class AdminComponent {
           route: "marketing/email-campaigns",
         },
         {
+          id: "newsletter",
+          label: "Newsletter Management",
+          icon: "mark_email_read",
+          route: "marketing/newsletter",
+        },
+        {
           id: "push-notifications",
           label: "Push Notifications",
           icon: "notifications_active",

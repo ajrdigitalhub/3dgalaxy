@@ -18,6 +18,7 @@ import {
 } from "../../../services/datastore";
 import { ApiService } from "../../../services/api.service";
 import { SettingsService } from "../../../core/services/settings.service";
+import { CustomerService } from "../../../admin/shared/services/customer.service";
 import { ScrollRevealDirective } from "../../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../../shared/directives/tilt.directive";
 
@@ -513,22 +514,95 @@ export class HomeCategoryView3DPrinterComponent {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: ``,
+  template: `
+    <section class="max-w-4xl mx-auto px-6 py-12">
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-orange-950 p-8 md:p-12 shadow-2xl border border-zinc-800/50 text-center">
+        <!-- Decorative Glow Blur -->
+        <div class="absolute -right-20 -top-20 w-60 h-60 bg-orange-600/20 rounded-full blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 w-60 h-60 bg-orange-600/10 rounded-full blur-3xl"></div>
+
+        <div class="relative z-10 space-y-6 max-w-2xl mx-auto">
+          <div class="inline-flex items-center justify-center p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20 text-orange-500 animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5" />
+            </svg>
+          </div>
+          
+          <div class="space-y-2">
+            <h2 class="text-3xl md:text-4xl font-black text-white tracking-tight font-display">
+              {{ section.config['title'] || 'Stay Updated with 3DGalaxy' }}
+            </h2>
+            <p class="text-zinc-300 text-sm md:text-base font-medium max-w-lg mx-auto">
+              {{ section.config['description'] || 'Get exclusive offers, new product launches, printing tips, and member-only discounts.' }}
+            </p>
+          </div>
+
+          <!-- Subscription Form -->
+          <div class="subscription-form max-w-md mx-auto" *ngIf="!isSubscribed()">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <input 
+                #emailInput 
+                type="email" 
+                placeholder="Enter your email address" 
+                class="flex-1 px-5 py-3.5 bg-zinc-800/80 border border-zinc-700/50 rounded-2xl text-white font-medium placeholder-zinc-500 outline-none focus:border-orange-500 focus:ring-3 focus:ring-orange-500/15 transition-all text-sm"
+              />
+              <button 
+                (click)="subscribe(emailInput)"
+                [disabled]="isLoading()"
+                class="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all text-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span class="spinner-mini" *ngIf="isLoading()"></span>
+                {{ isLoading() ? 'Subscribing...' : 'Subscribe' }}
+              </button>
+            </div>
+            <p class="text-left text-[11px] text-zinc-500 mt-3 font-semibold flex items-start gap-1.5 leading-relaxed">
+              <input type="checkbox" checked disabled class="mt-0.5 accent-orange-500" />
+              <span>By subscribing, you agree to receive promotional updates and accept our Terms of Service & Privacy Policy.</span>
+            </p>
+          </div>
+
+          <!-- Success State -->
+          <div class="success-card space-y-3 py-4 animate-bounce" *ngIf="isSubscribed()">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-green-500/10 text-green-500 rounded-full border border-green-500/20">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Thank You for Subscribing!</h3>
+            <p class="text-zinc-300 text-sm">You have been successfully added to our mailing list.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
 })
 export class HomeNewsletterComponent {
-  ds = inject(DatastoreService);
+  private customerService = inject(CustomerService);
   @Input() section!: any;
+
+  isLoading = signal(false);
   isSubscribed = signal(false);
 
-  subscribeNewsletter(input: HTMLInputElement) {
-    const val = input.value?.trim();
-    if (val) {
-      this.isSubscribed.set(true);
-      input.value = "";
-      setTimeout(() => {
-        this.isSubscribed.set(false);
-      }, 5000);
-    }
+  subscribe(input: HTMLInputElement) {
+    const email = input.value?.trim();
+    if (!email) return;
+
+    this.isLoading.set(true);
+    this.customerService.subscribeNewsletter({ email }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.isSubscribed.set(true);
+          input.value = "";
+          setTimeout(() => {
+            this.isSubscribed.set(false);
+          }, 6000);
+        }
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+      }
+    });
   }
 }
 

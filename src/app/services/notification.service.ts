@@ -11,6 +11,7 @@ import { ApiService } from "./api.service";
 import { DatastoreService } from "./datastore";
 import { initFirebase, app } from "../firebase";
 import { BehaviorSubject, Observable } from "rxjs";
+import { SettingsService } from "../core/services/settings.service";
 
 export interface InboxNotification {
   id: string;
@@ -31,6 +32,7 @@ export class NotificationService {
   private api = inject(ApiService);
   private ds = inject(DatastoreService);
   private platformId = inject(PLATFORM_ID);
+  private settingsService = inject(SettingsService);
 
   // Notifications Inbox list signal
   inbox = signal<InboxNotification[]>([]);
@@ -61,6 +63,15 @@ export class NotificationService {
           this.showPromptSubject.next(true);
         }, 4000);
       }
+
+      // Automatically fetch FCM token when permission is granted and settings are loaded
+      effect(() => {
+        const perm = this.permission();
+        const settingsLoaded = this.settingsService.isLoaded();
+        if (perm === "granted" && settingsLoaded && !this.fcmToken()) {
+          this.getFcmToken();
+        }
+      });
 
       // Automatically register device once FCM token is available
       effect(() => {
@@ -128,7 +139,16 @@ export class NotificationService {
       const reg = await this.getOrCreateServiceWorkerRegistration();
       const vapidKey =
         this.ds.settings().pushNotifications?.vapidKey ||
+        this.ds.settings().pushNotificationSettings?.vapidKey ||
         "BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215";
+
+      if (!this.isValidVapidKey(vapidKey)) {
+        console.warn(
+          `Skipping FCM token retrieval: VAPID key is invalid or placeholder ("${vapidKey}"). ` +
+          "Please configure a valid 65-byte base64url-encoded Web Push VAPID key in settings."
+        );
+        return null;
+      }
 
       const token = await getToken(messaging, {
         serviceWorkerRegistration: reg,
@@ -145,6 +165,26 @@ export class NotificationService {
     return null;
   }
 
+  private isValidVapidKey(key: string): boolean {
+    if (!key || typeof key !== 'string') return false;
+    const cleanKey = key.trim();
+    if (cleanKey.length !== 87 && cleanKey.length !== 88) {
+      return false;
+    }
+    const base64UrlRegex = /^[A-Za-z0-9\-_=]+$/;
+    if (!base64UrlRegex.test(cleanKey)) {
+      return false;
+    }
+    try {
+      const base64 = cleanKey.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+      atob(padded);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async getOrCreateServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
     if (this.serviceWorkerRegistrationPromise) {
       return this.serviceWorkerRegistrationPromise;
@@ -154,8 +194,19 @@ export class NotificationService {
       throw new Error("Service workers not supported in this browser.");
     }
 
+    const config =
+      this.ds.settings()?.pushNotifications ||
+      this.ds.settings()?.pushNotificationSettings ||
+      {};
+    const queryParams = new URLSearchParams({
+      apiKey: config.apiKey || '',
+      projectId: config.projectId || '',
+      senderId: config.senderId || '',
+      appId: config.appId || '',
+    }).toString();
+
     this.serviceWorkerRegistrationPromise = navigator.serviceWorker.register(
-      "/firebase-messaging-sw.js",
+      `/firebase-messaging-sw.js?${queryParams}`,
     );
     return this.serviceWorkerRegistrationPromise;
   }

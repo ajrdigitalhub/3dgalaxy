@@ -18,6 +18,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  // Prevent infinite retry loops by checking if the request has already been retried
+  const isRetried = req.headers.has('X-Auth-Retried');
+
   let authReq = req;
   if (typeof window !== 'undefined') {
     const accessToken = localStorage.getItem('access_token');
@@ -30,7 +33,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) {
+      // 403 (Invalid/expired token returned by backend) or 401 (Unauthorized)
+      if (
+        error instanceof HttpErrorResponse &&
+        (error.status === 401 || error.status === 403) &&
+        !isRetried
+      ) {
         if (typeof window !== 'undefined') {
           const refreshToken = localStorage.getItem('refresh_token');
           if (refreshToken) {
@@ -56,9 +64,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                     }
                     refreshTokenSubject.next(newAccess);
                     
-                    // Clone the failed request with the newly acquired access token
+                    // Clone the failed request with the newly acquired access token and retry flag
                     const retryReq = req.clone({
-                      headers: req.headers.set('Authorization', `Bearer ${newAccess}`)
+                      headers: req.headers
+                        .set('Authorization', `Bearer ${newAccess}`)
+                        .set('X-Auth-Retried', 'true')
                     });
                     return next(retryReq);
                   } else {
@@ -79,7 +89,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                 take(1),
                 switchMap((token) => {
                   const retryReq = req.clone({
-                    headers: req.headers.set('Authorization', `Bearer ${token}`)
+                    headers: req.headers
+                      .set('Authorization', `Bearer ${token}`)
+                      .set('X-Auth-Retried', 'true')
                   });
                   return next(retryReq);
                 })

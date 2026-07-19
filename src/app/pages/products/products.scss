@@ -172,3 +172,52 @@
 .dark .bg-neutral-900\/80 {
   background-color: rgba(23, 23, 23, 0.8);
 }
+
+// Redesigned Filter Drawer Animations
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+// Outlined modern dropdowns
+.premium-select {
+  appearance: none;
+  background-image: none;
+  &:focus {
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+  }
+}
+
+// Active chips horizontal scrollbar hider
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+}
+
+// Smooth backdrop transition
+.backdrop-blur-xs {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+// Slide-up transition for mobile drawer
+.mobile-drawer-animate {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+// Redesigned Active Class Styles
+.premium-view-btn.active {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  color: rgb(249, 115, 22) !important;
+}
+
+.accordion-content button.active {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  color: rgb(234, 88, 12) !important; /* text-orange-600 */
+}

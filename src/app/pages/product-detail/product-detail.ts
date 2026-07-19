@@ -54,6 +54,7 @@ export class ProductDetail {
   isReviewModalOpen = signal(false);
   reviewsHighlight = signal(false);
   @ViewChild("relatedScroll") relatedScroll?: ElementRef<HTMLElement>;
+  @ViewChild("galleryScroll") galleryScroll?: ElementRef<HTMLElement>;
   reviewDraft = signal({
     rating: 5,
     title: "",
@@ -909,6 +910,21 @@ export class ProductDetail {
       this.lastSyncedVariantId.set(variantId);
     });
 
+    effect(() => {
+      const activeImg = this.activeImage();
+      const scrollEl = this.galleryScroll?.nativeElement;
+      if (scrollEl && activeImg) {
+        const imgs = this.galleryImages();
+        const idx = imgs.findIndex((img) => this.getImageUrl(img) === activeImg);
+        if (idx !== -1) {
+          const targetLeft = idx * scrollEl.clientWidth;
+          if (Math.abs(scrollEl.scrollLeft - targetLeft) > 5) {
+            scrollEl.scrollTo({ left: targetLeft, behavior: "smooth" });
+          }
+        }
+      }
+    });
+
     this.route.params.subscribe((p) => {
       if (p["slug"]) {
         const slugStr = p["slug"];
@@ -1057,6 +1073,25 @@ export class ProductDetail {
   selectImage(img: any) {
     this.activeImage.set(this.getImageUrl(img));
     this.is360Active.set(false);
+  }
+
+  isMobile() {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  }
+
+  onGalleryScroll(el: HTMLElement) {
+    if (el.clientWidth === 0) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    const imgs = this.galleryImages();
+    if (imgs && imgs[idx]) {
+      const url = this.getImageUrl(imgs[idx]);
+      if (this.activeImage() !== url) {
+        this.activeImage.set(url);
+      }
+    }
   }
 
   toggle360Sensor() {

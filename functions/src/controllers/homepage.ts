@@ -2,12 +2,25 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
+import { sysCache } from '../config/cache';
+
+export const clearHomepageCache = () => {
+  sysCache.del('consolidated_home_payload');
+  sysCache.del('featured_products_payload');
+  sysCache.del('homepage_sections');
+  sysCache.del('frontend_layout');
+  clearCache();
+};
 
 export const getHomepageSections = async (req: Request, res: Response) => {
   try {
-    const sections = await prisma.homepageSection.findMany({
-      orderBy: { sortOrder: 'asc' },
-    });
+    let sections = sysCache.get('homepage_sections');
+    if (!sections) {
+      sections = await prisma.homepageSection.findMany({
+        orderBy: { sortOrder: 'asc' },
+      });
+      sysCache.set('homepage_sections', sections, 1800); // 30 minutes cache
+    }
     return res.status(200).json(sections);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to access homepage layout configurations', details: error.message });
@@ -16,10 +29,14 @@ export const getHomepageSections = async (req: Request, res: Response) => {
 
 export const getFrontendLayout = async (req: Request, res: Response) => {
   try {
-    const list = await prisma.homepageSection.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: 'asc' },
-    });
+    let list = sysCache.get('frontend_layout');
+    if (!list) {
+      list = await prisma.homepageSection.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+      sysCache.set('frontend_layout', list, 1800);
+    }
     return res.status(200).json(list);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to compile public storefront layout', details: error.message });
@@ -41,7 +58,7 @@ export const createHomepageSection = async (req: Request, res: Response) => {
         isActive: isVisible !== undefined ? !!isVisible : true,
       },
     });
-    clearCache();
+    clearHomepageCache();
     return res.status(201).json(created);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to record layout section', details: error.message });
@@ -88,7 +105,7 @@ export const updateHomepageSection = async (req: Request, res: Response) => {
         isActive: isVisible !== undefined ? !!isVisible : undefined,
       },
     });
-    clearCache();
+    clearHomepageCache();
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to alter layout section details', details: error.message });
@@ -100,7 +117,7 @@ export const deleteHomepageSection = async (req: Request, res: Response) => {
   const mappedId = toValidUuid(id);
   try {
     await prisma.homepageSection.delete({ where: { id: mappedId } });
-    clearCache();
+    clearHomepageCache();
     return res.status(200).json({ message: 'Homepage layout section successfully deleted' });
   } catch (error: any) {
     return res.status(500).json({ error: 'layout section deletion command halted', details: error.message });
@@ -109,6 +126,12 @@ export const deleteHomepageSection = async (req: Request, res: Response) => {
 
 export const getConsolidatedHome = async (req: Request, res: Response) => {
   try {
+    const cacheKey = 'consolidated_home_payload';
+    const cached = sysCache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     const [settingsData, categories, brands, menuItems, products] = await Promise.all([
       getSettingsService(),
       prisma.category.findMany({
@@ -144,7 +167,7 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
     };
     const navigationTree = buildMenuTree(menuItems, null);
 
-    return res.status(200).json({
+    const responseData = {
       success: true,
       data: {
         settings: settingsData,
@@ -202,7 +225,10 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
           { name: 'Prof. Rajesh K.', role: 'Makerspace Admin, IIT Delhi', comment: 'Outstanding post-sales training and customer service.' }
         ]
       }
-    });
+    };
+
+    sysCache.set(cacheKey, responseData, 1800);
+    return res.status(200).json(responseData);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to compile consolidated home payload', details: error.message });
   }
@@ -210,6 +236,12 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
 
 export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
+    const cacheKey = 'featured_products_payload';
+    const cached = sysCache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     let products = await prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
       include: { brand: true }
@@ -252,9 +284,12 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
       };
     });
 
-    return res.status(200).json({
+    const responseData = {
       products: mapped
-    });
+    };
+
+    sysCache.set(cacheKey, responseData, 1800);
+    return res.status(200).json(responseData);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to query featured products', details: error.message });
   }

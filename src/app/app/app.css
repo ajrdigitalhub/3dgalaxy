@@ -1,0 +1,50 @@
+/* Search Autocomplete Premium Styles */
+
+.search-highlight {
+  color: #d65108; /* Theme primary orange */
+  font-weight: 800;
+}
+
+@keyframes searchDropdownScaleIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-search-dropdown {
+  animation: searchDropdownScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Keyboard selection focus */
+.search-selected {
+  background-color: rgba(214, 81, 8, 0.06) !important;
+  border-color: rgba(214, 81, 8, 0.3) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.dark .search-selected {
+  background-color: rgba(214, 81, 8, 0.1) !important;
+  border-color: rgba(214, 81, 8, 0.5) !important;
+}
+
+/* Scrollbar support */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}

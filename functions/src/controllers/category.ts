@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
+import { sysCache } from '../config/cache';
 
 // Helper to construct recursively nested tree paths
 interface CategoryNode {
@@ -30,12 +31,26 @@ const buildCategoryTree = (
     }));
 };
 
+export const clearCategoryCache = () => {
+  sysCache.del('categories_tree');
+  sysCache.del('categories_flat');
+  sysCache.clearPattern('breadcrumbs_');
+  sysCache.clearPattern('category_children_');
+  sysCache.clearPattern('category_slug_');
+  sysCache.clearPattern('category_id_');
+  clearCache();
+};
+
 export const getCategoriesTree = async (req: Request, res: Response) => {
   try {
-    const all = await prisma.category.findMany({
-      orderBy: { name: 'asc' },
-    });
-    const tree = buildCategoryTree(all, null);
+    let tree = sysCache.get('categories_tree') as CategoryNode[];
+    if (!tree) {
+      const all = await prisma.category.findMany({
+        orderBy: { name: 'asc' },
+      });
+      tree = buildCategoryTree(all, null);
+      sysCache.set('categories_tree', tree, 1800); // 30 minutes cache
+    }
     return res.status(200).json(tree);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to build category tree', details: error.message });
@@ -44,11 +59,16 @@ export const getCategoriesTree = async (req: Request, res: Response) => {
 
 export const getCategoryBySlug = async (req: Request, res: Response) => {
   const { slug } = req.params;
+  const cacheKey = `category_slug_${slug}`;
   try {
-    const category = await prisma.category.findUnique({
-      where: { slug }
-    });
-    if (!category) return res.status(404).json({ error: 'Category not found' });
+    let category = sysCache.get(cacheKey);
+    if (!category) {
+      category = await prisma.category.findUnique({
+        where: { slug }
+      });
+      if (!category) return res.status(404).json({ error: 'Category not found' });
+      sysCache.set(cacheKey, category, 1800);
+    }
     return res.status(200).json(category);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch category', details: error.message });
@@ -57,8 +77,12 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
 
 export const getBreadcrumbsBySlug = async (req: Request, res: Response) => {
   const { slug } = req.params;
+  const cacheKey = `breadcrumbs_slug_${slug}`;
   try {
-    const breadcrumbs: Array<{ id: string; name: string; slug: string }> = [];
+    let breadcrumbs = sysCache.get(cacheKey);
+    if (breadcrumbs) return res.status(200).json(breadcrumbs);
+
+    breadcrumbs = [];
     const leafCategory = await prisma.category.findUnique({ where: { slug } });
     if (!leafCategory) return res.status(404).json({ error: 'Category not found' });
 
@@ -81,6 +105,7 @@ export const getBreadcrumbsBySlug = async (req: Request, res: Response) => {
       currentId = cat.parentId;
     }
 
+    sysCache.set(cacheKey, breadcrumbs, 1800);
     return res.status(200).json(breadcrumbs);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to trace breadcrumbs pathway', details: error.message });
@@ -89,8 +114,12 @@ export const getBreadcrumbsBySlug = async (req: Request, res: Response) => {
 
 export const getBreadcrumbs = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const cacheKey = `breadcrumbs_id_${id}`;
   try {
-    const breadcrumbs: Array<{ id: string; name: string; slug: string }> = [];
+    let breadcrumbs = sysCache.get(cacheKey);
+    if (breadcrumbs) return res.status(200).json(breadcrumbs);
+
+    breadcrumbs = [];
     let currentId: string | null = id;
 
     while (currentId) {
@@ -110,6 +139,7 @@ export const getBreadcrumbs = async (req: Request, res: Response) => {
       currentId = cat.parentId;
     }
 
+    sysCache.set(cacheKey, breadcrumbs, 1800);
     return res.status(200).json(breadcrumbs);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to trace breadcrumbs pathway', details: error.message });
@@ -119,11 +149,16 @@ export const getBreadcrumbs = async (req: Request, res: Response) => {
 export const getDirectChildren = async (req: Request, res: Response) => {
   const { parentId } = req.params;
   const targetParentId = parentId === 'root' ? null : parentId;
+  const cacheKey = `category_children_${targetParentId || 'root'}`;
   try {
-    const list = await prisma.category.findMany({
-      where: { parentId: targetParentId },
-      orderBy: { name: 'asc' },
-    });
+    let list = sysCache.get(cacheKey);
+    if (!list) {
+      list = await prisma.category.findMany({
+        where: { parentId: targetParentId },
+        orderBy: { name: 'asc' },
+      });
+      sysCache.set(cacheKey, list, 1800);
+    }
     return res.status(200).json(list);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch child subcategories', details: error.message });
@@ -132,9 +167,13 @@ export const getDirectChildren = async (req: Request, res: Response) => {
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const list = await prisma.category.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    let list = sysCache.get('categories_flat');
+    if (!list) {
+      list = await prisma.category.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      sysCache.set('categories_flat', list, 1800);
+    }
     return res.status(200).json(list);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to access flatter category listing', details: error.message });
@@ -164,7 +203,7 @@ export const createCategory = async (req: Request, res: Response) => {
         seoDescription,
       },
     });
-    clearCache();
+    clearCategoryCache();
     return res.status(201).json(created);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category creation stalled', details: error.message });
@@ -193,7 +232,7 @@ export const updateCategory = async (req: Request, res: Response) => {
         seoDescription,
       },
     });
-    clearCache();
+    clearCategoryCache();
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Category modification failed', details: error.message });
@@ -204,7 +243,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     await prisma.category.delete({ where: { id } });
-    clearCache();
+    clearCategoryCache();
     return res.status(200).json({ message: 'Category structure permanently purged' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Category purge command failed', details: error.message });

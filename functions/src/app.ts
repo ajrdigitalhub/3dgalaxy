@@ -21,6 +21,8 @@ import {
 } from "./modules/settings/settings.routes";
 import orderRoutes from "./routes/order";
 import customerRoutes from "./routes/customer";
+import adminCustomerRoutes from "./routes/adminCustomer";
+import newsletterRoutes from "./routes/newsletter";
 import reviewRoutes from "./routes/reviews";
 import whatsappRoutes from "./routes/whatsapp";
 import sitemapRoutes from "./routes/sitemap";
@@ -112,6 +114,8 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/admin/customers", adminCustomerRoutes);
+app.use("/api/newsletter", newsletterRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", whatsappRoutes);
 app.use("/api", abandonedCheckoutRoutes);

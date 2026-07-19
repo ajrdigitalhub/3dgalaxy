@@ -1,0 +1,483 @@
+<div class="customer-detail-container" *ngIf="customer() as c">
+  <!-- Back Button & Page Header -->
+  <div class="page-header">
+    <button class="btn-back" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon> Back to Customers
+    </button>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="openEditModal()">
+        <mat-icon>edit</mat-icon> Edit Profile
+      </button>
+      <button class="btn" [class.btn-warning]="c.status === 'Active'" [class.btn-success]="c.status === 'Blocked'" (click)="toggleBlockStatus()">
+        <mat-icon>{{ c.status === 'Active' ? 'block' : 'lock_open' }}</mat-icon>
+        {{ c.status === 'Active' ? 'Block Account' : 'Unblock Account' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Profile Overview Header Card -->
+  <div class="profile-header-card">
+    <div class="profile-main-info">
+      <img 
+        [src]="c.profileImage || 'assets/images/user-placeholder.png'" 
+        (error)="handleImageError($event, 'https://picsum.photos/seed/' + c.id + '/120/120')"
+        alt="Profile" 
+      />
+      <div class="name-section">
+        <h2>{{ c.name }}</h2>
+        <span class="customer-id">Customer ID: {{ c.id }}</span>
+        <div class="badges-row">
+          <span class="badge-type" [class]="c.customerType">{{ c.customerType | titlecase }}</span>
+          <span class="badge-status" [class.active]="c.status === 'Active'" [class.blocked]="c.status === 'Blocked'">{{ c.status }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="quick-stats-grid">
+      <div class="stat-card">
+        <span class="label">Total Spend</span>
+        <span class="value">₹{{ c.stats.totalSpend | number:'1.2-2' }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Total Orders</span>
+        <span class="value">{{ c.stats.totalOrders }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Avg Order Value</span>
+        <span class="value">₹{{ c.stats.averageOrderValue | number:'1.2-2' }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Reward Points</span>
+        <span class="value points">{{ c.rewardPoints }} pts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-nav-card">
+    <div class="tabs-list">
+      <button [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">
+        <mat-icon>analytics</mat-icon> Overview
+      </button>
+      <button [class.active]="activeTab() === 'orders'" (click)="setTab('orders')">
+        <mat-icon>shopping_bag</mat-icon> Orders
+      </button>
+      <button [class.active]="activeTab() === 'addresses'" (click)="setTab('addresses')">
+        <mat-icon>location_on</mat-icon> Addresses
+      </button>
+      <button [class.active]="activeTab() === 'wishlist'" (click)="setTab('wishlist')">
+        <mat-icon>favorite</mat-icon> Wishlist
+      </button>
+      <button [class.active]="activeTab() === 'reviews'" (click)="setTab('reviews')">
+        <mat-icon>reviews</mat-icon> Reviews
+      </button>
+      <button [class.active]="activeTab() === 'activity'" (click)="setTab('activity')">
+        <mat-icon>history</mat-icon> Activity
+      </button>
+      <button [class.active]="activeTab() === 'notes'" (click)="setTab('notes')">
+        <mat-icon>note_alt</mat-icon> Admin Notes
+      </button>
+    </div>
+  </div>
+
+  <!-- Dynamic Tabs Content -->
+  <div class="tab-content-container">
+
+    <!-- 1. OVERVIEW TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'overview'">
+      <div class="overview-grid">
+        <!-- Personal details -->
+        <div class="info-card">
+          <h3>Customer Details</h3>
+          <div class="info-row">
+            <span class="label">Email Address</span>
+            <span class="val font-semibold">{{ c.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Mobile Number</span>
+            <span class="val">{{ c.phone || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Registered On</span>
+            <span class="val">{{ c.registrationDate | date:'medium' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Last Logged In</span>
+            <span class="val">{{ c.lastLogin ? (c.lastLogin | date:'medium') : '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Gender</span>
+            <span class="val">{{ c.gender || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Birthday</span>
+            <span class="val">{{ c.dateOfBirth ? (c.dateOfBirth | date:'longDate') : '—' }}</span>
+          </div>
+        </div>
+
+        <!-- Segment Info -->
+        <div class="info-card engagement-card">
+          <h3>Segment Analytics</h3>
+          <div class="metric-meter">
+            <div class="meter-info">
+              <span>Customer Value Rating</span>
+              <span class="rating-badge" [class.high]="c.stats.totalSpend > 50000">
+                {{ c.stats.totalSpend > 50000 ? 'High Value' : 'Standard' }}
+              </span>
+            </div>
+            <div class="progress-bar">
+              <div class="fill" [style.width.%]="mathMin(100, (c.stats.totalSpend / 100000) * 100)"></div>
+            </div>
+          </div>
+          <p class="engagement-text">
+            * High Value customers spend more than ₹50,000 and have completed at least 3 orders on the storefront.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ORDERS TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'orders'">
+      <div class="empty-state-tab" *ngIf="orders().length === 0">
+        <mat-icon>shopping_bag</mat-icon>
+        <h4>No Orders Placed Yet</h4>
+        <p>This customer hasn't purchased any items yet.</p>
+      </div>
+
+      <div class="orders-table-wrapper" *ngIf="orders().length > 0">
+        <table class="sub-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th class="text-right">Amount</th>
+              <th>Payment Status</th>
+              <th>Delivery Status</th>
+              <th class="text-right">Invoice</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let o of orders()">
+              <td>
+                <span class="order-number font-semibold">#{{ o.orderNumber }}</span>
+              </td>
+              <td>{{ o.orderDate | date:'mediumDate' }}</td>
+              <td>
+                <div class="order-items-cell">
+                  <div class="item-mini" *ngFor="let item of o.items">
+                    <img [src]="item.productImage" alt="" (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.sku + '/40/40')" />
+                    <div class="item-desc">
+                      <span class="name">{{ item.productName }}</span>
+                      <span class="qty">Qty: {{ item.quantity }} × ₹{{ item.unitPrice | number:'1.2-2' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="text-right font-semibold">₹{{ o.totalAmount | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge-status-sm" [class.success]="o.paymentStatus === 'PAID'" [class.pending]="o.paymentStatus === 'PENDING'">
+                  {{ o.paymentStatus }}
+                </span>
+              </td>
+              <td>
+                <span class="badge-status-sm" [class.success]="o.deliveryStatus === 'DELIVERED'" [class.pending]="o.deliveryStatus === 'PROCESSING' || o.deliveryStatus === 'PENDING'">
+                  {{ o.deliveryStatus }}
+                </span>
+              </td>
+              <td class="text-right">
+                <a [href]="o.invoiceUrl" target="_blank" class="btn-invoice" *ngIf="o.invoiceUrl">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </a>
+                <span *ngIf="!o.invoiceUrl">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. ADDRESSES TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'addresses'">
+      <div class="pane-header">
+        <h3>Saved Addresses</h3>
+        <button class="btn btn-secondary btn-sm" (click)="openAddressModal()">
+          <mat-icon>add_location</mat-icon> Add New Address
+        </button>
+      </div>
+
+      <div class="empty-state-tab" *ngIf="addresses().length === 0">
+        <mat-icon>location_off</mat-icon>
+        <h4>No Addresses Added</h4>
+        <p>No billing or shipping address is currently saved for this customer profile.</p>
+      </div>
+
+      <div class="addresses-grid" *ngIf="addresses().length > 0">
+        <div class="address-card" *ngFor="let addr of addresses()" [class.is-default]="addr.isDefault">
+          <div class="card-header">
+            <span class="default-badge" *ngIf="addr.isDefault">Default</span>
+            <div class="actions">
+              <button class="btn-icon" (click)="openAddressModal(addr)"><mat-icon>edit</mat-icon></button>
+              <button class="btn-icon text-danger" (click)="deleteAddress(addr.id)"><mat-icon>delete</mat-icon></button>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="recipient font-semibold">{{ addr.name }}</p>
+            <p class="phone" *ngIf="addr.phone"><mat-icon>phone</mat-icon> {{ addr.phone }}</p>
+            <p class="address-line">{{ addr.addressLine1 }}</p>
+            <p class="address-line" *ngIf="addr.addressLine2">{{ addr.addressLine2 }}</p>
+            <p class="city-zip">{{ addr.city }}, {{ addr.state }} - {{ addr.postalCode }}</p>
+            <p class="country">{{ addr.country }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. WISHLIST TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'wishlist'">
+      <div class="empty-state-tab" *ngIf="wishlist().length === 0">
+        <mat-icon>favorite_border</mat-icon>
+        <h4>Wishlist is Empty</h4>
+        <p>This customer hasn't bookmarked any items yet.</p>
+      </div>
+
+      <div class="wishlist-grid" *ngIf="wishlist().length > 0">
+        <div class="wishlist-card" *ngFor="let item of wishlist()">
+          <img [src]="item.image" alt="Product" (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.productId + '/150/150')" />
+          <div class="wishlist-info">
+            <span class="category">{{ item.category }}</span>
+            <h4 class="name">{{ item.name }}</h4>
+            <span class="price font-semibold">₹{{ item.price | number:'1.2-2' }}</span>
+            <span class="stock-badge" [class.in-stock]="item.stockStatus === 'In Stock'">{{ item.stockStatus }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. REVIEWS TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'reviews'">
+      <div class="empty-state-tab" *ngIf="reviews().length === 0">
+        <mat-icon>chat_bubble_outline</mat-icon>
+        <h4>No Reviews Written</h4>
+        <p>This customer has not posted any reviews for catalog items.</p>
+      </div>
+
+      <div class="reviews-list" *ngIf="reviews().length > 0">
+        <div class="review-card" *ngFor="let r of reviews()">
+          <div class="review-header">
+            <div class="item-info">
+              <img [src]="r.product.image" alt="" (error)="handleImageError($event, 'https://picsum.photos/seed/' + r.id + '/40/40')" />
+              <div class="desc">
+                <span class="product-name font-semibold">{{ r.product.name }}</span>
+                <span class="date">{{ r.createdAt | date:'mediumDate' }}</span>
+              </div>
+            </div>
+            <div class="stars">
+              <mat-icon *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= r.rating">star</mat-icon>
+            </div>
+          </div>
+          <div class="review-body">
+            <p>{{ r.comment || '— No comment provided —' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. ACTIVITY TIMELINE TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'activity'">
+      <div class="empty-state-tab" *ngIf="activity().length === 0">
+        <mat-icon>history</mat-icon>
+        <h4>No Activity Recorded</h4>
+        <p>Timeline is clean. No logged sessions or profile alterations.</p>
+      </div>
+
+      <div class="timeline" *ngIf="activity().length > 0">
+        <div class="timeline-item" *ngFor="let act of activity()">
+          <div class="timeline-badge" [class]="act.action">
+            <mat-icon>
+              {{ 
+                act.action === 'ACCOUNT_CREATED' ? 'person_add' :
+                act.action === 'PROFILE_UPDATED' ? 'manage_accounts' :
+                act.action === 'ACCOUNT_BLOCKED' ? 'lock' :
+                act.action === 'ACCOUNT_UNBLOCKED' ? 'lock_open' :
+                act.action === 'ORDER_PLACED' ? 'shopping_bag' : 'bolt'
+              }}
+            </mat-icon>
+          </div>
+          <div class="timeline-card">
+            <div class="header">
+              <span class="title font-semibold">{{ replaceUnderscores(act.action) | titlecase }}</span>
+              <span class="time">{{ act.createdAt | date:'medium' }}</span>
+            </div>
+            <p class="details">{{ act.details }}</p>
+            <span class="ip" *ngIf="act.ipAddress">IP: {{ act.ipAddress }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. ADMIN NOTES TAB -->
+    <div class="tab-pane" *ngIf="activeTab() === 'notes'">
+      <!-- Add Note Input -->
+      <div class="add-note-card">
+        <h3>Create Admin Note</h3>
+        <div class="form-group">
+          <textarea 
+            [(ngModel)]="newNoteText" 
+            placeholder="Type confidential note about customer (B2B terms, disputes, credit records)..."
+            rows="3">
+          </textarea>
+        </div>
+        <div class="card-footer">
+          <label class="pin-check">
+            <input type="checkbox" [(ngModel)]="isNotePinned" />
+            <mat-icon>push_pin</mat-icon> Pin note to top
+          </label>
+          <button class="btn btn-primary btn-sm" (click)="addNote()" [disabled]="!newNoteText().trim()">
+            Save Note
+          </button>
+        </div>
+      </div>
+
+      <!-- Notes Timeline -->
+      <div class="empty-state-tab" *ngIf="notes().length === 0">
+        <mat-icon>description</mat-icon>
+        <h4>No Administrative Notes</h4>
+        <p>Add administrative memos here. Confidential and visible only to staff.</p>
+      </div>
+
+      <div class="notes-list" *ngIf="notes().length > 0">
+        <div class="note-item" *ngFor="let n of notes()" [class.pinned]="n.isPinned">
+          <div class="header">
+            <div class="meta">
+              <span class="author font-semibold">{{ n.author }}</span>
+              <span class="date">{{ n.createdAt | date:'medium' }}</span>
+            </div>
+            <div class="actions">
+              <button class="btn-icon" (click)="togglePinNote(n)" [title]="n.isPinned ? 'Unpin Note' : 'Pin Note'">
+                <mat-icon [class.pinned-icon]="n.isPinned">push_pin</mat-icon>
+              </button>
+              <button class="btn-icon text-danger" (click)="deleteNote(n.id)"><mat-icon>delete</mat-icon></button>
+            </div>
+          </div>
+          <p class="body">{{ n.note }}</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Address Modal Form -->
+  <div class="modal-overlay" *ngIf="showAddressModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ editingAddress() ? 'Edit Address Card' : 'Add New Address' }}</h3>
+        <button class="btn-close" (click)="closeAddressModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Recipient Name *</label>
+          <input type="text" [(ngModel)]="addressForm.name" placeholder="John Doe" />
+        </div>
+        <div class="form-group">
+          <label>Recipient Phone *</label>
+          <input type="text" [(ngModel)]="addressForm.phone" placeholder="+91 9876543210" />
+        </div>
+        <div class="form-group">
+          <label>Address Line 1 *</label>
+          <input type="text" [(ngModel)]="addressForm.addressLine1" placeholder="Flat / House No. / Street" />
+        </div>
+        <div class="form-group">
+          <label>Address Line 2</label>
+          <input type="text" [(ngModel)]="addressForm.addressLine2" placeholder="Landmark / Locality" />
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>City *</label>
+            <input type="text" [(ngModel)]="addressForm.city" placeholder="Mumbai" />
+          </div>
+          <div class="form-group">
+            <label>State *</label>
+            <input type="text" [(ngModel)]="addressForm.state" placeholder="Maharashtra" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>PIN / Postal Code *</label>
+            <input type="text" [(ngModel)]="addressForm.postalCode" placeholder="400001" />
+          </div>
+          <div class="form-group">
+            <label>Country *</label>
+            <input type="text" [(ngModel)]="addressForm.country" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="pin-check">
+            <input type="checkbox" [(ngModel)]="addressForm.isDefault" /> Set as default address
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddressModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitAddress()">Save Address</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Customer Profile</h3>
+        <button class="btn-close" (click)="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" [(ngModel)]="editProfileForm.name" />
+        </div>
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" [(ngModel)]="editProfileForm.email" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="text" [(ngModel)]="editProfileForm.phone" />
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Customer Tier</label>
+            <select [(ngModel)]="editProfileForm.customerType">
+              <option value="retail">Retail Creator</option>
+              <option value="dealer">B2B Dealer</option>
+              <option value="guest">Standard Guest</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Gender</label>
+            <select [(ngModel)]="editProfileForm.gender">
+              <option value="">Choose</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="date" [(ngModel)]="editProfileForm.dateOfBirth" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitEditProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Spinner Overlay -->
+<div class="loading-overlay" *ngIf="isLoading()">
+  <div class="spinner"></div>
+</div>

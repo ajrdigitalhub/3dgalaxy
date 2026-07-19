@@ -441,7 +441,7 @@ export const buildProductPayload = async (
       salePrice:
         variant.salePrice !== undefined && variant.salePrice !== null
           ? variant.salePrice
-          : variant.price || 0,
+          : null,
       stock: variant.stock || 0,
       weight: variant.weight || 0,
       barcode: variant.barcode || "",
@@ -466,6 +466,13 @@ export const buildProductPayload = async (
     ...(group.tags || []).map((tag: string) => ({ name: tag, value: tag })),
   ];
 
+  const mrp = Math.max(...prices, 0);
+  const firstVariant = group.variants[0];
+  const productPrice = firstVariant ? firstVariant.price : 0;
+  const productSalePrice = firstVariant && firstVariant.salePrice !== null && firstVariant.salePrice !== undefined
+    ? firstVariant.salePrice
+    : null;
+
   return {
     name: group.name || sku,
     slug:
@@ -475,9 +482,9 @@ export const buildProductPayload = async (
     sku,
     description: group.productDetails || group.description || "",
     short_description: group.description || "",
-    mrp: Math.max(...prices, 0),
-    price: prices[0] || 0,
-    salePrice: prices[0] || 0,
+    mrp,
+    price: productPrice,
+    salePrice: productSalePrice,
     dealerPrice: null,
     stock: stockQtys.reduce((sum: number, qty: number) => sum + qty, 0),
     categoryId,

@@ -37,6 +37,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   styleUrl: './app.css',
 })
 export class App {
+  Math = Math;
   toastService = inject(ToastService);
   public ds = inject(DatastoreService);
   public sessionService = inject(SessionService);
@@ -151,19 +152,19 @@ export class App {
   selectedIndex = signal(-1);
 
   private searchTimeout: any;
+  private searchSub: any;
+  private searchCache = new Map<string, any>();
 
   onSearchFocus() {
     this.isSearchFocused.set(true);
     this.selectedIndex.set(-1);
-    if (!this.recentSearches().length) {
-       this.fetchRecentSearches();
-    }
+    this.fetchRecentSearches();
   }
 
   handleSearchKeydown(event: KeyboardEvent) {
       if (!this.isSearchFocused()) return;
       const suggs = this.suggestions();
-      const itemsLength = suggs.products.length + suggs.categories.length + suggs.brands.length + suggs.services.length;
+      const itemsLength = suggs.products.length + suggs.categories.length + suggs.brands.length + (suggs.services || []).length;
 
       if (event.key === 'ArrowDown') {
           event.preventDefault();
@@ -174,7 +175,7 @@ export class App {
       } else if (event.key === 'Enter') {
           event.preventDefault();
           if (this.selectedIndex() >= 0 && itemsLength > 0) {
-              const allItems = [...suggs.products, ...suggs.categories, ...suggs.brands, ...suggs.services];
+              const allItems = [...suggs.products, ...suggs.categories, ...suggs.brands, ...(suggs.services || [])];
               const selectedItem = allItems[this.selectedIndex()];
               if (selectedItem) {
                   this.router.navigateByUrl(selectedItem.url);
@@ -191,28 +192,67 @@ export class App {
   }
 
   fetchRecentSearches() {
-    this.http.get<any>('/api/search/recent').subscribe(res => {
-        if (res.success) this.recentSearches.set(res.data);
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('recentSearches');
+      if (cached) {
+        try {
+          this.recentSearches.set(JSON.parse(cached));
+        } catch (e) {}
+      }
+    }
+    // Also fetch from API to sync
+    this.http.get<any>('/api/search/recent').subscribe({
+      next: res => {
+        if (res.success && res.data && res.data.length) {
+          this.recentSearches.set(res.data);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('recentSearches', JSON.stringify(res.data));
+          }
+        }
+      },
+      error: () => {}
     });
   }
 
   onSearch(q: string) {
     this.searchQuery.set(q);
+    this.selectedIndex.set(-1);
+    
     if (q.length < 2) {
        this.suggestions.set({ products: [], categories: [], brands: [], services: [] });
+       if (this.searchSub) {
+         this.searchSub.unsubscribe();
+       }
+       this.isSearching.set(false);
+       return;
+    }
+
+    const cached = this.searchCache.get(q.toLowerCase().trim());
+    if (cached) {
+       this.suggestions.set(cached);
+       if (this.searchSub) {
+         this.searchSub.unsubscribe();
+       }
+       this.isSearching.set(false);
        return;
     }
     
     this.isSearching.set(true);
     clearTimeout(this.searchTimeout);
+    if (this.searchSub) {
+      this.searchSub.unsubscribe();
+    }
     
     this.searchTimeout = setTimeout(() => {
-       this.http.get<any>(`/api/search/suggestions?q=${encodeURIComponent(q)}`).subscribe({
+       this.searchSub = this.http.get<any>(`/api/search/suggestions?q=${encodeURIComponent(q)}`).subscribe({
          next: res => {
              if (res.success) {
                 if (res.data.products) res.data.products.forEach((p: any) => p.url = `/product/${p.slug}`);
                 if (res.data.categories) res.data.categories.forEach((c: any) => c.url = `/category/${c.slug}`);
                 if (res.data.brands) res.data.brands.forEach((b: any) => b.url = `/brand/${b.slug}`);
+                
+                // Cache responses
+                this.searchCache.set(q.toLowerCase().trim(), res.data);
                 this.suggestions.set(res.data);
              }
              this.isSearching.set(false);
@@ -227,8 +267,43 @@ export class App {
     if (query) {
       this.isSearchFocused.set(false);
       this.isMobileSearchOpen.set(false);
+      
+      // Update local recent searches list
+      let current = [...this.recentSearches()];
+      current = current.filter(x => x.toLowerCase() !== query.toLowerCase());
+      current.unshift(query);
+      current = current.slice(0, 5); // keep max 5
+      this.recentSearches.set(current);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('recentSearches', JSON.stringify(current));
+      }
+      
       this.router.navigate(['/search'], { queryParams: { q: query }});
     }
+  }
+
+  getCategoryBreadcrumb(categoryIdOrName: string): string {
+    if (!categoryIdOrName) return 'Uncategorized';
+    const cats = this.ds.categories();
+    let currentCat = cats.find(c => c.id === categoryIdOrName || c.name === categoryIdOrName || c.slug === categoryIdOrName);
+    if (!currentCat) return categoryIdOrName;
+    
+    const path: string[] = [];
+    let temp: any = currentCat;
+    while (temp) {
+      path.unshift(temp.name);
+      const parentId = temp.parent_id || temp.parentId;
+      temp = parentId ? cats.find(c => c.id === parentId) : null;
+    }
+    return path.join(' > ');
+  }
+
+  highlightMatch(text: string, query: string): string {
+    if (!text) return '';
+    if (!query || query.trim().length < 2) return text;
+    const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return text.replace(regex, '<span class="search-highlight">$1</span>');
   }
   isAuthRoute = computed(() => {
     return ['/login', '/register', '/forgot-password', '/reset-password'].some(r => this.currentUrl().includes(r));

@@ -69,7 +69,11 @@ model User {
   notifications       Notification[]
   notificationDevices NotificationDevice[]
   productImportHistories ProductImportHistory[]
+  customerNotes   CustomerNote[]
 
+  @@index([mobile])
+  @@index([isActive])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -230,6 +234,11 @@ model Product {
   cartItems       CartItem[]
   homepageItems   HomepageSectionItem[]
 
+  @@index([brandId])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([isActive])
+  @@index([isFeatured])
   @@map("products")
 }
 
@@ -257,6 +266,7 @@ model ProductVariant {
   orderItems      OrderItem[]
   cartItems       CartItem[]
 
+  @@index([productId])
   @@map("product_variants")
 }
 
@@ -306,6 +316,9 @@ model Inventory {
   warehouse       Warehouse         @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   transactions    InventoryTransaction[]
 
+  @@index([productId])
+  @@index([variantId])
+  @@index([warehouseId])
   @@map("inventory")
 }
 
@@ -320,6 +333,8 @@ model InventoryTransaction {
 
   inventory       Inventory         @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 
+  @@index([inventoryId])
+  @@index([referenceId])
   @@map("inventory_transactions")
 }
 
@@ -340,7 +355,12 @@ model Customer {
   orders          Order[]
   carts           Cart[]
   couponUsages    CouponUsage[]
+  notes           CustomerNote[]
+  activities      CustomerActivityLog[]
 
+  @@index([phone])
+  @@index([customerType])
+  @@index([createdAt])
   @@map("customers")
 }
 
@@ -419,6 +439,9 @@ model Order {
   shipments       Shipment[]
   couponUsages    CouponUsage[]
 
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([status])
   @@map("orders")
 }
 
@@ -436,6 +459,9 @@ model OrderItem {
   product         Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
   variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
   @@map("order_items")
 }
 
@@ -464,6 +490,7 @@ model Payment {
 
   order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@index([orderId])
   @@map("payments")
 }
 
@@ -479,6 +506,7 @@ model Shipment {
 
   order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@index([orderId])
   @@map("shipments")
 }
 
@@ -494,6 +522,8 @@ model Cart {
   customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items           CartItem[]
 
+  @@index([customerId])
+  @@index([sessionId])
   @@map("carts")
 }
 
@@ -509,6 +539,9 @@ model CartItem {
   product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   variant         ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
   @@map("cart_items")
 }
 
@@ -743,11 +776,25 @@ model ContactRequest {
 }
 
 model NewsletterSubscriber {
-  id              String            @id @default(uuid()) @db.Uuid
-  email           String            @unique @db.VarChar(255)
-  isActive        Boolean           @default(true) @map("is_active")
-  subscribedAt    DateTime          @default(now()) @map("subscribed_at") @db.Timestamptz
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String?   @db.VarChar(255)
+  email          String    @unique @db.VarChar(255)
+  phone          String?   @db.VarChar(50)
+  source         String    @default("website") @db.VarChar(100)
+  campaignId     String?   @map("campaign_id") @db.VarChar(255)
+  interests      Json?     @default("[]")
+  status         String    @default("active") @db.VarChar(50)
+  consent        Boolean   @default(true)
+  subscribedAt   DateTime  @default(now()) @map("subscribed_at") @db.Timestamptz
+  unsubscribedAt DateTime? @map("unsubscribed_at") @db.Timestamptz
+  tags           Json?     @default("[]")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
+  @@index([email])
+  @@index([status])
+  @@index([subscribedAt])
+  @@index([source])
   @@map("newsletter_subscribers")
 }
 
@@ -885,7 +932,7 @@ model RecoveryNotification {
 
 model NotificationDevice {
   id                  String   @id @default(uuid()) @db.Uuid
-  userId              String?  @map("user_id") @db.VarChar(255)
+  userId              String?  @map("user_id") @db.Uuid
   guestId             String?  @map("guest_id") @db.VarChar(255)
   sessionId           String?  @map("session_id") @db.VarChar(255)
   fcmToken            String   @unique @map("fcm_token") @db.Text
@@ -926,7 +973,7 @@ model NotificationLog {
 
 model Notification {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String?  @map("user_id") @db.VarChar(255)
+  userId    String?  @map("user_id") @db.Uuid
   guestId   String?  @map("guest_id") @db.VarChar(255)
   title     String   @db.VarChar(255)
   body      String   @db.Text
@@ -954,6 +1001,40 @@ model Advertisement {
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("advertisements")
+}
+
+model CustomerNote {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  note        String   @db.Text
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdBy   String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  author      User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([isPinned])
+  @@index([createdAt])
+  @@map("customer_notes")
+}
+
+model CustomerActivityLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  action      String   @db.VarChar(100)
+  details     String?  @db.Text
+  ipAddress   String?  @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("customer_activity_logs")
 }
 
 

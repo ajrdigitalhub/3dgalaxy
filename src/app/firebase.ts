@@ -21,14 +21,36 @@ export const initFirebase = async () => {
 
   let firebaseConfig: any = null;
   try {
-    const res = await fetch("/firebase-applet-config.json");
+    const res = await fetch("/api/settings");
     if (res.ok) {
-      firebaseConfig = await res.json();
-    } else {
-      throw new Error(`HTTP status ${res.status}`);
+      const settingsData = await res.json();
+      const pushConfig = settingsData?.data?.pushNotifications || settingsData?.data?.pushNotificationSettings;
+      if (pushConfig && pushConfig.enabled && pushConfig.projectId && pushConfig.apiKey) {
+        firebaseConfig = {
+          apiKey: pushConfig.apiKey,
+          authDomain: `${pushConfig.projectId}.firebaseapp.com`,
+          projectId: pushConfig.projectId,
+          storageBucket: `${pushConfig.projectId}.firebasestorage.app`,
+          messagingSenderId: pushConfig.senderId,
+          appId: pushConfig.appId,
+        };
+      }
     }
   } catch (err) {
-    console.warn("Failed to dynamically load Firebase configurations:", err);
+    console.warn("Failed to load Firebase configurations dynamically from settings:", err);
+  }
+
+  if (!firebaseConfig) {
+    try {
+      const res = await fetch("/firebase-applet-config.json");
+      if (res.ok) {
+        firebaseConfig = await res.json();
+      } else {
+        throw new Error(`HTTP status ${res.status}`);
+      }
+    } catch (err) {
+      console.warn("Failed to dynamically load Firebase configurations from static file:", err);
+    }
   }
 
   if (!firebaseConfig) {

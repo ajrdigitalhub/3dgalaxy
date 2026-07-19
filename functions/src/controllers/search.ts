@@ -46,7 +46,8 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
         where: productWhere,
         include: {
           category: true,
-          reviews: true
+          reviews: true,
+          brand: true
         },
         take: 5
       }),
@@ -84,10 +85,14 @@ const safeParseArray = (val: any): any[] => {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        price: p.basePrice,
-        salePrice: p.salePrice,
+        price: Number(p.basePrice),
+        salePrice: p.salePrice ? Number(p.salePrice) : null,
         image: safeParseArray(p.images)[0]?.url || null,
         category: p.category?.name || null,
+        categoryId: p.categoryId || null,
+        brand: p.brand?.name || null,
+        stock: p.stock,
+        shortDescription: p.shortDescription || null,
         rating: avgRating,
         type: 'Product'
       };

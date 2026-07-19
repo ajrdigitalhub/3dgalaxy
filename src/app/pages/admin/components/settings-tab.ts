@@ -4900,12 +4900,13 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                           class="text-[10px] font-mono text-zinc-650 dark:text-zinc-450 overflow-x-auto whitespace-pre-wrap select-all"
                         >
 &#123;
-  "projectId": "manifest-replica-3lkqp",
-  "appId": "1:13671285845:web:d590ce7b58aadc0dcf00dc",
-  "apiKey": "AIzaSyAhMymmsQh5hvLg-hiWtNMqYCwPiZkSWYY",
-  "authDomain": "manifest-replica-3lkqp.firebaseapp.com",
-  "storageBucket": "manifest-replica-3lkqp.firebasestorage.app",
-  "messagingSenderId": "13671285845"
+  apiKey: "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8",
+  authDomain: "ajr3dgalaxy.firebaseapp.com",
+  projectId: "ajr3dgalaxy",
+  storageBucket: "ajr3dgalaxy.firebasestorage.app",
+  messagingSenderId: "111872927152",
+  appId: "1:111872927152:web:b498fd9a072f776a2ae275",
+  measurementId: "G-C9R96N5FR6"
 &#125;</pre
                         >
                       </div>
@@ -4962,13 +4963,13 @@ export class AdminSettingsTab {
       const t = templates[templateKey]
         ? { ...templates[templateKey] }
         : {
-            name: templateKey,
-            language: "en",
-            headerType: "Text",
-            body: "",
-            footer: "",
-            buttons: [],
-          };
+          name: templateKey,
+          language: "en",
+          headerType: "Text",
+          body: "",
+          footer: "",
+          buttons: [],
+        };
       t[field] = value;
       templates[templateKey] = t;
       ws.templates = templates;

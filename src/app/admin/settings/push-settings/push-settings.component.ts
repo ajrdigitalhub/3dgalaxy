@@ -64,6 +64,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <input type="text" formControlName="projectId" class="w-full h-11 px-4 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 focus:border-[#f54f00] rounded-xl text-xs font-bold text-neutral-900 dark:text-white outline-none transition-colors">
               </div>
 
+              <!-- App ID -->
+              <div class="space-y-1.5">
+                <label class="text-xs font-black uppercase tracking-wider text-neutral-500">Firebase App ID</label>
+                <input type="text" formControlName="appId" class="w-full h-11 px-4 bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700 focus:border-[#f54f00] rounded-xl text-xs font-bold text-neutral-900 dark:text-white outline-none transition-colors">
+              </div>
+
               <!-- API Key -->
               <div class="space-y-1.5">
                 <label class="text-xs font-black uppercase tracking-wider text-neutral-500">API Key</label>
@@ -235,8 +241,9 @@ export class PushSettingsComponent implements OnInit {
       enabled: [config.enabled || false],
       projectId: [config.projectId || 'manifest-replica-3lkqp'],
       apiKey: [config.apiKey || 'AIzaSyAhMymmsQh5hvLg-hiWtNMqYCwPiZkSWYY'],
-      senderId: [config.senderId || '13671285845'],
+      senderId: [config.senderId || '13671'],
       vapidKey: [config.vapidKey || 'BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215'],
+      appId: [config.appId || '1:13671285845:web:d590ce7b58aadc0dcf00dc'],
       defaultIcon: [config.defaultIcon || '/favicon.ico'],
       defaultClickAction: [config.defaultClickAction || '/'],
       defaultImage: [config.defaultImage || ''],

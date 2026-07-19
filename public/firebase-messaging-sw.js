@@ -1,13 +1,26 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
+const urlParams = new URLSearchParams(self.location.search);
+const apiKey = urlParams.get('apiKey');
+const projectId = urlParams.get('projectId');
+const senderId = urlParams.get('senderId');
+const appId = urlParams.get('appId');
+
+const getParam = (val, fallback) => (val && val.trim() !== '') ? val.trim() : fallback;
+
+const finalApiKey = getParam(apiKey, "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8");
+const finalProjectId = getParam(projectId, "ajr3dgalaxy");
+const finalSenderId = getParam(senderId, "111872927152");
+const finalAppId = getParam(appId, "1:111872927152:web:b498fd9a072f776a2ae275");
+
 firebase.initializeApp({
-  apiKey: "AIzaSyAhMymmsQh5hvLg-hiWtNMqYCwPiZkSWYY",
-  authDomain: "manifest-replica-3lkqp.firebaseapp.com",
-  projectId: "manifest-replica-3lkqp",
-  storageBucket: "manifest-replica-3lkqp.firebasestorage.app",
-  messagingSenderId: "13671285845",
-  appId: "1:13671285845:web:d590ce7b58aadc0dcf00dc"
+  apiKey: finalApiKey,
+  authDomain: `${finalProjectId}.firebaseapp.com`,
+  projectId: finalProjectId,
+  storageBucket: `${finalProjectId}.firebasestorage.app`,
+  messagingSenderId: finalSenderId,
+  appId: finalAppId
 });
 
 const messaging = firebase.messaging();

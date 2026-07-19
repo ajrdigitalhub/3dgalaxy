@@ -1,42 +1,140 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { ApiService } from '../../../services/api.service';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CustomerService {
-  customersList = signal([
-    { id: 'c1', name: 'Rajesh Kumar', email: 'rajesh.kumar@gmail.com', phone: '+91 98765 43210', spent: 58499, orders: 3, points: 580, tier: 'B2B Dealer', date: '2026-05-18' },
-    { id: 'c2', name: 'Priya Sharma', email: 'priya.sharma@yahoo.com', phone: '+91 98123 45678', spent: 21499, orders: 1, points: 210, tier: 'Retail Creator', date: '2026-06-02' },
-    { id: 'c3', name: 'Amit Patel', email: 'amit.patel@design-craft.in', phone: '+91 90011 22334', spent: 145200, orders: 5, points: 1450, tier: 'B2B Dealer', date: '2026-04-20' },
-    { id: 'c4', name: 'Vikram Singh', email: 'v.singh@panchkulamakers.org', phone: '+91 80543 21098', spent: 38499, orders: 1, points: 385, tracking_number_placeholder: '123' },
-    { id: 'c5', name: 'Sneha Reddy', email: 'sneha.r@gmail.com', phone: '+91 78901 23456', spent: 1250, orders: 1, points: 12, tier: 'Standard Guest', date: '2026-06-04' }
-  ]);
+  private api = inject(ApiService);
 
-  customerGroupsList = signal([
-    { id: 'g1', name: 'B2B Dealers', discount: 'Dealer wholesale rates', members: 12 },
-    { id: 'g2', name: 'Standard Retail Guests', discount: 'Standard catalog rates', members: 45 },
-    { id: 'g3', name: 'VVIP Creators', discount: 'Additional 10% off checkout', members: 8 }
-  ]);
-
-  reviewsList = signal([
-    { id: 'r1', productName: 'Bambu Lab A1 Mini', userName: 'Rajesh K.', rating: 5, comment: 'Phenomenal speed! Best printer for desktop prototypes.', date: '2026-05-20', status: 'Approved', response: '' },
-    { id: 'r2', productName: 'Carbon Fiber PLA Core Filament', userName: 'Vikram S.', rating: 4, comment: 'Extremely rigid and strong print quality. Make sure to use hardened steel nozzle.', date: '2026-05-28', status: 'Pending', response: '' },
-    { id: 'r3', productName: 'Creality Ender 3 V3 KE', userName: 'Amit P.', rating: 2, comment: 'Extruder clogged on day 3. Fine after clearance but frustrating.', date: '2026-06-01', status: 'Pending', response: '' }
-  ]);
-
-  awardPoints(id: string, points: number) {
-    this.customersList.update(all => all.map(c => c.id === id ? { ...c, points: Math.max(0, c.points + points) } : c));
+  // 1. Customer CRUD & Management APIs
+  getCustomers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    customerType?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Observable<any> {
+    return this.api.get<any>('/admin/customers', params, true);
   }
 
-  approveReview(id: string) {
-    this.reviewsList.update(all => all.map(r => r.id === id ? { ...r, status: 'Approved' } : r));
+  getCustomerById(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}`, null, true);
   }
 
-  rejectReview(id: string) {
-    this.reviewsList.update(all => all.map(r => r.id === id ? { ...r, status: 'Spam/Rejected' } : r));
+  createCustomer(payload: any): Observable<any> {
+    return this.api.post<any>('/admin/customers', payload);
   }
 
-  saveReviewResponse(id: string, text: string) {
-    this.reviewsList.update(all => all.map(r => r.id === id ? { ...r, response: text } : r));
+  updateCustomer(id: string, payload: any): Observable<any> {
+    return this.api.put<any>(`/admin/customers/${id}`, payload);
+  }
+
+  deleteCustomer(id: string): Observable<any> {
+    return this.api.delete<any>(`/admin/customers/${id}`);
+  }
+
+  blockCustomer(id: string): Observable<any> {
+    return this.api.patch<any>(`/admin/customers/${id}/block`, {});
+  }
+
+  unblockCustomer(id: string): Observable<any> {
+    return this.api.patch<any>(`/admin/customers/${id}/unblock`, {});
+  }
+
+  // 2. Customer Sub-resources APIs
+  getCustomerOrders(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/orders`, null, true);
+  }
+
+  getCustomerAddresses(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/addresses`, null, true);
+  }
+
+  getCustomerActivity(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/activity`, null, true);
+  }
+
+  getCustomerReviews(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/reviews`, null, true);
+  }
+
+  getCustomerWishlist(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/wishlist`, null, true);
+  }
+
+  // 3. Customer Notes APIs
+  getCustomerNotes(id: string): Observable<any> {
+    return this.api.get<any>(`/admin/customers/${id}/notes`, null, true);
+  }
+
+  addCustomerNote(id: string, note: string, isPinned = false): Observable<any> {
+    return this.api.post<any>(`/admin/customers/${id}/notes`, { note, isPinned });
+  }
+
+  pinCustomerNote(id: string, noteId: string, isPinned: boolean): Observable<any> {
+    return this.api.patch<any>(`/admin/customers/${id}/notes/${noteId}/pin`, { isPinned });
+  }
+
+  deleteCustomerNote(id: string, noteId: string): Observable<any> {
+    return this.api.delete<any>(`/admin/customers/${id}/notes/${noteId}`);
+  }
+
+  // 4. Customer Analytics APIs
+  getCustomerAnalytics(): Observable<any> {
+    return this.api.get<any>('/admin/customers/analytics', null, true);
+  }
+
+  // 5. Public Newsletter APIs
+  subscribeNewsletter(payload: {
+    email: string;
+    name?: string;
+    phone?: string;
+    interests?: string[];
+    consent?: boolean;
+  }): Observable<any> {
+    return this.api.post<any>('/newsletter/subscribe', payload);
+  }
+
+  unsubscribeNewsletter(email: string): Observable<any> {
+    return this.api.post<any>('/newsletter/unsubscribe', { email });
+  }
+
+  // 6. Administrative Newsletter APIs
+  getNewsletterSubscribers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: string;
+    source?: string;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Observable<any> {
+    return this.api.get<any>('/newsletter/admin/subscribers', params, true);
+  }
+
+  updateNewsletterSubscriber(id: string, payload: any): Observable<any> {
+    return this.api.put<any>(`/newsletter/admin/subscribers/${id}`, payload);
+  }
+
+  deleteNewsletterSubscriber(id: string): Observable<any> {
+    return this.api.delete<any>(`/newsletter/admin/subscribers/${id}`);
+  }
+
+  getNewsletterAnalytics(): Observable<any> {
+    return this.api.get<any>('/newsletter/admin/analytics', null, true);
+  }
+
+  sendNewsletterCampaign(payload: {
+    subject: string;
+    body: string;
+    audienceSegment: string;
+  }): Observable<any> {
+    return this.api.post<any>('/newsletter/admin/send', payload);
   }
 }

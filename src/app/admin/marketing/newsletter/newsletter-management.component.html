@@ -1,0 +1,350 @@
+<div class="newsletter-mgmt-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Newsletter & Campaigns</h1>
+      <p>Configure subscription forms, build segment lists, and publish campaigns.</p>
+    </div>
+    <div class="nav-tabs">
+      <button [class.active]="activeSection() === 'subscribers'" (click)="activeSection.set('subscribers')">
+        <mat-icon>people</mat-icon> Subscribers
+      </button>
+      <button [class.active]="activeSection() === 'campaigns'" (click)="activeSection.set('campaigns')">
+        <mat-icon>email</mat-icon> Send Campaign
+      </button>
+      <button [class.active]="activeSection() === 'analytics'" (click)="activeSection.set('analytics')">
+        <mat-icon>analytics</mat-icon> Marketing Analytics
+      </button>
+      <button [class.active]="activeSection() === 'settings'" (click)="activeSection.set('settings')">
+        <mat-icon>settings</mat-icon> Settings & Popups
+      </button>
+    </div>
+  </div>
+
+  <!-- Dynamic Content Sections -->
+  <div class="mgmt-content-card">
+
+    <!-- 1. SUBSCRIBERS SECTION -->
+    <div class="section-pane" *ngIf="activeSection() === 'subscribers'">
+      <div class="ribbon">
+        <div class="search-box">
+          <mat-icon>search</mat-icon>
+          <input 
+            type="text" 
+            [ngModel]="searchQuery()" 
+            (ngModelChange)="onSearch($event)"
+            placeholder="Search email, name..." 
+          />
+        </div>
+        <div class="filters">
+          <select [ngModel]="selectedStatus()" (ngModelChange)="onStatusFilter($event)">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="unsubscribed">Unsubscribed</option>
+          </select>
+          <select [ngModel]="selectedSource()" (ngModelChange)="onSourceFilter($event)">
+            <option value="">All Sources</option>
+            <option value="website">Website Form</option>
+            <option value="checkout">Checkout Consent</option>
+            <option value="popup">Intent Popup</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" (click)="exportCSV()">
+            <mat-icon>download</mat-icon> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Skeleton Loader -->
+      <div class="skeleton-wrapper" *ngIf="isLoading()">
+        <div class="skeleton-row header"></div>
+        <div class="skeleton-row" *ngFor="let i of [1,2,3,4]"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading() && subscribers().length === 0">
+        <mat-icon class="huge-icon">mail_outline</mat-icon>
+        <h3>No Subscribers Yet</h3>
+        <p>No newsletter subscriptions recorded matching search filters.</p>
+      </div>
+
+      <!-- Subscribers Table -->
+      <div class="table-responsive" *ngIf="!isLoading() && subscribers().length > 0">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th class="sortable" (click)="onSort('name')">Name</th>
+              <th class="sortable" (click)="onSort('email')">Email</th>
+              <th>Phone</th>
+              <th class="sortable" (click)="onSort('subscribedAt')">Joined Date</th>
+              <th>Source</th>
+              <th>Campaign</th>
+              <th class="text-center">Opens</th>
+              <th class="text-center">Clicks</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of subscribers()">
+              <td class="font-semibold">{{ s.name || '—' }}</td>
+              <td class="font-semibold">{{ s.email }}</td>
+              <td>{{ s.phone || '—' }}</td>
+              <td>{{ s.subscriptionDate | date:'mediumDate' }}</td>
+              <td>
+                <span class="badge-source" [class]="s.source">{{ s.source }}</span>
+              </td>
+              <td>{{ s.campaign }}</td>
+              <td class="text-center font-semibold">{{ s.totalOpens }}</td>
+              <td class="text-center font-semibold">{{ s.totalClicks }}</td>
+              <td>
+                <span class="badge-status" [class.active]="s.status === 'active'" [class.blocked]="s.status === 'unsubscribed'">
+                  {{ s.status === 'active' ? 'Subscribed' : 'Unsubscribed' }}
+                </span>
+              </td>
+              <td class="text-right actions-cell">
+                <button class="btn-icon" [title]="s.status === 'unsubscribed' ? 'Re-subscribe' : 'Unsubscribe'" (click)="toggleUnsubscribe(s)">
+                  <mat-icon>{{ s.status === 'unsubscribed' ? 'check_circle' : 'remove_circle_outline' }}</mat-icon>
+                </button>
+                <button class="btn-icon text-danger" title="Delete record" (click)="deleteSubscriber(s.id)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-section" *ngIf="!isLoading() && subscribers().length > 0">
+        <div class="pagination-info">
+          Showing {{ (currentPage() - 1) * pageSize() + 1 }} to {{ mathMin(currentPage() * pageSize(), totalSubscribers()) }} of {{ totalSubscribers() }} entries
+        </div>
+        <div class="pagination-controls">
+          <button [disabled]="currentPage() === 1" (click)="prevPage()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="current-page">{{ currentPage() }} / {{ totalPages() }}</span>
+          <button [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CAMPAIGNS SECTION -->
+    <div class="section-pane" *ngIf="activeSection() === 'campaigns'">
+      <div class="campaign-builder-grid">
+        <div class="builder-inputs">
+          <h3>Compose Campaign Email</h3>
+          <div class="form-group">
+            <label>Campaign Subject *</label>
+            <input type="text" [(ngModel)]="campaign.subject" placeholder="e.g. 10% Discount on carbon fiber filaments! 🚀" />
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Audience Target Segment</label>
+              <select [(ngModel)]="campaign.audienceSegment">
+                <option value="all">All Active Subscribers</option>
+                <option value="new">New Subscribers (Joined last 30 days)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Email Body HTML Content *</label>
+            <textarea 
+              [(ngModel)]="campaign.body" 
+              placeholder="Write the message content. Supports HTML formatting..."
+              rows="12">
+            </textarea>
+          </div>
+
+          <div class="builder-footer">
+            <button class="btn btn-primary" (click)="sendCampaign()" [disabled]="isCampaignSending() || !campaign.subject || !campaign.body">
+              <mat-icon *ngIf="!isCampaignSending()">send</mat-icon>
+              <span class="spinner-mini" *ngIf="isCampaignSending()"></span>
+              {{ isCampaignSending() ? 'Sending Campaign...' : 'Send Campaign Now' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="builder-preview">
+          <h3>Live Sandbox Preview</h3>
+          <div class="preview-card">
+            <div class="preview-header">
+              <span class="bullet red"></span>
+              <span class="bullet yellow"></span>
+              <span class="bullet green"></span>
+              <span class="window-title">Preview: {{ campaign.subject || '(Subject line empty)' }}</span>
+            </div>
+            <div class="preview-content">
+              <div class="logo-area">
+                <img src="assets/images/logo.png" alt="3DGalaxy" (error)="handleImageError($event, 'https://picsum.photos/seed/galaxy/150/40')" />
+              </div>
+              <div class="mail-body" [innerHTML]="campaign.body || '<p style=\'color:#94a3b8;text-align:center;padding:4rem 0;\'>Your composed email body renders here in real time...</p>'"></div>
+              <div class="mail-footer">
+                <p>© 3DGalaxy Hub. All rights reserved.</p>
+                <p><a href="#">Unsubscribe from mailing list</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ANALYTICS SECTION -->
+    <div class="section-pane" *ngIf="activeSection() === 'analytics'">
+      <div class="analytics-spinner" *ngIf="isAnalyticsLoading()">
+        <span class="spinner-large"></span>
+      </div>
+
+      <div class="analytics-content" *ngIf="!isAnalyticsLoading() && analyticsStats() as stats">
+        <!-- Dashboard metrics grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="label">Total Subscribers</span>
+            <span class="value">{{ stats.summary.totalSubscribers }}</span>
+            <span class="sub-label font-semibold text-success">
+              +{{ stats.summary.growthPercent }}% growth
+            </span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Active Subscribers</span>
+            <span class="value">{{ stats.summary.activeSubscribers }}</span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Today's Signups</span>
+            <span class="value">{{ stats.summary.todaySubscribers }}</span>
+          </div>
+          <div class="metric-card">
+            <span class="label">Unsubscribed</span>
+            <span class="value">{{ stats.summary.unsubscribed }}</span>
+          </div>
+        </div>
+
+        <div class="analytics-charts-grid">
+          <!-- Daily Signups Trend (Simulated layout) -->
+          <div class="chart-card">
+            <h3>Signup Growth Trend</h3>
+            <div class="bar-chart-sim">
+              <div class="bar-column" *ngFor="let item of stats.charts.dailySignups">
+                <div class="bar-fill" [style.height.%]="mathMin(100, (item.value / 20) * 100)">
+                  <span class="val-pop font-semibold">{{ item.value }}</span>
+                </div>
+                <span class="bar-label font-semibold">{{ item.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sources breakdown -->
+          <div class="chart-card list-card">
+            <h3>Subscription Channels</h3>
+            <div class="sources-list">
+              <div class="source-item" *ngFor="let src of stats.charts.sourcesBreakdown">
+                <span class="source-name font-semibold">{{ src.source | titlecase }}</span>
+                <span class="source-count font-semibold">{{ src.count }} subscribers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SETTINGS & POPUPS SECTION -->
+    <div class="section-pane" *ngIf="activeSection() === 'settings'">
+      <div class="settings-grid">
+        <div class="settings-form">
+          <h3>Exit-Intent & Scroll Popup Config</h3>
+          <div class="form-group">
+            <label>Headline Title *</label>
+            <input type="text" [(ngModel)]="popupSettings().headline" />
+          </div>
+          <div class="form-group">
+            <label>Description Subtitle *</label>
+            <textarea [(ngModel)]="popupSettings().description" rows="3"></textarea>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Placeholder text</label>
+              <input type="text" [(ngModel)]="popupSettings().placeholder" />
+            </div>
+            <div class="form-group">
+              <label>CTA Button Text</label>
+              <input type="text" [(ngModel)]="popupSettings().btnText" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Success Thank-You Message</label>
+            <input type="text" [(ngModel)]="popupSettings().successMessage" />
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Trigger Mode</label>
+              <select [(ngModel)]="popupSettings().triggerRule">
+                <option value="delay">After Delay Timer</option>
+                <option value="scroll">On Scroll Percent</option>
+                <option value="exit">On Exit Intent</option>
+              </select>
+            </div>
+            <div class="form-group" *ngIf="popupSettings().triggerRule === 'delay'">
+              <label>Delay Timer (seconds)</label>
+              <input type="number" [(ngModel)]="popupSettings().triggerDelay" />
+            </div>
+            <div class="form-group" *ngIf="popupSettings().triggerRule === 'scroll'">
+              <label>Scroll Percent threshold</label>
+              <input type="number" [(ngModel)]="popupSettings().scrollPercent" />
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Theme</label>
+              <select [(ngModel)]="popupSettings().theme">
+                <option value="dark-orange">Dark Orange Gradient</option>
+                <option value="light-apple">Light Apple Minimal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Frequency Limit</label>
+              <select [(ngModel)]="popupSettings().frequency">
+                <option value="once-per-user">Once per User</option>
+                <option value="once-per-session">Once per Session</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="checkbox-group">
+            <label>Display Locations:</label>
+            <label class="check-item">
+              <input type="checkbox" [(ngModel)]="popupSettings().isEnabledHome" /> Home Page
+            </label>
+            <label class="check-item">
+              <input type="checkbox" [(ngModel)]="popupSettings().isEnabledProduct" /> Product Details
+            </label>
+            <label class="check-item">
+              <input type="checkbox" [(ngModel)]="popupSettings().isEnabledBlog" /> Blogs
+            </label>
+          </div>
+
+          <button class="btn btn-primary" (click)="saveSettings()">Save Settings</button>
+        </div>
+
+        <div class="settings-preview">
+          <h3>Interactive Popup Layout Preview</h3>
+          <div class="popup-preview-box" [class]="popupSettings().theme">
+            <div class="popup-badge">PROMOTIONAL OFFER</div>
+            <h2>{{ popupSettings().headline }}</h2>
+            <p>{{ popupSettings().description }}</p>
+            <div class="input-row">
+              <input type="email" [placeholder]="popupSettings().placeholder" readonly />
+              <button class="btn-sub">{{ popupSettings().btnText }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

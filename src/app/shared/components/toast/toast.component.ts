@@ -118,9 +118,11 @@ export class ToastItemComponent implements OnInit, OnDestroy {
   template: `
     <div class="fixed bottom-0 left-0 right-0 sm:left-auto sm:bottom-4 sm:right-4 w-full sm:w-auto flex flex-col items-center sm:items-end gap-2 p-4 sm:p-0 z-[9999] pointer-events-none">
       <!-- animate using simple enter animations -->
-      <div *ngFor="let toast of toastService.toasts()" class="slide-in w-full flex justify-center sm:block">
-        <app-toast-item [toast]="toast" class="block w-full sm:w-auto max-w-sm"></app-toast-item>
-      </div>
+      @for (toast of toastService.toasts(); track toast.id) {
+        <div class="slide-in w-full flex justify-center sm:block">
+          <app-toast-item [toast]="toast" class="block w-full sm:w-auto max-w-sm"></app-toast-item>
+        </div>
+      }
     </div>
   `,
   styles: [`

@@ -6,6 +6,7 @@ import {
   computed,
   effect,
   OnInit,
+  HostListener,
 } from "@angular/core";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { RouterModule, ActivatedRoute, Router } from "@angular/router";
@@ -67,6 +68,7 @@ export class Products implements OnInit {
     new Set(["category", "brand", "price", "rating", "availability"]),
   );
   showMobileFilters = signal<boolean>(false);
+  showFilterDrawer = signal<boolean>(false);
   isListView = signal<boolean>(false);
 
   // Search filter inputs inside the sidebar (for local filtering of long lists)
@@ -74,6 +76,19 @@ export class Products implements OnInit {
   categorySearchTerm = signal<string>("");
   materialSearchTerm = signal<string>("");
   compatSearchTerm = signal<string>("");
+  activeQuickDropdown = signal<string | null>(null);
+
+  @HostListener("document:click")
+  closeQuickDropdowns() {
+    this.activeQuickDropdown.set(null);
+  }
+
+  toggleQuickDropdown(name: string, event: Event) {
+    event.stopPropagation();
+    this.activeQuickDropdown.set(
+      this.activeQuickDropdown() === name ? null : name
+    );
+  }
 
   // Active query parameters (mirrored for convenience)
   queryParams = signal<Record<string, any>>({});
@@ -256,7 +271,6 @@ export class Products implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: currentParams,
-      queryParamsHandling: "merge",
     });
   }
 
@@ -281,7 +295,6 @@ export class Products implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: currentParams,
-      queryParamsHandling: "merge",
     });
   }
 
@@ -303,7 +316,6 @@ export class Products implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: currentParams,
-      queryParamsHandling: "merge",
     });
   }
 
@@ -312,10 +324,14 @@ export class Products implements OnInit {
   }
 
   clearAllFilters() {
+    const currentParams = { ...this.queryParams() };
+    const preserved: Record<string, any> = {};
+    if (currentParams["sort"]) preserved["sort"] = currentParams["sort"];
+    if (currentParams["limit"]) preserved["limit"] = currentParams["limit"];
+
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {},
-      queryParamsHandling: "merge",
+      queryParams: preserved,
       replaceUrl: true,
     });
   }
@@ -325,12 +341,7 @@ export class Products implements OnInit {
       this.clearPriceRange();
       return;
     }
-    if (
-      key === "search" ||
-      key === "rating" ||
-      key === "category" ||
-      key === "subcategory"
-    ) {
+    if (key === "search" || key === "rating") {
       this.updateUrlQueryParam(key, null);
       return;
     }
@@ -446,15 +457,17 @@ export class Products implements OnInit {
   }
 
   // Active filter display labels mapping
-  getActiveFilterChips(): { key: string; value: string; display: string }[] {
-    const chips: { key: string; value: string; display: string }[] = [];
+  getActiveFilterChips(): { key: string; value: string; label: string; display: string; icon: string }[] {
+    const chips: { key: string; value: string; label: string; display: string; icon: string }[] = [];
     const params = this.queryParams();
 
     if (params["search"]) {
       chips.push({
         key: "search",
         value: params["search"],
-        display: `Search: "${params["search"]}"`,
+        label: "Search",
+        display: `"${params["search"]}"`,
+        icon: "search",
       });
     }
     if (params["category"]) {
@@ -465,7 +478,9 @@ export class Products implements OnInit {
         chips.push({
           key: "category",
           value: val,
-          display: `Category: ${cat ? cat.name : val}`,
+          label: "Category",
+          display: cat ? cat.name : val,
+          icon: "category",
         });
       });
     }
@@ -477,27 +492,39 @@ export class Products implements OnInit {
         chips.push({
           key: "subcategory",
           value: val,
-          display: `Subcategory: ${sub ? sub.name : val}`,
+          label: "Subcategory",
+          display: sub ? sub.name : val,
+          icon: "subdirectory_arrow_right",
         });
       });
     }
     if (params["brand"]) {
       params["brand"].split(",").forEach((val: string) => {
-        chips.push({ key: "brand", value: val, display: `Brand: ${val}` });
+        chips.push({ 
+          key: "brand", 
+          value: val, 
+          label: "Brand", 
+          display: val, 
+          icon: "sell" 
+        });
       });
     }
     if (params["price"]) {
       chips.push({
         key: "price",
         value: params["price"],
-        display: `Price: ₹${params["price"].replace("-", " - ₹")}`,
+        label: "Price",
+        display: `₹${params["price"].replace("-", " - ₹")}`,
+        icon: "payments",
       });
     }
     if (params["rating"]) {
       chips.push({
         key: "rating",
         value: params["rating"],
+        label: "Rating",
         display: `${params["rating"]}★ & Up`,
+        icon: "star",
       });
     }
     if (params["stock"]) {
@@ -511,7 +538,9 @@ export class Products implements OnInit {
         chips.push({
           key: "stock",
           value: val,
+          label: "Availability",
           display: displayMap[val] || val,
+          icon: "inventory_2",
         });
       });
     }
@@ -520,13 +549,21 @@ export class Products implements OnInit {
         chips.push({
           key: "featured",
           value: val,
+          label: "Offers",
           display: val.replace("_", " "),
+          icon: "local_offer",
         });
       });
     }
     if (params["color"]) {
       params["color"].split(",").forEach((val: string) => {
-        chips.push({ key: "color", value: val, display: `Color: ${val}` });
+        chips.push({ 
+          key: "color", 
+          value: val, 
+          label: "Color", 
+          display: val, 
+          icon: "palette" 
+        });
       });
     }
     if (params["material"]) {
@@ -534,18 +571,32 @@ export class Products implements OnInit {
         chips.push({
           key: "material",
           value: val,
-          display: `Material: ${val}`,
+          label: "Material",
+          display: val,
+          icon: "layers",
         });
       });
     }
     if (params["technology"]) {
       params["technology"].split(",").forEach((val: string) => {
-        chips.push({ key: "technology", value: val, display: `Tech: ${val}` });
+        chips.push({ 
+          key: "technology", 
+          value: val, 
+          label: "Tech", 
+          display: val, 
+          icon: "precision_manufacturing" 
+        });
       });
     }
     if (params["printerType"]) {
       params["printerType"].split(",").forEach((val: string) => {
-        chips.push({ key: "printerType", value: val, display: `Type: ${val}` });
+        chips.push({ 
+          key: "printerType", 
+          value: val, 
+          label: "Type", 
+          display: val, 
+          icon: "print" 
+        });
       });
     }
     if (params["compatibility"]) {
@@ -553,7 +604,9 @@ export class Products implements OnInit {
         chips.push({
           key: "compatibility",
           value: val,
-          display: `Fits: ${val}`,
+          label: "Fits",
+          display: val,
+          icon: "settings_suggest",
         });
       });
     }

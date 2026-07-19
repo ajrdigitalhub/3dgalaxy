@@ -59,26 +59,28 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of history()">
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ formatDate(item.importedAt) }}
-            </td>
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ item.filename }}
-            </td>
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ item.createdCount }}
-            </td>
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ item.updatedCount }}
-            </td>
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ item.failedCount }}
-            </td>
-            <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
-              {{ item.mode }}
-            </td>
-          </tr>
+          @for (item of history(); track item.id || item.importedAt) {
+            <tr>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ formatDate(item.importedAt) }}
+              </td>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ item.filename }}
+              </td>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ item.createdCount }}
+              </td>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ item.updatedCount }}
+              </td>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ item.failedCount }}
+              </td>
+              <td class="border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+                {{ item.mode }}
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>

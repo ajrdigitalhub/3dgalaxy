@@ -1,1 +1,257 @@
-<div>Customers</div>
+<div class="customer-list-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Customer Database</h1>
+      <p>Manage and segment registered buyer accounts and store profiles.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary" (click)="exportCSV()">
+        <mat-icon>download</mat-icon> Export CSV
+      </button>
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <mat-icon>person_add</mat-icon> Add Customer
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter & Action Ribbon -->
+  <div class="filter-ribbon">
+    <div class="search-box">
+      <mat-icon>search</mat-icon>
+      <input 
+        type="text" 
+        [ngModel]="searchQuery()" 
+        (ngModelChange)="onSearch($event)"
+        placeholder="Search name, email, phone..." 
+      />
+    </div>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label>Account Type</label>
+        <select [ngModel]="selectedType()" (ngModelChange)="onTypeFilter($event)">
+          <option value="">All Types</option>
+          <option value="retail">Retail Creator</option>
+          <option value="dealer">B2B Dealer</option>
+          <option value="guest">Standard Guest</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Status</label>
+        <select [ngModel]="selectedStatus()" (ngModelChange)="onStatusFilter($event)">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="blocked">Blocked</option>
+        </select>
+      </div>
+
+      <div class="filter-group date-filter">
+        <label>Date Range</label>
+        <div class="date-inputs">
+          <input type="date" [(ngModel)]="dateFrom" (change)="onDateChange()" />
+          <span>to</span>
+          <input type="date" [(ngModel)]="dateTo" (change)="onDateChange()" />
+        </div>
+      </div>
+
+      <button class="btn-clear" (click)="clearFilters()" *ngIf="searchQuery() || selectedType() || selectedStatus() || dateFrom() || dateTo()">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Bulk Actions Ribbon (Shows only when selections exist) -->
+  <div class="bulk-ribbon" *ngIf="hasSelections()">
+    <div class="bulk-info">
+      <span class="badge">{{ getSelectedCount() }}</span> Selected
+    </div>
+    <div class="bulk-buttons">
+      <button class="btn btn-warning btn-sm" (click)="bulkBlock()">
+        <mat-icon>block</mat-icon> Bulk Block
+      </button>
+      <button class="btn btn-danger btn-sm" (click)="bulkDelete()">
+        <mat-icon>delete</mat-icon> Bulk Delete
+      </button>
+    </div>
+  </div>
+
+  <!-- Data Table Card -->
+  <div class="table-card">
+    <!-- Skeleton Loading State -->
+    <div class="skeleton-wrapper" *ngIf="isLoading()">
+      <div class="skeleton-row header"></div>
+      <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading() && customers().length === 0">
+      <mat-icon class="huge-icon">people_outline</mat-icon>
+      <h3>No Customers Found</h3>
+      <p>Try refining your search parameters or check filters.</p>
+      <button class="btn btn-secondary btn-sm" (click)="clearFilters()">Reset Filters</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive" *ngIf="!isLoading() && customers().length > 0">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th class="col-check">
+              <input 
+                type="checkbox" 
+                [ngModel]="isAllSelected()" 
+                (ngModelChange)="toggleSelectAll($event)" 
+              />
+            </th>
+            <th class="sortable" (click)="onSort('name')">
+              Customer <span class="sort-icon" *ngIf="sortField() === 'name'">{{ sortOrder() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('email')">
+              Email <span class="sort-icon" *ngIf="sortField() === 'email'">{{ sortOrder() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th>Phone</th>
+            <th class="sortable" (click)="onSort('createdAt')">
+              Joined <span class="sort-icon" *ngIf="sortField() === 'createdAt'">{{ sortOrder() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th>Type</th>
+            <th class="sortable text-right" (click)="onSort('totalSpend')">
+              Total Spend <span class="sort-icon" *ngIf="sortField() === 'totalSpend'">{{ sortOrder() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="text-center">Orders</th>
+            <th class="sortable" (click)="onSort('status')">
+              Status <span class="sort-icon" *ngIf="sortField() === 'status'">{{ sortOrder() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of customers()" [class.row-selected]="selectedCustomerIds()[c.id]">
+            <td class="col-check">
+              <input 
+                type="checkbox" 
+                [ngModel]="selectedCustomerIds()[c.id] || false" 
+                (ngModelChange)="toggleSelect(c.id, $event)" 
+              />
+            </td>
+            <td>
+              <div class="customer-profile-cell">
+                <img 
+                  [src]="c.profileImage || 'assets/images/user-placeholder.png'" 
+                  (error)="handleImageError($event, 'https://picsum.photos/seed/' + c.id + '/80/80')"
+                  alt="Avatar" 
+                />
+                <div class="customer-info">
+                  <span class="customer-name" (click)="viewCustomerDetails(c.id)">{{ c.name }}</span>
+                  <span class="customer-id">ID: {{ c.id.substring(0,8) }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ c.email }}</td>
+            <td>{{ c.phone || '—' }}</td>
+            <td>{{ c.registrationDate | date:'mediumDate' }}</td>
+            <td>
+              <span class="badge-type" [class]="c.customerType">
+                {{ c.customerType | titlecase }}
+              </span>
+            </td>
+            <td class="text-right font-semibold">₹{{ c.totalSpend | number:'1.2-2' }}</td>
+            <td class="text-center font-semibold">{{ c.totalOrders }}</td>
+            <td>
+              <span class="badge-status" [class.active]="c.status === 'Active'" [class.blocked]="c.status === 'Blocked'">
+                {{ c.status }}
+              </span>
+            </td>
+            <td class="text-right actions-cell">
+              <button class="btn-icon" title="View details" (click)="viewCustomerDetails(c.id)">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button class="btn-icon" [title]="c.status === 'Blocked' ? 'Unblock' : 'Block'" (click)="toggleBlockStatus(c)">
+                <mat-icon>{{ c.status === 'Blocked' ? 'lock_open' : 'block' }}</mat-icon>
+              </button>
+              <button class="btn-icon text-danger" title="Delete customer" (click)="deleteCustomer(c.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="!isLoading() && customers().length > 0">
+      <div class="page-size-selector">
+        Show
+        <select [(ngModel)]="pageSize" (change)="fetchCustomers()">
+          <option [value]="5">5</option>
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+        </select>
+        entries
+      </div>
+      <div class="pagination-info">
+        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to {{ mathMin(currentPage() * pageSize(), totalCustomers()) }} of {{ totalCustomers() }} entries
+      </div>
+      <div class="pagination-controls">
+        <button [disabled]="currentPage() === 1" (click)="prevPage()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="current-page">{{ currentPage() }} / {{ totalPages() }}</span>
+        <button [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Customer Modal Dialog -->
+  <div class="modal-overlay" *ngIf="showAddModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Create Storefront Customer</h3>
+        <button class="btn-close" (click)="closeAddModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" [(ngModel)]="newCustomer.name" placeholder="John Doe" />
+        </div>
+        <div class="form-group">
+          <label>Email Address *</label>
+          <input type="email" [(ngModel)]="newCustomer.email" placeholder="john@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="text" [(ngModel)]="newCustomer.phone" placeholder="+91 9876543210" />
+        </div>
+        <div class="form-group">
+          <label>Access Password</label>
+          <input type="password" [(ngModel)]="newCustomer.password" placeholder="Default 12345678 if empty" />
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Customer Tier</label>
+            <select [(ngModel)]="newCustomer.customerType">
+              <option value="retail">Retail Creator</option>
+              <option value="dealer">B2B Dealer</option>
+              <option value="guest">Standard Guest</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="newCustomer.status">
+              <option value="Active">Active</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="submitCustomer()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>

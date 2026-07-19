@@ -6,9 +6,13 @@ import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 
 export const clearProductCache = () => {
+  sysCache.del('all_mapped_products');
+  sysCache.clearPattern('category_path_');
   sysCache.clearPattern('products_list_');
   sysCache.clearPattern('products_slug_');
   sysCache.clearPattern('products_id_');
+  sysCache.del('consolidated_home_payload');
+  sysCache.del('featured_products_payload');
   clearCache(); // Flushes route cache for /api/home and other routes
 };
 
@@ -39,6 +43,10 @@ const safeParseObject = (val: any): any => {
 
 const getCategoryPath = async (categoryId: string | null): Promise<string[]> => {
   if (!categoryId) return [];
+  const cacheKey = `category_path_${categoryId}`;
+  const cached = sysCache.get(cacheKey);
+  if (cached) return cached;
+
   const path: string[] = [];
   let currentId: string | null = categoryId;
   const visited = new Set<string>();
@@ -53,6 +61,7 @@ const getCategoryPath = async (categoryId: string | null): Promise<string[]> => 
     path.unshift(cat.name);
     currentId = cat.parentId;
   }
+  sysCache.set(cacheKey, path, 1800); // Cache category path for 30 minutes
   return path;
 };
 
@@ -88,171 +97,175 @@ export const getProducts = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Load all active products first
-    const items = await prisma.product.findMany({
-      where: { deletedAt: null, isActive: true },
-      include: {
-        brand: true,
-        category: true,
-        reviews: true,
-      }
-    });
-
-    const getSpecsArray = (specsJson: any): any[] => {
-      if (!specsJson) return [];
-      if (Array.isArray(specsJson)) return specsJson;
-      if (specsJson && typeof specsJson === 'object' && Array.isArray((specsJson as any).create)) {
-        return (specsJson as any).create;
-      }
-      return [];
-    };
-
-    // Parse and map all products with computed features
-    const allMapped = items.map(p => {
-      const specs = getSpecsArray(p.specifications);
-
-      // Extract Color
-      const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
-      let colors: string[] = [];
-      if (colorSpec && colorSpec.value) {
-        colors = colorSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
-      }
-      if (colors.length === 0) {
-        const colorKeywords = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Grey', 'Gray', 'Orange', 'Purple', 'Silver', 'Gold', 'Pink', 'Brown'];
-        for (const keyword of colorKeywords) {
-          if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
-            colors.push(keyword);
-          }
+    // Load and map all active products from memory cache if available
+    let allMapped = sysCache.get('all_mapped_products') as any[];
+    if (!allMapped) {
+      const items = await prisma.product.findMany({
+        where: { deletedAt: null, isActive: true },
+        include: {
+          brand: true,
+          category: true,
+          reviews: true,
         }
-      }
-      if (colors.length === 0) colors.push('Multicolor');
+      });
 
-      // Extract Material
-      const materialSpec = specs.find(s => ['material', 'materials'].includes(s.name.toLowerCase()));
-      let materials: string[] = [];
-      if (materialSpec && materialSpec.value) {
-        materials = materialSpec.value.split(/[,/]/).map((m: string) => m.trim()).filter(Boolean);
-      }
-      if (materials.length === 0 && p.category?.name) {
-        const matKeywords = ['PLA', 'PETG', 'ABS', 'TPU', 'Resin', 'Nylon', 'Carbon Fiber', 'Wood', 'Metal'];
-        for (const keyword of matKeywords) {
-          if (p.category.name.toLowerCase().includes(keyword.toLowerCase()) || p.name.toLowerCase().includes(keyword.toLowerCase())) {
-            materials.push(keyword);
-          }
+      const getSpecsArray = (specsJson: any): any[] => {
+        if (!specsJson) return [];
+        if (Array.isArray(specsJson)) return specsJson;
+        if (specsJson && typeof specsJson === 'object' && Array.isArray((specsJson as any).create)) {
+          return (specsJson as any).create;
         }
-      }
-      if (materials.length === 0) materials.push('Other');
-
-      // Extract Technology
-      const techSpec = specs.find(s => ['technology', 'print technology', 'printing technology'].includes(s.name.toLowerCase()));
-      let technology = techSpec?.value || '';
-      if (!technology && p.category?.name) {
-        if (p.category.name.toLowerCase().includes('resin') || p.name.toLowerCase().includes('resin') || p.category.name.toLowerCase().includes('sla') || p.category.name.toLowerCase().includes('lcd')) {
-          technology = 'Resin (SLA/LCD)';
-        } else if (p.category.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('printer') || p.category.name.toLowerCase().includes('pla') || p.category.name.toLowerCase().includes('abs') || p.category.name.toLowerCase().includes('petg')) {
-          technology = 'FDM';
-        }
-      }
-      if (!technology) technology = 'Other';
-
-      // Extract Printer Type
-      const typeSpec = specs.find(s => ['printer type', 'type', 'structure'].includes(s.name.toLowerCase()));
-      let printerType = typeSpec?.value || '';
-      if (!printerType && p.name.toLowerCase().includes('mini')) {
-        printerType = 'Desktop / Compact';
-      } else if (!printerType && (p.name.toLowerCase().includes('industrial') || p.name.toLowerCase().includes('brahma'))) {
-        printerType = 'Industrial';
-      } else if (!printerType) {
-        printerType = 'Desktop';
-      }
-
-      // Extract Compatibility
-      const compSpec = specs.find(s => ['compatibility', 'compatible printers', 'compatible with'].includes(s.name.toLowerCase()));
-      let compatibility: string[] = [];
-      if (compSpec && compSpec.value) {
-        compatibility = compSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
-      }
-      const compKeywords = ['A1', 'P1S', 'X1C', 'K1', 'Ender', 'Neptune', 'Saturn', 'Mars'];
-      for (const keyword of compKeywords) {
-        if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
-          compatibility.push(keyword);
-        }
-      }
-
-      // Calculate rating
-      let avgRating = 4.9;
-      if (p.reviews && p.reviews.length > 0) {
-        const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-        avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
-      }
-
-      // Stock status
-      let stockStatus = 'IN_STOCK';
-      if (p.stock === 0) {
-        const checkStr = (p.name + ' ' + (p.description || '')).toLowerCase();
-        if (checkStr.includes('pre-order') || checkStr.includes('preorder')) {
-          stockStatus = 'PRE_ORDER';
-        } else if (checkStr.includes('coming-soon') || checkStr.includes('coming soon')) {
-          stockStatus = 'COMING_SOON';
-        } else {
-          stockStatus = 'OUT_OF_STOCK';
-        }
-      }
-
-      // Active price
-      const basePriceNum = parseFloat(p.basePrice?.toString() || '0');
-      const salePriceNum = p.salePrice ? parseFloat(p.salePrice.toString()) : basePriceNum;
-      const activePrice = salePriceNum;
-
-      // Featured flags
-      const isBestseller = p.isExclusive || p.name.toLowerCase().includes('combo') || p.stock > 100;
-      const isTrending = p.isFeatured || p.stock < 10;
-      const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
-      const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
-
-      let thumbnail = '';
-      const imgs = safeParseArray(p.images);
-      if (imgs.length > 0) {
-        const primaryImg = imgs.find((img: any) => img?.isPrimary) || imgs[0];
-        thumbnail = primaryImg?.url || (typeof primaryImg === 'string' ? primaryImg : '');
-      }
-
-      return {
-        id: p.id,
-        brandId: p.brandId,
-        categoryId: p.categoryId,
-        name: p.name,
-        slug: p.slug,
-        sku: p.sku,
-        description: p.description,
-        shortDescription: p.shortDescription,
-        basePrice: basePriceNum,
-        salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
-        dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
-        stock: p.stock,
-        isActive: p.isActive,
-        isExclusive: p.isExclusive,
-        images: imgs.map(img => typeof img === 'string' ? { url: img } : img),
-        specifications: specs,
-        brand: p.brand,
-        category: p.category,
-        reviews: p.reviews,
-        thumbnail,
-        activePrice,
-        colors,
-        materials,
-        technology,
-        printerType,
-        compatibility,
-        avgRating,
-        stockStatus,
-        isFeatured: p.isFeatured,
-        isBestseller,
-        isTrending,
-        isNewArrival,
-        isOnSale
+        return [];
       };
-    });
+
+      allMapped = items.map(p => {
+        const specs = getSpecsArray(p.specifications);
+
+        // Extract Color
+        const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
+        let colors: string[] = [];
+        if (colorSpec && colorSpec.value) {
+          colors = colorSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+        }
+        if (colors.length === 0) {
+          const colorKeywords = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Grey', 'Gray', 'Orange', 'Purple', 'Silver', 'Gold', 'Pink', 'Brown'];
+          for (const keyword of colorKeywords) {
+            if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+              colors.push(keyword);
+            }
+          }
+        }
+        if (colors.length === 0) colors.push('Multicolor');
+
+        // Extract Material
+        const materialSpec = specs.find(s => ['material', 'materials'].includes(s.name.toLowerCase()));
+        let materials: string[] = [];
+        if (materialSpec && materialSpec.value) {
+          materials = materialSpec.value.split(/[,/]/).map((m: string) => m.trim()).filter(Boolean);
+        }
+        if (materials.length === 0 && p.category?.name) {
+          const matKeywords = ['PLA', 'PETG', 'ABS', 'TPU', 'Resin', 'Nylon', 'Carbon Fiber', 'Wood', 'Metal'];
+          for (const keyword of matKeywords) {
+            if (p.category.name.toLowerCase().includes(keyword.toLowerCase()) || p.name.toLowerCase().includes(keyword.toLowerCase())) {
+              materials.push(keyword);
+            }
+          }
+        }
+        if (materials.length === 0) materials.push('Other');
+
+        // Extract Technology
+        const techSpec = specs.find(s => ['technology', 'print technology', 'printing technology'].includes(s.name.toLowerCase()));
+        let technology = techSpec?.value || '';
+        if (!technology && p.category?.name) {
+          if (p.category.name.toLowerCase().includes('resin') || p.name.toLowerCase().includes('resin') || p.category.name.toLowerCase().includes('sla') || p.category.name.toLowerCase().includes('lcd')) {
+            technology = 'Resin (SLA/LCD)';
+          } else if (p.category.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('printer') || p.category.name.toLowerCase().includes('pla') || p.category.name.toLowerCase().includes('abs') || p.category.name.toLowerCase().includes('petg')) {
+            technology = 'FDM';
+          }
+        }
+        if (!technology) technology = 'Other';
+
+        // Extract Printer Type
+        const typeSpec = specs.find(s => ['printer type', 'type', 'structure'].includes(s.name.toLowerCase()));
+        let printerType = typeSpec?.value || '';
+        if (!printerType && p.name.toLowerCase().includes('mini')) {
+          printerType = 'Desktop / Compact';
+        } else if (!printerType && (p.name.toLowerCase().includes('industrial') || p.name.toLowerCase().includes('brahma'))) {
+          printerType = 'Industrial';
+        } else if (!printerType) {
+          printerType = 'Desktop';
+        }
+
+        // Extract Compatibility
+        const compSpec = specs.find(s => ['compatibility', 'compatible printers', 'compatible with'].includes(s.name.toLowerCase()));
+        let compatibility: string[] = [];
+        if (compSpec && compSpec.value) {
+          compatibility = compSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+        }
+        const compKeywords = ['A1', 'P1S', 'X1C', 'K1', 'Ender', 'Neptune', 'Saturn', 'Mars'];
+        for (const keyword of compKeywords) {
+          if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+            compatibility.push(keyword);
+          }
+        }
+
+        // Calculate rating
+        let avgRating = 4.9;
+        if (p.reviews && p.reviews.length > 0) {
+          const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+          avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
+        }
+
+        // Stock status
+        let stockStatus = 'IN_STOCK';
+        if (p.stock === 0) {
+          const checkStr = (p.name + ' ' + (p.description || '')).toLowerCase();
+          if (checkStr.includes('pre-order') || checkStr.includes('preorder')) {
+            stockStatus = 'PRE_ORDER';
+          } else if (checkStr.includes('coming-soon') || checkStr.includes('coming soon')) {
+            stockStatus = 'COMING_SOON';
+          } else {
+            stockStatus = 'OUT_OF_STOCK';
+          }
+        }
+
+        // Active price
+        const basePriceNum = parseFloat(p.basePrice?.toString() || '0');
+        const salePriceNum = p.salePrice ? parseFloat(p.salePrice.toString()) : basePriceNum;
+        const activePrice = salePriceNum;
+
+        // Featured flags
+        const isBestseller = p.isExclusive || p.name.toLowerCase().includes('combo') || p.stock > 100;
+        const isTrending = p.isFeatured || p.stock < 10;
+        const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
+
+        let thumbnail = '';
+        const imgs = safeParseArray(p.images);
+        if (imgs.length > 0) {
+          const primaryImg = imgs.find((img: any) => img?.isPrimary) || imgs[0];
+          thumbnail = primaryImg?.url || (typeof primaryImg === 'string' ? primaryImg : '');
+        }
+
+        return {
+          id: p.id,
+          brandId: p.brandId,
+          categoryId: p.categoryId,
+          name: p.name,
+          slug: p.slug,
+          sku: p.sku,
+          description: p.description,
+          shortDescription: p.shortDescription,
+          basePrice: basePriceNum,
+          salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
+          dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
+          stock: p.stock,
+          isActive: p.isActive,
+          isExclusive: p.isExclusive,
+          images: imgs.map(img => typeof img === 'string' ? { url: img } : img),
+          specifications: specs,
+          brand: p.brand,
+          category: p.category,
+          reviews: p.reviews,
+          thumbnail,
+          activePrice,
+          colors,
+          materials,
+          technology,
+          printerType,
+          compatibility,
+          avgRating,
+          stockStatus,
+          isFeatured: p.isFeatured,
+          isBestseller,
+          isTrending,
+          isNewArrival,
+          isOnSale
+        };
+      });
+
+      sysCache.set('all_mapped_products', allMapped, 1800); // 30 minutes cache
+    }
 
     // Helper to check if a category belongs to a parent (by ID or slug)
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
@@ -347,7 +360,7 @@ export const getProducts = async (req: Request, res: Response) => {
     if (color) {
       const colorsArray = (color as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
       filtered = filtered.filter(p => {
-        return p.colors.some(c => colorsArray.includes(c.toLowerCase()));
+        return p.colors.some((c: string) => colorsArray.includes(c.toLowerCase()));
       });
     }
 
@@ -355,7 +368,7 @@ export const getProducts = async (req: Request, res: Response) => {
     if (material) {
       const materialsArray = (material as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
       filtered = filtered.filter(p => {
-        return p.materials.some(m => materialsArray.includes(m.toLowerCase()));
+        return p.materials.some((m: string) => materialsArray.includes(m.toLowerCase()));
       });
     }
 
@@ -375,7 +388,7 @@ export const getProducts = async (req: Request, res: Response) => {
     if (compatibility) {
       const compArray = (compatibility as string).split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
       filtered = filtered.filter(p => {
-        return p.compatibility.some(c => compArray.includes(c.toLowerCase()));
+        return p.compatibility.some((c: string) => compArray.includes(c.toLowerCase()));
       });
     }
 
@@ -428,12 +441,12 @@ export const getProducts = async (req: Request, res: Response) => {
       }
 
       // Colors
-      p.colors.forEach(c => {
+      p.colors.forEach((c: string) => {
         aggColorsMap[c] = (aggColorsMap[c] || 0) + 1;
       });
 
       // Materials
-      p.materials.forEach(m => {
+      p.materials.forEach((m: string) => {
         aggMaterialsMap[m] = (aggMaterialsMap[m] || 0) + 1;
       });
 
@@ -462,7 +475,7 @@ export const getProducts = async (req: Request, res: Response) => {
       aggPrinterTypeMap[p.printerType] = (aggPrinterTypeMap[p.printerType] || 0) + 1;
 
       // Compatibility
-      p.compatibility.forEach(c => {
+      p.compatibility.forEach((c: string) => {
         aggCompatibilityMap[c] = (aggCompatibilityMap[c] || 0) + 1;
       });
     });

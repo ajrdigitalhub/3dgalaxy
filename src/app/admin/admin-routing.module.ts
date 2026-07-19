@@ -30,7 +30,20 @@ const routes: Routes = [
       },
       {
         path: 'customers',
-        loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
+        redirectTo: 'customers/list',
+        pathMatch: 'full'
+      },
+      {
+        path: 'customers/list',
+        loadComponent: () => import('./customers/customer-list/customer-list.component').then(m => m.CustomerListComponent)
+      },
+      {
+        path: 'customers/detail/:id',
+        loadComponent: () => import('./customers/customer-detail/customer-detail.component').then(m => m.CustomerDetailComponent)
+      },
+      {
+        path: 'customers/analytics',
+        loadComponent: () => import('./customers/customer-analytics/customer-analytics.component').then(m => m.CustomerAnalyticsComponent)
       },
       {
         path: 'content',
@@ -47,6 +60,10 @@ const routes: Routes = [
       {
         path: 'marketing/push-notifications',
         loadComponent: () => import('./marketing/push-notifications/push-notifications.component').then(m => m.PushNotificationsComponent)
+      },
+      {
+        path: 'marketing/newsletter',
+        loadComponent: () => import('./marketing/newsletter/newsletter-management.component').then(m => m.NewsletterManagementComponent)
       },
       {
         path: 'marketing',
