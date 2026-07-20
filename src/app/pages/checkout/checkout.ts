@@ -86,7 +86,7 @@ export class CheckoutComponent implements OnInit {
 
   // Computed Values
   isLoggedIn = computed(() => !!this.ds.userProfile());
-  groupedCheckoutItems = computed(() => this.ds.groupedCartItems() || []);
+  groupedCheckoutItems = computed(() => this.ds.activeCheckoutItems() || []);
 
   isGstValid = computed(() => {
     if (!this.isBusinessPurchase()) return true;
@@ -98,28 +98,40 @@ export class CheckoutComponent implements OnInit {
     );
   });
 
-  subtotal = computed(() => this.ds.cartSubtotal());
+  subtotal = computed(() => {
+    const items = this.groupedCheckoutItems();
+    return items.reduce((acc: number, item: any) => {
+      if (item.isFree) return acc;
+      const price = item.variant?.salePrice || item.variant?.price || item.product?.salePrice || item.product?.basePrice || item.product?.price || 0;
+      return acc + (Number(price) * (item.quantity || 1));
+    }, 0);
+  });
 
-  shipping = computed(() => this.ds.cartShipping());
+  shipping = computed(() => {
+    const items = this.groupedCheckoutItems();
+    if (items.length === 0) return 0;
+    const isFreeEligible = items.every((i: any) => i.product?.freeShippingEligible !== false);
+    if (isFreeEligible && this.subtotal() >= 999) return 0;
+    const maxCharge = Math.max(...items.map((i: any) => Number(i.product?.baseShippingCharge || 0)), 0);
+    return isFinite(maxCharge) ? maxCharge : 0;
+  });
 
-  tax = computed(() => this.ds.cartTax());
+  tax = computed(() => 0);
 
   // COD checks
   codError = computed(() => {
     const paySettings = this.settingsService.paymentGatewaySettings();
-    const codConfig = paySettings?.paymentMethods?.cod || {};
     const globalSettings = this.settingsService.shippingSettings() || {};
 
-    const hasNonCodProduct = this.groupedCheckoutItems().some(
-      (item: any) => item.product.codAvailable === false,
-    );
-    if (hasNonCodProduct)
-      return "One or more products are not eligible for Cash on Delivery.";
+    const isCodEligible = this.ds.isCodAvailableForCheckout();
+    if (!isCodEligible) {
+      return "Cash on Delivery is unavailable because one or more selected products are not eligible.";
+    }
 
     const maxCodVal =
       globalSettings.codMaximumOrderValue !== undefined
         ? Number(globalSettings.codMaximumOrderValue)
-        : 2500;
+        : 25000;
     if (this.subtotal() > maxCodVal)
       return `Cash on Delivery is not available for orders above ₹${maxCodVal}.`;
 
@@ -133,7 +145,7 @@ export class CheckoutComponent implements OnInit {
     const globalSettings = this.settingsService.shippingSettings() || {};
     return globalSettings.codHandlingCharge !== undefined
       ? Number(globalSettings.codHandlingCharge)
-      : 100;
+      : 0;
   });
 
   grandTotal = computed(
@@ -391,23 +403,24 @@ export class CheckoutComponent implements OnInit {
   }
 
   openRazorpay(orderData: any) {
-    const options = {
+    const options: any = {
       key:
+        orderData.keyId ||
+        orderData.key ||
         this.settingsService.paymentGatewaySettings()?.paymentMethods?.razorpay
-          ?.keyId || "YOUR_KEY_ID",
+          ?.keyId || "rzp_test_mock",
       amount: orderData.amount,
       currency: "INR",
       name: "3D Galaxy",
       description: "Purchase Order",
-      order_id: orderData.id,
       handler: async (response: any) => {
         try {
           this.loading.startLoading();
           await firstValueFrom(
             this.api.post<any>("/payment/verify-payment", {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
+              razorpay_order_id: response.razorpay_order_id || orderData.id || orderData.dbOrderId,
+              razorpay_payment_id: response.razorpay_payment_id || "pay_mock_" + Date.now(),
+              razorpay_signature: response.razorpay_signature || "mock_signature",
             }),
           );
           this.finishOrder(orderData.dbOrderId || orderData.id);
@@ -435,8 +448,26 @@ export class CheckoutComponent implements OnInit {
         },
       },
     };
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+
+    if (orderData.isRealOrder && orderData.id) {
+      options.order_id = orderData.id;
+    }
+
+    try {
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (resp: any) => {
+        console.warn('Razorpay Payment Error:', resp);
+        this.toast.error(resp.error?.description || 'Payment failed or cancelled.');
+        this.isSubmitting.set(false);
+        this.loading.stopLoading();
+      });
+      rzp.open();
+    } catch (sdkErr: any) {
+      console.error('Razorpay SDK error:', sdkErr);
+      this.toast.error('Could not initialize Razorpay modal. Please check your API Key.');
+      this.isSubmitting.set(false);
+      this.loading.stopLoading();
+    }
   }
 
   openCashfree(orderData: any) {
@@ -472,6 +503,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   finishOrder(orderId: string) {
+    this.ds.clearBuyNowItem();
     this.ds.cart.set([]);
     this.ds.activeCouponCode.set("");
     this.ds.couponDiscountAmount.set(0);

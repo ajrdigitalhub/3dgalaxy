@@ -29,6 +29,7 @@
     "@tailwindcss/postcss": "^4.0.0",
     "@types/compression": "^1.8.1",
     "@types/node-cache": "^4.1.3",
+    "@types/three": "^0.185.1",
     "axios": "^1.17.0",
     "busboy": "^1.6.0",
     "compression": "^1.8.1",
@@ -40,7 +41,8 @@
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
     "razorpay": "^2.9.6",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.0.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@angular/build": "^19.0.0",

@@ -71,14 +71,20 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
 
     // 3. Fetch All Categories
     const allCategories = await prisma.category.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null
+      },
       select: {
         id: true,
         name: true,
         slug: true,
         image: true,
+        banner: true,
         icon: true,
         parentId: true,
         description: true,
+        isFeatured: true,
         sortOrder: true
       },
       orderBy: { sortOrder: 'asc' }
@@ -98,8 +104,10 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         name: cat.name,
         slug: cat.slug || cat.id,
         image: cat.image || null,
+        banner: cat.banner || null,
         icon: cat.icon || 'category',
         description: cat.description || null,
+        isFeatured: Boolean(cat.isFeatured),
         productCount: totalProductCount,
         children
       };
@@ -111,7 +119,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
     // 4. Fetch Active Brands
     const brandsRaw = await prisma.brand.findMany({
       where: {
-        isActive: true,
         deletedAt: null
       },
       select: {
@@ -119,9 +126,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         name: true,
         slug: true,
         logo: true,
-        image: true,
-        description: true,
-        isFeatured: true
+        description: true
       },
       orderBy: { name: 'asc' }
     });
@@ -130,9 +135,9 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       id: b.id,
       name: b.name,
       slug: b.slug || b.id,
-      logo: b.logo || b.image || null,
+      logo: b.logo || null,
       description: b.description || null,
-      isFeatured: b.isFeatured || false,
+      isFeatured: false,
       productCount: brandCountMap.get(b.id) || 0
     })).sort((a, b) => b.productCount - a.productCount);
 
@@ -149,8 +154,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         images: true,
         basePrice: true,
         salePrice: true,
-        rating: true,
-        reviewCount: true,
         stock: true,
         categoryId: true
       },
@@ -176,7 +179,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         image: Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[])[0] : null,
         basePrice: Number(p.basePrice),
         salePrice: p.salePrice ? Number(p.salePrice) : null,
-        rating: p.rating ? Number(p.rating) : 4.8,
+        rating: (p as any).rating ? Number((p as any).rating) : 4.8,
         inStock: p.stock > 0,
         categoryId: p.categoryId
       })),

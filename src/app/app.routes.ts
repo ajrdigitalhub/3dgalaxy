@@ -41,6 +41,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "track-service",
+    loadComponent: () =>
+      import("./pages/track-service/track-service").then(
+        (m) => m.TrackServiceComponent,
+      ),
+  },
+  {
     path: "cart",
     loadComponent: () =>
       import("./pages/cart/cart").then((m) => m.CartCheckout),

@@ -213,6 +213,26 @@ export const createOrder = async (req: any, res: Response) => {
     }
   }
 
+  // Validate COD eligibility if paymentMethod is COD
+  if (paymentMethod === 'COD') {
+    for (const item of items) {
+      if (item.productId) {
+        const prod = await prisma.product.findUnique({
+          where: { id: item.productId },
+          select: { name: true, codAvailable: true, isActive: true, deletedAt: true }
+        });
+        if (!prod || !prod.isActive || prod.deletedAt) {
+          return res.status(400).json({ error: `Product "${item.productId}" is no longer available.` });
+        }
+        if (prod.codAvailable === false) {
+          return res.status(400).json({
+            error: `Cash on Delivery (COD) is unavailable for "${prod.name}". Please choose another payment method.`
+          });
+        }
+      }
+    }
+  }
+
   try {
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;

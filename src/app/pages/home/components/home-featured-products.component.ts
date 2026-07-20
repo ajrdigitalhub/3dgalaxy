@@ -489,7 +489,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
 
   // --- ACTIONS ---
   buyNow(p: Product) {
-    this.ds.addToCart(p, 1);
+    this.ds.setBuyNowItem({ product: p, quantity: 1 });
     this.router.navigate(["/checkout"]);
   }
 

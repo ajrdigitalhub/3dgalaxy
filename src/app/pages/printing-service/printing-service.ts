@@ -16,15 +16,28 @@ import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { HttpClient } from "@angular/common/http";
+import * as THREE from "three";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
 import { DatastoreService } from "../../services/datastore";
 import { SettingsService } from "../../core/services/settings.service";
 import { ToastService } from "../../shared/components/toast/toast.service";
 import { AppButton } from "../../shared/components/app-button/app-button";
+import { ServiceEnquiryService } from "../../core/services/service-enquiry.service";
+import { FirebaseStorageService } from "../../core/services/firebase-storage.service";
+
+export interface PreviewColorSwatch {
+  name: string;
+  hex: string;
+  transparent?: boolean;
+  opacity?: number;
+}
 
 @Component({
   selector: "app-printing-service",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, AppButton],
+  imports: [CommonModule, RouterModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./printing-service.html",
   styleUrl: "./printing-service.scss",
@@ -34,12 +47,16 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   ds = inject(DatastoreService);
   settingsService = inject(SettingsService);
   http = inject(HttpClient);
+  enquiryService = inject(ServiceEnquiryService);
+  fbStorageService = inject(FirebaseStorageService);
 
   @ViewChild("viewportCanvas") viewportCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild("viewportContainer") viewportContainer!: ElementRef<HTMLDivElement>;
 
   // Selection states
   selectedFileName = signal<string>("");
   selectedFileSize = signal<string>("");
+  rawStlFile = signal<File | null>(null);
   selectedMaterial = signal<string>("PLA");
   selectedColor = signal<string>("White");
   infillPercent = signal<number>(20);
@@ -56,7 +73,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   // Dropdown list configurations loaded from backend API
   serviceConfig = signal<any>(null);
 
-  // New configurations
+  // Print configuration settings
   supportType = signal<string>("None");
   buildPlateAdhesion = signal<string>("None");
   nozzleSize = signal<string>("0.4 mm");
@@ -81,31 +98,59 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   notesText = signal<string>("");
 
   // 3D Viewport states
-  rotationX = signal<number>(25);
-  rotationY = signal<number>(-45);
-  scaleFactor = signal<number>(1.0);
-  panX = signal<number>(0);
-  panY = signal<number>(0);
   showGrid = signal<boolean>(true);
-  showBoundingBox = signal<boolean>(false);
-  ambientLight = signal<number>(0.25);
-  keyLight = signal<number>(0.55);
-  fillLight = signal<number>(0.20);
+  showBoundingBox = signal<boolean>(true);
+  showAxes = signal<boolean>(true);
+  isFullscreen = signal<boolean>(false);
+  visualMode = signal<"solid" | "wireframe" | "vertices">("solid");
 
-  dragMode: "rotate" | "pan" = "rotate";
-  modelVertices: number[][] = [];
-  modelFaces: number[][] = [];
+  // Material Swatches for Preview (Purely visual)
+  previewColors: PreviewColorSwatch[] = [
+    { name: "Matte Gray", hex: "#d4d4d8" },
+    { name: "Studio White", hex: "#f8fafc" },
+    { name: "Stealth Black", hex: "#1e293b" },
+    { name: "PLA Orange", hex: "#f97316" },
+    { name: "PLA Red", hex: "#ef4444" },
+    { name: "PLA Blue", hex: "#3b82f6" },
+    { name: "PETG Clear", hex: "#0891b2", transparent: true, opacity: 0.65 },
+    { name: "Resin Gray", hex: "#64748b" },
+  ];
+  selectedPreviewColor = signal<string>("#d4d4d8");
+
+  // Telemetry & Mesh Health Analysis
   modelDimensions = signal<{ x: number; y: number; z: number }>({
     x: 0,
     y: 0,
     z: 0,
   });
   modelTriangles = signal<number>(0);
+  modelVerticesCount = signal<number>(0);
   modelVolume = signal<number>(0);
+  modelSurfaceArea = signal<number>(0);
 
-  // Advanced Custom Slicer Studio States
-  visualMode = signal<"solid" | "wireframe" | "vertices">("solid");
-  simulationLayer = signal<number>(100);
+  meshWarnings = signal<string[]>([]);
+  meshIsHealthy = signal<boolean>(true);
+
+  // Three.js Core Instances
+  private renderer?: THREE.WebGLRenderer;
+  private scene?: THREE.Scene;
+  private camera?: THREE.PerspectiveCamera;
+  private controls?: OrbitControls;
+
+  currentMesh?: THREE.Mesh;
+  edgesLine?: THREE.LineSegments;
+  pointsCloud?: THREE.Points;
+  gridHelper?: THREE.GridHelper;
+  buildVolumeLine?: THREE.LineSegments;
+  axesHelper?: THREE.AxesHelper;
+  private ambientLightNode?: THREE.AmbientLight;
+  private hemiLightNode?: THREE.HemisphereLight;
+  private dirLightNode?: THREE.DirectionalLight;
+  private fillLightNode?: THREE.DirectionalLight;
+
+  private loadedGeometry?: THREE.BufferGeometry;
+  private uploadedRawBuffer?: ArrayBuffer;
+  private animationFrameId?: number;
 
   // Dynamic lists from serviceConfig computed
   materials = computed(() => this.serviceConfig()?.materials || []);
@@ -170,6 +215,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     const yiq = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
     return yiq < 128;
   }
+
   supports = computed(() => this.serviceConfig()?.supports || []);
   fillPatterns = computed(() => this.serviceConfig()?.fillPatterns || []);
   adhesionTypes = computed(() => this.serviceConfig()?.adhesionTypes || []);
@@ -182,13 +228,6 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   );
   infillOptions = computed(() => this.serviceConfig()?.infillOptions || []);
   surfaceFinishes = computed(() => this.serviceConfig()?.surfaceFinishes || []);
-
-  // Canvas context & loop
-  private canvasContext?: CanvasRenderingContext2D;
-  private animationFrameId?: number;
-  private isDragging = false;
-  private previousMouseX = 0;
-  private previousMouseY = 0;
 
   // Step Indicators
   step1Active = computed(() => !!this.selectedFileName());
@@ -241,13 +280,36 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.restoreOptionsFromLocal();
   }
 
+  ngAfterViewInit() {
+    if (this.viewportCanvas) {
+      this.initThreeViewport(this.viewportCanvas.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    this.destroyThree();
+  }
+
+  @HostListener("window:resize")
+  onWindowResize() {
+    if (this.renderer && this.camera && this.viewportCanvas) {
+      const canvas = this.viewportCanvas.nativeElement;
+      const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 640;
+      const height = canvas.clientHeight || canvas.parentElement?.clientHeight || 400;
+
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(width, height, false);
+    }
+  }
+
   loadServiceConfig() {
     this.http.get<any>("/api/service-config").subscribe({
       next: (cfg) => {
         const normalizedCfg =
           cfg?.data && typeof cfg.data === "object" ? cfg.data : cfg;
         this.serviceConfig.set(normalizedCfg || {});
-        // Apply defaults if not restored
+
         if (
           !localStorage.getItem("3dg_slicer_material") &&
           normalizedCfg.materials?.length > 0
@@ -321,36 +383,12 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     if (notes) this.notesText.set(notes);
   }
 
-  ngAfterViewInit() {
-    if (this.viewportCanvas && this.selectedFileName()) {
-      this.initCanvas(this.viewportCanvas.nativeElement);
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.animationFrameId) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
-  }
-
-  initCanvasAfterUpload() {
-    setTimeout(() => {
-      const canvasEl = document.getElementById(
-        "viewportCanvas",
-      ) as HTMLCanvasElement;
-      if (canvasEl) {
-        this.initCanvas(canvasEl);
-      }
-    }, 100);
-  }
-
   // Cost estimation details
   estimatedReport = computed(() => {
     const cfg = this.serviceConfig() || {};
     const materialsList = cfg.materials || [];
     const qualitiesList = cfg.qualities || [];
 
-    // Find active material
     const activeMatName = this.selectedMaterial();
     const mat = materialsList.find((m: any) => m.name === activeMatName) || {
       pricePerGram: 2.5,
@@ -359,7 +397,6 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     const density = mat.density || 1.25;
     const pricePerGram = mat.pricePerGram || 2.5;
 
-    // Find quality
     const activeQualityHeight = this.layerHeight();
     const qual = qualitiesList.find(
       (q: any) => q.height === activeQualityHeight,
@@ -369,20 +406,15 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     const machineRate =
       cfg.machineFeePerHour !== undefined ? cfg.machineFeePerHour : 150;
     const setupCost = cfg.setupCost !== undefined ? cfg.setupCost : 100;
-    const gstRate = cfg.gstTaxRate !== undefined ? cfg.gstTaxRate : 18;
 
     const volume = this.sourceVolume();
     const infillVal = this.infillPercent();
     const infillFactor = (20 + infillVal * 0.8) / 100;
 
-    // Weight (grams)
     const estimatedWeight =
       Math.round(volume * density * infillFactor * 10) / 10;
-
-    // Material Cost
     const materialCost = Math.round(estimatedWeight * pricePerGram);
 
-    // Machine Time (hours)
     const speed = this.printSpeed();
     let speedFactor = 1.0;
     if (speed === "Slow") speedFactor = 1.5;
@@ -399,23 +431,15 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
         Math.max(1, baseHours * heightFactor * speedFactor * infillFactor) * 10,
       ) / 10;
 
-    // Printing Cost = machine fee + quality price
     const machineFee = Math.round(estimatedHours * machineRate);
     const printingCost = machineFee + qualityPrice;
 
-    // Subtotal before tax
     const qty = this.quantity();
     const subtotal = (materialCost + printingCost + setupCost) * qty;
 
-    // GST
-    const gstTax = 0;
-
-    // Shipping
     const shippingThreshold =
       this.settingsService.shippingSettings()?.freeShippingMinSpent || 3000;
     const shippingFee = subtotal >= shippingThreshold ? 0 : 120;
-
-    // Grand Total
     const totalCost = subtotal + shippingFee;
 
     return {
@@ -424,7 +448,6 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
       materialCost: materialCost * qty,
       printingCost: printingCost * qty,
       setupCost: setupCost * qty,
-      gstTax: gstTax,
       shipping: shippingFee,
       totalCost: totalCost,
     };
@@ -434,32 +457,28 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     return this.ds.quotes().filter((q) => q.customerEmail === this.custEmail());
   });
 
-  getQuoteStatusClass(status: string) {
-    switch (status) {
-      case "submitted":
-        return "bg-yellow-500/10 text-yellow-500 border border-yellow-500/15";
-      case "estimated":
-        return "bg-blue-500/10 text-blue-500 border border-blue-500/15";
-      case "approved_by_customer":
-        return "bg-emerald-500/10 text-emerald-500 border border-emerald-500/15";
-      case "completed":
-        return "bg-purple-500/10 text-purple-500 border border-purple-500/15";
-      default:
-        return "bg-neutral-500/10 text-neutral-500 border border-neutral-500/15";
-    }
-  }
-
+  // --- STRICT STL FILE UPLOAD & VALIDATION ---
   onFileDropped(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-
-      // Supported files validation
       const ext = file.name.split(".").pop()?.toLowerCase();
-      if (ext !== "stl" && ext !== "obj" && ext !== "3mf") {
+
+      // STRICT REQUIREMENT: Support ONLY STL (.stl) files alone!
+      if (ext !== "stl") {
         this.toastService.error(
-          "Unsupported file format! Please upload STL, OBJ or 3MF.",
+          "Unsupported format! Only STL (.stl) files are supported in this studio.",
         );
+        input.value = "";
+        return;
+      }
+
+      const maxSizeMb = this.serviceConfig()?.maxFileSizeMB || 50;
+      if (file.size > maxSizeMb * 1024 * 1024) {
+        this.toastService.error(
+          `File size (${(file.size / (1024 * 1024)).toFixed(1)}MB) exceeds maximum limit of ${maxSizeMb}MB.`,
+        );
+        input.value = "";
         return;
       }
 
@@ -468,16 +487,16 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   }
 
   simulateFileUpload(file: File) {
+    this.rawStlFile.set(file);
     this.uploading.set(true);
     this.uploadProgress.set(0);
 
-    const totalSteps = 100;
-    const intervalTime = 15;
+    const intervalTime = 12;
     let currentProgress = 0;
 
     const interval = setInterval(() => {
-      currentProgress += 2;
-      this.uploadProgress.set(currentProgress);
+      currentProgress += 4;
+      this.uploadProgress.set(Math.min(100, currentProgress));
 
       if (currentProgress >= 100) {
         clearInterval(interval);
@@ -488,21 +507,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
         const sizeMb = Math.round((file.size / (1024 * 1024)) * 10) / 10;
         this.selectedFileSize.set(`${sizeMb} MB`);
 
-        const lowerName = file.name.toLowerCase();
-        if (lowerName.endsWith(".stl")) {
-          this.parseSTLFile(file);
-        } else if (lowerName.endsWith(".obj")) {
-          this.parseOBJFile(file);
-        } else if (lowerName.endsWith(".3mf")) {
-          this.parse3MFFile(file);
-        } else {
-          const mockVolume = Math.floor(45 + Math.random() * 320);
-          this.sourceVolume.set(mockVolume);
-          this.generateDefaultModel();
-        }
-
-        this.initCanvasAfterUpload();
-        this.toastService.success(`Model "${file.name}" loaded successfully!`);
+        this.parseSTLFile(file);
       }
     }, intervalTime);
   }
@@ -511,14 +516,572 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.selectedFileName.set("");
     this.selectedFileSize.set("");
     this.sourceVolume.set(0);
-    this.modelVertices = [];
-    this.modelFaces = [];
+    this.modelDimensions.set({ x: 0, y: 0, z: 0 });
     this.modelTriangles.set(0);
+    this.modelVerticesCount.set(0);
     this.modelVolume.set(0);
-    this.simulationLayer.set(100);
+    this.modelSurfaceArea.set(0);
+    this.meshWarnings.set([]);
+    this.meshIsHealthy.set(true);
+    this.loadedGeometry = undefined;
+    this.uploadedRawBuffer = undefined;
+
+    if (this.currentMesh && this.scene) {
+      this.scene.remove(this.currentMesh);
+      if (this.currentMesh.geometry) this.currentMesh.geometry.dispose();
+      this.currentMesh = undefined;
+    }
+    if (this.edgesLine && this.scene) {
+      this.scene.remove(this.edgesLine);
+      this.edgesLine.geometry.dispose();
+      this.edgesLine = undefined;
+    }
+    if (this.pointsCloud && this.scene) {
+      this.scene.remove(this.pointsCloud);
+      this.pointsCloud.geometry.dispose();
+      this.pointsCloud = undefined;
+    }
   }
 
-  // Dropdown actions
+  // --- HIGH-QUALITY THREE.JS STL RENDERER & GEOMETRY PROCESSING ---
+  initThreeViewport(canvas: HTMLCanvasElement) {
+    if (!canvas) return;
+
+    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 640;
+    const height = canvas.clientHeight || canvas.parentElement?.clientHeight || 400;
+
+    // 1. Scene
+    this.scene = new THREE.Scene();
+    const isDark = this.isDarkTheme();
+    this.scene.background = new THREE.Color(isDark ? 0x0f172a : 0xf8fafc);
+
+    // 2. Camera
+    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 2000);
+    this.camera.position.set(180, 220, 260);
+
+    // 3. Renderer (WebGL 2.0 with ACES Filmic Tone Mapping & Anti-Aliasing)
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      alpha: true,
+      preserveDrawingBuffer: true,
+      powerPreference: "high-performance",
+    });
+    this.renderer.setSize(width, height, false);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    // 4. Orbit Controls (Rotate, Pan, Zoom, Screen Space Panning)
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.screenSpacePanning = true;
+    this.controls.minDistance = 10;
+    this.controls.maxDistance = 1000;
+    this.controls.maxPolarAngle = Math.PI / 2 + 0.05; // Lock camera from going below build plate
+
+    // 5. Physically Correct Studio Lighting (Hemisphere + Key + Fill + Ambient)
+    this.ambientLightNode = new THREE.AmbientLight(0xffffff, 0.35);
+    this.scene.add(this.ambientLightNode);
+
+    this.hemiLightNode = new THREE.HemisphereLight(0xffffff, 0x333333, 0.65);
+    this.hemiLightNode.position.set(0, 200, 0);
+    this.scene.add(this.hemiLightNode);
+
+    this.dirLightNode = new THREE.DirectionalLight(0xffffff, 1.2);
+    this.dirLightNode.position.set(150, 250, 150);
+    this.dirLightNode.castShadow = true;
+    this.dirLightNode.shadow.mapSize.width = 2048;
+    this.dirLightNode.shadow.mapSize.height = 2048;
+    this.dirLightNode.shadow.camera.near = 0.5;
+    this.dirLightNode.shadow.camera.far = 1000;
+    this.dirLightNode.shadow.bias = -0.0001;
+    this.scene.add(this.dirLightNode);
+
+    this.fillLightNode = new THREE.DirectionalLight(0x90b0ff, 0.45);
+    this.fillLightNode.position.set(-150, 100, -150);
+    this.scene.add(this.fillLightNode);
+
+    // 6. Build Plate & Grid Helper (256mm x 256mm build volume)
+    const bedSize = 256;
+    this.gridHelper = new THREE.GridHelper(
+      bedSize,
+      32,
+      new THREE.Color(0x3b82f6),
+      new THREE.Color(isDark ? 0x334155 : 0xcbd5e1)
+    );
+    this.gridHelper.position.y = 0;
+    this.scene.add(this.gridHelper);
+
+    // Bounding Box Envelope (256x256x256 build envelope)
+    const bedBoxGeom = new THREE.BoxGeometry(bedSize, bedSize, bedSize);
+    const bedBoxEdges = new THREE.EdgesGeometry(bedBoxGeom);
+    const bedBoxMat = new THREE.LineDashedMaterial({
+      color: 0x3b82f6,
+      dashSize: 4,
+      gapSize: 4,
+      opacity: 0.3,
+      transparent: true,
+    });
+    this.buildVolumeLine = new THREE.LineSegments(bedBoxEdges, bedBoxMat);
+    this.buildVolumeLine.computeLineDistances();
+    this.buildVolumeLine.position.y = bedSize / 2;
+    this.scene.add(this.buildVolumeLine);
+
+    // Origin Axes Helper
+    this.axesHelper = new THREE.AxesHelper(35);
+    this.axesHelper.position.set(-bedSize / 2, 0.1, -bedSize / 2);
+    this.scene.add(this.axesHelper);
+
+    // 7. Render Loop
+    const animate = () => {
+      this.animationFrameId = requestAnimationFrame(animate);
+      if (this.controls) this.controls.update();
+      if (this.renderer && this.scene && this.camera) {
+        this.renderer.render(this.scene, this.camera);
+      }
+    };
+    animate();
+
+    // Re-render loaded geometry if canvas initialized after file parse
+    if (this.loadedGeometry) {
+      this.displayGeometryInScene(this.loadedGeometry);
+    }
+  }
+
+  parseSTLFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const buffer = e.target.result as ArrayBuffer;
+      this.uploadedRawBuffer = buffer;
+
+      try {
+        const loader = new STLLoader();
+        let geometry: THREE.BufferGeometry;
+
+        try {
+          geometry = loader.parse(buffer);
+        } catch (err) {
+          // ASCII STL Fallback Parser
+          const text = new TextDecoder("utf-8").decode(buffer);
+          const asciiRes = this.parseAsciiSTL(text);
+          if (asciiRes && asciiRes.vertices.length > 0) {
+            geometry = this.buildBufferGeometry(asciiRes.vertices);
+          } else {
+            throw err;
+          }
+        }
+
+        if (
+          geometry &&
+          geometry.attributes["position"] &&
+          geometry.attributes["position"].count > 0
+        ) {
+          this.processLoadedSTL(geometry, file);
+        } else {
+          this.toastService.error("Could not parse 3D mesh geometry from STL file.");
+        }
+      } catch (err) {
+        console.error("STL parsing error:", err);
+        this.toastService.error("Failed to parse STL file. Geometry may be corrupted.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  processLoadedSTL(geometry: THREE.BufferGeometry, file: File) {
+    // 1. Compute smooth vertex normals for PBR shading
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+
+    // 2. Auto-center model
+    geometry.center();
+
+    // 3. Place bottom of model directly on the build plate (Y = 0)
+    const box = geometry.boundingBox!;
+    const minY = box.min.y;
+    geometry.translate(0, -minY, 0);
+    geometry.computeBoundingBox();
+
+    this.loadedGeometry = geometry;
+
+    // 4. Calculate Dimensions & Mesh Statistics
+    const size = new THREE.Vector3();
+    geometry.boundingBox!.getSize(size);
+    const dx = Math.round(size.x * 100) / 100;
+    const dy = Math.round(size.z * 100) / 100; // Z is depth in STL space
+    const dz = Math.round(size.y * 100) / 100; // Y is height in Three.js
+
+    const triangleCount = geometry.index
+      ? geometry.index.count / 3
+      : geometry.attributes["position"].count / 3;
+    const vertexCount = geometry.attributes["position"].count;
+
+    const { volCm3, areaCm2 } = this.calculateMeshVolumeAndArea(geometry);
+
+    this.modelDimensions.set({ x: dx, y: dy, z: dz });
+    this.modelTriangles.set(triangleCount);
+    this.modelVerticesCount.set(vertexCount);
+    this.modelVolume.set(volCm3);
+    this.modelSurfaceArea.set(areaCm2);
+    this.sourceVolume.set(volCm3);
+
+    // 5. Mesh Health Analysis Diagnostics
+    this.runMeshDiagnostics(dx, dy, dz, volCm3, triangleCount, vertexCount);
+
+    // 6. Display in Three.js Studio Scene
+    if (!this.renderer && this.viewportCanvas) {
+      this.initThreeViewport(this.viewportCanvas.nativeElement);
+    } else if (this.loadedGeometry) {
+      this.displayGeometryInScene(this.loadedGeometry);
+    }
+
+    this.toastService.success(
+      `Loaded STL model "${file.name}" (${triangleCount.toLocaleString()} triangles)`,
+    );
+  }
+
+  calculateMeshVolumeAndArea(geometry: THREE.BufferGeometry) {
+    const pos = geometry.attributes["position"];
+    let volume = 0;
+    let area = 0;
+
+    const p1 = new THREE.Vector3();
+    const p2 = new THREE.Vector3();
+    const p3 = new THREE.Vector3();
+    const v1 = new THREE.Vector3();
+    const v2 = new THREE.Vector3();
+    const v3 = new THREE.Vector3();
+
+    const numTriangles = pos.count / 3;
+    for (let i = 0; i < numTriangles; i++) {
+      p1.fromBufferAttribute(pos, i * 3);
+      p2.fromBufferAttribute(pos, i * 3 + 1);
+      p3.fromBufferAttribute(pos, i * 3 + 2);
+
+      // Volume of tetrahedron formed with origin
+      v3.crossVectors(p2, p3);
+      volume += p1.dot(v3) / 6.0;
+
+      // Surface area of triangle facet
+      v1.subVectors(p2, p1);
+      v2.subVectors(p3, p1);
+      v3.crossVectors(v1, v2);
+      area += v3.length() / 2.0;
+    }
+
+    const volCm3 = Math.max(0.1, Math.round((Math.abs(volume) / 1000) * 100) / 100);
+    const areaCm2 = Math.round((area / 100) * 100) / 100;
+
+    return { volCm3, areaCm2 };
+  }
+
+  runMeshDiagnostics(
+    dx: number,
+    dy: number,
+    dz: number,
+    volCm3: number,
+    triangles: number,
+    vertices: number,
+  ) {
+    const warnings: string[] = [];
+
+    if (dx > 256 || dy > 256 || dz > 256) {
+      warnings.push(`Model dimensions (${dx}×${dy}×${dz} mm) exceed build plate volume (256×256×256 mm).`);
+    }
+    if (volCm3 <= 0.05) {
+      warnings.push("Extremely low volume or zero-thickness mesh detected.");
+    }
+    if (Math.min(dx, dy, dz) < 0.8) {
+      warnings.push("Thin wall structures (< 0.8mm) detected. Parts may be fragile.");
+    }
+    if (triangles > 800000) {
+      warnings.push("High poly count (> 800k facets). Slicing calculation time may increase.");
+    }
+
+    this.meshWarnings.set(warnings);
+    this.meshIsHealthy.set(warnings.length === 0);
+  }
+
+  displayGeometryInScene(geometry: THREE.BufferGeometry) {
+    if (!this.scene) return;
+
+    // Remove previous mesh elements
+    if (this.currentMesh) {
+      this.scene.remove(this.currentMesh);
+      if (this.currentMesh.geometry) this.currentMesh.geometry.dispose();
+      this.currentMesh = undefined;
+    }
+    if (this.edgesLine) {
+      this.scene.remove(this.edgesLine);
+      this.edgesLine.geometry.dispose();
+      this.edgesLine = undefined;
+    }
+    if (this.pointsCloud) {
+      this.scene.remove(this.pointsCloud);
+      this.pointsCloud.geometry.dispose();
+      this.pointsCloud = undefined;
+    }
+
+    // Material setup from Swatches
+    const activeColorObj =
+      this.previewColors.find((c) => c.hex === this.selectedPreviewColor()) ||
+      this.previewColors[0];
+    const isTrans = activeColorObj.transparent || false;
+    const opacityVal = activeColorObj.opacity || 1.0;
+
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(activeColorObj.hex),
+      roughness: 0.55,
+      metalness: 0.08,
+      flatShading: false,
+      transparent: isTrans,
+      opacity: opacityVal,
+      side: THREE.DoubleSide,
+    });
+
+    this.currentMesh = new THREE.Mesh(geometry, material);
+    this.currentMesh.castShadow = true;
+    this.currentMesh.receiveShadow = true;
+    this.scene.add(this.currentMesh);
+
+    // Edge Highlight Line Segments for sharp CAD detail clarity
+    const edgesGeom = new THREE.EdgesGeometry(geometry, 25);
+    const edgesMat = new THREE.LineBasicMaterial({
+      color: 0x3b82f6,
+      linewidth: 1,
+      opacity: 0.35,
+      transparent: true,
+    });
+    this.edgesLine = new THREE.LineSegments(edgesGeom, edgesMat);
+    this.scene.add(this.edgesLine);
+
+    // Apply active visual mode
+    this.applyVisualMode();
+
+    // Auto-fit camera
+    this.fitCameraToModel();
+  }
+
+  applyVisualMode() {
+    if (!this.currentMesh) return;
+
+    const mode = this.visualMode();
+    if (mode === "solid") {
+      this.currentMesh.visible = true;
+      (this.currentMesh.material as THREE.MeshStandardMaterial).wireframe = false;
+      if (this.edgesLine) this.edgesLine.visible = true;
+      if (this.pointsCloud) this.pointsCloud.visible = false;
+    } else if (mode === "wireframe") {
+      this.currentMesh.visible = true;
+      (this.currentMesh.material as THREE.MeshStandardMaterial).wireframe = true;
+      if (this.edgesLine) this.edgesLine.visible = false;
+      if (this.pointsCloud) this.pointsCloud.visible = false;
+    } else if (mode === "vertices") {
+      this.currentMesh.visible = false;
+      if (this.edgesLine) this.edgesLine.visible = false;
+
+      if (!this.pointsCloud && this.loadedGeometry && this.scene) {
+        const pMat = new THREE.PointsMaterial({
+          color: 0x3b82f6,
+          size: 2,
+          sizeAttenuation: true,
+        });
+        this.pointsCloud = new THREE.Points(this.loadedGeometry, pMat);
+        this.scene.add(this.pointsCloud);
+      }
+      if (this.pointsCloud) this.pointsCloud.visible = true;
+    }
+  }
+
+  setPreviewColor(hex: string) {
+    this.selectedPreviewColor.set(hex);
+    if (this.currentMesh) {
+      const activeColorObj =
+        this.previewColors.find((c) => c.hex === hex) || this.previewColors[0];
+      const mat = this.currentMesh.material as THREE.MeshStandardMaterial;
+      mat.color.setHex(parseInt(hex.replace("#", ""), 16));
+      mat.transparent = activeColorObj.transparent || false;
+      mat.opacity = activeColorObj.opacity || 1.0;
+      mat.needsUpdate = true;
+    }
+  }
+
+  fitCameraToModel() {
+    if (!this.camera || !this.controls || !this.currentMesh) return;
+
+    const boundingBox = new THREE.Box3().setFromObject(this.currentMesh);
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = this.camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 2.2;
+
+    cameraZ = Math.max(cameraZ, 80);
+
+    const targetPos = new THREE.Vector3(
+      center.x + cameraZ * 0.75,
+      center.y + cameraZ * 0.85,
+      center.z + cameraZ * 1.15,
+    );
+
+    this.camera.position.copy(targetPos);
+    this.camera.lookAt(center);
+    this.controls.target.copy(center);
+    this.controls.update();
+  }
+
+  resetCameraView() {
+    if (this.camera && this.controls) {
+      if (this.currentMesh) {
+        this.fitCameraToModel();
+      } else {
+        this.camera.position.set(180, 220, 260);
+        this.controls.target.set(0, 50, 0);
+        this.controls.update();
+      }
+    }
+  }
+
+  toggleFullscreen() {
+    if (!this.viewportContainer) return;
+    const container = this.viewportContainer.nativeElement;
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().then(() => {
+        this.isFullscreen.set(true);
+        setTimeout(() => this.onWindowResize(), 100);
+      }).catch(err => console.warn(err));
+    } else {
+      document.exitFullscreen().then(() => {
+        this.isFullscreen.set(false);
+        setTimeout(() => this.onWindowResize(), 100);
+      }).catch(err => console.warn(err));
+    }
+  }
+
+  downloadCurrentSTL() {
+    if (!this.uploadedRawBuffer || !this.selectedFileName()) {
+      this.toastService.error("No STL file available to download.");
+      return;
+    }
+
+    const blob = new Blob([this.uploadedRawBuffer], {
+      type: "model/stl",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = this.selectedFileName();
+    a.click();
+    URL.revokeObjectURL(url);
+    this.toastService.success(`Downloaded "${this.selectedFileName()}"`);
+  }
+
+  parseAsciiSTL(text: string) {
+    const vertices: number[][] = [];
+    const vertRegex = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/gi;
+    let match;
+
+    while ((match = vertRegex.exec(text)) !== null) {
+      const x = parseFloat(match[1]);
+      const y = parseFloat(match[2]);
+      const z = parseFloat(match[3]);
+      if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+        vertices.push([x, y, z]);
+      }
+    }
+
+    const faces: number[][] = [];
+    for (let i = 0; i < vertices.length; i += 3) {
+      if (i + 2 < vertices.length) {
+        faces.push([i, i + 1, i + 2]);
+      }
+    }
+
+    return { vertices, faces };
+  }
+
+  buildBufferGeometry(vertices: number[][]): THREE.BufferGeometry {
+    const geom = new THREE.BufferGeometry();
+    const flatVerts = new Float32Array(vertices.length * 3);
+
+    for (let i = 0; i < vertices.length; i++) {
+      flatVerts[i * 3] = vertices[i][0];
+      flatVerts[i * 3 + 1] = vertices[i][1];
+      flatVerts[i * 3 + 2] = vertices[i][2];
+    }
+
+    geom.setAttribute("position", new THREE.BufferAttribute(flatVerts, 3));
+    geom.computeVertexNormals();
+    return geom;
+  }
+
+  destroyThree() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    if (this.controls) {
+      this.controls.dispose();
+      this.controls = undefined;
+    }
+    if (this.currentMesh && this.scene) {
+      this.scene.remove(this.currentMesh);
+      if (this.currentMesh.geometry) this.currentMesh.geometry.dispose();
+      if (Array.isArray(this.currentMesh.material)) {
+        this.currentMesh.material.forEach((m) => m.dispose());
+      } else if (this.currentMesh.material) {
+        this.currentMesh.material.dispose();
+      }
+      this.currentMesh = undefined;
+    }
+    if (this.edgesLine && this.scene) {
+      this.scene.remove(this.edgesLine);
+      this.edgesLine.geometry.dispose();
+      this.edgesLine = undefined;
+    }
+    if (this.pointsCloud && this.scene) {
+      this.scene.remove(this.pointsCloud);
+      this.pointsCloud.geometry.dispose();
+      this.pointsCloud = undefined;
+    }
+    if (this.renderer) {
+      this.renderer.dispose();
+      this.renderer = undefined;
+    }
+    this.scene = undefined;
+    this.camera = undefined;
+  }
+
+  hexToRgb(hex: string): { r: number; g: number; b: number } {
+    let cleanHex = hex.replace("#", "");
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex
+        .split("")
+        .map((char) => char + char)
+        .join("");
+    }
+    const num = parseInt(cleanHex, 16) || 0;
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255,
+    };
+  }
+
+  isDarkTheme(): boolean {
+    if (typeof document !== "undefined") {
+      return document.body.classList.contains("dark");
+    }
+    return false;
+  }
+
   toggleDropdown(id: string, event?: Event) {
     if (event) event.stopPropagation();
     this.openDropdownId.update((current) => (current === id ? null : id));
@@ -594,7 +1157,6 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Stepper handlers
   incrementQty() {
     this.quantity.update((q) => q + 1);
   }
@@ -603,777 +1165,157 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.quantity.update((q) => Math.max(1, q - 1));
   }
 
-  resetRotation() {
-    this.rotationX.set(25);
-    this.rotationY.set(-45);
-    this.scaleFactor.set(1.0);
-    this.panX.set(0);
-    this.panY.set(0);
-  }
+  quotes = signal<any[]>([]);
+  isSubmitting = signal<boolean>(false);
 
-  zoomIn() {
-    this.scaleFactor.update((s) => Math.min(5.0, s * 1.15));
+  getQuoteStatusClass(status: string): string {
+    switch (status) {
+      case "approved_by_customer":
+      case "completed":
+        return "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+      case "rejected":
+        return "bg-red-500/10 text-red-500 border border-red-500/20";
+      case "quoted":
+        return "bg-blue-500/10 text-blue-500 border border-blue-500/20";
+      default:
+        return "bg-amber-500/10 text-amber-500 border border-amber-500/20";
+    }
   }
-
-  zoomOut() {
-    this.scaleFactor.update((s) => Math.max(0.2, s * 0.85));
-  }
-
-  isSubmitting = signal(false);
 
   async submitQuotation() {
-    if (!this.selectedFileName() || this.isSubmitting()) return;
+    await this.submitQuoteRequest();
+  }
+
+  async createQuote(payload: any) {
+    const newQuote = {
+      id: "Q-" + Math.floor(100000 + Math.random() * 900000),
+      createdAt: new Date().toISOString(),
+      status: "pending",
+      ...payload,
+    };
+    this.quotes.update((list) => [newQuote, ...list]);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("3dg_quotes", JSON.stringify(this.quotes()));
+    }
+    return newQuote;
+  }
+
+  showSuccessModal = signal<boolean>(false);
+  submittedEnquiry = signal<any>(null);
+
+  async submitQuoteRequest() {
+    if (!this.selectedFileName()) {
+      this.toastService.error("Please upload an STL model first.");
+      return;
+    }
+
     this.isSubmitting.set(true);
+    const user = this.ds.activeUser();
+    const stlFile = this.rawStlFile();
 
-    try {
-      const customNotes = `
-=== SLICER PARAMETERS ===
-- Quantity: ${this.quantity()}
-- Support: ${this.supportType()}
-- Adhesion: ${this.buildPlateAdhesion()}
-- Nozzle: ${this.nozzleSize()}
-- Layer Height: ${this.layerHeightText()}
-- Speed: ${this.printSpeed()}
-- Walls: ${this.wallCount()}
-- Top/Bottom Layers: ${this.topLayers()} / ${this.bottomLayers()}
-- Pattern: ${this.fillPattern()}
-- Surface Finish: ${this.surfaceFinish()}
-- Priority: ${this.deliveryPriority()}
-
-=== INSTRUCTIONS ===
-${this.notesText().trim()}
-      `.trim();
-
-      await this.ds.submitQuotation({
-        name: this.custName().trim() || "Anonymous Maker",
-        phone: this.custPhone().trim(),
-        email: this.custEmail().trim(),
-        fileName: this.selectedFileName(),
+    const postEnquiry = (fileBase64: string) => {
+      const payload = {
+        userId: (user as any)?.id || null,
+        customerName: this.custName() || user?.name || "Valued Customer",
+        customerPhone: this.custPhone() || user?.phone || "",
+        customerEmail: this.custEmail() || user?.email || "customer@example.com",
+        modelName: this.selectedFileName(),
         fileSize: this.selectedFileSize(),
+        fileBase64,
         material: this.selectedMaterial(),
         color: this.selectedColor(),
-        infill: this.infillPercent(),
-        layerHeight: this.layerHeight(),
-        volumeSrc: this.sourceVolume(),
-        notes: customNotes,
-      });
+        infillPercent: this.infillPercent(),
+        layerHeight: this.layerHeightText(),
+        nozzleSize: this.nozzleSize(),
+        supportType: this.supportType(),
+        buildPlateAdhesion: this.buildPlateAdhesion(),
+        printSpeed: this.printSpeed(),
+        surfaceFinish: this.surfaceFinish(),
+        quantity: this.quantity(),
+        dimensions: this.modelDimensions(),
+        volumeCm3: this.modelVolume(),
+        surfaceAreaCm2: this.modelSurfaceArea(),
+        weightGrams: this.estimatedReport().weightGrams,
+        triangleCount: this.modelTriangles(),
+        estimatedHours: this.estimatedReport().hours,
+        notes: this.notesText(),
+      };
 
-      this.notesText.set("");
-      this.toastService.success(
-        "SUCCESS: Your custom 3D printing quotation has been evaluated instantly. The billing is waiting inside your list below!",
-      );
-    } catch {
-      this.toastService.error(
-        "Quotation Submission Failed: Access Denied or Network Error.",
-      );
-    } finally {
-      this.isSubmitting.set(false);
+      this.enquiryService.submitEnquiry(payload).subscribe({
+        next: (res) => {
+          this.isSubmitting.set(false);
+          const enquiry = res.data;
+          this.submittedEnquiry.set(enquiry);
+          this.showSuccessModal.set(true);
+          this.toastService.success(`Quotation Request Submitted! Order #: ${enquiry.orderId || enquiry.id}`);
+          this.createQuote(enquiry);
+        },
+        error: () => {
+          this.isSubmitting.set(false);
+          this.toastService.error("Failed to submit request to server.");
+        },
+      });
+    };
+
+    if (stlFile) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        postEnquiry(reader.result as string);
+      };
+      reader.readAsDataURL(stlFile);
+    } else {
+      postEnquiry("");
     }
+  }
+
+  copyText(text: string, label: string) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      this.toastService.success(`${label} copied to clipboard!`);
+    }
+  }
+
+  closeSuccessModal() {
+    this.showSuccessModal.set(false);
+  }
+
+  goToTracking(trackingNumber: string) {
+    this.showSuccessModal.set(false);
+    window.location.href = `/track-service?query=${encodeURIComponent(trackingNumber)}`;
+  }
+
+  goToAccountRequests() {
+    this.showSuccessModal.set(false);
+    window.location.href = `/account?tab=service_requests`;
   }
 
   async approveQuote(quoteId: string) {
     try {
-      await this.ds.approveQuote(quoteId);
-      this.toastService.success("Quotation approved. Instant invoice created!");
+      this.quotes.update((list) =>
+        list.map((q) =>
+          q.id === quoteId ? { ...q, status: "approved_by_customer" } : q,
+        ),
+      );
+      if (typeof window !== "undefined") {
+        localStorage.setItem("3dg_quotes", JSON.stringify(this.quotes()));
+      }
+      this.toastService.success("Quote approved! Proceeding to dispatch.");
     } catch {
-      this.toastService.error("Access Denied or Network Error.");
+      this.toastService.error("Failed to approve quote.");
     }
   }
 
   async rejectQuote(quoteId: string) {
     try {
-      await this.ds.rejectQuote(quoteId);
+      this.quotes.update((list) =>
+        list.map((q) => (q.id === quoteId ? { ...q, status: "rejected" } : q)),
+      );
+      if (typeof window !== "undefined") {
+        localStorage.setItem("3dg_quotes", JSON.stringify(this.quotes()));
+      }
       this.toastService.info("Quote request rejected.");
     } catch {
       this.toastService.error("Access Denied or Network Error.");
     }
-  }
-
-  // --- INTERACTIVE CANVAS 3D RENDERER ---
-  initCanvas(canvas: HTMLCanvasElement) {
-    this.canvasContext = canvas.getContext("2d") || undefined;
-    if (!this.canvasContext) return;
-
-    this.generateDefaultModel();
-
-    // Prevent default browser page scrolling when zooming on canvas
-    canvas.addEventListener(
-      "wheel",
-      (event: WheelEvent) => {
-        event.preventDefault();
-        const zoomDelta = event.deltaY < 0 ? 1.15 : 0.85;
-        this.scaleFactor.update((s) =>
-          Math.max(0.2, Math.min(5.0, s * zoomDelta)),
-        );
-      },
-      { passive: false },
-    );
-
-    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
-
-    const renderLoop = () => {
-      if (this.canvasContext) {
-        this.drawModel(canvas);
-      }
-      this.animationFrameId = requestAnimationFrame(renderLoop);
-    };
-    renderLoop();
-  }
-
-  generateDefaultModel() {
-    const vertices: number[][] = [];
-    const faces: number[][] = [];
-
-    // Generate keychain gear/plate default shape
-    const w = 48,
-      h = 26,
-      d = 5;
-    vertices.push([-w / 2, -h / 2, -d / 2]); // 0
-    vertices.push([w / 2, -h / 2, -d / 2]); // 1
-    vertices.push([w / 2, h / 2, -d / 2]); // 2
-    vertices.push([-w / 2, h / 2, -d / 2]); // 3
-    vertices.push([-w / 2, -h / 2, d / 2]); // 4
-    vertices.push([w / 2, -h / 2, d / 2]); // 5
-    vertices.push([w / 2, h / 2, d / 2]); // 6
-    vertices.push([-w / 2, h / 2, d / 2]); // 7
-
-    // Base Plate Faces (12 triangles)
-    faces.push([0, 1, 2]);
-    faces.push([0, 2, 3]);
-    faces.push([4, 6, 5]);
-    faces.push([4, 7, 6]);
-    faces.push([0, 4, 5]);
-    faces.push([0, 5, 1]);
-    faces.push([2, 6, 7]);
-    faces.push([2, 7, 3]);
-    faces.push([0, 3, 7]);
-    faces.push([0, 7, 4]);
-    faces.push([1, 5, 6]);
-    faces.push([1, 6, 2]);
-
-    // Ring Hole Vertices
-    const holeX = -17,
-      holeR = 3.5;
-    const segments = 12;
-    const startVert = vertices.length;
-    for (let i = 0; i < segments; i++) {
-      const theta = (i / segments) * Math.PI * 2;
-      const dx = Math.cos(theta) * holeR;
-      const dy = Math.sin(theta) * holeR;
-
-      vertices.push([holeX + dx, dy, -d / 2]);
-      vertices.push([holeX + dx, dy, d / 2]);
-
-      const curr = startVert + i * 2;
-      const next = startVert + ((i + 1) % segments) * 2;
-      faces.push([curr, next, curr + 1]);
-      faces.push([next, next + 1, curr + 1]);
-    }
-
-    this.modelVertices = vertices;
-    this.modelFaces = faces;
-    this.modelDimensions.set({ x: 48, y: 26, z: 5.0 });
-    this.modelTriangles.set(faces.length);
-    this.modelVolume.set(4.88);
-    this.sourceVolume.set(4.88);
-  }
-
-  drawModel(canvas: HTMLCanvasElement) {
-    const ctx = this.canvasContext;
-    if (!ctx) return;
-
-    // High-DPI (Retina) dynamic scaling for 100% crisp sharpness
-    const rect = canvas.getBoundingClientRect();
-    const dpr =
-      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    const targetW = Math.round(rect.width * dpr);
-    const targetH = Math.round(rect.height * dpr);
-
-    if (canvas.width !== targetW || canvas.height !== targetH) {
-      canvas.width = targetW;
-      canvas.height = targetH;
-    }
-
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-
-    const isDark = this.isDarkTheme();
-
-    const cx = width / 2;
-    const cy = height / 2;
-
-    const radX = (this.rotationX() * Math.PI) / 180;
-    const radY = (this.rotationY() * Math.PI) / 180;
-
-    const project = (x: number, y: number, z: number) => {
-      // Rotation Y
-      const x1 = x * Math.cos(radY) - z * Math.sin(radY);
-      const z1 = x * Math.sin(radY) + z * Math.cos(radY);
-
-      // Rotation X
-      const y2 = y * Math.cos(radX) - z1 * Math.sin(radX);
-      const z1_rotated = y * Math.sin(radX) + z1 * Math.cos(radX);
-
-      // Scaled perspective coordinates based on dynamic canvas buffer size
-      const perspective = 350 / (350 + z1_rotated);
-      const scale = (width / 640) * this.scaleFactor() * perspective * 2.8;
-      return {
-        x: cx + x1 * scale + this.panX() * dpr,
-        y: cy + y2 * scale + this.panY() * dpr,
-        depth: z1_rotated,
-      };
-    };
-
-    if (this.showGrid()) {
-      // Draw 3D print bed grid
-      ctx.strokeStyle = isDark
-        ? "rgba(30, 41, 59, 0.4)"
-        : "rgba(226, 232, 240, 0.9)";
-      ctx.lineWidth = 1 * dpr;
-
-      // The model max Y is scaled to fit in 35. So bottom is at Y = 17.5. Let's place bed at Y = 18.
-      const bedY = 18;
-      const bedSize = 45;
-      const step = 7.5;
-
-      // Draw lines parallel to Z axis (changing X)
-      for (let x = -bedSize; x <= bedSize; x += step) {
-        const pStart = project(x, bedY, -bedSize);
-        const pEnd = project(x, bedY, bedSize);
-        ctx.beginPath();
-        ctx.moveTo(pStart.x, pStart.y);
-        ctx.lineTo(pEnd.x, pEnd.y);
-        ctx.stroke();
-      }
-
-      // Draw lines parallel to X axis (changing Z)
-      for (let z = -bedSize; z <= bedSize; z += step) {
-        const pStart = project(-bedSize, bedY, z);
-        const pEnd = project(bedSize, bedY, z);
-        ctx.beginPath();
-        ctx.moveTo(pStart.x, pStart.y);
-        ctx.lineTo(pEnd.x, pEnd.y);
-        ctx.stroke();
-      }
-
-      // Draw compact Slicers BED Axes at the corner of the grid bed
-      const oX = -bedSize;
-      const oY = bedY;
-      const oZ = -bedSize;
-
-      const o = project(oX, oY, oZ);
-      const ax = project(oX + 15, oY, oZ);
-      const ay = project(oX, oY - 15, oZ);
-      const az = project(oX, oY, oZ + 15);
-
-      ctx.lineWidth = 2 * dpr;
-      ctx.strokeStyle = "#ef4444"; // X (Red)
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y);
-      ctx.lineTo(ax.x, ax.y);
-      ctx.stroke();
-      ctx.fillStyle = "#ef4444";
-      ctx.font = "bold " + Math.round(9 * dpr) + "px monospace";
-      ctx.fillText("X", ax.x + 3 * dpr, ax.y + 3 * dpr);
-
-      ctx.strokeStyle = "#22c55e"; // Y (Green)
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y);
-      ctx.lineTo(ay.x, ay.y);
-      ctx.stroke();
-      ctx.fillStyle = "#22c55e";
-      ctx.fillText("Y", ay.x + 3 * dpr, ay.y - 3 * dpr);
-
-      ctx.strokeStyle = "#3b82f6"; // Z (Blue)
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y);
-      ctx.lineTo(az.x, az.y);
-      ctx.stroke();
-      ctx.fillStyle = "#3b82f6";
-      ctx.fillText("Z", az.x + 3 * dpr, az.y + 3 * dpr);
-    }
-
-    if (this.modelVertices.length === 0) return;
-
-    // Calculate bounding box bounds and Z threshold for slicing simulation
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
-    let minZ = Infinity, maxZ = -Infinity;
-    for (const v of this.modelVertices) {
-      if (v[0] < minX) minX = v[0];
-      if (v[0] > maxX) maxX = v[0];
-      if (v[1] < minY) minY = v[1];
-      if (v[1] > maxY) maxY = v[1];
-      if (v[2] < minZ) minZ = v[2];
-      if (v[2] > maxZ) maxZ = v[2];
-    }
-    const zThreshold = minZ + (maxZ - minZ) * (this.simulationLayer() / 100);
-
-    // Draw 3D Bounding Box Outline if enabled
-    if (this.showBoundingBox()) {
-      const corners = [
-        project(minX, minY, minZ), // 0
-        project(maxX, minY, minZ), // 1
-        project(maxX, maxY, minZ), // 2
-        project(minX, maxY, minZ), // 3
-        project(minX, minY, maxZ), // 4
-        project(maxX, minY, maxZ), // 5
-        project(maxX, maxY, maxZ), // 6
-        project(minX, maxY, maxZ), // 7
-      ];
-
-      ctx.strokeStyle = "rgba(249, 115, 22, 0.85)";
-      ctx.lineWidth = 1 * dpr;
-      ctx.setLineDash([4 * dpr, 4 * dpr]);
-
-      // Bottom face
-      ctx.beginPath();
-      ctx.moveTo(corners[0].x, corners[0].y);
-      ctx.lineTo(corners[1].x, corners[1].y);
-      ctx.lineTo(corners[2].x, corners[2].y);
-      ctx.lineTo(corners[3].x, corners[3].y);
-      ctx.closePath();
-      ctx.stroke();
-
-      // Top face
-      ctx.beginPath();
-      ctx.moveTo(corners[4].x, corners[4].y);
-      ctx.lineTo(corners[5].x, corners[5].y);
-      ctx.lineTo(corners[6].x, corners[6].y);
-      ctx.lineTo(corners[7].x, corners[7].y);
-      ctx.closePath();
-      ctx.stroke();
-
-      // Vertical edges
-      ctx.beginPath();
-      for (let i = 0; i < 4; i++) {
-        ctx.moveTo(corners[i].x, corners[i].y);
-        ctx.lineTo(corners[i + 4].x, corners[i + 4].y);
-      }
-      ctx.stroke();
-
-      ctx.setLineDash([]); // Reset line dash
-    }
-
-    // Compute rotated coordinates in camera space first
-    const rotatedVerts = this.modelVertices.map((v) => {
-      const x = v[0],
-        y = v[1],
-        z = v[2];
-      // Rotation Y
-      const x1 = x * Math.cos(radY) - z * Math.sin(radY);
-      const z1 = x * Math.sin(radY) + z * Math.cos(radY);
-
-      // Rotation X
-      const y2 = y * Math.cos(radX) - z1 * Math.sin(radX);
-      const z2 = y * Math.sin(radX) + z1 * Math.cos(radX);
-
-      return [x1, y2, z2];
-    });
-
-    // Project rotated vertices
-    const projectedVerts = rotatedVerts.map((rv) => {
-      const perspective = 350 / (350 + rv[2]);
-      const scale = (width / 640) * this.scaleFactor() * perspective * 2.8;
-      return {
-        x: cx + rv[0] * scale + this.panX() * dpr,
-        y: cy + rv[1] * scale + this.panY() * dpr,
-        depth: rv[2],
-      };
-    });
-
-    // Depth sort faces
-    const sortedFaces = this.modelFaces
-      .map((f, idx) => {
-        const d =
-          (projectedVerts[f[0]].depth +
-            projectedVerts[f[1]].depth +
-            projectedVerts[f[2]].depth) /
-          3;
-        return { face: f, depth: d };
-      })
-      .sort((a, b) => b.depth - a.depth);
-
-    const fillHex = this.getFilamentHexColor();
-
-    if (this.visualMode() === "vertices") {
-      ctx.fillStyle = fillHex;
-      for (let i = 0; i < projectedVerts.length; i++) {
-        if (this.modelVertices[i][2] > zThreshold) continue;
-        const p = projectedVerts[i];
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.5 * dpr, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else {
-      ctx.lineWidth = 0.5 * dpr;
-      for (const sf of sortedFaces) {
-        const f = sf.face;
-        const z1 = this.modelVertices[f[0]][2];
-        const z2 = this.modelVertices[f[1]][2];
-        const z3 = this.modelVertices[f[2]][2];
-        if (z1 > zThreshold || z2 > zThreshold || z3 > zThreshold) continue;
-
-        const v0 = rotatedVerts[f[0]];
-        const v1 = rotatedVerts[f[1]];
-        const v2 = rotatedVerts[f[2]];
-
-        const ax_edge = v1[0] - v0[0];
-        const ay_edge = v1[1] - v0[1];
-        const az_edge = v1[2] - v0[2];
-
-        const bx_edge = v2[0] - v0[0];
-        const by_edge = v2[1] - v0[1];
-        const bz_edge = v2[2] - v0[2];
-
-        // Cross product
-        const nx = ay_edge * bz_edge - az_edge * by_edge;
-        const ny = az_edge * bx_edge - ax_edge * bz_edge;
-        const nz = ax_edge * by_edge - ay_edge * bx_edge;
-
-        // Backface culling: skip faces facing away from screen
-        if (nz <= 0) continue;
-
-        const p1 = projectedVerts[f[0]];
-        const p2 = projectedVerts[f[1]];
-        const p3 = projectedVerts[f[2]];
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p3.x, p3.y);
-        ctx.closePath();
-
-        if (this.visualMode() === "solid") {
-          // Normalize normal vector
-          const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
-          let intensity = 0.6; // Default fallback
-          if (len > 0) {
-            const nx_n = nx / len;
-            const ny_n = ny / len;
-            const nz_n = nz / len;
-
-            // Invert normal for lighting since positive nz points away from camera
-            const normalX = -nx_n;
-            const normalY = -ny_n;
-            const normalZ = -nz_n;
-
-            // Dual light source (Key + Fill) for gorgeous depth flat shading
-            const dot1 = Math.max(
-              0,
-              normalX * 0.4 + normalY * 0.5 + normalZ * 0.7,
-            );
-            const dot2 = Math.max(
-              0,
-              normalX * -0.5 + normalY * -0.5 + normalZ * 0.7,
-            );
-            intensity = this.ambientLight() + this.keyLight() * dot1 + this.fillLight() * dot2;
-          }
-
-          const rgb = this.hexToRgb(fillHex);
-          const r = Math.round(rgb.r * intensity);
-          const g = Math.round(rgb.g * intensity);
-          const b = Math.round(rgb.b * intensity);
-          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-          ctx.fill();
-
-          ctx.strokeStyle = isDark
-            ? "rgba(255, 255, 255, 0.05)"
-            : "rgba(0, 0, 0, 0.05)";
-          ctx.stroke();
-        } else if (this.visualMode() === "wireframe") {
-          ctx.strokeStyle = fillHex;
-          ctx.lineWidth = 0.7 * dpr;
-          ctx.stroke();
-        }
-      }
-    }
-  }
-
-  isDarkTheme(): boolean {
-    if (typeof document !== "undefined") {
-      return document.body.classList.contains("dark");
-    }
-    return false;
-  }
-
-  hexToRgb(hex: string): { r: number; g: number; b: number } {
-    let cleanHex = hex.replace("#", "");
-    if (cleanHex.length === 3) {
-      cleanHex = cleanHex
-        .split("")
-        .map((char) => char + char)
-        .join("");
-    }
-    const num = parseInt(cleanHex, 16) || 0;
-    return {
-      r: (num >> 16) & 255,
-      g: (num >> 8) & 255,
-      b: num & 255,
-    };
-  }
-
-  shadeColor(color: string, percent: number): string {
-    const num = parseInt(color.replace("#", ""), 16),
-      amt = Math.round(2.55 * (percent * 100 - 100)),
-      R = (num >> 16) + amt,
-      G = ((num >> 8) & 0x00ff) + amt,
-      B = (num & 0x0000ff) + amt;
-    return (
-      "#" +
-      (
-        0x1000000 +
-        (R < 255 ? (R < 0 ? 0 : R) : 255) * 0x10000 +
-        (G < 255 ? (G < 0 ? 0 : G) : 255) * 0x100 +
-        (B < 255 ? (B < 0 ? 0 : B) : 255)
-      )
-        .toString(16)
-        .slice(1)
-    );
-  }
-
-  getFilamentHexColor(): string {
-    const colors = this.colors();
-    const active = colors.find(
-      (c: any) => c.name.toLowerCase() === this.selectedColor().toLowerCase(),
-    );
-    return active ? active.hex : "#3b82f6";
-  }
-
-  getProgressPercent(): number {
-    if (this.step6Active()) return 100;
-    if (this.step5Active()) return 80;
-    if (this.step4Active()) return 60;
-    if (this.step3Active()) return 40;
-    if (this.step2Active()) return 20;
-    if (this.step1Active()) return 0;
-    return 0;
-  }
-
-  // --- STL / OBJ PARSERS ---
-  parseSTLFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const buffer = e.target.result as ArrayBuffer;
-      try {
-        const { vertices, faces } = this.parseBinarySTL(buffer);
-        if (vertices.length > 0) {
-          this.centerAndScaleModel(vertices, faces);
-          this.toastService.success(
-            `Successfully loaded mesh: ${faces.length} facets.`,
-          );
-        } else {
-          this.toastService.error(
-            "The selected file seems empty or unsupported.",
-          );
-        }
-      } catch (err) {
-        console.error("Binary STL parsing error:", err);
-        const mockVolume = Math.floor(45 + Math.random() * 320);
-        this.sourceVolume.set(mockVolume);
-        this.generateDefaultModel();
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  parseBinarySTL(buffer: ArrayBuffer) {
-    const dataView = new DataView(buffer);
-    const numFaces = dataView.getUint32(80, true);
-    const vertices: number[][] = [];
-    const faces: number[][] = [];
-
-    let offset = 84;
-    for (let i = 0; i < numFaces; i++) {
-      if (offset + 50 > buffer.byteLength) break;
-
-      const v1x = dataView.getFloat32(offset + 12, true);
-      const v1y = dataView.getFloat32(offset + 16, true);
-      const v1z = dataView.getFloat32(offset + 20, true);
-
-      const v2x = dataView.getFloat32(offset + 24, true);
-      const v2y = dataView.getFloat32(offset + 28, true);
-      const v2z = dataView.getFloat32(offset + 32, true);
-
-      const v3x = dataView.getFloat32(offset + 36, true);
-      const v3y = dataView.getFloat32(offset + 40, true);
-      const v3z = dataView.getFloat32(offset + 44, true);
-
-      vertices.push([v1x, v1y, v1z]);
-      vertices.push([v2x, v2y, v2z]);
-      vertices.push([v3x, v3y, v3z]);
-
-      const vIdx = vertices.length - 3;
-      faces.push([vIdx, vIdx + 1, vIdx + 2]);
-      offset += 50;
-    }
-    return { vertices, faces };
-  }
-
-  parseOBJFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result as string;
-      const vertices: number[][] = [];
-      const faces: number[][] = [];
-      const lines = text.split(/\r?\n/);
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith("#")) continue;
-
-        if (trimmed.startsWith("v ")) {
-          const values = trimmed.split(/\s+/).slice(1).map(Number);
-          if (values.length >= 3) {
-            vertices.push([values[0], values[1], values[2]]);
-          }
-        } else if (trimmed.startsWith("f ")) {
-          const parts = trimmed.split(/\s+/).slice(1);
-          const faceIndices = parts
-            .map((part) => part.split("/")[0])
-            .filter(Boolean)
-            .map((part) => Number(part))
-            .filter((index) => !Number.isNaN(index));
-
-          if (faceIndices.length >= 3) {
-            const [first, second, ...rest] = faceIndices;
-            const triangulated = rest.map((index) => [first, index, second]);
-            faces.push(...triangulated);
-          }
-        }
-      }
-
-      if (vertices.length > 0 && faces.length > 0) {
-        this.centerAndScaleModel(vertices, faces);
-        this.toastService.success(
-          `Loaded OBJ mesh with ${faces.length} triangles.`,
-        );
-      } else {
-        this.toastService.error("The selected OBJ file could not be parsed.");
-        this.generateDefaultModel();
-      }
-    };
-    reader.onerror = () => {
-      this.toastService.error("Unable to read the selected OBJ file.");
-      this.generateDefaultModel();
-    };
-    reader.readAsText(file);
-  }
-
-  parse3MFFile(file: File) {
-    const mockVolume = Math.floor(45 + Math.random() * 320);
-    this.sourceVolume.set(mockVolume);
-    this.generateDefaultModel();
-    this.toastService.info(
-      "3MF preview uses a simplified mesh preview for now.",
-    );
-  }
-
-  centerAndScaleModel(vertices: number[][], faces: number[][]) {
-    let minX = Infinity,
-      maxX = -Infinity;
-    let minY = Infinity,
-      maxY = -Infinity;
-    let minZ = Infinity,
-      maxZ = -Infinity;
-
-    for (const v of vertices) {
-      if (v[0] < minX) minX = v[0];
-      if (v[0] > maxX) maxX = v[0];
-      if (v[1] < minY) minY = v[1];
-      if (v[1] > maxY) maxY = v[1];
-      if (v[2] < minZ) minZ = v[2];
-      if (v[2] > maxZ) maxZ = v[2];
-    }
-
-    const dx = maxX - minX;
-    const dy = maxY - minY;
-    const dz = maxZ - minZ;
-
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
-    const cz = (minZ + maxZ) / 2;
-
-    const centeredVerts = vertices.map((v) => [
-      v[0] - cx,
-      v[1] - cy,
-      v[2] - cz,
-    ]);
-    const maxDim = Math.max(dx, dy, dz);
-    const targetScale = maxDim > 0 ? 35 / maxDim : 1.0;
-    const scaledVerts = centeredVerts.map((v) => [
-      v[0] * targetScale,
-      v[1] * targetScale,
-      v[2] * targetScale,
-    ]);
-
-    this.modelVertices = scaledVerts;
-    this.modelFaces = faces;
-
-    this.modelDimensions.set({
-      x: Math.round(dx * 100) / 100,
-      y: Math.round(dy * 100) / 100,
-      z: Math.round(dz * 100) / 100,
-    });
-    this.modelTriangles.set(faces.length);
-
-    // Volumetric slicing estimation
-    const bboxVolumeCm3 = (dx * dy * dz) / 1000;
-    const calculatedVolume =
-      Math.round(Math.max(0.5, bboxVolumeCm3 * 0.42) * 100) / 100;
-    this.modelVolume.set(calculatedVolume);
-    this.sourceVolume.set(calculatedVolume);
-    this.scaleFactor.set(1.0);
-    this.simulationLayer.set(100);
-  }
-
-  // --- INTERACTION EVENT BINDINGS ---
-  onMouseDown(event: MouseEvent) {
-    this.isDragging = true;
-    this.previousMouseX = event.clientX;
-    this.previousMouseY = event.clientY;
-
-    if (event.shiftKey || event.button === 1 || event.button === 2) {
-      this.dragMode = "pan";
-    } else {
-      this.dragMode = "rotate";
-    }
-  }
-
-  onMouseMove(event: MouseEvent) {
-    if (!this.isDragging) return;
-    const deltaX = event.clientX - this.previousMouseX;
-    const deltaY = event.clientY - this.previousMouseY;
-
-    if (this.dragMode === "pan") {
-      this.panX.update((px) => px + deltaX);
-      this.panY.update((py) => py + deltaY);
-    } else {
-      this.rotationY.update((ry) => ry + deltaX * 0.6);
-      this.rotationX.update((rx) => rx + deltaY * 0.6);
-    }
-
-    this.previousMouseX = event.clientX;
-    this.previousMouseY = event.clientY;
-  }
-
-  onMouseUp() {
-    this.isDragging = false;
-  }
-
-  onSliderXChange(event: Event) {
-    this.rotationX.set(parseFloat((event.target as HTMLInputElement).value));
-  }
-
-  onSliderYChange(event: Event) {
-    this.rotationY.set(parseFloat((event.target as HTMLInputElement).value));
-  }
-
-  autoFit() {
-    this.resetRotation();
   }
 }

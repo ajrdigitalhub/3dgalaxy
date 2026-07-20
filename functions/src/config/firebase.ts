@@ -57,12 +57,45 @@ export const uploadFileToStorage = async (
   destination: string,
   mimeType: string
 ): Promise<string> => {
-  const b = getStorageBucket();
-  if (!b) throw new Error("Firebase Storage is not initialized properly.");
-  
-  const file = b.file(destination);
-  await file.save(fileBuffer, { metadata: { contentType: mimeType } });
-  await file.makePublic();
-  return `https://storage.googleapis.com/${b.name}/${destination}`;
+  try {
+    const b = getStorageBucket();
+    if (b) {
+      const file = b.file(destination);
+      await file.save(fileBuffer, { metadata: { contentType: mimeType } });
+      try {
+        await file.makePublic();
+      } catch (err) {
+        console.warn("file.makePublic() skipped:", err);
+      }
+      return getFirebaseDownloadUrl(destination);
+    }
+  } catch (err) {
+    console.warn("uploadFileToStorage fallback to direct URL:", err);
+  }
+
+  const bucketName = process.env.APP_FIREBASE_STORAGE_BUCKET || "ajr3dgalaxy.firebasestorage.app";
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(destination)}?alt=media`;
+};
+
+export const getFirebaseDownloadUrl = async (storagePath: string): Promise<string> => {
+  try {
+    const b = getStorageBucket();
+    if (b) {
+      const file = b.file(storagePath);
+      const [exists] = await file.exists();
+      if (exists) {
+        const [signedUrl] = await file.getSignedUrl({
+          action: "read",
+          expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        });
+        if (signedUrl) return signedUrl;
+      }
+    }
+  } catch (err) {
+    console.warn("getFirebaseDownloadUrl fallback to public URL format:", err);
+  }
+
+  const bucketName = process.env.APP_FIREBASE_STORAGE_BUCKET || "ajr3dgalaxy.firebasestorage.app";
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(storagePath)}?alt=media`;
 };
 

@@ -100,6 +100,9 @@ export interface ProductVariant {
   secondaryImage?: string;
   galleryImages?: string[];
   variantSecondaryImages?: string[];
+  codAvailable?: boolean;
+  codCharge?: number;
+  codMessage?: string;
 }
 
 export interface Product {
@@ -156,6 +159,8 @@ export interface Product {
   relatedProducts?: { relatedProduct: any }[];
   isFeatured?: boolean;
   codAvailable?: boolean;
+  codCharge?: number;
+  codMessage?: string;
   baseShippingCharge?: number;
   estimatedDeliveryDays?: number;
   freeShippingEligible?: boolean;
@@ -503,6 +508,67 @@ export class DatastoreService {
   couponDiscountAmount = signal<number>(0);
   guestSessionId = signal<string>('');
   
+  // Buy Now Session State (Persisted in localStorage for reload safety)
+  buyNowItem = signal<{
+    product: Product;
+    variant?: ProductVariant | null;
+    quantity: number;
+    options?: any;
+    codAvailable: boolean;
+  } | null>(null);
+
+  setBuyNowItem(item: { product: Product; variant?: ProductVariant | null; quantity: number; options?: any }) {
+    const codAvailable = item.product.codAvailable !== false && (!item.variant || item.variant.codAvailable !== false);
+    const sessionData = { ...item, codAvailable };
+    this.buyNowItem.set(sessionData);
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.setItem("buyNowSession", JSON.stringify(sessionData));
+      } catch (e) {}
+    }
+  }
+
+  clearBuyNowItem() {
+    this.buyNowItem.set(null);
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        localStorage.removeItem("buyNowSession");
+      } catch (e) {}
+    }
+  }
+
+  // Active Checkout Items (Buy Now item takes precedence over cart)
+  activeCheckoutItems = computed(() => {
+    const buyNow = this.buyNowItem();
+    if (buyNow && buyNow.product) {
+      return [
+        {
+          product: buyNow.product,
+          variant: buyNow.variant || null,
+          quantity: buyNow.quantity || 1,
+          isFree: false,
+          bundleProducts: [],
+          isBuyNow: true
+        }
+      ];
+    }
+    return this.groupedCartItems() || [];
+  });
+
+  // Dynamic COD Eligibility Check across all items in active checkout
+  isCodAvailableForCheckout = computed(() => {
+    const items = this.activeCheckoutItems();
+    if (!items || items.length === 0) return false;
+
+    return items.every((item: any) => {
+      const p = item.product;
+      const v = item.variant;
+      const pCod = p?.codAvailable !== false;
+      const vCod = !v || v?.codAvailable !== false;
+      return pCod && vCod;
+    });
+  });
+  
   // Computed from SettingsService
   footerData = computed<any>(() => {
     return this.settingsService.footer();
@@ -745,6 +811,15 @@ export class DatastoreService {
   }
 
   private initAuth() {
+    if (isPlatformBrowser(this.platformId)) {
+      try {
+        const storedBuyNow = localStorage.getItem("buyNowSession");
+        if (storedBuyNow) {
+          this.buyNowItem.set(JSON.parse(storedBuyNow));
+        }
+      } catch (e) {}
+    }
+
     if (!isPlatformBrowser(this.platformId)) {
       this.authReady.set(true);
       return;

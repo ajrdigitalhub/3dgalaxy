@@ -351,15 +351,35 @@ export const getProducts = async (req: Request, res: Response) => {
       sysCache.set('all_mapped_products', allMapped, 1800); // 30 minutes cache
     }
 
+    let allDbCategories = sysCache.get('all_db_categories') as any[];
+    if (!allDbCategories) {
+      allDbCategories = await prisma.category.findMany({
+        where: { isActive: true, deletedAt: null }
+      });
+      sysCache.set('all_db_categories', allDbCategories, 1800);
+    }
+
     // Helper to check if a category belongs to a parent (by ID or slug)
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
       if (!cat) return false;
-      if (cat.id === parentSlugOrId || cat.slug === parentSlugOrId) return true;
-      if (cat.parentId) {
-        const parent = allMapped.map(x => x.category).find(c => c && c.id === cat.parentId);
-        return isCategoryChildOf(parent, parentSlugOrId);
-      }
-      return false;
+      const catId = cat.id;
+      const catSlug = cat.slug;
+      if (catId === parentSlugOrId || catSlug === parentSlugOrId) return true;
+
+      const targetCat = allDbCategories.find(c => c.id === parentSlugOrId || c.slug === parentSlugOrId);
+      if (!targetCat) return false;
+
+      const getDescendantIds = (parentId: string): string[] => {
+        const children = allDbCategories.filter(c => c.parentId === parentId);
+        let ids: string[] = [parentId];
+        for (const child of children) {
+          ids = ids.concat(getDescendantIds(child.id));
+        }
+        return ids;
+      };
+
+      const validIds = getDescendantIds(targetCat.id);
+      return validIds.includes(catId);
     };
 
     // Filter products

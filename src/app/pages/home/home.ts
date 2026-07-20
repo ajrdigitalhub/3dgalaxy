@@ -20,9 +20,6 @@ import { HomeBrandsComponent } from "./components/home-brands.component";
 import { HomeFeaturedShowcaseComponent } from "./components/home-featured-showcase.component";
 import {
   HomeShowcaseTwoComponent,
-  HomeCategoryViewFilamentComponent,
-  HomeCategoryViewSparePartsComponent,
-  HomeCategoryView3DPrinterComponent,
   HomeNewsletterComponent,
   HomeShopByCategoryComponent,
   HomeTechnologyHubsComponent,
@@ -57,9 +54,6 @@ import {
     HomeFeaturedShowcaseComponent,
     HomeBrandsComponent,
     HomeShowcaseTwoComponent,
-    HomeCategoryViewFilamentComponent,
-    HomeCategoryViewSparePartsComponent,
-    HomeCategoryView3DPrinterComponent,
     HomeCategoryShowcaseRowComponent,
     HomeNewsletterComponent,
     HomeShopByCategoryComponent,

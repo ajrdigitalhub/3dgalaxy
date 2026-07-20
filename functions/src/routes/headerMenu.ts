@@ -1,3 +1,4 @@
+import { Router } from 'express';
 import { getHeaderMenuData, getHeaderMenuSettings, updateHeaderMenuSettings } from '../controllers/headerMenu';
 import { cacheMiddleware } from '../middleware/cache';
 import { authenticateToken, requireRole } from '../middleware/auth';

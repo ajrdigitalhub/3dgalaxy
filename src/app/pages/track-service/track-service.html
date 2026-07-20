@@ -1,0 +1,247 @@
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fadeIn font-sans pb-16">
+
+  <!-- HEADER HERO -->
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
+    <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/30 mb-2">
+      <mat-icon class="scale-110">local_shipping</mat-icon>
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-black uppercase text-zinc-900 dark:text-white tracking-tight">
+      Track 3D Print Service Request
+    </h1>
+    <p class="text-xs text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto">
+      Enter your Tracking Number (TRK-XXXXXX) or Enquiry ID (ENQ-XXXXXX) to monitor real-time manufacturing telemetry, file analysis, and dispatch updates.
+    </p>
+
+    <!-- SEARCH INPUT FORM -->
+    <div class="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 pt-2">
+      <div class="relative flex-1">
+        <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+        <input
+          type="text"
+          [(ngModel)]="trackingQuery"
+          (keyup.enter)="searchTracking()"
+          placeholder="Enter Tracking No. (e.g. TRK-849204) or Enquiry ID"
+          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors uppercase"
+        />
+      </div>
+
+      <div class="relative w-full sm:w-48">
+        <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">lock</mat-icon>
+        <input
+          type="text"
+          [(ngModel)]="authVal"
+          (keyup.enter)="searchTracking()"
+          placeholder="Email / Phone (Optional)"
+          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
+        />
+      </div>
+
+      <button
+        (click)="searchTracking()"
+        [disabled]="loading()"
+        class="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider px-6 py-3 rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all cursor-pointer border-none flex items-center justify-center gap-2"
+      >
+        <mat-icon [class.animate-spin]="loading()" class="text-sm">search</mat-icon>
+        <span>{{ loading() ? 'Searching...' : 'Track' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULT CONTAINER -->
+  @if (enquiry(); as e) {
+    <div class="space-y-6 animate-fadeIn">
+      
+      <!-- TOP STATUS CARD -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 rounded-3xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{{ e.id }}</span>
+            <span class="text-zinc-300 dark:text-zinc-700">•</span>
+            <span class="text-xs font-mono text-zinc-500 uppercase">Tracking #: {{ e.trackingNumber }}</span>
+          </div>
+          <h2 class="text-lg font-black uppercase text-zinc-900 dark:text-white mt-1">{{ e.modelName }}</h2>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">Submitted on {{ e.createdAt | date:'medium' }}</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+            {{ e.status.replace('_', ' ') }}
+          </span>
+          <a
+            [href]="'https://wa.me/919876543210?text=Hi, inquiring about Service Request ' + e.trackingNumber"
+            target="_blank"
+            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 text-decoration-none"
+          >
+            <mat-icon class="text-sm">chat</mat-icon>
+            <span>WhatsApp Support</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- VISUAL TIMELINE BAR -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-lg space-y-4">
+        <h3 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-2">
+          <mat-icon class="text-sm">timeline</mat-icon> Manufacturing & Dispatch Timeline
+        </h3>
+
+        <!-- Horizontal Timeline Bar for Desktop -->
+        <div class="hidden md:flex justify-between items-center relative py-4 px-2">
+          <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-zinc-200 dark:bg-zinc-800 -z-0"></div>
+          
+          @for (stage of allWorkflowStages; track stage.key) {
+            <div class="relative z-10 flex flex-col items-center gap-1.5">
+              <div
+                [class]="isStageActive(stage.key) ? 'bg-blue-600 ring-4 ring-blue-500/20 text-white scale-125' : (isStageCompleted(stage.key) ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400')"
+                class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm"
+              >
+                <mat-icon class="text-xs font-bold">{{ isStageCompleted(stage.key) ? 'check' : 'radio_button_unchecked' }}</mat-icon>
+              </div>
+              <span
+                [class]="isStageActive(stage.key) ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-zinc-400 font-medium'"
+                class="text-[9px] uppercase tracking-wider font-mono text-center max-w-[70px]"
+              >
+                {{ stage.label }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <!-- Vertical Timeline Log for Mobile & Audit -->
+        <div class="space-y-3 pt-2">
+          @for (log of e.timeline; track log.timestamp) {
+            <div class="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+              <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
+                <mat-icon class="text-xs">check_circle</mat-icon>
+              </div>
+              <div class="flex-1 text-xs">
+                <div class="flex justify-between items-center font-bold text-zinc-900 dark:text-zinc-100">
+                  <span class="uppercase font-extrabold text-blue-600 dark:text-blue-400">{{ log.label }}</span>
+                  <span class="font-mono text-[10px] text-zinc-400">{{ log.timestamp | date:'short' }}</span>
+                </div>
+                @if (log.remarks) {
+                  <p class="text-zinc-500 dark:text-zinc-400 mt-1 font-mono text-[11px]">{{ log.remarks }}</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- DETAILS & QUOTATION GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Model Specifications -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-lg space-y-4">
+          <h3 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-2">
+            <mat-icon class="text-sm">layers</mat-icon> Printing Specifications
+          </h3>
+
+          <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+              <span class="block text-[9px] uppercase text-zinc-400 font-bold">Material & Color</span>
+              <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.material }} ({{ e.color }})</span>
+            </div>
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+              <span class="block text-[9px] uppercase text-zinc-400 font-bold">Quantity</span>
+              <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.quantity }} Units</span>
+            </div>
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+              <span class="block text-[9px] uppercase text-zinc-400 font-bold">Layer Height & Infill</span>
+              <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.layerHeight }} / {{ e.infillPercent }}%</span>
+            </div>
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+              <span class="block text-[9px] uppercase text-zinc-400 font-bold">Est. Volume & Weight</span>
+              <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.volumeCm3 }} cm³ ({{ e.weightGrams }}g)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Quotation Card -->
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-lg space-y-4">
+          <h3 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-2">
+            <mat-icon class="text-sm">receipt</mat-icon> Official Quotation & Billing
+          </h3>
+
+          @if (e.quotation; as q) {
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+                <span>Material Cost</span>
+                <span>₹{{ q.materialCost | number }}</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+                <span>Machine Time & Processing</span>
+                <span>₹{{ q.printingCost + q.machineFee + q.laborFee | number }}</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400">
+                <span>Shipping & Delivery</span>
+                <span>₹{{ q.shippingFee | number }}</span>
+              </div>
+              <div class="flex justify-between py-2 text-sm font-black uppercase text-zinc-900 dark:text-white pt-2">
+                <span>Total Quotation</span>
+                <span class="text-blue-600 dark:text-blue-400">₹{{ q.total | number }}</span>
+              </div>
+
+              <!-- Customer Actions -->
+              @if (e.status === 'quotation_generated' || e.status === 'waiting_customer_approval') {
+                <div class="pt-3 flex gap-3">
+                  <button (click)="acceptQuote()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider py-2.5 rounded-xl cursor-pointer transition-all border-none">
+                    Accept & Pay Quote
+                  </button>
+                  <button (click)="rejectQuote()" class="px-4 bg-zinc-200 dark:bg-zinc-800 hover:bg-red-500 hover:text-white text-zinc-700 dark:text-zinc-300 font-bold text-xs uppercase py-2.5 rounded-xl cursor-pointer transition-all border-none">
+                    Decline
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-600 dark:text-amber-400">
+              <p class="font-bold uppercase">Estimated Base Cost: ₹{{ e.estimatedCost | number }}</p>
+              <p class="text-[10px] mt-1 text-zinc-500 dark:text-zinc-400 font-mono">Official quotation review in progress by 3D Galaxy manufacturing node.</p>
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- ASSOCIATED STORAGE FILES CARD -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-lg space-y-4">
+        <h3 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-2">
+          <mat-icon class="text-sm">folder_zip</mat-icon> Request Documents & Files (Firebase Storage)
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          @for (file of files(); track file.id) {
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 flex items-center justify-between font-mono text-xs">
+              <div class="flex items-center gap-3 truncate max-w-[70%]">
+                <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                  <mat-icon class="text-sm">insert_drive_file</mat-icon>
+                </div>
+                <div class="truncate">
+                  <span class="font-extrabold text-zinc-900 dark:text-zinc-100 block truncate">{{ file.fileName }}</span>
+                  <span class="text-[9px] text-zinc-400 font-mono">Folder: {{ file.folder }} • {{ file.fileSize }}</span>
+                </div>
+              </div>
+
+              <button (click)="downloadFile(file)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] uppercase rounded-xl border-none cursor-pointer flex items-center gap-1 transition-all">
+                <mat-icon class="text-xs">download</mat-icon>
+                <span>Download</span>
+              </button>
+            </div>
+          }
+
+          @if (files().length === 0) {
+            <p class="text-xs text-zinc-400 font-mono py-2 col-span-2">No downloadable files attached to this request yet.</p>
+          }
+        </div>
+      </div>
+
+    </div>
+  } @else if (searched() && !loading()) {
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 text-center space-y-3">
+      <mat-icon class="text-zinc-400 text-4xl scale-150">error_outline</mat-icon>
+      <h3 class="text-base font-extrabold uppercase text-zinc-900 dark:text-white">No Service Request Found</h3>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400">Please check your tracking number or enquiry ID and try searching again.</p>
+    </div>
+  }
+
+</div>

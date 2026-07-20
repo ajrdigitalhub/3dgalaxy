@@ -411,8 +411,7 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
   }
 
   buyNow(product: Product) {
-    this.ds.addToCart(product, 1);
-    this.toastService.success(`${product.name} added to cart`);
+    this.ds.setBuyNowItem({ product, quantity: 1 });
     this.router.navigate(["/checkout"]);
   }
 

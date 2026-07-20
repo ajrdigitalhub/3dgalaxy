@@ -18,13 +18,8 @@
     </div>
     <!-- Step Indicator (Desktop) -->
     <div class="hidden md:flex items-center gap-2">
-      @if (ds.groupedCartItems().length > 0) {
-      <a [routerLink]="['/product', ds.groupedCartItems()[0].product.slug]" class="block w-full h-full">
-        <!-- <img
-          [src]="ds.getProductImage(ds.groupedCartItems()[0])"
-          class="w-full h-full object-contain"
-          referrerpolicy="no-referrer"
-        /> -->
+      @if (groupedCheckoutItems().length > 0) {
+      <a [routerLink]="['/product', groupedCheckoutItems()[0].product.slug]" class="block w-full h-full">
       </a>
       }
     </div>
@@ -448,7 +443,7 @@
 
           <!-- Cart Items -->
           <div class="space-y-4 max-h-[35vh] overflow-y-auto pr-2">
-            @for (item of ds.groupedCartItems(); track item.product.id +
+            @for (item of groupedCheckoutItems(); track item.product.id +
             (item.variant?.id || '')) {
             <div class="space-y-2">
               <div class="flex gap-3 items-start">

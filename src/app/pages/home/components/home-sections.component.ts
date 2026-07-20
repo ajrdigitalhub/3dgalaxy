@@ -657,60 +657,70 @@ export class HomeNewsletterComponent {
         </h3>
       </div>
 
-      <div class="space-y-12">
+      <div class="space-y-16">
         @for (
           group of shopByCategoryGroups();
           track group.category.id;
           let idx = $index
         ) {
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-            <!-- Large Card -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+            <!-- Large Featured Category Hero Card -->
             <div
-              class="lg:col-span-5 bg-neutral-100 dark:bg-neutral-900 rounded-[2.5rem] overflow-hidden relative group p-8 md:p-12 flex flex-col justify-end min-h-[500px] lg:min-h-[550px]"
+              class="lg:col-span-5 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 rounded-[3rem] overflow-hidden relative group p-8 md:p-12 flex flex-col justify-end min-h-[520px] lg:min-h-[580px] border border-neutral-800/80 shadow-2xl"
               [class.lg:order-2]="idx % 2 !== 0"
               appScrollReveal="scale-in"
             >
-              <img
-                [src]="
-                  group.category.image ||
-                  'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=800'
-                "
-                class="absolute inset-0 w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
-                referrerpolicy="no-referrer"
-                loading="lazy"
-                decoding="async"
-              />
-              <div
-                class="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-900/60 to-transparent pointer-events-none"
-              ></div>
+              <!-- Featured Category Background Image -->
+              <div class="absolute inset-0 w-full h-full overflow-hidden">
+                <img
+                  [src]="
+                    group.category.image ||
+                    group.category.banner ||
+                    'https://images.unsplash.com/photo-1631035626723-cd8e9ef9e728?auto=format&fit=crop&q=80&w=1200'
+                  "
+                  [alt]="group.category.name"
+                  class="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105"
+                  referrerpolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div
+                  class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/75 to-neutral-950/20 pointer-events-none"
+                ></div>
+              </div>
 
               <div class="relative z-10 space-y-4 text-left">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
+                  <mat-icon class="text-xs">star</mat-icon>
+                  FEATURED CATEGORY
+                </span>
+
                 <h4
-                  class="text-4xl font-black text-white tracking-tight uppercase font-display"
+                  class="text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-display drop-shadow-md"
                 >
                   {{ group.category.name }}
                 </h4>
                 <p
-                  class="text-neutral-300 text-sm leading-relaxed max-w-sm line-clamp-2"
+                  class="text-neutral-300 text-sm md:text-base leading-relaxed max-w-md line-clamp-3 font-medium"
                 >
                   {{
                     group.category.description ||
-                      "Explore the latest collection of premium " +
+                      "Explore our full range of genuine, high-performance " +
                         group.category.name +
-                        " for your next project."
+                        " curated for industrial and creative projects."
                   }}
                 </p>
                 <a
-                  [routerLink]="['/category', group.category.slug]"
-                  class="inline-flex h-12 px-6 bg-white hover:bg-orange-600 text-neutral-950 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest items-center gap-2 transition-colors duration-300 shadow-md"
+                  [routerLink]="['/category', group.category.slug || group.category.id]"
+                  class="inline-flex h-13 px-8 bg-[#f54f00] hover:bg-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest items-center gap-3 transition-all duration-300 shadow-xl shadow-orange-500/20 hover:scale-[1.03]"
                 >
-                  VIEW COLLECTION
-                  <mat-icon class="scale-75">arrow_forward</mat-icon>
+                  <span>EXPLORE COLLECTION</span>
+                  <mat-icon class="scale-90">arrow_forward</mat-icon>
                 </a>
               </div>
             </div>
 
-            <!-- Medium Cards Grid -->
+            <!-- Medium Products Cards Grid -->
             <div
               class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"
               [class.lg:order-1]="idx % 2 !== 0"
@@ -726,19 +736,21 @@ export class HomeNewsletterComponent {
                   class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item"
                 >
                   <div
-                    class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1.5 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
+                    class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-2 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
                   >
                     <img
-                      [src]="p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]) || 'https://via.placeholder.com/150'"
+                      [src]="p.primaryImage"
+                      [alt]="p.name"
                       class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
                       referrerpolicy="no-referrer"
                       loading="lazy"
                       decoding="async"
                     />
-                    @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]))) {
+                    @if (p.secondaryImage) {
                       <img
                         [src]="p.secondaryImage"
-                        class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                        [alt]="p.name"
+                        class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto transform group-hover/item:scale-105 transition-transform duration-700 ease-out"
                         referrerpolicy="no-referrer"
                         loading="lazy"
                         decoding="async"
@@ -750,7 +762,7 @@ export class HomeNewsletterComponent {
                   >
                     <span
                       class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108] truncate"
-                      >{{ p.brand }}</span
+                      >{{ p.brandName || p.brand || '3D GALAXY' }}</span
                     >
                     <h5
                       class="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors"
@@ -805,53 +817,132 @@ export class HomeShopByCategoryComponent {
       .filter(Boolean);
   });
 
+  featuredCategoryObjects = computed(() => {
+    const categories = this.ds.categories();
+    const selectedSlugs = this.selectedCategorySlugs();
+
+    let featured: Category[] = [];
+
+    // 1. Check settingsService homepageSections.featuredCategories
+    if (selectedSlugs.length > 0) {
+      featured = selectedSlugs
+        .map((slug) =>
+          categories.find(
+            (c) =>
+              String(c.slug).toLowerCase() === slug ||
+              String(c.id).toLowerCase() === slug ||
+              String(c.name).toLowerCase() === slug
+          )
+        )
+        .filter(Boolean) as Category[];
+    }
+
+    // 2. Check categories where isFeatured === true in database
+    if (featured.length === 0) {
+      featured = categories.filter(
+        (c) =>
+          c.isFeatured === true ||
+          (c as any).is_featured === true ||
+          (c as any).is_featured === "true" ||
+          (c as any).isFeatured === "true"
+      );
+    }
+
+    // 3. Fallback to all root categories (no parentId)
+    if (featured.length === 0) {
+      featured = categories.filter((c) => {
+        const pId = c.parentId || c.parent_id;
+        return !pId || pId === "null" || pId === "undefined";
+      });
+    }
+
+    // 4. Final fallback if still empty: return all categories
+    if (featured.length === 0) {
+      featured = categories;
+    }
+
+    return featured;
+  });
+
   shopByCategoryGroups = computed(() => {
     const products = this.ds.products();
     const categories = this.ds.categories();
-    const selectedSlugs = this.selectedCategorySlugs();
-    const targetSlugs =
-      selectedSlugs.length > 0 ? selectedSlugs : ["3d-printers", "materials"];
-    const groups = [];
+    const featuredCats = this.featuredCategoryObjects();
     const isDealer = this.isDealerPriceActive();
 
-    for (const slug of targetSlugs) {
-      const category = categories.find(
-        (c) => String(c.slug).toLowerCase() === slug || String(c.id) === slug,
-      );
-      if (!category) continue;
+    const groups = [];
 
-      const childIds = categories
-        .filter((c) => c.parent_id === category.id)
-        .map((c) => c.id);
-      const targetIds = [category.id, ...childIds];
+    for (const category of featuredCats) {
+      const getDescendantIds = (parentId: string): string[] => {
+        const children = categories.filter(
+          (c) => (c.parentId || c.parent_id) === parentId
+        );
+        let ids: string[] = [parentId];
+        for (const child of children) {
+          ids = ids.concat(getDescendantIds(child.id));
+        }
+        return ids;
+      };
 
-      const catProducts = products
-        .filter((p) =>
-          targetIds.includes(
-            p.category_id || p.categoryId || p.category?.id || "",
-          ),
-        )
+      const targetIds = getDescendantIds(category.id);
+
+      let catProducts = products
+        .filter((p) => {
+          const pCatId = p.categoryId || p.category_id || p.category?.id || "";
+          const pCatSlug = p.category?.slug || "";
+          return (
+            targetIds.includes(pCatId) ||
+            targetIds.includes(pCatSlug) ||
+            pCatSlug === category.slug ||
+            pCatId === category.id
+          );
+        })
         .sort((a, b) => {
           const aScore =
-            (a as any).salesCount ||
-            0 + (a.reviews?.length || 0) + (a.avgRating || 0);
+            ((a as any).salesCount || 0) +
+            (a.reviews?.length || 0) +
+            (a.avgRating || 0);
           const bScore =
-            (b as any).salesCount ||
-            0 + (b.reviews?.length || 0) + (b.avgRating || 0);
+            ((b as any).salesCount || 0) +
+            (b.reviews?.length || 0) +
+            (b.avgRating || 0);
           return (
             bScore - aScore ||
             String(a.name || "").localeCompare(String(b.name || ""))
           );
-        })
-        .slice(0, 5)
-        .map((p) => ({
-          ...p,
-          activePrice: isDealer
-            ? p.dealerPrice || p.dealer_price || p.salePrice || p.sale_price
-            : p.salePrice || p.sale_price || p.mrp,
-        }));
+        });
 
-      groups.push({ category, products: catProducts });
+      if (catProducts.length === 0 && products.length > 0) {
+        catProducts = products.slice(0, 4);
+      } else {
+        catProducts = catProducts.slice(0, 4);
+      }
+
+      const formattedProducts = catProducts.map((p) => {
+        const prim =
+          p.primaryImage ||
+          (Array.isArray(p.images) && (p.images[0]?.url || p.images[0])) ||
+          "https://via.placeholder.com/400x400?text=3D+Galaxy";
+
+        let sec = p.secondaryImage;
+        if (!sec || sec === prim) {
+          if (Array.isArray(p.images) && p.images.length > 1) {
+            sec = typeof p.images[1] === "string" ? p.images[1] : p.images[1]?.url;
+          }
+        }
+
+        return {
+          ...p,
+          primaryImage: prim,
+          secondaryImage: sec && sec !== prim ? sec : null,
+          brandName: typeof p.brand === "object" ? (p.brand as any)?.name : p.brand,
+          activePrice: isDealer
+            ? p.dealerPrice || p.dealer_price || p.salePrice || p.sale_price || p.basePrice || (p as any).price || p.mrp || 0
+            : p.salePrice || p.sale_price || p.basePrice || (p as any).price || p.mrp || 0,
+        };
+      });
+
+      groups.push({ category, products: formattedProducts });
     }
 
     return groups;

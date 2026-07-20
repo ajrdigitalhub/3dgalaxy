@@ -1769,10 +1769,10 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     <tr
                       class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800"
                     >
+                      <th class="py-2.5 text-left w-20 px-2">Actions</th>
+                      <th class="py-2.5 text-center w-16">Count</th>
                       <th class="py-2.5">Category Name</th>
-                      <th class="py-2.5 text-center">Products</th>
-                      <th class="py-2.5 text-center">Status</th>
-                      <th class="py-2.5 text-right">Actions</th>
+                      <th class="py-2.5 text-right pr-2">Status</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -1780,6 +1780,38 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       <tr
                         class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100"
                       >
+                        <!-- 1. ACTIONS ON THE LEFT -->
+                        <td class="py-3 text-left px-2">
+                          <div class="inline-flex items-center gap-1">
+                            <button
+                              (click)="admin.startCategoryEdit(c)"
+                              title="Edit Category"
+                              class="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg cursor-pointer bg-transparent border-none transition-colors"
+                            >
+                              <mat-icon class="text-sm font-bold w-4 h-4 flex items-center justify-center"
+                                >edit</mat-icon
+                              >
+                            </button>
+                            <button
+                              (click)="admin.deleteCategory(c.id)"
+                              title="Delete Category"
+                              class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg cursor-pointer bg-transparent border-none transition-colors"
+                            >
+                              <mat-icon class="text-sm font-bold w-4 h-4 flex items-center justify-center"
+                                >delete_outline</mat-icon
+                              >
+                            </button>
+                          </div>
+                        </td>
+
+                        <!-- 2. PRODUCT COUNT -->
+                        <td
+                          class="py-3 text-center font-mono font-extrabold text-zinc-600 dark:text-zinc-400"
+                        >
+                          {{ getProductCount(c.id) }}
+                        </td>
+
+                        <!-- 3. CATEGORY NAME & TREE -->
                         <td class="py-3 font-semibold">
                           <div
                             class="flex items-center gap-2"
@@ -1811,13 +1843,10 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                             </div>
                           </div>
                         </td>
-                        <td
-                          class="py-3 text-center font-mono font-bold text-zinc-500"
-                        >
-                          {{ getProductCount(c.id) }}
-                        </td>
-                        <td class="py-3 text-center">
-                          <div class="inline-flex gap-1">
+
+                        <!-- 4. STATUS -->
+                        <td class="py-3 text-right pr-2">
+                          <div class="inline-flex items-center justify-end gap-1">
                             <span
                               [class]="
                                 c.isActive !== false
@@ -1835,26 +1864,6 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                                 FEATURED
                               </span>
                             }
-                          </div>
-                        </td>
-                        <td class="py-3 text-right">
-                          <div class="inline-flex gap-1.5">
-                            <button
-                              (click)="admin.startCategoryEdit(c)"
-                              class="p-1 text-blue-500 hover:text-blue-700 cursor-pointer bg-transparent border-none"
-                            >
-                              <mat-icon class="text-sm font-bold"
-                                >edit</mat-icon
-                              >
-                            </button>
-                            <button
-                              (click)="admin.deleteCategory(c.id)"
-                              class="p-1 text-red-400 hover:text-red-600 cursor-pointer bg-transparent border-none"
-                            >
-                              <mat-icon class="text-sm font-bold"
-                                >delete_outline</mat-icon
-                              >
-                            </button>
                           </div>
                         </td>
                       </tr>

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "ADM-DEV-1784573615809",
+    "adminId": "admin-main",
+    "deviceName": "Windows (Chrome)",
+    "browser": "Chrome",
+    "browserVersion": "Latest",
+    "operatingSystem": "Windows",
+    "platform": "Desktop",
+    "fcmToken": "dhXMS9tm9NWENRBLM47clx:APA91bGrERibWOw36IfCBMXtVHgjl5mYe7IbOZd-sMZwJFh3IYFONEilqq293e6WpHT4x2yBTVejrb8gE1NFhIV9BIHl--52acOmWd6YLqboox_R1G5nYFs",
+    "deviceId": "DEV-6d57643659",
+    "isActive": true,
+    "notificationPermission": "granted",
+    "lastSeen": "2026-07-20T18:53:54.999Z",
+    "lastTokenRefresh": "2026-07-20T18:53:54.999Z",
+    "createdAt": "2026-07-20T18:53:35.809Z",
+    "updatedAt": "2026-07-20T18:53:54.999Z"
+  }
+]

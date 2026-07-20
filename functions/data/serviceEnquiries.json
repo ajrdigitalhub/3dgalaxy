@@ -1,0 +1,725 @@
+[
+  {
+    "id": "ENQ-538255",
+    "trackingNumber": "TRK-792381",
+    "createdAt": "2026-07-20T19:29:46.071Z",
+    "updatedAt": "2026-07-20T19:29:46.071Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "murugan no.plate (8) (1).stl",
+    "fileSize": "1.8 MB",
+    "fileUrl": "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/services/TRK-792381/original/murugan%20no.plate%20%288%29%20%281%29.stl?GoogleAccessId=firebase-adminsdk-fbsvc%40ajr3dgalaxy.iam.gserviceaccount.com&Expires=1785180591&Signature=On%2Bl71H1lpctrAv2jXjkzIrwwhGNOk7bn8kuBhnuIYQhy3W6X%2FwVxVQLGKoy1PejfuoQUp5k52PBhabTvdluhWd3opLhwLJ1KvBJbvn1MYQqv5wU02Clm24JMVcZ9DsqUxNsYYxxR6wAJp5kkInks0qen7MRBMvEHi2lvdugV3mS1I%2FelyNDP%2FqMGUMVgxWs2dWXuNib7FR1iPSa%2Bb610HHuZi89eEPTDdnv0LdsbzR9a3ehRfbccDZsb8mmgwbM6nd6Q9mRGVI0hBDfxN%2FHPmqdS064dXlzvIplpDxQPdIPe7j5wr1G3J6exhJcCmOhPxkMoDqYV7bM0xj0GZJdug%3D%3D",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 62,
+      "y": 6.2,
+      "z": 33.95
+    },
+    "volumeCm3": 7.73,
+    "surfaceAreaCm2": 58.1,
+    "weightGrams": 30,
+    "triangleCount": 37264,
+    "estimatedHours": 2.5,
+    "material": "ABS",
+    "color": "Red",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T19:29:46.071Z",
+        "remarks": "Customer uploaded STL file \"murugan no.plate (8) (1).stl\" into Firebase Storage.",
+        "updatedBy": "admin123@gmail.com"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784575791931",
+        "type": "push",
+        "sentAt": "2026-07-20T19:29:46.071Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-538255 (Tracking: TRK-792381) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-328378",
+    "trackingNumber": "TRK-997222",
+    "createdAt": "2026-07-20T19:12:26.683Z",
+    "updatedAt": "2026-07-20T19:28:51.781Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order.stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/services/TRK-997222/original/yamaha%20order.stl?GoogleAccessId=firebase-adminsdk-fbsvc%40ajr3dgalaxy.iam.gserviceaccount.com&Expires=1785179554&Signature=f80UF0LZu2e0bQ0%2F8UvY3swoC514ObV3MBarS7Ix8vQPhmV3eCxc1CR90KBhBBxznoA7MTnbygYYcqUh41%2Bl6%2F6RJicDjd2xELsZ1pPQoDiSpk2u%2B%2F86snm5UED5MjJdsVnp%2B%2Bk9xFGNnHDKMS7s38FmxymHXG4PBXzHCUWPpxQkYb3%2Bs1%2Bix7WM4ncCwpFGZ%2FildyxEYARoso%2BjvWbZdz3RTfobKvkSqKEUiPMmOnk5lSICihCodMBiD%2B%2FfChNcymvQjXsY97exL1eUzmGFpHthnHd6ODiiwdkXIK6jC5e4UPBp8WKLHoSymHW9UlzgLgo6CLwpYATHZp7AP%2BzyGw%3D%3D",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 30,
+    "triangleCount": 14652,
+    "estimatedHours": 2.5,
+    "material": "PLA",
+    "color": "Blue",
+    "infillPercent": 20,
+    "layerHeight": "0.1 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "ready_for_dispatch",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T19:12:26.683Z",
+        "remarks": "Customer uploaded STL file \"yamaha order.stl\" into Firebase Storage.",
+        "updatedBy": "admin123"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-20T19:12:59.295Z",
+        "remarks": "File \"yamaha order.stl\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "ready_for_dispatch",
+        "label": "Ready for Fleet Dispatch",
+        "timestamp": "2026-07-20T19:28:51.781Z",
+        "remarks": "Status updated to Ready for Fleet Dispatch by Admin.",
+        "updatedBy": "Admin Staff",
+        "notificationSent": true
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784574754219",
+        "type": "push",
+        "sentAt": "2026-07-20T19:12:26.683Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-328378 (Tracking: TRK-997222) has been received successfully!"
+      },
+      {
+        "id": "NOTIF-1784575731781",
+        "type": "push",
+        "sentAt": "2026-07-20T19:28:51.781Z",
+        "title": "Service Update: Ready for Fleet Dispatch",
+        "body": "Your 3D Print Request #ENQ-328378 status is now \"Ready for Fleet Dispatch\"."
+      }
+    ]
+  },
+  {
+    "id": "ENQ-818713",
+    "trackingNumber": "TRK-765286",
+    "createdAt": "2026-07-20T19:02:57.326Z",
+    "updatedAt": "2026-07-20T19:02:57.326Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order.stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "/api/services/file/stream/TRK-765286/original/yamaha%20order.stl",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 30,
+    "triangleCount": 14652,
+    "estimatedHours": 2.5,
+    "material": "PLA",
+    "color": "Blue",
+    "infillPercent": 20,
+    "layerHeight": "0.1 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T19:02:57.326Z",
+        "remarks": "Customer uploaded STL file \"yamaha order.stl\" into services storage folder.",
+        "updatedBy": "admin123@gmail.com"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-20T19:04:27.380Z",
+        "remarks": "File \"yamaha order.stl\" from services/TRK-765286/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-20T19:04:38.042Z",
+        "remarks": "File \"yamaha order.stl\" from services/TRK-765286/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784574177332",
+        "type": "push",
+        "sentAt": "2026-07-20T19:02:57.326Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-818713 (Tracking: TRK-765286) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-889531",
+    "trackingNumber": "TRK-389581",
+    "createdAt": "2026-07-20T18:56:13.723Z",
+    "updatedAt": "2026-07-20T18:56:13.723Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "murugan no.plate (7).stl",
+    "fileSize": "1.7 MB",
+    "fileUrl": "",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 62,
+      "y": 6.2,
+      "z": 33.95
+    },
+    "volumeCm3": 7.72,
+    "surfaceAreaCm2": 57.89,
+    "weightGrams": 30,
+    "triangleCount": 35922,
+    "estimatedHours": 2.5,
+    "material": "ABS",
+    "color": "Red",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:56:13.723Z",
+        "remarks": "Customer uploaded STL file \"murugan no.plate (7).stl\" to Firebase Storage services/ path.",
+        "updatedBy": "admin123@gmail.com"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784573773723",
+        "type": "push",
+        "sentAt": "2026-07-20T18:56:13.723Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-889531 (Tracking: TRK-389581) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-912845",
+    "trackingNumber": "TRK-130218",
+    "createdAt": "2026-07-20T18:46:47.397Z",
+    "updatedAt": "2026-07-20T18:46:47.397Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order (1).stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.6,
+      "z": 32
+    },
+    "volumeCm3": 8.64,
+    "surfaceAreaCm2": 61.04,
+    "weightGrams": 30,
+    "triangleCount": 14654,
+    "estimatedHours": 2.5,
+    "material": "ABS",
+    "color": "Black",
+    "infillPercent": 20,
+    "layerHeight": "0.1 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:46:47.397Z",
+        "remarks": "Customer uploaded STL file \"yamaha order (1).stl\" to Firebase Storage services/ path.",
+        "updatedBy": "admin123@gmail.com"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784573207397",
+        "type": "push",
+        "sentAt": "2026-07-20T18:46:47.397Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-912845 (Tracking: TRK-130218) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-646825",
+    "trackingNumber": "TRK-917915",
+    "createdAt": "2026-07-20T18:42:52.118Z",
+    "updatedAt": "2026-07-20T18:42:52.118Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "murugan no.plate (6).stl",
+    "fileSize": "1.6 MB",
+    "fileUrl": "",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 60.22,
+      "y": 6.2,
+      "z": 34
+    },
+    "volumeCm3": 7.73,
+    "surfaceAreaCm2": 58.04,
+    "weightGrams": 30,
+    "triangleCount": 33004,
+    "estimatedHours": 2.5,
+    "material": "TPU",
+    "color": "Yellow",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:42:52.118Z",
+        "remarks": "Customer uploaded STL file \"murugan no.plate (6).stl\" to Firebase Storage services/ path.",
+        "updatedBy": "admin123"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (6).stl)",
+        "timestamp": "2026-07-20T18:43:26.681Z",
+        "remarks": "File \"murugan no.plate (6).stl\" from Firebase Storage services/TRK-917915/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (6).stl)",
+        "timestamp": "2026-07-20T18:43:33.835Z",
+        "remarks": "File \"murugan no.plate (6).stl\" from Firebase Storage services/TRK-917915/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784572972118",
+        "type": "push",
+        "sentAt": "2026-07-20T18:42:52.118Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-646825 (Tracking: TRK-917915) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-105452",
+    "trackingNumber": "TRK-968303",
+    "createdAt": "2026-07-20T18:33:37.210Z",
+    "updatedAt": "2026-07-20T18:33:37.210Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order.stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "/api/services/file/stream/TRK-968303/original/yamaha%20order.stl",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 30,
+    "triangleCount": 14652,
+    "estimatedHours": 2.5,
+    "material": "PETG",
+    "color": "Grey",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:33:37.210Z",
+        "remarks": "Customer uploaded STL file \"yamaha order.stl\" into services storage folder.",
+        "updatedBy": "admin123@gmail.com"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-20T18:33:57.766Z",
+        "remarks": "File \"yamaha order.stl\" from services/TRK-968303/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-20T18:34:12.104Z",
+        "remarks": "File \"yamaha order.stl\" from services/TRK-968303/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Uploaded (QUOTATION)",
+        "timestamp": "2026-07-20T18:35:45.689Z",
+        "remarks": "New file \"ENQ-105452_Official_Quotation.pdf\" (v1) saved to services/TRK-968303/quotation/ by Admin Console.",
+        "updatedBy": "Admin Console"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784572417216",
+        "type": "push",
+        "sentAt": "2026-07-20T18:33:37.210Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-105452 (Tracking: TRK-968303) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-847331",
+    "trackingNumber": "TRK-455073",
+    "createdAt": "2026-07-20T18:21:09.311Z",
+    "updatedAt": "2026-07-20T18:21:09.311Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "murugan no.plate (6).stl",
+    "fileSize": "1.6 MB",
+    "fileUrl": "/api/services/file/stream/TRK-455073/original/murugan%20no.plate%20(6).stl",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 60.22,
+      "y": 6.2,
+      "z": 34
+    },
+    "volumeCm3": 7.73,
+    "surfaceAreaCm2": 58.04,
+    "weightGrams": 30,
+    "triangleCount": 33004,
+    "estimatedHours": 2.5,
+    "material": "ABS",
+    "color": "White",
+    "infillPercent": 20,
+    "layerHeight": "0.2 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:21:09.311Z",
+        "remarks": "Customer uploaded STL file \"murugan no.plate (6).stl\" into services storage folder.",
+        "updatedBy": "admin123"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (6).stl)",
+        "timestamp": "2026-07-20T18:22:10.552Z",
+        "remarks": "File \"murugan no.plate (6).stl\" from services/TRK-455073/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (6).stl)",
+        "timestamp": "2026-07-20T18:22:25.440Z",
+        "remarks": "File \"murugan no.plate (6).stl\" from services/TRK-455073/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (6).stl)",
+        "timestamp": "2026-07-20T18:22:34.514Z",
+        "remarks": "File \"murugan no.plate (6).stl\" from services/TRK-455073/original/ downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784571669328",
+        "type": "push",
+        "sentAt": "2026-07-20T18:21:09.311Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-847331 (Tracking: TRK-455073) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-280808",
+    "trackingNumber": "TRK-711872",
+    "createdAt": "2026-07-20T18:07:57.855Z",
+    "updatedAt": "2026-07-20T18:07:57.855Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "murugan no.plate (4).stl",
+    "fileSize": "1.6 MB",
+    "fileUrl": "",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 60.22,
+      "y": 6.2,
+      "z": 34
+    },
+    "volumeCm3": 7.8,
+    "surfaceAreaCm2": 57.69,
+    "weightGrams": 30,
+    "triangleCount": 33338,
+    "estimatedHours": 2.5,
+    "material": "PETG",
+    "color": "Grey",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T18:07:57.855Z",
+        "remarks": "Customer uploaded STL file and submitted service enquiry.",
+        "updatedBy": "admin123@gmail.com"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (4).stl)",
+        "timestamp": "2026-07-20T18:08:54.888Z",
+        "remarks": "File \"murugan no.plate (4).stl\" from original folder downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (4).stl)",
+        "timestamp": "2026-07-20T18:09:02.702Z",
+        "remarks": "File \"murugan no.plate (4).stl\" from original folder downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (4).stl)",
+        "timestamp": "2026-07-20T18:10:42.881Z",
+        "remarks": "File \"murugan no.plate (4).stl\" from original folder downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (4).stl)",
+        "timestamp": "2026-07-20T18:11:12.647Z",
+        "remarks": "File \"murugan no.plate (4).stl\" from original folder downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (murugan no.plate (4).stl)",
+        "timestamp": "2026-07-20T18:11:53.939Z",
+        "remarks": "File \"murugan no.plate (4).stl\" from original folder downloaded by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784570877855",
+        "type": "push",
+        "sentAt": "2026-07-20T18:07:57.855Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-280808 (Tracking: TRK-711872) has been received successfully!"
+      }
+    ]
+  },
+  {
+    "id": "ENQ-712773",
+    "trackingNumber": "TRK-121532",
+    "createdAt": "2026-07-20T17:45:13.558Z",
+    "updatedAt": "2026-07-20T18:05:38.057Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123@gmail.com",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order.stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 3.7,
+    "triangleCount": 14652,
+    "estimatedHours": 1,
+    "material": "TPU",
+    "color": "Purple",
+    "infillPercent": 20,
+    "layerHeight": "0.2 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "waiting_customer_approval",
+    "estimatedCost": 438,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-20T17:45:13.558Z",
+        "remarks": "Customer uploaded STL file and submitted service enquiry.",
+        "updatedBy": "admin123@gmail.com"
+      },
+      {
+        "status": "quotation_generated",
+        "label": "Official Quotation Generated",
+        "timestamp": "2026-07-20T17:46:43.513Z",
+        "remarks": "Official quotation generated: ₹475",
+        "updatedBy": "Admin Staff",
+        "notificationSent": true
+      },
+      {
+        "status": "waiting_customer_approval",
+        "label": "Waiting for Customer Approval",
+        "timestamp": "2026-07-20T18:05:38.057Z",
+        "remarks": "Status updated to Waiting for Customer Approval by Admin.",
+        "updatedBy": "Admin Staff",
+        "notificationSent": true
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784569513558",
+        "type": "push",
+        "sentAt": "2026-07-20T17:45:13.558Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-712773 (Tracking: TRK-121532) has been received successfully!"
+      },
+      {
+        "id": "NOTIF-1784570738057",
+        "type": "push",
+        "sentAt": "2026-07-20T18:05:38.057Z",
+        "title": "Service Update: Waiting for Customer Approval",
+        "body": "Your 3D Print Request #ENQ-712773 status is now \"Waiting for Customer Approval\"."
+      }
+    ],
+    "quotation": {
+      "materialCost": 197,
+      "printingCost": 153,
+      "machineFee": 0,
+      "laborFee": 5,
+      "postProcessingFee": 0,
+      "shippingFee": 120,
+      "taxAmount": 0,
+      "discountAmount": 0,
+      "total": 475,
+      "validUntil": "2026-07-27T17:46:43.514Z",
+      "notes": "Quotation valid for 7 days. Tax included where applicable."
+    }
+  }
+]

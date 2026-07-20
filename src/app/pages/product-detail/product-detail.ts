@@ -13,7 +13,7 @@ import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterModule, Router } from "@angular/router";
 import { Title, Meta, DomSanitizer } from "@angular/platform-browser";
 import { MatIconModule } from "@angular/material/icon";
-import { DatastoreService, Product, Review } from "../../services/datastore";
+import { DatastoreService, Product, ProductVariant, Review } from "../../services/datastore";
 import { LoadingService } from "../../core/services/loading.service";
 import { ApiService } from "../../services/api.service";
 import { ToastService } from "../../shared/components/toast/toast.service";
@@ -1230,8 +1230,14 @@ export class ProductDetail {
   }
 
   buyNow(p: Product) {
+    if (!p || p.isActive === false) {
+      this.toastService.error("Product is currently unavailable.");
+      return;
+    }
+
+    let selected: ProductVariant | null = null;
     if (p.variants && p.variants.length > 0) {
-      const selected = this.selectedVariant();
+      selected = this.selectedVariant();
       if (!selected) {
         this.toastService.error("Please select all variant options.");
         return;
@@ -1240,18 +1246,21 @@ export class ProductDetail {
         this.toastService.error("Selected variant is out of stock.");
         return;
       }
-      this.router.navigate(["/checkout"], {
-        state: { product: p, quantity: this.quantity(), variant: selected },
-      });
     } else {
       if (p.stock <= 0) {
         this.toastService.error("Product is out of stock.");
         return;
       }
-      this.router.navigate(["/checkout"], {
-        state: { product: p, quantity: this.quantity() },
-      });
     }
+
+    this.ds.setBuyNowItem({
+      product: p,
+      variant: selected,
+      quantity: this.quantity() || 1,
+    });
+
+    this.toastService.success(`Proceeding to checkout for "${p.name}"`);
+    this.router.navigate(["/checkout"]);
   }
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION

@@ -33,6 +33,7 @@ import abandonedCheckoutRoutes from "./routes/abandonedCheckout";
 import notificationRoutes from "./routes/notification";
 import pwaRoutes from "./routes/pwa";
 import headerMenuRoutes from "./routes/headerMenu";
+import marketingRoutes from "./routes/marketing";
 import homepageRoutes from "./routes/homepage";
 import { getServiceConfig } from "./controllers/settings";
 import {
@@ -130,12 +131,19 @@ app.use("/api", paymentRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", pwaRoutes);
 app.use("/api", headerMenuRoutes);
+app.use("/api", marketingRoutes);
 app.use("/api/homepage", homepageRoutes);
 import searchRoutes from "./routes/search";
 import supportRoutes from "./routes/support";
+import serviceEnquiryRoutes from "./routes/serviceEnquiry";
+import adminFcmRoutes from "./routes/adminFcm";
 
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/services", serviceEnquiryRoutes);
+app.use("/api/admin/services", serviceEnquiryRoutes);
+app.use("/api/admin/fcm", adminFcmRoutes);
+app.use("/api/notifications/admin", adminFcmRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

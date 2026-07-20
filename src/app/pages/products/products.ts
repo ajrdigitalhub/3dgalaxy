@@ -122,29 +122,31 @@ export class Products implements OnInit {
     // Handle path parameters for categorySlug and brandSlug
     this.route.params.subscribe((params) => {
       if (params["categorySlug"]) {
+        const slug = params["categorySlug"];
         const cat = this.ds
           .categories()
-          .find((c) => c.slug === params["categorySlug"]);
-        if (cat) {
-          this.updateUrlQueryParam("category", cat.id);
-          this.setSeoTags(
-            cat.name,
-            `Shop premium ${cat.name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
-            `category/${cat.slug}`,
-          );
-        }
+          .find((c) => c.slug === slug || c.id === slug);
+        const catValue = cat ? cat.id : slug;
+        this.updateUrlQueryParam("category", catValue);
+        const name = cat ? cat.name : slug.replace(/-/g, " ");
+        this.setSeoTags(
+          name,
+          `Shop premium ${name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
+          `category/${slug}`,
+        );
       } else if (params["brandSlug"]) {
+        const bSlug = params["brandSlug"];
         const b = this.ds
           .brands()
-          .find((br) => br.slug === params["brandSlug"]);
-        if (b) {
-          this.updateUrlQueryParam("brand", b.name);
-          this.setSeoTags(
-            `Buy Original ${b.name} Products Online | 3D Galaxy India`,
-            `Get authorized ${b.name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`,
-            `brand/${b.slug}`,
-          );
-        }
+          .find((br) => br.slug === bSlug || br.name === bSlug);
+        const bValue = b ? b.name : bSlug;
+        this.updateUrlQueryParam("brand", bValue);
+        const name = b ? b.name : bSlug;
+        this.setSeoTags(
+          `Buy Original ${name} Products Online | 3D Galaxy India`,
+          `Get authorized ${name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`,
+          `brand/${bSlug}`,
+        );
       } else {
         this.setSeoTags(
           "Buy 3D Printers, Filaments & Spare Parts Online | 3D Galaxy",

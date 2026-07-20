@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, Product } from '../../services/datastore';
 import { PageHeaderComponent } from '../shared/components/page-header/page-header.component';
-import { StatisticsCardComponent } from '../shared/components/statistics-card/statistics-card.component';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, MatIconModule, PageHeaderComponent, StatisticsCardComponent],
+  imports: [CommonModule, MatIconModule, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

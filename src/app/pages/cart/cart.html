@@ -78,11 +78,17 @@
           >
             <!-- Dynamic Highlight Chips (Flipkart style) -->
             <div class="absolute top-4 right-4 sm:top-6 sm:right-6 flex gap-2">
-              @if (item.product.codAvailable) {
+              @if (item.product.codAvailable !== false && (!item.variant || item.variant.codAvailable !== false)) {
               <span
-                class="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1"
-                ><mat-icon class="scale-[0.5] -mx-1">payments</mat-icon> COD
-                Eligible</span
+                class="px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 border border-emerald-500/20"
+                ><mat-icon class="scale-[0.5] -mx-1">local_shipping</mat-icon> ✅ COD
+                Available</span
+              >
+              } @else {
+              <span
+                class="px-2 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 border border-amber-500/20"
+                ><mat-icon class="scale-[0.5] -mx-1">block</mat-icon> ❌ COD
+                Unavailable</span
               >
               }
             </div>

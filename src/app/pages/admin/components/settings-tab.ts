@@ -14,11 +14,12 @@ import { ImagePickerComponent } from "../../../shared/components/image-picker/im
 import { ThemeService } from "../../../core/services/theme.service";
 import { ToastService } from "../../../shared/components/toast/toast.service";
 import { PwaSettingsTabComponent } from "./pwa-settings-tab";
+import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
 @Component({
   selector: "app-admin-settings-tab",
   standalone: true,
-  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule, PwaSettingsTabComponent],
+  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule, PwaSettingsTabComponent, MarketingTrackingTabComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
@@ -4944,6 +4945,11 @@ import { PwaSettingsTabComponent } from "./pwa-settings-tab";
             @if (activeSubTab() === "PWA Settings") {
               <app-admin-pwa-settings-tab />
             }
+
+            <!-- MARKETING & TRACKING -->
+            @if (activeSubTab() === "Marketing & Tracking") {
+              <app-admin-marketing-tracking-tab />
+            }
           </div>
         </div>
       </div>
@@ -5126,6 +5132,7 @@ export class AdminSettingsTab {
     { name: "Recent Purchase Settings", icon: "add_shopping_cart" },
     { name: "Push Settings", icon: "notifications" },
     { name: "PWA Settings", icon: "install_mobile" },
+    { name: "Marketing & Tracking", icon: "insights" },
     { name: "Shipping", icon: "local_shipping" },
     { name: "Payment Gateway", icon: "payment" },
     { name: "Newsletter", icon: "alternate_email" },
@@ -5162,6 +5169,8 @@ export class AdminSettingsTab {
         this.activeSubTab.set("Push Settings");
       } else if (active === "pwa-settings") {
         this.activeSubTab.set("PWA Settings");
+      } else if (active === "marketing-settings") {
+        this.activeSubTab.set("Marketing & Tracking");
       }
     });
   }

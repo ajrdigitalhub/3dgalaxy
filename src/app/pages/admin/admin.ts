@@ -20,6 +20,7 @@ import {
   Order,
 } from "../../services/datastore";
 import { SettingsService } from "../../core/services/settings.service";
+import { PwaService } from "../../core/services/pwa.service";
 
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonPageComponent } from "../../shared/components/skeleton/skeleton-page/skeleton-page.component";
@@ -36,6 +37,7 @@ import { AdminSettingsTab } from "./components/settings-tab";
 import { AdminPaymentsTab } from "./components/payments-tab";
 import { AdminCommunicationTab } from "./components/communication-tab";
 import { AdminAbandonedCheckoutsTab } from "./components/abandoned-checkouts-tab";
+import { AdminServiceEnquiriesTab } from "./components/service-enquiries-tab";
 import { ToastService } from "../../shared/components/toast/toast.service";
 
 export type AdminTab =
@@ -78,6 +80,7 @@ export type AdminTab =
   | "print-settings"
   | "push-settings"
   | "pwa-settings"
+  | "marketing-settings"
   | "transactions"
   | "webhook-logs"
   | "whatsapp-logs"
@@ -100,6 +103,7 @@ export type AdminTab =
     AdminPaymentsTab,
     AdminCommunicationTab,
     AdminAbandonedCheckoutsTab,
+    AdminServiceEnquiriesTab,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -111,6 +115,7 @@ export class AdminPanel {
   loadingService = inject(LoadingService);
   http = inject(HttpClient);
   settingsService = inject(SettingsService);
+  pwa = inject(PwaService);
 
   loading = computed(() => {
     if (this.ds.products().length === 0 && this.ds.productsLoading())
@@ -221,6 +226,11 @@ export class AdminPanel {
           id: "pwa-settings",
           label: "PWA Settings",
           icon: "install_mobile",
+        },
+        {
+          id: "marketing-settings",
+          label: "Marketing & Tracking",
+          icon: "insights",
         },
         // { id: 'user-management', label: 'User Management', icon: 'badge' },
         // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },

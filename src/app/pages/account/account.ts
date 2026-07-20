@@ -19,6 +19,7 @@ import { DatastoreService, UserProfile } from "../../services/datastore";
 import { ToastService } from "../../shared/components/toast/toast.service";
 import { ApiService } from "../../services/api.service";
 import { NotificationService } from "../../services/notification.service";
+import { ServiceEnquiryService } from "../../core/services/service-enquiry.service";
 import { environment } from "../../../environments/environment";
 
 @Component({
@@ -40,12 +41,14 @@ export class Account {
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
   fb = inject(FormBuilder);
+  enquiryService = inject(ServiceEnquiryService);
 
   api = inject(ApiService);
   ns = inject(NotificationService);
 
   profile = this.ds.userProfile;
   myOrders = signal<any[]>([]);
+  myServiceRequests = this.enquiryService.myEnquiries;
   wishlist = signal<any[]>([]);
   isOrdersLoading = signal(true);
   isWishlistLoading = signal(true);
@@ -69,6 +72,12 @@ export class Account {
       label: "My Orders",
       icon: "local_shipping",
       path: "/account/orders",
+    },
+    {
+      id: "service-requests",
+      label: "My Service Requests",
+      icon: "layers",
+      path: "/account/service-requests",
     },
     {
       id: "wishlist",
@@ -253,8 +262,30 @@ export class Account {
     return tab?.id || index;
   }
 
+  fetchMyServiceRequests() {
+    const p = this.profile();
+    this.enquiryService.getMyEnquiries(p?.email, p?.id).subscribe();
+  }
+
+  acceptServiceQuote(id: string) {
+    this.enquiryService.customerAction(id, "accept_quote").subscribe({
+      next: () => this.toastService.success("Quotation accepted! Proceeding to invoice."),
+      error: () => this.toastService.error("Failed to accept quotation."),
+    });
+  }
+
+  rejectServiceQuote(id: string) {
+    this.enquiryService.customerAction(id, "reject_quote").subscribe({
+      next: () => this.toastService.info("Quotation declined."),
+      error: () => this.toastService.error("Failed to decline quotation."),
+    });
+  }
+
   switchTab(tabId: string) {
     this.activeTab.set(tabId);
+    if (tabId === "service-requests") {
+      this.fetchMyServiceRequests();
+    }
     if (tabId === "dashboard") {
       this.router.navigate(["/account"]);
     } else {

@@ -42,24 +42,24 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
                 <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 to-amber-500"></div>
               }
 
-              <div [class]="'h-20 w-20 md:h-26 md:w-26 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden ' + 
+              <div [class]="'h-22 w-22 md:h-28 md:w-28 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden shadow-xs ' + 
                             (ds.filterCategory() === item.id 
                               ? 'bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/20' 
                               : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-amber-500 group-hover:text-white group-hover:rotate-6')">
                 @if (item.image) {
-                  <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-1.5 logo-img"
+                  <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-2 logo-img"
                     (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
                 } @else {
-                  <mat-icon class="scale-[2] md:scale-[2.5]">{{ getIcon(item.id) }}</mat-icon>
+                  <mat-icon class="scale-[2.2] md:scale-[2.8]">{{ getIcon(item.id) }}</mat-icon>
                 }
               </div>
 
               <div class="flex flex-col items-center gap-0.5 mt-1">
-                <span [class]="'text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
+                <span [class]="'text-[10px] md:text-xs font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
                                (ds.filterCategory() === item.id 
                                  ? 'text-orange-600 dark:text-orange-400 font-bold' 
                                  : 'text-neutral-600 dark:text-neutral-300 group-hover:text-neutral-900 dark:group-hover:text-white')">{{ item.name }}</span>
-                <span class="text-[8px] text-neutral-400 font-bold uppercase tracking-wide">
+                <span class="text-[9px] text-neutral-400 font-bold uppercase tracking-wide">
                   {{ ds.productCountMap()[item.id] || 0 }} Items
                 </span>
               </div>
@@ -75,14 +75,25 @@ export class HomeCategoriesComponent {
   router = inject(Router);
 
   parentCategories = computed(() => {
-    return this.ds.categories()
-      .filter((c: Category) => {
-        const pId = c.parentId || c.parent_id;
-        if (!pId) return true;
-        if (pId === 'null' || pId === 'undefined') return true;
-        return false;
-      })
-      .slice(0, 10);
+    const categories = this.ds.categories();
+    const featured = categories.filter((c: Category) => 
+      c.isFeatured === true || 
+      (c as any).is_featured === true || 
+      (c as any).is_featured === 'true' || 
+      (c as any).isFeatured === 'true'
+    );
+    const roots = categories.filter((c: Category) => {
+      const pId = c.parentId || c.parent_id;
+      return !pId || pId === 'null' || pId === 'undefined';
+    });
+
+    const combined: Category[] = [...featured];
+    for (const r of roots) {
+      if (!combined.some((c) => c.id === r.id)) {
+        combined.push(r);
+      }
+    }
+    return combined.slice(0, 10);
   });
 
   getIcon(catId: string): string {

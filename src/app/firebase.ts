@@ -54,7 +54,15 @@ export const initFirebase = async () => {
   }
 
   if (!firebaseConfig) {
-    throw new Error("Firebase configuration could not be loaded.");
+    firebaseConfig = {
+      apiKey: "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8",
+      authDomain: "ajr3dgalaxy.firebaseapp.com",
+      projectId: "ajr3dgalaxy",
+      storageBucket: "ajr3dgalaxy.firebasestorage.app",
+      messagingSenderId: "111872927152",
+      appId: "1:111872927152:web:b498fd9a072f776a2ae275",
+      measurementId: "G-C9R96N5FR6",
+    };
   }
 
   app = fbApp.initializeApp(firebaseConfig);

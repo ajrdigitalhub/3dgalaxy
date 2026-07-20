@@ -393,4 +393,33 @@ export class NotificationService {
       console.warn("Foreground notification listener setup skipped:", err);
     }
   }
+
+  registerAdminDevice(payload: any): Observable<any> {
+    return this.api.post("/admin/fcm/register", payload);
+  }
+
+  sendTestNotification(fcmToken: string): Observable<any> {
+    return this.api.post("/admin/fcm/test", {
+      fcmToken,
+      deviceName: "Chrome Admin Desktop",
+    });
+  }
+
+  sendAdminPushNotification(payload: {
+    title: string;
+    body: string;
+    type: string;
+    deepLink?: string;
+    data?: any;
+  }): Observable<any> {
+    return this.api.post("/notifications/admin/send", payload);
+  }
+
+  getAdminDevices(): Observable<any> {
+    return this.api.get("/admin/fcm/devices");
+  }
+
+  getAdminNotificationLogs(): Observable<any> {
+    return this.api.get("/admin/fcm/logs");
+  }
 }

@@ -1,0 +1,457 @@
+<div class="space-y-6 font-sans pb-12 animate-fadeIn">
+  
+  <!-- HEADER BAR -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs">
+    <div>
+      <h1 class="text-xl font-black uppercase text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
+        3D Printing Service Enquiries
+        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-500 border border-orange-500/20">
+          Fleet CRM & Storage Console
+        </span>
+      </h1>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+        Manage custom STL manufacturing requests, generate quotes, review production telemetry, and manage secure Firebase Storage files.
+      </p>
+    </div>
+
+    <button 
+      (click)="loadEnquiries()"
+      class="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer border-none"
+    >
+      <mat-icon [class.animate-spin]="loading()" class="text-sm w-4 h-4 flex items-center justify-center">refresh</mat-icon>
+      <span>Refresh List</span>
+    </button>
+  </div>
+
+  <!-- ANALYTICS CARDS GRID -->
+  @if (stats(); as s) {
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+        <span class="text-[9px] font-black uppercase text-zinc-400 tracking-wider">Total Requests</span>
+        <p class="text-xl font-black text-zinc-900 dark:text-white">{{ s.totalEnquiries }}</p>
+      </div>
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+        <span class="text-[9px] font-black uppercase text-amber-500 tracking-wider">Pending Quotes</span>
+        <p class="text-xl font-black text-amber-600 dark:text-amber-400">{{ s.pendingQuotes }}</p>
+      </div>
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+        <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Printing Active</span>
+        <p class="text-xl font-black text-blue-600 dark:text-blue-400">{{ s.printingActive }}</p>
+      </div>
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+        <span class="text-[9px] font-black uppercase text-emerald-500 tracking-wider">Completed Fleet</span>
+        <p class="text-xl font-black text-emerald-600 dark:text-emerald-400">{{ s.completed }}</p>
+      </div>
+      <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1 col-span-2 lg:col-span-1">
+        <span class="text-[9px] font-black uppercase text-purple-500 tracking-wider">Service Revenue</span>
+        <p class="text-xl font-black text-purple-600 dark:text-purple-400">₹{{ s.totalRevenue | number }}</p>
+      </div>
+    </div>
+  }
+
+  <!-- FILTER & SEARCH BAR -->
+  <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-3">
+    <div class="relative w-full sm:w-80">
+      <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="loadEnquiries()"
+        placeholder="Search ID, Tracking, Customer or File..."
+        class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+      />
+    </div>
+
+    <div class="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar">
+      @for (st of statusFilters; track st.id) {
+        <button
+          (click)="selectedStatusFilter.set(st.id); loadEnquiries()"
+          [class]="selectedStatusFilter() === st.id ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'"
+          class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer border-none shrink-0"
+        >
+          {{ st.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ENQUIRIES TABLE -->
+  <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs whitespace-nowrap">
+        <thead>
+          <tr class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50">
+            <th class="py-3 px-4">Enquiry ID / Tracking</th>
+            <th class="py-3 px-3">Customer</th>
+            <th class="py-3 px-3">Model / Specs</th>
+            <th class="py-3 px-3">Print Configuration</th>
+            <th class="py-3 px-3">Quotation Total</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+          @for (e of enquiries(); track e.id) {
+            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+              <td class="py-3 px-4 font-mono">
+                <span class="font-black text-blue-600 dark:text-blue-400 block">{{ e.id }}</span>
+                <span class="text-[10px] text-zinc-400 block">TRK: {{ e.trackingNumber }}</span>
+              </td>
+
+              <td class="py-3 px-3">
+                <p class="font-extrabold uppercase text-zinc-900 dark:text-white leading-none">{{ e.customerName }}</p>
+                <p class="text-[10px] text-zinc-400 font-mono mt-0.5">{{ e.customerEmail }}</p>
+                <span [class]="e.isGuest ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'" class="inline-block mt-1 px-1.5 py-0.2 rounded text-[8px] font-black uppercase">
+                  {{ e.isGuest ? 'Guest' : 'Registered' }}
+                </span>
+              </td>
+
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-blue-500 shrink-0">
+                    <mat-icon class="text-base">layers</mat-icon>
+                  </div>
+                  <div class="truncate max-w-[160px]">
+                    <p class="font-bold text-zinc-900 dark:text-white truncate" [title]="e.modelName">{{ e.modelName }}</p>
+                    <p class="text-[9px] text-zinc-400 font-mono">{{ e.dimensions.x }}×{{ e.dimensions.y }}×{{ e.dimensions.z }}mm • {{ e.volumeCm3 }}cm³</p>
+                  </div>
+                </div>
+              </td>
+
+              <td class="py-3 px-3 font-mono text-[10px]">
+                <span class="font-bold text-zinc-800 dark:text-zinc-200 block">{{ e.material }} ({{ e.color }})</span>
+                <span class="text-zinc-400 block">{{ e.quantity }} Units • {{ e.layerHeight }} • {{ e.infillPercent }}%</span>
+              </td>
+
+              <td class="py-3 px-3 font-mono">
+                @if (e.quotation) {
+                  <span class="font-black text-emerald-600 dark:text-emerald-400 text-xs block">₹{{ e.quotation.total | number }}</span>
+                  <span class="text-[8px] text-zinc-400 uppercase block">Official Quote</span>
+                } @else {
+                  <span class="font-bold text-zinc-700 dark:text-zinc-300 block">₹{{ e.estimatedCost | number }}</span>
+                  <span class="text-[8px] text-amber-500 font-black uppercase block">Est. Pending Quote</span>
+                }
+              </td>
+
+              <td class="py-3 px-3">
+                <span class="px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  {{ e.status.replace('_', ' ') }}
+                </span>
+              </td>
+
+              <td class="py-3 px-3 text-right">
+                <div class="inline-flex items-center gap-1">
+                  <button (click)="openOverviewDrawer(e)" class="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg cursor-pointer bg-transparent border-none" title="360 Overview Console">
+                    <mat-icon class="text-sm">visibility</mat-icon>
+                  </button>
+                  <button (click)="openQuoteModal(e)" class="p-1.5 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg cursor-pointer bg-transparent border-none" title="Generate Quotation">
+                    <mat-icon class="text-sm">receipt</mat-icon>
+                  </button>
+                  <a [href]="'https://wa.me/91' + e.customerPhone + '?text=Hi ' + e.customerName + ', regarding your 3D print request ' + e.trackingNumber" target="_blank" class="p-1.5 text-emerald-600 hover:text-emerald-800 rounded-lg cursor-pointer bg-transparent border-none text-decoration-none" title="Send WhatsApp Message">
+                    <mat-icon class="text-sm">chat</mat-icon>
+                  </a>
+                  <button (click)="deleteEnquiry(e.id)" class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg cursor-pointer bg-transparent border-none" title="Delete Record">
+                    <mat-icon class="text-sm">delete_outline</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (enquiries().length === 0 && !loading()) {
+            <tr>
+              <td colspan="7" class="py-12 text-center text-zinc-400 font-bold text-xs">
+                No 3D printing service enquiries found.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 360 OVERVIEW & FILE MANAGEMENT MODAL DRAWER -->
+  @if (activeOverviewEnquiry(); as activeEq) {
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex justify-end">
+      <div class="bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-4xl h-full flex flex-col shadow-2xl animate-slideLeft overflow-hidden">
+        
+        <!-- DRAWER HEADER -->
+        <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-950/60">
+          <div>
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="font-extrabold text-blue-600 dark:text-blue-400 uppercase">{{ activeEq.id }}</span>
+              <span class="text-zinc-300 dark:text-zinc-700">•</span>
+              <span class="text-zinc-400 uppercase">TRK: {{ activeEq.trackingNumber }}</span>
+            </div>
+            <h2 class="text-lg font-black uppercase text-zinc-900 dark:text-white mt-1">Service Enquiry Overview Console</h2>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button (click)="activeOverviewEnquiry.set(null)" class="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-white rounded-xl bg-transparent border-none cursor-pointer">
+              <mat-icon class="text-base">close</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- DRAWER BODY -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          
+          <!-- STATUS UPDATE BAR -->
+          <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <span class="text-[9px] uppercase font-black text-zinc-400 tracking-wider">Current Production Status</span>
+              <p class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 mt-0.5">{{ activeEq.status.replace('_', ' ') }}</p>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <select
+                [ngModel]="activeEq.status"
+                (ngModelChange)="updateStatus(activeEq.id, $event)"
+                class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-bold p-2 rounded-xl text-zinc-900 dark:text-white outline-none cursor-pointer"
+              >
+                @for (s of statusOptions; track s.id) {
+                  <option [value]="s.id">{{ s.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- 3D STL MODEL PREVIEW CANVAS FOR ADMIN -->
+          <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 space-y-2">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-zinc-400 font-bold uppercase flex items-center gap-1.5 text-[10px]">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> High-Precision 3D Mesh Inspector ({{ activeEq.modelName }})
+              </span>
+              <div class="flex items-center gap-1">
+                <button (click)="resetAdminCamera()" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[9px] font-bold uppercase cursor-pointer border-none">Reset Camera</button>
+                <button (click)="fitAdminModel()" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[9px] font-bold uppercase cursor-pointer border-none">Fit Model</button>
+              </div>
+            </div>
+
+            <div class="relative w-full h-[300px] bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800/80">
+              <canvas #adminStlCanvas class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+              @if (isAdminStlLoading()) {
+                <div class="absolute inset-0 bg-zinc-950/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 text-white text-xs font-mono">
+                  <mat-icon class="animate-spin text-blue-500">autorenew</mat-icon>
+                  <span>Loading 3D Mesh Geometry...</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- OVERVIEW GRID: CUSTOMER + SPECS -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Customer Specs -->
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-2">
+              <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+                <mat-icon class="text-sm">person</mat-icon> Customer Telemetry
+              </h4>
+              <div class="space-y-1 text-xs font-mono">
+                <p class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ activeEq.customerName }}</p>
+                <p class="text-zinc-500">{{ activeEq.customerEmail }}</p>
+                <p class="text-zinc-500">{{ activeEq.customerPhone || 'No phone provided' }}</p>
+                <span [class]="activeEq.isGuest ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'" class="inline-block mt-1 px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                  {{ activeEq.isGuest ? 'Guest Customer' : 'Registered Customer' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Print Specs -->
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-2">
+              <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+                <mat-icon class="text-sm">layers</mat-icon> Manufacturing Configuration
+              </h4>
+              <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div>
+                  <span class="block text-[8px] text-zinc-400 uppercase font-bold">Material / Color</span>
+                  <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ activeEq.material }} ({{ activeEq.color }})</span>
+                </div>
+                <div>
+                  <span class="block text-[8px] text-zinc-400 uppercase font-bold">Quantity</span>
+                  <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ activeEq.quantity }} Units</span>
+                </div>
+                <div>
+                  <span class="block text-[8px] text-zinc-400 uppercase font-bold">Layer / Infill</span>
+                  <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ activeEq.layerHeight }} / {{ activeEq.infillPercent }}%</span>
+                </div>
+                <div>
+                  <span class="block text-[8px] text-zinc-400 uppercase font-bold">Volume & Weight</span>
+                  <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ activeEq.volumeCm3 }}cm³ ({{ activeEq.weightGrams }}g)</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- SECURE FIREBASE STORAGE FILES MANAGEMENT -->
+          <div class="space-y-4 pt-2">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+                <mat-icon class="text-sm">folder_zip</mat-icon> Storage Folder Files (service-enquiries/{{ activeEq.trackingNumber }}/)
+              </h4>
+
+              <button (click)="openFileUploadModal(activeEq)" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer border-none flex items-center gap-1">
+                <mat-icon class="text-xs">cloud_upload</mat-icon>
+                <span>Upload to Storage</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+              @for (file of currentEnquiryFiles(); track file.id) {
+                <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-mono">
+                  <div class="flex items-center gap-3 truncate max-w-[70%]">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                      <mat-icon class="text-sm">insert_drive_file</mat-icon>
+                    </div>
+                    <div class="truncate">
+                      <span class="font-bold block text-zinc-900 dark:text-white truncate">{{ file.fileName }}</span>
+                      <span class="text-[9px] text-zinc-400">Folder: {{ file.folder }} • {{ file.fileSize }} • v{{ file.version }} • Downloads: {{ file.downloadCount }}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1">
+                    <button (click)="downloadFile(file)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-bold uppercase transition border-none cursor-pointer flex items-center gap-1">
+                      <mat-icon class="text-xs">download</mat-icon>
+                      <span>Download</span>
+                    </button>
+                    <button (click)="deleteFileRecord(file.id)" class="p-1 text-zinc-400 hover:text-red-500 rounded-lg border-none bg-transparent cursor-pointer">
+                      <mat-icon class="text-sm">delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+
+              @if (currentEnquiryFiles().length === 0) {
+                <div class="p-6 text-center text-zinc-400 font-mono text-xs bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800">
+                  No files stored in service-enquiries/{{ activeEq.trackingNumber }}/ folders yet.
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- ACTIVITY TIMELINE AUDIT -->
+          <div class="space-y-3 pt-2">
+            <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
+              <mat-icon class="text-sm">history</mat-icon> Audit Timeline Activity
+            </h4>
+
+            <div class="space-y-2">
+              @for (log of activeEq.timeline; track log.timestamp) {
+                <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200/50 dark:border-zinc-850 text-xs">
+                  <div class="flex justify-between font-bold text-zinc-900 dark:text-zinc-100">
+                    <span class="uppercase text-blue-600 dark:text-blue-400 font-black text-[11px]">{{ log.label }}</span>
+                    <span class="font-mono text-[9px] text-zinc-400">{{ log.timestamp | date:'short' }}</span>
+                  </div>
+                  @if (log.remarks) {
+                    <p class="text-zinc-500 dark:text-zinc-400 text-[10px] font-mono mt-1">{{ log.remarks }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- FILE UPLOAD MODAL -->
+  @if (activeUploadModalEnquiry(); as upEq) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fadeIn">
+        
+        <div class="flex justify-between items-center pb-3 border-b dark:border-zinc-800">
+          <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-white">
+            Upload File to Storage // {{ upEq.trackingNumber }}
+          </h3>
+          <button (click)="activeUploadModalEnquiry.set(null)" class="text-zinc-400 hover:text-zinc-600 border-none bg-transparent cursor-pointer">
+            <mat-icon class="text-sm">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs font-mono">
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">Target Storage Folder</label>
+            <select [(ngModel)]="uploadForm.folder" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold text-zinc-900 dark:text-white">
+              <option value="original">original (Original STL models)</option>
+              <option value="quotation">quotation (PDF Quotations)</option>
+              <option value="reference">reference (Reference Images)</option>
+              <option value="production">production (Production Photos)</option>
+              <option value="qc">qc (QC Reports)</option>
+              <option value="delivery">delivery (Delivery Proofs)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">File Name</label>
+            <input type="text" [(ngModel)]="uploadForm.fileName" placeholder="e.g. Official_Quotation.pdf" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold text-zinc-900 dark:text-white" />
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button (click)="submitFileUpload()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider py-2.5 rounded-xl cursor-pointer transition-all border-none">
+            Upload to Firebase Storage
+          </button>
+          <button (click)="activeUploadModalEnquiry.set(null)" class="px-4 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs uppercase py-2.5 rounded-xl cursor-pointer transition-all border-none">
+            Cancel
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- QUOTATION GENERATOR MODAL -->
+  @if (activeQuoteModalEnquiry(); as activeEq) {
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fadeIn">
+        
+        <div class="flex justify-between items-center pb-3 border-b dark:border-zinc-800">
+          <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-white">
+            Generate Official Quotation // {{ activeEq.id }}
+          </h3>
+          <button (click)="activeQuoteModalEnquiry.set(null)" class="text-zinc-400 hover:text-zinc-600 dark:hover:text-white border-none bg-transparent cursor-pointer">
+            <mat-icon class="text-sm">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">Material Cost (₹)</label>
+            <input type="number" [(ngModel)]="quoteForm.materialCost" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold" />
+          </div>
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">Printing & Processing (₹)</label>
+            <input type="number" [(ngModel)]="quoteForm.printingCost" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold" />
+          </div>
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">Labor / Setup Fee (₹)</label>
+            <input type="number" [(ngModel)]="quoteForm.laborFee" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold" />
+          </div>
+          <div>
+            <label class="block text-[9px] uppercase font-bold text-zinc-400 mb-1">Shipping Fee (₹)</label>
+            <input type="number" [(ngModel)]="quoteForm.shippingFee" class="w-full p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none font-bold" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-between items-center border-t dark:border-zinc-800 font-mono text-sm font-black text-zinc-900 dark:text-white">
+          <span>Computed Total Quote:</span>
+          <span class="text-emerald-600 dark:text-emerald-400 text-base">₹{{ (quoteForm.materialCost + quoteForm.printingCost + quoteForm.laborFee + quoteForm.shippingFee) | number }}</span>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button (click)="submitQuotationForm()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider py-2.5 rounded-xl cursor-pointer transition-all border-none">
+            Issue Official Quotation
+          </button>
+          <button (click)="activeQuoteModalEnquiry.set(null)" class="px-4 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs uppercase py-2.5 rounded-xl cursor-pointer transition-all border-none">
+            Cancel
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>
