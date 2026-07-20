@@ -1,5 +1,21 @@
 [
   {
+    "id": "NOTIF-LOG-1784579226630",
+    "title": "🛒 New Order #ORD-2026-669604",
+    "body": "admin123 placed order #ORD-2026-669604 (₹309.00)",
+    "type": "order",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderNumber": "ORD-2026-669604",
+      "totalAmount": "309",
+      "customerName": "admin123",
+      "orderId": "69683dd5-5282-48c7-8ed7-250959bb1f21"
+    },
+    "sentAt": "2026-07-20T20:27:06.629Z",
+    "isRead": false,
+    "recipientDeviceCount": 1
+  },
+  {
     "id": "NOTIF-LOG-1784575479536",
     "title": "🚀 3DGalaxy Admin Push Test",
     "body": "Push notifications are active on Chrome Admin Desktop.",

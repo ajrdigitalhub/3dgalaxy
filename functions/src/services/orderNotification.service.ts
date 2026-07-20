@@ -42,20 +42,23 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
       return result;
     }
 
+    // Cast to any for flexible field access across different order shapes
+    const orderAny = order as any;
+
     // Customer Name Resolution
     const customerObj = order.customer;
     const custName =
-      order.customerName ||
+      (orderAny.customerName) ||
       (customerObj?.user
         ? `${customerObj.user.firstName || ''} ${customerObj.user.lastName || ''}`.trim()
         : 'Customer');
 
     // Customer Phone Resolution
-    let custPhone = customerObj?.phone || customerObj?.user?.phone || '';
+    let custPhone = customerObj?.phone || customerObj?.user?.mobile || '';
     if (!custPhone && order.shippingAddress) {
       const addrObj = typeof order.shippingAddress === 'string'
         ? (function() { try { return JSON.parse(order.shippingAddress as any); } catch { return {}; } })()
-        : order.shippingAddress;
+        : (order.shippingAddress as any);
       custPhone = addrObj?.phone || addrObj?.contactNumber || '';
     }
 

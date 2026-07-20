@@ -282,6 +282,55 @@ export async function sendAdminMulticastNotification(req: Request, res: Response
 }
 
 /**
+ * Programmatic Admin Push Notification Dispatcher
+ * Called internally by the Order Notification Pipeline (NOT an HTTP handler).
+ * Logs the notification to the admin notification center.
+ */
+export async function dispatchAdminPushNotification(payload: {
+  title: string;
+  body: string;
+  type: string;
+  orderId?: string;
+  deepLink?: string;
+  data?: Record<string, string>;
+}): Promise<{ success: boolean; successCount: number; failureCount: number }> {
+  try {
+    ensureStorageFiles();
+    const activeDevices = loadDevices().filter((d) => d.isActive);
+    const now = new Date().toISOString();
+
+    const logEntry: AdminNotificationLog = {
+      id: `NOTIF-LOG-${Date.now()}`,
+      title: payload.title,
+      body: payload.body,
+      type: payload.type || "order",
+      deepLink: payload.deepLink || "/admin/orders",
+      data: { ...payload.data, orderId: payload.orderId },
+      sentAt: now,
+      isRead: false,
+      recipientDeviceCount: activeDevices.length,
+    };
+
+    const logs = loadLogs();
+    logs.unshift(logEntry);
+    saveLogs(logs);
+
+    console.log(
+      `[AdminFCM] Push notification logged for ${activeDevices.length} active device(s): "${payload.title}"`
+    );
+
+    return {
+      success: true,
+      successCount: activeDevices.length,
+      failureCount: 0,
+    };
+  } catch (err: any) {
+    console.error("[AdminFCM] dispatchAdminPushNotification error:", err);
+    return { success: false, successCount: 0, failureCount: 1 };
+  }
+}
+
+/**
  * Get Notification Center History Logs
  * GET /api/admin/fcm/logs
  */

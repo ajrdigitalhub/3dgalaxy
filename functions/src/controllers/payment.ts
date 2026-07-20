@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { createOrder } from './order';
+import { dispatchOrderNotifications } from '../services/orderNotification.service';
 
 // Helper to get payment settings
 const getPaymentSettings = async () => {
@@ -279,6 +280,11 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       await deductInventory(tx, transaction.orderId);
     });
 
+    // Dispatch notifications after successful payment verification (non-blocking)
+    dispatchOrderNotifications(transaction.orderId).catch((notifErr) => {
+      console.error('[RazorpayVerify] Notification pipeline error (non-blocking):', notifErr);
+    });
+
     return res.status(200).json({ success: true });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -542,6 +548,17 @@ export const handleRazorpayWebhook = async (req: any, res: Response) => {
       data: { status: 'processed' },
     });
 
+    // Dispatch notifications after successful Razorpay webhook confirmation (non-blocking)
+    if (req.body?.payload?.payment?.entity?.order_id) {
+      const rpOrderId = req.body.payload.payment.entity.order_id;
+      const txnForNotif = await prisma.transactionHistory.findFirst({ where: { gatewayOrderId: rpOrderId } });
+      if (txnForNotif) {
+        dispatchOrderNotifications(txnForNotif.orderId).catch((notifErr) => {
+          console.error('[RazorpayWebhook] Notification pipeline error (non-blocking):', notifErr);
+        });
+      }
+    }
+
     return res.status(200).send('OK');
   } catch (error) {
     console.error('Webhook error:', error);
@@ -624,6 +641,11 @@ export const handleCashfreeWebhook = async (req: Request, res: Response) => {
             },
           }),
         ]);
+
+        // Dispatch notifications after successful Cashfree webhook confirmation (non-blocking)
+        dispatchOrderNotifications(transaction.orderId).catch((notifErr) => {
+          console.error('[CashfreeWebhook] Notification pipeline error (non-blocking):', notifErr);
+        });
       }
     }
 

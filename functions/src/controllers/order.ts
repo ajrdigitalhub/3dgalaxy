@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { triggerWhatsAppNotification } from './whatsapp';
+import { dispatchOrderNotifications } from '../services/orderNotification.service';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -412,19 +413,11 @@ export const createOrder = async (req: any, res: Response) => {
       return orderEntity;
     });
 
-    // Fetch full order details with customer and items to send WhatsApp Placed notification
-    const fullOrder = await prisma.order.findUnique({
-      where: { id: transaction.id },
-      include: {
-        customer: true,
-        items: { include: { product: true } }
-      }
+    // Fire the centralized order notification pipeline (Customer WhatsApp + Admin WhatsApp + Admin FCM Push)
+    // Run async, don't block the response
+    dispatchOrderNotifications(transaction.id).catch((notifErr) => {
+      console.error('[CreateOrder] Notification pipeline error (non-blocking):', notifErr);
     });
-
-    const phone = fullOrder?.customer?.phone;
-    if (fullOrder && phone) {
-      await triggerWhatsAppNotification('order_placed', phone, fullOrder, fullOrder.customer);
-    }
 
     return res.status(201).json(transaction);
   } catch (error: any) {
@@ -639,38 +632,17 @@ export const resendOrderNotification = async (req: any, res: Response) => {
     if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const order = await prisma.order.findUnique({
       where: orderWhere,
-      include: { customer: { include: { user: true } } }
     });
     if (!order) return res.status(404).json({ error: 'Order reference does not exist' });
 
-    const userId = order.customer?.userId;
-    if (userId) {
-      let template = await prisma.notificationTemplate.findFirst({
-        where: { name: 'Order Update' }
-      });
-      if (!template) {
-        template = await prisma.notificationTemplate.create({
-          data: {
-            name: 'Order Update',
-            channel: 'EMAIL',
-            subject: 'Order Status Update',
-            body: 'Your order status has been updated. Please check the website for more details.'
-          }
-        });
-      }
+    // Use centralized notification pipeline for resend
+    const notifResult = await dispatchOrderNotifications(order.id);
 
-      await prisma.systemNotification.create({
-        data: {
-          userId,
-          templateId: template.id,
-          status: 'SENT',
-          sentAt: new Date()
-        }
-      });
-    }
-
-    //test
-    return res.status(200).json({ success: true, message: 'Order notification resent successfully' });
+    return res.status(200).json({
+      success: true,
+      message: 'Order notification resent successfully',
+      notifications: notifResult,
+    });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to resend notification', details: error.message });
   }
