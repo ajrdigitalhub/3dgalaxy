@@ -13,11 +13,12 @@ import { AdminPanel } from "../admin";
 import { ImagePickerComponent } from "../../../shared/components/image-picker/image-picker.component";
 import { ThemeService } from "../../../core/services/theme.service";
 import { ToastService } from "../../../shared/components/toast/toast.service";
+import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 
 @Component({
   selector: "app-admin-settings-tab",
   standalone: true,
-  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule],
+  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule, PwaSettingsTabComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
@@ -32,9 +33,18 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
             <mat-icon class="text-blue-600">admin_panel_settings</mat-icon>
             System Core Configurator
           </h1>
-          <p class="text-xs text-zinc-500">
-            Formulate and manage gateways, typography, brand assets, and
-            services globally.
+          <p class="text-xs text-zinc-500 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>Formulate and manage gateways, typography, brand assets, and services globally.</span>
+            @if (admin.settingsService.settingsData()?.version) {
+              <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-400 text-[10px] font-bold rounded-md">
+                v{{ admin.settingsService.settingsData().version }}
+              </span>
+            }
+            @if (admin.settingsService.settingsData()?.updatedAt) {
+              <span class="text-zinc-400 text-[10px] font-semibold">
+                (Last synced: {{ admin.settingsService.settingsData().updatedAt | date:'medium' }})
+              </span>
+            }
           </p>
         </div>
         <div class="flex items-center gap-2">
@@ -49,6 +59,15 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
             </span>
           }
           <button
+            (click)="restoreDefaults()"
+            [disabled]="isSaving()"
+            class="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-205 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+            id="restore-defaults-settings-btn"
+          >
+            <mat-icon class="text-sm">settings_backup_restore</mat-icon>
+            Restore Defaults
+          </button>
+          <button
             (click)="saveAllSettings()"
             [disabled]="isSaving()"
             class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer shadow-sm shadow-blue-500/20 disabled:opacity-50 active:scale-95 flex items-center gap-1.5"
@@ -62,9 +81,8 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
 
       <!-- TABBED SUB-BOARD LAYOUT -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- SUB-LINKS LEFT (23 DISTINCT DYNAMIC MODULES) -->
         <div
-          class="flex flex-col gap-1 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 pr-4 max-h-[70vh] overflow-y-auto scrollbar-thin"
+          class="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 pr-4 pb-2 lg:pb-0 lg:max-h-[70vh] lg:overflow-y-auto no-scrollbar lg:scrollbar-thin"
         >
           @for (tab of subTabs; track tab.name) {
             <button
@@ -73,12 +91,14 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
               [class.text-blue-600]="activeSubTab() === tab.name"
               [class.dark:bg-zinc-800]="activeSubTab() === tab.name"
               [class.dark:text-blue-400]="activeSubTab() === tab.name"
-              [class.border-l-4]="activeSubTab() === tab.name"
+              [class.border-b-2]="activeSubTab() === tab.name"
+              [class.lg:border-b-0]="activeSubTab() === tab.name"
+              [class.lg:border-l-4]="activeSubTab() === tab.name"
               [class.border-blue-600]="activeSubTab() === tab.name"
-              class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded text-[11px] font-black uppercase select-none transition-all cursor-pointer text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              class="w-auto lg:w-full shrink-0 flex items-center gap-2.5 px-3 py-2 text-left rounded text-[11px] font-black uppercase select-none transition-all cursor-pointer text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
             >
-              <mat-icon class="text-base">{{ tab.icon }}</mat-icon>
-              {{ tab.name }}
+              <mat-icon class="text-base shrink-0">{{ tab.icon }}</mat-icon>
+              <span>{{ tab.name }}</span>
             </button>
           }
         </div>
@@ -4919,6 +4939,11 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                 </div>
               </div>
             }
+
+            <!-- PWA SETTINGS -->
+            @if (activeSubTab() === "PWA Settings") {
+              <app-admin-pwa-settings-tab />
+            }
           </div>
         </div>
       </div>
@@ -5100,6 +5125,7 @@ export class AdminSettingsTab {
     { name: "WhatsApp Settings", icon: "chat" },
     { name: "Recent Purchase Settings", icon: "add_shopping_cart" },
     { name: "Push Settings", icon: "notifications" },
+    { name: "PWA Settings", icon: "install_mobile" },
     { name: "Shipping", icon: "local_shipping" },
     { name: "Payment Gateway", icon: "payment" },
     { name: "Newsletter", icon: "alternate_email" },
@@ -5134,6 +5160,8 @@ export class AdminSettingsTab {
         this.activeSubTab.set("Shipping");
       } else if (active === "push-settings") {
         this.activeSubTab.set("Push Settings");
+      } else if (active === "pwa-settings") {
+        this.activeSubTab.set("PWA Settings");
       }
     });
   }
@@ -5552,6 +5580,23 @@ export class AdminSettingsTab {
       this.toastService.error(
         e.message || "Error synchronization system schema.",
       );
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  async restoreDefaults() {
+    if (!confirm("Are you sure you want to restore all configurations to system defaults? This will overwrite your current settings and cannot be undone.")) {
+      return;
+    }
+    this.isSaving.set(true);
+    try {
+      await this.admin.settingsService.saveSettings({ resetToDefault: true });
+      this.toastService.success("System configurations restored to defaults successfully.");
+      // Overwrite local draft copy with new default settings returned by service
+      this.draft.set(JSON.parse(JSON.stringify(this.admin.settingsService.settingsData())));
+    } catch (e: any) {
+      this.toastService.error(e.message || "Error restoring defaults.");
     } finally {
       this.isSaving.set(false);
     }

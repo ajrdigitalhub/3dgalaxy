@@ -117,7 +117,58 @@
   <div
     class="h-[350px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"
   ></div>
-  } } } } }
+  } }
+  @case ('FLASH_DEALS') { @defer (on viewport) {
+  <app-home-flash-deals />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('BEST_SELLERS') { @defer (on viewport) {
+  <app-home-best-sellers />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('TRENDING') { @defer (on viewport) {
+  <app-home-trending-products />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('NEW_ARRIVALS') { @defer (on viewport) {
+  <app-home-new-arrivals />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('MATERIALS') { @defer (on viewport) {
+  <app-home-materials />
+  } @placeholder {
+  <div class="h-64 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('APPLICATIONS') { @defer (on viewport) {
+  <app-home-applications />
+  } @placeholder {
+  <div class="h-64 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('COLLECTIONS') { @defer (on viewport) {
+  <app-home-collections />
+  } @placeholder {
+  <div class="h-64 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('BUNDLES') { @defer (on viewport) {
+  <app-home-bundles />
+  } @placeholder {
+  <div class="h-72 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('REVIEWS') { @defer (on viewport) {
+  <app-home-reviews />
+  } @placeholder {
+  <div class="h-72 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  @case ('BLOGS') { @defer (on viewport) {
+  <app-home-blogs />
+  } @placeholder {
+  <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  } }
+  } } }
 
   <!-- Loop to display additional featured categories if there are more than 3 -->
   @for (cat of featuredCategories(); track cat.id; let idx = $index) {

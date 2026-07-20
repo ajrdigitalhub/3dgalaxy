@@ -367,22 +367,40 @@ export const getSettingsService = async () => {
 
 export const updateSettingsService = async (payload: any) => {
   const currentSettings = await getSettingsService();
-  const newSettings = { ...currentSettings, ...payload };
+  const currentVersion = Number(currentSettings.version) || 1;
+  
+  let newSettings: any;
+  if (payload && payload.resetToDefault === true) {
+    newSettings = {
+      ...defaultSettings,
+      version: currentVersion + 1,
+      updatedAt: new Date().toISOString(),
+      updatedBy: payload.updatedBy || "Admin"
+    };
+  } else {
+    newSettings = {
+      ...currentSettings,
+      ...payload,
+      version: currentVersion + 1,
+      updatedAt: new Date().toISOString(),
+      updatedBy: payload.updatedBy || "Admin"
+    };
+  }
 
   try {
     // 1. Sync Theme Settings if updated
-    if (payload.theme) {
+    if (newSettings.theme) {
       await prisma.themeSetting.upsert({
         where: { keyName: "global-settings" },
-        update: { value: payload.theme },
-        create: { keyName: "global-settings", value: payload.theme },
+        update: { value: newSettings.theme },
+        create: { keyName: "global-settings", value: newSettings.theme },
       });
     }
 
     // 2. Sync Banners (heroSlides and promoBanners) if updated
-    if (payload.heroSlides !== undefined || payload.promoBanners !== undefined) {
-      const updatedHeroSlides = payload.heroSlides !== undefined ? payload.heroSlides : currentSettings.heroSlides;
-      const updatedPromoBanners = payload.promoBanners !== undefined ? payload.promoBanners : currentSettings.promoBanners;
+    if (payload.heroSlides !== undefined || payload.promoBanners !== undefined || payload.resetToDefault) {
+      const updatedHeroSlides = newSettings.heroSlides;
+      const updatedPromoBanners = newSettings.promoBanners;
 
       await prisma.$transaction(async (tx) => {
         // Delete all current banners in HERO/PROMO positions
@@ -426,8 +444,8 @@ export const updateSettingsService = async (payload: any) => {
     }
 
     // 3. Sync Homepage Sections if updated
-    if (payload.homePageSections !== undefined || payload.homepageSections !== undefined) {
-      const sectionsData = payload.homepageSections || payload.homePageSections;
+    if (payload.homePageSections !== undefined || payload.homepageSections !== undefined || payload.resetToDefault) {
+      const sectionsData = newSettings.homepageSections || newSettings.homePageSections;
       if (Array.isArray(sectionsData)) {
         await prisma.$transaction(async (tx) => {
           // Clear all existing section mappings and rewrite
@@ -484,8 +502,17 @@ export const updateSettingsService = async (payload: any) => {
       finalSettingsObj = newSettings;
     }
 
-    // Clear cache and replace
+    // Clear all memory & route-level caches completely to guarantee fresh sync
     sysCache.del("app_settings");
+    sysCache.del("consolidated_home_payload");
+    sysCache.del("consolidated_dynamic_homepage_payload");
+    sysCache.del("featured_products_payload");
+    sysCache.del("theme_settings");
+    sysCache.del("security_settings");
+    sysCache.del("service_config");
+    sysCache.del("homepage_sections");
+    sysCache.del("frontend_layout");
+
     if (payload && payload.instagramFeedSettings) {
       try {
         sysCache.del("instagram_feed");
@@ -500,6 +527,15 @@ export const updateSettingsService = async (payload: any) => {
   } catch (error: any) {
     if (isDatabaseUnavailableError(error)) {
       sysCache.del("app_settings");
+      sysCache.del("consolidated_home_payload");
+      sysCache.del("consolidated_dynamic_homepage_payload");
+      sysCache.del("featured_products_payload");
+      sysCache.del("theme_settings");
+      sysCache.del("security_settings");
+      sysCache.del("service_config");
+      sysCache.del("homepage_sections");
+      sysCache.del("frontend_layout");
+
       if (payload && payload.instagramFeedSettings) {
         try {
           sysCache.del("instagram_feed");

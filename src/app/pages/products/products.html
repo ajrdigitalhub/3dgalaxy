@@ -282,12 +282,18 @@
               <!-- Product Image Frame -->
               <a [routerLink]="['/product', p.slug]"
                  [class]="isListView() ? 'w-full sm:w-48 shrink-0' : 'w-full'"
-                 class="block relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-3 mb-4">
+                 class="block relative aspect-square bg-neutral-50/50 dark:bg-neutral-950/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20 flex items-center justify-center overflow-hidden p-3 mb-4 product-card-image-container group">
                 <div class="shimmer-effect"></div>
-                <img [src]="p.thumbnail || 'https://picsum.photos/seed/' + p.slug + '/400/400'"
+                <img [src]="p.primaryImage || p.thumbnail || 'https://picsum.photos/seed/' + p.slug + '/400/400'"
                      [alt]="p.name"
-                     class="max-w-[90%] max-h-[90%] object-contain group-hover:scale-105 transition-transform duration-500 ease-out"
+                     class="max-w-[90%] max-h-[90%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500 ease-out"
                      loading="lazy">
+                @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.thumbnail)) {
+                  <img [src]="p.secondaryImage"
+                       [alt]="p.name + ' Alternate'"
+                       class="max-w-[90%] max-h-[90%] object-contain secondary-image absolute inset-0 m-auto"
+                       loading="lazy">
+                }
               </a>
 
               <!-- Product Details -->

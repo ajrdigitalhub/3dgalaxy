@@ -31,6 +31,9 @@ import wishlistRoutes from "./routes/wishlist";
 import paymentRoutes from "./routes/payment";
 import abandonedCheckoutRoutes from "./routes/abandonedCheckout";
 import notificationRoutes from "./routes/notification";
+import pwaRoutes from "./routes/pwa";
+import headerMenuRoutes from "./routes/headerMenu";
+import homepageRoutes from "./routes/homepage";
 import { getServiceConfig } from "./controllers/settings";
 import {
   getConsolidatedHome,
@@ -65,6 +68,7 @@ app.use(compression());
 app.use(cors());
 app.use(
   express.json({
+    limit: "50mb",
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {
         req.rawBody = buf;
@@ -74,6 +78,7 @@ app.use(
 );
 app.use(
   express.urlencoded({
+    limit: "50mb",
     extended: true,
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {
@@ -123,6 +128,9 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", paymentRoutes);
 app.use("/api", notificationRoutes);
+app.use("/api", pwaRoutes);
+app.use("/api", headerMenuRoutes);
+app.use("/api/homepage", homepageRoutes);
 import searchRoutes from "./routes/search";
 import supportRoutes from "./routes/support";
 

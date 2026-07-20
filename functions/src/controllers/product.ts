@@ -41,6 +41,98 @@ const safeParseObject = (val: any): any => {
   return val;
 };
 
+export const mapProductFields = (p: any): any => {
+  if (!p) return p;
+
+  const imgs = safeParseArray(p.images).map((img: any) => {
+    if (!img) return null;
+    if (typeof img === 'string') {
+      return { url: img, isPrimary: false, isSecondary: false, sortOrder: 0 };
+    }
+    return {
+      url: img.url || img.imageUrl || '',
+      isPrimary: !!img.isPrimary,
+      isSecondary: !!img.isSecondary,
+      sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
+    };
+  }).filter((img: any) => img && img.url.trim().length > 0);
+
+  // Calculate product primary and secondary images
+  let primaryImage = '';
+  let secondaryImage = '';
+
+  const primaryObj = imgs.find((img: any) => img.isPrimary) || imgs[0];
+  primaryImage = primaryObj?.url || '';
+
+  // Secondary Image: isSecondary flag, or first image that is not the primary image, fallback to primary image
+  const secondaryObj = imgs.find((img: any) => img.isSecondary) || imgs.find((img: any) => img.url !== primaryImage) || imgs[0];
+  secondaryImage = secondaryObj?.url || primaryImage;
+
+  const galleryImages = imgs.map((img: any) => img.url).filter(Boolean);
+
+  // Map variants if they exist
+  let mappedVariants = p.variants;
+  let variantImages: string[] = [];
+  let variantSecondaryImages: string[] = [];
+
+  if (p.variants && Array.isArray(p.variants)) {
+    mappedVariants = p.variants.map((v: any) => {
+      const vImgs = safeParseArray(v.variantImages || v.images || []).map((img: any) => {
+        if (!img) return null;
+        if (typeof img === 'string') {
+          return { url: img, isPrimary: false, isSecondary: false, sortOrder: 0 };
+        }
+        return {
+          url: img.url || img.imageUrl || '',
+          isPrimary: !!img.isPrimary,
+          isSecondary: !!img.isSecondary,
+          sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
+        };
+      }).filter((img: any) => img && img.url.trim().length > 0);
+
+      let vPrimary = '';
+      let vSecondary = '';
+
+      const vPrimaryObj = vImgs.find((img: any) => img.isPrimary) || vImgs[0];
+      // Priority for variant: Selected Variant Primary Image -> Selected Variant Secondary Image -> Product Primary
+      vPrimary = vPrimaryObj?.url || primaryImage;
+
+      const vSecondaryObj = vImgs.find((img: any) => img.isSecondary) || vImgs.find((img: any) => img.url !== vPrimary) || vImgs[0];
+      // Priority: Variant Secondary -> Variant Primary -> Product Secondary -> Product Primary
+      vSecondary = vSecondaryObj?.url || vPrimary || secondaryImage;
+
+      if (vPrimary) variantImages.push(vPrimary);
+      if (vSecondary) variantSecondaryImages.push(vSecondary);
+
+      return {
+        ...v,
+        images: vImgs,
+        variantImages: vImgs,
+        primaryImage: vPrimary,
+        secondaryImage: vSecondary,
+        galleryImages: vImgs.map((img: any) => img.url).filter(Boolean)
+      };
+    });
+  }
+
+  // Remove duplicates
+  variantImages = Array.from(new Set(variantImages));
+  variantSecondaryImages = Array.from(new Set(variantSecondaryImages));
+
+  return {
+    ...p,
+    images: imgs,
+    primaryImage,
+    secondaryImage,
+    galleryImages,
+    variants: mappedVariants,
+    variantImages,
+    variantSecondaryImages,
+    thumbnail: primaryImage
+  };
+};
+
+
 const getCategoryPath = async (categoryId: string | null): Promise<string[]> => {
   if (!categoryId) return [];
   const cacheKey = `category_path_${categoryId}`;
@@ -220,14 +312,7 @@ export const getProducts = async (req: Request, res: Response) => {
         const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
         const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
 
-        let thumbnail = '';
-        const imgs = safeParseArray(p.images);
-        if (imgs.length > 0) {
-          const primaryImg = imgs.find((img: any) => img?.isPrimary) || imgs[0];
-          thumbnail = primaryImg?.url || (typeof primaryImg === 'string' ? primaryImg : '');
-        }
-
-        return {
+        return mapProductFields({
           id: p.id,
           brandId: p.brandId,
           categoryId: p.categoryId,
@@ -242,12 +327,11 @@ export const getProducts = async (req: Request, res: Response) => {
           stock: p.stock,
           isActive: p.isActive,
           isExclusive: p.isExclusive,
-          images: imgs.map(img => typeof img === 'string' ? { url: img } : img),
+          images: p.images,
           specifications: specs,
           brand: p.brand,
           category: p.category,
           reviews: p.reviews,
-          thumbnail,
           activePrice,
           colors,
           materials,
@@ -261,7 +345,7 @@ export const getProducts = async (req: Request, res: Response) => {
           isTrending,
           isNewArrival,
           isOnSale
-        };
+        });
       });
 
       sysCache.set('all_mapped_products', allMapped, 1800); // 30 minutes cache
@@ -601,19 +685,21 @@ export const getProductBySlug = async (req: Request, res: Response) => {
     };
 
     const catPath = await getCategoryPath(item.categoryId);
+    const mappedProduct = mapProductFields({
+      ...item,
+      categoryPath: catPath,
+      bundleProducts: relations.bundleProducts.map(p => mapProductFields(p)),
+      recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
+      relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
+    });
+
     const finalResponse = {
       categoryPath: catPath,
-      variantImages: (item.variants || []).map((v: any) => ({
+      variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
-        imageIds: safeParseArray(v.variantImages || v.images || [])
+        imageIds: v.variantImages || []
       })),
-      product: {
-        ...item,
-        categoryPath: catPath,
-        bundleProducts: relations.bundleProducts,
-        recommendedFilaments: relations.recommendedFilaments,
-        relatedProducts: relations.relatedProducts
-      },
+      product: mappedProduct,
       pricing: {
         price: item.basePrice,
         salePrice: item.salePrice,
@@ -626,26 +712,27 @@ export const getProductBySlug = async (req: Request, res: Response) => {
         backorder: false
       },
       options: safeParseArray(item.options),
-      variants: (item.variants || []).map((v: any) => ({
-        ...v,
-        images: safeParseArray(v.variantImages || v.images || [])
-      })),
+      variants: mappedProduct.variants || [],
       reviews: item.reviews || [],
       // Keep backward compatibility lists
-      images: masterData.images,
-      specifications: masterData.specifications,
-      downloads: masterData.downloads,
-      features: masterData.features,
-      faqs: masterData.faqs,
-      warranty: masterData.warranty,
-      shipping: masterData.shipping,
-      seo: masterData.seo,
-      relatedProducts: relations.relatedProducts,
-      bundleProducts: relations.bundleProducts,
-      complimentaryProducts: relations.bundleProducts,
-      recommendedFilaments: relations.recommendedFilaments,
+      images: mappedProduct.images,
+      specifications: mappedProduct.specifications,
+      downloads: mappedProduct.downloads,
+      features: mappedProduct.features,
+      faqs: mappedProduct.faqs,
+      warranty: mappedProduct.warranty,
+      shipping: mappedProduct.shipping,
+      seo: mappedProduct.seo,
+      relatedProducts: mappedProduct.relatedProducts,
+      bundleProducts: mappedProduct.bundleProducts,
+      complimentaryProducts: mappedProduct.bundleProducts,
+      recommendedFilaments: mappedProduct.recommendedFilaments,
       assets: safeParseArray(item.attributes),
-      masterData
+      masterData: {
+        ...masterData,
+        images: mappedProduct.images,
+        relatedProducts: mappedProduct.relatedProducts
+      }
     };
 
     sysCache.set(cacheKey, finalResponse, 300);
@@ -695,19 +782,21 @@ export const getProductById = async (req: Request, res: Response) => {
     };
 
     const catPath = await getCategoryPath(item.categoryId);
+    const mappedProduct = mapProductFields({
+      ...item,
+      categoryPath: catPath,
+      bundleProducts: relations.bundleProducts.map(p => mapProductFields(p)),
+      recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
+      relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
+    });
+
     const finalResponse = {
       categoryPath: catPath,
-      variantImages: (item.variants || []).map((v: any) => ({
+      variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
-        imageIds: safeParseArray(v.variantImages || v.images || [])
+        imageIds: v.variantImages || []
       })),
-      product: {
-        ...item,
-        categoryPath: catPath,
-        bundleProducts: relations.bundleProducts,
-        recommendedFilaments: relations.recommendedFilaments,
-        relatedProducts: relations.relatedProducts
-      },
+      product: mappedProduct,
       pricing: {
         price: item.basePrice,
         salePrice: item.salePrice,
@@ -720,26 +809,27 @@ export const getProductById = async (req: Request, res: Response) => {
         backorder: false
       },
       options: safeParseArray(item.options),
-      variants: (item.variants || []).map((v: any) => ({
-        ...v,
-        images: safeParseArray(v.variantImages || v.images || [])
-      })),
+      variants: mappedProduct.variants || [],
       reviews: item.reviews || [],
       // Keep backward compatibility lists
-      images: masterData.images,
-      specifications: masterData.specifications,
-      downloads: masterData.downloads,
-      features: masterData.features,
-      faqs: masterData.faqs,
-      warranty: masterData.warranty,
-      shipping: masterData.shipping,
-      seo: masterData.seo,
-      relatedProducts: relations.relatedProducts,
-      bundleProducts: relations.bundleProducts,
-      complimentaryProducts: relations.bundleProducts,
-      recommendedFilaments: relations.recommendedFilaments,
+      images: mappedProduct.images,
+      specifications: mappedProduct.specifications,
+      downloads: mappedProduct.downloads,
+      features: mappedProduct.features,
+      faqs: mappedProduct.faqs,
+      warranty: mappedProduct.warranty,
+      shipping: mappedProduct.shipping,
+      seo: mappedProduct.seo,
+      relatedProducts: mappedProduct.relatedProducts,
+      bundleProducts: mappedProduct.bundleProducts,
+      complimentaryProducts: mappedProduct.bundleProducts,
+      recommendedFilaments: mappedProduct.recommendedFilaments,
       assets: safeParseArray(item.attributes),
-      masterData
+      masterData: {
+        ...masterData,
+        images: mappedProduct.images,
+        relatedProducts: mappedProduct.relatedProducts
+      }
     };
 
     sysCache.set(cacheKey, finalResponse, 300);

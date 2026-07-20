@@ -16,6 +16,62 @@ export class SettingsService {
         this.applyTheme(themeData);
       }
     });
+
+    this.loadFromLocalStorage();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", (event: StorageEvent) => {
+        if (event.key === "3d_galaxy_settings_version") {
+          const newVer = Number(event.newValue) || 0;
+          const currVer = Number(this.settingsData()?.version) || 0;
+          if (newVer > currVer) {
+            console.log(`[SETTINGS SYNC] Settings update detected in another tab. Version: ${newVer}`);
+            this.loadSettings(true);
+          }
+        }
+      });
+
+      this.initVersionPolling();
+    }
+  }
+
+  private loadFromLocalStorage() {
+    if (typeof window === "undefined") return;
+    try {
+      const cached = localStorage.getItem("3d_galaxy_settings");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        this.hydrateSettings(parsed);
+        console.log(`[SETTINGS CACHE] Loaded settings from local storage. Version: ${parsed.version || 1}`);
+      }
+    } catch (e) {
+      console.warn("Failed to load settings from local storage cache:", e);
+    }
+  }
+
+  private initVersionPolling() {
+    if (typeof window === "undefined") return;
+    setInterval(() => {
+      if (document.visibilityState === "visible") {
+        this.checkVersionAndSync();
+      }
+    }, 12000);
+  }
+
+  private async checkVersionAndSync() {
+    try {
+      const resp = await firstValueFrom(this.http.get<any>("/api/settings/version"));
+      if (resp && resp.success) {
+        const remoteVersion = resp.version;
+        const currentVersion = this.settingsData()?.version || 0;
+        if (remoteVersion > currentVersion) {
+          console.log(`[SETTINGS SYNC] Remote version (${remoteVersion}) is newer than current (${currentVersion}). Syncing...`);
+          await this.loadSettings(true);
+        }
+      }
+    } catch (e) {
+      console.warn("[SETTINGS SYNC] Background version check failed.");
+    }
   }
 
   // Expose signals for reactivity
@@ -194,17 +250,53 @@ export class SettingsService {
     if (this.isLoaded() && !force) return this.settingsData();
     if (this.loadPromise && !force) return this.loadPromise;
 
+    if (!force && typeof window !== "undefined") {
+      const cachedVer = localStorage.getItem("3d_galaxy_settings_version");
+      if (cachedVer) {
+        try {
+          const check = await firstValueFrom(this.http.get<any>("/api/settings/version"));
+          if (check && check.success && check.version <= Number(cachedVer)) {
+            this.loadFromLocalStorage();
+            if (this.isLoaded()) {
+              return this.settingsData();
+            }
+          }
+        } catch (e) {
+          console.warn("[SETTINGS CACHE] Version check failed, using local storage:", e);
+          this.loadFromLocalStorage();
+          if (this.isLoaded()) {
+            return this.settingsData();
+          }
+        }
+      }
+    }
+
     this.loadPromise = firstValueFrom(this.http.get<any>("/api/settings"))
       .then((resp) => {
         if (resp) {
           const d = resp.data !== undefined ? resp.data : resp;
           this.hydrateSettings(d);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("3d_galaxy_settings", JSON.stringify(d));
+              localStorage.setItem("3d_galaxy_settings_version", String(d.version || 1));
+            } catch (e) {
+              console.warn("Failed to save settings to local storage:", e);
+            }
+          }
         }
         this.loadPromise = null;
         return this.settingsData();
       })
       .catch((err) => {
         this.loadPromise = null;
+        if (typeof window !== "undefined") {
+          this.loadFromLocalStorage();
+        }
+        if (this.isLoaded()) {
+          console.warn("[SETTINGS CACHE] Settings API failed; using cached local storage data.");
+          return this.settingsData();
+        }
         throw err;
       });
 
@@ -216,7 +308,11 @@ export class SettingsService {
       const resp = await firstValueFrom(
         this.http.put<any>("/api/admin/settings", payload),
       );
-      // Always force-reload settings from the server after save to ensure sync
+      const d = resp.data !== undefined ? resp.data : resp;
+      if (typeof window !== "undefined" && d) {
+        localStorage.setItem("3d_galaxy_settings", JSON.stringify(d));
+        localStorage.setItem("3d_galaxy_settings_version", String(d.version || 1));
+      }
       await this.loadSettings(true);
       return resp;
     } catch (e: any) {
@@ -312,6 +408,19 @@ export class SettingsService {
       document.body.classList.add("dark");
     } else {
       document.body.classList.remove("dark");
+    }
+
+    // Dynamically update favicon in HTML head if set
+    if (themeData.favicon && typeof document !== "undefined") {
+      const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (link) {
+        link.href = themeData.favicon;
+      } else {
+        const newLink = document.createElement("link");
+        newLink.rel = "icon";
+        newLink.href = themeData.favicon;
+        document.head.appendChild(newLink);
+      }
     }
   }
 

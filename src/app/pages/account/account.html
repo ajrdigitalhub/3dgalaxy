@@ -739,14 +739,21 @@
                 >
                   <mat-icon class="scale-90">delete</mat-icon>
                 </button>
-                <div
-                  class="aspect-square bg-neutral-100 dark:bg-neutral-900 relative"
+                 <div
+                  class="aspect-square bg-neutral-100 dark:bg-neutral-900 relative overflow-hidden product-card-image-container group"
                 >
                   <img
-                    [src]="item.product.images[0]?.url || 'https://via.placeholder.com/400x400?text=No+Image'"
+                    [src]="item.product.primaryImage || item.product.images[0]?.url || 'https://via.placeholder.com/400x400?text=No+Image'"
                     [alt]="item.product.name"
-                    class="w-full h-full object-cover"
+                    class="max-w-[90%] max-h-[90%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-700"
                   />
+                  @if (item.product.secondaryImage && item.product.secondaryImage !== (item.product.primaryImage || item.product.images[0]?.url)) {
+                    <img
+                      [src]="item.product.secondaryImage"
+                      [alt]="item.product.name + ' Alternate'"
+                      class="max-w-[90%] max-h-[90%] object-contain secondary-image absolute inset-0 m-auto"
+                    />
+                  }
                 </div>
                 <div class="p-4 space-y-2">
                   <h3

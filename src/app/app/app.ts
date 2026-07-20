@@ -12,9 +12,11 @@ import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
 import { ScrollRestorationService } from '../core/services/scroll-restoration.service';
 import { ThemeService } from '../core/services/theme.service';
+import { ApiService } from '../services/api.service';
 import { RecentPurchasePopupComponent } from '../shared/components/recent-purchase-popup/recent-purchase-popup';
 import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell';
 import { NotificationPopupComponent } from '../shared/components/notification-popup/notification-popup';
+import { HeaderMegaMenuComponent } from '../shared/components/header-mega-menu/header-mega-menu.component';
 import { fromEvent } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,7 +33,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     ToastContainerComponent, 
     RecentPurchasePopupComponent,
     NotificationBellComponent,
-    NotificationPopupComponent
+    NotificationPopupComponent,
+    HeaderMegaMenuComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -43,6 +46,7 @@ export class App {
   public sessionService = inject(SessionService);
   public themeService = inject(ThemeService);
   public router = inject(Router);
+  public api = inject(ApiService);
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
   private scrollRestoration = inject(ScrollRestorationService);
@@ -73,6 +77,17 @@ export class App {
         this.isSearchFocused.set(false);
         this.isMobileSearchOpen.set(false);
         this.isMobileMenuOpen.set(false);
+
+        // Capture push notification clicks for attribution tracking
+        if (isPlatformBrowser(this.platformId)) {
+          const urlParams = new URL(window.location.href, window.location.origin).searchParams;
+          const utmLog = urlParams.get('utm_log');
+          if (utmLog) {
+            this.api.post<any>('/notifications/track-click', { logId: utmLog }).subscribe({
+              error: (err) => console.error('Failed to track push click attribution:', err)
+            });
+          }
+        }
       }
       const urlPath = this.router.url.split('?')[0];
       this.isHome.set(urlPath === '/' || urlPath === '/home');

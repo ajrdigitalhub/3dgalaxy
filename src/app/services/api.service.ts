@@ -42,6 +42,7 @@ export class ApiService {
       '/api/categories',
       '/api/brands',
       '/api/home',
+      '/api/homepage',
       '/api/public/instagram-feed',
       '/api/service-config'
     ];

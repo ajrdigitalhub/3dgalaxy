@@ -77,6 +77,7 @@ export type AdminTab =
   | "security-settings"
   | "print-settings"
   | "push-settings"
+  | "pwa-settings"
   | "transactions"
   | "webhook-logs"
   | "whatsapp-logs"
@@ -215,6 +216,11 @@ export class AdminPanel {
           id: "push-settings",
           label: "Push Notification Config",
           icon: "notifications",
+        },
+        {
+          id: "pwa-settings",
+          label: "PWA Settings",
+          icon: "install_mobile",
         },
         // { id: 'user-management', label: 'User Management', icon: 'badge' },
         // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },

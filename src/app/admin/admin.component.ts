@@ -166,7 +166,7 @@ export class AdminComponent {
           id: "homepage-builder",
           label: "Homepage Builder",
           icon: "design_services",
-          route: "content/homepage-builder",
+          route: "marketing/homepage-builder",
         },
         {
           id: "footer-builder",
@@ -205,7 +205,7 @@ export class AdminComponent {
         },
         {
           id: "push-notifications",
-          label: "Push Notifications",
+          label: "Push Notification Campaigns",
           icon: "notifications_active",
           route: "marketing/push-notifications",
         },

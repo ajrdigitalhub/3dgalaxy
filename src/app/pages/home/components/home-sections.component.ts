@@ -163,12 +163,19 @@ export class HomeShowcaseTwoComponent {
               class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
             >
               <!-- Image container -->
-              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300 product-card-image-container">
                 <img
-                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [src]="p.primaryImage || (p.images && p.images[0]) || 'https://via.placeholder.com/400'"
                   [alt]="p.name"
-                  class="max-w-full max-h-full object-contain"
+                  class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto"
                 />
+                @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]))) {
+                  <img
+                    [src]="p.secondaryImage"
+                    [alt]="p.name + ' Alternate'"
+                    class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                  />
+                }
                 @if (p.stock <= 0) {
                   <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
                     Sold out
@@ -288,12 +295,19 @@ export class HomeCategoryViewFilamentComponent {
               class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
             >
               <!-- Image container -->
-              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300 product-card-image-container">
                 <img
-                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [src]="p.primaryImage || (p.images && p.images[0]) || 'https://via.placeholder.com/400'"
                   [alt]="p.name"
-                  class="max-w-full max-h-full object-contain"
+                  class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto"
                 />
+                @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]))) {
+                  <img
+                    [src]="p.secondaryImage"
+                    [alt]="p.name + ' Alternate'"
+                    class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                  />
+                }
                 @if (p.stock <= 0) {
                   <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
                     Sold out
@@ -413,12 +427,19 @@ export class HomeCategoryViewSparePartsComponent {
               class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
             >
               <!-- Image container -->
-              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+              <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300 product-card-image-container">
                 <img
-                  [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                  [src]="p.primaryImage || (p.images && p.images[0]) || 'https://via.placeholder.com/400'"
                   [alt]="p.name"
-                  class="max-w-full max-h-full object-contain"
+                  class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto"
                 />
+                @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]))) {
+                  <img
+                    [src]="p.secondaryImage"
+                    [alt]="p.name + ' Alternate'"
+                    class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                  />
+                }
                 @if (p.stock <= 0) {
                   <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
                     Sold out
@@ -705,19 +726,24 @@ export class HomeNewsletterComponent {
                   class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item"
                 >
                   <div
-                    class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1.5 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30"
+                    class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-1.5 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
                   >
                     <img
-                      [src]="
-                        (p.images && p.images[0]?.url) ||
-                        (p.images && p.images[0]) ||
-                        'https://via.placeholder.com/150'
-                      "
-                      class="w-full h-full object-contain transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
+                      [src]="p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]) || 'https://via.placeholder.com/150'"
+                      class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
                       referrerpolicy="no-referrer"
                       loading="lazy"
                       decoding="async"
                     />
+                    @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]))) {
+                      <img
+                        [src]="p.secondaryImage"
+                        class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                        referrerpolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    }
                   </div>
                   <div
                     class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 text-left"
@@ -1790,12 +1816,19 @@ export class HomeInstagramFeedComponent {
             class="group flex flex-col items-center justify-between text-center select-none cursor-pointer h-full"
           >
             <!-- Image container -->
-            <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300">
+            <div class="relative w-full aspect-square bg-transparent rounded-2xl overflow-hidden flex items-center justify-center p-3 mb-3 group-hover:scale-105 transition-transform duration-300 product-card-image-container">
               <img
-                [src]="(p.images && p.images[0]) || 'https://via.placeholder.com/400'"
+                [src]="p.primaryImage || (p.images && p.images[0]) || 'https://via.placeholder.com/400'"
                 [alt]="p.name"
-                class="max-w-full max-h-full object-contain"
+                class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto"
               />
+              @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]))) {
+                <img
+                  [src]="p.secondaryImage"
+                  [alt]="p.name + ' Alternate'"
+                  class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto"
+                />
+              }
               @if (p.stock <= 0) {
                 <span class="absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-black text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-md z-10">
                   Sold out
@@ -1878,3 +1911,642 @@ export class HomeCategoryShowcaseRowComponent {
     this.router.navigate(["/products"], { queryParams: { category: slug } });
   }
 }
+
+// 1. FLASH DEALS
+@Component({
+  selector: "app-home-flash-deals",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="deals().length > 0">
+      <div class="flex items-center justify-between flex-wrap gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center p-2.5 bg-red-500/10 text-red-500 rounded-xl">
+            <mat-icon class="scale-110">flash_on</mat-icon>
+          </div>
+          <div>
+            <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+              Flash Deals of the Day
+            </h2>
+            <p class="text-zinc-500 text-xs font-semibold">Super-limited stock. Ending soon!</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 bg-red-500/5 dark:bg-red-500/10 border border-red-500/15 px-4 py-2 rounded-2xl text-red-500 font-extrabold text-sm tracking-wide">
+          <mat-icon class="scale-75">access_time</mat-icon>
+          <span>ENDS IN:</span>
+          <span>{{ countdown() }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div 
+          *ngFor="let p of deals()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+        >
+          <div class="absolute top-4 left-4 z-10 bg-red-600 text-white px-2 py-0.5 text-[9px] font-black rounded-lg uppercase tracking-wider shadow-sm">
+            {{ getDiscount(p.mrp, p.salePrice) }}% OFF
+          </div>
+
+          <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
+            <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
+            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
+              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto" alt="Product Alternate" />
+            }
+          </a>
+
+          <div class="space-y-2 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
+                {{ p.name }}
+              </h3>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-base font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
+                <span class="text-xs text-zinc-400 line-through font-semibold">₹{{ p.mrp | number }}</span>
+              </div>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
+              <div class="flex items-center justify-between text-[10px] font-bold text-zinc-500">
+                <span>Stock Left: {{ p.stock }}</span>
+                <span class="text-red-500">Almost Sold Out!</span>
+              </div>
+              <div class="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div class="h-full bg-red-600 rounded-full animate-pulse" [style.width.%]="mathMin(100, (p.stock / 20) * 100)"></div>
+              </div>
+
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-red-500/10 cursor-pointer">
+                Buy Now
+                <mat-icon class="scale-75">bolt</mat-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeFlashDealsComponent {
+  ds = inject(DatastoreService);
+  deals = computed(() => this.ds.homepageData()?.flashDeals || []);
+  countdown = signal('02h 44m 12s');
+
+  constructor() {
+    setInterval(() => {
+      const now = new Date();
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      const diff = endOfDay.getTime() - now.getTime();
+      const hrs = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      this.countdown.set(
+        `${String(hrs).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+      );
+    }, 1000);
+  }
+
+  getDiscount(mrp: number, sale: number): number {
+    if (!mrp) return 0;
+    return Math.round(((mrp - sale) / mrp) * 100);
+  }
+
+  mathMin(a: number, b: number): number {
+    return Math.min(a, b);
+  }
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+    }
+  }
+}
+
+// 2. BEST SELLERS
+@Component({
+  selector: "app-home-best-sellers",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="items().length > 0">
+      <div class="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
+        <div class="flex items-center justify-center p-2.5 bg-orange-500/10 text-orange-500 rounded-xl">
+          <mat-icon class="scale-110">military_tech</mat-icon>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+            Best Sellers
+          </h2>
+          <p class="text-zinc-500 text-xs font-semibold">Our most popular and trusted 3D printing choices.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div 
+          *ngFor="let p of items()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+        >
+          <div class="absolute top-4 left-4 z-10 bg-orange-600 text-white px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider shadow-sm">
+            BESTSELLER
+          </div>
+
+          <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
+            <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
+            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
+              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto" alt="Product Alternate" />
+            }
+          </a>
+
+          <div class="space-y-2 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-1 mb-1">
+                <mat-icon class="text-amber-500 scale-75">star</mat-icon>
+                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">4.8 (24)</span>
+              </div>
+              <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
+                {{ p.name }}
+              </h3>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-base font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
+                <span class="text-xs text-zinc-400 line-through font-semibold" *ngIf="p.mrp > p.salePrice">₹{{ p.mrp | number }}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+                View Details
+                <mat-icon class="scale-75">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeBestSellersComponent {
+  ds = inject(DatastoreService);
+  items = computed(() => this.ds.homepageData()?.bestSellers || []);
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+    }
+  }
+}
+
+// 3. TRENDING PRODUCTS
+@Component({
+  selector: "app-home-trending-products",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="items().length > 0">
+      <div class="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
+        <div class="flex items-center justify-center p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
+          <mat-icon class="scale-110">trending_up</mat-icon>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+            Trending Now
+          </h2>
+          <p class="text-zinc-500 text-xs font-semibold">High-interest printing machines and custom design templates.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div 
+          *ngFor="let p of items()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+        >
+          <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
+            <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
+            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
+              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto" alt="Product Alternate" />
+            }
+          </a>
+
+          <div class="space-y-2 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
+                {{ p.name }}
+              </h3>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-base font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
+                <span class="text-xs text-zinc-400 line-through font-semibold" *ngIf="p.mrp > p.salePrice">₹{{ p.mrp | number }}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+                View Details
+                <mat-icon class="scale-75">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeTrendingProductsComponent {
+  ds = inject(DatastoreService);
+  items = computed(() => this.ds.homepageData()?.trendingProducts || []);
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+    }
+  }
+}
+
+// 4. NEW ARRIVALS
+@Component({
+  selector: "app-home-new-arrivals",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="items().length > 0">
+      <div class="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
+        <div class="flex items-center justify-center p-2.5 bg-green-500/10 text-green-500 rounded-xl">
+          <mat-icon class="scale-110">fiber_new</mat-icon>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+            New Arrivals
+          </h2>
+          <p class="text-zinc-500 text-xs font-semibold">The absolute latest releases in the 3D world.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div 
+          *ngFor="let p of items()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+        >
+          <div class="absolute top-4 left-4 z-10 bg-green-650 text-white px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider shadow-sm">
+            NEW
+          </div>
+
+          <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
+            <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
+            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
+              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto" alt="Product Alternate" />
+            }
+          </a>
+
+          <div class="space-y-2 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
+                {{ p.name }}
+              </h3>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-base font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
+                <span class="text-xs text-zinc-400 line-through font-semibold" *ngIf="p.mrp > p.salePrice">₹{{ p.mrp | number }}</span>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+                View Details
+                <mat-icon class="scale-75">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeNewArrivalsComponent {
+  ds = inject(DatastoreService);
+  items = computed(() => this.ds.homepageData()?.newArrivals || []);
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+    }
+  }
+}
+
+// 5. SHOP BY MATERIAL
+@Component({
+  selector: "app-home-materials",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="materials().length > 0">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+          Premium Consumables
+        </h2>
+        <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
+          Shop by Materials
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
+        <a 
+          *ngFor="let m of materials()" 
+          [routerLink]="['/products']" 
+          [queryParams]="{ material: m.name }"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col items-center text-center hover:shadow-[0_12px_30px_rgba(234,88,12,0.06)] hover:border-orange-500/30 hover:-translate-y-0.5 transition-all group"
+        >
+          <div class="w-24 h-24 bg-orange-500/5 dark:bg-orange-500/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+            <mat-icon class="text-orange-500 scale-125">category</mat-icon>
+          </div>
+          <h4 class="text-base font-black text-zinc-900 dark:text-white uppercase tracking-wider mb-1 font-display">
+            {{ m.name }}
+          </h4>
+          <span class="text-xs text-zinc-400 font-semibold mb-2">Starts from ₹{{ m.startsFrom | number }}</span>
+          <span class="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 rounded-full">
+            {{ m.totalProducts }} Products
+          </span>
+        </a>
+      </div>
+    </section>
+  `
+})
+export class HomeMaterialsComponent {
+  ds = inject(DatastoreService);
+  materials = computed(() => this.ds.homepageData()?.materials || []);
+}
+
+// 6. SHOP BY APPLICATION
+@Component({
+  selector: "app-home-applications",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="apps().length > 0">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+          Use Cases & Sectors
+        </h2>
+        <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
+          Shop by Application
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <a 
+          *ngFor="let a of apps()" 
+          [routerLink]="['/products']" 
+          [queryParams]="{ application: a.name }"
+          class="relative bg-zinc-900 rounded-3xl overflow-hidden group min-h-[160px] p-6 flex flex-col justify-end text-left hover:-translate-y-0.5 transition-all"
+        >
+          <img [src]="'https://picsum.photos/seed/' + a.name + '/300/160'" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700" alt="App" />
+          <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-900/40 to-transparent"></div>
+          
+          <div class="relative z-10">
+            <h4 class="text-lg font-black text-white uppercase tracking-wider font-display">{{ a.name }}</h4>
+            <p class="text-xs text-zinc-300 font-semibold mt-1">Starts from ₹{{ a.startsFrom | number }}</p>
+          </div>
+        </a>
+      </div>
+    </section>
+  `
+})
+export class HomeApplicationsComponent {
+  ds = inject(DatastoreService);
+  apps = computed(() => this.ds.homepageData()?.applications || []);
+}
+
+// 7. POPULAR COLLECTIONS
+@Component({
+  selector: "app-home-collections",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="cols().length > 0">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+          Curated Choices
+        </h2>
+        <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
+          Popular Collections
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div 
+          *ngFor="let c of cols()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-6 min-h-[220px]"
+        >
+          <div class="space-y-2 text-left">
+            <h4 class="text-xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+              {{ c.name }}
+            </h4>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+              {{ c.description }}
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60 mt-4">
+            <span class="text-sm text-zinc-400 font-semibold">Starts From ₹{{ c.startingPrice | number }}</span>
+            <a [routerLink]="['/products']" [queryParams]="{ collection: c.slug }" class="h-10 px-5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 shadow-sm">
+              Explore Collection
+              <mat-icon class="scale-75">arrow_forward</mat-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeCollectionsComponent {
+  ds = inject(DatastoreService);
+  cols = computed(() => this.ds.homepageData()?.collections || []);
+}
+
+// 8. BUNDLE OFFERS & COMBOS
+@Component({
+  selector: "app-home-bundles",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="deals().length > 0">
+      <div class="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
+        <div class="flex items-center justify-center p-2.5 bg-purple-500/10 text-purple-500 rounded-xl">
+          <mat-icon class="scale-110">card_giftcard</mat-icon>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
+            Bundle Combos & Value Deals
+          </h2>
+          <p class="text-zinc-500 text-xs font-semibold">Save extra on machine and consumable packs.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div 
+          *ngFor="let p of deals()" 
+          class="bg-linear-to-br from-purple-500/5 to-pink-500/5 dark:from-purple-500/10 dark:to-pink-500/10 border border-purple-500/15 rounded-3xl p-6 flex flex-col md:flex-row gap-6 items-center hover:shadow-[0_12px_40px_rgba(168,85,247,0.06)] transition-all group"
+        >
+          <div class="w-40 h-40 bg-white dark:bg-zinc-950/40 rounded-2xl p-4 shrink-0 flex items-center justify-center border border-purple-500/10 product-card-image-container relative">
+            <img [src]="p.primaryImage || p.images[0]" (error)="handleImageError($event)" class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Bundle" />
+            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
+              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto" alt="Bundle Alternate" />
+            }
+          </div>
+
+          <div class="space-y-4 text-left flex-1">
+            <div class="inline-flex px-3 py-1 bg-purple-500/10 text-purple-500 border border-purple-500/15 text-[9px] font-black uppercase tracking-wider rounded-full">
+              MEGA BUNDLE SAVINGS
+            </div>
+            <div>
+              <h3 class="text-lg font-black text-zinc-900 dark:text-white leading-tight font-display">
+                {{ p.name }}
+              </h3>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
+                {{ p.description }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xl font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
+              <span class="text-sm text-zinc-400 line-through font-semibold">₹{{ p.mrp | number }}</span>
+            </div>
+            <a [routerLink]="['/product', p.slug]" class="inline-flex h-11 px-6 bg-purple-650 hover:bg-purple-750 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest items-center justify-center gap-1.5 shadow-md shadow-purple-500/10 cursor-pointer">
+              Grab Bundle
+              <mat-icon class="scale-75">offline_bolt</mat-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeBundleOffersComponent {
+  ds = inject(DatastoreService);
+  deals = computed(() => this.ds.homepageData()?.bundleDeals || []);
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+    }
+  }
+}
+
+// 9. DYNAMIC CUSTOMER REVIEWS
+@Component({
+  selector: "app-home-reviews",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="reviews().length > 0">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+          Testimonials & Feedback
+        </h2>
+        <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
+          Verified Buyer Experiences
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div 
+          *ngFor="let r of reviews()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col justify-between min-h-[220px]"
+        >
+          <div class="space-y-4 text-left">
+            <div class="flex items-center gap-1">
+              <mat-icon class="text-amber-500 scale-90" *ngFor="let star of [1,2,3,4,5]">star</mat-icon>
+            </div>
+            <p class="text-sm text-zinc-600 dark:text-zinc-300 font-medium italic line-clamp-4">
+              "{{ r.comment }}"
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800/60 mt-4">
+            <img [src]="r.customerPhoto" (error)="handleAvatarError($event)" class="w-10 h-10 rounded-full object-cover shrink-0 border border-zinc-200" alt="Avatar" />
+            <div class="flex flex-col text-left">
+              <span class="text-sm font-bold text-zinc-900 dark:text-white">{{ r.customerName }}</span>
+              <span class="text-[10px] text-zinc-400 font-semibold flex items-center gap-1">
+                <mat-icon class="text-green-500 scale-50">verified</mat-icon> Verified Buyer
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeReviewsComponent {
+  ds = inject(DatastoreService);
+  reviews = computed(() => this.ds.homepageData()?.reviews || []);
+
+  handleAvatarError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'assets/images/user-placeholder.png';
+    }
+  }
+}
+
+// 10. RECENT ARTICLES (BLOGS)
+@Component({
+  selector: "app-home-blogs",
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="blogs().length > 0">
+      <div class="text-center space-y-2 mb-10">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+          Learning & Knowledge
+        </h2>
+        <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
+          Latest 3D Articles & Slicing Tips
+        </h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div 
+          *ngFor="let b of blogs()" 
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+        >
+          <div class="relative w-full h-48 overflow-hidden bg-zinc-100">
+            <img [src]="b.imageUrl || 'https://picsum.photos/seed/blog/400/200'" (error)="handleImageError($event)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Blog Title" />
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col justify-between text-left space-y-4">
+            <div>
+              <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                {{ b.createdAt | date:'mediumDate' }}
+              </span>
+              <h4 class="text-base font-black text-zinc-900 dark:text-white mt-1 leading-snug font-display line-clamp-2">
+                {{ b.title }}
+              </h4>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2 line-clamp-3 leading-relaxed">
+                {{ b.excerpt }}
+              </p>
+            </div>
+            
+            <a [routerLink]="['/blog', b.slug]" class="inline-flex text-[10px] font-black uppercase tracking-widest text-orange-600 hover:text-orange-700 items-center gap-1">
+              Read Article
+              <mat-icon class="scale-75">arrow_forward</mat-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+})
+export class HomeBlogsComponent {
+  ds = inject(DatastoreService);
+  blogs = computed(() => this.ds.homepageData()?.blogs || []);
+
+  handleImageError(event: any) {
+    if (event.target) {
+      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/400/200';
+    }
+  }
+}
+

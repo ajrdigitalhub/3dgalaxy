@@ -66,6 +66,10 @@ const routes: Routes = [
         loadComponent: () => import('./marketing/newsletter/newsletter-management.component').then(m => m.NewsletterManagementComponent)
       },
       {
+        path: 'marketing/homepage-builder',
+        loadComponent: () => import('./marketing/homepage-builder/homepage-builder.component').then(m => m.HomepageBuilderComponent)
+      },
+      {
         path: 'marketing',
         loadChildren: () => import('./dashboard/dashboard.module').then(m => m.DashboardModule)
       },

@@ -194,6 +194,7 @@ import { firstValueFrom } from "rxjs";
                   <!-- Main Image -->
                   <img
                     [src]="
+                      p.primaryImage ||
                       (p.images && p.images[0]?.url) ||
                       (p.images && p.images[0]) ||
                       'https://via.placeholder.com/400x400?text=No+Image'
@@ -204,9 +205,9 @@ import { firstValueFrom } from "rxjs";
                   />
 
                   <!-- Alternate Image on Hover -->
-                  @if (p.images && p.images.length > 1) {
+                  @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]))) {
                     <img
-                      [src]="p.images[1]?.url || p.images[1]"
+                      [src]="p.secondaryImage"
                       class="absolute inset-0 w-[85%] h-[85%] m-auto object-contain secondary-image z-2"
                       alt="{{ p.name }} Alternate"
                       loading="lazy"

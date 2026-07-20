@@ -1037,5 +1037,140 @@ model CustomerActivityLog {
   @@map("customer_activity_logs")
 }
 
+model PushCampaign {
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String            @db.VarChar(255)
+  type            String            @db.VarChar(50) // Promotional, Flash Sale, New Product, etc.
+  status          String            @default("Draft") @db.VarChar(50) // Draft, Scheduled, Sending, Sent, Failed, Paused
+  title           String            @db.VarChar(255)
+  body            String            @db.Text
+  image           String?           @db.Text
+  icon            String?           @db.Text
+  actionUrl       String?           @map("action_url") @db.Text
+  ctaText         String?           @map("cta_text") @db.VarChar(100)
+  deepLink        String?           @map("deep_link") @db.Text
+  priority        String            @default("Normal") @db.VarChar(50) // Normal, High
+  expiryTime      DateTime?         @map("expiry_time") @db.Timestamptz
+  aiGenerated     Boolean           @default(false) @map("ai_generated")
+  productsConfig  Json?             @map("products_config") // Selection mode, count, products, etc.
+  audienceId      String?           @map("audience_id") @db.Uuid
+  scheduleId      String?           @map("schedule_id") @db.Uuid
+  scheduledAt     DateTime?         @map("scheduled_at") @db.Timestamptz
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  audience        PushAudience?     @relation(fields: [audienceId], references: [id], onDelete: SetNull)
+  schedule        PushSchedule?     @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  logs            PushLog[]
+  analytics       PushAnalytics[]
+  queues          NotificationQueue[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@index([type])
+  @@map("push_campaigns")
+}
+
+model PushTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(255)
+  category    String   @db.VarChar(100) // Offers, Flash Sales, Product Launch, Festival, Reminder, Announcement, Custom
+  title       String   @db.VarChar(255)
+  body        String   @db.Text
+  image       String?  @db.Text
+  actionUrl   String?  @map("action_url") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("push_templates")
+}
+
+model PushAudience {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String         @db.VarChar(255)
+  description String?        @db.Text
+  rules       Json           @map("rules") // json inclusion/exclusion filters
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  campaigns   PushCampaign[]
+
+  @@map("push_audiences")
+}
+
+model PushSchedule {
+  id             String         @id @default(uuid()) @db.Uuid
+  type           String         @db.VarChar(50) // Send Now, Specific Date, Daily, Weekly, Monthly, Cron
+  scheduledAt    DateTime?      @map("scheduled_at") @db.Timestamptz
+  cronExpression String?        @map("cron_expression") @db.VarChar(100)
+  timezone       String         @default("UTC") @db.VarChar(50)
+  settings       Json?          @map("settings") // retryOnFailure, businessHoursOnly, etc.
+  nextRunAt      DateTime?      @map("next_run_at") @db.Timestamptz
+  lastRunAt      DateTime?      @map("last_run_at") @db.Timestamptz
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  campaigns      PushCampaign[]
+
+  @@map("push_schedules")
+}
+
+model PushAnalytics {
+  id               String       @id @default(uuid()) @db.Uuid
+  campaignId       String       @unique @map("campaign_id") @db.Uuid
+  sentCount        Int          @default(0) @map("sent_count")
+  deliveredCount   Int          @default(0) @map("delivered_count")
+  openedCount      Int          @default(0) @map("opened_count")
+  clickedCount     Int          @default(0) @map("clicked_count")
+  conversionCount  Int          @default(0) @map("conversion_count")
+  failedCount      Int          @default(0) @map("failed_count")
+  revenueGenerated Decimal      @default(0) @map("revenue_generated") @db.Decimal(10, 2)
+  deviceSplit      Json?        @map("device_split")
+  browserSplit     Json?        @map("browser_split")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  campaign         PushCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("push_analytics")
+}
+
+model PushLog {
+  id           String        @id @default(uuid()) @db.Uuid
+  campaignId   String?       @map("campaign_id") @db.Uuid
+  userId       String?       @map("user_id") @db.Uuid
+  guestId      String?       @map("guest_id") @db.VarChar(255)
+  fcmToken     String        @map("fcm_token") @db.Text
+  status       String        @db.VarChar(50) // SENT, DELIVERED, OPENED, CLICKED, FAILED
+  errorMessage String?       @map("error_message") @db.Text
+  deviceInfo   Json?         @map("device_info")
+  deliveredAt  DateTime?     @map("delivered_at") @db.Timestamptz
+  openedAt     DateTime?     @map("opened_at") @db.Timestamptz
+  clickedAt    DateTime?     @map("clicked_at") @db.Timestamptz
+  convertedAt  DateTime?     @map("converted_at") @db.Timestamptz
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  campaign     PushCampaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("push_logs")
+}
+
+model NotificationQueue {
+  id           String        @id @default(uuid()) @db.Uuid
+  campaignId   String?       @map("campaign_id") @db.Uuid
+  fcmToken     String        @map("fcm_token") @db.Text
+  payload      Json          @map("payload")
+  priority     String        @default("Normal") @db.VarChar(50)
+  status       String        @default("Pending") @db.VarChar(50) // Pending, Processing, Sent, Failed
+  retryCount   Int           @default(0) @map("retry_count")
+  errorMessage String?       @map("error_message") @db.Text
+  scheduledAt  DateTime      @map("scheduled_at") @db.Timestamptz
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  campaign     PushCampaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("notification_queues")
+}
+
+
 
 

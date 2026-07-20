@@ -95,6 +95,11 @@ export interface ProductVariant {
   name: string;
   images?: any[];
   options?: any[];
+  variantImages?: any[];
+  primaryImage?: string;
+  secondaryImage?: string;
+  galleryImages?: string[];
+  variantSecondaryImages?: string[];
 }
 
 export interface Product {
@@ -158,6 +163,12 @@ export interface Product {
   recommendedFilaments?: any;
   createdAt?: string;
   updatedAt?: string;
+  primaryImage?: string;
+  secondaryImage?: string;
+  galleryImages?: string[];
+  variantImages?: string[];
+  variantSecondaryImages?: string[];
+  thumbnail?: string;
 }
 
 export interface CartItem {
@@ -481,6 +492,7 @@ export class DatastoreService {
   });
   
   homepageLoading = signal<boolean>(true);
+  homepageData = signal<any>(null);
   categoriesLoading = signal<boolean>(true);
   bannersLoading = signal<boolean>(true);
   productsLoading = signal<boolean>(true);
@@ -1073,7 +1085,7 @@ export class DatastoreService {
 
   public loadConsolidatedHome(force = false) {
     if (force || !this.consolidatedHomeCache$) {
-      this.consolidatedHomeCache$ = this.api.get<any>('/home').pipe(
+      this.consolidatedHomeCache$ = this.api.get<any>('/homepage').pipe(
         catchError((err) => {
           console.error('Error loading consolidated home payload:', err);
           this.consolidatedHomeCache$ = undefined;
@@ -1101,7 +1113,7 @@ export class DatastoreService {
           const d = res.data;
           
           // 1. Settings & Theme
-          const settingsVal = d.settings || {};
+          const settingsVal = d.settings || d;
           try {
             this.settingsService.hydrateSettings(settingsVal);
           } catch (e) {
@@ -1109,8 +1121,13 @@ export class DatastoreService {
           }
 
           // 2. Categories
-          if (d.categories) {
-            this.categories.set(d.categories);
+          if (d.featuredCategories) {
+            const mappedCats = d.featuredCategories.map((c: any) => ({
+              ...c,
+              isFeatured: true,
+              isActive: true
+            }));
+            this.categories.set(mappedCats);
           }
 
           // 3. Navigation megamenu
@@ -1122,6 +1139,9 @@ export class DatastoreService {
           if (d.featuredProducts && this.products().length <= d.featuredProducts.length) {
             this.products.set(d.featuredProducts);
           }
+
+          // 5. Store consolidated dynamic payload
+          this.homepageData.set(d);
         }
       }
     });

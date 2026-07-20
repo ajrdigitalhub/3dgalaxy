@@ -2,10 +2,11 @@ import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
+import { PwaDashboardCardComponent } from './pwa-dashboard-card';
 
 @Component({
   selector: 'app-admin-dashboard-tab',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, PwaDashboardCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6 animate-fadeIn pb-12 font-sans">
@@ -40,6 +41,9 @@ import { AdminPanel } from '../admin';
           </button>
         </div>
       </div>
+
+      <!-- PWA APPLICATION INSTALLATION & DIAGNOSTICS CARD -->
+      <app-admin-pwa-dashboard-card></app-admin-pwa-dashboard-card>
 
       <!-- KPI TELEMETRY CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

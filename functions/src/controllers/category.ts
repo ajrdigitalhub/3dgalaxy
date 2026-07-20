@@ -31,6 +31,8 @@ const buildCategoryTree = (
     }));
 };
 
+import { invalidateHeaderMenuCache } from './headerMenu';
+
 export const clearCategoryCache = () => {
   sysCache.del('categories_tree');
   sysCache.del('categories_flat');
@@ -38,6 +40,7 @@ export const clearCategoryCache = () => {
   sysCache.clearPattern('category_children_');
   sysCache.clearPattern('category_slug_');
   sysCache.clearPattern('category_id_');
+  invalidateHeaderMenuCache();
   clearCache();
 };
 

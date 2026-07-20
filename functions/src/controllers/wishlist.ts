@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { mapProductFields } from './product';
 
 export const getWishlist = async (req: any, res: Response) => {
   const userId = req.user?.id;
@@ -14,7 +15,12 @@ export const getWishlist = async (req: any, res: Response) => {
       include: { product: true }
     });
 
-    return res.status(200).json({ success: true, data: wishlist });
+    const mappedWishlist = wishlist.map((item: any) => ({
+      ...item,
+      product: mapProductFields(item.product)
+    }));
+
+    return res.status(200).json({ success: true, data: mappedWishlist });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to access wishlist', details: error.message });
   }

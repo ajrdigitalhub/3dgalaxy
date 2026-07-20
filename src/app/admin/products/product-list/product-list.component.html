@@ -54,21 +54,31 @@
   <app-admin-data-table [headers]="headers">
     @for (p of paginatedProducts(); track p.id) {
       <tr
-        class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors cursor-pointer"
+        class="group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 font-semibold text-zinc-900 dark:text-zinc-100 transition-colors cursor-pointer"
         (click)="viewProductPage(p.slug)"
       >
         <td class="py-4">
           <div class="flex items-center gap-3">
-            <img
-              [src]="
-                p.images[0]?.url ||
-                p.images[0] ||
-                'https://picsum.photos/100/100'
-              "
-              alt="Product thumbnail"
-              class="h-9 w-9 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 group-hover:scale-105 transition-transform duration-200"
-              referrerpolicy="no-referrer"
-            />
+            <div class="relative h-9 w-9 shrink-0 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden hover-glow">
+              <img
+                [src]="
+                  p.images[0]?.url ||
+                  p.images[0] ||
+                  'https://picsum.photos/100/100'
+                "
+                alt="Product thumbnail"
+                class="absolute inset-0 h-full w-full object-contain primary-image"
+                referrerpolicy="no-referrer"
+              />
+              @if (p.images && p.images.length > 1) {
+                <img
+                  [src]="p.images[1]?.url || p.images[1]"
+                  alt="Product hover thumbnail"
+                  class="absolute inset-0 h-full w-full object-contain secondary-image"
+                  referrerpolicy="no-referrer"
+                />
+              }
+            </div>
             <div class="min-w-0">
               <p
                 class="font-black uppercase text-zinc-900 dark:text-white leading-tight hover:text-blue-500 transition-colors truncate max-w-[240px] block"

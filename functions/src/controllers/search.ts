@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { mapProductFields } from './product';
+
 
 export const getSearchSuggestions = async (req: Request, res: Response) => {
   try {
@@ -198,7 +200,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       data: {
-        products,
+        products: products.map((p: any) => mapProductFields(p)),
         categories,
         brands,
         services: []

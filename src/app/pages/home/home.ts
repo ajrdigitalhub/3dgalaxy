@@ -33,6 +33,16 @@ import {
   HomeTestimonialsComponent,
   HomeInstagramFeedComponent,
   HomeCategoryShowcaseRowComponent,
+  HomeFlashDealsComponent,
+  HomeBestSellersComponent,
+  HomeTrendingProductsComponent,
+  HomeNewArrivalsComponent,
+  HomeMaterialsComponent,
+  HomeApplicationsComponent,
+  HomeCollectionsComponent,
+  HomeBundleOffersComponent,
+  HomeReviewsComponent,
+  HomeBlogsComponent
 } from "./components/home-sections.component";
 
 @Component({
@@ -60,6 +70,16 @@ import {
     HomeStatisticsComponent,
     HomeTestimonialsComponent,
     HomeInstagramFeedComponent,
+    HomeFlashDealsComponent,
+    HomeBestSellersComponent,
+    HomeTrendingProductsComponent,
+    HomeNewArrivalsComponent,
+    HomeMaterialsComponent,
+    HomeApplicationsComponent,
+    HomeCollectionsComponent,
+    HomeBundleOffersComponent,
+    HomeReviewsComponent,
+    HomeBlogsComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./home.html",

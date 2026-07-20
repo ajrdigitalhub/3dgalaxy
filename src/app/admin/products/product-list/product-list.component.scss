@@ -2,3 +2,48 @@
 :host {
   display: block;
 }
+
+@keyframes glow-pulse {
+  0% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.4), 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 6px rgba(59, 130, 246, 0.4);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.4), 0 0 2px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+}
+
+.hover-glow {
+  transition: all 0.3s ease-in-out;
+  position: relative;
+
+  .primary-image {
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .secondary-image {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+}
+
+tr.group:hover {
+  .hover-glow {
+    animation: glow-pulse 1.8s infinite ease-in-out;
+    transform: scale(1.05);
+
+    .primary-image:has(~ .secondary-image) {
+      opacity: 0;
+    }
+
+    .secondary-image {
+      opacity: 1;
+    }
+  }
+}

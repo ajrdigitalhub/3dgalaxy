@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   getHomepageSections,
-  getFrontendLayout,
+  getDetailedDynamicHomepageData,
   createHomepageSection,
   updateHomepageSection,
   deleteHomepageSection,
@@ -11,7 +11,7 @@ import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
-router.get('/', cacheMiddleware(300), getFrontendLayout);
+router.get('/', cacheMiddleware(300), getDetailedDynamicHomepageData);
 router.get('/admin', authenticateToken, requireRole(['Admin']), getHomepageSections);
 
 router.post('/', authenticateToken, requireRole(['Admin']), createHomepageSection);

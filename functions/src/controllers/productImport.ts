@@ -418,6 +418,13 @@ export const buildProductPayload = async (
     (group.uploadedImages || group.images || []).filter(Boolean),
   );
 
+  const formattedProductImages = productImages.map((url: string, index: number) => ({
+    url,
+    isPrimary: index === 0,
+    isSecondary: index === 1,
+    sortOrder: index
+  }));
+
   const variantItems = [];
   for (const variant of group.variants) {
     const images = uniqueArray(
@@ -434,6 +441,13 @@ export const buildProductPayload = async (
       matchedImages = matchImagesToVariant(variant, productImages, group);
     }
 
+    const formattedVariantImages = matchedImages.map((url: string, index: number) => ({
+      url,
+      isPrimary: index === 0,
+      isSecondary: index === 1,
+      sortOrder: index
+    }));
+
     variantItems.push({
       name: variant.name || sku,
       sku: variant.sku || `${sku}-${variant.name || "default"}`,
@@ -445,7 +459,7 @@ export const buildProductPayload = async (
       stock: variant.stock || 0,
       weight: variant.weight || 0,
       barcode: variant.barcode || "",
-      variantImages: matchedImages,
+      variantImages: formattedVariantImages,
       optionValues: variant.optionValues || {},
     });
   }
@@ -492,7 +506,7 @@ export const buildProductPayload = async (
     seoTitle: group.seoTitle || "",
     seoDescription: group.seoDescription || "",
     seoKeywords: generateSeoKeywords(group),
-    images: productImages,
+    images: formattedProductImages,
     variants: variantItems,
     specifications: group.specifications || [],
     downloads: [],

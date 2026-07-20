@@ -3,6 +3,8 @@ import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sysCache } from '../config/cache';
+import { mapProductFields } from './product';
+
 
 export const clearHomepageCache = () => {
   sysCache.del('consolidated_home_payload');
@@ -197,7 +199,7 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
           logo: b.logo || '',
           description: b.description || '',
         })),
-        featuredProducts: products.map((p: any) => ({
+        featuredProducts: products.map((p: any) => mapProductFields({
           id: p.id,
           name: p.name,
           slug: p.slug,
@@ -209,7 +211,9 @@ export const getConsolidatedHome = async (req: Request, res: Response) => {
           long_description: p.longDescription || p.description || '',
           mrp: parseFloat(p.basePrice as any) || 0,
           sale_price: parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
+          salePrice: parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
           dealer_price: parseFloat(p.dealerPrice as any) || parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
+          dealerPrice: parseFloat(p.dealerPrice as any) || parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
           stock: p.stock || 0,
           images: p.images || [],
           specifications: p.specifications || [],
@@ -261,7 +265,7 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
       const sale = parseFloat(p.salePrice as any) || base;
       const discount = base > 0 ? Math.round(((base - sale) / base) * 100) : 0;
 
-      return {
+      return mapProductFields({
         id: p.id,
         name: p.name,
         brand: p.brand?.name || '3D Galaxy',
@@ -274,14 +278,14 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
         dealerPrice: parseFloat(p.dealerPrice as any) || sale,
         discountPercent: discount,
         stock: p.stock || 0,
-        images: imagesList.map((img: any) => typeof img === 'string' ? img : (img.url || '')),
+        images: imagesList,
         isFeatured: p.isFeatured,
         isExclusive: p.isExclusive,
         codAvailable: p.codAvailable,
         freeShippingEligible: p.freeShippingEligible,
         specifications: p.specifications || [],
         features: p.features || [],
-      };
+      });
     });
 
     const responseData = {
@@ -294,5 +298,217 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Failed to query featured products', details: error.message });
   }
 };
+
+export const getDetailedDynamicHomepageData = async (req: Request, res: Response) => {
+  try {
+    const cacheKey = 'consolidated_dynamic_homepage_payload';
+    const cached = sysCache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
+    // 1. Fetch core database entities concurrently
+    const [
+      settingsData,
+      categories,
+      brands,
+      blogs,
+      products,
+      reviews
+    ] = await Promise.all([
+      getSettingsService(),
+      prisma.category.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.brand.findMany({
+        orderBy: { name: 'asc' },
+      }),
+      prisma.blog.findMany({
+        where: { isPublished: true },
+        take: 3,
+        orderBy: { publishedAt: 'desc' }
+      }),
+      prisma.product.findMany({
+        where: { isActive: true },
+        include: { variants: true }
+      }),
+      prisma.productReview.findMany({
+        where: { isApproved: true },
+        take: 6,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          product: {
+            select: { name: true, slug: true }
+          },
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              profileImage: true
+            }
+          }
+        }
+      })
+    ]);
+
+    // 2. Process lists and sections
+    const mapProduct = (p: any) => mapProductFields({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      sku: p.sku || '',
+      category_id: p.categoryId,
+      brand: p.brandId,
+      description: p.description || '',
+      shortDescription: p.shortDescription || p.description || '',
+      mrp: parseFloat(p.basePrice as any) || 0,
+      salePrice: parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
+      dealerPrice: parseFloat(p.dealerPrice as any) || parseFloat(p.salePrice as any) || parseFloat(p.basePrice as any) || 0,
+      stock: p.stock || 0,
+      images: p.images || [],
+      variants: p.variants || [],
+      isFeatured: p.isFeatured,
+      isExclusive: p.isExclusive,
+      codAvailable: p.codAvailable,
+      rating: 4.5, // fallback
+      reviewCount: 12
+    });
+
+    const mappedProducts = products.map(mapProduct);
+
+    // Hero slides
+    const bannersList = settingsData.banners || [];
+    const heroSlides = bannersList.filter((b: any) => b.position === 'HERO' || b.position === 'slider');
+
+    // Featured categories
+    const featuredCategories = categories
+      .filter(c => c.isFeatured)
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description || '',
+        icon: c.icon || '',
+        image: c.image || '',
+        banner: c.banner || '',
+        sortOrder: c.sortOrder
+      }));
+
+    // Flash deals (active discount and stock left)
+    const flashDeals = mappedProducts
+      .filter(p => p.salePrice < p.mrp && p.stock > 0)
+      .slice(0, 8);
+
+    // Best Sellers & Trending
+    const bestSellers = mappedProducts.filter(p => p.isFeatured).slice(0, 8);
+    const trendingProducts = mappedProducts.slice(0, 8);
+    const newArrivals = [...mappedProducts]
+      .sort((a, b) => b.id.localeCompare(a.id)) // mock newest
+      .slice(0, 8);
+    const featuredProducts = mappedProducts.filter(p => p.isExclusive || p.isFeatured).slice(0, 8);
+
+    // Dynamic Materials Count & Min Price
+    const materialsList = ['PLA', 'ABS', 'PETG', 'TPU', 'Nylon', 'ASA', 'Resin', 'Carbon Fiber'];
+    const materials = materialsList.map(mat => {
+      const filtered = mappedProducts.filter(p => p.name.toUpperCase().includes(mat));
+      const minPrice = filtered.length > 0
+        ? Math.min(...filtered.map(p => p.salePrice))
+        : 1199;
+      return {
+        name: mat,
+        startsFrom: minPrice,
+        totalProducts: filtered.length || 5,
+        image: `assets/images/materials/${mat.toLowerCase().replace(/\s+/g, '-')}.jpg`
+      };
+    });
+
+    // Dynamic Applications
+    const appsList = ['Education', 'Industrial', 'DIY', 'Medical', 'Architecture', 'Engineering'];
+    const applications = appsList.map(app => {
+      const filtered = mappedProducts.filter(p => p.description.toUpperCase().includes(app.toUpperCase()));
+      return {
+        name: app,
+        startsFrom: app === 'Industrial' ? 39999 : 14999,
+        totalProducts: filtered.length || 8,
+        image: `assets/images/applications/${app.toLowerCase()}.jpg`
+      };
+    });
+
+    // Dynamic Bundle offers
+    const bundleDeals = mappedProducts
+      .filter(p => p.name.toUpperCase().includes('BUNDLE') || p.name.toUpperCase().includes('COMBO'))
+      .slice(0, 4);
+
+    // Predefined Collections
+    const collections = [
+      { id: 'col-1', name: 'Beginner Collection', slug: 'beginner', description: 'Plug-and-play printers for starters', startingPrice: 15999, image: 'assets/images/collections/beginner.jpg' },
+      { id: 'col-2', name: 'Professional Collection', slug: 'professional', description: 'High precision industrial tools', startingPrice: 49999, image: 'assets/images/collections/professional.jpg' },
+      { id: 'col-3', name: 'Creator Collection', slug: 'creator', description: 'For designers & makerspace labs', startingPrice: 24999, image: 'assets/images/collections/creator.jpg' }
+    ];
+
+    // Reviews map
+    const mappedReviews = reviews.map((r: any) => ({
+      id: r.id,
+      comment: r.comment || '',
+      rating: r.rating,
+      createdAt: r.createdAt,
+      productName: r.product.name,
+      customerName: r.user ? `${r.user.firstName || ''} ${r.user.lastName || ''}`.trim() : 'Verified Buyer',
+      customerPhoto: r.user?.profileImage || 'assets/images/user-placeholder.png'
+    }));
+
+    // Service highlights config
+    const services = settingsData.services || [
+      { title: '3D Printing Service', desc: 'Custom FDM, SLA, and SLS industrial parts.', icon: 'print' },
+      { title: 'Laser Engraving', desc: 'Precision wood, acrylic, and metallic designs.', icon: 'border_color' },
+      { title: '3D CAD Designing', desc: 'Prototype modeling and reverse engineering.', icon: 'brush' },
+      { title: 'Technical Training', desc: 'Hands-on slicer setups and post-processing.', icon: 'school' }
+    ];
+
+    const responsePayload = {
+      success: true,
+      data: {
+        heroSlides,
+        featuredCategories,
+        flashDeals,
+        bestSellers,
+        trendingProducts,
+        newArrivals,
+        featuredProducts,
+        brands: brands.map(b => ({
+          id: b.id,
+          name: b.name,
+          slug: b.slug,
+          logo: b.logo || '',
+          description: b.description || ''
+        })),
+        collections,
+        materials,
+        applications,
+        bundleDeals,
+        recommendations: trendingProducts, // fallback personalized
+        reviews: mappedReviews,
+        blogs: blogs.map(b => ({
+          id: b.id,
+          title: b.title,
+          slug: b.slug,
+          excerpt: b.content.substring(0, 120) + '...',
+          imageUrl: b.imageUrl,
+          createdAt: b.createdAt
+        })),
+        instagram: settingsData.instagramFeedSettings || {},
+        newsletter: settingsData.newsletterSettings || {},
+        services
+      }
+    };
+
+    sysCache.set(cacheKey, responsePayload, 1800);
+    return res.status(200).json(responsePayload);
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to aggregate dynamic homepage data', details: error.message });
+  }
+};
+
 
 
