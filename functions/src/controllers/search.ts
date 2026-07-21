@@ -2,67 +2,6 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { mapProductFields } from './product';
 
-
-export const getSearchSuggestions = async (req: Request, res: Response) => {
-  try {
-    const q = req.query.q as string;
-    if (!q || q.length < 2) {
-      return res.status(200).json({
-        success: true,
-        data: { products: [], categories: [], brands: [], services: [] }
-      });
-    }
-
-    const searchStr = q.toLowerCase();
-    const terms = searchStr.split(/\s+/).filter(t => t.length > 0);
-
-    let productWhere: any = { isActive: true };
-    let categoryWhere: any = {};
-    let brandWhere: any = {};
-
-    if (terms.length > 0) {
-      productWhere.AND = terms.map(term => ({
-        OR: [
-          { name: { contains: term, mode: 'insensitive' } },
-          { description: { contains: term, mode: 'insensitive' } },
-          { sku: { contains: term, mode: 'insensitive' } },
-          { category: { name: { contains: term, mode: 'insensitive' } } },
-          { brand: { name: { contains: term, mode: 'insensitive' } } }
-        ]
-      }));
-
-      categoryWhere.AND = terms.map(term => ({
-        name: { contains: term, mode: 'insensitive' }
-      }));
-
-      brandWhere.AND = terms.map(term => ({
-        name: { contains: term, mode: 'insensitive' }
-      }));
-    }
-    
-    // Log search query async if setting enabled (skip for <3 chars?)
-    // In this basic version we will just log in the `search` endpoint, not everywhere in suggestions to avoid spam.
-
-    const [products, categories, brands] = await Promise.all([
-      prisma.product.findMany({
-        where: productWhere,
-        include: {
-          category: true,
-          reviews: true,
-          brand: true
-        },
-        take: 5
-      }),
-      prisma.category.findMany({
-        where: categoryWhere,
-        take: 5
-      }),
-      prisma.brand.findMany({
-        where: brandWhere,
-        take: 5
-      })
-    ]);
-
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
   if (typeof val === 'string') {
@@ -76,25 +15,146 @@ const safeParseArray = (val: any): any[] => {
   return Array.isArray(val) ? val : [];
 };
 
-    // Format products
+const computeRelevanceScore = (p: any, query: string, terms: string[]): number => {
+  let score = 0;
+  const name = (p.name || '').toLowerCase();
+  const sku = (p.sku || '').toLowerCase();
+  const catName = (p.category?.name || (typeof p.category === 'string' ? p.category : '') || '').toLowerCase();
+  const brandName = (p.brand?.name || (typeof p.brand === 'string' ? p.brand : '') || '').toLowerCase();
+
+  // Exact full name match
+  if (name === query) score += 100;
+  // Name starts with query
+  else if (name.startsWith(query)) score += 80;
+  // Name contains full query
+  else if (name.includes(query)) score += 60;
+
+  // Term matches in Name, SKU, Category, Brand
+  terms.forEach(t => {
+    if (name.includes(t)) score += 30;
+    if (sku.includes(t)) score += 25;
+    if (catName.includes(t)) score += 20;
+    if (brandName.includes(t)) score += 15;
+  });
+
+  return score;
+};
+
+const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
+  const fullSearchStr = terms.join(' ').toLowerCase();
+
+  // 1. Primary query: Name, SKU, Category Name, or Brand Name
+  const primaryWhere: any = {
+    isActive: true,
+    AND: terms.map(term => ({
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { sku: { contains: term, mode: 'insensitive' } },
+        { category: { name: { contains: term, mode: 'insensitive' } } },
+        { brand: { name: { contains: term, mode: 'insensitive' } } }
+      ]
+    }))
+  };
+
+  const primaryProducts = await prisma.product.findMany({
+    where: primaryWhere,
+    include: { category: true, reviews: true, brand: true },
+    ...(limit ? { take: limit * 3 } : {})
+  });
+
+  let allProducts = [...primaryProducts];
+
+  // 2. Secondary query: Description (only if primary products are fewer than requested limit)
+  if (limit && allProducts.length < limit) {
+    const existingIds = new Set(allProducts.map(p => p.id));
+    const secondaryWhere: any = {
+      isActive: true,
+      id: { notIn: Array.from(existingIds) },
+      AND: terms.map(term => ({
+        OR: [
+          { description: { contains: term, mode: 'insensitive' } },
+          { shortDescription: { contains: term, mode: 'insensitive' } }
+        ]
+      }))
+    };
+
+    const secondaryProducts = await prisma.product.findMany({
+      where: secondaryWhere,
+      include: { category: true, reviews: true, brand: true },
+      take: limit - allProducts.length
+    });
+
+    allProducts.push(...secondaryProducts);
+  }
+
+  // Sort by relevance score
+  allProducts.sort((a, b) => {
+    const scoreA = computeRelevanceScore(a, fullSearchStr, terms);
+    const scoreB = computeRelevanceScore(b, fullSearchStr, terms);
+    return scoreB - scoreA;
+  });
+
+  return limit ? allProducts.slice(0, limit) : allProducts;
+};
+
+export const getSearchSuggestions = async (req: Request, res: Response) => {
+  try {
+    const q = req.query.q as string;
+    if (!q || q.length < 2) {
+      return res.status(200).json({
+        success: true,
+        data: { products: [], categories: [], brands: [], services: [] }
+      });
+    }
+
+    const searchStr = q.toLowerCase().trim();
+    const terms = searchStr.split(/\s+/).filter(t => t.length > 0);
+
+    let categoryWhere: any = {};
+    let brandWhere: any = {};
+
+    if (terms.length > 0) {
+      categoryWhere.AND = terms.map(term => ({
+        name: { contains: term, mode: 'insensitive' }
+      }));
+
+      brandWhere.AND = terms.map(term => ({
+        name: { contains: term, mode: 'insensitive' }
+      }));
+    }
+
+    const [products, categories, brands] = await Promise.all([
+      fetchProductsByRelevance(terms, 5),
+      prisma.category.findMany({
+        where: categoryWhere,
+        take: 5
+      }),
+      prisma.brand.findMany({
+        where: brandWhere,
+        take: 5
+      })
+    ]);
+
+    // Format products using mapProductFields
     const formattedProducts = products.map((p) => {
+      const mapped = mapProductFields(p);
       let avgRating = 4.5;
       if (p.reviews && p.reviews.length > 0) {
         const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
         avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
       }
       return {
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        price: Number(p.basePrice),
-        salePrice: p.salePrice ? Number(p.salePrice) : null,
-        image: safeParseArray(p.images)[0]?.url || null,
-        category: p.category?.name || null,
+        id: mapped.id,
+        name: mapped.name,
+        slug: mapped.slug,
+        price: Number(mapped.basePrice || mapped.price || 0),
+        salePrice: mapped.salePrice ? Number(mapped.salePrice) : null,
+        image: mapped.primaryImage || mapped.thumbnail || (mapped.images && mapped.images[0]?.url) || null,
+        category: p.category?.name || (typeof p.category === 'string' ? p.category : null),
         categoryId: p.categoryId || null,
-        brand: p.brand?.name || null,
-        stock: p.stock,
-        shortDescription: p.shortDescription || null,
+        brand: p.brand?.name || (typeof p.brand === 'string' ? p.brand : null),
+        stock: mapped.stock,
+        shortDescription: mapped.shortDescription || null,
         rating: avgRating,
         type: 'Product'
       };
@@ -106,7 +166,7 @@ const safeParseArray = (val: any): any[] => {
         products: formattedProducts,
         categories: categories.map(c => ({ id: c.id, name: c.name, slug: c.slug, type: 'Category' })),
         brands: brands.map(b => ({ id: b.id, name: b.name, slug: b.slug, type: 'Brand' })),
-        services: [] // No separate service model
+        services: []
       }
     });
   } catch (error: any) {
@@ -116,8 +176,7 @@ const safeParseArray = (val: any): any[] => {
 
 export const getSearchResults = async (req: Request, res: Response) => {
   try {
-    const q = req.query.q as string || '';
-    const userId = (req as any).user?.id || null;
+    const q = (req.query.q as string || '').trim();
 
     let products: any[] = [];
     let categories: any[] = [];
@@ -127,21 +186,10 @@ export const getSearchResults = async (req: Request, res: Response) => {
       const searchStr = q.toLowerCase();
       const terms = searchStr.split(/\s+/).filter(t => t.length > 0);
 
-      let productWhere: any = { isActive: true };
       let categoryWhere: any = {};
       let brandWhere: any = {};
 
       if (terms.length > 0) {
-        productWhere.AND = terms.map(term => ({
-          OR: [
-            { name: { contains: term, mode: 'insensitive' } },
-            { description: { contains: term, mode: 'insensitive' } },
-            { sku: { contains: term, mode: 'insensitive' } },
-            { category: { name: { contains: term, mode: 'insensitive' } } },
-            { brand: { name: { contains: term, mode: 'insensitive' } } }
-          ]
-        }));
-
         categoryWhere.AND = terms.map(term => ({
           name: { contains: term, mode: 'insensitive' }
         }));
@@ -152,10 +200,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
       }
 
       [products, categories, brands] = await Promise.all([
-        prisma.product.findMany({
-          where: productWhere,
-          include: { category: true, brand: true }
-        }),
+        fetchProductsByRelevance(terms),
         prisma.category.findMany({
           where: categoryWhere
         }),
@@ -163,38 +208,6 @@ export const getSearchResults = async (req: Request, res: Response) => {
           where: brandWhere
         })
       ]);
-      
-      // Sort products based on ranking criteria:
-      // 1. Exact Name match
-      // 2. Starts with search term
-      // 3. Category match
-      // 4. Brand match (handled implicit by product name starts with brand in our DB, or relation)
-      // 5. Description match
-      
-      products.sort((a, b) => {
-          const aName = a.name.toLowerCase();
-          const bName = b.name.toLowerCase();
-          
-          if (aName === searchStr) return -1;
-          if (bName === searchStr) return 1;
-          
-          if (aName.startsWith(searchStr)) return -1;
-          if (bName.startsWith(searchStr)) return 1;
-          
-          return 0; // fallback to default order
-      });
-      
-      // Log search query (SearchLog model is not in schema)
-      /*
-      const resultCount = products.length + categories.length + brands.length;
-      await prisma.searchLog.create({
-          data: {
-              userId,
-              searchTerm: q,
-              resultCount
-          }
-      });
-      */
     }
 
     return res.status(200).json({
@@ -214,8 +227,8 @@ export const getSearchResults = async (req: Request, res: Response) => {
 
 export const getRecentSearches = async (req: Request, res: Response) => {
   try {
-      return res.status(200).json({ success: true, data: [] });
+    return res.status(200).json({ success: true, data: [] });
   } catch (error: any) {
-      return res.status(500).json({ success: false, error: 'Failed to fetch recent searches' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch recent searches' });
   }
 };

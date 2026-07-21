@@ -425,6 +425,14 @@ model Order {
   invoiceUrl      String?           @map("invoice_url") @db.VarChar(255)
   gstNumber       String?           @map("gst_number") @db.VarChar(15)
   companyName     String?           @map("company_name") @db.VarChar(255)
+  paymentMethod   String?           @map("payment_method") @db.VarChar(100)
+  paymentStatus   String?           @map("payment_status") @db.VarChar(50)
+  paymentGateway  String?           @map("payment_gateway") @db.VarChar(100)
+  paymentId       String?           @map("payment_id") @db.VarChar(255)
+  transactionId   String?           @map("transaction_id") @db.VarChar(255)
+  gatewayResponse String?           @map("gateway_response") @db.Text
+  codCharge       Decimal?          @default(0) @map("cod_charge") @db.Decimal(10, 2)
+  paidAmount      Decimal?          @default(0) @map("paid_amount") @db.Decimal(10, 2)
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -438,6 +446,7 @@ model Order {
   payments        Payment[]
   shipments       Shipment[]
   couponUsages    CouponUsage[]
+  invoice         Invoice?
 
   @@index([customerId])
   @@index([createdAt])
@@ -800,7 +809,7 @@ model NewsletterSubscriber {
 
 model TransactionHistory {
   id                     String    @id @default(uuid()) @db.Uuid
-  orderId                String    @map("order_id") @db.Uuid
+  orderId                String?   @map("order_id") @db.Uuid
   customerId             String?   @map("customer_id") @db.Uuid
   paymentMethod          String    @map("payment_method") @db.VarChar(100)
   gatewayName            String?   @map("gateway_name") @db.VarChar(100)
@@ -1169,6 +1178,79 @@ model NotificationQueue {
   @@index([status])
   @@index([scheduledAt])
   @@map("notification_queues")
+}
+
+model Invoice {
+  id              String            @id @default(uuid()) @db.Uuid
+  orderId         String            @unique @map("order_id") @db.Uuid
+  invoiceNumber   String            @unique @map("invoice_number") @db.VarChar(100)
+  invoiceStatus   String            @default("ORIGINAL") @map("invoice_status") @db.VarChar(50)
+  pdfStoragePath  String?           @map("pdf_storage_path") @db.VarChar(255)
+  pdfDownloadUrl  String?           @map("pdf_download_url") @db.Text
+  generatedAt     DateTime          @default(now()) @map("generated_at") @db.Timestamptz
+  generatedBy     String?           @map("generated_by") @db.VarChar(255)
+  version         Int               @default(1)
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([invoiceNumber])
+  @@map("invoices")
+}
+
+model AdminNotificationDevice {
+  id                      String            @id @default(uuid()) @db.Uuid
+  adminId                 String            @default("admin-main") @map("admin_id") @db.VarChar(100)
+  deviceName              String            @map("device_name") @db.VarChar(255)
+  browser                 String?           @db.VarChar(100)
+  operatingSystem         String?           @map("operating_system") @db.VarChar(100)
+  platform                String?           @db.VarChar(100)
+  fcmToken                String            @unique @map("fcm_token") @db.Text
+  deviceId                String?           @map("device_id") @db.VarChar(255)
+  isActive                Boolean           @default(true) @map("is_active")
+  notificationPermission  String            @default("granted") @map("notification_permission") @db.VarChar(50)
+  lastSeen                DateTime          @default(now()) @map("last_seen") @db.Timestamptz
+  createdAt               DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([adminId])
+  @@index([isActive])
+  @@map("admin_notification_devices")
+}
+
+model AdminNotification {
+  id              String            @id @default(uuid()) @db.Uuid
+  eventKey        String            @map("event_key") @db.VarChar(100)
+  category        String            @db.VarChar(50)
+  title           String            @db.VarChar(255)
+  body            String            @db.Text
+  deepLink        String?           @map("deep_link") @db.Text
+  metadata        Json?
+  isRead          Boolean           @default(false) @map("is_read")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([category])
+  @@index([eventKey])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("admin_notifications")
+}
+
+model NotificationChannelSetting {
+  id              String            @id @default(uuid()) @db.Uuid
+  eventKey        String            @unique @map("event_key") @db.VarChar(100)
+  eventLabel      String            @map("event_label") @db.VarChar(255)
+  category        String            @db.VarChar(50)
+  pushEnabled     Boolean           @default(true) @map("push_enabled")
+  whatsappEnabled Boolean           @default(false) @map("whatsapp_enabled")
+  emailEnabled    Boolean           @default(false) @map("email_enabled")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([category])
+  @@map("notification_channel_settings")
 }
 
 

@@ -1,6 +1,6 @@
 import prisma from "../config/database";
 import { triggerWhatsAppNotification, getWhatsappSettings } from "../controllers/whatsapp";
-import { dispatchAdminPushNotification } from "../controllers/adminFcm";
+import { NotificationService } from "./notification.service";
 
 export interface NotificationResult {
   customerWhatsApp: boolean;
@@ -78,50 +78,32 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
       result.logs.push(`No customer phone number available.`);
     }
 
-    // 2. ADMIN WHATSAPP NOTIFICATION
+    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp Restricted to New Order)
     try {
-      const settings = await getWhatsappSettings();
-      const adminPhonesRaw = settings.adminPhoneNumber || process.env.ADMIN_WHATSAPP_PHONE || '';
-      if (adminPhonesRaw && adminPhonesRaw.trim().length > 0) {
-        const phoneList = adminPhonesRaw.split(',').map((p: string) => p.trim()).filter(Boolean);
-        for (const adminPhone of phoneList) {
-          console.log(`[OrderNotificationPipeline] Sending Admin WhatsApp to ${adminPhone}...`);
-          await triggerWhatsAppNotification('admin_new_order', adminPhone, order, customerObj, { is_admin: true });
-        }
-        result.adminWhatsApp = true;
-        result.logs.push(`Admin WhatsApp dispatched to ${phoneList.length} phone(s)`);
-      } else {
-        result.logs.push(`No admin phone number configured in WhatsApp settings.`);
-      }
-    } catch (adminWaErr: any) {
-      console.error(`[OrderNotificationPipeline] Admin WhatsApp error:`, adminWaErr);
-      result.logs.push(`Admin WhatsApp failed: ${adminWaErr.message}`);
-    }
+      const pushTitle = `🛒 New Order Received`;
+      const pushBody = `${custName} placed Order #${order.orderNumber || order.id} for ₹${Number(order.totalAmount).toFixed(2)}`;
 
-    // 3. ADMIN PUSH (FCM) MULTICAST NOTIFICATION
-    try {
-      const pushTitle = `🛒 New Order #${order.orderNumber || order.id}`;
-      const pushBody = `${custName} placed order #${order.orderNumber || order.id} (₹${Number(order.totalAmount).toFixed(2)})`;
-      
-      console.log(`[OrderNotificationPipeline] Sending Admin FCM Push Notification...`);
-      const pushRes = await dispatchAdminPushNotification({
+      const dispatchResult = await NotificationService.dispatch({
+        eventKey: 'NEW_ORDER',
         title: pushTitle,
         body: pushBody,
-        type: 'order',
-        orderId: order.id,
         deepLink: `/admin/orders`,
-        data: {
+        metadata: {
+          orderId: order.id,
           orderNumber: order.orderNumber,
           totalAmount: String(order.totalAmount),
           customerName: custName,
+          paymentMethod: order.paymentMethod || 'Online',
         },
+        order,
       });
 
-      result.adminPush = pushRes.success;
-      result.logs.push(`Admin FCM Push dispatched (${pushRes.successCount || 0} succeeded, ${pushRes.failureCount || 0} failed)`);
-    } catch (fcmErr: any) {
-      console.error(`[OrderNotificationPipeline] Admin FCM Push error:`, fcmErr);
-      result.logs.push(`Admin Push failed: ${fcmErr.message}`);
+      result.adminWhatsApp = dispatchResult.whatsappSent;
+      result.adminPush = dispatchResult.pushSent;
+      result.logs.push(`Admin Central Dispatch: Push ${dispatchResult.pushSent ? 'SENT' : 'SKIPPED'}, WhatsApp ${dispatchResult.whatsappSent ? 'SENT' : 'SKIPPED'}`);
+    } catch (adminErr: any) {
+      console.error(`[OrderNotificationPipeline] Admin Central Dispatch error:`, adminErr);
+      result.logs.push(`Admin Dispatch failed: ${adminErr.message}`);
     }
 
     console.log(`======================================================`);

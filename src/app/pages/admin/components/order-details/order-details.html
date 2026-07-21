@@ -56,15 +56,14 @@
 
     <!-- CRITICAL FAST ACTIONS ROW -->
     <div class="flex flex-wrap items-center gap-2">
-      <button (click)="resendNotification()" [disabled]="notificationResending()"
+      <button (click)="viewInvoice()"
         class="px-3.5 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-850 border border-neutral-200 dark:border-neutral-800 text-neutral-850 dark:text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm">
-        @if (notificationResending()) {
-        <span
-          class="h-3 w-3 border-2 border-neutral-850 dark:border-white border-t-transparent rounded-full animate-spin"></span>
-        } @else {
-        <mat-icon class="text-sm scale-85">forward_to_inbox</mat-icon>
-        }
-        Resend Alert
+        <mat-icon class="text-sm scale-85">visibility</mat-icon> View Invoice
+      </button>
+
+      <button (click)="downloadInvoice()"
+        class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm">
+        <mat-icon class="text-sm scale-85">download</mat-icon> Download Invoice
       </button>
 
       <button (click)="printInvoice()"
@@ -72,14 +71,9 @@
         <mat-icon class="text-sm scale-85">print</mat-icon> Print Slip
       </button>
 
-      <button (click)="markAsRefunded()" [disabled]="ord.payments?.[0]?.status === 'Refunded'"
-        class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm">
-        <mat-icon class="text-sm scale-85">assignment_return</mat-icon> Mark Refunded
-      </button>
-
       <button (click)="cancelOrder()" [disabled]="ord.status === 'Cancelled'"
-        class="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm">
-        <mat-icon class="text-sm scale-85">cancel</mat-icon> Cancel Contract
+        class="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition-all flex items-center gap-1 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
+        <mat-icon class="text-sm scale-85">cancel</mat-icon> Mark as Canceled
       </button>
     </div>
   </section>
@@ -148,55 +142,88 @@
 
         <!-- Box 2: State Transitions & payment modifiers -->
         <div
-          class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl space-y-4 shadow-sm">
-          <div class="flex items-center gap-2">
-            <mat-icon class="text-blue-500 scale-90">settings</mat-icon>
-            <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">LIFECYCLE STATE MODIFIERS
-            </h3>
+          class="p-6 bg-gradient-to-b from-blue-50/50 via-white to-white dark:from-blue-950/20 dark:via-neutral-950 dark:to-neutral-950 border-2 border-blue-500/30 dark:border-blue-500/20 rounded-3xl space-y-5 shadow-lg shadow-blue-500/5 relative overflow-hidden">
+          
+          <!-- Decorative Background Accent Light -->
+          <div class="absolute -top-12 -right-12 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <!-- Section Header -->
+          <div class="flex items-center justify-between border-b border-neutral-200/80 dark:border-neutral-850 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <div class="p-2 bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0">
+                <mat-icon class="scale-90">tune</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-xs font-mono font-black tracking-widest text-neutral-900 dark:text-white uppercase">
+                  LIFECYCLE STATE MODIFIERS
+                </h3>
+                <p class="text-[10px] text-neutral-500 font-sans font-medium">Update & sync real-time order states</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 rounded-md font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <span class="h-1.5 w-1.5 bg-blue-500 rounded-full animate-ping"></span> Live Control
+            </span>
           </div>
 
-          <div class="space-y-5 pt-1 text-xs">
-            <div class="space-y-1">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 block font-mono">Select Configurable Order
-                Status:</span>
-              <div class="relative">
+          <div class="space-y-4 text-xs">
+            <!-- Order Status Field -->
+            <div class="space-y-1.5 bg-neutral-50/80 dark:bg-neutral-900/80 p-3.5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 hover:border-blue-500/30 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 font-mono tracking-wider flex items-center gap-1.5">
+                  <mat-icon class="text-xs text-blue-500 scale-75">local_shipping</mat-icon> Order Lifecycle Status:
+                </span>
+                <span class="px-2 py-0.5 bg-blue-500 text-white font-mono text-[9px] font-black uppercase rounded shadow-xs">
+                  {{ ord.status }}
+                </span>
+              </div>
+
+              <div class="relative mt-1">
                 <select [value]="ord.status" (change)="updateOrderStatus($any($event.target).value)"
                   [disabled]="statusUpdating()"
-                  class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs text-neutral-800 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500">
+                  class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-blue-500/30 dark:border-blue-500/30 hover:border-blue-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
                   @for (st of statuses; track st) {
                   <option [value]="st">{{ st }}</option>
                   }
                 </select>
                 @if (statusUpdating()) {
                 <span
-                  class="absolute right-8 top-3.5 h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                  class="absolute right-3 top-3 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
                 }
               </div>
             </div>
 
-            <div class="space-y-1">
-              <span class="text-[9px] uppercase font-bold text-neutral-400 block font-mono">Select Payment Settlement
-                Status:</span>
-              <div class="relative">
+            <!-- Payment Settlement Status Field -->
+            <div class="space-y-1.5 bg-neutral-50/80 dark:bg-neutral-900/80 p-3.5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 hover:border-emerald-500/30 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 font-mono tracking-wider flex items-center gap-1.5">
+                  <mat-icon class="text-xs text-emerald-500 scale-75">payments</mat-icon> Payment Settlement Status:
+                </span>
+                <span class="px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-black uppercase rounded shadow-xs">
+                  {{ ord.payments?.[0]?.status || 'PENDING' }}
+                </span>
+              </div>
+
+              <div class="relative mt-1">
                 <select [value]="ord.payments?.[0]?.status" (change)="updatePaymentStatus($any($event.target).value)"
                   [disabled]="paymentUpdating()"
-                  class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs text-neutral-850 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500">
+                  class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-emerald-500/30 dark:border-emerald-500/30 hover:border-emerald-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
                   @for (ps of paymentStatuses; track ps) {
                   <option [value]="ps">{{ ps }}</option>
                   }
                 </select>
                 @if (paymentUpdating()) {
                 <span
-                  class="absolute right-8 top-3.5 h-3 w-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                  class="absolute right-3 top-3 h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>
                 }
               </div>
             </div>
 
-            <p
-              class="p-3 bg-neutral-50 dark:bg-neutral-900/60 rounded-xl border border-neutral-200/50 dark:border-neutral-800 text-[10px] text-neutral-500 leading-normal">
-              Modifying order statuses writes directly to status audit ledger and triggers notifications for registered
-              customer accounts automatically.
-            </p>
+            <!-- Sleek Informational Notice Box -->
+            <div
+              class="p-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-2xl border border-blue-500/20 text-[10px] text-blue-700 dark:text-blue-300 leading-normal flex items-start gap-2">
+              <mat-icon class="text-sm text-blue-500 shrink-0 mt-0.5">info</mat-icon>
+              <span>Updating order or payment status instantly commits to the status audit log and notifies the customer.</span>
+            </div>
           </div>
         </div>
 
@@ -405,7 +432,7 @@
         <div class="space-y-2.5 pt-1 font-mono text-xs text-neutral-500">
           <div class="flex justify-between">
             <span>Subtotal Net:</span>
-            <span>{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount + ord.discountAmount |
+            <span>{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount + ord.discountAmount - (ord.codCharge || (ord.paymentMethod === 'COD' ? 100 : 0)) |
               currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
 
@@ -420,6 +447,13 @@
             <span>Logistic transport fee:</span>
             <span>{{ ord.shippingAmount | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
+
+          @if (ord.codCharge > 0 || ord.paymentMethod === 'COD') {
+          <div class="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
+            <span>COD Handling Charge:</span>
+            <span class="font-bold text-[#d65108]">{{ (ord.codCharge || 100) | currency:'INR':'symbol':'1.0-0' }}</span>
+          </div>
+          }
 
           <div class="flex justify-between">
             <span>Tax collection (18% included):</span>
@@ -488,24 +522,7 @@
           }
         </div>
 
-        <!-- Form to add custom notes/comments -->
-        <div class="pt-4 border-t border-dashed border-neutral-150 dark:border-neutral-850 space-y-2">
-          <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Write Internal
-            Note:</span>
-          <textarea rows="2" #noteArea
-            placeholder="e.g. Spoke to customer, package delivery is scheduled for Tuesday morning."
-            class="w-full p-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
 
-          <button (click)="addNote(noteArea.value, noteArea)" [disabled]="noteAdding()"
-            class="w-full py-2 bg-neutral-950 hover:bg-neutral-900 disabled:opacity-50 text-white font-mono font-bold text-[10px] uppercase rounded-xl transition-all flex items-center justify-center gap-1">
-            @if (noteAdding()) {
-            <span class="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            RECORDING NOTE...
-            } @else {
-            <mat-icon class="text-sm scale-80">add_comment</mat-icon> Log Internal Note
-            }
-          </button>
-        </div>
       </div>
       }
 

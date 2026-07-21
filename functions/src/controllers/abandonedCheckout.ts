@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { getSettingsService } from '../modules/settings/settings.service';
 
+const isValidUuid = (val: any): boolean => {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+};
+
 async function getSettings() {
   const settings = await getSettingsService();
   return settings?.abandonedCheckoutSettings || {
@@ -400,7 +405,12 @@ async function dispatchSimulatedReminder(checkout: any, channel: 'EMAIL' | 'WHAT
 }
 
 export const manualResendReminder = async (req: Request, res: Response) => {
-  const { id, channel } = req.body;
+  const id = req.body?.id || req.body?.checkoutId || req.body?.abandonedCheckoutId || req.params?.id;
+  const channel = req.body?.channel || 'EMAIL';
+
+  if (!id) {
+    return res.status(400).json({ error: 'Abandoned checkout ID is required' });
+  }
 
   try {
     const checkout = await prisma.abandonedCheckout.findUnique({ where: { id } });
@@ -408,7 +418,7 @@ export const manualResendReminder = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Checkout session not found' });
     }
 
-    await dispatchSimulatedReminder(checkout, channel || 'EMAIL', 99);
+    await dispatchSimulatedReminder(checkout, channel, 99);
     return res.status(200).json({ success: true, message: 'Recovery reminder triggered successfully.' });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -416,7 +426,11 @@ export const manualResendReminder = async (req: Request, res: Response) => {
 };
 
 export const manualRecoverCheckout = async (req: Request, res: Response) => {
-  const { id } = req.body;
+  const id = req.body?.id || req.body?.checkoutId || req.body?.abandonedCheckoutId || req.params?.id;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Abandoned checkout ID is required' });
+  }
 
   try {
     const updated = await prisma.abandonedCheckout.update({
@@ -499,6 +513,9 @@ export const getAdminAbandonedCheckoutsAnalytics = async (req: Request, res: Res
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const deviceArray = Object.keys(deviceBreakdown).map(device => ({ device, count: deviceBreakdown[device] }));
+    const browserArray = Object.keys(browserBreakdown).map(browser => ({ browser, count: browserBreakdown[browser] }));
+
     return res.status(200).json({
       cards: {
         totalAbandoned,
@@ -510,8 +527,13 @@ export const getAdminAbandonedCheckoutsAnalytics = async (req: Request, res: Res
         weekAbandoned,
         monthAbandoned
       },
-      deviceBreakdown,
-      browserBreakdown,
+      totalAbandonedValue: lostRevenue,
+      totalRecoveredValue: recoveredRevenue,
+      recoveryRate,
+      totalAbandonedCount: totalAbandoned,
+      totalRecoveredCount: recovered,
+      deviceBreakdown: deviceArray,
+      browserBreakdown: browserArray,
       paymentBreakdown,
       mostAbandonedProducts
     });

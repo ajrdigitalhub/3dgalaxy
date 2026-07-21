@@ -137,7 +137,12 @@ import searchRoutes from "./routes/search";
 import supportRoutes from "./routes/support";
 import serviceEnquiryRoutes from "./routes/serviceEnquiry";
 import adminFcmRoutes from "./routes/adminFcm";
+import invoiceRoutes from "./routes/invoice";
+import adminNotificationRoutes from "./routes/adminNotification.routes";
 
+app.use("/api", invoiceRoutes);
+app.use("/api/invoices", invoiceRoutes);
+app.use("/api", adminNotificationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);

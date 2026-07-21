@@ -173,6 +173,14 @@
             <div
               class="aspect-square bg-neutral-50 dark:bg-neutral-950 relative overflow-hidden flex-shrink-0 product-card-image-container"
             >
+              <!-- Out of Stock Overlay -->
+              @if (p.stock === 0 || p.stockStatus === 'OUT_OF_STOCK') {
+                <div class="absolute inset-0 bg-neutral-950/70 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center p-2 text-center rounded-xl">
+                  <span class="px-2.5 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded shadow-md mb-1">Out of Stock</span>
+                  <span class="text-[9px] font-bold text-neutral-300">Currently Unavailable</span>
+                </div>
+              }
+
               <img
                 [src]="p.primaryImage || getProductImage(p)"
                 [alt]="p.name"
@@ -189,32 +197,57 @@
                   loading="lazy"
                 />
               }
-              @if (p.salePrice) {
-              <div
-                class="absolute top-3 left-3 bg-[#d65108] text-white text-[9px] font-black uppercase px-2 py-1 rounded shadow-sm tracking-wider"
-              >
-                Sale
+
+              <!-- Offer & Status Badges -->
+              <div class="absolute top-3 left-3 z-20 flex flex-col gap-1">
+                @if (p.basePrice && p.salePrice && p.basePrice > p.salePrice) {
+                  <div
+                    class="bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow-sm tracking-wider"
+                  >
+                    {{ Math.round(((p.basePrice - p.salePrice) / p.basePrice) * 100) }}% OFF
+                  </div>
+                }
+                @if (p.stock === 0 || p.stockStatus === 'OUT_OF_STOCK') {
+                  <div
+                    class="bg-neutral-950 text-rose-400 border border-rose-500/40 text-[8px] font-black uppercase px-2 py-0.5 rounded shadow-sm tracking-wider"
+                  >
+                    Out of Stock
+                  </div>
+                }
               </div>
-              }
             </div>
             <div class="p-4 sm:p-5 flex flex-col flex-1">
               <div
                 class="text-[9px] font-bold text-[#d65108] uppercase tracking-wider mb-1.5 line-clamp-1 opacity-80"
               >
-                {{ p.brand?.name || 'Generic' }}
+                {{ p.brand?.name || p.brand || '3D GALAXY' }}
               </div>
               <h4
                 class="font-bold text-sm text-neutral-900 dark:text-white leading-tight mb-2 line-clamp-2 group-hover:text-[#d65108] transition-colors flex-1"
               >
                 {{ p.name }}
               </h4>
+
+              <!-- Stock & Offer details pill -->
+              <div class="flex items-center gap-1.5 flex-wrap text-[10px] my-1.5">
+                @if (p.stock === 0 || p.stockStatus === 'OUT_OF_STOCK') {
+                  <span class="font-black text-rose-600 dark:text-rose-400 flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded text-[9px] border border-rose-200 dark:border-rose-900/50">
+                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span> Out of Stock
+                  </span>
+                } @else if (p.stock !== undefined && p.stock > 0 && p.stock <= 5) {
+                  <span class="font-black text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded text-[9px] border border-amber-200 dark:border-amber-900/50">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span> Only {{ p.stock }} left!
+                  </span>
+                }
+              </div>
+
               <div class="flex items-center gap-2 mt-auto">
                 <span
                   class="font-black text-sm text-neutral-900 dark:text-white"
                   >{{ (p.salePrice || p.basePrice) |
                   currency:'INR':'symbol':'1.0-0' }}</span
                 >
-                @if (p.salePrice) {
+                @if (p.salePrice && p.basePrice && p.basePrice > p.salePrice) {
                 <span class="text-xs text-neutral-400 line-through font-medium"
                   >{{ p.basePrice | currency:'INR':'symbol':'1.0-0' }}</span
                 >

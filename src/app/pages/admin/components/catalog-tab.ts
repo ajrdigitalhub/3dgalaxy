@@ -1527,28 +1527,69 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       >
                         <td class="py-4">
                           <div class="flex items-center gap-3">
-                            <img
-                              [src]="
-                                (p.images && p.images[0]?.url) ||
-                                (p.images && p.images[0]) ||
-                                'https://picsum.photos/100/100'
-                              "
-                              alt="Product thumbnail"
-                              class="h-9 w-9 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800"
-                              referrerpolicy="no-referrer"
-                            />
+                            <div class="relative shrink-0">
+                              <img
+                                [src]="
+                                  (p.images && p.images[0]?.url) ||
+                                  (p.images && p.images[0]) ||
+                                  'https://picsum.photos/100/100'
+                                "
+                                alt="Product thumbnail"
+                                class="h-10 w-10 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800"
+                                referrerpolicy="no-referrer"
+                              />
+                              @if (p.stock === 0) {
+                                <span class="absolute -top-1 -right-1 bg-red-600 text-white text-[7px] font-black uppercase px-1 rounded shadow">OUT</span>
+                              }
+                            </div>
                             <div class="min-w-0">
                               <p
-                                class="font-black uppercase text-zinc-900 dark:text-white truncate max-w-[220px] block"
+                                class="font-black uppercase text-zinc-900 dark:text-white truncate max-w-[240px] block"
                                 [title]="p.name"
                               >
                                 {{ p.name }}
                               </p>
-                              <p
-                                class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono tracking-wide uppercase mt-1"
-                              >
-                                {{ p.brand }} alliance
-                              </p>
+                              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span class="text-[9px] text-zinc-400 dark:text-zinc-550 font-mono tracking-wide uppercase">
+                                  {{ p.brand }}
+                                </span>
+                                <!-- Offers Badges & Tags -->
+                                @if (getOfferDiscountPercent(p) > 0) {
+                                  <span class="px-1.5 py-0.2 bg-red-500/10 text-red-500 border border-red-500/20 text-[8px] font-black rounded uppercase">
+                                    {{ getOfferDiscountPercent(p) }}% OFF
+                                  </span>
+                                }
+                                @if (getOfferSavings(p) >= 100) {
+                                  <span class="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[8px] font-black rounded uppercase">
+                                    SAVE ₹{{ getOfferSavings(p) }}
+                                  </span>
+                                }
+                                @if (p.freeShippingEligible) {
+                                  <span class="px-1.5 py-0.2 bg-teal-500/10 text-teal-500 border border-teal-500/20 text-[8px] font-black rounded uppercase">
+                                    FREE SHIP
+                                  </span>
+                                }
+                                @if (p.codAvailable) {
+                                  <span class="px-1.5 py-0.2 bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[8px] font-black rounded uppercase">
+                                    COD
+                                  </span>
+                                }
+                                @if (p.featured || p.isFeatured) {
+                                  <span class="px-1.5 py-0.2 bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[8px] font-black rounded uppercase">
+                                    FEATURED
+                                  </span>
+                                }
+                                @if (p.isExclusive) {
+                                  <span class="px-1.5 py-0.2 bg-purple-500/10 text-purple-500 border border-purple-500/20 text-[8px] font-black rounded uppercase">
+                                    EXCLUSIVE
+                                  </span>
+                                }
+                                @if (p.stock === 0) {
+                                  <span class="px-1.5 py-0.2 bg-rose-600 text-white text-[8px] font-black rounded uppercase">
+                                    OUT OF STOCK
+                                  </span>
+                                }
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -1565,28 +1606,22 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                           {{ p.sku }}
                         </td>
                         <td class="py-4">
-                          <span
-                            [class]="
-                              p.stock === 0
-                                ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-                                : p.stock <= 10
-                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                            "
-                            class="px-2 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5"
-                          >
-                            <span
-                              class="h-1.5 w-1.5 rounded-full"
-                              [class]="
-                                p.stock === 0
-                                  ? 'bg-rose-500'
-                                  : p.stock <= 10
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              "
-                            ></span>
-                            {{ p.stock === 0 ? 'Out of stock' : p.stock + ' units' }}
-                          </span>
+                          @if (p.stock === 0) {
+                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400">
+                              <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                              OUT OF STOCK (0 units)
+                            </span>
+                          } @else if (p.stock <= 10) {
+                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400">
+                              <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                              LOW STOCK ({{ p.stock }} units)
+                            </span>
+                          } @else {
+                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+                              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              IN STOCK ({{ p.stock }} units)
+                            </span>
+                          }
                         </td>
                         <td class="py-4 font-mono font-bold">
                           ₹{{ p.sale_price | number }}
@@ -2803,6 +2838,22 @@ export class AdminCatalogTab {
   itemsPerPageOptions = [10, 20, 50, 100];
   Math = Math;
   Number = Number;
+
+  getOfferDiscountPercent(p: any): number {
+    if (!p) return 0;
+    const mrp = Number(p.mrp || p.basePrice || 0);
+    const sale = Number(p.sale_price || p.salePrice || mrp);
+    if (!mrp || mrp <= sale) return 0;
+    return Math.round(((mrp - sale) / mrp) * 100);
+  }
+
+  getOfferSavings(p: any): number {
+    if (!p) return 0;
+    const mrp = Number(p.mrp || p.basePrice || 0);
+    const sale = Number(p.sale_price || p.salePrice || mrp);
+    if (!mrp || mrp <= sale) return 0;
+    return Math.round(mrp - sale);
+  }
 
   filteredProducts = computed(() => {
     const query = this.admin.searchQueryProducts().toLowerCase().trim();

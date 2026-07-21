@@ -219,6 +219,7 @@ export interface Order {
   guestSessionId?: string;
   gstNumber?: string;
   companyName?: string;
+  codCharge?: number;
 }
 
 export interface QuoteRequest {
@@ -555,8 +556,8 @@ export class DatastoreService {
     return this.groupedCartItems() || [];
   });
 
-  // Dynamic COD Eligibility Check across all items in active checkout
-  isCodAvailableForCheckout = computed(() => {
+  // Checks if all items in active checkout support COD
+  areAllProductsCodAvailable = computed(() => {
     const items = this.activeCheckoutItems();
     if (!items || items.length === 0) return false;
 
@@ -568,6 +569,35 @@ export class DatastoreService {
       return pCod && vCod;
     });
   });
+
+  // Active checkout subtotal
+  checkoutSubtotal = computed(() => {
+    const items = this.activeCheckoutItems();
+    if (!items || items.length === 0) return 0;
+    return items.reduce((sum: number, item: any) => {
+      const price = item.variant?.price ? Number(item.variant.price) : (item.product?.salePrice ? Number(item.product.salePrice) : Number(item.product?.basePrice || item.product?.price || 0));
+      return sum + price * (item.quantity || 1);
+    }, 0);
+  });
+
+  // Dynamic COD Eligibility Check (All products support COD AND subtotal <= 2500)
+  isCodEligibleForCheckout = computed(() => {
+    const allProdCod = this.areAllProductsCodAvailable();
+    if (!allProdCod) return false;
+    return this.checkoutSubtotal() <= 2500;
+  });
+
+  codReason = computed(() => {
+    if (!this.areAllProductsCodAvailable()) {
+      return 'One or more selected products are not eligible for Cash on Delivery.';
+    }
+    if (this.checkoutSubtotal() > 2500) {
+      return 'Your order total exceeds ₹2,500.';
+    }
+    return '';
+  });
+
+  isCodAvailableForCheckout = computed(() => this.isCodEligibleForCheckout());
   
   // Computed from SettingsService
   footerData = computed<any>(() => {

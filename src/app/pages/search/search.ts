@@ -37,6 +37,7 @@ export class SearchComponent implements OnInit {
     services: [],
   });
   loading = signal<boolean>(false);
+  Math = Math;
 
   priceRange = signal([0, 10000]);
 

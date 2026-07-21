@@ -14,6 +14,7 @@ import { ToastService } from "../../../../shared/components/toast/toast.service"
 import { catchError } from "rxjs/operators";
 import { of, firstValueFrom } from "rxjs";
 import { SettingsService } from "../../../../core/services/settings.service";
+import { environment } from "../../../../../environments/environment";
 
 @Component({
   selector: "app-customer-order-details",
@@ -380,8 +381,67 @@ export class CustomerOrderDetailsComponent implements OnInit {
     }
   }
 
+  isDelivered = computed(() => {
+    const status = (this.order()?.status || '').toUpperCase();
+    return status === 'DELIVERED';
+  });
+
   printInvoice() {
     window.print();
+  }
+
+  viewInvoice() {
+    const ord = this.order();
+    if (!ord) return;
+    if (!this.isDelivered()) {
+      this.toastService.warning('Invoice will be available after your order has been successfully delivered.');
+      return;
+    }
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+    const apiUrl = environment.apiUrl;
+    const streamUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=false`;
+
+    this.http.get(streamUrl, { ...this.getHeaders(), responseType: 'blob' as 'json' }).subscribe({
+      next: (res: any) => {
+        const blob = new Blob([res], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      },
+      error: () => {
+        const fallbackUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=false&token=${encodeURIComponent(token)}`;
+        window.open(fallbackUrl, '_blank');
+      }
+    });
+  }
+
+  downloadInvoice() {
+    const ord = this.order();
+    if (!ord) return;
+    if (!this.isDelivered()) {
+      this.toastService.warning('Invoice will be available after your order has been successfully delivered.');
+      return;
+    }
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+    const apiUrl = environment.apiUrl;
+    const streamUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=true`;
+
+    this.http.get(streamUrl, { ...this.getHeaders(), responseType: 'blob' as 'json' }).subscribe({
+      next: (res: any) => {
+        const blob = new Blob([res], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Invoice_${ord.orderNumber || ord.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      },
+      error: () => {
+        const fallbackUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=true&token=${encodeURIComponent(token)}`;
+        window.open(fallbackUrl, '_blank');
+      }
+    });
   }
 
   canReviewOrder(): boolean {

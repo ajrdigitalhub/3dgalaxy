@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
+import { NotificationService } from '../services/notification.service';
 
 export const getCustomers = async (req: Request, res: Response) => {
   try {
@@ -346,6 +347,15 @@ export const createReview = async (req: Request, res: Response) => {
         rating: parseInt(rating, 10),
         reviewText: comment || '',
       },
+    });
+
+    // Dispatch Central Admin Notification (Push Only, WhatsApp Suppressed)
+    NotificationService.dispatch({
+      eventKey: 'NEW_PRODUCT_REVIEW',
+      title: '⭐ New Product Review',
+      body: `New ${review.rating}★ product review submitted.`,
+      deepLink: `/admin/catalog`,
+      metadata: { productId, rating: review.rating, reviewId: review.id },
     });
 
     return res.status(201).json({

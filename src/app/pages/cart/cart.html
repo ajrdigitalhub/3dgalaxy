@@ -415,6 +415,37 @@
           </div>
           }
 
+          <!-- COD Threshold Policy Info -->
+          <div class="p-3.5 rounded-xl border text-xs shadow-xs"
+               [ngClass]="{
+                 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300': ds.isCodEligibleForCheckout(),
+                 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300': !ds.isCodEligibleForCheckout() && ds.areAllProductsCodAvailable(),
+                 'bg-red-500/10 border-red-500/30 text-red-800 dark:text-red-300': !ds.areAllProductsCodAvailable()
+               }">
+            <div class="flex items-center gap-1.5 font-bold mb-1">
+              <mat-icon class="scale-75">payments</mat-icon>
+              @if (ds.isCodEligibleForCheckout()) {
+              <span>Cash on Delivery Available</span>
+              } @else {
+              <span>Cash on Delivery Unavailable</span>
+              }
+            </div>
+            @if (ds.isCodEligibleForCheckout()) {
+            <p class="text-[11px] font-medium leading-relaxed">
+              Orders up to ₹2,500 are eligible.<br/>
+              Additional COD handling charge of ₹100 will be applied at checkout.
+            </p>
+            } @else if (!ds.areAllProductsCodAvailable()) {
+            <p class="text-[11px] font-medium leading-relaxed">
+              One or more selected products are not eligible for Cash on Delivery.
+            </p>
+            } @else {
+            <p class="text-[11px] font-medium leading-relaxed">
+              Your order total exceeds ₹2,500. Please choose Online Payment.
+            </p>
+            }
+          </div>
+
           <button
             (click)="proceedToCheckout()"
             class="w-full bg-[#d65108] hover:bg-[#b04006] text-white text-sm font-black uppercase tracking-[0.15em] py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"

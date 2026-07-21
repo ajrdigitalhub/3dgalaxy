@@ -506,14 +506,25 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
     this.admin.ds.api.get<any>('/admin/abandoned-checkouts/analytics').subscribe({
       next: (res: any) => {
         if (res) {
+          const cards = res.cards || {};
+          const rawDevice = res.deviceBreakdown || [];
+          const deviceArr = Array.isArray(rawDevice)
+            ? rawDevice
+            : Object.keys(rawDevice).map(k => ({ device: k, count: rawDevice[k] }));
+
+          const rawBrowser = res.browserBreakdown || [];
+          const browserArr = Array.isArray(rawBrowser)
+            ? rawBrowser
+            : Object.keys(rawBrowser).map(k => ({ browser: k, count: rawBrowser[k] }));
+
           this.analytics.set({
-            totalAbandonedValue: res.totalAbandonedValue || 0,
-            totalRecoveredValue: res.totalRecoveredValue || 0,
-            recoveryRate: res.recoveryRate || 0,
-            totalAbandonedCount: res.totalAbandonedCount || 0,
-            totalRecoveredCount: res.totalRecoveredCount || 0,
-            deviceBreakdown: res.deviceBreakdown || [],
-            browserBreakdown: res.browserBreakdown || []
+            totalAbandonedValue: res.totalAbandonedValue ?? cards.lostRevenue ?? 0,
+            totalRecoveredValue: res.totalRecoveredValue ?? cards.recoveredRevenue ?? 0,
+            recoveryRate: res.recoveryRate ?? cards.recoveryRate ?? 0,
+            totalAbandonedCount: res.totalAbandonedCount ?? cards.totalAbandoned ?? 0,
+            totalRecoveredCount: res.totalRecoveredCount ?? cards.recovered ?? 0,
+            deviceBreakdown: deviceArr,
+            browserBreakdown: browserArr
           });
         }
       },
@@ -595,7 +606,7 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
   }
 
   triggerResend(id: string, channel: 'WHATSAPP' | 'EMAIL') {
-    this.admin.ds.api.post<any>('/admin/abandoned-checkouts/resend', { checkoutId: id, channel }).subscribe({
+    this.admin.ds.api.post<any>('/admin/abandoned-checkouts/resend', { id, checkoutId: id, channel }).subscribe({
       next: (res: any) => {
         this.toast.success(`Successfully dispatched recovery reminder via ${channel}!`);
         // If drawer is open, refresh detail metrics
@@ -611,7 +622,7 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
   }
 
   markAsRecovered(id: string) {
-    this.admin.ds.api.post<any>('/admin/abandoned-checkouts/recover', { checkoutId: id }).subscribe({
+    this.admin.ds.api.post<any>('/admin/abandoned-checkouts/recover', { id, checkoutId: id }).subscribe({
       next: () => {
         this.toast.success('Checkout marked as recovered manually.');
         this.closeDrawer();

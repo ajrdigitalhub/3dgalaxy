@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 import { getFirebaseDownloadUrl, uploadFileToStorage } from "../config/firebase";
+import { NotificationService } from "../services/notification.service";
 
 export interface ServiceEnquiryTimeline {
   status: string;
@@ -292,6 +293,21 @@ export async function createServiceEnquiry(req: Request, res: Response): Promise
     enquiries.unshift(newEnquiry);
     saveEnquiries(enquiries);
 
+    // Dispatch Central Admin Notification (Push Only, WhatsApp Suppressed)
+    NotificationService.dispatch({
+      eventKey: 'NEW_SERVICE_REQUEST',
+      title: '🖨️ New 3D Service Request',
+      body: `${newEnquiry.customerName} uploaded 3D model "${modelFileName}" (Tracking: ${trackingNumber})`,
+      deepLink: `/admin/services`,
+      metadata: {
+        trackingNumber,
+        enquiryId: id,
+        customerName: newEnquiry.customerName,
+        material: newEnquiry.material,
+        quantity: newEnquiry.quantity,
+      },
+    });
+
     // File metadata record pointing to Firebase Storage
     const initialFile: ServiceFile = {
       id: `FILE-${Date.now()}`,
@@ -471,6 +487,13 @@ export async function customerEnquiryAction(req: Request, res: Response): Promis
         remarks: remarks || "Customer accepted official quotation. Proceeding to payment.",
         updatedBy: enquiry.customerName,
       });
+      NotificationService.dispatch({
+        eventKey: 'QUOTE_ACCEPTED',
+        title: '✅ Service Quote Accepted',
+        body: `${enquiry.customerName} accepted quote for Service #${enquiry.trackingNumber}`,
+        deepLink: `/admin/services`,
+        metadata: { trackingNumber: enquiry.trackingNumber, enquiryId: enquiry.id },
+      });
     } else if (action === "reject_quote") {
       enquiry.status = "rejected";
       enquiry.updatedAt = now;
@@ -480,6 +503,13 @@ export async function customerEnquiryAction(req: Request, res: Response): Promis
         timestamp: now,
         remarks: remarks || "Customer declined quotation.",
         updatedBy: enquiry.customerName,
+      });
+      NotificationService.dispatch({
+        eventKey: 'QUOTE_REJECTED',
+        title: '❌ Service Quote Rejected',
+        body: `${enquiry.customerName} declined quote for Service #${enquiry.trackingNumber}`,
+        deepLink: `/admin/services`,
+        metadata: { trackingNumber: enquiry.trackingNumber, enquiryId: enquiry.id },
       });
     } else if (action === "cancel") {
       if (enquiry.status === "printing_started" || enquiry.status === "shipped" || enquiry.status === "completed") {

@@ -375,6 +375,8 @@
       <app-admin-settings-tab [admin]="this" />
       } @if (activeTab() === 'transactions' || activeTab() === 'webhook-logs') {
       <app-admin-payments-tab [admin]="this" />
+      } @if (activeTab() === 'notification-center') {
+      <app-admin-notification-center-tab />
       } @if (activeTab() === 'whatsapp-logs' || activeTab() ===
       'whatsapp-campaign') {
       <app-admin-communication-tab [admin]="this" />

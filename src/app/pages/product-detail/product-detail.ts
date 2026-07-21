@@ -274,6 +274,56 @@ export class ProductDetail {
     return bestScore > 0 ? bestVariant : null;
   }
 
+  getBrandName(p: any): string {
+    if (!p) return '3D GALAXY';
+    if (typeof p.brand === 'string') return p.brand;
+    if (p.brand?.name) return p.brand.name;
+    if (p.brandName) return p.brandName;
+    if (typeof p.category === 'string') return p.category;
+    if (p.category?.name) return p.category.name;
+    return '3D GALAXY';
+  }
+
+  isDefaultVariantName(name: string): boolean {
+    if (!name) return true;
+    const n = String(name).trim().toLowerCase();
+    return n === 'default title' || n === 'default' || n === 'default variant' || n === 'standard' || n === 'title';
+  }
+
+  getProductTitle(p: any): string {
+    if (!p) return '';
+    const variantName = this.selectedVariant()?.name;
+    if (variantName && !this.isDefaultVariantName(variantName)) {
+      return variantName;
+    }
+    return p.name || 'Product Details';
+  }
+
+  hasRealVariants(p: any = this.product()): boolean {
+    if (!p) return false;
+    if (!Array.isArray(p.options) || p.options.length === 0) return false;
+
+    const realOptions = p.options.filter((opt: any) => {
+      const optName = String(opt?.name || '').trim().toLowerCase();
+      if (optName === 'title') {
+        const vals = Array.isArray(opt.values) ? opt.values : [];
+        if (vals.every((v: any) => this.isDefaultVariantName(this.getOptionValueStr(v)))) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    return realOptions.length > 0;
+  }
+
+  getCleanSku(p: any): string {
+    if (!p) return 'N/A';
+    let sku = this.selectedVariant()?.sku || p.sku || 'N/A';
+    if (typeof sku !== 'string') return 'N/A';
+    return sku.replace(/[-_]DEFAULT[-_]?TITLE/gi, '');
+  }
+
   private syncActiveImageFromVariant(variant: any, product?: any) {
     const variantImages = this.extractVariantImages(variant);
     if (variantImages.length > 0) {
@@ -454,6 +504,20 @@ export class ProductDetail {
       this.fetchedProduct() ||
       this.ds.products().find((p) => p.slug === this.slug())
     );
+  });
+
+  isProductOutOfStock = computed(() => {
+    const p = this.product();
+    if (!p) return true;
+    const selected = this.selectedVariant();
+    if (p.variants && p.variants.length > 0) {
+      if (selected) {
+        return (selected.stock ?? 0) <= 0;
+      }
+      return false;
+    }
+    if (p.stockStatus === 'OUT_OF_STOCK') return true;
+    return (p.stock ?? 0) <= 0;
   });
 
   detailTabs = computed(() => [
@@ -1230,8 +1294,8 @@ export class ProductDetail {
   }
 
   buyNow(p: Product) {
-    if (!p || p.isActive === false) {
-      this.toastService.error("Product is currently unavailable.");
+    if (!p || p.isActive === false || this.isProductOutOfStock()) {
+      this.toastService.error("Product is currently out of stock.");
       return;
     }
 

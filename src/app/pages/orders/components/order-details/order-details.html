@@ -78,12 +78,25 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      <button
-        (click)="printInvoice()"
-        class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-850 border border-neutral-250 dark:border-neutral-800 text-neutral-800 dark:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-      >
-        <mat-icon class="text-sm scale-95">download</mat-icon> Download Invoice
-      </button>
+      @if (isDelivered()) {
+        <button
+          (click)="viewInvoice()"
+          class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-neutral-250 dark:border-neutral-800 text-neutral-800 dark:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+        >
+          <mat-icon class="text-sm scale-95">visibility</mat-icon> View Invoice
+        </button>
+        <button
+          (click)="downloadInvoice()"
+          class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+        >
+          <mat-icon class="text-sm scale-95">download</mat-icon> Download Invoice
+        </button>
+      } @else {
+        <div class="px-3.5 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold">
+          <mat-icon class="text-sm text-amber-500">info</mat-icon>
+          <span>Invoice available after delivery</span>
+        </div>
+      }
       <a
         href="#support-box"
         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
@@ -491,7 +504,7 @@
             <span>Price (Items subtotal):</span>
             <span
               >{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount +
-              ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span
+              ord.discountAmount - (ord.codCharge || (ord.paymentMethod === 'COD' ? 100 : 0)) | currency:'INR':'symbol':'1.0-0' }}</span
             >
           </div>
 
@@ -515,6 +528,13 @@
               }
             </span>
           </div>
+
+          @if (ord.codCharge > 0 || ord.paymentMethod === 'COD') {
+          <div class="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
+            <span>COD handling charge:</span>
+            <span class="font-bold text-[#d65108]">{{ (ord.codCharge || 100) | currency:'INR':'symbol':'1.0-0' }}</span>
+          </div>
+          }
 
 
           <div

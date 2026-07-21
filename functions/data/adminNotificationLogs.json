@@ -1,5 +1,109 @@
 [
   {
+    "id": "cbf2c0ef-94ff-4fef-80df-5c972613e154",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-21T18:48:23.532Z"
+    },
+    "sentAt": "2026-07-21T18:48:25.047Z",
+    "isRead": false
+  },
+  {
+    "id": "192da5f3-1149-47d4-99ca-2daa943df4cc",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-21T18:47:40.670Z"
+    },
+    "sentAt": "2026-07-21T18:47:42.379Z",
+    "isRead": false
+  },
+  {
+    "id": "8a2cf39b-5189-46f8-9fc9-7f8aaeb49138",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-21T18:39:27.791Z"
+    },
+    "sentAt": "2026-07-21T18:39:29.294Z",
+    "isRead": false
+  },
+  {
+    "id": "f4da4166-e6d8-4195-9b2d-5674cf7fc974",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-21T18:38:32.844Z"
+    },
+    "sentAt": "2026-07-21T18:38:34.532Z",
+    "isRead": false
+  },
+  {
+    "id": "375d75cf-4afc-4819-a6cf-6ad37c520f35",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-21T18:33:07.581Z"
+    },
+    "sentAt": "2026-07-21T18:33:09.643Z",
+    "isRead": false
+  },
+  {
+    "id": "8484083e-c7bd-4dce-bccf-907b0e822d41",
+    "title": "🛒 New Order Received",
+    "body": "Test User placed Order #ORD-2026-967846 for ₹1200.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "23a7a12b-1813-492d-b40c-f922f7d9f2f7",
+      "orderNumber": "ORD-2026-967846",
+      "totalAmount": "1200",
+      "customerName": "Test User",
+      "paymentMethod": "Online"
+    },
+    "sentAt": "2026-07-21T18:29:17.347Z",
+    "isRead": false
+  },
+  {
+    "id": "b44e5bea-73f7-4b5e-a09b-99e80a1aff99",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-588064 for ₹5950.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "886bcdd8-1b87-4fd5-a3e5-ed20972bbfba",
+      "orderNumber": "ORD-2026-588064",
+      "totalAmount": "5950",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-21T17:48:42.663Z",
+    "isRead": false
+  },
+  {
     "id": "NOTIF-LOG-1784579226630",
     "title": "🛒 New Order #ORD-2026-669604",
     "body": "admin123 placed order #ORD-2026-669604 (₹309.00)",

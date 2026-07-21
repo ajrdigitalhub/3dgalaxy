@@ -24,7 +24,10 @@ router.post('/webhooks/cashfree', handleCashfreeWebhook);
 
 // Unified payment endpoints matching frontend
 router.post('/payment/create-order', optionalAuthenticateToken, createOrderAndPayment);
+router.post('/payment/create', optionalAuthenticateToken, createOrderAndPayment);
+router.post('/checkout', optionalAuthenticateToken, createOrderAndPayment);
 router.post('/payment/verify-payment', optionalAuthenticateToken, verifyRazorpayPayment);
+router.post('/payment/verify', optionalAuthenticateToken, verifyRazorpayPayment);
 
 // Authenticated / Guest payment endpoints (legacy/specific)
 router.post('/payments/razorpay/create-order', optionalAuthenticateToken, createRazorpayOrder);

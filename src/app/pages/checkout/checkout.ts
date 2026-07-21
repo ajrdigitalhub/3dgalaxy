@@ -120,20 +120,12 @@ export class CheckoutComponent implements OnInit {
 
   // COD checks
   codError = computed(() => {
-    const paySettings = this.settingsService.paymentGatewaySettings();
-    const globalSettings = this.settingsService.shippingSettings() || {};
-
-    const isCodEligible = this.ds.isCodAvailableForCheckout();
-    if (!isCodEligible) {
-      return "Cash on Delivery is unavailable because one or more selected products are not eligible.";
+    if (!this.ds.areAllProductsCodAvailable()) {
+      return "One or more products in your cart do not support Cash on Delivery.";
     }
-
-    const maxCodVal =
-      globalSettings.codMaximumOrderValue !== undefined
-        ? Number(globalSettings.codMaximumOrderValue)
-        : 25000;
-    if (this.subtotal() > maxCodVal)
-      return `Cash on Delivery is not available for orders above ₹${maxCodVal}.`;
+    if (this.subtotal() > 2500) {
+      return "Cash on Delivery is available only for orders of ₹2,500 or below.";
+    }
 
     return null;
   });
@@ -143,9 +135,8 @@ export class CheckoutComponent implements OnInit {
   codSurcharge = computed(() => {
     if (this.paymentMethod() !== "COD") return 0;
     const globalSettings = this.settingsService.shippingSettings() || {};
-    return globalSettings.codHandlingCharge !== undefined
-      ? Number(globalSettings.codHandlingCharge)
-      : 0;
+    const charge = globalSettings.codHandlingCharge !== undefined ? Number(globalSettings.codHandlingCharge) : 100;
+    return charge > 0 ? charge : 100;
   });
 
   grandTotal = computed(
@@ -443,6 +434,7 @@ export class CheckoutComponent implements OnInit {
       },
       modal: {
         ondismiss: () => {
+          this.toast.error("Your payment was not completed. Please try again.");
           this.isSubmitting.set(false);
           this.loading.stopLoading();
         },
@@ -457,7 +449,7 @@ export class CheckoutComponent implements OnInit {
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', (resp: any) => {
         console.warn('Razorpay Payment Error:', resp);
-        this.toast.error(resp.error?.description || 'Payment failed or cancelled.');
+        this.toast.error("Your payment was not completed. Please try again.");
         this.isSubmitting.set(false);
         this.loading.stopLoading();
       });

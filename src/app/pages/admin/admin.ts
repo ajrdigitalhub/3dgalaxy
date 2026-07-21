@@ -38,9 +38,11 @@ import { AdminPaymentsTab } from "./components/payments-tab";
 import { AdminCommunicationTab } from "./components/communication-tab";
 import { AdminAbandonedCheckoutsTab } from "./components/abandoned-checkouts-tab";
 import { AdminServiceEnquiriesTab } from "./components/service-enquiries-tab";
+import { AdminNotificationCenterTabComponent } from "./components/notification-center-tab";
 import { ToastService } from "../../shared/components/toast/toast.service";
 
 export type AdminTab =
+  | "notification-center"
   | "dashboard"
   | "products"
   | "bulk-import"
@@ -104,6 +106,7 @@ export type AdminTab =
     AdminCommunicationTab,
     AdminAbandonedCheckoutsTab,
     AdminServiceEnquiriesTab,
+    AdminNotificationCenterTabComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -184,7 +187,10 @@ export class AdminPanel {
     },
     {
       group: "Communication",
-      items: [{ id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" }],
+      items: [
+        { id: "notification-center", label: "Notification Center", icon: "notifications_active" },
+        { id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" },
+      ],
     },
     {
       group: "Customers",

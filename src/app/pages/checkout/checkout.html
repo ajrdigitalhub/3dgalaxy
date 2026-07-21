@@ -536,7 +536,7 @@
             </div>
             @if (paymentMethod() === 'COD' && codSurcharge() > 0) {
             <div class="flex justify-between text-neutral-500 font-semibold">
-              <span>COD Surcharge</span>
+              <span>COD Handling Charge</span>
               <span class="text-neutral-900 dark:text-white font-bold">{{ codSurcharge() |
                 currency:'INR':'symbol':'1.0-0' }}</span>
             </div>

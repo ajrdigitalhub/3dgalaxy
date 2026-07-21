@@ -140,19 +140,46 @@ export const generateInvoicePDF = async (order: any): Promise<string> => {
         });
       }
       
+      let itemsSubtotal = 0;
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item: any) => {
+          itemsSubtotal += item.quantity * Number(item.unitPrice || item.price || 0);
+        });
+      }
+
       doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
       doc.moveDown(0.5);
-      
-      doc.text('Subtotal:', 370, doc.y, { width: 70, align: 'right' });
-      doc.text(`₹${order.totalAmount}`, 460, doc.y, { width: 80, align: 'right' });
+
+      doc.text('Subtotal:', 350, doc.y, { width: 90, align: 'right' });
+      doc.text(`₹${itemsSubtotal.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
+      doc.moveDown(0.4);
+
+      if (Number(order.shippingAmount || 0) > 0) {
+        doc.text('Shipping:', 350, doc.y, { width: 90, align: 'right' });
+        doc.text(`₹${Number(order.shippingAmount).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
+        doc.moveDown(0.4);
+      }
+
+      if (Number(order.discountAmount || 0) > 0) {
+        doc.text('Discount:', 350, doc.y, { width: 90, align: 'right' });
+        doc.text(`-₹${Number(order.discountAmount).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
+        doc.moveDown(0.4);
+      }
+
+      const codFee = Number(order.codCharge || 0) || (order.paymentMethod === 'COD' ? 100 : 0);
+      if (codFee > 0) {
+        doc.text('COD Charge:', 350, doc.y, { width: 90, align: 'right' });
+        doc.text(`₹${codFee.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
+        doc.moveDown(0.4);
+      }
+
+      const taxVal = Number(order.taxAmount || 0);
+      doc.text('Tax / GST:', 350, doc.y, { width: 90, align: 'right' });
+      doc.text(`₹${taxVal.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
       doc.moveDown(0.5);
-      
-      doc.text('GST:', 370, doc.y, { width: 70, align: 'right' });
-      doc.text(`₹0`, 460, doc.y, { width: 80, align: 'right' });
-      doc.moveDown(0.5);
-      
-      doc.fontSize(11).font('Helvetica-Bold').text('Grand Total:', 370, doc.y, { width: 70, align: 'right' });
-      doc.text(`₹${order.totalAmount}`, 460, doc.y, { width: 80, align: 'right' });
+
+      doc.fontSize(11).font('Helvetica-Bold').text('Grand Total:', 350, doc.y, { width: 90, align: 'right' });
+      doc.text(`₹${Number(order.totalAmount || 0).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
       
       doc.end();
       

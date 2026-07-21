@@ -1,12 +1,11 @@
 import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { DatastoreService, Product } from '../../services/datastore';
-import { PageHeaderComponent } from '../shared/components/page-header/page-header.component';
+import { DatastoreService } from '../../services/datastore';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, MatIconModule, PageHeaderComponent],
+  imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

@@ -167,6 +167,26 @@ export const getOrderById = async (req: any, res: Response) => {
     });
 
     if (!order) {
+      const checkout = await prisma.abandonedCheckout.findUnique({
+        where: { id },
+      });
+      if (checkout && checkout.recoveredOrderId) {
+        const recovered = await prisma.order.findUnique({
+          where: { id: checkout.recoveredOrderId },
+          include: {
+            customer: { include: { user: true } },
+            shippingAddress: true,
+            billingAddress: true,
+            items: { include: { product: true, variant: true } },
+            statusHistory: { orderBy: { createdAt: 'desc' } },
+            payments: true,
+            shipments: { orderBy: { createdAt: 'desc' } }
+          }
+        });
+        if (recovered) {
+          return res.status(200).json(mapOrderWithVariantDetails(recovered));
+        }
+      }
       return res.status(404).json({ error: 'Order reference does not exist' });
     }
 
@@ -216,21 +236,29 @@ export const createOrder = async (req: any, res: Response) => {
 
   // Validate COD eligibility if paymentMethod is COD
   if (paymentMethod === 'COD') {
+    let orderSubtotal = 0;
     for (const item of items) {
       if (item.productId) {
         const prod = await prisma.product.findUnique({
           where: { id: item.productId },
-          select: { name: true, codAvailable: true, isActive: true, deletedAt: true }
+          select: { name: true, basePrice: true, salePrice: true, codAvailable: true, isActive: true, deletedAt: true }
         });
         if (!prod || !prod.isActive || prod.deletedAt) {
           return res.status(400).json({ error: `Product "${item.productId}" is no longer available.` });
         }
         if (prod.codAvailable === false) {
           return res.status(400).json({
-            error: `Cash on Delivery (COD) is unavailable for "${prod.name}". Please choose another payment method.`
+            error: `Cash on Delivery (COD) is unavailable for "${prod.name}". Please choose online payment.`
           });
         }
+        const itemPrice = prod.salePrice ? Number(prod.salePrice) : Number(prod.basePrice);
+        orderSubtotal += itemPrice * (item.quantity || 1);
       }
+    }
+    if (orderSubtotal > 2500) {
+      return res.status(400).json({
+        error: 'Cash on Delivery is available only for eligible products with a cart total of ₹2,500 or below.'
+      });
     }
   }
 
@@ -383,9 +411,10 @@ export const createOrder = async (req: any, res: Response) => {
       }
 
       const shippingAmount = subtotal > 1000 ? 0 : 99;
+      const codCharge = paymentMethod === 'COD' ? 100 : 0;
       const taxAmount = 0; // GST already included in product price
       const discountAmount = 0;
-      const totalAmount = subtotal + shippingAmount + taxAmount - discountAmount;
+      const totalAmount = subtotal + shippingAmount + codCharge + taxAmount - discountAmount;
 
       // 3. Create Order
       const orderEntity = await tx.order.create({
@@ -470,6 +499,82 @@ export const trackOrder = async (req: Request, res: Response) => {
   }
 };
 
+export const restoreInventory = async (tx: any, orderId: string) => {
+  const existingRestore = await tx.inventoryTransaction.findFirst({
+    where: {
+      referenceId: orderId,
+      transactionType: 'INCREMENT',
+      notes: { contains: 'Stock restored' }
+    }
+  });
+
+  if (existingRestore) {
+    console.log(`[InventoryRestore] Stock already restored for Order ${orderId}`);
+    return;
+  }
+
+  const items = await tx.orderItem.findMany({
+    where: { orderId },
+  });
+
+  const warehouse = await tx.warehouse.findFirst();
+
+  for (const item of items) {
+    if (warehouse) {
+      const inventory = await tx.inventory.findFirst({
+        where: {
+          productId: item.productId,
+          variantId: item.variantId,
+          warehouseId: warehouse.id,
+        },
+      });
+
+      if (inventory) {
+        await tx.inventory.update({
+          where: { id: inventory.id },
+          data: {
+            quantity: {
+              increment: item.quantity,
+            },
+          },
+        });
+
+        await tx.inventoryTransaction.create({
+          data: {
+            inventoryId: inventory.id,
+            transactionType: 'INCREMENT',
+            quantity: item.quantity,
+            referenceId: orderId,
+            notes: `Stock restored for cancelled Order ${orderId}`,
+          },
+        });
+      }
+    }
+
+    if (item.productId) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
+
+    if (item.variantId) {
+      await tx.productVariant.update({
+        where: { id: item.variantId },
+        data: {
+          stock: {
+            increment: item.quantity,
+          },
+        },
+      });
+    }
+  }
+};
+
 export const updateOrderStatus = async (req: any, res: Response) => {
   const { id } = req.params;
   const { status } = req.body; 
@@ -483,6 +588,12 @@ export const updateOrderStatus = async (req: any, res: Response) => {
     if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const existing = await prisma.order.findUnique({ where: orderWhere });
     if (!existing) return res.status(404).json({ error: 'Not found' });
+
+    if (String(status).toUpperCase() === 'CANCELLED') {
+      await prisma.$transaction(async (tx) => {
+        await restoreInventory(tx, existing.id);
+      });
+    }
 
     const updated = await prisma.order.update({
       where: { id: existing.id },

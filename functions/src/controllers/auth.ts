@@ -7,6 +7,7 @@ import {
   verifyRefreshToken,
 } from "../utils/token";
 import { triggerWhatsAppNotification } from "./whatsapp";
+import { NotificationService } from "../services/notification.service";
 
 // Simple in-memory blocklist for illustrative JWT logouts
 const tokenBlocklist = new Set<string>();
@@ -119,6 +120,15 @@ export const register = async (req: Request, res: Response) => {
         entityId: newUser.id,
         newData: JSON.stringify(`Registered account: ${email}`),
       },
+    });
+
+    // Dispatch Central Admin Notification (Push Only, WhatsApp Suppressed)
+    NotificationService.dispatch({
+      eventKey: 'NEW_CUSTOMER_REGISTRATION',
+      title: '👤 New Customer Registration',
+      body: `${firstName} ${lastName} (${email}) created a new customer account.`,
+      deepLink: `/admin/customers`,
+      metadata: { userId: newUser.id, email: newUser.email, mobile: newUser.mobile },
     });
 
     const userRoleName = newUser.roles?.[0]?.role?.name || "Customer";
