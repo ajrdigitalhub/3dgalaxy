@@ -5,8 +5,14 @@ import { sendPushNotificationInternal } from './notification';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 
+let pendingMappedProductsPromise: Promise<any[]> | null = null;
+let pendingCategoriesPromise: Promise<any[]> | null = null;
+
 export const clearProductCache = () => {
+  pendingMappedProductsPromise = null;
+  pendingCategoriesPromise = null;
   sysCache.del('all_mapped_products');
+  sysCache.del('all_db_categories');
   sysCache.clearPattern('category_path_');
   sysCache.clearPattern('products_list_');
   sysCache.clearPattern('products_slug_');
@@ -15,6 +21,217 @@ export const clearProductCache = () => {
   sysCache.del('featured_products_payload');
   clearCache(); // Flushes route cache for /api/home and other routes
 };
+
+export async function getAllMappedProductsCached(): Promise<any[]> {
+  const cached = sysCache.get('all_mapped_products') as any[];
+  if (cached && cached.length > 0) {
+    return cached;
+  }
+
+  if (pendingMappedProductsPromise) {
+    return pendingMappedProductsPromise;
+  }
+
+  pendingMappedProductsPromise = (async () => {
+    try {
+      const items = await prisma.product.findMany({
+        where: { deletedAt: null, isActive: true },
+        include: {
+          brand: true,
+          category: true,
+          reviews: true,
+        }
+      });
+
+      const getSpecsArray = (specsJson: any): any[] => {
+        if (!specsJson) return [];
+        if (Array.isArray(specsJson)) return specsJson;
+        if (specsJson && typeof specsJson === 'object' && Array.isArray((specsJson as any).create)) {
+          return (specsJson as any).create;
+        }
+        return [];
+      };
+
+      const allMapped = items.map(p => {
+        const specs = getSpecsArray(p.specifications);
+
+        // Extract Color
+        const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
+        let colors: string[] = [];
+        if (colorSpec && colorSpec.value) {
+          colors = colorSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+        }
+        if (colors.length === 0) {
+          const colorKeywords = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Grey', 'Gray', 'Orange', 'Purple', 'Silver', 'Gold', 'Pink', 'Brown'];
+          for (const keyword of colorKeywords) {
+            if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+              colors.push(keyword);
+            }
+          }
+        }
+        if (colors.length === 0) colors.push('Multicolor');
+
+        // Extract Material
+        const materialSpec = specs.find(s => ['material', 'materials'].includes(s.name.toLowerCase()));
+        let materials: string[] = [];
+        if (materialSpec && materialSpec.value) {
+          materials = materialSpec.value.split(/[,/]/).map((m: string) => m.trim()).filter(Boolean);
+        }
+        if (materials.length === 0 && p.category?.name) {
+          const matKeywords = ['PLA', 'PETG', 'ABS', 'TPU', 'Resin', 'Nylon', 'Carbon Fiber', 'Wood', 'Metal'];
+          for (const keyword of matKeywords) {
+            if (p.category.name.toLowerCase().includes(keyword.toLowerCase()) || p.name.toLowerCase().includes(keyword.toLowerCase())) {
+              materials.push(keyword);
+            }
+          }
+        }
+        if (materials.length === 0) materials.push('Other');
+
+        // Extract Technology
+        const techSpec = specs.find(s => ['technology', 'print technology', 'printing technology'].includes(s.name.toLowerCase()));
+        let technology = techSpec?.value || '';
+        if (!technology && p.category?.name) {
+          if (p.category.name.toLowerCase().includes('resin') || p.name.toLowerCase().includes('resin') || p.category.name.toLowerCase().includes('sla') || p.category.name.toLowerCase().includes('lcd')) {
+            technology = 'Resin (SLA/LCD)';
+          } else if (p.category.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('printer') || p.category.name.toLowerCase().includes('pla') || p.category.name.toLowerCase().includes('abs') || p.category.name.toLowerCase().includes('petg')) {
+            technology = 'FDM';
+          }
+        }
+        if (!technology) technology = 'Other';
+
+        // Extract Printer Type
+        const typeSpec = specs.find(s => ['printer type', 'type', 'structure'].includes(s.name.toLowerCase()));
+        let printerType = typeSpec?.value || '';
+        if (!printerType && p.name.toLowerCase().includes('mini')) {
+          printerType = 'Desktop / Compact';
+        } else if (!printerType && (p.name.toLowerCase().includes('industrial') || p.name.toLowerCase().includes('brahma'))) {
+          printerType = 'Industrial';
+        } else if (!printerType) {
+          printerType = 'Desktop';
+        }
+
+        // Extract Compatibility
+        const compSpec = specs.find(s => ['compatibility', 'compatible printers', 'compatible with'].includes(s.name.toLowerCase()));
+        let compatibility: string[] = [];
+        if (compSpec && compSpec.value) {
+          compatibility = compSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
+        }
+        const compKeywords = ['A1', 'P1S', 'X1C', 'K1', 'Ender', 'Neptune', 'Saturn', 'Mars'];
+        for (const keyword of compKeywords) {
+          if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
+            compatibility.push(keyword);
+          }
+        }
+
+        // Calculate rating
+        let avgRating = 4.9;
+        if (p.reviews && p.reviews.length > 0) {
+          const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+          avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
+        }
+
+        // Stock status
+        let stockStatus = 'IN_STOCK';
+        if (p.stock === 0) {
+          const checkStr = (p.name + ' ' + (p.description || '')).toLowerCase();
+          if (checkStr.includes('pre-order') || checkStr.includes('preorder')) {
+            stockStatus = 'PRE_ORDER';
+          } else if (checkStr.includes('coming-soon') || checkStr.includes('coming soon')) {
+            stockStatus = 'COMING_SOON';
+          } else {
+            stockStatus = 'OUT_OF_STOCK';
+          }
+        }
+
+        // Active price
+        const basePriceNum = parseFloat(p.basePrice?.toString() || '0');
+        const salePriceNum = p.salePrice ? parseFloat(p.salePrice.toString()) : basePriceNum;
+        const activePrice = salePriceNum;
+
+        // Featured flags
+        const isBestseller = p.isExclusive || p.name.toLowerCase().includes('combo') || p.stock > 100;
+        const isTrending = p.isFeatured || p.stock < 10;
+        const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
+
+        return mapProductFields({
+          id: p.id,
+          brandId: p.brandId,
+          categoryId: p.categoryId,
+          name: p.name,
+          slug: p.slug,
+          sku: p.sku,
+          description: p.description,
+          shortDescription: p.shortDescription,
+          basePrice: basePriceNum,
+          salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
+          dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
+          stock: p.stock,
+          isActive: p.isActive,
+          isExclusive: p.isExclusive,
+          images: p.images,
+          specifications: specs,
+          brand: p.brand,
+          category: p.category,
+          reviews: p.reviews,
+          activePrice,
+          colors,
+          materials,
+          technology,
+          printerType,
+          compatibility,
+          avgRating,
+          stockStatus,
+          isFeatured: p.isFeatured,
+          isBestseller,
+          isTrending,
+          isNewArrival,
+          isOnSale
+        });
+      });
+
+      sysCache.set('all_mapped_products', allMapped, 1800); // 30 minutes cache
+      return allMapped;
+    } catch (err: any) {
+      console.warn('[PRODUCT_CACHE_WARN] Database query error, returning stale/empty cache:', err?.message || err);
+      const stale = sysCache.get('all_mapped_products') as any[];
+      return stale || [];
+    } finally {
+      pendingMappedProductsPromise = null;
+    }
+  })();
+
+  return pendingMappedProductsPromise;
+}
+
+export async function getAllDbCategoriesCached(): Promise<any[]> {
+  const cached = sysCache.get('all_db_categories') as any[];
+  if (cached && cached.length > 0) {
+    return cached;
+  }
+
+  if (pendingCategoriesPromise) {
+    return pendingCategoriesPromise;
+  }
+
+  pendingCategoriesPromise = (async () => {
+    try {
+      const cats = await prisma.category.findMany({
+        where: { isActive: true, deletedAt: null }
+      });
+      sysCache.set('all_db_categories', cats, 1800);
+      return cats;
+    } catch (err: any) {
+      console.warn('[CATEGORY_CACHE_WARN] Database query error, returning stale/empty cache:', err?.message || err);
+      const stale = sysCache.get('all_db_categories') as any[];
+      return stale || [];
+    } finally {
+      pendingCategoriesPromise = null;
+    }
+  })();
+
+  return pendingCategoriesPromise;
+}
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -189,175 +406,9 @@ export const getProducts = async (req: Request, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Load and map all active products from memory cache if available
-    let allMapped = sysCache.get('all_mapped_products') as any[];
-    if (!allMapped) {
-      const items = await prisma.product.findMany({
-        where: { deletedAt: null, isActive: true },
-        include: {
-          brand: true,
-          category: true,
-          reviews: true,
-        }
-      });
-
-      const getSpecsArray = (specsJson: any): any[] => {
-        if (!specsJson) return [];
-        if (Array.isArray(specsJson)) return specsJson;
-        if (specsJson && typeof specsJson === 'object' && Array.isArray((specsJson as any).create)) {
-          return (specsJson as any).create;
-        }
-        return [];
-      };
-
-      allMapped = items.map(p => {
-        const specs = getSpecsArray(p.specifications);
-
-        // Extract Color
-        const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
-        let colors: string[] = [];
-        if (colorSpec && colorSpec.value) {
-          colors = colorSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
-        }
-        if (colors.length === 0) {
-          const colorKeywords = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Grey', 'Gray', 'Orange', 'Purple', 'Silver', 'Gold', 'Pink', 'Brown'];
-          for (const keyword of colorKeywords) {
-            if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
-              colors.push(keyword);
-            }
-          }
-        }
-        if (colors.length === 0) colors.push('Multicolor');
-
-        // Extract Material
-        const materialSpec = specs.find(s => ['material', 'materials'].includes(s.name.toLowerCase()));
-        let materials: string[] = [];
-        if (materialSpec && materialSpec.value) {
-          materials = materialSpec.value.split(/[,/]/).map((m: string) => m.trim()).filter(Boolean);
-        }
-        if (materials.length === 0 && p.category?.name) {
-          const matKeywords = ['PLA', 'PETG', 'ABS', 'TPU', 'Resin', 'Nylon', 'Carbon Fiber', 'Wood', 'Metal'];
-          for (const keyword of matKeywords) {
-            if (p.category.name.toLowerCase().includes(keyword.toLowerCase()) || p.name.toLowerCase().includes(keyword.toLowerCase())) {
-              materials.push(keyword);
-            }
-          }
-        }
-        if (materials.length === 0) materials.push('Other');
-
-        // Extract Technology
-        const techSpec = specs.find(s => ['technology', 'print technology', 'printing technology'].includes(s.name.toLowerCase()));
-        let technology = techSpec?.value || '';
-        if (!technology && p.category?.name) {
-          if (p.category.name.toLowerCase().includes('resin') || p.name.toLowerCase().includes('resin') || p.category.name.toLowerCase().includes('sla') || p.category.name.toLowerCase().includes('lcd')) {
-            technology = 'Resin (SLA/LCD)';
-          } else if (p.category.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('fdm') || p.name.toLowerCase().includes('printer') || p.category.name.toLowerCase().includes('pla') || p.category.name.toLowerCase().includes('abs') || p.category.name.toLowerCase().includes('petg')) {
-            technology = 'FDM';
-          }
-        }
-        if (!technology) technology = 'Other';
-
-        // Extract Printer Type
-        const typeSpec = specs.find(s => ['printer type', 'type', 'structure'].includes(s.name.toLowerCase()));
-        let printerType = typeSpec?.value || '';
-        if (!printerType && p.name.toLowerCase().includes('mini')) {
-          printerType = 'Desktop / Compact';
-        } else if (!printerType && (p.name.toLowerCase().includes('industrial') || p.name.toLowerCase().includes('brahma'))) {
-          printerType = 'Industrial';
-        } else if (!printerType) {
-          printerType = 'Desktop';
-        }
-
-        // Extract Compatibility
-        const compSpec = specs.find(s => ['compatibility', 'compatible printers', 'compatible with'].includes(s.name.toLowerCase()));
-        let compatibility: string[] = [];
-        if (compSpec && compSpec.value) {
-          compatibility = compSpec.value.split(/[,/]/).map((c: string) => c.trim()).filter(Boolean);
-        }
-        const compKeywords = ['A1', 'P1S', 'X1C', 'K1', 'Ender', 'Neptune', 'Saturn', 'Mars'];
-        for (const keyword of compKeywords) {
-          if (p.name.toLowerCase().includes(keyword.toLowerCase())) {
-            compatibility.push(keyword);
-          }
-        }
-
-        // Calculate rating
-        let avgRating = 4.9;
-        if (p.reviews && p.reviews.length > 0) {
-          const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-          avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
-        }
-
-        // Stock status
-        let stockStatus = 'IN_STOCK';
-        if (p.stock === 0) {
-          const checkStr = (p.name + ' ' + (p.description || '')).toLowerCase();
-          if (checkStr.includes('pre-order') || checkStr.includes('preorder')) {
-            stockStatus = 'PRE_ORDER';
-          } else if (checkStr.includes('coming-soon') || checkStr.includes('coming soon')) {
-            stockStatus = 'COMING_SOON';
-          } else {
-            stockStatus = 'OUT_OF_STOCK';
-          }
-        }
-
-        // Active price
-        const basePriceNum = parseFloat(p.basePrice?.toString() || '0');
-        const salePriceNum = p.salePrice ? parseFloat(p.salePrice.toString()) : basePriceNum;
-        const activePrice = salePriceNum;
-
-        // Featured flags
-        const isBestseller = p.isExclusive || p.name.toLowerCase().includes('combo') || p.stock > 100;
-        const isTrending = p.isFeatured || p.stock < 10;
-        const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
-        const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
-
-        return mapProductFields({
-          id: p.id,
-          brandId: p.brandId,
-          categoryId: p.categoryId,
-          name: p.name,
-          slug: p.slug,
-          sku: p.sku,
-          description: p.description,
-          shortDescription: p.shortDescription,
-          basePrice: basePriceNum,
-          salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
-          dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
-          stock: p.stock,
-          isActive: p.isActive,
-          isExclusive: p.isExclusive,
-          images: p.images,
-          specifications: specs,
-          brand: p.brand,
-          category: p.category,
-          reviews: p.reviews,
-          activePrice,
-          colors,
-          materials,
-          technology,
-          printerType,
-          compatibility,
-          avgRating,
-          stockStatus,
-          isFeatured: p.isFeatured,
-          isBestseller,
-          isTrending,
-          isNewArrival,
-          isOnSale
-        });
-      });
-
-      sysCache.set('all_mapped_products', allMapped, 1800); // 30 minutes cache
-    }
-
-    let allDbCategories = sysCache.get('all_db_categories') as any[];
-    if (!allDbCategories) {
-      allDbCategories = await prisma.category.findMany({
-        where: { isActive: true, deletedAt: null }
-      });
-      sysCache.set('all_db_categories', allDbCategories, 1800);
-    }
+    // Load and map all active products & categories from single-flight memory cache
+    const allMapped = await getAllMappedProductsCached();
+    const allDbCategories = await getAllDbCategoriesCached();
 
     // Helper to check if a category belongs to a parent (by ID or slug)
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {

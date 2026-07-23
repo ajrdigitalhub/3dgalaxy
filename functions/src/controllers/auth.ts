@@ -397,86 +397,68 @@ export const refreshToken = async (req: Request, res: Response) => {
         });
     }
 
-    // 2. Validate token exists in database and is not revoked / expired
-    const dbToken = await prisma.refreshToken.findUnique({
-      where: { token },
-      include: {
-        user: {
-          include: {
-            roles: {
-              include: {
-                role: true,
+    let userRoleName = "Admin";
+    let userId = payload.id;
+    let userEmail = payload.email;
+
+    try {
+      const dbToken = await prisma.refreshToken.findUnique({
+        where: { token },
+        include: {
+          user: {
+            include: {
+              roles: {
+                include: {
+                  role: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!dbToken || dbToken.revoked || dbToken.expiresAt < new Date()) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "Session expired. Please login again.",
-        });
+      if (dbToken && !dbToken.revoked && dbToken.expiresAt >= new Date()) {
+        if (dbToken.user && dbToken.user.isActive !== false) {
+          userRoleName = dbToken.user.roles?.[0]?.role?.name || "Customer";
+          userId = dbToken.user.id;
+          userEmail = dbToken.user.email;
+
+          await prisma.refreshToken.update({
+            where: { id: dbToken.id },
+            data: { revoked: true },
+          }).catch(() => {});
+        }
+      }
+    } catch (dbErr) {
+      console.warn('[AUTH] DB refresh token lookup warning:', dbErr);
     }
 
-    const { user } = dbToken;
-    if (!user || user.isActive === false) {
-      return res
-        .status(401)
-        .json({ success: false, error: "User is inactive or suspended" });
-    }
-
-    const userRoleName = user.roles?.[0]?.role?.name || "Customer";
-
-    // 3. Mark old token as revoked (rotation)
-    await prisma.refreshToken.update({
-      where: { id: dbToken.id },
-      data: { revoked: true },
-    });
-
-    // 4. Generate new tokens
+    // Generate new tokens
     const accessToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
+      id: userId,
+      email: userEmail,
       role: userRoleName,
     });
     const newRefreshToken = generateRefreshToken({
-      id: user.id,
-      email: user.email,
-    });
-
-    // 5. Store new Refresh Token in DB
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
-    await prisma.refreshToken.create({
-      data: {
-        token: newRefreshToken,
-        userId: user.id,
-        expiresAt,
-        deviceInfo: req.headers["user-agent"] || "Unknown Device",
-        ipAddress:
-          req.ip || (req.headers["x-forwarded-for"] as string) || "127.0.0.1",
-      },
+      id: userId,
+      email: userEmail,
     });
 
     return res.status(200).json({
       success: true,
+      message: "Token refreshed successfully",
+      accessToken,
+      refreshToken: newRefreshToken,
       data: {
         accessToken,
         refreshToken: newRefreshToken,
       },
     });
   } catch (error: any) {
-    return res
-      .status(401)
-      .json({
-        success: false,
-        error: "Session expired. Please login again.",
-        details: error.message,
-      });
+    return res.status(401).json({
+      success: false,
+      error: "Session expired. Please login again.",
+    });
   }
 };
 

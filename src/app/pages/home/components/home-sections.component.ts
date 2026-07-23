@@ -1468,7 +1468,7 @@ export class HomeServicesComponent {
       <div class="sticky-stack-container">
         <!-- Card 1 -->
         <div
-          class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]"
+          class="sticky-stack-card bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-200/50 dark:shadow-none flex flex-col md:flex-row justify-between gap-8 min-h-[300px]"
         >
           <div class="space-y-4 max-w-xl text-left">
             <span
@@ -1478,7 +1478,7 @@ export class HomeServicesComponent {
             <h4 class="text-3xl font-black tracking-tight leading-none">
               Authorized National Distributor
             </h4>
-            <p class="text-sm text-neutral-400 leading-relaxed">
+            <p class="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               We work directly with tier-1 manufacturers to source authentic
               systems. Enjoy factory-certified product warranties, direct
               firmware overrides, and guaranteed spares support.
@@ -1493,7 +1493,7 @@ export class HomeServicesComponent {
 
         <!-- Card 3 -->
         <div
-          class="sticky-stack-card bg-neutral-900 text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-800 flex flex-col md:flex-row justify-between gap-8 min-h-[300px]"
+          class="sticky-stack-card bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white rounded-[2.5rem] p-10 md:p-14 border border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-200/50 dark:shadow-none flex flex-col md:flex-row justify-between gap-8 min-h-[300px]"
         >
           <div class="space-y-4 max-w-xl text-left">
             <span
@@ -1503,7 +1503,7 @@ export class HomeServicesComponent {
             <h4 class="text-3xl font-black tracking-tight leading-none">
               Next-Gen Slicing Engine
             </h4>
-            <p class="text-sm text-neutral-400 leading-relaxed">
+            <p class="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               Our cloud quoting pipeline estimates parameters using direct mesh
               parsing. Upload your files to automatically receive custom infill,
               density, and filament parameters with instant pricing.

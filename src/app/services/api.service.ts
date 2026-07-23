@@ -4,6 +4,8 @@ import { Observable, throwError, timer } from 'rxjs';
 import { catchError, retry, tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
+import { getFriendlyErrorMessage } from '../core/utils/error-handler.util';
+
 export interface ApiResponse<T> {
   success: true;
   message: string;
@@ -24,15 +26,7 @@ export class ApiService {
   }
 
   private handleError(error: HttpErrorResponse) {
-    let errorMessage = 'Unknown error!';
-    if (error.error instanceof ErrorEvent) {
-      // Client-side errors
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      // Server-side errors
-      errorMessage = error.error?.message || error.message || `Error Code: ${error.status}\nMessage: ${error.message}`;
-    }
-    console.error(errorMessage);
+    const errorMessage = getFriendlyErrorMessage(error);
     return throwError(() => new Error(errorMessage));
   }
 

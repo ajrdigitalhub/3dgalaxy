@@ -1299,21 +1299,24 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       });
 
       // Save TransactionHistory record
-      await prisma.transactionHistory.create({
-        data: {
-          orderId: null,
-          customerId: isValidUuid(customerIdToUse) ? customerIdToUse : null,
-          paymentMethod: 'RAZORPAY',
-          gatewayName: 'razorpay',
-          gatewayOrderId,
-          amount: calculatedTotal,
-          currency: settings.currency || 'INR',
-          status: 'Initiated',
-          paymentStatus: 'Pending',
-          requestPayload: { checkoutSessionId, gatewayOrderId, amountInPaise },
-          responsePayload: gatewayData,
-        }
-      });
+      try {
+        await prisma.transactionHistory.create({
+          data: {
+            customerId: isValidUuid(customerIdToUse) ? customerIdToUse : undefined,
+            paymentMethod: 'RAZORPAY',
+            gatewayName: 'razorpay',
+            gatewayOrderId,
+            amount: calculatedTotal,
+            currency: settings.currency || 'INR',
+            status: 'Initiated',
+            paymentStatus: 'Pending',
+            requestPayload: { checkoutSessionId, gatewayOrderId, amountInPaise },
+            responsePayload: gatewayData,
+          }
+        });
+      } catch (txLogErr: any) {
+        console.warn('[PAYMENT_INIT] Soft warning creating transaction history record:', txLogErr?.message || txLogErr);
+      }
 
       return res.status(200).json({
         success: true,
@@ -1349,7 +1352,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       const payload = {
         order_amount: Number(calculatedTotal),
         order_currency: settings.currency || 'INR',
-        order_id: orderNumber,
+        order_id: checkoutSessionId,
         customer_details: {
           customer_id: customerIdToUse || 'GUEST_' + Date.now(),
           customer_phone: resolvedPhone || '9999999999',
@@ -1399,29 +1402,34 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         }
       });
 
-      await prisma.transactionHistory.create({
-        data: {
-          orderId: null,
-          customerId: isValidUuid(customerIdToUse) ? customerIdToUse : null,
-          paymentMethod: 'CASHFREE',
-          gatewayName: 'cashfree',
-          gatewayOrderId: String(gatewayOrderId),
-          amount: calculatedTotal,
-          currency: settings.currency || 'INR',
-          status: 'Initiated',
-          paymentStatus: 'Pending',
-          requestPayload: payload,
-          responsePayload: cfData,
-        }
-      });
+      try {
+        await prisma.transactionHistory.create({
+          data: {
+            customerId: isValidUuid(customerIdToUse) ? customerIdToUse : undefined,
+            paymentMethod: 'CASHFREE',
+            gatewayName: 'cashfree',
+            gatewayOrderId: String(gatewayOrderId),
+            amount: calculatedTotal,
+            currency: settings.currency || 'INR',
+            status: 'Initiated',
+            paymentStatus: 'Pending',
+            requestPayload: payload,
+            responsePayload: cfData,
+          }
+        });
+      } catch (txLogErr: any) {
+        console.warn('[CASHFREE_INIT] Soft warning logging transaction history:', txLogErr?.message || txLogErr);
+      }
 
       return res.status(200).json({
         success: true,
         data: {
           paymentSessionId: cfData.payment_session_id,
+          payment_session_id: cfData.payment_session_id,
           cfOrderId: cfData.cf_order_id,
           orderId: abandonedCheckout.id,
           checkoutId: abandonedCheckout.id,
+          sandbox: Boolean(sandbox),
         }
       });
     } else {

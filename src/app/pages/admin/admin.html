@@ -303,6 +303,40 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Theme Switcher Button -->
+        <button
+          (click)="toggleTheme()"
+          [title]="'Switch Theme (' + (ds.theme() === 'dark' ? 'Dark' : 'Light') + ')'"
+          class="h-9 px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+        >
+          <mat-icon class="text-sm text-amber-500">{{ ds.theme() === 'dark' ? 'wb_sunny' : 'nightlight_round' }}</mat-icon>
+          <span class="hidden sm:inline text-[10px] uppercase font-black tracking-wider">{{ ds.theme() === 'dark' ? 'Light' : 'Dark' }}</span>
+        </button>
+
+        <!-- Quick Links Button -->
+        <button
+          (click)="isQuickLinksOpen.set(!isQuickLinksOpen())"
+          class="h-9 px-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+        >
+          <mat-icon class="text-sm">bolt</mat-icon>
+          <span class="hidden sm:inline text-[10px] uppercase tracking-wider">Quick Links</span>
+        </button>
+
+        <!-- Admin Details Profile Trigger Button -->
+        <button
+          (click)="isAdminDetailsOpen.set(!isAdminDetailsOpen())"
+          class="flex items-center gap-2.5 p-1 px-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer"
+        >
+          <div class="h-7 w-7 rounded-lg bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white uppercase shadow-xs">
+            {{ adminName().slice(0,2) }}
+          </div>
+          <div class="text-left hidden md:block">
+            <p class="text-[11px] font-black text-zinc-900 dark:text-white leading-none truncate max-w-[100px]">{{ adminName() }}</p>
+            <span class="text-[8px] font-mono text-blue-500 font-bold uppercase tracking-wider block mt-0.5">{{ adminRole() }}</span>
+          </div>
+          <mat-icon class="text-xs text-zinc-400">tune</mat-icon>
+        </button>
+
         <!-- Compact Install App Top-Right Button -->
         <button
           (click)="pwa.promptInstall()"
@@ -325,20 +359,135 @@
             >Network Live</span
           >
         </div>
-        <div class="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800"></div>
-        <div class="text-right">
-          <p
-            class="text-[10px] font-black text-zinc-900 dark:text-white uppercase leading-none"
-          >
-            {{ storeName() }}
-          </p>
-          <span
-            class="text-[8px] font-mono text-zinc-400 uppercase tracking-widest"
-            >Industrial Node</span
-          >
-        </div>
       </div>
     </header>
+
+    <!-- ADMIN DETAILS & SYSTEM ACCESS MODAL -->
+    @if (isAdminDetailsOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/70 backdrop-blur-md animate-fadeIn" (click)="isAdminDetailsOpen.set(false)">
+      <div (click)="$event.stopPropagation()" class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div class="flex items-center gap-4">
+            <div class="h-14 w-14 rounded-2xl bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-xl font-black text-white uppercase shadow-lg shadow-purple-500/20">
+              {{ adminName().slice(0,2) }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-black tracking-tight uppercase font-display">{{ adminName() }}</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-mono font-black uppercase tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                  {{ adminRole() }} CLEARANCE
+                </span>
+              </div>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium">{{ adminEmail() }}</p>
+            </div>
+          </div>
+          <button (click)="isAdminDetailsOpen.set(false)" class="h-9 w-9 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-300 flex items-center justify-center transition-colors cursor-pointer border-none">
+            <mat-icon class="text-base">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- System Theme Switcher Bar -->
+        <div class="p-4 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <mat-icon>{{ ds.theme() === 'dark' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+            </div>
+            <div>
+              <h4 class="text-xs font-black uppercase tracking-wider">Console Visual Theme</h4>
+              <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Operating in {{ ds.theme() === 'dark' ? 'Dark Theme' : 'Light Theme' }} mode</p>
+            </div>
+          </div>
+          <button (click)="toggleTheme()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 cursor-pointer border-none">
+            <mat-icon class="text-sm">{{ ds.theme() === 'dark' ? 'wb_sunny' : 'nightlight_round' }}</mat-icon>
+            <span>Switch to {{ ds.theme() === 'dark' ? 'Light' : 'Dark' }}</span>
+          </button>
+        </div>
+
+        <!-- Access Capabilities List -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 font-display">Administrative Clearances & Capabilities</h4>
+            <span class="text-[10px] font-mono text-emerald-500 font-bold uppercase tracking-wider">● Session Active</span>
+          </div>
+          <div class="space-y-2">
+            @for (acc of adminAccessList(); track acc.name) {
+              <div class="p-3 bg-zinc-50 dark:bg-zinc-950/40 rounded-xl border border-zinc-200/50 dark:border-zinc-850 flex items-center justify-between gap-4">
+                <div class="space-y-0.5">
+                  <p class="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <mat-icon class="text-xs text-emerald-500">check_circle</mat-icon>
+                    {{ acc.name }}
+                  </p>
+                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 pl-5">{{ acc.detail }}</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-md text-[9px] font-mono font-extrabold uppercase tracking-wider bg-zinc-200/60 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0">
+                  {{ acc.badge }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+          <a href="/" target="_blank" class="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all inline-flex items-center gap-2 text-decoration-none">
+            <mat-icon class="text-sm">open_in_new</mat-icon>
+            <span>Visit Storefront</span>
+          </a>
+          <div class="flex items-center gap-2">
+            <button (click)="setActiveTab('store-settings'); isAdminDetailsOpen.set(false)" class="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border-none">
+              <mat-icon class="text-sm">settings</mat-icon>
+              <span>Store Settings</span>
+            </button>
+            <button (click)="logout(); isAdminDetailsOpen.set(false)" class="px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border-none">
+              <mat-icon class="text-sm">logout</mat-icon>
+              <span>Log Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- QUICK LINKS MODAL -->
+    @if (isQuickLinksOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/70 backdrop-blur-md animate-fadeIn" (click)="isQuickLinksOpen.set(false)">
+      <div (click)="$event.stopPropagation()" class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] p-6 sm:p-8 max-w-3xl w-full shadow-2xl space-y-6 relative max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center">
+              <mat-icon>bolt</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-lg font-black uppercase tracking-tight font-display">Console Quick Shortcuts</h3>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">Direct 1-click access to core administrative modules</p>
+            </div>
+          </div>
+          <button (click)="isQuickLinksOpen.set(false)" class="h-9 w-9 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-300 flex items-center justify-center transition-colors cursor-pointer border-none">
+            <mat-icon class="text-base">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Grid of Quick Links Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          @for (link of quickLinks; track link.tab) {
+            <button
+              (click)="setActiveTab(link.tab); isQuickLinksOpen.set(false)"
+              class="p-4 bg-zinc-50 dark:bg-zinc-950/60 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 border border-zinc-200/60 dark:border-zinc-800 rounded-2xl transition-all cursor-pointer text-left space-y-3 flex flex-col justify-between group/link hover:-translate-y-0.5 shadow-xs"
+            >
+              <div class="h-10 w-10 rounded-xl flex items-center justify-center border group-hover/link:scale-110 transition-transform" [class]="link.color">
+                <mat-icon class="text-lg">{{ link.icon }}</mat-icon>
+              </div>
+              <div>
+                <h4 class="text-xs font-black uppercase tracking-tight text-zinc-900 dark:text-white group-hover/link:text-blue-500 transition-colors">{{ link.label }}</h4>
+                <p class="text-[10px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1">{{ link.desc }}</p>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+    }
 
     <!-- CONTENT BODY PANEL -->
     <div class="p-6 lg:p-8 space-y-8 w-full max-w-none">

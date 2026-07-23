@@ -12,6 +12,7 @@ import {
   OnInit,
 } from "@angular/core";
 import { isPlatformBrowser, CommonModule } from "@angular/common";
+import { DomSanitizer } from "@angular/platform-browser";
 import { RouterModule, Router } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { DatastoreService, Product } from "../../../services/datastore";
@@ -101,9 +102,9 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                   >
                     <img
                       [src]="
-                        product.images[0] ||
+                        (product.images && product.images[0]) ||
                         'https://picsum.photos/seed/' +
-                          product.slug +
+                          (product.slug || 'product') +
                           '/800/800'
                       "
                       [alt]="product.name"
@@ -133,9 +134,9 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                   >
                     {{ product.name }}
                   </h3>
-                  @if (product.tags.length) {
+                  @if (product.tags && product.tags.length) {
                     <div class="showcase-anim flex flex-wrap gap-2 mt-4">
-                      @for (tag of product.tags.slice(0, 4); track tag) {
+                      @for (tag of (product.tags || []).slice(0, 4); track tag) {
                         <span
                           class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200"
                         >
@@ -146,7 +147,7 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
                   }
                   <p
                     class="showcase-anim text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed max-w-xl select-none line-clamp-4 mt-4"
-                    [innerHTML]="product.description || product.shortDescription"
+                    [innerHTML]="safeHtml(product.description || product.shortDescription || '')"
                   ></p>
 
                   <div
@@ -243,6 +244,11 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
   toastService = inject(ToastService);
   router = inject(Router);
   platformId = inject(PLATFORM_ID);
+  private sanitizer = inject(DomSanitizer);
+
+  safeHtml(html: string) {
+    return this.sanitizer.bypassSecurityTrustHtml(html || "");
+  }
 
   showcaseContainer = viewChild<ElementRef>("showcaseContainer");
 

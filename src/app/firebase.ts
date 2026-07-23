@@ -8,6 +8,8 @@ export let db: Firestore | any;
 export let auth: Auth | any;
 export let storage: FirebaseStorage | any;
 
+import { environment } from "../environments/environment";
+
 export const initFirebase = async () => {
   if (typeof window === "undefined") return { app, db, auth, storage };
   if (app) return { app, db, auth, storage }; // Already initialized
@@ -21,7 +23,7 @@ export const initFirebase = async () => {
 
   let firebaseConfig: any = null;
   try {
-    const res = await fetch("/api/settings");
+    const res = await fetch(environment.apiUrl + "/settings");
     if (res.ok) {
       const settingsData = await res.json();
       const pushConfig = settingsData?.data?.pushNotifications || settingsData?.data?.pushNotificationSettings;

@@ -8,37 +8,8 @@
     <div class="top-loader-bar"></div>
   </div>
   } @if (!isAuthRoute() && !isAdminRoute()) {
-  <!-- INTERACTIVE TOP MARKETING SLIDER BANNER -->
-  @if (topAd(); as ad) {
-  <div
-    class="bg-linear-to-r from-fuchsia-600 via-purple-600 to-cyan-500 text-white text-xs py-2 px-4 shadow-sm relative overflow-hidden select-none"
-  >
-    <div
-      class="max-w-7xl mx-auto flex items-center justify-between font-medium"
-    >
-      <button
-        type="button"
-        (click)="clickAd(ad)"
-        class="flex items-center gap-2 cursor-pointer hover:underline mx-auto bg-transparent border-0 text-white font-medium focus:outline-none focus:ring-1 focus:ring-white/20 rounded"
-      >
-        <span
-          class="px-2 py-0.5 bg-white/10 text-[9px] font-semibold rounded uppercase tracking-wider"
-          >Announcement</span
-        >
-        <span>{{ ad.title }}</span>
-        <span class="text-blue-200 font-bold hidden sm:inline-block"
-          >&#x2192; Claim Deal</span
-        >
-      </button>
-      <button
-        (click)="dismissBannerAd()"
-        class="text-white/75 hover:text-white transition-opacity font-bold scale-90 leading-none"
-      >
-        ✕
-      </button>
-    </div>
-  </div>
-  }
+  <!-- PROFESSIONAL TOP HEADER ANNOUNCEMENT BAR -->
+  <app-header-announcement-bar />
 
   <!-- CLOUD MOBILE DRAWER (Full screen slide) -->
   @if (isMobileMenuOpen()) {
@@ -239,8 +210,8 @@
   <!-- STICKY TOP PREMIUM HEADER -->
   <header
     [class]="isScrolled() 
-    ? 'sticky top-0 z-40 bg-white/80 dark:bg-neutral-950/85 backdrop-blur-[20px] border-b border-neutral-200 dark:border-neutral-900/60 shadow-[0_8px_30px_rgba(0,0,0,0.03)] h-14 sm:h-16 select-none transition-all duration-300' 
-    : 'sticky top-0 z-40 bg-transparent border-b border-transparent h-16 sm:h-20 select-none transition-all duration-300'"
+    ? 'sticky top-0 z-40 bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-b border-neutral-200/90 dark:border-neutral-850 shadow-md shadow-neutral-950/5 dark:shadow-black/40 h-14 sm:h-16 select-none transition-all duration-300' 
+    : 'sticky top-0 z-40 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-xl border-b border-neutral-200/70 dark:border-neutral-900/80 shadow-xs sm:shadow-sm h-16 sm:h-20 select-none transition-all duration-300'"
     style="backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px)"
   >
     <div
@@ -249,7 +220,7 @@
       <!-- Mobile Menu Toggle -->
       <button
         (click)="isMobileMenuOpen.set(true)"
-        class="mobile-menu-trigger xl:hidden h-10 w-10 flex shrink-0 items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-lg transition-all active:scale-95"
+        class="mobile-menu-trigger xl:hidden h-10 w-10 flex shrink-0 items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-lg transition-all hover:scale-105 active:scale-95"
       >
         <mat-icon>menu</mat-icon>
       </button>
@@ -258,7 +229,7 @@
       <a
         [routerLink]="['/']"
         (click)="isMobileMenuOpen.set(false)"
-        class="flex items-center gap-2 flex-shrink-0 mr-auto lg:mr-0 text-neutral-900 dark:text-white hover:opacity-90 transition-opacity"
+        class="flex items-center gap-2 flex-shrink-0 mr-auto lg:mr-0 text-neutral-900 dark:text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
       >
         <img
           [src]="ds.theme() === 'dark' ? '/3d-logo.png' :  '/3d-logo.png'"
@@ -275,7 +246,7 @@
       </div>
       } @else {
       <nav
-        class="hidden xl:flex items-center gap-1.5 h-full text-[11px] font-extrabold uppercase tracking-wider text-neutral-650 dark:text-neutral-350"
+        class="hidden xl:flex items-center gap-1 h-full text-[11px] font-extrabold uppercase tracking-wider text-neutral-800 dark:text-neutral-200"
       >
         <!-- Dynamic Header Categories & Brands Mega Menu -->
         <app-header-mega-menu></app-header-mega-menu>
@@ -283,8 +254,8 @@
         <!-- Services Link -->
         <a
           [routerLink]="['/slicer']"
-          routerLinkActive="text-[#d65108]"
-          class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-6 font-bold cursor-pointer"
+          routerLinkActive="text-[#d65108] bg-[#d65108]/10 dark:bg-[#d65108]/20"
+          class="hover:text-[#d65108] dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl px-3 py-2 transition-all duration-200 flex items-center gap-2 font-extrabold cursor-pointer hover:scale-105 active:scale-95"
         >
           <!-- Tools Outline SVG -->
           <svg
@@ -293,7 +264,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.8"
             stroke="currentColor"
-            class="w-4.5 h-4.5"
+            class="w-4 h-4 text-[#d65108]"
           >
             <path
               stroke-linecap="round"
@@ -308,8 +279,8 @@
         <a
           [routerLink]="['/products']"
           [queryParams]="{ featured: 'true' }"
-          routerLinkActive="text-[#d65108]"
-          class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-6 font-bold cursor-pointer"
+          routerLinkActive="text-[#d65108] bg-[#d65108]/10 dark:bg-[#d65108]/20"
+          class="hover:text-[#d65108] dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl px-3 py-2 transition-all duration-200 flex items-center gap-2 font-extrabold cursor-pointer hover:scale-105 active:scale-95"
         >
           <!-- Rocket Outline SVG -->
           <svg
@@ -318,7 +289,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.8"
             stroke="currentColor"
-            class="w-4.5 h-4.5"
+            class="w-4 h-4 text-[#d65108]"
           >
             <path
               stroke-linecap="round"
@@ -332,8 +303,8 @@
         <!-- Support Link -->
         <a
           [routerLink]="['/returns']"
-          routerLinkActive="text-[#d65108]"
-          class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-6 font-bold cursor-pointer"
+          routerLinkActive="text-[#d65108] bg-[#d65108]/10 dark:bg-[#d65108]/20"
+          class="hover:text-[#d65108] dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl px-3 py-2 transition-all duration-200 flex items-center gap-2 font-extrabold cursor-pointer hover:scale-105 active:scale-95"
         >
           <!-- Headset Outline SVG -->
           <svg
@@ -342,7 +313,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.8"
             stroke="currentColor"
-            class="w-4.5 h-4.5"
+            class="w-4 h-4 text-[#d65108]"
           >
             <path
               stroke-linecap="round"
@@ -356,8 +327,8 @@
         <!-- About Link -->
         <a
           [routerLink]="['/about']"
-          routerLinkActive="text-[#d65108]"
-          class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-6 font-bold cursor-pointer"
+          routerLinkActive="text-[#d65108] bg-[#d65108]/10 dark:bg-[#d65108]/20"
+          class="hover:text-[#d65108] dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl px-3 py-2 transition-all duration-200 flex items-center gap-2 font-extrabold cursor-pointer hover:scale-105 active:scale-95"
         >
           <!-- Info Circle SVG -->
           <svg
@@ -366,7 +337,7 @@
             viewBox="0 0 24 24"
             stroke-width="1.8"
             stroke="currentColor"
-            class="w-4.5 h-4.5"
+            class="w-4 h-4 text-[#d65108]"
           >
             <path
               stroke-linecap="round"
@@ -390,6 +361,9 @@
           viewBox="0 0 24 24"
           stroke-width="1.8"
           stroke="currentColor"
+          width="20"
+          height="20"
+          style="width: 20px; height: 20px;"
           class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 group-focus-within:text-[#d65108] transition-colors z-10"
         >
           <path
@@ -673,6 +647,9 @@
             viewBox="0 0 24 24"
             stroke-width="1.8"
             stroke="currentColor"
+            width="20"
+            height="20"
+            style="width: 20px; height: 20px;"
             class="w-5 h-5"
           >
             <path
@@ -1334,7 +1311,7 @@
         </div>
 
         <!-- Dynamic Link Groups Iteration - Columns 2 & 3 -->
-        @for (grp of ds.footerData()?.groups; track grp.id) { @if (grp.isActive)
+        @for (grp of ds.footerData()?.groups; track grp.id || $index) { @if (grp.isActive !== false)
         {
         <!-- Desktop Layout column -->
         <div class="space-y-4 hidden md:block">
@@ -1346,11 +1323,11 @@
           <div
             class="flex flex-col gap-2.5 font-bold text-neutral-500 dark:text-neutral-400"
           >
-            @for (lnk of grp.links; track lnk.id) { @if (lnk.isActive) {
+            @for (lnk of grp.links; track lnk.id || $index) { @if (lnk.isActive !== false) {
             <a
               [routerLink]="[lnk.url]"
               [target]="lnk.openInNewTab ? '_blank' : '_self'"
-              class="hover:text-[#d65108] hover:translate-x-1 transition-all duration-200 block"
+              class="hover:text-[#d65108] hover:translate-x-1 transition-all duration-200 block text-xs"
               >{{ lnk.title }}</a
             >
             } }
@@ -1372,11 +1349,11 @@
           <div
             class="flex flex-col gap-3 font-bold text-neutral-500 dark:text-neutral-400 mt-4 px-2"
           >
-            @for (lnk of grp.links; track lnk.id) { @if (lnk.isActive) {
+            @for (lnk of grp.links; track lnk.id || $index) { @if (lnk.isActive !== false) {
             <a
               [routerLink]="[lnk.url]"
               [target]="lnk.openInNewTab ? '_blank' : '_self'"
-              class="hover:text-[#d65108] hover:translate-x-1 transition-all duration-200 block"
+              class="hover:text-[#d65108] hover:translate-x-1 transition-all duration-200 block text-xs"
               >{{ lnk.title }}</a
             >
             } }

@@ -39,6 +39,24 @@ export class CheckoutComponent implements OnInit {
 
   isSubmitting = signal(false);
   showAuthModal = signal(false);
+  showTermsModal = signal(false);
+
+  openTermsModal(event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    this.showTermsModal.set(true);
+  }
+
+  closeTermsModal() {
+    this.showTermsModal.set(false);
+  }
+
+  acceptTermsFromModal() {
+    this.termsAccepted.set(true);
+    this.showTermsModal.set(false);
+  }
 
   @HostListener("window:beforeunload", ["$event"])
   unloadNotification($event: any): string | undefined {
@@ -463,9 +481,35 @@ export class CheckoutComponent implements OnInit {
   }
 
   openCashfree(orderData: any) {
+    if (!orderData) {
+      this.toast.error("Invalid payment order response.");
+      this.isSubmitting.set(false);
+      this.loading.stopLoading();
+      return;
+    }
+
+    const sessionId = (
+      orderData.paymentSessionId ||
+      orderData.payment_session_id ||
+      orderData.sessionId ||
+      ""
+    )
+      .toString()
+      .trim();
+
+    if (!sessionId) {
+      this.toast.error("Payment session token missing.");
+      this.isSubmitting.set(false);
+      this.loading.stopLoading();
+      return;
+    }
+
+    const cfSettings =
+      this.settingsService.paymentGatewaySettings()?.paymentMethods?.cashfree;
     const isSandbox =
-      this.settingsService.paymentGatewaySettings()?.paymentMethods?.cashfree
-        ?.sandbox !== false;
+      orderData.sandbox !== undefined
+        ? Boolean(orderData.sandbox)
+        : cfSettings?.sandbox !== false;
 
     if (!(window as any).Cashfree) {
       this.toast.error(
@@ -482,12 +526,16 @@ export class CheckoutComponent implements OnInit {
       });
       this.loading.stopLoading();
 
+      const returnUrl = `${window.location.origin}/order-success?orderId=${
+        orderData.orderId || orderData.checkoutId
+      }`;
+
       cashfree.checkout({
-        paymentSessionId: orderData.paymentSessionId,
-        returnUrl: `${window.location.origin}/order-success?orderId=${orderData.orderId}`,
+        paymentSessionId: sessionId,
+        returnUrl: returnUrl,
       });
     } catch (err: any) {
-      console.error(err);
+      console.error("Cashfree checkout error:", err);
       this.toast.error("Cashfree initialization failed.");
       this.isSubmitting.set(false);
       this.loading.stopLoading();

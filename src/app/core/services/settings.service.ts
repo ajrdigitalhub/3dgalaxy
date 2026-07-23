@@ -1,6 +1,161 @@
 import { Injectable, inject, signal, effect, computed } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { firstValueFrom } from "rxjs";
+import { environment } from "../../../environments/environment";
+
+export const DEFAULT_FOOTER_GROUPS = [
+  {
+    id: "policies",
+    title: "Policies",
+    isActive: true,
+    links: [
+      { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
+      { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
+      { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
+      { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
+      { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+      { id: "abt-policy", title: "About Us", url: "/about", isActive: true, openInNewTab: false }
+    ]
+  },
+  {
+    id: "quick-links",
+    title: "Quick links",
+    isActive: true,
+    links: [
+      { id: "search-link", title: "Search", url: "/products", isActive: true, openInNewTab: false },
+      { id: "contact-link", title: "Contact Us", url: "/about", isActive: true, openInNewTab: false },
+      { id: "products-link", title: "All products", url: "/products", isActive: true, openInNewTab: false },
+      { id: "track-link", title: "Track Order", url: "/orders", isActive: true, openInNewTab: false }
+    ]
+  }
+];
+
+export const DEFAULT_HEADER_ANNOUNCEMENTS: Array<{
+  id: string;
+  title: string;
+  shortMessage: string;
+  description?: string;
+  icon?: string;
+  iconType?: 'material' | 'emoji' | 'svg';
+  bgColor?: string;
+  textColor?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  openInNewTab?: boolean;
+  animationType?: 'fade' | 'slide-left' | 'slide-right' | 'slide-up' | 'slide-down' | 'zoom' | 'bounce' | 'pulse' | 'glow';
+  displayMode?: 'static' | 'marquee' | 'rotating';
+  scrollDirection?: 'left' | 'right';
+  scrollSpeed?: number;
+  priority?: number;
+  visiblePages?: string[];
+  targetAudience?: 'all' | 'guest' | 'logged_in';
+  startDate?: string | null;
+  endDate?: string | null;
+  isActive?: boolean;
+  isDismissible?: boolean;
+  sortOrder?: number;
+}> = [
+  {
+    id: "ann-free-shipping",
+    title: "Free Shipping",
+    shortMessage: "🚚 Free Shipping on Orders Above ₹999",
+    description: "Enjoy free standard delivery across India on all eligible cart totals exceeding ₹999.",
+    icon: "local_shipping",
+    iconType: "material",
+    bgColor: "linear-gradient(135deg, #d65108 0%, #b83200 100%)",
+    textColor: "#ffffff",
+    ctaText: "Shop Now",
+    ctaUrl: "/products",
+    openInNewTab: false,
+    animationType: "fade",
+    displayMode: "rotating",
+    scrollDirection: "left",
+    scrollSpeed: 4,
+    priority: 1,
+    visiblePages: ["all"],
+    targetAudience: "all",
+    startDate: null,
+    endDate: null,
+    isActive: true,
+    isDismissible: true,
+    sortOrder: 1
+  },
+  {
+    id: "ann-flash-sale",
+    title: "Flash Sale",
+    shortMessage: "🔥 Flash Sale - Flat 20% OFF 3D Printing Filaments",
+    description: "Limited time offer on premium PLA, PETG & ABS filaments.",
+    icon: "whatshot",
+    iconType: "material",
+    bgColor: "linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)",
+    textColor: "#ffffff",
+    ctaText: "Claim Deal",
+    ctaUrl: "/products?category=filaments",
+    openInNewTab: false,
+    animationType: "pulse",
+    displayMode: "rotating",
+    scrollDirection: "left",
+    scrollSpeed: 4,
+    priority: 2,
+    visiblePages: ["all"],
+    targetAudience: "all",
+    startDate: null,
+    endDate: null,
+    isActive: true,
+    isDismissible: true,
+    sortOrder: 2
+  },
+  {
+    id: "ann-coupon",
+    title: "Coupon Code",
+    shortMessage: "🎁 Use Coupon AJR100 & Save ₹100 Extra",
+    description: "Apply code AJR100 at checkout for instant ₹100 discount.",
+    icon: "card_giftcard",
+    iconType: "material",
+    bgColor: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+    textColor: "#ffffff",
+    ctaText: "Use Code",
+    ctaUrl: "/products",
+    openInNewTab: false,
+    animationType: "bounce",
+    displayMode: "rotating",
+    scrollDirection: "left",
+    scrollSpeed: 4,
+    priority: 3,
+    visiblePages: ["all"],
+    targetAudience: "all",
+    startDate: null,
+    endDate: null,
+    isActive: true,
+    isDismissible: true,
+    sortOrder: 3
+  },
+  {
+    id: "ann-stl-slicer",
+    title: "Custom Slicing",
+    shortMessage: "🖨️ Upload STL Files & Get Instant Online Slicing Quotes",
+    description: "Automated FDM & SLA 3D printing price calculator.",
+    icon: "print",
+    iconType: "material",
+    bgColor: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+    textColor: "#ffffff",
+    ctaText: "Upload STL",
+    ctaUrl: "/slicer",
+    openInNewTab: false,
+    animationType: "slide-left",
+    displayMode: "rotating",
+    scrollDirection: "left",
+    scrollSpeed: 4,
+    priority: 4,
+    visiblePages: ["all"],
+    targetAudience: "all",
+    startDate: null,
+    endDate: null,
+    isActive: true,
+    isDismissible: true,
+    sortOrder: 4
+  }
+];
 
 @Injectable({
   providedIn: "root",
@@ -31,7 +186,8 @@ export class SettingsService {
         }
       });
 
-      this.initVersionPolling();
+      // DISABLED: Version polling was triggering /api/settings/version every 12s — excessive billing
+      // this.initVersionPolling();
     }
   }
 
@@ -60,7 +216,7 @@ export class SettingsService {
 
   private async checkVersionAndSync() {
     try {
-      const resp = await firstValueFrom(this.http.get<any>("/api/settings/version"));
+      const resp = await firstValueFrom(this.http.get<any>(environment.apiUrl + "/settings/version"));
       if (resp && resp.success) {
         const remoteVersion = resp.version;
         const currentVersion = this.settingsData()?.version || 0;
@@ -87,7 +243,8 @@ export class SettingsService {
   public promoBanners = signal<any[]>([]);
   public advertisements = signal<any[]>([]);
   public banners = signal<any[]>([]);
-  public footer = signal<any>({});
+  public footer = signal<any>({ groups: DEFAULT_FOOTER_GROUPS });
+  public headerAnnouncements = signal<any[]>(DEFAULT_HEADER_ANNOUNCEMENTS);
   public aboutPage = signal<any>({});
   public contact = signal<any>({});
   public socialLinks = signal<any>({});
@@ -206,11 +363,21 @@ export class SettingsService {
       };
     }
     this.theme.set(themeData);
+    this.applyTheme(themeData);
 
     if (d.heroSlides) this.heroSlides.set(d.heroSlides);
     if (d.promoBanners) this.promoBanners.set(d.promoBanners);
     if (d.advertisements) this.advertisements.set(d.advertisements);
-    if (d.footer) this.footer.set(d.footer);
+    if (d.headerAnnouncements && Array.isArray(d.headerAnnouncements) && d.headerAnnouncements.length > 0) {
+      this.headerAnnouncements.set(d.headerAnnouncements);
+    }
+    if (d.footer) {
+      const footerObj = { ...d.footer };
+      if (!footerObj.groups || footerObj.groups.length === 0) {
+        footerObj.groups = DEFAULT_FOOTER_GROUPS;
+      }
+      this.footer.set(footerObj);
+    }
     if (d.aboutPage) this.aboutPage.set(d.aboutPage);
     if (d.contact) this.contact.set(d.contact);
     if (d.socialLinks) this.socialLinks.set(d.socialLinks);
@@ -247,31 +414,15 @@ export class SettingsService {
   }
 
   async loadSettings(force = false) {
-    if (this.isLoaded() && !force) return this.settingsData();
     if (this.loadPromise && !force) return this.loadPromise;
 
-    if (!force && typeof window !== "undefined") {
-      const cachedVer = localStorage.getItem("3d_galaxy_settings_version");
-      if (cachedVer) {
-        try {
-          const check = await firstValueFrom(this.http.get<any>("/api/settings/version"));
-          if (check && check.success && check.version <= Number(cachedVer)) {
-            this.loadFromLocalStorage();
-            if (this.isLoaded()) {
-              return this.settingsData();
-            }
-          }
-        } catch (e) {
-          console.warn("[SETTINGS CACHE] Version check failed, using local storage:", e);
-          this.loadFromLocalStorage();
-          if (this.isLoaded()) {
-            return this.settingsData();
-          }
-        }
-      }
+    // Immediately hydrate from localStorage if available for fast initial rendering
+    if (typeof window !== "undefined") {
+      this.loadFromLocalStorage();
     }
 
-    this.loadPromise = firstValueFrom(this.http.get<any>("/api/settings"))
+    // Always fetch dynamic settings from Settings API to apply latest theme
+    this.loadPromise = firstValueFrom(this.http.get<any>(environment.apiUrl + "/settings"))
       .then((resp) => {
         if (resp) {
           const d = resp.data !== undefined ? resp.data : resp;
@@ -294,7 +445,7 @@ export class SettingsService {
           this.loadFromLocalStorage();
         }
         if (this.isLoaded()) {
-          console.warn("[SETTINGS CACHE] Settings API failed; using cached local storage data.");
+          this.applyTheme(this.theme());
           return this.settingsData();
         }
         throw err;
@@ -306,7 +457,7 @@ export class SettingsService {
   async saveSettings(payload: any) {
     try {
       const resp = await firstValueFrom(
-        this.http.put<any>("/api/admin/settings", payload),
+        this.http.put<any>(environment.apiUrl + "/admin/settings", payload),
       );
       const d = resp.data !== undefined ? resp.data : resp;
       if (typeof window !== "undefined" && d) {
@@ -327,9 +478,27 @@ export class SettingsService {
     const root = document.documentElement;
     const d = this.settingsData() || {};
 
-    const primaryColor = themeData.primaryColor || "#2563EB";
-    const secondaryColor = themeData.secondaryColor || "#7C3AED";
-    const accentColor = themeData.accentColor || "#3B82F6";
+    const primaryColor = themeData.primaryColor || d.primaryColor || "#f54f00";
+    const secondaryColor = themeData.secondaryColor || d.secondaryColor || "#ea580c";
+    const accentColor = themeData.accentColor || d.accentColor || "#3B82F6";
+
+    // RGB extractor helper for rgba CSS background & glow utilities
+    const hexToRgb = (hex: string) => {
+      if (!hex) return '245, 79, 0';
+      const cleanHex = hex.replace('#', '').trim();
+      if (cleanHex.length === 3) {
+        const r = parseInt(cleanHex[0] + cleanHex[0], 16);
+        const g = parseInt(cleanHex[1] + cleanHex[1], 16);
+        const b = parseInt(cleanHex[2] + cleanHex[2], 16);
+        return `${r}, ${g}, ${b}`;
+      } else if (cleanHex.length === 6) {
+        const r = parseInt(cleanHex.substring(0, 2), 16);
+        const g = parseInt(cleanHex.substring(2, 4), 16);
+        const b = parseInt(cleanHex.substring(4, 6), 16);
+        return `${r}, ${g}, ${b}`;
+      }
+      return '245, 79, 0';
+    };
 
     // Gradient Angle
     let angle =
@@ -348,7 +517,7 @@ export class SettingsService {
       borderRadius = `${String(borderRadius).trim()}px`;
     }
 
-    // Hover Effect (brightness or custom transform)
+    // Hover Effect
     const hoverEffect = themeData.hoverEffect || "brightness(1.15) scale(1.02)";
 
     // Gradient build
@@ -359,7 +528,18 @@ export class SettingsService {
       `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
 
     // Theme active mode colors
-    const isDarkMode = themeData.darkMode || false;
+    let userPrefMode: boolean | null = null;
+    if (typeof localStorage !== "undefined") {
+      const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
+      if (savedTheme === "light") userPrefMode = false;
+      else if (savedTheme === "dark") userPrefMode = true;
+    }
+
+    const isDarkMode = themeData.darkMode !== undefined 
+      ? themeData.darkMode 
+      : (userPrefMode !== null 
+          ? userPrefMode 
+          : (d.darkMode !== undefined ? d.darkMode : false));
     const lightColors = d.lightThemeColors || {};
     const darkColors = d.darkThemeColors || {};
     const actColors = isDarkMode ? darkColors : lightColors;
@@ -368,9 +548,12 @@ export class SettingsService {
     const finalSecondary = actColors.secondary || secondaryColor;
     const finalAccent = actColors.accent || accentColor;
 
+    // Apply primary CSS variables to document root
     root.style.setProperty("--primary-color", finalPrimary);
     root.style.setProperty("--secondary-color", finalSecondary);
     root.style.setProperty("--accent-color", finalAccent);
+    root.style.setProperty("--primary-color-rgb", hexToRgb(finalPrimary));
+    root.style.setProperty("--secondary-color-rgb", hexToRgb(finalSecondary));
     root.style.setProperty("--gradient-angle", angle);
     root.style.setProperty("--theme-radius", borderRadius);
     root.style.setProperty("--radius", borderRadius);
@@ -378,7 +561,18 @@ export class SettingsService {
     root.style.setProperty("--theme-text", themeData.themeText || "#ffffff");
     root.style.setProperty("--theme-hover-effect", hoverEffect);
 
-    // Animation/Transitions customizations
+    // Compatibility CSS variables
+    root.style.setProperty("--color-primary", finalPrimary);
+    root.style.setProperty("--color-secondary", finalSecondary);
+    root.style.setProperty("--color-theme-primary", finalPrimary);
+    root.style.setProperty("--color-theme-secondary", finalSecondary);
+
+    // Typography
+    const font = themeData.fontFamily || themeData.typography || d.fontFamily || "Inter";
+    root.style.setProperty("--font-sans", `"${font}", ui-sans-serif, system-ui, sans-serif`);
+    root.style.setProperty("--font-display", `"${font}", "Space Grotesk", sans-serif`);
+
+    // Animation & transition settings
     const animSpeed = themeData.animationSpeed || "0.5s";
     const animStyle =
       themeData.animationStyle || "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -399,18 +593,16 @@ export class SettingsService {
     root.style.setProperty("--button-style", btnStyle);
     root.style.setProperty("--parallax-enabled", plxEnabled ? "1" : "0");
 
-    // Compatibility variables
-    root.style.setProperty("--color-primary", finalPrimary);
-    root.style.setProperty("--color-secondary", finalSecondary);
-
-    // Apply variables to body class for Dark Mode if enabled
+    // Apply dark mode class to html and body
     if (isDarkMode) {
+      root.classList.add("dark");
       document.body.classList.add("dark");
     } else {
+      root.classList.remove("dark");
       document.body.classList.remove("dark");
     }
 
-    // Dynamically update favicon in HTML head if set
+    // Favicon update
     if (themeData.favicon && typeof document !== "undefined") {
       const link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
       if (link) {

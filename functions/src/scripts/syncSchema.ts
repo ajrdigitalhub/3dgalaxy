@@ -4,6 +4,9 @@ async function main() {
   console.log("Syncing database schema missing columns and tables...");
 
   const ddlStatements = [
+    // Transaction History table column fix
+    `ALTER TABLE "transaction_history" ALTER COLUMN "order_id" DROP NOT NULL;`,
+
     // Orders missing columns
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "payment_method" VARCHAR(100);`,
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "payment_status" VARCHAR(50);`,

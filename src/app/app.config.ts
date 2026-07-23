@@ -29,10 +29,15 @@ import { provideAnalytics } from "./core/analytics";
 import { TrackingService } from "./core/services/tracking/tracking.service";
 
 import { routes } from "./app.routes";
+import { SettingsService } from "./core/services/settings.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideExperimentalZonelessChangeDetection(),
+    provideAppInitializer(() => {
+      const settingsService = inject(SettingsService);
+      return settingsService.loadSettings();
+    }),
     provideAnalytics({
       enabled: true,
       debugMode: true,

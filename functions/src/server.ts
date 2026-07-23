@@ -11,6 +11,6 @@ app.listen(PORT, () => {
   console.log(`📄 Swagger UI: http://localhost:${PORT}/api/docs`);
   console.log(`===============================================`);
   
-  // Start the push campaign queue & scheduling daemon
-  startScheduler();
+  // DISABLED TO REDUCE BILLING — scheduler runs DB queries every 20s
+  // startScheduler();
 });

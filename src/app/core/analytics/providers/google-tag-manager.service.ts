@@ -30,7 +30,7 @@ export class GoogleTagManagerService implements AnalyticsProvider {
       return false;
     }
 
-    if (!config.gtm || !config.gtm.containerId) {
+    if (!config.gtm || !config.gtm.containerId || config.gtm.containerId.startsWith('GTM-3DGLX')) {
       return false;
     }
 

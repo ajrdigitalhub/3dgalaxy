@@ -185,7 +185,7 @@
                 [src]="p.primaryImage || getProductImage(p)"
                 [alt]="p.name"
                 referrerpolicy="no-referrer"
-                class="max-w-[90%] max-h-[90%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-700"
+                class="w-full h-full object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-700"
                 loading="lazy"
               />
               @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || getProductImage(p))) {
@@ -193,7 +193,7 @@
                   [src]="p.secondaryImage"
                   [alt]="p.name + ' Alternate'"
                   referrerpolicy="no-referrer"
-                  class="max-w-[90%] max-h-[90%] object-contain secondary-image absolute inset-0 m-auto"
+                  class="w-full h-full object-contain secondary-image absolute inset-0 m-auto"
                   loading="lazy"
                 />
               }

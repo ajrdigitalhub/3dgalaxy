@@ -66,8 +66,9 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/admin') || caches.match('/');
+            return caches.match('/admin') || caches.match('/') || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
           }
+          return new Response('', { status: 404, statusText: 'Not Found' });
         });
       })
   );

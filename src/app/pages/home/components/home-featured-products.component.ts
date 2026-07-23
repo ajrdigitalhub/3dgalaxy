@@ -199,7 +199,7 @@ import { firstValueFrom } from "rxjs";
                       (p.images && p.images[0]) ||
                       'https://via.placeholder.com/400x400?text=No+Image'
                     "
-                    class="w-[85%] h-[85%] object-contain transform group-hover:scale-110 transition-transform duration-700 ease-out primary-image relative z-1"
+                    class="w-full h-full object-contain transform group-hover:scale-110 transition-transform duration-700 ease-out primary-image relative z-1"
                     alt="{{ p.name }}"
                     loading="lazy"
                   />
@@ -208,7 +208,7 @@ import { firstValueFrom } from "rxjs";
                   @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || (p.images && p.images[0]?.url) || (p.images && p.images[0]))) {
                     <img
                       [src]="p.secondaryImage"
-                      class="absolute inset-0 w-[85%] h-[85%] m-auto object-contain secondary-image z-2"
+                      class="absolute inset-0 w-full h-full m-auto object-contain secondary-image z-2"
                       alt="{{ p.name }} Alternate"
                       loading="lazy"
                     />
@@ -226,7 +226,7 @@ import { firstValueFrom } from "rxjs";
                   <!-- Wishlist Button -->
                   <button
                     (click)="$event.stopPropagation(); toggleWishlist(p.id)"
-                    class="absolute top-3 right-3 h-9 w-9 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 text-white hover:text-red-500 flex items-center justify-center transition-all duration-300 active:scale-95 cursor-pointer z-30"
+                    class="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/80 dark:bg-black/40 hover:bg-white dark:hover:bg-black/60 border border-neutral-200/80 dark:border-white/10 text-neutral-700 dark:text-white hover:text-red-500 dark:hover:text-red-500 shadow-xs flex items-center justify-center transition-all duration-300 active:scale-95 cursor-pointer z-30"
                   >
                     <mat-icon class="scale-90">{{
                       wishlistIds().has(p.id) ? "favorite" : "favorite_border"
@@ -301,7 +301,7 @@ import { firstValueFrom } from "rxjs";
                     </button>
                     <a
                       [routerLink]="['/product', p.slug]"
-                      class="h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center backdrop-blur-xl"
+                      class="h-9 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center backdrop-blur-xl"
                     >
                       Details
                     </a>

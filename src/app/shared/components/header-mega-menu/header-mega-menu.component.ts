@@ -72,7 +72,7 @@ export interface HeaderMenuPayload {
         type="button"
         (mouseenter)="openMenu()"
         (click)="toggleMenu()"
-        class="hover:text-[#d65108] dark:hover:text-white transition-colors flex items-center gap-2 px-3 py-5 font-extrabold text-[11px] uppercase tracking-wider cursor-pointer border-none bg-transparent text-neutral-700 dark:text-neutral-300"
+        class="hover:text-[#d65108] dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-xl px-3 py-2 transition-all duration-200 flex items-center gap-2 font-extrabold text-[11px] uppercase tracking-wider cursor-pointer border-none bg-transparent text-neutral-800 dark:text-neutral-200 hover:scale-105 active:scale-95"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-[#d65108]">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />

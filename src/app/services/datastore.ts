@@ -13,7 +13,7 @@ import {
 } from 'firebase/auth';
 import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
-import { SettingsService } from '../core/services/settings.service';
+import { SettingsService, DEFAULT_FOOTER_GROUPS } from '../core/services/settings.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
@@ -599,9 +599,14 @@ export class DatastoreService {
 
   isCodAvailableForCheckout = computed(() => this.isCodEligibleForCheckout());
   
-  // Computed from SettingsService
+  // Computed from SettingsService with fallback default link groups
   footerData = computed<any>(() => {
-    return this.settingsService.footer();
+    const f = this.settingsService.footer() || {};
+    const groups = (f.groups && f.groups.length > 0) ? f.groups : DEFAULT_FOOTER_GROUPS;
+    return {
+      ...f,
+      groups: groups
+    };
   });
   footerLoading = signal<boolean>(true);
   filterCategory = signal<string>('');
@@ -1785,6 +1790,7 @@ export class DatastoreService {
   }
 
   reloadFooter() {
+    this.settingsService.loadSettings(true);
     this.footerLoading.set(false);
   }
 

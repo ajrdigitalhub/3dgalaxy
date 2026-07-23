@@ -3,12 +3,19 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 
+import { HeaderAnnouncementsTabComponent } from './header-announcements-tab';
+
 @Component({
   selector: 'app-admin-marketing-tab',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, HeaderAnnouncementsTabComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
+      
+      <!-- ========================= TAB: HEADER ANNOUNCEMENTS ========================= -->
+      @if (admin.activeTab() === 'header-announcements') {
+        <app-admin-header-announcements-tab />
+      }
       
       <!-- ========================= TAB: CAMPAIGN VOUCHERS (COUPONS) ========================= -->
       @if (admin.activeTab() === 'coupons') {

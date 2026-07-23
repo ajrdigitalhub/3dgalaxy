@@ -4,13 +4,18 @@
 
 /* Avoid FOUC (flash of unstyled content) for Material Icons by hiding the ligature text while font loads */
 mat-icon {
-  display: inline-block !important;
-  width: 24px !important;
-  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  line-height: 1;
   overflow: hidden !important;
   white-space: nowrap !important;
   text-overflow: clip !important;
   vertical-align: middle;
+  box-sizing: border-box;
 }
 
 html:not(.material-icons-loaded) mat-icon {
@@ -20,6 +25,20 @@ html:not(.material-icons-loaded) mat-icon {
   box-shadow: none !important;
 }
 
+/* Prevent SVG search icons from expanding to full screen before CSS loads */
+svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.search-container svg,
+.mobile-menu-trigger svg,
+header svg {
+  flex-shrink: 0;
+  max-width: 1.25rem !important;
+  max-height: 1.25rem !important;
+}
+
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -27,9 +46,9 @@ html:not(.material-icons-loaded) mat-icon {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  
-  --color-theme-primary: var(--primary-color, #00f2fe);
-  --color-theme-secondary: var(--secondary-color, #4facfe);
+
+  --color-theme-primary: var(--primary-color, #f54f00);
+  --color-theme-secondary: var(--secondary-color, #ea580c);
 
   --animate-slide-in-left: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --animate-fadeIn: fadeIn 0.5s ease-out forwards;
@@ -40,64 +59,131 @@ html:not(.material-icons-loaded) mat-icon {
 }
 
 .bg-theme-gradient {
-  background: linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #00f2fe), var(--secondary-color, #4facfe));
+  background: var(--theme-gradient, linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #f54f00), var(--secondary-color, #ea580c))) !important;
 }
 
 .text-theme-gradient {
-  background: linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #00f2fe), var(--secondary-color, #4facfe));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: var(--theme-gradient, linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #f54f00), var(--secondary-color, #ea580c))) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 @keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); max-height: 0; }
-  to { opacity: 1; transform: translateY(0); max-height: 1000px; }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    max-height: 0;
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1000px;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
 }
 
 @keyframes borderGlowPulse {
-  0%, 100% { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
-  50% { border-color: rgba(236, 72, 153, 0.7); box-shadow: 0 0 30px rgba(236, 72, 153, 0.5); }
+
+  0%,
+  100% {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+  }
+
+  50% {
+    border-color: rgba(236, 72, 153, 0.7);
+    box-shadow: 0 0 30px rgba(236, 72, 153, 0.5);
+  }
 }
 
 @keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes floatBubble {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-12px) scale(1.03); }
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-12px) scale(1.03);
+  }
 }
 
 @keyframes shimmerSweep {
-  0% { transform: translateX(-100%) skewX(-15deg); }
-  100% { transform: translateX(200%) skewX(-15deg); }
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
 }
 
 @keyframes shimmerPulse {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
 }
 
 .skeleton {
@@ -114,8 +200,15 @@ html:not(.material-icons-loaded) mat-icon {
 }
 
 @keyframes textGradientFlow {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .animate-pulse-glow {
@@ -136,26 +229,29 @@ html:not(.material-icons-loaded) mat-icon {
 
 @layer base {
   html {
-    font-size: 14px; /* small in mobile view */
+    font-size: 14px;
+    /* small in mobile view */
   }
+
   @media (min-width: 768px) {
     html {
       font-size: 15px;
     }
   }
+
   @media (min-width: 1024px) {
     html {
       font-size: 16px;
     }
   }
-  
+
   body {
     @apply h-full antialiased;
     /* Optional base text size if not relying entirely on rems */
-    font-size: 1rem; 
+    font-size: 1rem;
   }
-  
-  button, 
+
+  button,
   a.btn {
     @apply min-h-[44px];
   }
@@ -164,12 +260,12 @@ html:not(.material-icons-loaded) mat-icon {
     font-size: clamp(20px, 4vw, 42px);
     line-height: clamp(28px, 5vw, 50px);
   }
-  
+
   h2 {
     font-size: clamp(16px, 3.5vw, 32px);
     line-height: clamp(24px, 4.5vw, 40px);
   }
-  
+
   h3 {
     font-size: clamp(14px, 3vw, 24px);
     line-height: clamp(20px, 4vw, 32px);
@@ -177,7 +273,7 @@ html:not(.material-icons-loaded) mat-icon {
 }
 
 /* Centralized dynamic theme override to support gradient-based primary elements */
-.bg-blue-600, 
+.bg-blue-600,
 .bg-indigo-600,
 .bg-violet-600,
 .bg-blue-500,
@@ -251,7 +347,8 @@ button.bg-theme-glow-button {
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.1em !important;
-  font-size: 0.75rem !important; /* text-xs */
+  font-size: 0.75rem !important;
+  /* text-xs */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -310,8 +407,8 @@ button.bg-theme-glow-button:disabled {
 .reveal-init {
   opacity: 0;
   transition: opacity var(--animation-speed) var(--animation-style),
-              transform var(--animation-speed) var(--animation-style),
-              filter var(--animation-speed) var(--animation-style);
+    transform var(--animation-speed) var(--animation-style),
+    filter var(--animation-speed) var(--animation-style);
   will-change: opacity, transform, filter;
 }
 
@@ -343,18 +440,39 @@ button.bg-theme-glow-button:disabled {
 
 /* Floating Animations */
 @keyframes float-loop-1 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(1deg);
+  }
 }
 
 @keyframes float-loop-2 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-15px) rotate(-1deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(-1deg);
+  }
 }
 
 @keyframes float-loop-3 {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(1.5deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-8px) rotate(1.5deg);
+  }
 }
 
 .animate-float-1 {
@@ -384,20 +502,45 @@ button.bg-theme-glow-button:disabled {
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.04);
 }
 
-.sticky-stack-card:nth-child(1) { top: 80px; z-index: 1; }
-.sticky-stack-card:nth-child(2) { top: 120px; z-index: 2; }
-.sticky-stack-card:nth-child(3) { top: 160px; z-index: 3; }
-.sticky-stack-card:nth-child(4) { top: 200px; z-index: 4; }
+.sticky-stack-card:nth-child(1) {
+  top: 80px;
+  z-index: 1;
+}
+
+.sticky-stack-card:nth-child(2) {
+  top: 120px;
+  z-index: 2;
+}
+
+.sticky-stack-card:nth-child(3) {
+  top: 160px;
+  z-index: 3;
+}
+
+.sticky-stack-card:nth-child(4) {
+  top: 200px;
+  z-index: 4;
+}
 
 /* Custom Marquee Keyframes (Missing Fallbacks) */
 @keyframes marquee {
-  0% { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes marquee2 {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(0%); }
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(0%);
+  }
 }
 
 .animate-marquee {
@@ -444,7 +587,10 @@ button.bg-theme-glow-button:disabled {
 .shimmer-sweep::after {
   content: "";
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
   transform: translateX(-100%);
   animation: shimmer-swipe-animation 2.2s infinite ease-in-out;
@@ -455,8 +601,13 @@ button.bg-theme-glow-button:disabled {
 }
 
 @keyframes shimmer-swipe-animation {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Product Detail Sticky Buy Box */
@@ -524,10 +675,18 @@ button.bg-theme-glow-button:disabled {
 }
 
 @keyframes topLoaderCrawl {
-  0% { left: -35%; width: 35%; }
-  50% { left: 30%; width: 40%; }
-  100% { left: 100%; width: 35%; }
+  0% {
+    left: -35%;
+    width: 35%;
+  }
+
+  50% {
+    left: 30%;
+    width: 40%;
+  }
+
+  100% {
+    left: 100%;
+    width: 35%;
+  }
 }
-
-
-

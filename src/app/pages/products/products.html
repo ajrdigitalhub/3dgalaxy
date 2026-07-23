@@ -14,7 +14,7 @@
   <div class="space-y-6">
 
     <!-- 1. STICKY TOP FILTER BAR -->
-    <div class="sticky top-18 bg-[#fafafa] dark:bg-[#121212] z-30 py-3 border-b border-neutral-200/50 dark:border-neutral-800/50 space-y-3">
+    <div class="sticky top-14 sm:top-16 bg-neutral-50/95 dark:bg-neutral-950/95 backdrop-blur-md z-30 py-3 border-b border-neutral-200/60 dark:border-neutral-800/60 space-y-3 transition-all duration-200 shadow-2xs">
       
       <!-- Desktop & Tablet Layout -->
       <div class="hidden md:flex items-center justify-between gap-4">
@@ -303,12 +303,12 @@
 
                 <img [src]="p.primaryImage || p.thumbnail || 'https://picsum.photos/seed/' + p.slug + '/400/400'"
                      [alt]="p.name"
-                     class="max-w-[90%] max-h-[90%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500 ease-out"
+                     class="w-full h-full object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500 ease-out"
                      loading="lazy">
                 @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.thumbnail)) {
                   <img [src]="p.secondaryImage"
                        [alt]="p.name + ' Alternate'"
-                       class="max-w-[90%] max-h-[90%] object-contain secondary-image absolute inset-0 m-auto"
+                       class="w-full h-full object-contain secondary-image absolute inset-0 m-auto"
                        loading="lazy">
                 }
               </a>

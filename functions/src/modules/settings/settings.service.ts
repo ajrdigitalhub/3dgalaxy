@@ -8,7 +8,32 @@ const defaultSettings = {
   currency: "₹",
   footer: {
     description: "",
-    groups: [],
+    groups: [
+      {
+        id: "policies",
+        title: "Policies",
+        isActive: true,
+        links: [
+          { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
+          { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
+          { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
+          { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
+          { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+          { id: "abt-policy", title: "About Us", url: "/about", isActive: true, openInNewTab: false }
+        ]
+      },
+      {
+        id: "quick-links",
+        title: "Quick links",
+        isActive: true,
+        links: [
+          { id: "search-link", title: "Search", url: "/products", isActive: true, openInNewTab: false },
+          { id: "contact-link", title: "Contact Us", url: "/about", isActive: true, openInNewTab: false },
+          { id: "products-link", title: "All products", url: "/products", isActive: true, openInNewTab: false },
+          { id: "track-link", title: "Track Order", url: "/orders", isActive: true, openInNewTab: false }
+        ]
+      }
+    ],
     socialLinks: [],
     paymentIcons: [],
     trustBadges: [],

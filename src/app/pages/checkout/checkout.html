@@ -384,7 +384,9 @@
               class="w-4 h-4 text-[#d65108] bg-zinc-100 border-zinc-300 rounded focus:ring-[#d65108] cursor-pointer" />
             <label for="termsCheck"
               class="text-[11px] font-bold text-neutral-600 dark:text-neutral-350 cursor-pointer">I accept the
-              <a routerLink="/terms" class="text-[#d65108] hover:underline">terms and conditions</a>
+              <button type="button" (click)="openTermsModal($event)" class="text-[#d65108] hover:underline font-bold bg-transparent border-none p-0 cursor-pointer inline">
+                terms and conditions
+              </button>
               of purchase.</label>
           </div>
 
@@ -631,6 +633,86 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+  }
+
+  <!-- Terms & Conditions Modal Popup -->
+  @if (showTermsModal()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6 animate-fadeIn">
+    <div class="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-5 sm:p-6 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/50 shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-orange-500/10 text-[#d65108] flex items-center justify-center">
+            <mat-icon class="scale-110">gavel</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-neutral-900 dark:text-white uppercase tracking-tight">Terms & Conditions of Purchase</h3>
+            <p class="text-[11px] text-neutral-500 font-medium">Please review our terms of service before completing your purchase</p>
+          </div>
+        </div>
+        <button (click)="closeTermsModal()" class="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer border-none">
+          <mat-icon class="scale-90">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable Content) -->
+      <div class="p-6 overflow-y-auto space-y-6 text-xs text-neutral-600 dark:text-neutral-350 leading-relaxed scrollbar-thin">
+        
+        <div class="p-4 bg-orange-500/5 dark:bg-orange-500/10 rounded-2xl border border-orange-500/20 text-orange-700 dark:text-orange-300 font-medium">
+          By completing an order with 3DGalaxy, you agree to these standard terms governing payment, order fulfillment, shipping, and returns.
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">payment</mat-icon> 1. Orders & Payments
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">All orders are subject to acceptance and product availability. Prices displayed include GST where applicable. Payment must be cleared prior to dispatch via online gateway or Cash on Delivery (COD) where available.</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">local_shipping</mat-icon> 2. Shipping & Delivery
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Delivery timeframes provided are estimates. Standard shipping typically takes 3 to 7 business days depending on delivery region. Risk of loss and title for items pass to you upon delivery to the carrier.</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">published_with_changes</mat-icon> 3. Cancellations & Returns
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Orders can be cancelled prior to dispatch by contacting support. Unopened hardware and spools in original packaging are eligible for return within 7 days of delivery per our Refund Policy.</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">verified</mat-icon> 4. Warranty & Support
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Hardware printers and digitizers come with standard manufacturer warranty against defective parts. Consumable items like opened filament spools or resin bottles are non-returnable once seal is broken.</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">security</mat-icon> 5. Privacy & Data Security
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Your personal data is encrypted and handled strictly in accordance with our Privacy Policy. We do not sell or share customer data with third parties beyond order execution requirements.</p>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 sm:p-6 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <button (click)="closeTermsModal()" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-none">
+          Close
+        </button>
+        <button (click)="acceptTermsFromModal()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#d65108] hover:bg-orange-700 text-white font-black text-xs uppercase tracking-widest transition-all cursor-pointer border-none flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20">
+          <mat-icon class="scale-75">check_circle</mat-icon>
+          I Accept Terms
+        </button>
+      </div>
+
     </div>
   </div>
   }

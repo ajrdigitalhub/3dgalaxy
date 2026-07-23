@@ -12,11 +12,13 @@ import { ToastService } from '../shared/components/toast/toast.service';
 import { SessionService } from '../core/services/session.service';
 import { ScrollRestorationService } from '../core/services/scroll-restoration.service';
 import { ThemeService } from '../core/services/theme.service';
+import { SettingsService } from '../core/services/settings.service';
 import { ApiService } from '../services/api.service';
 import { RecentPurchasePopupComponent } from '../shared/components/recent-purchase-popup/recent-purchase-popup';
 import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell';
 import { NotificationPopupComponent } from '../shared/components/notification-popup/notification-popup';
 import { HeaderMegaMenuComponent } from '../shared/components/header-mega-menu/header-mega-menu.component';
+import { HeaderAnnouncementBarComponent } from '../shared/components/header-announcement-bar/header-announcement-bar.component';
 import { fromEvent } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -34,7 +36,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     RecentPurchasePopupComponent,
     NotificationBellComponent,
     NotificationPopupComponent,
-    HeaderMegaMenuComponent
+    HeaderMegaMenuComponent,
+    HeaderAnnouncementBarComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -47,6 +50,7 @@ export class App {
   public themeService = inject(ThemeService);
   public router = inject(Router);
   public api = inject(ApiService);
+  public settingsService = inject(SettingsService);
   public currentUrl = signal(this.router.url);
   public loadingService = inject(LoadingService);
   private scrollRestoration = inject(ScrollRestorationService);
@@ -67,10 +71,23 @@ export class App {
   constructor() {
     this.scrollRestoration.init();
 
-    // Keep isHome updated with active path
+    if (isPlatformBrowser(this.platformId)) {
+      const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        this.ds.theme.set(savedTheme);
+      }
+    }
+    
+    // Ensure Settings API theme is fetched and applied first in application init
+    this.settingsService.loadSettings();
+
+    // Keep isHome updated with active path and re-apply settings theme on navigation
     this.router.events.subscribe((val) => {
       if (val instanceof NavigationEnd) {
         this.currentUrl.set(val.url);
+        // Ensure Settings API theme is applied first on every page load
+        this.settingsService.loadSettings();
+
         // Auto close dropdowns on navigation
         this.isRoleDropdownOpen.set(false);
         this.isBellOpen.set(false);
@@ -394,7 +411,16 @@ export class App {
   });
 
   toggleTheme() {
-    this.ds.theme.update(t => t === 'dark' ? 'light' : 'dark');
+    const nextTheme = this.ds.theme() === 'dark' ? 'light' : 'dark';
+    this.ds.theme.set(nextTheme);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('3d_galaxy_theme', nextTheme);
+      localStorage.setItem('theme', nextTheme);
+    }
+    this.settingsService.applyTheme({
+      ...(this.settingsService.theme() || {}),
+      darkMode: nextTheme === 'dark'
+    });
   }
 
   toggleRoleDropdown() {

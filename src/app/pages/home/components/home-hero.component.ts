@@ -161,7 +161,8 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
                                 ? slide.mobileImageUrl
                                 : slide.imageUrl
                             "
-                            loading="lazy"
+                            loading="eager"
+                            fetchpriority="high"
                             class="max-w-[90%] max-h-[90%] object-contain transition-transform duration-700 ease-out group-hover/card:scale-105 filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] select-none pointer-events-none animate-float-slow"
                             [alt]="slide.title"
                           />
@@ -420,7 +421,7 @@ export class HomeHeroComponent {
           linkUrl: "/products/bambu-lab-a1-combo",
           desc: "Seamless multi-color printing at an accessible price point, complete with fully automated alignment and calibration sensors.",
           imageUrl:
-            "https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png",
+            "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=800",
           price: "48999",
           oldPrice: "55000",
           discountText: "11% OFF",

@@ -36,7 +36,7 @@ export class MicrosoftClarityService implements AnalyticsProvider {
       return false;
     }
 
-    if (!config.clarity || !config.clarity.projectId) {
+    if (!config.clarity || !config.clarity.projectId || config.clarity.projectId.includes('clarity_proj')) {
       return false;
     }
 

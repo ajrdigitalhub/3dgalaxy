@@ -128,10 +128,13 @@ app.use("/api", abandonedCheckoutRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", paymentRoutes);
-app.use("/api", notificationRoutes);
+// DISABLED TO REDUCE BILLING — notification routes
+// app.use("/api", notificationRoutes);
 app.use("/api", pwaRoutes);
 app.use("/api", headerMenuRoutes);
 app.use("/api", marketingRoutes);
+import headerAnnouncementRoutes from "./routes/headerAnnouncements";
+app.use("/api", headerAnnouncementRoutes);
 app.use("/api/homepage", homepageRoutes);
 import searchRoutes from "./routes/search";
 import supportRoutes from "./routes/support";
@@ -142,13 +145,15 @@ import adminNotificationRoutes from "./routes/adminNotification.routes";
 
 app.use("/api", invoiceRoutes);
 app.use("/api/invoices", invoiceRoutes);
-app.use("/api", adminNotificationRoutes);
+// DISABLED TO REDUCE BILLING — admin notification routes
+// app.use("/api", adminNotificationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);
 app.use("/api/admin/services", serviceEnquiryRoutes);
-app.use("/api/admin/fcm", adminFcmRoutes);
-app.use("/api/notifications/admin", adminFcmRoutes);
+// DISABLED TO REDUCE BILLING — admin FCM routes
+// app.use("/api/admin/fcm", adminFcmRoutes);
+// app.use("/api/notifications/admin", adminFcmRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

@@ -65,6 +65,7 @@ export type AdminTab =
   | "menu-builder"
   | "coupons"
   | "promotions"
+  | "header-announcements"
   | "email-campaigns"
   | "push-notifications"
   | "sales-reports"
@@ -128,6 +129,52 @@ export class AdminPanel {
 
   activeTab = signal<AdminTab>("dashboard");
   isAdminSidebarOpen = signal(false);
+  isAdminDetailsOpen = signal(false);
+  isQuickLinksOpen = signal(false);
+
+  adminName = computed(() => this.ds.userProfile()?.name || this.ds.currentUser()?.displayName || 'System Admin');
+  adminEmail = computed(() => this.ds.userProfile()?.email || this.ds.currentUser()?.email || 'admin@3dgalaxy.com');
+  adminRole = computed(() => (this.ds.userRole() || 'admin').toUpperCase());
+  adminAvatar = computed(() => this.ds.currentUser()?.photoURL || '');
+
+  toggleTheme() {
+    const nextTheme = this.ds.theme() === 'dark' ? 'light' : 'dark';
+    this.ds.theme.set(nextTheme);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('3d_galaxy_theme', nextTheme);
+      localStorage.setItem('theme', nextTheme);
+    }
+    this.settingsService.applyTheme({
+      ...(this.settingsService.theme() || {}),
+      darkMode: nextTheme === 'dark'
+    });
+    this.toastService.info(`Switched to ${nextTheme === 'dark' ? 'Dark' : 'Light'} Mode`);
+  }
+
+  quickLinks = [
+    { label: 'Products Catalog', tab: 'products' as AdminTab, icon: 'inventory_2', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20', desc: 'Manage products, stock & pricing' },
+    { label: 'Orders & Sales', tab: 'orders' as AdminTab, icon: 'shopping_bag', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20', desc: 'View live customer orders & status' },
+    { label: 'Customers List', tab: 'customer-list' as AdminTab, icon: 'group', color: 'text-purple-500 bg-purple-500/10 border-purple-500/20', desc: 'Manage user profiles & reward points' },
+    { label: 'CAD Quote Enquiries', tab: 'quotes' as AdminTab, icon: 'layers', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20', desc: 'Process STL/STEP print requests' },
+    { label: 'Banners & Promotions', tab: 'banners' as AdminTab, icon: 'view_carousel', color: 'text-pink-500 bg-pink-500/10 border-pink-500/20', desc: 'Manage hero banners & ad cards' },
+    { label: 'Coupons & Deals', tab: 'coupons' as AdminTab, icon: 'local_offer', color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20', desc: 'Manage promotional promo codes' },
+    { label: 'Store Theme Settings', tab: 'theme-settings' as AdminTab, icon: 'palette', color: 'text-orange-500 bg-orange-500/10 border-orange-500/20', desc: 'Customize store design & colors' },
+    { label: 'System Settings', tab: 'store-settings' as AdminTab, icon: 'settings', color: 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20', desc: 'General business & API settings' },
+  ];
+
+  adminAccessList = computed(() => {
+    const role = this.ds.userRole();
+    const isSuper = role === 'super-admin';
+    return [
+      { name: 'Full Database & Catalog Access', detail: 'Create, update & archive products, brands, and categories', granted: true, badge: 'Full Clearance' },
+      { name: 'Order Processing & Refunds', detail: 'Manage order status, shipping labels & customer payments', granted: true, badge: 'Full Clearance' },
+      { name: 'Customer Data & CRM Insights', detail: 'Inspect user profiles, reward points & address books', granted: true, badge: 'Full Clearance' },
+      { name: 'Store Design & Content Editor', detail: 'Update homepage sections, banners & navigation menus', granted: true, badge: 'Full Clearance' },
+      { name: 'System Settings & API Configuration', detail: 'Manage store parameters, tax, payment gateways & PWA', granted: true, badge: 'Full Clearance' },
+      { name: 'Financial & Audit Logs', detail: 'Access transaction history, revenue logs & webhook events', granted: isSuper, badge: isSuper ? 'Root Clearance' : 'View Only' },
+      { name: 'Security Clearance & User Roles', detail: 'Manage admin roles, active sessions & security rules', granted: isSuper, badge: isSuper ? 'Root Clearance' : 'Restricted' },
+    ];
+  });
 
   // Sidebar Group Collapsed state
   collapsedGroups = signal<Record<string, boolean>>({
@@ -203,6 +250,8 @@ export class AdminPanel {
     {
       group: "Marketing",
       items: [
+        { id: "header-announcements", label: "Header Announcements", icon: "campaign" },
+        { id: "coupons", label: "Promo Vouchers", icon: "confirmation_number" },
         { id: "whatsapp-campaign", label: "WhatsApp Campaign", icon: "chat" },
       ],
     },

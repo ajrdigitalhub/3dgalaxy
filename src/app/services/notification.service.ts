@@ -55,43 +55,43 @@ export class NotificationService {
         this.permission.set(Notification.permission);
       }
 
-      // Check storage if they dismissed prompt
-      const dismissed = localStorage.getItem("fcm_prompt_dismissed");
-      if (this.permission() === "default" && !dismissed) {
-        // Trigger stay-updated modal popup prompt after 4 seconds
-        setTimeout(() => {
-          this.showPromptSubject.next(true);
-        }, 4000);
-      }
+      // DISABLED — notification system disabled
+      // const dismissed = localStorage.getItem("fcm_prompt_dismissed");
+      // if (this.permission() === "default" && !dismissed) {
+      //   setTimeout(() => {
+      //     this.showPromptSubject.next(true);
+      //   }, 4000);
+      // }
 
+      // DISABLED TO REDUCE BILLING — notification APIs are disabled on backend
       // Automatically fetch FCM token when permission is granted and settings are loaded
-      effect(() => {
-        const perm = this.permission();
-        const settingsLoaded = this.settingsService.isLoaded();
-        if (perm === "granted" && settingsLoaded && !this.fcmToken()) {
-          this.getFcmToken();
-        }
-      });
+      // effect(() => {
+      //   const perm = this.permission();
+      //   const settingsLoaded = this.settingsService.isLoaded();
+      //   if (perm === "granted" && settingsLoaded && !this.fcmToken()) {
+      //     this.getFcmToken();
+      //   }
+      // });
 
       // Automatically register device once FCM token is available
-      effect(() => {
-        const token = this.fcmToken();
-        const user = this.ds.currentUser();
-        const guestId = this.ds.guestSessionId();
-        if (token) {
-          const key = `${token}|${user?.uid || "guest"}|${guestId || ""}`;
-          if (this.registrationKey !== key) {
-            this.registrationKey = key;
-            this.registerDeviceInBackend(token, user?.uid || null, guestId);
-          }
-        }
-      });
+      // effect(() => {
+      //   const token = this.fcmToken();
+      //   const user = this.ds.currentUser();
+      //   const guestId = this.ds.guestSessionId();
+      //   if (token) {
+      //     const key = `${token}|${user?.uid || "guest"}|${guestId || ""}`;
+      //     if (this.registrationKey !== key) {
+      //       this.registrationKey = key;
+      //       this.registerDeviceInBackend(token, user?.uid || null, guestId);
+      //     }
+      //   }
+      // });
 
       // Fetch inbox notifications on initialization
-      this.fetchInbox();
+      // this.fetchInbox();
 
       // Setup dynamic foreground message listener once Firebase is initialized
-      this.setupForegroundListener();
+      // this.setupForegroundListener();
     }
   }
 
