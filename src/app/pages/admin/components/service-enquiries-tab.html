@@ -197,17 +197,40 @@
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
           
           <!-- STATUS UPDATE BAR -->
-          <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <!-- STATUS & FINANCIAL CONTROL BAR -->
+          <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <span class="text-[9px] uppercase font-black text-zinc-400 tracking-wider">Current Production Status</span>
               <p class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 mt-0.5">{{ activeEq.status.replace('_', ' ') }}</p>
             </div>
 
-            <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <!-- EDIT ESTIMATED COST FIELD -->
+              <div class="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
+                <span class="text-[10px] font-mono font-black uppercase text-zinc-400">Est. Cost:</span>
+                <span class="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">₹</span>
+                <input
+                  type="number"
+                  #costInput
+                  [value]="activeEq.estimatedCost || 0"
+                  (change)="updateCost(activeEq.id, costInput.value)"
+                  class="w-24 bg-transparent text-xs font-mono font-black text-zinc-900 dark:text-white outline-none"
+                  placeholder="0"
+                />
+                <button
+                  (click)="updateCost(activeEq.id, costInput.value)"
+                  class="p-1 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 rounded cursor-pointer bg-transparent border-none flex items-center"
+                  title="Save Cost Override"
+                >
+                  <mat-icon class="text-base">check_circle</mat-icon>
+                </button>
+              </div>
+
+              <!-- STATUS DROPDOWN -->
               <select
                 [ngModel]="activeEq.status"
                 (ngModelChange)="updateStatus(activeEq.id, $event)"
-                class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-bold p-2 rounded-xl text-zinc-900 dark:text-white outline-none cursor-pointer"
+                class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-bold p-2.5 rounded-xl text-zinc-900 dark:text-white outline-none cursor-pointer"
               >
                 @for (s of statusOptions; track s.id) {
                   <option [value]="s.id">{{ s.label }}</option>
@@ -257,10 +280,10 @@
               </div>
             </div>
 
-            <!-- Print Specs -->
-            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-2">
+            <!-- Print Specs & Cost -->
+            <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-3">
               <h4 class="text-xs font-black uppercase text-zinc-400 tracking-wider flex items-center gap-1.5">
-                <mat-icon class="text-sm">layers</mat-icon> Manufacturing Configuration
+                <mat-icon class="text-sm">layers</mat-icon> Manufacturing Configuration & Cost
               </h4>
               <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
                 <div>
@@ -278,6 +301,21 @@
                 <div>
                   <span class="block text-[8px] text-zinc-400 uppercase font-bold">Volume & Weight</span>
                   <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ activeEq.volumeCm3 }}cm³ ({{ activeEq.weightGrams }}g)</span>
+                </div>
+              </div>
+
+              <!-- EDITABLE COST BAR IN SPECS -->
+              <div class="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between font-mono">
+                <span class="text-[9px] uppercase font-black text-zinc-400">Estimated Quote Cost:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-xs font-black text-emerald-600 dark:text-emerald-400">₹</span>
+                  <input
+                    type="number"
+                    #specCostInput
+                    [value]="activeEq.estimatedCost || 0"
+                    (change)="updateCost(activeEq.id, specCostInput.value)"
+                    class="w-28 px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
+                  />
                 </div>
               </div>
             </div>

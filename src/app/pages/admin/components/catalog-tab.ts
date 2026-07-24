@@ -49,21 +49,30 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                 specifications.
               </p>
             </div>
-            @if (!admin.editingProduct()) {
-              <button
-                (click)="startEditNew()"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
-              >
-                Register SKU
-              </button>
-            } @else {
-              <button
-                (click)="cancelEdit()"
-                class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
-              >
-                Back to Hub
-              </button>
-            }
+            <div class="flex items-center gap-2">
+              @if (!admin.editingProduct()) {
+                <button
+                  (click)="exportProductsCsv()"
+                  class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <mat-icon class="text-sm">download</mat-icon>
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  (click)="startEditNew()"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
+                >
+                  Register SKU
+                </button>
+              } @else {
+                <button
+                  (click)="cancelEdit()"
+                  class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer"
+                >
+                  Back to Hub
+                </button>
+              }
+            </div>
           </div>
 
           @if (admin.editingProduct()) {
@@ -1096,27 +1105,41 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest"
                       >Downloads & Manuals</span
                     >
-                    <button
-                      (click)="admin.addDownload()"
-                      class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"
-                    >
-                      <mat-icon class="scale-75">add</mat-icon> Add Row
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <input #headerDocUpload type="file" multiple class="hidden" (change)="handleDocumentUploadForRow($event)" />
+                      <button
+                        (click)="headerDocUpload.click()"
+                        class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1 shadow-sm transition-all"
+                      >
+                        <mat-icon class="scale-75">cloud_upload</mat-icon> Upload Document
+                      </button>
+                      <button
+                        (click)="admin.addDownload()"
+                        class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold uppercase px-3 py-1.5 rounded-lg cursor-pointer flex items-center gap-1 shadow-sm transition-all"
+                      >
+                        <mat-icon class="scale-75">add</mat-icon> Add Row
+                      </button>
+                    </div>
                   </div>
                   @if (admin.pDownloads().length === 0) {
                     <div
-                      class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl"
+                      (click)="headerDocUpload.click()"
+                      class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-300 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500 rounded-xl cursor-pointer bg-zinc-50/50 dark:bg-zinc-950/50 transition-all flex flex-col items-center justify-center gap-2"
                     >
-                      No downloads added.
+                      <mat-icon class="text-3xl text-zinc-400">cloud_upload</mat-icon>
+                      <div>
+                        <p class="text-zinc-700 dark:text-zinc-300 font-semibold">No downloads or manuals added yet.</p>
+                        <p class="text-[11px] text-zinc-400 font-normal mt-0.5">Click here to upload PDF, DOCX, ZIP, or 3D files (Max 25MB)</p>
+                      </div>
                     </div>
                   } @else {
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                       @for (
                         dl of admin.pDownloads();
                         track $index;
                         let i = $index
                       ) {
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
                           <input
                             type="text"
                             [value]="dl.title"
@@ -1128,7 +1151,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                               )
                             "
                             placeholder="Document Title (e.g. User Manual)"
-                            class="w-1/3 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                            class="w-1/3 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
                           />
                           <input
                             type="text"
@@ -1140,12 +1163,22 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                                 $any($event.target).value
                               )
                             "
-                            placeholder="File URL (https://...)"
-                            class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                            placeholder="File URL (https://... or uploaded file)"
+                            class="flex-1 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
                           />
+                          <input #rowDocUpload type="file" class="hidden" (change)="handleDocumentUploadForRow($event, i)" />
+                          <button
+                            (click)="rowDocUpload.click()"
+                            class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-300 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 border border-indigo-200 dark:border-indigo-800/50"
+                            title="Upload Document File"
+                          >
+                            <mat-icon class="text-sm">cloud_upload</mat-icon>
+                            <span>Upload</span>
+                          </button>
                           <button
                             (click)="admin.removeDownload(i)"
-                            class="text-red-400 hover:text-red-500 p-2 cursor-pointer bg-red-50 dark:bg-red-950 rounded-lg"
+                            class="text-red-400 hover:text-red-500 p-2 cursor-pointer bg-red-50 dark:bg-red-950/40 hover:bg-red-100 rounded-lg shrink-0 border border-red-100 dark:border-red-900/40"
+                            title="Remove Document"
                           >
                             <mat-icon class="scale-75">delete</mat-icon>
                           </button>
@@ -1752,14 +1785,23 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
       <!-- ========================= TAB: CATEGORIES ========================= -->
       @if (admin.activeTab() === "categories") {
         <div class="space-y-8">
-          <div>
-            <h1 class="text-xl font-black uppercase font-sans">
-              Taxonomy Tree
-            </h1>
-            <p class="text-xs text-zinc-500">
-              Manage structure taxonomy, parent mappings, SEO attributes, and
-              media.
-            </p>
+          <div class="flex justify-between items-center">
+            <div>
+              <h1 class="text-xl font-black uppercase font-sans">
+                Taxonomy Tree
+              </h1>
+              <p class="text-xs text-zinc-500">
+                Manage structure taxonomy, parent mappings, SEO attributes, and
+                media.
+              </p>
+            </div>
+            <button
+              (click)="exportCategoriesCsv()"
+              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <mat-icon class="text-sm">download</mat-icon>
+              <span>Export CSV</span>
+            </button>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -2286,12 +2328,21 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
       <!-- ========================= TAB: BRANDS ========================= -->
       @if (admin.activeTab() === "brands") {
         <div class="space-y-8 font-sans">
-          <div>
-            <h1 class="text-xl font-black uppercase">Brand Alliances</h1>
-            <p class="text-xs text-zinc-500">
-              Coordinate and verify global SLA printing manufacturers. Add
-              logos, descriptions, and territories.
-            </p>
+          <div class="flex justify-between items-center">
+            <div>
+              <h1 class="text-xl font-black uppercase">Brand Alliances</h1>
+              <p class="text-xs text-zinc-500">
+                Coordinate and verify global SLA printing manufacturers. Add
+                logos, descriptions, and territories.
+              </p>
+            </div>
+            <button
+              (click)="exportBrandsCsv()"
+              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <mat-icon class="text-sm">download</mat-icon>
+              <span>Export CSV</span>
+            </button>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2708,6 +2759,55 @@ export class AdminCatalogTab {
   http = inject(HttpClient);
   @Input({ required: true }) admin!: AdminPanel;
 
+  async handleDocumentUploadForRow(event: Event, index?: number) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    for (let i = 0; i < input.files.length; i++) {
+      const file = input.files[i];
+      if (file.size > 25 * 1024 * 1024) {
+        this.toastService.error(`File ${file.name} exceeds 25MB limit.`);
+        continue;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("document", file);
+        formData.append("image", file);
+
+        let res: any = null;
+        try {
+          res = await firstValueFrom(this.http.post<any>("/api/admin/upload-document", formData));
+        } catch (err) {
+          res = await firstValueFrom(this.http.post<any>("/api/admin/upload-image", formData));
+        }
+
+        if (res && (res.success || res.url)) {
+          const fileUrl = res.url;
+          const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+          const formattedTitle = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+          if (index !== undefined && index >= 0 && index < this.admin.pDownloads().length) {
+            this.admin.updateDownload(index, "fileUrl", fileUrl);
+            if (!this.admin.pDownloads()[index].title) {
+              this.admin.updateDownload(index, "title", formattedTitle);
+            }
+          } else {
+            this.admin.pDownloads.update((list) => [...list, { title: formattedTitle, fileUrl }]);
+          }
+
+          this.toastService.success(`Uploaded "${file.name}" successfully.`);
+        } else {
+          this.toastService.error("Document upload failed.");
+        }
+      } catch (e) {
+        console.error("Failed to upload document file:", e);
+        this.toastService.error("Document upload failed.");
+      }
+    }
+    input.value = "";
+  }
+
   uploadProgress = 0;
 
   activeVariantForImages = signal<number | null>(null);
@@ -3120,5 +3220,101 @@ export class AdminCatalogTab {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  }
+
+  exportCategoriesCsv() {
+    const dataToExport = this.admin.ds.categories() || [];
+    if (dataToExport.length === 0) {
+      this.toastService.warning('No category records to export.');
+      return;
+    }
+
+    const headers = ['Category ID', 'Name', 'Slug', 'Parent ID', 'Path', 'Sort Order', 'Is Featured', 'Is Active', 'Description'];
+    const rows = dataToExport.map(c => [
+      `"${c.id}"`,
+      `"${c.name.replace(/"/g, '""')}"`,
+      `"${c.slug || ''}"`,
+      `"${c.parent_id || c.parentId || ''}"`,
+      `"${this.getCategoryPath(c.id).replace(/"/g, '""')}"`,
+      c.sortOrder || 0,
+      !!c.isFeatured,
+      !!(c.isActive !== false),
+      `"${(c.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `categories_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toastService.success(`Exported ${dataToExport.length} categories.`);
+  }
+
+  exportProductsCsv() {
+    const dataToExport = this.admin.ds.products() || [];
+    if (dataToExport.length === 0) {
+      this.toastService.warning('No product records to export.');
+      return;
+    }
+
+    const headers = ['Product ID', 'Name', 'SKU', 'Barcode', 'Category ID', 'Brand', 'MRP', 'Sale Price', 'Dealer Price', 'Stock', 'Reserved', 'Is Featured', 'Is Exclusive', 'COD Available', 'Description'];
+    const rows = dataToExport.map(p => [
+      `"${p.id}"`,
+      `"${p.name.replace(/"/g, '""')}"`,
+      `"${p.sku || ''}"`,
+      `"${p.barcode || ''}"`,
+      `"${p.category_id || p.categoryId || ''}"`,
+      `"${(p.brand || '').replace(/"/g, '""')}"`,
+      p.mrp || p.basePrice || 0,
+      p.sale_price || p.salePrice || 0,
+      p.dealer_price || p.dealerPrice || 0,
+      p.stock || 0,
+      p.reserved || 0,
+      !!(p.featured || p.isFeatured),
+      !!p.isExclusive,
+      !!p.codAvailable,
+      `"${(p.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `products_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toastService.success(`Exported ${dataToExport.length} products.`);
+  }
+
+  exportBrandsCsv() {
+    const dataToExport = this.admin.ds.brands() || [];
+    if (dataToExport.length === 0) {
+      this.toastService.warning('No brand records to export.');
+      return;
+    }
+
+    const headers = ['Brand ID', 'Name', 'Slug', 'Active', 'Logo URL', 'Description'];
+    const rows = dataToExport.map(br => [
+      `"${br.id}"`,
+      `"${br.name.replace(/"/g, '""')}"`,
+      `"${br.slug || ''}"`,
+      !!(br.active !== false),
+      `"${br.logo || ''}"`,
+      `"${(br.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `brands_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toastService.success(`Exported ${dataToExport.length} brands.`);
   }
 }

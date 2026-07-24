@@ -481,6 +481,14 @@ export class App {
     });
   }
 
+  get whatsappUrl(): string {
+    const phone = this.settingsService.whatsappSettings()?.adminPhoneNumber || this.settingsService.contact()?.phone || '919999999999';
+    // Clean phone number: remove +, spaces, dashes, parentheses
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const message = encodeURIComponent("Hello! I have a query regarding 3D Galaxy store.");
+    return `https://wa.me/${cleanPhone}?text=${message}`;
+  }
+
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
     if (img.getAttribute('data-error-handled')) return;

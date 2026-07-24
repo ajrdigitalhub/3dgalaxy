@@ -17,7 +17,7 @@ import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.
     }
 
     .brand-section-bg {
-      background: radial-gradient(circle at 50% 20%, rgba(245, 79, 0, 0.12) 0%, transparent 65%),
+      background: radial-gradient(circle at 50% 20%, rgba(var(--primary-color-rgb, 245, 79, 0), 0.12) 0%, transparent 65%),
                   linear-gradient(180deg, #070709 0%, #0d0e14 50%, #070709 100%);
     }
 
@@ -36,10 +36,10 @@ import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.
       border-radius: 1.35rem;
       padding: 1.5px;
       background: linear-gradient(120deg, 
-        rgba(245, 79, 0, 0.85), 
-        rgba(251, 146, 60, 0.5), 
+        rgba(var(--primary-color-rgb, 245, 79, 0), 0.85), 
+        rgba(var(--primary-color-rgb, 245, 79, 0), 0.5), 
         rgba(99, 102, 241, 0.7), 
-        rgba(245, 79, 0, 0.85)
+        rgba(var(--primary-color-rgb, 245, 79, 0), 0.85)
       );
       background-size: 250% 250%;
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -53,7 +53,7 @@ import { ScrollRevealDirective } from '../../../shared/directives/scroll-reveal.
 
     .brand-card-animated:hover::before {
       opacity: 1;
-      filter: drop-shadow(0 0 10px rgba(245, 79, 0, 0.6));
+      filter: drop-shadow(0 0 10px rgba(var(--primary-color-rgb, 245, 79, 0), 0.6));
     }
 
     .brand-card-animated:hover {

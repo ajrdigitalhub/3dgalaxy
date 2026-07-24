@@ -94,7 +94,10 @@ export class AdminServiceEnquiriesTab implements OnInit {
   openOverviewDrawer(enquiry: ServiceEnquiry) {
     this.activeOverviewEnquiry.set(enquiry);
     this.loadEnquiryFiles(enquiry.trackingNumber);
-    if (enquiry.fileUrl) {
+    if (enquiry.trackingNumber && enquiry.modelName) {
+      const streamUrl = `${environment.apiUrl}/services/file/stream/${enquiry.trackingNumber}/original/${encodeURIComponent(enquiry.modelName)}`;
+      this.initAdminStlViewer(streamUrl);
+    } else if (enquiry.fileUrl) {
       this.initAdminStlViewer(enquiry.fileUrl);
     }
   }
@@ -214,6 +217,21 @@ export class AdminServiceEnquiriesTab implements OnInit {
           }
         },
         error: () => this.toastService.error("Failed to update status."),
+      });
+  }
+
+  updateCost(id: string, costValue: any) {
+    const estimatedCost = Math.max(0, Number(costValue) || 0);
+    this.enquiryService
+      .updateAdminEnquiry(id, { estimatedCost })
+      .subscribe({
+        next: (res) => {
+          this.toastService.success("Estimated cost updated to ₹" + estimatedCost.toLocaleString("en-IN"));
+          if (this.activeOverviewEnquiry()?.id === id) {
+            this.activeOverviewEnquiry.set(res.data);
+          }
+        },
+        error: () => this.toastService.error("Failed to update estimated cost."),
       });
   }
 

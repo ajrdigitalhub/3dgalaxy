@@ -362,6 +362,7 @@ export class NotificationService {
       const fbAdmin = getFirebaseAdmin();
       if (!fbAdmin.apps.length) return false;
 
+      const targetLink = payload.deepLink || `/admin/${category}`;
       const fcmMessage = {
         tokens: allTokens,
         notification: {
@@ -371,7 +372,10 @@ export class NotificationService {
         data: {
           type: category,
           eventKey: payload.eventKey,
-          deepLink: payload.deepLink || `/admin/${category}`,
+          deepLink: targetLink,
+          click_action: targetLink,
+          title: payload.title,
+          body: payload.body,
           ...(payload.metadata
             ? Object.fromEntries(
                 Object.entries(payload.metadata).map(([k, v]) => [k, String(v)])
@@ -380,9 +384,11 @@ export class NotificationService {
         },
         webpush: {
           fcmOptions: {
-            link: payload.deepLink || `/admin/${category}`,
+            link: targetLink,
           },
           notification: {
+            title: payload.title,
+            body: payload.body,
             icon: '/assets/icons/icon-192x192.png',
             badge: '/assets/icons/badge-72x72.png',
           },

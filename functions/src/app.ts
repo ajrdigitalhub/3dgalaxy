@@ -128,8 +128,7 @@ app.use("/api", abandonedCheckoutRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", paymentRoutes);
-// DISABLED TO REDUCE BILLING — notification routes
-// app.use("/api", notificationRoutes);
+app.use("/api", notificationRoutes);
 app.use("/api", pwaRoutes);
 app.use("/api", headerMenuRoutes);
 app.use("/api", marketingRoutes);
@@ -145,15 +144,13 @@ import adminNotificationRoutes from "./routes/adminNotification.routes";
 
 app.use("/api", invoiceRoutes);
 app.use("/api/invoices", invoiceRoutes);
-// DISABLED TO REDUCE BILLING — admin notification routes
-// app.use("/api", adminNotificationRoutes);
+app.use("/api", adminNotificationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);
 app.use("/api/admin/services", serviceEnquiryRoutes);
-// DISABLED TO REDUCE BILLING — admin FCM routes
-// app.use("/api/admin/fcm", adminFcmRoutes);
-// app.use("/api/notifications/admin", adminFcmRoutes);
+app.use("/api/admin/fcm", adminFcmRoutes);
+app.use("/api/notifications/admin", adminFcmRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

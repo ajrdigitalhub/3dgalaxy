@@ -1,5 +1,92 @@
 [
   {
+    "id": "db6f5035-bff2-4bcb-bfcd-3e7a4d0004ea",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-24T11:24:16.016Z"
+    },
+    "sentAt": "2026-07-24T11:24:16.558Z",
+    "isRead": false
+  },
+  {
+    "id": "b572e896-93bd-434d-a9eb-b95c6e536450",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-24T11:23:56.364Z"
+    },
+    "sentAt": "2026-07-24T11:23:57.905Z",
+    "isRead": false
+  },
+  {
+    "id": "6d27c686-379e-4657-b797-f55a3e2d1366",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-24T08:31:06.668Z"
+    },
+    "sentAt": "2026-07-24T08:31:08.162Z",
+    "isRead": false
+  },
+  {
+    "id": "128501aa-d656-4e1c-ba9c-88eb4a8d3d57",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-24T06:29:57.601Z"
+    },
+    "sentAt": "2026-07-24T06:29:58.331Z",
+    "isRead": false
+  },
+  {
+    "id": "c69e5186-8016-4843-8290-cfb8a2635753",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-24T06:25:20.085Z"
+    },
+    "sentAt": "2026-07-24T06:25:21.050Z",
+    "isRead": false
+  },
+  {
+    "id": "b595844a-9b47-4d26-a56d-9aaec56f8b0e",
+    "title": "🖨️ New 3D Service Request",
+    "body": "ajrgroup uploaded 3D model \"yamaha order.stl\" (Tracking: TRK-975494)",
+    "type": "service",
+    "eventKey": "NEW_SERVICE_REQUEST",
+    "deepLink": "/admin/services",
+    "data": {
+      "material": "ABS",
+      "quantity": 2,
+      "enquiryId": "ENQ-305712",
+      "customerName": "ajrgroup",
+      "trackingNumber": "TRK-975494"
+    },
+    "sentAt": "2026-07-24T05:41:38.871Z",
+    "isRead": false
+  },
+  {
     "id": "cbf2c0ef-94ff-4fef-80df-5c972613e154",
     "title": "🚀 3DGalaxy Admin Push Test",
     "body": "Admin push notification channel is active and receiving live events.",

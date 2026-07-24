@@ -1,5 +1,133 @@
 [
   {
+    "id": "ENQ-305712",
+    "trackingNumber": "TRK-975494",
+    "createdAt": "2026-07-24T05:41:27.763Z",
+    "updatedAt": "2026-07-24T12:02:07.430Z",
+    "userId": null,
+    "customerName": "ajrgroup",
+    "customerEmail": "ajrgroupconnect@gmail.com",
+    "customerPhone": "09597935647",
+    "isGuest": true,
+    "modelName": "yamaha order.stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/services/TRK-975494/original/yamaha%20order.stl?GoogleAccessId=firebase-adminsdk-fbsvc%40ajr3dgalaxy.iam.gserviceaccount.com&Expires=1785476495&Signature=QwUYBqDV4wh2YLvIwm6FjIVBBPYwV7%2FPMyQpZldIu3Tfibv2rIsCRwbdhwm3sGPPV5aas8DZj9S7mXbd6PhorBoa13X5QPucg0YikKPPbOYNcgPswyCOgLy%2FRAPYmaaR5%2FEVG91TsMP%2F%2BpXSfnV1ghOLh%2BExQLocwmsu8qb3Bo05pphYFUpW%2Bbzw%2Fp0DFUBaG7c2AefHrY3n4Yfo4%2BRvVQipxUiesU3%2B3JRF30Eo0gHYAd2l790%2FOV7ipJsKCfUUbDO7WfyCGx%2Fpj10EZhxJE0L8%2BuNH7piMmOzru3FPlCQL2A5iF0ro0Yz1O3RcQmVAXkh0H0YSJPXbPuCgiXR%2FuA%3D%3D",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 3.3,
+    "triangleCount": 14652,
+    "estimatedHours": 1,
+    "material": "ABS",
+    "color": "Red",
+    "infillPercent": 20,
+    "layerHeight": "0.2 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 2,
+    "notes": "",
+    "status": "file_review",
+    "estimatedCost": 450,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-07-24T05:41:27.763Z",
+        "remarks": "Customer uploaded STL file \"yamaha order.stl\" into Firebase Storage.",
+        "updatedBy": "ajrgroup"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-24T05:47:00.265Z",
+        "remarks": "File \"yamaha order.stl\" downloaded from Firebase Storage by Customer.",
+        "updatedBy": "Customer"
+      },
+      {
+        "status": "submitted",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-24T05:55:03.452Z",
+        "remarks": "File \"yamaha order.stl\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "received",
+        "label": "Enquiry Received by Node",
+        "timestamp": "2026-07-24T11:11:00.255Z",
+        "remarks": "Status updated to Enquiry Received by Node by Admin.",
+        "updatedBy": "Admin Staff",
+        "notificationSent": true
+      },
+      {
+        "status": "file_review",
+        "label": "3D Mesh File Review",
+        "timestamp": "2026-07-24T11:54:59.343Z",
+        "remarks": "Status updated to 3D Mesh File Review by Admin.",
+        "updatedBy": "Admin Staff",
+        "notificationSent": true
+      },
+      {
+        "status": "file_review",
+        "label": "File Downloaded (yamaha order.stl)",
+        "timestamp": "2026-07-24T11:55:55.670Z",
+        "remarks": "File \"yamaha order.stl\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "file_review",
+        "label": "Estimated Cost Updated",
+        "timestamp": "2026-07-24T12:02:07.430Z",
+        "remarks": "Estimated quote price updated to ₹450 by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "file_review",
+        "label": "File Uploaded (QUOTATION)",
+        "timestamp": "2026-07-24T12:02:25.009Z",
+        "remarks": "New file \"ENQ-305712_Official_Quotation.pdf\" (v1) saved to Firebase Storage services/TRK-975494/quotation/ by Admin Console.",
+        "updatedBy": "Admin Console"
+      },
+      {
+        "status": "file_review",
+        "label": "File Downloaded (ENQ-305712_Official_Quotation.pdf)",
+        "timestamp": "2026-07-24T12:02:28.833Z",
+        "remarks": "File \"ENQ-305712_Official_Quotation.pdf\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1784871695938",
+        "type": "push",
+        "sentAt": "2026-07-24T05:41:27.763Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-305712 (Tracking: TRK-975494) has been received successfully!"
+      },
+      {
+        "id": "NOTIF-1784891460255",
+        "type": "push",
+        "sentAt": "2026-07-24T11:11:00.255Z",
+        "title": "Service Update: Enquiry Received by Node",
+        "body": "Your 3D Print Request #ENQ-305712 status is now \"Enquiry Received by Node\"."
+      },
+      {
+        "id": "NOTIF-1784894099343",
+        "type": "push",
+        "sentAt": "2026-07-24T11:54:59.343Z",
+        "title": "Service Update: 3D Mesh File Review",
+        "body": "Your 3D Print Request #ENQ-305712 status is now \"3D Mesh File Review\"."
+      }
+    ]
+  },
+  {
     "id": "ENQ-538255",
     "trackingNumber": "TRK-792381",
     "createdAt": "2026-07-20T19:29:46.071Z",

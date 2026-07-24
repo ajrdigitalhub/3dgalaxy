@@ -55,6 +55,8 @@ export type AdminTab =
   | "abandoned-carts"
   | "quotes"
   | "customer-list"
+  | "customer-details"
+  | "customer-analytics"
   | "customer-groups"
   | "reviews"
   | "pages"
@@ -128,7 +130,13 @@ export class AdminPanel {
   });
 
   activeTab = signal<AdminTab>("dashboard");
+  selectedCustomerId = signal<string | null>(null);
   isAdminSidebarOpen = signal(false);
+
+  openCustomerDetails(customerId: string) {
+    this.selectedCustomerId.set(customerId);
+    this.activeTab.set("customer-details");
+  }
   isAdminDetailsOpen = signal(false);
   isQuickLinksOpen = signal(false);
 
@@ -243,8 +251,7 @@ export class AdminPanel {
       group: "Customers",
       items: [
         { id: "customer-list", label: "Customer List", icon: "people" },
-        // { id: 'customer-groups', label: 'Customer Groups', icon: 'groups' },
-        // { id: 'reviews', label: 'Reviews', icon: 'reviews' }
+        { id: "customer-analytics", label: "Customer Analytics", icon: "insights" },
       ],
     },
     {
@@ -1123,17 +1130,18 @@ export class AdminPanel {
 
   async updateOrderStatus(orderId: string, nextStatus: string) {
     if (this.isUpdatingOrderStatus()) return;
-    const order = this.ds.orders().find((o) => o.id === orderId);
+    const order = this.ds.orders().find((o) => o.id === orderId || o.orderNumber === orderId);
     if (!order) return;
 
     let trackingNumber = order.trackingNumber;
-    if (nextStatus === "shipped" && !trackingNumber) {
+    if (nextStatus?.toLowerCase() === "shipped" && !trackingNumber) {
       trackingNumber = "TRACK-" + Math.floor(100000 + Math.random() * 900000);
     }
 
     this.isUpdatingOrderStatus.set(true);
     try {
-      await this.ds.updateOrderStatus(orderId, nextStatus, trackingNumber);
+      await this.ds.updateOrderStatus(order.id, nextStatus, trackingNumber);
+      this.toastService.success(`Order ${order.orderNumber} status updated to ${nextStatus}`);
     } catch {
       this.toastService.error(
         "FAILED to update order status: Access Denied or Network Error.",

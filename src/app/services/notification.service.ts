@@ -55,43 +55,41 @@ export class NotificationService {
         this.permission.set(Notification.permission);
       }
 
-      // DISABLED — notification system disabled
-      // const dismissed = localStorage.getItem("fcm_prompt_dismissed");
-      // if (this.permission() === "default" && !dismissed) {
-      //   setTimeout(() => {
-      //     this.showPromptSubject.next(true);
-      //   }, 4000);
-      // }
+      const dismissed = localStorage.getItem("fcm_prompt_dismissed");
+      if (this.permission() === "default" && !dismissed) {
+        setTimeout(() => {
+          this.showPromptSubject.next(true);
+        }, 4000);
+      }
 
-      // DISABLED TO REDUCE BILLING — notification APIs are disabled on backend
       // Automatically fetch FCM token when permission is granted and settings are loaded
-      // effect(() => {
-      //   const perm = this.permission();
-      //   const settingsLoaded = this.settingsService.isLoaded();
-      //   if (perm === "granted" && settingsLoaded && !this.fcmToken()) {
-      //     this.getFcmToken();
-      //   }
-      // });
+      effect(() => {
+        const perm = this.permission();
+        const settingsLoaded = this.settingsService.isLoaded();
+        if (perm === "granted" && settingsLoaded && !this.fcmToken()) {
+          this.getFcmToken();
+        }
+      });
 
       // Automatically register device once FCM token is available
-      // effect(() => {
-      //   const token = this.fcmToken();
-      //   const user = this.ds.currentUser();
-      //   const guestId = this.ds.guestSessionId();
-      //   if (token) {
-      //     const key = `${token}|${user?.uid || "guest"}|${guestId || ""}`;
-      //     if (this.registrationKey !== key) {
-      //       this.registrationKey = key;
-      //       this.registerDeviceInBackend(token, user?.uid || null, guestId);
-      //     }
-      //   }
-      // });
+      effect(() => {
+        const token = this.fcmToken();
+        const user = this.ds.currentUser();
+        const guestId = this.ds.guestSessionId();
+        if (token) {
+          const key = `${token}|${user?.uid || "guest"}|${guestId || ""}`;
+          if (this.registrationKey !== key) {
+            this.registrationKey = key;
+            this.registerDeviceInBackend(token, user?.uid || null, guestId);
+          }
+        }
+      });
 
       // Fetch inbox notifications on initialization
-      // this.fetchInbox();
+      this.fetchInbox();
 
       // Setup dynamic foreground message listener once Firebase is initialized
-      // this.setupForegroundListener();
+      this.setupForegroundListener();
     }
   }
 
@@ -142,18 +140,15 @@ export class NotificationService {
         this.ds.settings().pushNotificationSettings?.vapidKey ||
         "BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215";
 
-      if (!this.isValidVapidKey(vapidKey)) {
-        console.warn(
-          `Skipping FCM token retrieval: VAPID key is invalid or placeholder ("${vapidKey}"). ` +
-          "Please configure a valid 65-byte base64url-encoded Web Push VAPID key in settings."
-        );
-        return null;
+      const tokenOptions: any = {
+        serviceWorkerRegistration: reg,
+      };
+
+      if (vapidKey && this.isValidVapidKey(vapidKey)) {
+        tokenOptions.vapidKey = vapidKey;
       }
 
-      const token = await getToken(messaging, {
-        serviceWorkerRegistration: reg,
-        vapidKey: vapidKey,
-      });
+      const token = await getToken(messaging, tokenOptions);
 
       if (token) {
         this.fcmToken.set(token);
@@ -254,6 +249,24 @@ export class NotificationService {
       error: (err) =>
         console.error("Failed to register FCM token with backend:", err),
     });
+
+    const user: any = this.ds.currentUser();
+    const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+    if (user?.role === "Admin" || isAdminRoute) {
+      const adminPayload = {
+        adminId: user?.uid || "admin-main",
+        deviceName: `${os} (${browser})`,
+        browser,
+        operatingSystem: os,
+        platform: userAgent.indexOf("Mobi") > -1 ? "Mobile" : "Desktop",
+        fcmToken: token,
+        notificationPermission: Notification.permission,
+      };
+      this.registerAdminDevice(adminPayload).subscribe({
+        next: () => console.log("Admin FCM device token registered with backend"),
+        error: (err) => console.error("Failed to register admin FCM token:", err),
+      });
+    }
   }
 
   // Subscribe to Firebase topic

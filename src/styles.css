@@ -58,6 +58,38 @@ header svg {
   --animate-float-bubble: floatBubble 6s infinite ease-in-out;
 }
 
+.bg-theme-primary {
+  background-color: var(--primary-color, #f54f00) !important;
+}
+
+.text-theme-primary {
+  color: var(--primary-color, #f54f00) !important;
+}
+
+.border-theme-primary {
+  border-color: var(--primary-color, #f54f00) !important;
+}
+
+.bg-theme-secondary {
+  background-color: var(--secondary-color, #ea580c) !important;
+}
+
+.text-theme-secondary {
+  color: var(--secondary-color, #ea580c) !important;
+}
+
+.border-theme-secondary {
+  border-color: var(--secondary-color, #ea580c) !important;
+}
+
+.bg-theme-accent {
+  background-color: var(--accent-color, #3b82f6) !important;
+}
+
+.text-theme-accent {
+  color: var(--accent-color, #3b82f6) !important;
+}
+
 .bg-theme-gradient {
   background: var(--theme-gradient, linear-gradient(var(--gradient-angle, 135deg), var(--primary-color, #f54f00), var(--secondary-color, #ea580c))) !important;
 }
@@ -610,11 +642,79 @@ button.bg-theme-glow-button:disabled {
   }
 }
 
-/* Product Detail Sticky Buy Box */
+/* Product Detail Buy Box */
 .sticky-buy-box {
-  position: sticky;
-  top: 100px;
-  z-index: 20;
+  position: relative;
+  z-index: 1;
+}
+
+/* Fantasy UI Card Effects for Product Badges */
+@keyframes fantasyBorderGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(245, 79, 0, 0.2), inset 0 0 15px rgba(245, 79, 0, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(124, 58, 237, 0.3), inset 0 0 20px rgba(124, 58, 237, 0.1);
+  }
+}
+
+@keyframes fantasyIconFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(3deg);
+  }
+}
+
+@keyframes fantasyShimmerSweep {
+  0% {
+    transform: translateX(-150%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(250%) rotate(25deg);
+  }
+}
+
+.fantasy-card {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fantasy-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  animation: fantasyBorderGlow 3s ease-in-out infinite;
+}
+
+.fantasy-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fantasy-card:hover::before {
+  opacity: 1;
+  animation: fantasyShimmerSweep 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fantasy-icon-anim {
+  animation: fantasyIconFloat 4s ease-in-out infinite;
 }
 
 /* Card and Theme configurations */

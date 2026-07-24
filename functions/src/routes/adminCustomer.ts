@@ -9,6 +9,10 @@ import {
   unblockCustomer,
   getCustomerOrders,
   getCustomerAddresses,
+  addCustomerAddress,
+  updateCustomerAddress,
+  deleteCustomerAddress,
+  setDefaultCustomerAddress,
   getCustomerActivity,
   getCustomerReviews,
   getCustomerWishlist,
@@ -37,9 +41,13 @@ router.post('/:id/notes', requireRole(['Admin', 'Super Admin', 'Manager']), addC
 router.patch('/:id/notes/:noteId/pin', requireRole(['Admin', 'Super Admin', 'Manager']), pinCustomerNote);
 router.delete('/:id/notes/:noteId', requireRole(['Admin', 'Super Admin', 'Manager']), deleteCustomerNote);
 
-// Sub-Resource Lookups
+// Sub-Resource Lookups & Address CRUD
 router.get('/:id/orders', requireRole(['Admin', 'Super Admin', 'Manager']), getCustomerOrders);
 router.get('/:id/addresses', requireRole(['Admin', 'Super Admin', 'Manager']), getCustomerAddresses);
+router.post('/:id/addresses', requireRole(['Admin', 'Super Admin', 'Manager']), addCustomerAddress);
+router.put('/:id/addresses/:addressId', requireRole(['Admin', 'Super Admin', 'Manager']), updateCustomerAddress);
+router.delete('/:id/addresses/:addressId', requireRole(['Admin', 'Super Admin', 'Manager']), deleteCustomerAddress);
+router.patch('/:id/addresses/:addressId/default', requireRole(['Admin', 'Super Admin', 'Manager']), setDefaultCustomerAddress);
 router.get('/:id/activity', requireRole(['Admin', 'Super Admin', 'Manager']), getCustomerActivity);
 router.get('/:id/reviews', requireRole(['Admin', 'Super Admin', 'Manager']), getCustomerReviews);
 router.get('/:id/wishlist', requireRole(['Admin', 'Super Admin', 'Manager']), getCustomerWishlist);

@@ -14,8 +14,8 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 export const upload = {
   single: (
     fieldname: string,
-    maxSize: number = 10 * 1024 * 1024,
-    allowedExtensions: RegExp = /jpeg|jpg|png|gif|webp|svg|csv/,
+    maxSize: number = 25 * 1024 * 1024,
+    allowedExtensions: RegExp = /jpeg|jpg|png|gif|webp|svg|csv|pdf|doc|docx|zip|rar|txt|stl|step|stp|3mf/i,
   ) => {
     return (req: Request, res: Response, next: NextFunction) => {
       const contentType = req.headers["content-type"] || "";
@@ -62,7 +62,7 @@ export const upload = {
             mimetype,
           );
 
-          if (name !== fieldname) {
+          if (name !== fieldname && name !== 'document' && name !== 'file' && name !== 'image') {
             console.log(
               "[UPLOAD] field mismatch, expected:",
               fieldname,
@@ -77,12 +77,21 @@ export const upload = {
 
           // Validate mime type and extension
           const extName = path.extname(originalname).toLowerCase();
-          const mimeTypeValid = allowedExtensions.test(mimetype);
           const extNameValid =
             allowedExtensions.test(extName) ||
             allowedExtensions.test(originalname.toLowerCase());
+          const mimeTypeValid =
+            allowedExtensions.test(mimetype) ||
+            mimetype.includes('image') ||
+            mimetype.includes('pdf') ||
+            mimetype.includes('document') ||
+            mimetype.includes('msword') ||
+            mimetype.includes('zip') ||
+            mimetype.includes('compressed') ||
+            mimetype.includes('text') ||
+            mimetype.includes('octet-stream');
 
-          if (!mimeTypeValid || !extNameValid) {
+          if (!extNameValid && !mimeTypeValid) {
             console.log("[UPLOAD] invalid mime/ext:", mimetype, originalname);
             errorOccurred = true;
             fileStream.resume();

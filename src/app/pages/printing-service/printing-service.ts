@@ -92,10 +92,13 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   uploadProgress = signal<number | null>(null);
 
   // Customer details
-  custName = signal<string>("Sumit Sharma");
-  custPhone = signal<string>("9876543210");
-  custEmail = signal<string>("sumit@3dgalaxy.co.in");
+  custName = signal<string>("");
+  custPhone = signal<string>("");
+  custEmail = signal<string>("");
   notesText = signal<string>("");
+
+  isLoggedIn = computed(() => !!this.ds.userProfile());
+  userProfile = computed(() => this.ds.userProfile());
 
   // 3D Viewport states
   showGrid = signal<boolean>(true);
@@ -245,12 +248,20 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   });
 
   constructor() {
-    const u = this.ds.activeUser();
-    if (u) {
-      this.custName.set(u.name);
-      this.custPhone.set(u.phone || "");
-      this.custEmail.set(u.email);
-    }
+    effect(() => {
+      const u = this.ds.userProfile();
+      if (u) {
+        this.custName.set(u.name || "");
+        this.custEmail.set(u.email || "");
+        this.custPhone.set(u.phone || "");
+      } else {
+        if (typeof window !== "undefined") {
+          this.custName.set(localStorage.getItem("3dg_guest_name") || "");
+          this.custEmail.set(localStorage.getItem("3dg_guest_email") || "");
+          this.custPhone.set(localStorage.getItem("3dg_guest_phone") || "");
+        }
+      }
+    });
 
     // Effect to auto-save selected options locally
     effect(() => {
@@ -1209,16 +1220,45 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
+    const isGuest = !this.isLoggedIn();
+    if (isGuest) {
+      if (!this.custName().trim()) {
+        this.toastService.error("Please enter your full name.");
+        return;
+      }
+      if (!this.custEmail().trim() || !this.custEmail().includes("@")) {
+        this.toastService.error("Please enter a valid email address.");
+        return;
+      }
+      if (!this.custPhone().trim() || this.custPhone().trim().length < 10) {
+        this.toastService.error("Please enter a valid mobile number.");
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("3dg_guest_name", this.custName().trim());
+        localStorage.setItem("3dg_guest_email", this.custEmail().trim());
+        localStorage.setItem("3dg_guest_phone", this.custPhone().trim());
+      }
+    } else {
+      const profile = this.userProfile();
+      if (profile) {
+        if (!this.custName()) this.custName.set(profile.name || "Valued Account");
+        if (!this.custEmail()) this.custEmail.set(profile.email || "");
+        if (!this.custPhone()) this.custPhone.set(profile.phone || "");
+      }
+    }
+
     this.isSubmitting.set(true);
-    const user = this.ds.activeUser();
+    const profile = this.userProfile();
     const stlFile = this.rawStlFile();
 
     const postEnquiry = (fileBase64: string) => {
       const payload = {
-        userId: (user as any)?.id || null,
-        customerName: this.custName() || user?.name || "Valued Customer",
-        customerPhone: this.custPhone() || user?.phone || "",
-        customerEmail: this.custEmail() || user?.email || "customer@example.com",
+        userId: profile?.id || null,
+        customerName: this.custName().trim() || profile?.name || "Valued Customer",
+        customerPhone: this.custPhone().trim() || profile?.phone || "",
+        customerEmail: this.custEmail().trim() || profile?.email || "customer@example.com",
         modelName: this.selectedFileName(),
         fileSize: this.selectedFileSize(),
         fileBase64,

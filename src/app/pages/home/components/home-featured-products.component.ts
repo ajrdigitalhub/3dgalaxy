@@ -46,7 +46,7 @@ import { firstValueFrom } from "rxjs";
       >
         <div class="space-y-1">
           <h2
-            class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display"
+            class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display"
           >
             Precision Catalog
           </h2>
@@ -217,7 +217,7 @@ import { firstValueFrom } from "rxjs";
                   <!-- Offer/Discount Badge -->
                   @if (p.mrp && p.mrp > p.activePrice) {
                     <span
-                      class="absolute top-3 left-3 px-2.5 py-1 bg-orange-600 text-white text-[9px] font-black rounded-lg uppercase tracking-wider z-10 shadow-md"
+                      class="absolute top-3 left-3 px-2.5 py-1 bg-theme-primary text-white text-[9px] font-black rounded-lg uppercase tracking-wider z-10 shadow-md"
                     >
                       {{ getDiscountPercent(p) }}% OFF
                     </span>
@@ -249,12 +249,12 @@ import { firstValueFrom } from "rxjs";
                 <!-- Product Details -->
                 <div class="flex-1 flex flex-col space-y-2 text-left">
                   <span
-                    class="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500"
+                    class="text-[9px] font-black uppercase tracking-[0.2em] text-theme-primary"
                     >{{ p.brand }}</span
                   >
                   <a
                     [routerLink]="['/product', p.slug]"
-                    class="block text-sm font-black text-neutral-800 dark:text-neutral-100 leading-snug hover:text-orange-500 min-h-[40px] line-clamp-2 transition-colors font-display"
+                    class="block text-sm font-black text-neutral-800 dark:text-neutral-100 leading-snug hover:text-theme-primary min-h-[40px] line-clamp-2 transition-colors font-display"
                   >
                     {{ p.name }}
                   </a>
@@ -280,14 +280,18 @@ import { firstValueFrom } from "rxjs";
                         >
                       }
                     </div>
-                    <div
-                      class="flex items-center gap-1 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-md"
-                    >
-                      <mat-icon class="scale-75 -mr-1">star</mat-icon>
-                      <span class="text-[10px] font-black">{{
-                        p.calculatedRating
-                      }}</span>
-                    </div>
+                    @if (p.ratingCount > 0 || p.calculatedRating > 0) {
+                      <div
+                        class="flex items-center gap-1 bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-md"
+                      >
+                        <mat-icon class="scale-75 -mr-1">star</mat-icon>
+                        <span class="text-[10px] font-black">{{ p.calculatedRating }} ({{ p.ratingCount }})</span>
+                      </div>
+                    } @else {
+                      <div class="flex items-center gap-1 text-neutral-400 dark:text-neutral-500 px-2 py-0.5 rounded-md text-[10px]">
+                        <span>No reviews</span>
+                      </div>
+                    }
                   </div>
 
                   <!-- CTAs -->
@@ -295,7 +299,7 @@ import { firstValueFrom } from "rxjs";
                     <button
                       (click)="$event.stopPropagation(); buyNow(p)"
                       [disabled]="p.stock <= 0"
-                      class="h-9 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md shadow-orange-500/10 cursor-pointer disabled:opacity-50"
+                      class="h-9 bg-theme-gradient hover:opacity-90 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md cursor-pointer disabled:opacity-50"
                     >
                       Buy Now
                     </button>
@@ -401,19 +405,22 @@ export class HomeFeaturedProductsComponent implements OnInit {
       const price = isDealer
         ? p.dealerPrice || p.dealer_price || p.salePrice || p.sale_price
         : p.salePrice || p.sale_price || p.basePrice || p.mrp;
-      let avgRating = p.avgRating;
-      if (!avgRating) {
-        if (!p.reviews || p.reviews.length === 0) {
-          avgRating = 4.5;
-        } else {
-          const sum = p.reviews.reduce((acc, r) => acc + r.rating, 0);
-          avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
-        }
+      const reviewsList = Array.isArray(p.reviews) ? p.reviews : [];
+      let avgRating = 0;
+      let ratingCount = 0;
+      if (reviewsList.length > 0) {
+        const sum = reviewsList.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
+        avgRating = Math.round((sum / reviewsList.length) * 10) / 10;
+        ratingCount = reviewsList.length;
+      } else if (typeof p.avgRating === "number" && p.avgRating > 0) {
+        avgRating = Math.round(p.avgRating * 10) / 10;
+        ratingCount = p.ratingCount || 0;
       }
       return {
         ...p,
         activePrice: price,
         calculatedRating: avgRating,
+        ratingCount,
       };
     });
 

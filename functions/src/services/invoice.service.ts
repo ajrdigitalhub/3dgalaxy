@@ -296,8 +296,13 @@ export class InvoiceService {
     userId: string | null = null,
     options: InvoiceOptions = {}
   ): Promise<any> {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: orderId },
+          { orderNumber: orderId }
+        ]
+      },
       include: {
         customer: true,
         shippingAddress: true,
@@ -315,13 +320,15 @@ export class InvoiceService {
       throw new Error('Order not found');
     }
 
+    const targetOrderId = order.id;
+
     let invoice = await prisma.invoice.findUnique({
-      where: { orderId },
+      where: { orderId: targetOrderId },
     });
 
     // Reuse cached invoice if not forcing regeneration
     if (invoice && !options.forceRegenerate && invoice.pdfDownloadUrl) {
-      this.logAudit(userId, 'INVOICE_VIEWED', orderId, { invoiceNumber: invoice.invoiceNumber });
+      this.logAudit(userId, 'INVOICE_VIEWED', targetOrderId, { invoiceNumber: invoice.invoiceNumber });
       return invoice;
     }
 
@@ -334,13 +341,18 @@ export class InvoiceService {
     // Build PDF Buffer
     const pdfBuffer = await this.buildInvoicePDFBuffer(order, invoiceNumber, invoiceStatus);
 
-    // Upload to Firebase Storage
-    const storagePath = `invoices/${order.orderNumber || order.id}/invoice.pdf`;
-    const downloadUrl = await uploadFileToStorage(pdfBuffer, storagePath, 'application/pdf');
+    // Upload to Firebase Storage with error handling
+    const storagePath = `invoices/${order.orderNumber || targetOrderId}/invoice.pdf`;
+    let downloadUrl: string | null = null;
+    try {
+      downloadUrl = await uploadFileToStorage(pdfBuffer, storagePath, 'application/pdf');
+    } catch (uploadErr: any) {
+      console.warn('Invoice PDF storage upload warning:', uploadErr?.message);
+    }
 
     // Upsert Invoice Record in DB
     invoice = await prisma.invoice.upsert({
-      where: { orderId },
+      where: { orderId: targetOrderId },
       update: {
         invoiceStatus,
         pdfStoragePath: storagePath,
@@ -350,7 +362,7 @@ export class InvoiceService {
         generatedBy: userId || 'SYSTEM',
       },
       create: {
-        orderId,
+        orderId: targetOrderId,
         invoiceNumber,
         invoiceStatus,
         pdfStoragePath: storagePath,
@@ -361,17 +373,19 @@ export class InvoiceService {
     });
 
     // Also update order.invoiceUrl for legacy compatibility
-    try {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { invoiceUrl: downloadUrl },
-      });
-    } catch (err: any) {
-      console.warn('Legacy order invoiceUrl update warning:', err.message);
+    if (downloadUrl) {
+      try {
+        await prisma.order.update({
+          where: { id: targetOrderId },
+          data: { invoiceUrl: downloadUrl },
+        });
+      } catch (err: any) {
+        console.warn('Legacy order invoiceUrl update warning:', err.message);
+      }
     }
 
     const action = options.forceRegenerate ? 'INVOICE_REGENERATED' : 'INVOICE_GENERATED';
-    this.logAudit(userId, action, orderId, { invoiceNumber, version: invoice.version });
+    this.logAudit(userId, action, targetOrderId, { invoiceNumber, version: invoice.version });
 
     return invoice;
   }

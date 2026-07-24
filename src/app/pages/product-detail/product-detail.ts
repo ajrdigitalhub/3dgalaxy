@@ -53,6 +53,10 @@ export class ProductDetail {
   isLoadingProduct = signal(true);
   isReviewModalOpen = signal(false);
   reviewsHighlight = signal(false);
+  canReviewProduct = signal(false);
+  purchaseOrderId = signal<string>('');
+  alreadyReviewed = signal(false);
+  isCheckingReviewEligibility = signal(false);
   @ViewChild("relatedScroll") relatedScroll?: ElementRef<HTMLElement>;
   @ViewChild("galleryScroll") galleryScroll?: ElementRef<HTMLElement>;
   reviewDraft = signal({
@@ -506,6 +510,78 @@ export class ProductDetail {
     );
   });
 
+  configuredBadges = computed(() => {
+    const p = this.product();
+    if (!p) return [];
+
+    const badges: { icon: string; title: string; subtitle?: string; color: string }[] = [];
+
+    // 1. Warranty (Only if configured in Admin Product settings)
+    const warrantyPeriod = p.warranty?.warrantyPeriod || (typeof p.warranty === 'string' ? p.warranty : null);
+    if (warrantyPeriod && String(warrantyPeriod).trim().length > 0) {
+      badges.push({
+        icon: 'verified_user',
+        title: String(warrantyPeriod).trim().toUpperCase(),
+        subtitle: 'Official Guarantee',
+        color: 'from-amber-400 via-orange-500 to-amber-600'
+      });
+    }
+
+    // 2. Tech Support (Only if warranty description / support info is set in Admin)
+    const hasSupport = p.warranty?.warrantyDescription || p.supportDescription;
+    if (hasSupport) {
+      badges.push({
+        icon: 'support_agent',
+        title: 'TECH SUPPORT',
+        subtitle: '24/7 Expert Help',
+        color: 'from-cyan-400 via-blue-500 to-indigo-600'
+      });
+    }
+
+    // 3. Fast Delivery (Only if shipping info or delivery time is set in Admin)
+    const deliveryTime = p.shipping?.deliveryTime || (p.estimatedDeliveryDays ? `${p.estimatedDeliveryDays} Days Delivery` : null);
+    if (deliveryTime && String(deliveryTime).trim().length > 0) {
+      badges.push({
+        icon: 'local_shipping',
+        title: String(deliveryTime).trim().toUpperCase(),
+        subtitle: 'Insured Logistics',
+        color: 'from-emerald-400 via-teal-500 to-cyan-600'
+      });
+    }
+
+    // 4. Secure Pay / COD (Only if explicitly enabled in Admin)
+    if (p.codAvailable === true) {
+      badges.push({
+        icon: 'security',
+        title: 'SECURE PAY / COD',
+        subtitle: 'Verified Checkout',
+        color: 'from-purple-400 via-fuchsia-500 to-pink-600'
+      });
+    }
+
+    // 5. Custom Features / Badges configured in Admin
+    if (Array.isArray(p.features) && p.features.length > 0) {
+      p.features.forEach((feat: any) => {
+        if (typeof feat === 'string' && feat.trim()) {
+          badges.push({
+            icon: 'star',
+            title: feat.trim().toUpperCase(),
+            color: 'from-orange-400 to-amber-500'
+          });
+        } else if (feat && feat.title) {
+          badges.push({
+            icon: feat.icon || 'star',
+            title: String(feat.title).trim().toUpperCase(),
+            subtitle: feat.description || feat.subtitle || '',
+            color: 'from-indigo-400 to-purple-600'
+          });
+        }
+      });
+    }
+
+    return badges;
+  });
+
   isProductOutOfStock = computed(() => {
     const p = this.product();
     if (!p) return true;
@@ -610,6 +686,22 @@ export class ProductDetail {
   productDownloads = computed(
     () => this.product()?.downloads || (this.product() as any)?.downloads || [],
   );
+
+  getFileIcon(urlOrTitle: string): string {
+    const s = (urlOrTitle || '').toLowerCase();
+    if (s.includes('.pdf') || s.includes('pdf')) return 'picture_as_pdf';
+    if (s.includes('.zip') || s.includes('.rar') || s.includes('.7z')) return 'folder_zip';
+    if (s.includes('.stl') || s.includes('.step') || s.includes('.stp') || s.includes('.3mf')) return 'view_in_ar';
+    if (s.includes('.doc') || s.includes('.txt')) return 'description';
+    return 'insert_drive_file';
+  }
+
+  getFileExt(urlOrTitle: string): string {
+    const match = (urlOrTitle || '').match(/\.([a-zA-Z0-9]+)(\?.*)?$/);
+    if (match && match[1]) return match[1].toUpperCase() + ' FILE';
+    return 'DOCUMENT FILE';
+  }
+
   productFaqs = computed(
     () => this.product()?.faqs || this.product()?.qnas || [],
   );
@@ -956,13 +1048,18 @@ export class ProductDetail {
 
   getRelatedProductRating(product: Product): string {
     const reviews = product.reviews || [];
-    if (!reviews.length) return "New";
-    const sum = reviews.reduce(
-      (acc: number, review: any) =>
-        acc + Number(review.rating || review.stars || 0),
-      0,
-    );
-    return (sum / reviews.length).toFixed(1);
+    if (reviews.length > 0) {
+      const sum = reviews.reduce(
+        (acc: number, review: any) =>
+          acc + Number(review.rating || review.stars || 0),
+        0,
+      );
+      return (sum / reviews.length).toFixed(1);
+    }
+    if (typeof product.avgRating === "number" && product.avgRating > 0) {
+      return product.avgRating.toFixed(1);
+    }
+    return "0.0";
   }
 
   constructor() {
@@ -1021,6 +1118,10 @@ export class ProductDetail {
                 merged,
                 detailedProd.relatedProducts || merged.relatedProducts || [],
               );
+              // Check review eligibility after product loads
+              if (merged.id) {
+                this.checkPurchaseEligibility(merged.id);
+              }
             }
           })
           .catch((err) =>
@@ -1426,6 +1527,19 @@ export class ProductDetail {
   }
 
   openReviewModal() {
+    if (this.ds.userRole() === 'guest') {
+      this.toastService.info('Please log in to review this product.');
+      this.router.navigate(['/login']);
+      return;
+    }
+    if (this.alreadyReviewed()) {
+      this.toastService.info('You have already reviewed this product.');
+      return;
+    }
+    if (!this.canReviewProduct()) {
+      this.toastService.info('Only verified purchasers can review this product. Purchase and receive this product first.');
+      return;
+    }
     this.isReviewModalOpen.set(true);
   }
 
@@ -1452,15 +1566,20 @@ export class ProductDetail {
       return;
     }
 
+    if (!this.canReviewProduct()) {
+      this.toastService.error(
+        "Only verified purchasers can review this product.",
+      );
+      return;
+    }
+
     this.isSubmittingReview.set(true);
     this.reviewDraft.update((value) => ({ ...value, uploading: true }));
 
     try {
       const payload: any = {
         productId,
-        orderId:
-          (this.router.getCurrentNavigation()?.extras?.state as any)?.orderId ||
-          "",
+        orderId: this.purchaseOrderId() || '',
         rating: draft.rating,
         title: draft.title,
         review: draft.comment,
@@ -1471,19 +1590,21 @@ export class ProductDetail {
       const res: any = await this.api.post("/reviews", payload).toPromise();
       if (res?.success) {
         this.toastService.success(
-          "Thanks! Your review has been submitted for approval.",
+          "Thanks! Your review has been submitted successfully.",
         );
         this.closeReviewModal();
         this.loadReviews(productId);
+        // Update eligibility — user has now reviewed
+        this.canReviewProduct.set(false);
+        this.alreadyReviewed.set(true);
       } else {
         this.toastService.error(
           res?.error || "Unable to submit your review right now.",
         );
       }
     } catch (error: any) {
-      this.toastService.error(
-        error?.message || "Unable to submit your review right now.",
-      );
+      const msg = error?.error?.error || error?.message || "Unable to submit your review right now.";
+      this.toastService.error(msg);
     } finally {
       this.isSubmittingReview.set(false);
       this.reviewDraft.update((value) => ({ ...value, uploading: false }));
@@ -1554,6 +1675,37 @@ export class ProductDetail {
   }
 
   isReviewEligible() {
-    return true;
+    return this.canReviewProduct();
+  }
+
+  async checkPurchaseEligibility(productId: string) {
+    if (this.ds.userRole() === 'guest') {
+      this.canReviewProduct.set(false);
+      this.purchaseOrderId.set('');
+      this.alreadyReviewed.set(false);
+      return;
+    }
+
+    this.isCheckingReviewEligibility.set(true);
+    try {
+      const res: any = await this.api
+        .get(`/reviews/purchase-check/${productId}`)
+        .toPromise();
+      if (res?.success) {
+        this.canReviewProduct.set(!!res.canReview);
+        this.purchaseOrderId.set(res.orderId || '');
+        this.alreadyReviewed.set(!!res.alreadyReviewed);
+      } else {
+        this.canReviewProduct.set(false);
+        this.purchaseOrderId.set('');
+        this.alreadyReviewed.set(false);
+      }
+    } catch (error) {
+      this.canReviewProduct.set(false);
+      this.purchaseOrderId.set('');
+      this.alreadyReviewed.set(false);
+    } finally {
+      this.isCheckingReviewEligibility.set(false);
+    }
   }
 }

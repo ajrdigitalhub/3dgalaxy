@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { getFirebaseDownloadUrl, uploadFileToStorage } from "../config/firebase";
+import os from "os";
+import { getFirebaseDownloadUrl, uploadFileToStorage, getStorageBucket } from "../config/firebase";
 import { NotificationService } from "../services/notification.service";
 
 export interface ServiceEnquiryTimeline {
@@ -110,35 +111,80 @@ export interface ServiceEnquiry {
   isDeleted?: boolean;
 }
 
-const STORAGE_SERVICES_DIR = path.resolve(__dirname, "../../storage/services");
-const DATA_DIR = path.resolve(__dirname, "../../data");
-const ENQUIRIES_FILE = path.join(DATA_DIR, "serviceEnquiries.json");
-const FILES_FILE = path.join(DATA_DIR, "serviceFiles.json");
+const PRIMARY_STORAGE_SERVICES_DIR = path.resolve(__dirname, "../../storage/services");
+const PRIMARY_DATA_DIR = path.resolve(__dirname, "../../data");
 
 function ensureServicesStorageFolder(trackingNumber: string, folderName: string): string {
-  const folderPath = path.join(STORAGE_SERVICES_DIR, trackingNumber, folderName);
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath, { recursive: true });
+  const primaryFolderPath = path.join(PRIMARY_STORAGE_SERVICES_DIR, trackingNumber, folderName);
+  try {
+    if (!fs.existsSync(primaryFolderPath)) {
+      fs.mkdirSync(primaryFolderPath, { recursive: true });
+    }
+    return primaryFolderPath;
+  } catch (primaryErr) {
+    console.warn(`[ensureServicesStorageFolder] Could not write to primary directory ${primaryFolderPath}, falling back to tmpdir:`, (primaryErr as any)?.message);
+    const tmpFolderPath = path.join(os.tmpdir(), "storage/services", trackingNumber, folderName);
+    try {
+      if (!fs.existsSync(tmpFolderPath)) {
+        fs.mkdirSync(tmpFolderPath, { recursive: true });
+      }
+    } catch (tmpErr) {
+      console.warn(`[ensureServicesStorageFolder] Fallback tmpdir creation failed:`, (tmpErr as any)?.message);
+    }
+    return tmpFolderPath;
   }
-  return folderPath;
+}
+
+function getStorageFilePath(filename: string): string {
+  const primaryFilePath = path.join(PRIMARY_DATA_DIR, filename);
+  const tmpFilePath = path.join(os.tmpdir(), "data", filename);
+
+  try {
+    if (fs.existsSync(primaryFilePath)) {
+      return primaryFilePath;
+    }
+    if (!fs.existsSync(PRIMARY_DATA_DIR)) {
+      fs.mkdirSync(PRIMARY_DATA_DIR, { recursive: true });
+    }
+    return primaryFilePath;
+  } catch {
+    try {
+      const tmpDataDir = path.join(os.tmpdir(), "data");
+      if (!fs.existsSync(tmpDataDir)) {
+        fs.mkdirSync(tmpDataDir, { recursive: true });
+      }
+    } catch {}
+    return tmpFilePath;
+  }
 }
 
 function ensureStorageFiles() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  const enquiriesFile = getStorageFilePath("serviceEnquiries.json");
+  const filesFile = getStorageFilePath("serviceFiles.json");
+
+  try {
+    if (!fs.existsSync(enquiriesFile)) {
+      fs.writeFileSync(enquiriesFile, JSON.stringify([], null, 2), "utf-8");
+    }
+  } catch (err) {
+    console.warn("[ensureStorageFiles] Could not write enquiries file:", err);
   }
-  if (!fs.existsSync(ENQUIRIES_FILE)) {
-    fs.writeFileSync(ENQUIRIES_FILE, JSON.stringify([], null, 2), "utf-8");
-  }
-  if (!fs.existsSync(FILES_FILE)) {
-    fs.writeFileSync(FILES_FILE, JSON.stringify([], null, 2), "utf-8");
+
+  try {
+    if (!fs.existsSync(filesFile)) {
+      fs.writeFileSync(filesFile, JSON.stringify([], null, 2), "utf-8");
+    }
+  } catch (err) {
+    console.warn("[ensureStorageFiles] Could not write files file:", err);
   }
 }
 
 function loadEnquiries(): ServiceEnquiry[] {
   try {
     ensureStorageFiles();
-    const data = fs.readFileSync(ENQUIRIES_FILE, "utf-8");
+    const enquiriesFile = getStorageFilePath("serviceEnquiries.json");
+    if (!fs.existsSync(enquiriesFile)) return [];
+    const data = fs.readFileSync(enquiriesFile, "utf-8");
     return JSON.parse(data || "[]");
   } catch (err) {
     console.error("Error reading serviceEnquiries.json", err);
@@ -149,7 +195,8 @@ function loadEnquiries(): ServiceEnquiry[] {
 function saveEnquiries(enquiries: ServiceEnquiry[]) {
   try {
     ensureStorageFiles();
-    fs.writeFileSync(ENQUIRIES_FILE, JSON.stringify(enquiries, null, 2), "utf-8");
+    const enquiriesFile = getStorageFilePath("serviceEnquiries.json");
+    fs.writeFileSync(enquiriesFile, JSON.stringify(enquiries, null, 2), "utf-8");
   } catch (err) {
     console.error("Error saving serviceEnquiries.json", err);
   }
@@ -158,7 +205,9 @@ function saveEnquiries(enquiries: ServiceEnquiry[]) {
 function loadFiles(): ServiceFile[] {
   try {
     ensureStorageFiles();
-    const data = fs.readFileSync(FILES_FILE, "utf-8");
+    const filesFile = getStorageFilePath("serviceFiles.json");
+    if (!fs.existsSync(filesFile)) return [];
+    const data = fs.readFileSync(filesFile, "utf-8");
     return JSON.parse(data || "[]");
   } catch (err) {
     console.error("Error reading serviceFiles.json", err);
@@ -169,7 +218,8 @@ function loadFiles(): ServiceFile[] {
 function saveFiles(files: ServiceFile[]) {
   try {
     ensureStorageFiles();
-    fs.writeFileSync(FILES_FILE, JSON.stringify(files, null, 2), "utf-8");
+    const filesFile = getStorageFilePath("serviceFiles.json");
+    fs.writeFileSync(filesFile, JSON.stringify(files, null, 2), "utf-8");
   } catch (err) {
     console.error("Error saving serviceFiles.json", err);
   }
@@ -224,7 +274,11 @@ export async function createServiceEnquiry(req: Request, res: Response): Promise
 
     if (body.fileBase64) {
       const buffer = Buffer.from(body.fileBase64.replace(/^data:.*;base64,/, ""), "base64");
-      fs.writeFileSync(filePath, buffer);
+      try {
+        fs.writeFileSync(filePath, buffer);
+      } catch (writeErr) {
+        console.warn("[createServiceEnquiry] Local file write warning:", writeErr);
+      }
       downloadUrl = await uploadFileToStorage(buffer, storagePath, "model/stl");
     }
 
@@ -358,8 +412,10 @@ export async function getServiceFileContent(req: Request, res: Response): Promis
     res.setHeader("Access-Control-Allow-Headers", "*");
 
     const possiblePaths = [
-      path.join(STORAGE_SERVICES_DIR, trackingNumber, folder, decodedFileName),
-      path.join(STORAGE_SERVICES_DIR, trackingNumber, folder, fileName),
+      path.join(PRIMARY_STORAGE_SERVICES_DIR, trackingNumber, folder, decodedFileName),
+      path.join(PRIMARY_STORAGE_SERVICES_DIR, trackingNumber, folder, fileName),
+      path.join(os.tmpdir(), "storage/services", trackingNumber, folder, decodedFileName),
+      path.join(os.tmpdir(), "storage/services", trackingNumber, folder, fileName),
     ];
 
     let foundPath = possiblePaths.find((p) => fs.existsSync(p));
@@ -367,10 +423,44 @@ export async function getServiceFileContent(req: Request, res: Response): Promis
     if (!foundPath) {
       const targetDir = ensureServicesStorageFolder(trackingNumber, folder);
       foundPath = path.join(targetDir, decodedFileName);
-      fs.writeFileSync(
-        foundPath,
-        `3D Galaxy Service File Telemetry for ${trackingNumber}\nFile: ${decodedFileName}\nCreated: ${new Date().toISOString()}`
-      );
+
+      let downloaded = false;
+      try {
+        const bucket = getStorageBucket();
+        if (bucket) {
+          const storagePath = `services/${trackingNumber}/${folder}/${decodedFileName}`;
+          const file = bucket.file(storagePath);
+          const [exists] = await file.exists();
+          if (exists) {
+            console.log(`[getServiceFileContent] Downloading ${storagePath} from Firebase Storage to ${foundPath}...`);
+            await file.download({ destination: foundPath });
+            downloaded = true;
+          } else {
+            // Try raw un-decoded filename
+            const rawStoragePath = `services/${trackingNumber}/${folder}/${fileName}`;
+            const rawFile = bucket.file(rawStoragePath);
+            const [rawExists] = await rawFile.exists();
+            if (rawExists) {
+              console.log(`[getServiceFileContent] Downloading ${rawStoragePath} from Firebase Storage to ${foundPath}...`);
+              await rawFile.download({ destination: foundPath });
+              downloaded = true;
+            }
+          }
+        }
+      } catch (fbErr: any) {
+        console.error("[getServiceFileContent] Firebase Storage download failure:", fbErr.message);
+      }
+
+      if (!downloaded) {
+        try {
+          fs.writeFileSync(
+            foundPath,
+            `3D Galaxy Service File Telemetry for ${trackingNumber}\nFile: ${decodedFileName}\nCreated: ${new Date().toISOString()}`
+          );
+        } catch (writeErr) {
+          console.warn("[getServiceFileContent] Local telemetry file write warning:", writeErr);
+        }
+      }
     }
 
     res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(decodedFileName)}"`);
@@ -576,7 +666,11 @@ export async function uploadServiceFile(req: Request, res: Response): Promise<vo
 
     if (fileBase64) {
       const buffer = Buffer.from(fileBase64.replace(/^data:.*;base64,/, ""), "base64");
-      fs.writeFileSync(filePath, buffer);
+      try {
+        fs.writeFileSync(filePath, buffer);
+      } catch (writeErr) {
+        console.warn("[uploadServiceFile] Local file write warning:", writeErr);
+      }
       fileDownloadUrl = await uploadFileToStorage(buffer, storagePath, "application/octet-stream");
     }
 
@@ -822,7 +916,7 @@ export async function getAdminServiceEnquiries(req: Request, res: Response): Pro
 export async function updateAdminServiceEnquiry(req: Request, res: Response): Promise<void> {
   try {
     const id = req.params.id.trim().toUpperCase();
-    const { status, assignedStaff, expectedCompletionDate, adminRemarks } = req.body || {};
+    const { status, assignedStaff, expectedCompletionDate, adminRemarks, estimatedCost } = req.body || {};
     const enquiries = loadEnquiries();
 
     const index = enquiries.findIndex((e) => e.id.toUpperCase() === id);
@@ -852,6 +946,20 @@ export async function updateAdminServiceEnquiry(req: Request, res: Response): Pr
         title: `Service Update: ${STATUS_LABELS[status] || status}`,
         body: `Your 3D Print Request #${enquiry.id} status is now "${STATUS_LABELS[status] || status}".`,
       });
+    }
+
+    if (estimatedCost !== undefined && estimatedCost !== null && !isNaN(Number(estimatedCost))) {
+      const newCost = Number(estimatedCost);
+      if (enquiry.estimatedCost !== newCost) {
+        enquiry.estimatedCost = newCost;
+        enquiry.timeline.push({
+          status: enquiry.status,
+          label: "Estimated Cost Updated",
+          timestamp: now,
+          remarks: `Estimated quote price updated to ₹${newCost.toLocaleString("en-IN")} by Admin Staff.`,
+          updatedBy: "Admin Staff",
+        });
+      }
     }
 
     if (assignedStaff) enquiry.assignedStaff = assignedStaff;

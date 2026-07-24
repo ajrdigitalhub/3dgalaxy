@@ -7,6 +7,36 @@ import {
 
 const router = Router();
 
+// Helper: Check if a user has a delivered order containing a specific product
+async function hasVerifiedPurchase(
+  userId: string,
+  productId: string,
+): Promise<{ verified: boolean; orderId?: string }> {
+  // Find the customer record for this user
+  const customer = await prisma.customer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+  if (!customer) return { verified: false };
+
+  // Find a delivered order containing the product
+  const orderItem = await prisma.orderItem.findFirst({
+    where: {
+      productId,
+      order: {
+        customerId: customer.id,
+        status: { in: ["DELIVERED", "Delivered", "delivered"] },
+      },
+    },
+    select: { orderId: true },
+  });
+
+  if (orderItem) {
+    return { verified: true, orderId: orderItem.orderId };
+  }
+  return { verified: false };
+}
+
 router.get("/products/:id/reviews", async (req, res) => {
   try {
     const productId = req.params.id;
@@ -16,28 +46,84 @@ router.get("/products/:id/reviews", async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    const mapped = reviews.map((review: any) => ({
-      id: review.id,
-      productId: review.productId,
-      userName: review.user
-        ? `${review.user.firstName || ""} ${review.user.lastName || ""}`.trim()
-        : "Customer",
-      rating: review.rating,
-      title: review.title || "Great purchase",
-      comment: review.comment || "",
-      date: review.createdAt.toISOString(),
-      verified: true,
-      images: [],
-      recommended: true,
-      helpfulCount: 0,
-      sellerReply: null,
-    }));
+    // Check verified purchase status for each reviewer
+    const mapped = await Promise.all(
+      reviews.map(async (review: any) => {
+        let isVerified = false;
+        if (review.userId) {
+          const purchaseCheck = await hasVerifiedPurchase(
+            review.userId,
+            productId,
+          );
+          isVerified = purchaseCheck.verified;
+        }
+        return {
+          id: review.id,
+          productId: review.productId,
+          userName: review.user
+            ? `${review.user.firstName || ""} ${review.user.lastName || ""}`.trim()
+            : "Customer",
+          rating: review.rating,
+          title: review.title || "Great purchase",
+          comment: review.comment || "",
+          date: review.createdAt.toISOString(),
+          verified: isVerified,
+          images: [],
+          recommended: true,
+          helpfulCount: 0,
+          sellerReply: null,
+        };
+      }),
+    );
 
     return res.status(200).json({ success: true, data: mapped });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Check if the authenticated user has purchased a specific product (delivered)
+router.get(
+  "/reviews/purchase-check/:productId",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const userId = (req as any).user?.id;
+      const productId = req.params.productId;
+
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, canReview: false, error: "Not authenticated" });
+      }
+
+      // Check if user already reviewed this product
+      const existingReview = await prisma.productReview.findFirst({
+        where: { productId, userId },
+      });
+      if (existingReview) {
+        return res.status(200).json({
+          success: true,
+          canReview: false,
+          alreadyReviewed: true,
+          error: "You have already reviewed this product",
+        });
+      }
+
+      const result = await hasVerifiedPurchase(userId, productId);
+      return res.status(200).json({
+        success: true,
+        canReview: result.verified,
+        orderId: result.orderId || null,
+        alreadyReviewed: false,
+      });
+    } catch (error: any) {
+      return res
+        .status(500)
+        .json({ success: false, canReview: false, error: error.message });
+    }
+  },
+);
 
 router.get("/orders/:id/review-status", async (req, res) => {
   try {
@@ -62,7 +148,7 @@ router.get("/orders/:id/review-status", async (req, res) => {
   }
 });
 
-router.post("/reviews", optionalAuthenticateToken, async (req, res) => {
+router.post("/reviews", authenticateToken, async (req, res) => {
   try {
     const {
       productId,
@@ -73,9 +159,14 @@ router.post("/reviews", optionalAuthenticateToken, async (req, res) => {
       images = [],
       video,
       recommended = true,
-      customerName,
     } = req.body;
     const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ success: false, error: "Authentication required to submit a review" });
+    }
 
     if (!productId || !rating) {
       return res
@@ -86,24 +177,20 @@ router.post("/reviews", optionalAuthenticateToken, async (req, res) => {
         });
     }
 
-    if (orderId) {
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
-      if (!order) {
-        return res.status(404).json({ success: false, error: "Order not found" });
-      }
-
-      if ((order.status || "").toLowerCase() !== "delivered") {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Only delivered orders can be reviewed",
-          });
-      }
+    // Verify the user has actually purchased and received this product
+    const purchaseCheck = await hasVerifiedPurchase(userId, productId);
+    if (!purchaseCheck.verified) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: "Only verified purchasers can review this product. Purchase and receive this product first.",
+        });
     }
 
+    // Check for duplicate reviews
     const existing = await prisma.productReview.findFirst({
-      where: { productId, userId: userId || undefined },
+      where: { productId, userId },
     });
     if (existing) {
       return res
@@ -114,7 +201,7 @@ router.post("/reviews", optionalAuthenticateToken, async (req, res) => {
     const created = await prisma.productReview.create({
       data: {
         productId,
-        userId: userId || null,
+        userId,
         rating: Number(rating),
         title: title || "Great purchase",
         comment: review || "",

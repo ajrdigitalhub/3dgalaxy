@@ -148,7 +148,7 @@
 
     <!-- RIGHT: PURCHASING -->
     <div
-      class="space-y-6 lg:space-y-10 pb-28 md:pb-0 relative z-10"
+      class="space-y-6 lg:space-y-10 pb-28 md:pb-0 relative z-10 lg:sticky lg:top-24 lg:self-start"
       appScrollReveal="fade"
     >
       <div class="space-y-4">
@@ -468,48 +468,44 @@
       </div>
       }
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
-        <div
-          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
-        >
-          <mat-icon class="text-neutral-700 dark:text-neutral-300"
-            >verified_user</mat-icon
+      <!-- ADMIN CONFIGURED PRODUCT BADGES / HIGHLIGHTS (Fantasy UI) -->
+      @if (configuredBadges().length > 0) {
+      <div class="pt-4 animate-fadeIn">
+        <div [class]="configuredBadges().length === 1 ? 'grid grid-cols-1 max-w-xs mx-auto gap-4' : configuredBadges().length === 2 ? 'grid grid-cols-2 gap-3 sm:gap-4' : configuredBadges().length === 3 ? 'grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4' : 'grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4'">
+          @for (b of configuredBadges(); track b.title; let idx = $index) {
+          <div
+            class="fantasy-card group relative p-4 sm:p-5 rounded-2xl md:rounded-3xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 hover:border-orange-500/50 shadow-sm hover:shadow-xl flex flex-col items-center justify-center text-center gap-3.5 cursor-pointer"
+            appScrollReveal="scale-in"
+            [delay]="idx * 100"
           >
-          <span class="text-[10px] font-bold text-neutral-500 uppercase"
-            >{{ p.warranty?.warrantyPeriod || '1 Year Warranty' }}</span
-          >
-        </div>
-        <div
-          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
-        >
-          <mat-icon class="text-neutral-700 dark:text-neutral-300"
-            >support_agent</mat-icon
-          >
-          <span class="text-[10px] font-bold text-neutral-500 uppercase"
-            >Tech Support</span
-          >
-        </div>
-        <div
-          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
-        >
-          <mat-icon class="text-neutral-700 dark:text-neutral-300"
-            >local_shipping</mat-icon
-          >
-          <span class="text-[10px] font-bold text-neutral-500 uppercase"
-            >{{ p.shipping?.deliveryTime || 'Fast Delivery' }}</span
-          >
-        </div>
-        <div
-          class="flex flex-col items-center justify-center text-center gap-2 p-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl border border-neutral-100 dark:border-neutral-800/50 hover:border-orange-500/20 transition-colors"
-        >
-          <mat-icon class="text-neutral-700 dark:text-neutral-300"
-            >security</mat-icon
-          >
-          <span class="text-[10px] font-bold text-neutral-500 uppercase"
-            >Secure Pay</span
-          >
+            <!-- Ambient Glowing Orb behind icon -->
+            <div class="relative flex items-center justify-center">
+              <div class="absolute inset-0 rounded-2xl bg-gradient-to-r {{ b.color }} opacity-35 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all duration-500"></div>
+              
+              <!-- Floating Fantasy Icon Container -->
+              <div class="fantasy-icon-anim relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br {{ b.color }} p-[1.5px] shadow-lg group-hover:scale-110 transition-transform duration-500">
+                <div class="w-full h-full bg-white dark:bg-neutral-950 rounded-[14px] flex items-center justify-center text-neutral-900 dark:text-white">
+                  <mat-icon class="scale-110 sm:scale-125 text-neutral-800 dark:text-white transition-transform duration-300 group-hover:scale-135">{{ b.icon }}</mat-icon>
+                </div>
+              </div>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <div class="space-y-0.5 text-center">
+              <span class="block text-[11px] sm:text-xs font-black text-neutral-900 dark:text-white uppercase tracking-wider font-display drop-shadow-xs group-hover:text-theme-primary transition-colors">
+                {{ b.title }}
+              </span>
+              @if (b.subtitle) {
+                <span class="block text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest flex items-center justify-center gap-1">
+                  <span class="text-theme-primary text-[8px]">✦</span> {{ b.subtitle }}
+                </span>
+              }
+            </div>
+          </div>
+          }
         </div>
       </div>
+      }
     </div>
   </div>
 
@@ -603,26 +599,33 @@
       <div class="animate-slideUp max-w-4xl">
         @if (productDownloads().length) {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          @for (d of productDownloads(); track d.id || d.title; let idx =
-          $index) {
+          @for (d of productDownloads(); track d.id || d.title; let idx = $index) {
           <a
             [href]="d.fileUrl || '#'"
             target="_blank"
+            download
             appTilt
             [tiltMax]="4"
-            class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group group-hover:text-[#d65108]"
+            class="flex items-center justify-between p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-[1.5rem] hover:border-[#d65108] hover:shadow-lg transition-all group shrink-0 cursor-pointer"
           >
-            <div
-              class="flex items-center gap-4 text-neutral-800 dark:text-neutral-200"
-            >
-              <mat-icon class="text-neutral-400 group-hover:text-[#d65108]"
-                >insert_drive_file</mat-icon
-              >
-              <span class="font-bold">{{ d.title }}</span>
+            <div class="flex items-center gap-4 text-neutral-800 dark:text-neutral-200 min-w-0 pr-2">
+              <div class="h-12 w-12 rounded-2xl bg-orange-500/10 dark:bg-orange-500/20 text-[#d65108] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <mat-icon class="text-2xl">{{ getFileIcon(d.fileUrl || d.title) }}</mat-icon>
+              </div>
+              <div class="min-w-0">
+                <span class="font-bold text-sm text-neutral-900 dark:text-white group-hover:text-[#d65108] transition-colors block truncate">{{ d.title || 'Product Documentation' }}</span>
+                <span class="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block mt-0.5">{{ getFileExt(d.fileUrl || d.title) }}</span>
+              </div>
             </div>
-            <mat-icon class="text-neutral-300">download</mat-icon>
+            <div class="h-10 w-10 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 group-hover:bg-[#d65108] group-hover:text-white flex items-center justify-center transition-all shrink-0">
+              <mat-icon class="text-base">download</mat-icon>
+            </div>
           </a>
           }
+        </div>
+        } @else {
+        <div class="p-12 text-center text-neutral-400 text-sm font-medium border border-dashed border-neutral-200 dark:border-neutral-800 rounded-3xl">
+          No user manuals or documentation configured for this product.
         </div>
         }
       </div>
@@ -662,15 +665,34 @@
               <p class="text-sm text-neutral-500">
                 Based on {{ reviewStats().total }} verified reviews
               </p>
+              @if (canReviewProduct()) {
+              <button
+                type="button"
+                (click)="openReviewModal()"
+                class="inline-flex items-center justify-center rounded-full bg-theme-gradient px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              >
+                <mat-icon class="mr-2 text-base">edit</mat-icon>
+                Rate & Review Product
+              </button>
+              } @else if (ds.userRole() === 'guest') {
+              <div class="flex items-center gap-2 rounded-full border border-neutral-200 dark:border-neutral-800 px-4 py-2.5">
+                <mat-icon class="text-base text-neutral-400">lock</mat-icon>
+                <span class="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                  <a routerLink="/login" class="text-theme-primary hover:underline">Log in</a> to review this product
+                </span>
+              </div>
+              } @else if (alreadyReviewed()) {
+              <div class="flex items-center gap-2 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2.5">
+                <mat-icon class="text-base text-emerald-500">check_circle</mat-icon>
+                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">You've already reviewed this product</span>
+              </div>
+              } @else {
+              <div class="flex items-center gap-2 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-500/10 px-4 py-2.5">
+                <mat-icon class="text-base text-amber-500">verified_user</mat-icon>
+                <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">Only verified purchasers can review</span>
+              </div>
+              }
             </div>
-            <button
-              type="button"
-              (click)="openReviewModal()"
-              class="inline-flex items-center justify-center rounded-full bg-[#d65108] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#b74306]"
-            >
-              <mat-icon class="mr-2 text-base">edit</mat-icon>
-              Rate & Review Product
-            </button>
           </div>
         </div>
 

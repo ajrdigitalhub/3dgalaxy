@@ -178,11 +178,11 @@
               </div>
 
               <div class="relative mt-1">
-                <select [value]="ord.status" (change)="updateOrderStatus($any($event.target).value)"
+                <select (change)="updateOrderStatus($any($event.target).value)"
                   [disabled]="statusUpdating()"
                   class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-blue-500/30 dark:border-blue-500/30 hover:border-blue-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
                   @for (st of statuses; track st) {
-                  <option [value]="st">{{ st }}</option>
+                  <option [value]="st" [selected]="isSameStatus(ord.status, st)">{{ st }}</option>
                   }
                 </select>
                 @if (statusUpdating()) {
@@ -199,16 +199,16 @@
                   <mat-icon class="text-xs text-emerald-500 scale-75">payments</mat-icon> Payment Settlement Status:
                 </span>
                 <span class="px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-black uppercase rounded shadow-xs">
-                  {{ ord.payments?.[0]?.status || 'PENDING' }}
+                  {{ ord.payments?.[0]?.status || ord.paymentStatus || 'PENDING' }}
                 </span>
               </div>
 
               <div class="relative mt-1">
-                <select [value]="ord.payments?.[0]?.status" (change)="updatePaymentStatus($any($event.target).value)"
+                <select (change)="updatePaymentStatus($any($event.target).value)"
                   [disabled]="paymentUpdating()"
                   class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-emerald-500/30 dark:border-emerald-500/30 hover:border-emerald-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
                   @for (ps of paymentStatuses; track ps) {
-                  <option [value]="ps">{{ ps }}</option>
+                  <option [value]="ps" [selected]="isSameStatus(ord.payments?.[0]?.status || ord.paymentStatus, ps)">{{ ps }}</option>
                   }
                 </select>
                 @if (paymentUpdating()) {

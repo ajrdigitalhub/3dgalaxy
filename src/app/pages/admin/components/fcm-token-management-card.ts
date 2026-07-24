@@ -171,8 +171,12 @@ export class AdminFcmTokenCard implements OnInit {
           let token = this.ns.fcmToken();
           
           if (!token) {
-            token = `FCM-ADMIN-DEV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
-            this.ns.fcmToken.set(token);
+            token = (await this.ns.getFcmToken()) || "";
+          }
+
+          if (!token) {
+            this.toastService.error("Could not obtain valid FCM push token from browser. Please check notification settings.");
+            return;
           }
 
           this.fcmToken.set(token);
@@ -194,15 +198,17 @@ export class AdminFcmTokenCard implements OnInit {
             next: () => {
               this.toastService.success("Admin device registered & FCM token synced with backend!");
             },
-            error: () => {
-              this.toastService.info("FCM token initialized locally.");
+            error: (err) => {
+              console.error("Failed to register admin FCM device:", err);
+              this.toastService.error("Failed to sync FCM token with backend server.");
             },
           });
         } else {
           this.toastService.error("Notification permission denied in browser settings.");
         }
       }
-    } catch {
+    } catch (err: any) {
+      console.error("registerCurrentDevice error:", err);
       this.toastService.error("Failed to register device push token.");
     } finally {
       this.loading.set(false);

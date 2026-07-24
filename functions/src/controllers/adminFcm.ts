@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 export interface AdminNotificationDevice {
   id: string;
@@ -32,26 +33,58 @@ export interface AdminNotificationLog {
   recipientDeviceCount: number;
 }
 
-const DATA_DIR = path.resolve(__dirname, "../../data");
-const DEVICES_FILE = path.join(DATA_DIR, "adminDevices.json");
-const LOGS_FILE = path.join(DATA_DIR, "adminNotificationLogs.json");
+const PRIMARY_DATA_DIR = path.resolve(__dirname, "../../data");
+
+function getStorageFilePath(filename: string): string {
+  const primaryFilePath = path.join(PRIMARY_DATA_DIR, filename);
+  const tmpFilePath = path.join(os.tmpdir(), "data", filename);
+
+  try {
+    if (fs.existsSync(primaryFilePath)) {
+      return primaryFilePath;
+    }
+    if (!fs.existsSync(PRIMARY_DATA_DIR)) {
+      fs.mkdirSync(PRIMARY_DATA_DIR, { recursive: true });
+    }
+    return primaryFilePath;
+  } catch {
+    try {
+      const tmpDataDir = path.join(os.tmpdir(), "data");
+      if (!fs.existsSync(tmpDataDir)) {
+        fs.mkdirSync(tmpDataDir, { recursive: true });
+      }
+    } catch {}
+    return tmpFilePath;
+  }
+}
 
 function ensureStorageFiles() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  const devicesFile = getStorageFilePath("adminDevices.json");
+  const logsFile = getStorageFilePath("adminNotificationLogs.json");
+
+  try {
+    if (!fs.existsSync(devicesFile)) {
+      fs.writeFileSync(devicesFile, JSON.stringify([], null, 2), "utf-8");
+    }
+  } catch (err) {
+    console.warn("[ensureStorageFiles] Could not write adminDevices file:", err);
   }
-  if (!fs.existsSync(DEVICES_FILE)) {
-    fs.writeFileSync(DEVICES_FILE, JSON.stringify([], null, 2), "utf-8");
-  }
-  if (!fs.existsSync(LOGS_FILE)) {
-    fs.writeFileSync(LOGS_FILE, JSON.stringify([], null, 2), "utf-8");
+
+  try {
+    if (!fs.existsSync(logsFile)) {
+      fs.writeFileSync(logsFile, JSON.stringify([], null, 2), "utf-8");
+    }
+  } catch (err) {
+    console.warn("[ensureStorageFiles] Could not write adminNotificationLogs file:", err);
   }
 }
 
 function loadDevices(): AdminNotificationDevice[] {
   try {
     ensureStorageFiles();
-    const data = fs.readFileSync(DEVICES_FILE, "utf-8");
+    const devicesFile = getStorageFilePath("adminDevices.json");
+    if (!fs.existsSync(devicesFile)) return [];
+    const data = fs.readFileSync(devicesFile, "utf-8");
     return JSON.parse(data || "[]");
   } catch {
     return [];
@@ -61,7 +94,8 @@ function loadDevices(): AdminNotificationDevice[] {
 function saveDevices(devices: AdminNotificationDevice[]) {
   try {
     ensureStorageFiles();
-    fs.writeFileSync(DEVICES_FILE, JSON.stringify(devices, null, 2), "utf-8");
+    const devicesFile = getStorageFilePath("adminDevices.json");
+    fs.writeFileSync(devicesFile, JSON.stringify(devices, null, 2), "utf-8");
   } catch (err) {
     console.error("Error saving adminDevices.json", err);
   }
@@ -70,7 +104,9 @@ function saveDevices(devices: AdminNotificationDevice[]) {
 function loadLogs(): AdminNotificationLog[] {
   try {
     ensureStorageFiles();
-    const data = fs.readFileSync(LOGS_FILE, "utf-8");
+    const logsFile = getStorageFilePath("adminNotificationLogs.json");
+    if (!fs.existsSync(logsFile)) return [];
+    const data = fs.readFileSync(logsFile, "utf-8");
     return JSON.parse(data || "[]");
   } catch {
     return [];
@@ -80,7 +116,8 @@ function loadLogs(): AdminNotificationLog[] {
 function saveLogs(logs: AdminNotificationLog[]) {
   try {
     ensureStorageFiles();
-    fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2), "utf-8");
+    const logsFile = getStorageFilePath("adminNotificationLogs.json");
+    fs.writeFileSync(logsFile, JSON.stringify(logs, null, 2), "utf-8");
   } catch (err) {
     console.error("Error saving adminNotificationLogs.json", err);
   }

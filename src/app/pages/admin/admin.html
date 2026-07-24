@@ -505,14 +505,14 @@
       <app-admin-service-enquiries-tab />
       } @if (activeTab() === 'abandoned-carts') {
       <app-admin-abandoned-checkouts-tab [admin]="this" />
-      } @if (activeTab() === 'customer-list' || activeTab() ===
+      } @if (activeTab() === 'customer-list' || activeTab() === 'customer-details' || activeTab() === 'customer-analytics' || activeTab() ===
       'customer-groups' || activeTab() === 'reviews') {
       <app-admin-customers-tab [admin]="this" />
       } @if (activeTab() === 'pages' || activeTab() === 'blogs' || activeTab()
       === 'faqs' || activeTab() === 'banners' || activeTab() ===
       'homepage-builder' || activeTab() === 'menu-builder') {
       <app-admin-content-tab [admin]="this" />
-      } @if (activeTab() === 'coupons' || activeTab() === 'promotions' ||
+      } @if (activeTab() === 'header-announcements' || activeTab() === 'coupons' || activeTab() === 'promotions' ||
       activeTab() === 'email-campaigns' || activeTab() === 'push-notifications')
       {
       <app-admin-marketing-tab [admin]="this" />

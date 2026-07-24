@@ -290,7 +290,7 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
                             [routerLink]="slide.linkUrl || '/products'"
                             [style.borderRadius]="theme().borderRadius"
                             [ngClass]="{
-                              'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-500/20 hover:shadow-orange-500/30':
+                              'bg-theme-gradient text-white hover:opacity-90 shadow-lg':
                                 slide.btnTheme === 'primary' || !slide.btnTheme,
                               'bg-zinc-800 hover:bg-zinc-700 text-white shadow-zinc-850/20 hover:shadow-zinc-850/30':
                                 slide.btnTheme === 'secondary',

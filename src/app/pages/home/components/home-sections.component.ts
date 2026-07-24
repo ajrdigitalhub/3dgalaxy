@@ -539,11 +539,11 @@ export class HomeCategoryView3DPrinterComponent {
     <section class="max-w-4xl mx-auto px-6 py-12">
       <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-orange-950 p-8 md:p-12 shadow-2xl border border-zinc-800/50 text-center">
         <!-- Decorative Glow Blur -->
-        <div class="absolute -right-20 -top-20 w-60 h-60 bg-orange-600/20 rounded-full blur-3xl"></div>
-        <div class="absolute -left-20 -bottom-20 w-60 h-60 bg-orange-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute -right-20 -top-20 w-60 h-60 bg-theme-primary/20 rounded-full blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 w-60 h-60 bg-theme-primary/10 rounded-full blur-3xl"></div>
 
         <div class="relative z-10 space-y-6 max-w-2xl mx-auto">
-          <div class="inline-flex items-center justify-center p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20 text-orange-500 animate-pulse">
+          <div class="inline-flex items-center justify-center p-3 bg-theme-primary/10 rounded-2xl border border-theme-primary/20 text-theme-primary animate-pulse">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-2.25-1.5a2 2 0 00-2.22 0l-2.25 1.5" />
             </svg>
@@ -570,7 +570,7 @@ export class HomeCategoryView3DPrinterComponent {
               <button 
                 (click)="subscribe(emailInput)"
                 [disabled]="isLoading()"
-                class="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all text-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+                class="px-8 py-3.5 bg-theme-gradient hover:opacity-90 text-white font-bold rounded-2xl shadow-lg transition-all text-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span class="spinner-mini" *ngIf="isLoading()"></span>
                 {{ isLoading() ? 'Subscribing...' : 'Subscribe' }}
@@ -646,7 +646,7 @@ export class HomeNewsletterComponent {
     >
       <div class="text-center space-y-2">
         <h2
-          class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display"
+          class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display"
         >
           {{ section.config["subtitle"] || "Browse Collections" }}
         </h2>
@@ -690,7 +690,7 @@ export class HomeNewsletterComponent {
               </div>
 
               <div class="relative z-10 space-y-4 text-left">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-400 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-theme-primary/20 border border-theme-primary/40 text-theme-primary rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md">
                   <mat-icon class="text-xs">star</mat-icon>
                   FEATURED CATEGORY
                 </span>
@@ -712,7 +712,7 @@ export class HomeNewsletterComponent {
                 </p>
                 <a
                   [routerLink]="['/category', group.category.slug || group.category.id]"
-                  class="inline-flex h-13 px-8 bg-[#f54f00] hover:bg-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest items-center gap-3 transition-all duration-300 shadow-xl shadow-orange-500/20 hover:scale-[1.03]"
+                  class="inline-flex h-13 px-8 bg-theme-gradient hover:opacity-90 text-white rounded-2xl font-black text-xs uppercase tracking-widest items-center gap-3 transition-all duration-300 shadow-xl hover:scale-[1.03]"
                 >
                   <span>EXPLORE COLLECTION</span>
                   <mat-icon class="scale-90">arrow_forward</mat-icon>
@@ -1026,7 +1026,7 @@ export class HomeShopByCategoryComponent {
                     '/category',
                     tech.id === 'industrial' ? '3d-printers' : tech.id,
                   ]"
-                  class="flex items-center justify-center h-11 w-full bg-white text-neutral-900 hover:bg-orange-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 select-text cursor-pointer"
+                  class="flex items-center justify-center h-11 w-full bg-white text-neutral-900 hover:bg-theme-primary hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 select-text cursor-pointer"
                 >
                   EXPLORE STACK
                 </a>
@@ -1107,7 +1107,7 @@ export class HomeTechnologyHubsComponent {
         >
           <div class="space-y-3">
             <h2
-              class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 font-display"
+              class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display"
             >
               {{ section.config["subtitle"] || "Enterprise Protocol" }}
             </h2>
@@ -1123,7 +1123,7 @@ export class HomeTechnologyHubsComponent {
           </div>
           <a
             [routerLink]="['/printing-service']"
-            class="inline-flex h-12 px-8 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-xs uppercase tracking-widest items-center gap-3 hover:scale-105 transition-all"
+            class="inline-flex h-12 px-8 bg-theme-gradient hover:opacity-90 text-white rounded-xl font-black text-xs uppercase tracking-widest items-center gap-3 hover:scale-105 transition-all"
           >
             BOOK CONSULTATION
             <mat-icon class="scale-90">support_agent</mat-icon>
@@ -2152,8 +2152,13 @@ export class HomeFlashDealsComponent {
           <div class="space-y-2 flex-1 flex flex-col justify-between">
             <div>
               <div class="flex items-center gap-1 mb-1">
-                <mat-icon class="text-amber-500 scale-75">star</mat-icon>
-                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">4.8 (24)</span>
+                <ng-container *ngIf="getProductReviewCount(p) > 0; else noReviews">
+                  <mat-icon class="text-amber-500 scale-75">star</mat-icon>
+                  <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">{{ getProductAvgRating(p) }} ({{ getProductReviewCount(p) }})</span>
+                </ng-container>
+                <ng-template #noReviews>
+                  <span class="text-[10px] text-zinc-400 dark:text-zinc-500">No reviews</span>
+                </ng-template>
               </div>
               <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
                 {{ p.name }}
@@ -2179,6 +2184,25 @@ export class HomeFlashDealsComponent {
 export class HomeBestSellersComponent {
   ds = inject(DatastoreService);
   items = computed(() => this.ds.homepageData()?.bestSellers || []);
+
+  getProductAvgRating(p: any): number {
+    if (!p) return 0;
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (reviews.length > 0) {
+      const sum = reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
+      return Math.round((sum / reviews.length) * 10) / 10;
+    }
+    return p.avgRating ? Math.round(Number(p.avgRating) * 10) / 10 : 0;
+  }
+
+  getProductReviewCount(p: any): number {
+    if (!p) return 0;
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (reviews.length > 0) {
+      return reviews.length;
+    }
+    return p.ratingCount || 0;
+  }
 
   handleImageError(event: any) {
     if (event.target) {
@@ -2332,7 +2356,7 @@ export class HomeNewArrivalsComponent {
   template: `
     <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="materials().length > 0">
       <div class="text-center space-y-2 mb-10">
-        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display">
           Premium Consumables
         </h2>
         <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
@@ -2345,10 +2369,10 @@ export class HomeNewArrivalsComponent {
           *ngFor="let m of materials()" 
           [routerLink]="['/products']" 
           [queryParams]="{ material: m.name }"
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col items-center text-center hover:shadow-[0_12px_30px_rgba(234,88,12,0.06)] hover:border-orange-500/30 hover:-translate-y-0.5 transition-all group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col items-center text-center hover:shadow-lg hover:border-theme-primary/30 hover:-translate-y-0.5 transition-all group"
         >
-          <div class="w-24 h-24 bg-orange-500/5 dark:bg-orange-500/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-            <mat-icon class="text-orange-500 scale-125">category</mat-icon>
+          <div class="w-24 h-24 bg-theme-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+            <mat-icon class="text-theme-primary scale-125">category</mat-icon>
           </div>
           <h4 class="text-base font-black text-zinc-900 dark:text-white uppercase tracking-wider mb-1 font-display">
             {{ m.name }}
@@ -2376,7 +2400,7 @@ export class HomeMaterialsComponent {
   template: `
     <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="apps().length > 0">
       <div class="text-center space-y-2 mb-10">
-        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display">
           Use Cases & Sectors
         </h2>
         <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
@@ -2417,7 +2441,7 @@ export class HomeApplicationsComponent {
   template: `
     <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="cols().length > 0">
       <div class="text-center space-y-2 mb-10">
-        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display">
+        <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display">
           Curated Choices
         </h2>
         <h3 class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display">
@@ -2441,7 +2465,7 @@ export class HomeApplicationsComponent {
 
           <div class="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800/60 mt-4">
             <span class="text-sm text-zinc-400 font-semibold">Starts From ₹{{ c.startingPrice | number }}</span>
-            <a [routerLink]="['/products']" [queryParams]="{ collection: c.slug }" class="h-10 px-5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 shadow-sm">
+            <a [routerLink]="['/products']" [queryParams]="{ collection: c.slug }" class="h-10 px-5 bg-theme-gradient hover:opacity-90 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 shadow-sm">
               Explore Collection
               <mat-icon class="scale-75">arrow_forward</mat-icon>
             </a>

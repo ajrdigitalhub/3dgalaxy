@@ -44,6 +44,37 @@ router.post('/upload-image', adminGuard, upload.single('image'), async (req: Req
   }
 });
 
+router.post('/upload-document', adminGuard, upload.single('document'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No document file uploaded' });
+    }
+    const originalPath = req.file.path;
+    const fileBuffer = fs.readFileSync(originalPath);
+    const destination = `downloads/${Date.now()}-${req.file.filename}`;
+    const mimeType = req.file.mimetype;
+
+    const url = await FirebaseStorageService.uploadFile(fileBuffer, destination, mimeType);
+
+    try {
+      if (fs.existsSync(originalPath)) {
+        fs.unlinkSync(originalPath);
+      }
+    } catch (cleanupErr: any) {
+      console.error('Failed to remove local temporary file:', cleanupErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      url: url,
+      fileName: req.file.originalname || req.file.filename
+    });
+  } catch (err: any) {
+    console.error('Firebase storage document upload failed:', err);
+    return res.status(500).json({ success: false, error: 'Upload failed', details: err.message });
+  }
+});
+
 router.post('/delete-image', adminGuard, async (req: Request, res: Response) => {
   try {
     const { url } = req.body;

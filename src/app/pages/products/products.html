@@ -332,10 +332,16 @@
                   <div class="flex items-center gap-1">
                     <div class="flex items-center text-amber-500">
                       @for (star of getStarsArray(5); track $index) {
-                        <mat-icon class="scale-65 -mx-1.5">{{ $index < floorValue(p.avgRating) ? 'star' : 'star_border' }}</mat-icon>
+                        <mat-icon class="scale-65 -mx-1.5">{{ $index < floorValue(getProductAvgRating(p)) ? 'star' : 'star_border' }}</mat-icon>
                       }
                     </div>
-                    <span class="text-[10px] font-black text-neutral-400 ml-1">({{ p.reviews?.length || 1 }})</span>
+                    <span class="text-[10px] font-black text-neutral-400 ml-1">
+                      @if (getProductReviewCount(p) > 0) {
+                        {{ getProductAvgRating(p) }} ({{ getProductReviewCount(p) }})
+                      } @else {
+                        No reviews
+                      }
+                    </span>
                   </div>
 
                   <!-- Stock Status & Offer Details Row -->

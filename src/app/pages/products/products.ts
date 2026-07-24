@@ -401,11 +401,30 @@ export class Products implements OnInit {
   }
 
   floorValue(val: number): number {
-    return Math.floor(val);
+    return Math.floor(val || 0);
   }
 
   getStarsArray(count: number): number[] {
     return Array(count).fill(0);
+  }
+
+  getProductAvgRating(p: any): number {
+    if (!p) return 0;
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (reviews.length > 0) {
+      const sum = reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
+      return Math.round((sum / reviews.length) * 10) / 10;
+    }
+    return p.avgRating ? Math.round(Number(p.avgRating) * 10) / 10 : 0;
+  }
+
+  getProductReviewCount(p: any): number {
+    if (!p) return 0;
+    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
+    if (reviews.length > 0) {
+      return reviews.length;
+    }
+    return p.ratingCount || 0;
   }
 
   // Helper for dealer price calculations

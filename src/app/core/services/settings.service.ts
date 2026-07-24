@@ -353,13 +353,24 @@ export class SettingsService {
     let themeData = d.theme;
     if (!themeData) {
       themeData = {
-        primaryColor: d.primaryColor || "#d65108",
-        secondaryColor: d.secondaryColor || "#1e3a8a",
+        primaryColor: d.primaryColor || "#f54f00",
+        secondaryColor: d.secondaryColor || "#ea580c",
         accentColor: d.accentColor || "#3B82F6",
         borderRadius: d.borderRadius || "0.75rem",
         fontFamily: d.typography || "Inter",
-        darkMode: d.darkMode || false,
+        darkMode: d.darkMode !== undefined ? d.darkMode : false,
         themeText: d.themeText || "#ffffff",
+      };
+    } else {
+      themeData = {
+        primaryColor: themeData.primaryColor || d.primaryColor || "#f54f00",
+        secondaryColor: themeData.secondaryColor || d.secondaryColor || "#ea580c",
+        accentColor: themeData.accentColor || d.accentColor || "#3B82F6",
+        borderRadius: themeData.borderRadius || d.borderRadius || "0.75rem",
+        fontFamily: themeData.fontFamily || themeData.typography || d.typography || "Inter",
+        darkMode: themeData.darkMode !== undefined ? themeData.darkMode : (d.darkMode !== undefined ? d.darkMode : false),
+        themeText: themeData.themeText || d.themeText || "#ffffff",
+        ...themeData,
       };
     }
     this.theme.set(themeData);
@@ -527,19 +538,24 @@ export class SettingsService {
       gradSettings.gradient ||
       `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
 
-    // Theme active mode colors
-    let userPrefMode: boolean | null = null;
-    if (typeof localStorage !== "undefined") {
-      const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
-      if (savedTheme === "light") userPrefMode = false;
-      else if (savedTheme === "dark") userPrefMode = true;
+    // Theme active mode colors - Settings API takes priority
+    let isDarkMode = false;
+    if (themeData.darkMode !== undefined && themeData.darkMode !== null) {
+      isDarkMode = Boolean(themeData.darkMode);
+    } else if (d.darkMode !== undefined && d.darkMode !== null) {
+      isDarkMode = Boolean(d.darkMode);
+    } else {
+      let userPrefMode: boolean | null = null;
+      if (typeof localStorage !== "undefined") {
+        const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
+        if (savedTheme === "light") userPrefMode = false;
+        else if (savedTheme === "dark") userPrefMode = true;
+      }
+      if (userPrefMode !== null) {
+        isDarkMode = userPrefMode;
+      }
     }
 
-    const isDarkMode = themeData.darkMode !== undefined 
-      ? themeData.darkMode 
-      : (userPrefMode !== null 
-          ? userPrefMode 
-          : (d.darkMode !== undefined ? d.darkMode : false));
     const lightColors = d.lightThemeColors || {};
     const darkColors = d.darkThemeColors || {};
     const actColors = isDarkMode ? darkColors : lightColors;
@@ -554,6 +570,7 @@ export class SettingsService {
     root.style.setProperty("--accent-color", finalAccent);
     root.style.setProperty("--primary-color-rgb", hexToRgb(finalPrimary));
     root.style.setProperty("--secondary-color-rgb", hexToRgb(finalSecondary));
+    root.style.setProperty("--accent-color-rgb", hexToRgb(finalAccent));
     root.style.setProperty("--gradient-angle", angle);
     root.style.setProperty("--theme-radius", borderRadius);
     root.style.setProperty("--radius", borderRadius);
@@ -564,8 +581,10 @@ export class SettingsService {
     // Compatibility CSS variables
     root.style.setProperty("--color-primary", finalPrimary);
     root.style.setProperty("--color-secondary", finalSecondary);
+    root.style.setProperty("--color-accent", finalAccent);
     root.style.setProperty("--color-theme-primary", finalPrimary);
     root.style.setProperty("--color-theme-secondary", finalSecondary);
+    root.style.setProperty("--color-theme-accent", finalAccent);
 
     // Typography
     const font = themeData.fontFamily || themeData.typography || d.fontFamily || "Inter";
@@ -596,10 +615,12 @@ export class SettingsService {
     // Apply dark mode class to html and body
     if (isDarkMode) {
       root.classList.add("dark");
-      document.body.classList.add("dark");
+      document.body?.classList.add("dark");
+      root.style.colorScheme = "dark";
     } else {
       root.classList.remove("dark");
-      document.body.classList.remove("dark");
+      document.body?.classList.remove("dark");
+      root.style.colorScheme = "light";
     }
 
     // Favicon update

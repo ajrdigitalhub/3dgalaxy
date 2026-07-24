@@ -414,6 +414,16 @@ export const updateSettingsService = async (payload: any) => {
 
   try {
     // 1. Sync Theme Settings if updated
+    if (!newSettings.theme) {
+      newSettings.theme = {};
+    }
+    if (payload.primaryColor) newSettings.theme.primaryColor = payload.primaryColor;
+    if (payload.secondaryColor) newSettings.theme.secondaryColor = payload.secondaryColor;
+    if (payload.accentColor) newSettings.theme.accentColor = payload.accentColor;
+    if (payload.borderRadius) newSettings.theme.borderRadius = payload.borderRadius;
+    if (payload.fontFamily || payload.typography) newSettings.theme.fontFamily = payload.fontFamily || payload.typography;
+    if (payload.darkMode !== undefined) newSettings.theme.darkMode = payload.darkMode;
+
     if (newSettings.theme) {
       await prisma.themeSetting.upsert({
         where: { keyName: "global-settings" },

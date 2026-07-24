@@ -138,10 +138,12 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
     // Format products using mapProductFields
     const formattedProducts = products.map((p) => {
       const mapped = mapProductFields(p);
-      let avgRating = 4.5;
-      if (p.reviews && p.reviews.length > 0) {
-        const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-        avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
+      const approved = (p.reviews || []).filter((r: any) => r.isApproved !== false);
+      const ratingCount = approved.length;
+      let avgRating = 0;
+      if (ratingCount > 0) {
+        const sum = approved.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
+        avgRating = Math.round((sum / ratingCount) * 10) / 10;
       }
       return {
         id: mapped.id,
@@ -156,6 +158,7 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
         stock: mapped.stock,
         shortDescription: mapped.shortDescription || null,
         rating: avgRating,
+        ratingCount,
         type: 'Product'
       };
     });

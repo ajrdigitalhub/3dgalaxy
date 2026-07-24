@@ -478,23 +478,37 @@ export class DatastoreService {
   homeLayout = computed<HomeLayoutSection[]>(() => {
     const data = this.settingsService.settingsData() || {};
     const dbSections = data.homeLayout || data.homepage?.sections;
+    let resultSections: HomeLayoutSection[] = [];
     if (Array.isArray(dbSections) && dbSections.length > 0) {
-      return [...dbSections].sort((a, b) => (a.order || 0) - (b.order || 0));
+      resultSections = [...dbSections].sort((a, b) => (a.order || 0) - (b.order || 0));
+    } else {
+      // Fallback static defaults
+      resultSections = [
+        { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
+        { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
+        { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
+        { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 4, config: {} },
+        { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 5, config: {} },
+        { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
+        { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
+        { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
+        { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
+        { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
+        { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
+      ];
     }
-    // Fallback static defaults
-    return [
-      { id: 'hero-1', name: 'Hero', type: 'HERO', visible: true, order: 1, config: {} },
-      { id: 'cat-2', name: 'Categories', type: 'CATEGORIES', visible: true, order: 2, config: {} },
-      { id: 'brands-5', name: 'Brands', type: 'BRANDS', visible: true, order: 3, config: {} },
-      { id: 'feat-3', name: 'Featured Products', type: 'FEATURED_PRODUCTS', visible: true, order: 4, config: {} },
-      { id: 'services-6', name: 'Our Services', type: 'SERVICES', visible: true, order: 6, config: {} },
-      { id: 'why-7', name: 'Why Choose Us', type: 'WHY_CHOOSE_US', visible: true, order: 7, config: {} },
-      { id: 'stats-8', name: 'Statistics', type: 'STATISTICS', visible: true, order: 8, config: {} },
-      { id: 'testimonials-9', name: 'Customer Testimonials', type: 'TESTIMONIALS', visible: true, order: 9, config: {} },
-      { id: 'shop-11', name: 'Shop By Category', type: 'SHOP_BY_CATEGORY', visible: true, order: 11, config: {} },
-      { id: 'best-12', name: 'Best Sellers', type: 'BEST_SELLERS', visible: true, order: 12, config: {} },
-      { id: 'newsletter-13', name: 'Newsletter', type: 'NEWSLETTER', visible: true, order: 13, config: {} }
-    ];
+
+    // Ensure SHOP_BY_CATEGORY comes right after BRANDS
+    const brandsIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'BRANDS');
+    const shopCatIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'SHOP_BY_CATEGORY');
+
+    if (brandsIdx !== -1 && shopCatIdx !== -1 && shopCatIdx !== brandsIdx + 1) {
+      const [shopCatSection] = resultSections.splice(shopCatIdx, 1);
+      const targetBrandsIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'BRANDS');
+      resultSections.splice(targetBrandsIdx + 1, 0, shopCatSection);
+    }
+
+    return resultSections;
   });
   
   homepageLoading = signal<boolean>(true);
@@ -825,9 +839,19 @@ export class DatastoreService {
       
     }
     
-    // Sync theme class
+    // Sync theme class & SettingsService theme updates
     effect(() => {
       this.syncThemeClass(this.theme());
+    });
+
+    effect(() => {
+      const themeData = this.settingsService.theme();
+      if (themeData && themeData.darkMode !== undefined) {
+        const targetMode = themeData.darkMode ? 'dark' : 'light';
+        if (this.theme() !== targetMode) {
+          this.theme.set(targetMode);
+        }
+      }
     });
 
     // Save cart to local storage (still useful for guest persistence)
@@ -1246,8 +1270,10 @@ export class DatastoreService {
           }
 
           // 4. Initial Products
-          if (d.featuredProducts && this.products().length <= d.featuredProducts.length) {
-            this.products.set(d.featuredProducts);
+          if (d.products && Array.isArray(d.products) && d.products.length > 0) {
+            this.products.set(d.products.map((p: any) => this.mapProductFromServer(p)));
+          } else if (d.featuredProducts && this.products().length <= d.featuredProducts.length) {
+            this.products.set(d.featuredProducts.map((p: any) => this.mapProductFromServer(p)));
           }
 
           // 5. Store consolidated dynamic payload
@@ -1261,6 +1287,7 @@ export class DatastoreService {
     // Consolidated /home loader replaces separate startup calls
     this.loadConsolidatedHome();
     this.reloadFeaturedProducts();
+    this.reloadProducts(false);
 
 
 
@@ -1281,8 +1308,11 @@ export class DatastoreService {
               const ordersList = Array.isArray(res) ? res : (res.data || []);
               this.orders.set(ordersList.map((o: any) => ({
                 ...o,
-                customerName: o.customer?.user?.name || o.customer?.user?.firstName || 'Guest',
-                customerPhone: o.customer?.user?.phone || 'N/A',
+                customerName: o.customer?.user?.firstName 
+                  ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
+                  : o.customer?.user?.name || o.guestName || o.customerName || 'Guest',
+                customerPhone: o.customer?.phone || o.customer?.user?.phone || o.guestPhone || o.customerPhone || 'N/A',
+                customerType: o.customer?.customerType || o.customerType || 'retail',
                 status: o.status ? o.status.toLowerCase() : 'pending',
                 grandTotal: Number(o.totalAmount) || 0,
               })));
@@ -1322,11 +1352,18 @@ export class DatastoreService {
       const root = window.document.documentElement;
       if (activeTheme === 'dark') {
         root.classList.add('dark');
+        document.body?.classList.add('dark');
         root.style.colorScheme = 'dark';
       } else {
         root.classList.remove('dark');
+        document.body?.classList.remove('dark');
         root.style.colorScheme = 'light';
       }
+      const currentThemeSettings = this.settingsService.theme() || {};
+      this.settingsService.applyTheme({
+        ...currentThemeSettings,
+        darkMode: activeTheme === 'dark',
+      });
     }
   }
 
@@ -1514,6 +1551,54 @@ export class DatastoreService {
     });
   }
 
+  public mapProductFromServer(p: any): Product {
+    const brandVal = typeof p.brand === 'object' ? p.brand?.name : (p.brand || p.brandId || '');
+    return {
+      id: p.id,
+      createdAt: p.createdAt,
+      name: p.name,
+      slug: p.slug,
+      sku: p.sku || '',
+      barcode: p.barcode || '',
+      category_id: p.categoryId || p.category_id || '',
+      brand: brandVal,
+      description: p.description || '',
+      long_description: p.long_description || p.longDescription || p.description || '',
+      mrp: Number(p.basePrice || p.mrp || 0),
+      sale_price: Number(p.salePrice || p.sale_price || p.basePrice || p.mrp || 0),
+      dealer_price: Number(p.dealerPrice || p.dealer_price || p.salePrice || p.sale_price || p.basePrice || p.mrp || 0),
+      stock: typeof p.stock === 'number' ? p.stock : 10,
+      reserved: p.reserved || 0,
+      images: p.images && p.images.length ? [...p.images].sort((a: any, b: any) => {
+        const aPrimary = a && typeof a === 'object' && a.isPrimary ? 1 : 0;
+        const bPrimary = b && typeof b === 'object' && b.isPrimary ? 1 : 0;
+        if (aPrimary !== bPrimary) return bPrimary - aPrimary;
+        const aOrder = a && typeof a === 'object' && typeof a.sortOrder === 'number' ? a.sortOrder : 0;
+        const bOrder = b && typeof b === 'object' && typeof b.sortOrder === 'number' ? b.sortOrder : 0;
+        return aOrder - bOrder;
+      }).map((i: any) => (i && typeof i === 'object' ? i.url : i) || '') : (Array.isArray(p.images) ? p.images : ['https://picsum.photos/seed/'+p.slug+'/800/800']),
+      specs: p.specifications && p.specifications.length ? p.specifications.map((s: any) => ({ name: s.name, value: s.value })) : (p.specs || []),
+      specifications: p.specifications || [],
+      downloads: p.downloads || [],
+      features: p.features || [],
+      faqs: p.faqs || p.qnas || [],
+      warranty: p.warranty || null,
+      shipping: p.shipping || null,
+      seoTitle: p.seo?.seoTitle || p.seoTitle || '',
+      seoDescription: p.seo?.seoDescription || p.seoDescription || '',
+      reviews: p.reviews || [],
+      qnas: p.qnas || [],
+      featured: !!p.isFeatured || !!p.featured,
+      isFeatured: !!p.isFeatured || !!p.featured,
+      isExclusive: !!p.isExclusive,
+      codAvailable: !!p.codAvailable,
+      freeShippingEligible: !!p.freeShippingEligible,
+      is360Supported: p.is360Supported || false,
+      variants: p.variants || [],
+      tags: []
+    };
+  }
+
   reloadProducts(showLoader = true, force = false) {
     if (showLoader) {
       this.productsLoading.set(true);
@@ -1535,50 +1620,7 @@ export class DatastoreService {
       next: (res) => { 
         const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
         if (list) {
-           this.products.set(list.map((p: any) => ({
-             id: p.id,
-             createdAt: p.createdAt,
-             name: p.name,
-             slug: p.slug,
-             sku: p.sku || '',
-             barcode: p.barcode || '',
-             category_id: p.categoryId,
-             brand: p.brand?.name || p.brandId,
-             description: p.description || '',
-             long_description: p.long_description || p.description || '',
-             mrp: p.basePrice || 0,
-             sale_price: p.salePrice || p.basePrice || 0,
-             dealer_price: p.dealerPrice || p.salePrice || p.basePrice || 0,
-             stock: p.stock || 10,
-             reserved: p.reserved || 0,
-             images: p.images && p.images.length ? [...p.images].sort((a: any, b: any) => {
-               const aPrimary = a && typeof a === 'object' && a.isPrimary ? 1 : 0;
-               const bPrimary = b && typeof b === 'object' && b.isPrimary ? 1 : 0;
-               if (aPrimary !== bPrimary) return bPrimary - aPrimary;
-               const aOrder = a && typeof a === 'object' && typeof a.sortOrder === 'number' ? a.sortOrder : 0;
-               const bOrder = b && typeof b === 'object' && typeof b.sortOrder === 'number' ? b.sortOrder : 0;
-               return aOrder - bOrder;
-             }).map((i: any) => (i && typeof i === 'object' ? i.url : i) || '') : ['https://picsum.photos/seed/'+p.slug+'/800/800'],
-             specs: p.specifications && p.specifications.length ? p.specifications.map((s: any) => ({ name: s.name, value: s.value })) : (p.specs || []),
-             specifications: p.specifications || [],
-             downloads: p.downloads || [],
-             features: p.features || [],
-             faqs: p.faqs || [],
-             warranty: p.warranty || null,
-             shipping: p.shipping || null,
-             seoTitle: p.seo?.seoTitle || '',
-             seoDescription: p.seo?.seoDescription || '',
-             reviews: p.reviews || [],
-             qnas: p.qnas || [],
-             featured: !!p.isFeatured || !!p.featured,
-             isFeatured: !!p.isFeatured || !!p.featured,
-             isExclusive: !!p.isExclusive,
-             codAvailable: !!p.codAvailable,
-             freeShippingEligible: !!p.freeShippingEligible,
-             is360Supported: p.is360Supported || false,
-             variants: p.variants || [],
-             tags: []
-           })));
+           this.products.set(list.map((p: any) => this.mapProductFromServer(p)));
         } 
       },
       error: (e) => console.error(e)

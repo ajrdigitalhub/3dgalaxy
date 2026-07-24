@@ -123,11 +123,16 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           }
         }
 
-        // Calculate rating
-        let avgRating = 4.9;
+        // Calculate rating strictly from real approved reviews
+        let avgRating = 0;
+        let ratingCount = 0;
         if (p.reviews && p.reviews.length > 0) {
-          const sum = p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-          avgRating = Math.round((sum / p.reviews.length) * 10) / 10;
+          const approved = p.reviews.filter((r: any) => r.isApproved !== false);
+          if (approved.length > 0) {
+            const sum = approved.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
+            avgRating = Math.round((sum / approved.length) * 10) / 10;
+            ratingCount = approved.length;
+          }
         }
 
         // Stock status
@@ -181,6 +186,7 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           printerType,
           compatibility,
           avgRating,
+          ratingCount,
           stockStatus,
           isFeatured: p.isFeatured,
           isBestseller,

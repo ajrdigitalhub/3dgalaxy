@@ -104,6 +104,11 @@ export class OrderDetailsComponent implements OnInit {
     'Failed'
   ];
 
+  isSameStatus(a: string | undefined, b: string): boolean {
+    if (!a || !b) return false;
+    return a.trim().toLowerCase() === b.trim().toLowerCase();
+  }
+
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       const id = params.get('orderNumber');

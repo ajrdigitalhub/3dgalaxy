@@ -503,6 +503,95 @@ export const getCustomerAddresses = async (req: Request, res: Response) => {
   }
 };
 
+export const addCustomerAddress = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { addressLine1, addressLine2, city, state, postalCode, country, isDefault } = req.body;
+  try {
+    if (isDefault) {
+      await prisma.customerAddress.updateMany({
+        where: { customerId: id },
+        data: { isDefault: false },
+      });
+    }
+    const created = await prisma.customerAddress.create({
+      data: {
+        customerId: id,
+        addressLine1: addressLine1 || 'Main Street',
+        addressLine2: addressLine2 || null,
+        city: city || 'City',
+        state: state || 'State',
+        postalCode: postalCode || '000000',
+        country: country || 'India',
+        isDefault: !!isDefault,
+      }
+    });
+    return res.status(201).json({ success: true, data: created });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to add address.', details: error.message });
+  }
+};
+
+export const updateCustomerAddress = async (req: Request, res: Response) => {
+  const { addressId } = req.params;
+  const { addressLine1, addressLine2, city, state, postalCode, country, isDefault } = req.body;
+  try {
+    const existing = await prisma.customerAddress.findUnique({ where: { id: addressId } });
+    if (!existing) return res.status(404).json({ success: false, error: 'Address not found.' });
+
+    if (isDefault) {
+      await prisma.customerAddress.updateMany({
+        where: { customerId: existing.customerId },
+        data: { isDefault: false },
+      });
+    }
+
+    const updated = await prisma.customerAddress.update({
+      where: { id: addressId },
+      data: {
+        addressLine1: addressLine1 || undefined,
+        addressLine2: addressLine2 !== undefined ? addressLine2 : undefined,
+        city: city || undefined,
+        state: state || undefined,
+        postalCode: postalCode || undefined,
+        country: country || undefined,
+        isDefault: isDefault !== undefined ? !!isDefault : undefined,
+      }
+    });
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to update address.', details: error.message });
+  }
+};
+
+export const deleteCustomerAddress = async (req: Request, res: Response) => {
+  const { addressId } = req.params;
+  try {
+    await prisma.customerAddress.delete({ where: { id: addressId } });
+    return res.status(200).json({ success: true, message: 'Address deleted.' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to delete address.', details: error.message });
+  }
+};
+
+export const setDefaultCustomerAddress = async (req: Request, res: Response) => {
+  const { id, addressId } = req.params;
+  try {
+    await prisma.$transaction([
+      prisma.customerAddress.updateMany({
+        where: { customerId: id },
+        data: { isDefault: false },
+      }),
+      prisma.customerAddress.update({
+        where: { id: addressId },
+        data: { isDefault: true },
+      }),
+    ]);
+    return res.status(200).json({ success: true, message: 'Default address set successfully.' });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to set default address.', details: error.message });
+  }
+};
+
 // 10. Get Customer Activity Timeline
 export const getCustomerActivity = async (req: Request, res: Response) => {
   const { id } = req.params;

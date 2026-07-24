@@ -499,7 +499,8 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
         })),
         instagram: settingsData.instagramFeedSettings || {},
         newsletter: settingsData.newsletterSettings || {},
-        services
+        services,
+        products: mappedProducts
       }
     };
 

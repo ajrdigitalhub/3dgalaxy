@@ -1,8 +1,9 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { AdminPanel } from '../admin';
+import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-sales-tab',
@@ -14,9 +15,18 @@ import { AdminPanel } from '../admin';
       <!-- ========================= TAB: ORDERS MANAGEMENT ========================= -->
       @if (admin.activeTab() === 'orders') {
         <div class="space-y-8">
-          <div>
-            <h1 class="text-xl font-black uppercase tracking-tight">Active Fulfillment Logs</h1>
-            <p class="text-xs text-zinc-500">Monitor active orders, track clearance status, and dispatch logistical courier details.</p>
+          <div class="flex justify-between items-center">
+            <div>
+              <h1 class="text-xl font-black uppercase tracking-tight">Active Fulfillment Logs</h1>
+              <p class="text-xs text-zinc-500">Monitor active orders, track clearance status, and dispatch logistical courier details.</p>
+            </div>
+            <button
+              (click)="exportOrdersCsv()"
+              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <mat-icon class="text-sm">download</mat-icon>
+              <span>Export CSV</span>
+            </button>
           </div>
 
           <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans">
@@ -66,14 +76,14 @@ import { AdminPanel } from '../admin';
                         <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors mr-2" title="Shipment">
                           <mat-icon class="scale-75">local_shipping</mat-icon>
                         </a>
-                        <select [value]="o.status" (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
-                          <option value="Pending">Pending Auth</option>
-                          <option value="Confirmed">Confirmed</option>
-                          <option value="Processing">Processing Job</option>
-                          <option value="Packed">Packed</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
+                        <select (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
+                          <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending Auth</option>
+                          <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
+                          <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing Job</option>
+                          <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
+                          <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
+                          <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
+                          <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
                         </select>
                       </div>
                     </td>
@@ -293,4 +303,41 @@ import { AdminPanel } from '../admin';
 })
 export class AdminSalesTab {
   @Input({ required: true }) admin!: AdminPanel;
+  private toastService = inject(ToastService);
+
+  isSameStatus(a: string | undefined, b: string): boolean {
+    if (!a || !b) return false;
+    return a.trim().toLowerCase() === b.trim().toLowerCase();
+  }
+
+  exportOrdersCsv() {
+    const dataToExport = this.admin.ds.orders() || [];
+    if (dataToExport.length === 0) {
+      this.toastService.warning('No order records to export.');
+      return;
+    }
+
+    const headers = ['Order ID', 'Order Number', 'Customer Name', 'Customer Phone', 'Type', 'Financial Status', 'Items Count', 'Grand Total (INR)', 'Created At'];
+    const rows = dataToExport.map(o => [
+      `"${o.id}"`,
+      `"${o.orderNumber}"`,
+      `"${(o.guestName || o.customerName || '').replace(/"/g, '""')}"`,
+      `"${o.guestPhone || o.customerPhone || ''}"`,
+      `"${o.customerType || 'REG'}"`,
+      `"${o.status}"`,
+      o.items?.length || 0,
+      o.grandTotal || 0,
+      `"${o.date || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `orders_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toastService.success(`Exported ${dataToExport.length} orders.`);
+  }
 }
