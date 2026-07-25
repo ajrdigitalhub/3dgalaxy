@@ -1,0 +1,33 @@
+# 3D Galaxy - India's Leading 3D Printing & Manufacturing Hub
+
+> 3D Galaxy is a professional platform for 3D printers, high-grade filaments, spare parts, and custom automated 3D printing & manufacturing services in India.
+
+## Key Capabilities & Offerings
+
+- **3D Printers & Systems**: Official distributor and provider for Bambu Lab, Creality, Anycubic, and industrial FDM/SLA 3D printers.
+- **Filaments & Materials**: Premium PLA, ABS, PETG, TPU, Carbon Fiber, Resin, and specialty filaments.
+- **Automated Instant Slicing Service**: Upload STL, OBJ, STEP, or 3MF files for real-time volumetric analysis, material selection, layer height configuration, and instant order calculation.
+- **Custom Bulk & Dealer Orders**: OEM customization, corporate prototyping, and volume compounding.
+
+## Primary Web Pages
+
+- [Homepage](https://3dgalaxy.in/): Latest 3D printers, promo banners, and featured products.
+- [3D Printers & Products Catalog](https://3dgalaxy.in/products): Browse, filter, and search full product catalog.
+- [Custom 3D Printing Service](https://3dgalaxy.in/printing-service): Automated STL 3D slicer and instant quote builder.
+- [About Us](https://3dgalaxy.in/about): Company background, factory details, and contact info.
+- [Track Order](https://3dgalaxy.in/orders): Live order status and tracking details.
+
+## API & Integration Reference
+
+- Sitemap: `https://3dgalaxy.in/sitemap.xml`
+- API Health & Consolidated Home: `GET https://3dgalaxy.in/api/home`
+- Products List API: `GET https://3dgalaxy.in/api/products`
+- Categories API: `GET https://3dgalaxy.in/api/categories`
+- Slicing Quote Calculation: `POST https://3dgalaxy.in/api/slice/quote`
+
+## Contact & Location
+
+- Trade Name: 3D Galaxy India
+- Address: 374/1 Budana Compound, Udyog Nagar Palda, Indore (M.P)- 452001
+- Email: galaxy.3d@hotmail.com
+- Phone: +91 9111381113

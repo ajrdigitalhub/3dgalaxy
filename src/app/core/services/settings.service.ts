@@ -30,6 +30,13 @@ export const DEFAULT_FOOTER_GROUPS = [
   }
 ];
 
+export const DEFAULT_PAYMENT_ICONS = [
+  { id: "visa", name: "VISA", isActive: true },
+  { id: "rupay", name: "RuPay", isActive: true },
+  { id: "cashfree", name: "Cashfree", isActive: true },
+  { id: "mastercard", name: "Mastercard", isActive: true }
+];
+
 export const DEFAULT_HEADER_ANNOUNCEMENTS: Array<{
   id: string;
   title: string;
@@ -538,22 +545,24 @@ export class SettingsService {
       gradSettings.gradient ||
       `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
 
-    // Theme active mode colors - Settings API takes priority
+    // Theme active mode resolution:
+    // 1. Explicit themeData.darkMode parameter passed to applyTheme
+    // 2. User's explicit saved preference in localStorage ('3d_galaxy_theme' or 'theme')
+    // 3. Backend database configuration (d.darkMode)
     let isDarkMode = false;
-    if (themeData.darkMode !== undefined && themeData.darkMode !== null) {
+    let userPrefMode: boolean | null = null;
+    if (typeof localStorage !== "undefined") {
+      const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
+      if (savedTheme === "light") userPrefMode = false;
+      else if (savedTheme === "dark") userPrefMode = true;
+    }
+
+    if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
       isDarkMode = Boolean(themeData.darkMode);
+    } else if (userPrefMode !== null) {
+      isDarkMode = userPrefMode;
     } else if (d.darkMode !== undefined && d.darkMode !== null) {
       isDarkMode = Boolean(d.darkMode);
-    } else {
-      let userPrefMode: boolean | null = null;
-      if (typeof localStorage !== "undefined") {
-        const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
-        if (savedTheme === "light") userPrefMode = false;
-        else if (savedTheme === "dark") userPrefMode = true;
-      }
-      if (userPrefMode !== null) {
-        isDarkMode = userPrefMode;
-      }
     }
 
     const lightColors = d.lightThemeColors || {};

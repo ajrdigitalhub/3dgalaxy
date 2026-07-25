@@ -671,9 +671,9 @@ router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) =
 // 4. Reviews List
 router.get('/reviews', adminGuard, async (req: Request, res: Response) => {
   try {
-    const reviews = await prisma.productReview.findMany({
+    const reviews = await prisma.customerReview.findMany({
       include: {
-        user: true,
+        customer: { include: { user: true } },
         product: true
       },
       orderBy: {
@@ -682,15 +682,16 @@ router.get('/reviews', adminGuard, async (req: Request, res: Response) => {
     });
 
     const formatted = reviews.map(r => {
-      const userName = r.user ? (r.user.firstName ? `${r.user.firstName} ${r.user.lastName || ''}`.trim() : r.user.email) : 'Guest';
+      const u = r.customer?.user;
+      const userName = u ? (u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.email) : 'Guest';
       return {
         id: r.id,
-        productName: r.product.name,
+        productName: r.product?.name || 'Product',
         userName,
         rating: r.rating,
-        comment: r.comment || '',
-        date: r.createdAt.toISOString().split('T')[0],
-        status: r.isApproved ? 'Approved' : 'Pending',
+        comment: r.reviewText || '',
+        date: r.createdAt ? r.createdAt.toISOString().split('T')[0] : '',
+        status: 'Approved',
         response: ''
       };
     });

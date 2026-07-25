@@ -178,7 +178,6 @@ export const upload = {
           return next(err);
         });
 
-        // Resume the stream (it may have been paused) then pipe to busboy
         req.on("error", (err) => {
           if (!errorOccurred) {
             errorOccurred = true;
@@ -187,8 +186,22 @@ export const upload = {
           }
         });
 
-        req.resume();
-        req.pipe(bb);
+        const rawBody = (req as any).rawBody;
+        if (rawBody && Buffer.isBuffer(rawBody)) {
+          console.log(
+            "[UPLOAD] Feeding req.rawBody buffer to busboy (size:",
+            rawBody.length,
+            ")"
+          );
+          bb.end(rawBody);
+        } else if (Buffer.isBuffer(req.body)) {
+          console.log("[UPLOAD] Feeding req.body buffer to busboy");
+          bb.end(req.body);
+        } else {
+          console.log("[UPLOAD] Piping request stream to busboy");
+          req.resume();
+          req.pipe(bb);
+        }
       } catch (err) {
         console.log("[UPLOAD] unexpected error:", err);
         return next(err);

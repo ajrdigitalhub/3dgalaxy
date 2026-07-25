@@ -223,18 +223,13 @@
 
         <!-- COD Badge -->
         @if (p.codAvailable !== false) {
-        <div
-          class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-black uppercase tracking-wider border border-emerald-500/20 shadow-sm"
-        >
-          <mat-icon class="text-sm scale-90">verified</mat-icon>
-          <span>✓ Cash on Delivery Available</span>
+        <div class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          <mat-icon class="text-sm">verified</mat-icon>
+          <span>Cash on Delivery Available</span>
         </div>
         } @else {
-        <div
-          class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-red-500/10 text-red-600 dark:text-red-400 rounded-xl text-xs font-black uppercase tracking-wider border border-red-500/20 shadow-sm"
-        >
-          <mat-icon class="text-sm scale-90">cancel</mat-icon>
-          <span>❌ Cash on Delivery Not Available</span>
+        <div class="mt-2 text-[11px] font-medium text-neutral-500 dark:text-neutral-400">
+          Prepaid Order Only
         </div>
         }
 

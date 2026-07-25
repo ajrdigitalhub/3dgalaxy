@@ -10,6 +10,12 @@ export const cacheMiddleware = (durationInSeconds: number) => {
       return next();
     }
 
+    // Set HTTP Cache-Control headers for Firebase CDN, Cloud Run Edge & browser caching
+    res.setHeader(
+      'Cache-Control',
+      `public, max-age=${durationInSeconds}, s-maxage=${durationInSeconds * 2}, stale-while-revalidate=60`
+    );
+
     const cacheKey = req.originalUrl || req.url;
     const cachedResponse = cache.get(cacheKey);
 

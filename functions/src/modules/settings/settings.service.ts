@@ -35,7 +35,12 @@ const defaultSettings = {
       }
     ],
     socialLinks: [],
-    paymentIcons: [],
+    paymentIcons: [
+      { id: "visa", name: "VISA", isActive: true },
+      { id: "rupay", name: "RuPay", isActive: true },
+      { id: "cashfree", name: "Cashfree", isActive: true },
+      { id: "mastercard", name: "Mastercard", isActive: true }
+    ],
     trustBadges: [],
   },
   heroSlides: [],

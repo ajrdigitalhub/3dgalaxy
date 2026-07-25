@@ -146,17 +146,8 @@ export class AdminPanel {
   adminAvatar = computed(() => this.ds.currentUser()?.photoURL || '');
 
   toggleTheme() {
-    const nextTheme = this.ds.theme() === 'dark' ? 'light' : 'dark';
-    this.ds.theme.set(nextTheme);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('3d_galaxy_theme', nextTheme);
-      localStorage.setItem('theme', nextTheme);
-    }
-    this.settingsService.applyTheme({
-      ...(this.settingsService.theme() || {}),
-      darkMode: nextTheme === 'dark'
-    });
-    this.toastService.info(`Switched to ${nextTheme === 'dark' ? 'Dark' : 'Light'} Mode`);
+    this.ds.toggleTheme();
+    this.toastService.info(`Switched to ${this.ds.theme() === 'dark' ? 'Dark' : 'Light'} Mode`);
   }
 
   quickLinks = [

@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '../../config/database';
 
 export const getBanners = async (type?: string) => {
   return prisma.banner.findMany({

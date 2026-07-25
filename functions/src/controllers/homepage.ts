@@ -333,19 +333,22 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
         where: { isActive: true },
         include: { variants: true }
       }),
-      prisma.productReview.findMany({
-        where: { isApproved: true },
+      prisma.customerReview.findMany({
         take: 6,
         orderBy: { createdAt: 'desc' },
         include: {
           product: {
             select: { name: true, slug: true }
           },
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-              profileImage: true
+          customer: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  profileImage: true
+                }
+              }
             }
           }
         }

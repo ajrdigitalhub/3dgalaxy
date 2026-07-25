@@ -81,27 +81,27 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 @for (tx of filteredTransactions(); track tx.id) {
                   <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-955/50 transition-colors">
                     <td class="p-4 pl-6 font-mono text-[10px] font-bold text-zinc-750 dark:text-zinc-300">
-                      {{ tx.id.slice(0, 8) }}...{{ tx.id.slice(-6) }}
+                      {{ tx.id ? (tx.id.length > 14 ? (tx.id.slice(0, 8) + '...' + tx.id.slice(-6)) : tx.id) : 'N/A' }}
                     </td>
                     <td class="p-4 font-bold text-zinc-900 dark:text-white">
-                      {{ tx.orderId.slice(0, 8) }}
+                      {{ tx.orderNumber || (tx.orderId ? (tx.orderId.length > 8 ? tx.orderId.slice(0, 8) : tx.orderId) : 'N/A') }}
                     </td>
                     <td class="p-4 uppercase text-[10px] font-bold tracking-wider text-zinc-500">
-                      {{ tx.gatewayName || 'N/A' }}
+                      {{ tx.gatewayName || tx.paymentMethod || 'N/A' }}
                     </td>
                     <td class="p-4 uppercase text-[10px] font-black text-blue-500">
-                      {{ tx.paymentMethod }}
+                      {{ tx.paymentMethod || 'N/A' }}
                     </td>
                     <td class="p-4 font-black">
-                      ₹{{ tx.amount }}
+                      ₹{{ tx.amount || 0 }}
                     </td>
                     <td class="p-4">
-                      <span [class]="getStatusClass(tx.status)" class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider">
-                        {{ tx.status }}
+                      <span [class]="getStatusClass(tx.status || tx.paymentStatus)" class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider">
+                        {{ tx.status || tx.paymentStatus || 'Initiated' }}
                       </span>
                     </td>
                     <td class="p-4 text-zinc-400 text-[11px] font-medium">
-                      {{ tx.createdAt | date:'MMM d, y, h:mm a' }}
+                      {{ tx.createdAt ? (tx.createdAt | date:'MMM d, y, h:mm a') : 'N/A' }}
                     </td>
                     <td class="p-4 pr-6 text-right">
                       <button (click)="selectedTx.set(tx)" class="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/15 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer">Inspect</button>
@@ -253,18 +253,18 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 @for (log of webhooks(); track log.id) {
                   <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-955/50 transition-colors">
                     <td class="p-4 pl-6 font-mono text-[10px] text-zinc-500">
-                      {{ log.id.slice(0, 8) }}...{{ log.id.slice(-6) }}
+                      {{ log.id ? (log.id.length > 14 ? (log.id.slice(0, 8) + '...' + log.id.slice(-6)) : log.id) : 'N/A' }}
                     </td>
                     <td class="p-4 uppercase text-[10px] font-black text-zinc-750 dark:text-zinc-300">
-                      {{ log.gateway }}
+                      {{ log.gateway || 'N/A' }}
                     </td>
                     <td class="p-4">
                       <span [class]="log.status === 'processed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'" class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider">
-                        {{ log.status }}
+                        {{ log.status || 'N/A' }}
                       </span>
                     </td>
                     <td class="p-4 text-zinc-400 text-[11px] font-medium">
-                      {{ log.receivedAt | date:'MMM d, y, h:mm a' }}
+                      {{ log.receivedAt ? (log.receivedAt | date:'MMM d, y, h:mm a') : 'N/A' }}
                     </td>
                     <td class="p-4 pr-6 text-right font-semibold text-zinc-750 dark:text-zinc-200 text-xs">
                       {{ log.payload?.event || log.payload?.event_type || 'captured' }}
@@ -337,14 +337,17 @@ export class AdminPaymentsTab {
 
   filteredTransactions = computed(() => {
     return this.transactions().filter((t) => {
-      if (this.filterGateway && String(t.gatewayName).toLowerCase() !== this.filterGateway.toLowerCase()) return false;
-      if (this.filterStatus && t.status !== this.filterStatus) return false;
+      if (!t) return false;
+      if (this.filterGateway && String(t.gatewayName || t.paymentMethod || '').toLowerCase() !== this.filterGateway.toLowerCase()) return false;
+      if (this.filterStatus && (t.status !== this.filterStatus && t.paymentStatus !== this.filterStatus)) return false;
       if (this.searchQuery) {
         const q = this.searchQuery.toLowerCase();
-        const idMatch = String(t.id).toLowerCase().includes(q);
-        const orderMatch = String(t.orderId).toLowerCase().includes(q);
+        const idMatch = t.id ? String(t.id).toLowerCase().includes(q) : false;
+        const orderMatch = t.orderId ? String(t.orderId).toLowerCase().includes(q) : false;
+        const orderNumMatch = t.orderNumber ? String(t.orderNumber).toLowerCase().includes(q) : false;
         const customerMatch = t.customerId ? String(t.customerId).toLowerCase().includes(q) : false;
-        if (!idMatch && !orderMatch && !customerMatch) return false;
+        const customerNameMatch = t.customerName ? String(t.customerName).toLowerCase().includes(q) : false;
+        if (!idMatch && !orderMatch && !orderNumMatch && !customerMatch && !customerNameMatch) return false;
       }
       return true;
     });

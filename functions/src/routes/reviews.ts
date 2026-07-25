@@ -40,9 +40,9 @@ async function hasVerifiedPurchase(
 router.get("/products/:id/reviews", async (req, res) => {
   try {
     const productId = req.params.id;
-    const reviews = await prisma.productReview.findMany({
-      where: { productId, isApproved: true },
-      include: { user: true },
+    const reviews = await prisma.customerReview.findMany({
+      where: { productId },
+      include: { customer: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -50,22 +50,24 @@ router.get("/products/:id/reviews", async (req, res) => {
     const mapped = await Promise.all(
       reviews.map(async (review: any) => {
         let isVerified = false;
-        if (review.userId) {
+        const userId = review.customer?.userId;
+        if (userId) {
           const purchaseCheck = await hasVerifiedPurchase(
-            review.userId,
+            userId,
             productId,
           );
           isVerified = purchaseCheck.verified;
         }
+        const user = review.customer?.user;
         return {
           id: review.id,
           productId: review.productId,
-          userName: review.user
-            ? `${review.user.firstName || ""} ${review.user.lastName || ""}`.trim()
+          userName: user
+            ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
             : "Customer",
           rating: review.rating,
-          title: review.title || "Great purchase",
-          comment: review.comment || "",
+          title: "Great purchase",
+          comment: review.reviewText || "",
           date: review.createdAt.toISOString(),
           verified: isVerified,
           images: [],
@@ -98,16 +100,19 @@ router.get(
       }
 
       // Check if user already reviewed this product
-      const existingReview = await prisma.productReview.findFirst({
-        where: { productId, userId },
-      });
-      if (existingReview) {
-        return res.status(200).json({
-          success: true,
-          canReview: false,
-          alreadyReviewed: true,
-          error: "You have already reviewed this product",
+      const customer = await prisma.customer.findFirst({ where: { userId } });
+      if (customer) {
+        const existingReview = await prisma.customerReview.findFirst({
+          where: { productId, customerId: customer.id },
         });
+        if (existingReview) {
+          return res.status(200).json({
+            success: true,
+            canReview: false,
+            alreadyReviewed: true,
+            error: "You have already reviewed this product",
+          });
+        }
       }
 
       const result = await hasVerifiedPurchase(userId, productId);
@@ -188,9 +193,14 @@ router.post("/reviews", authenticateToken, async (req, res) => {
         });
     }
 
+    let customer = await prisma.customer.findFirst({ where: { userId } });
+    if (!customer) {
+      customer = await prisma.customer.create({ data: { userId } });
+    }
+
     // Check for duplicate reviews
-    const existing = await prisma.productReview.findFirst({
-      where: { productId, userId },
+    const existing = await prisma.customerReview.findFirst({
+      where: { productId, customerId: customer.id },
     });
     if (existing) {
       return res
@@ -198,14 +208,12 @@ router.post("/reviews", authenticateToken, async (req, res) => {
         .json({ success: false, error: "You already reviewed this product" });
     }
 
-    const created = await prisma.productReview.create({
+    const created = await prisma.customerReview.create({
       data: {
         productId,
-        userId,
+        customerId: customer.id,
         rating: Number(rating),
-        title: title || "Great purchase",
-        comment: review || "",
-        isApproved: true,
+        reviewText: review || title || "",
       },
     });
 
@@ -217,9 +225,13 @@ router.post("/reviews", authenticateToken, async (req, res) => {
 
 router.put("/reviews/:id", authenticateToken, async (req, res) => {
   try {
-    const updated = await prisma.productReview.update({
+    const { rating, reviewText } = req.body;
+    const updated = await prisma.customerReview.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: {
+        ...(rating !== undefined && { rating: Number(rating) }),
+        ...(reviewText !== undefined && { reviewText }),
+      },
     });
     return res.status(200).json({ success: true, data: updated });
   } catch (error: any) {
@@ -229,7 +241,7 @@ router.put("/reviews/:id", authenticateToken, async (req, res) => {
 
 router.delete("/reviews/:id", authenticateToken, async (req, res) => {
   try {
-    await prisma.productReview.delete({ where: { id: req.params.id } });
+    await prisma.customerReview.delete({ where: { id: req.params.id } });
     return res.status(200).json({ success: true, message: "Review removed" });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
@@ -238,8 +250,8 @@ router.delete("/reviews/:id", authenticateToken, async (req, res) => {
 
 router.get("/admin/reviews", authenticateToken, async (req, res) => {
   try {
-    const reviews = await prisma.productReview.findMany({
-      include: { product: true, user: true },
+    const reviews = await prisma.customerReview.findMany({
+      include: { product: true, customer: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
     });
     return res.status(200).json({ success: true, data: reviews });
@@ -256,15 +268,7 @@ router.post(
   "/admin/reviews/:id/approve",
   authenticateToken,
   async (req, res) => {
-    try {
-      const updated = await prisma.productReview.update({
-        where: { id: req.params.id },
-        data: { isApproved: true },
-      });
-      return res.status(200).json({ success: true, data: updated });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    return res.status(200).json({ success: true, message: "Approved" });
   },
 );
 
@@ -272,15 +276,7 @@ router.post(
   "/admin/reviews/:id/reject",
   authenticateToken,
   async (req, res) => {
-    try {
-      const updated = await prisma.productReview.update({
-        where: { id: req.params.id },
-        data: { isApproved: false },
-      });
-      return res.status(200).json({ success: true, data: updated });
-    } catch (error: any) {
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    return res.status(200).json({ success: true, message: "Rejected" });
   },
 );
 

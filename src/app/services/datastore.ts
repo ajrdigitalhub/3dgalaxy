@@ -13,7 +13,7 @@ import {
 } from 'firebase/auth';
 import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
-import { SettingsService, DEFAULT_FOOTER_GROUPS } from '../core/services/settings.service';
+import { SettingsService, DEFAULT_FOOTER_GROUPS, DEFAULT_PAYMENT_ICONS } from '../core/services/settings.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
@@ -617,9 +617,11 @@ export class DatastoreService {
   footerData = computed<any>(() => {
     const f = this.settingsService.footer() || {};
     const groups = (f.groups && f.groups.length > 0) ? f.groups : DEFAULT_FOOTER_GROUPS;
+    const paymentIcons = (f.paymentIcons && f.paymentIcons.length > 0) ? f.paymentIcons : DEFAULT_PAYMENT_ICONS;
     return {
       ...f,
-      groups: groups
+      groups: groups,
+      paymentIcons: paymentIcons
     };
   });
   footerLoading = signal<boolean>(true);
@@ -840,6 +842,13 @@ export class DatastoreService {
     }
     
     // Sync theme class & SettingsService theme updates
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        this.theme.set(savedTheme);
+      }
+    }
+
     effect(() => {
       this.syncThemeClass(this.theme());
     });
@@ -847,9 +856,12 @@ export class DatastoreService {
     effect(() => {
       const themeData = this.settingsService.theme();
       if (themeData && themeData.darkMode !== undefined) {
-        const targetMode = themeData.darkMode ? 'dark' : 'light';
-        if (this.theme() !== targetMode) {
-          this.theme.set(targetMode);
+        const hasUserPref = typeof localStorage !== 'undefined' && (localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme'));
+        if (!hasUserPref) {
+          const targetMode = themeData.darkMode ? 'dark' : 'light';
+          if (this.theme() !== targetMode) {
+            this.theme.set(targetMode);
+          }
         }
       }
     });
@@ -1368,7 +1380,13 @@ export class DatastoreService {
   }
 
   toggleTheme() {
-    this.theme.update(t => t === 'dark' ? 'light' : 'dark');
+    const nextTheme = this.theme() === 'dark' ? 'light' : 'dark';
+    this.theme.set(nextTheme);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      localStorage.setItem('3d_galaxy_theme', nextTheme);
+      localStorage.setItem('theme', nextTheme);
+    }
+    this.syncThemeClass(nextTheme);
   }
 
   // --- CRUD OPERATIONS ---

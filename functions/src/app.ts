@@ -35,6 +35,7 @@ import pwaRoutes from "./routes/pwa";
 import headerMenuRoutes from "./routes/headerMenu";
 import marketingRoutes from "./routes/marketing";
 import homepageRoutes from "./routes/homepage";
+import { bannerRoutes, adminBannerRoutes } from "./modules/banner/banner.routes";
 import { getServiceConfig } from "./controllers/settings";
 import {
   getConsolidatedHome,
@@ -113,6 +114,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", variantImageRoutes); // Since some endpoints start with /variants or /product-variant-images
 app.use("/api/brands", brandRoutes);
+app.use("/api/banners", bannerRoutes);
+app.use("/api/admin/banners", adminBannerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin/products", adminProductRoutes);
 app.use("/api/menus", menuRoutes);

@@ -1427,9 +1427,91 @@
         </div>
       </div>
 
-      <!-- Footer Bottom segment (Copyright & Payment Icons) -->
+      <!-- PAYMENTS ACCEPTED SECTION -->
+      <div class="border-t border-neutral-200/60 dark:border-neutral-900/80 mt-10 pt-6">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-neutral-50/80 dark:bg-neutral-900/40 border border-neutral-200/60 dark:border-neutral-850/80 backdrop-blur-xs">
+          <!-- Left: Section Title & Security Info -->
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-2xs">
+              <mat-icon class="scale-90 text-lg">verified_user</mat-icon>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black text-neutral-900 dark:text-neutral-100 uppercase tracking-widest font-sans">
+                  Payments Accepted
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[9px] font-black tracking-wider">
+                  100% SECURE
+                </span>
+              </div>
+              <p class="text-[10px] text-neutral-500 dark:text-neutral-400 font-medium">
+                Encrypted & safe checkout powered by Cashfree Payments
+              </p>
+            </div>
+          </div>
+
+          <!-- Right: Payment Badges (VISA, RuPay, Cashfree, Mastercard) -->
+          <div class="flex flex-wrap items-center justify-center md:justify-end gap-2.5">
+            <!-- VISA -->
+            <div class="px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xs flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:border-blue-500/50 hover:shadow-blue-500/10 group" title="VISA Accepted">
+              <svg class="h-4.5 w-auto rounded-xs" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="24" rx="3" fill="#1434CB"/>
+                <path d="M13.6 16.5H11.5L13 7.5H15.1L13.6 16.5ZM21.2 7.6C20.7 7.4 19.9 7.2 19 7.2C16.6 7.2 15 8.4 15 10.2C15 11.5 16.2 12.2 17.1 12.6C18 13.1 18.3 13.4 18.3 13.8C18.3 14.4 17.6 14.7 16.9 14.7C15.7 14.7 15 14.5 14 14L13.6 16.6C14.4 17 15.6 17.3 17 17.3C19.6 17.3 21.3 15.9 21.3 13.6C21.3 12.3 20.5 11.3 18.8 10.5C17.9 10 17.4 9.7 17.4 9.3C17.4 8.9 17.9 8.6 18.7 8.6C19.6 8.6 20.2 8.8 20.7 9L21.2 7.6ZM27.1 7.5H25.3C24.7 7.5 24.3 7.7 24.1 8.2L20.6 16.5H23.1L23.6 15.1H26.7L27 16.5H29.2L27.1 7.5ZM24.3 13.2L25.6 9.7L26.3 13.2H24.3ZM9.8 7.5L7.7 13.7L7.4 12.4C6.9 10.9 5.6 9.4 4.1 8.6L6.2 16.5H8.7L12.4 7.5H9.8Z" fill="white"/>
+                <path d="M5.8 7.5H2.1L2 7.7C4.9 8.4 6.8 10.2 7.6 12.4L6.8 8.2C6.6 7.7 6.2 7.5 5.8 7.5Z" fill="#F7B600"/>
+              </svg>
+              <span class="text-[11px] font-black tracking-wider text-neutral-800 dark:text-neutral-200 font-sans">VISA</span>
+            </div>
+
+            <!-- RuPay -->
+            <div class="px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xs flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:border-orange-500/50 hover:shadow-orange-500/10 group" title="RuPay Accepted">
+              <svg class="h-4.5 w-auto rounded-xs" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="38" height="24" rx="3" fill="#0F172A"/>
+                <text x="4" y="16" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="11" font-style="italic">RuPay</text>
+                <path d="M26 7.5l3.5 4.5-3.5 4.5h2.5l3.5-4.5-3.5-4.5H26z" fill="#F97316"/>
+                <path d="M30 7.5l3.5 4.5-3.5 4.5h2.5l3.5-4.5-3.5-4.5H30z" fill="#10B981"/>
+              </svg>
+              <span class="text-[11px] font-black tracking-wider text-neutral-800 dark:text-neutral-200 font-sans">RuPay</span>
+            </div>
+
+            <!-- Cashfree -->
+            <div class="px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xs flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:border-cyan-500/50 hover:shadow-cyan-500/10 group" title="Cashfree Payments Accepted">
+              <svg class="h-4.5 w-auto rounded-xs" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="24" rx="3" fill="#3B0764"/>
+                <path d="M12.5 7.5C9.5 7.5 7 10 7 12C7 14 9.5 16.5 12.5 16.5C14.5 16.5 16.2 15.4 17 13.8L15 12.8C14.5 13.8 13.6 14.5 12.5 14.5C11.1 14.5 9.2 13.1 9.2 12C9.2 10.9 11.1 9.5 12.5 9.5C13.6 9.5 14.5 10.2 15 11.2L17 10.2C16.2 8.6 14.5 7.5 12.5 7.5Z" fill="#06B6D4"/>
+                <path d="M23.5 7.5C21.5 7.5 19.8 8.6 19 10.2L21 11.2C21.5 10.2 22.4 9.5 23.5 9.5C24.9 9.5 26.8 10.9 26.8 12C26.8 13.1 24.9 14.5 23.5 14.5C22.4 14.5 21.5 13.8 21 12.8L19 13.8C19.8 15.4 21.5 16.5 23.5 16.5C26.5 16.5 29 14 29 12C29 10 26.5 7.5 23.5 7.5Z" fill="#38BDF8"/>
+              </svg>
+              <span class="text-[11px] font-black tracking-wider text-neutral-800 dark:text-neutral-200 font-sans">Cashfree</span>
+            </div>
+
+            <!-- Mastercard -->
+            <div class="px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xs flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:border-red-500/50 hover:shadow-red-500/10 group" title="Mastercard Accepted">
+              <svg class="h-4.5 w-auto rounded-xs" viewBox="0 0 36 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="24" rx="3" fill="#18181B"/>
+                <circle cx="13" cy="12" r="6.5" fill="#EB001B"/>
+                <circle cx="23" cy="12" r="6.5" fill="#F79E1B"/>
+                <path d="M18 7.1A6.47 6.47 0 0 0 15.4 12c0 2.05.9 3.86 2.35 5.02A6.47 6.47 0 0 0 20.6 12c0-2.05-.9-3.86-2.6-5.02z" fill="#FF5F00"/>
+              </svg>
+              <span class="text-[11px] font-black tracking-wider text-neutral-800 dark:text-neutral-200 font-sans">Mastercard</span>
+            </div>
+
+            <!-- Additional dynamic payment icons if uploaded via admin -->
+            @for (icon of ds.footerData()?.paymentIcons; track icon.id) {
+              @if (icon.isActive && icon.name !== 'VISA' && icon.name !== 'RuPay' && icon.name !== 'Cashfree' && icon.name !== 'Mastercard') {
+                <div class="px-3 py-1.5 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xs flex items-center gap-2 transition-all duration-200 hover:scale-105">
+                  @if (icon.imageUrl) {
+                    <img [src]="icon.imageUrl" [alt]="icon.name" class="h-4.5 w-auto object-contain block" referrerpolicy="no-referrer"/>
+                  }
+                  <span class="text-[11px] font-black tracking-wider text-neutral-800 dark:text-neutral-200 uppercase font-sans">{{ icon.name }}</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Bottom segment (Copyright & SSL badge) -->
       <div
-        class="border-t border-neutral-100 dark:border-neutral-900 mt-12 pt-8 text-[9px] sm:text-[10px] text-neutral-450 font-bold uppercase tracking-widest flex flex-col md:flex-row items-center justify-between gap-6"
+        class="border-t border-neutral-100 dark:border-neutral-900 mt-6 pt-6 text-[9px] sm:text-[10px] text-neutral-450 font-bold uppercase tracking-widest flex flex-col md:flex-row items-center justify-between gap-4"
       >
         <div class="flex items-center gap-2">
           <span
@@ -1441,26 +1523,9 @@
           </p>
         </div>
 
-        <!-- Payment Icons list -->
-        @if (ds.footerData()?.paymentIcons?.length) {
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          @for (icon of ds.footerData()?.paymentIcons; track icon.id) { @if
-          (icon.isActive) {
-          <span
-            class="px-2 py-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-850 rounded-lg text-[9px] text-neutral-500 font-bold tracking-wider uppercase flex items-center gap-1.5 font-mono"
-          >
-            @if (icon.imageUrl) {
-            <img
-              [src]="icon.imageUrl"
-              [alt]="icon.name"
-              class="h-3 w-auto object-contain block"
-              referrerpolicy="no-referrer"
-            />
-            } {{ icon.name }}
-          </span>
-          } }
+        <div class="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium normal-case tracking-normal">
+          All transactions protected with 256-bit SSL encryption
         </div>
-        }
       </div>
 
       <!-- Mobile configuration bottom text -->

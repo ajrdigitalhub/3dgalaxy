@@ -65,7 +65,7 @@ export const getRecommendedProducts = async (config: {
       case 'Trending':
       case 'Highest Rated': {
         // Get highest rated reviews
-        const topRated = await prisma.productReview.groupBy({
+        const topRated = await prisma.customerReview.groupBy({
           by: ['productId'],
           _avg: { rating: true },
           orderBy: { _avg: { rating: 'desc' } },

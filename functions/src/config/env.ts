@@ -11,6 +11,9 @@ export const ENV = {
   PG_SSL: process.env.PG_SSL === 'true',
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: process.env.BACKEND_PORT || 4000,
+  PG_POOL_MAX: Number(process.env.PG_POOL_MAX || 10),
+  PG_IDLE_TIMEOUT_MS: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
+  PG_CONN_TIMEOUT_MS: Number(process.env.PG_CONN_TIMEOUT_MS || 30000),
 };
 
 export const getDatabaseUrl = () => {

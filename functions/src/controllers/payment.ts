@@ -877,9 +877,112 @@ export const getAdminTransactions = async (req: Request, res: Response) => {
   try {
     const list = await prisma.transactionHistory.findMany({
       orderBy: { createdAt: 'desc' },
+      take: 100,
     });
-    return res.status(200).json({ status: 'success', success: true, message: 'success', data: list });
+
+    const orders = await prisma.order.findMany({
+      take: 100,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        orderNumber: true,
+        paymentStatus: true,
+        customer: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              }
+            }
+          }
+        },
+        shippingAddress: {
+          select: {
+            addressLine1: true,
+            city: true,
+          }
+        },
+        payments: {
+          select: {
+            id: true,
+            paymentMethod: true,
+            transactionId: true,
+            amount: true,
+            status: true,
+            createdAt: true,
+          }
+        }
+      }
+    });
+
+    const getOrderCustomerName = (o: any) => {
+      if (!o) return null;
+      if (o.customer?.user) {
+        const name = `${o.customer.user.firstName || ''} ${o.customer.user.lastName || ''}`.trim();
+        if (name) return name;
+      }
+      return null;
+    };
+
+    const getOrderCustomerEmail = (o: any) => {
+      if (!o) return null;
+      return o.customer?.user?.email || null;
+    };
+
+    const orderMap = new Map<string, any>();
+    orders.forEach((o: any) => orderMap.set(o.id, o));
+
+    const formattedList: any[] = list.map(tx => {
+      const orderInfo = tx.orderId ? orderMap.get(tx.orderId) : null;
+      return {
+        ...tx,
+        amount: Number(tx.amount || 0),
+        orderNumber: orderInfo?.orderNumber || (tx.orderId ? (tx.orderId.length > 8 ? tx.orderId.slice(0, 8) : tx.orderId) : 'N/A'),
+        customerName: getOrderCustomerName(orderInfo) || tx.customerId || 'Guest',
+        customerEmail: getOrderCustomerEmail(orderInfo) || 'N/A',
+      };
+    });
+
+    const txIds = new Set(list.map(t => t.id));
+    const txOrderIds = new Set(list.map(t => t.orderId).filter(Boolean));
+
+    orders.forEach((o: any) => {
+      if (o.payments && o.payments.length > 0) {
+        o.payments.forEach((p: any) => {
+          if (!txIds.has(p.id) && (!p.transactionId || !txIds.has(p.transactionId)) && !txOrderIds.has(o.id)) {
+            formattedList.push({
+              id: p.id,
+              orderId: o.id,
+              orderNumber: o.orderNumber,
+              customerId: null,
+              customerName: getOrderCustomerName(o) || 'Guest',
+              customerEmail: getOrderCustomerEmail(o) || 'N/A',
+              paymentMethod: p.paymentMethod || 'ONLINE',
+              gatewayName: p.paymentMethod || 'GATEWAY',
+              gatewayOrderId: p.transactionId || o.orderNumber,
+              gatewayTransactionId: p.transactionId,
+              gatewayPaymentId: p.transactionId,
+              amount: Number(p.amount || 0),
+              currency: 'INR',
+              status: p.status === 'SUCCESS' || p.status === 'CAPTURED' ? 'Captured' : p.status,
+              paymentStatus: p.status,
+              responsePayload: null,
+              requestPayload: null,
+              createdAt: p.createdAt,
+              updatedAt: p.createdAt,
+            });
+          }
+        });
+      }
+    });
+
+    formattedList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return res.status(200).json({ status: 'success', success: true, message: 'success', data: formattedList });
   } catch (error: any) {
+    console.error('Error fetching admin transactions:', error);
     return res.status(500).json({ status: 'error', success: false, message: error.message, error: error.message });
   }
 };

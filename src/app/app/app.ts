@@ -81,12 +81,10 @@ export class App {
     // Ensure Settings API theme is fetched and applied first in application init
     this.settingsService.loadSettings();
 
-    // Keep isHome updated with active path and re-apply settings theme on navigation
+    // Keep isHome updated with active path
     this.router.events.subscribe((val) => {
       if (val instanceof NavigationEnd) {
         this.currentUrl.set(val.url);
-        // Ensure Settings API theme is applied first on every page load
-        this.settingsService.loadSettings();
 
         // Auto close dropdowns on navigation
         this.isRoleDropdownOpen.set(false);
@@ -411,16 +409,7 @@ export class App {
   });
 
   toggleTheme() {
-    const nextTheme = this.ds.theme() === 'dark' ? 'light' : 'dark';
-    this.ds.theme.set(nextTheme);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('3d_galaxy_theme', nextTheme);
-      localStorage.setItem('theme', nextTheme);
-    }
-    this.settingsService.applyTheme({
-      ...(this.settingsService.theme() || {}),
-      darkMode: nextTheme === 'dark'
-    });
+    this.ds.toggleTheme();
   }
 
   toggleRoleDropdown() {

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ENV } from './env';
 
-// PostgreSQL connection pool module with max connection limit for session mode
+// PostgreSQL connection pool module configured for high concurrency and cloud pooler stability
 export const pool = new Pool({
   user: ENV.PG_USER,
   host: ENV.PG_HOST,
@@ -11,9 +11,11 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: 5, // Keep under Supabase session mode pool_size limit (15)
-  idleTimeoutMillis: 10000, // Close idle clients after 10s
-  connectionTimeoutMillis: 5000, // Wait max 5s for an available client
+  max: ENV.PG_POOL_MAX, // Default 15 connection limit for active API requests
+  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS, // Retain idle sockets up to 30s
+  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS, // Allow up to 15s to establish socket / get available client
+  keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
+  keepAliveInitialDelayMillis: 10000,
 });
 
 // Automatic reconnect handling and error logging
