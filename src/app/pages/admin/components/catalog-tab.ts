@@ -153,7 +153,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         admin.updateProductName($any($event.target).value)
                       "
                       placeholder="e.g. Bambu Lab P1S"
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                     />
                   </div>
                   <div class="space-y-1">
@@ -166,7 +166,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       [value]="admin.pSlug()"
                       (input)="admin.pSlug.set($any($event.target).value)"
                       placeholder="bambu-lab-p1s"
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-bold outline-none text-blue-500 dark:text-blue-400"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold outline-none text-blue-500 dark:text-blue-400"
                     />
                   </div>
                   <div class="space-y-1">
@@ -179,7 +179,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       [value]="admin.pSku()"
                       (input)="admin.pSku.set($any($event.target).value)"
                       placeholder="e.g. GLX-PLA-BLU"
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white"
                     />
                   </div>
 
@@ -192,7 +192,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       <button
                         type="button"
                         (click)="pCatDropdownOpen.set(!pCatDropdownOpen())"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
                       >
                         <span>{{
                           getCategoryPath(admin.pCatId()) ||
@@ -208,7 +208,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                           class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col"
                         >
                           <div
-                            class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1"
+                            class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1"
                           >
                             <mat-icon
                               class="text-zinc-400 text-sm shrink-0 mr-1.5"
@@ -306,7 +306,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         type="number"
                         [value]="admin.pMrp()"
                         (input)="admin.pMrp.set(+$any($event.target).value)"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
                       />
                     </div>
                     <div class="space-y-1">
@@ -318,7 +318,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         type="number"
                         [value]="admin.pSale()"
                         (input)="admin.pSale.set(+$any($event.target).value)"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none"
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none"
                       />
                     </div>
                     <div class="space-y-1">
@@ -330,7 +330,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         type="number"
                         [value]="admin.pDealer()"
                         (input)="admin.pDealer.set(+$any($event.target).value)"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none"
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -348,7 +348,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         type="number"
                         [value]="admin.pStock()"
                         (input)="admin.pStock.set(+$any($event.target).value)"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white"
+                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white"
                       />
                     </div>
                     <div class="space-y-1">
@@ -1537,7 +1537,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
               </div>
 
               <div
-                class="p-6 bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar shadow-xs"
+                class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar shadow-xs"
               >
                 <table class="w-full text-left text-xs whitespace-nowrap">
                   <thead>
@@ -1833,7 +1833,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     [value]="categorySearchQuery()"
                     (input)="categorySearchQuery.set($any($event.target).value)"
                     placeholder="Search categories..."
-                    class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -1998,7 +1998,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       [value]="admin.newCatName()"
                       (input)="admin.newCatName.set($any($event.target).value)"
                       placeholder="e.g. FDM Accessories"
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                     />
                   </div>
 
@@ -2012,7 +2012,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       (click)="
                         editorCatDropdownOpen.set(!editorCatDropdownOpen())
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
                     >
                       <span>{{
                         getCategoryPath(admin.newCatParentId()) ||
@@ -2028,7 +2028,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col"
                       >
                         <div
-                          class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg px-2.5 py-1"
+                          class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1"
                         >
                           <mat-icon
                             class="text-zinc-400 text-sm shrink-0 mr-1.5"
@@ -2153,7 +2153,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         (change)="
                           admin.catIsActive.set($any($event.target).checked)
                         "
-                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
+                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
                       />
                       <span
                         class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest"
@@ -2167,7 +2167,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         (change)="
                           admin.catIsFeatured.set($any($event.target).checked)
                         "
-                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
+                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
                       />
                       <span
                         class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest"
@@ -2178,7 +2178,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
 
                   <!-- Category SEO tags -->
                   <div
-                    class="p-4 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-200 dark:border-zinc-850 space-y-2"
+                    class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2"
                   >
                     <span
                       class="text-[9px] font-black uppercase text-zinc-450 dark:text-zinc-500 tracking-widest block"
@@ -2298,7 +2298,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                   [value]="admin.newColName()"
                   (input)="admin.newColName.set($any($event.target).value)"
                   placeholder="e.g. PLA Professional Filament"
-                  class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                  class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                 />
               </div>
               <div class="space-y-1">
@@ -2373,7 +2373,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                           >
                         } @else {
                           <span
-                            class="bg-zinc-250 dark:bg-zinc-850 text-zinc-500 px-1 py-0.5 rounded text-[8px] font-black"
+                            class="bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1 py-0.5 rounded text-[8px] font-black"
                             >INACTIVE</span
                           >
                         }
@@ -2441,7 +2441,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                 @if (admin.editingBrand()) {
                   <button
                     (click)="admin.cancelBrandEdit()"
-                    class="text-[9px] font-black uppercase px-2 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded text-zinc-500 cursor-pointer"
+                    class="text-[9px] font-black uppercase px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500 cursor-pointer"
                   >
                     New
                   </button>
@@ -2459,7 +2459,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     [value]="admin.brandName()"
                     (input)="admin.brandName.set($any($event.target).value)"
                     placeholder="e.g. Creality Inc."
-                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                   />
                 </div>
                 <div class="space-y-1">
@@ -2472,7 +2472,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     [value]="admin.brandSlug()"
                     (input)="admin.brandSlug.set($any($event.target).value)"
                     placeholder="creality-inc"
-                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
                   />
                 </div>
                 <div class="space-y-1">
@@ -2485,7 +2485,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                     [value]="admin.brandCountry()"
                     (input)="admin.brandCountry.set($any($event.target).value)"
                     placeholder="e.g. Shenzhen HQ"
-                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                   />
                 </div>
                 <div class="space-y-1 border-b dark:border-zinc-800 pb-2">
@@ -2566,7 +2566,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
               >
                 @for (p of admin.ds.products(); track p.id) {
                   <tr
-                    class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 text-zinc-950 dark:text-zinc-150"
+                    class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 text-zinc-950 dark:text-zinc-100"
                   >
                     <td
                       class="py-4 font-black text-zinc-900 dark:text-white uppercase font-sans"

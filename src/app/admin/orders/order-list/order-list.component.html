@@ -40,7 +40,7 @@
             @for (o of orderService.orders(); track o.id) {
               <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 cursor-pointer" (click)="inspectOrder(o)">
                 <td class="py-4">
-                  <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-850 uppercase">{{ o.orderNumber }}</span>
+                  <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-800 uppercase">{{ o.orderNumber }}</span>
                 </td>
                 <td class="py-4">
                   <p class="font-black text-zinc-900 dark:text-white uppercase">{{ o.customerName }}</p>
@@ -55,7 +55,7 @@
                 <td class="py-4 font-mono font-black text-zinc-800 dark:text-white">₹{{ o.grandTotal | number }}</td>
                 <td class="py-4 text-right" (click)="$event.stopPropagation()">
                   <div class="inline-flex gap-1.5 align-middle">
-                    <select [value]="o.status" (change)="updateOrderStatus(o.id, $any($event.target).value)" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer text-zinc-900 dark:text-white font-bold">
+                    <select [value]="o.status" (change)="updateOrderStatus(o.id, $any($event.target).value)" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer text-zinc-900 dark:text-white font-bold">
                       <option value="pending">Pending Auth</option>
                       <option value="processing">Processing Job</option>
                       <option value="shipped">Courier Dispatched</option>
@@ -87,7 +87,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="space-y-1">
             <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-wide">Client Name *</span>
-            <input type="text" [value]="draftCustomerName()" (input)="draftCustomerName.set($any($event.target).value)" placeholder="e.g. Ramesh Patel" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+            <input type="text" [value]="draftCustomerName()" (input)="draftCustomerName.set($any($event.target).value)" placeholder="e.g. Ramesh Patel" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
           </div>
           <div class="space-y-1">
             <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-wide">Client Email *</span>
@@ -104,7 +104,7 @@
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Attach Catalog Product</span>
           <div class="flex gap-2">
             <div class="flex-1 relative">
-              <input type="text" [value]="draftQuery()" (input)="draftQuery.set($any($event.target).value); draftItemSelectorOpen.set(true)" placeholder="Search catalog by name or sku code..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+              <input type="text" [value]="draftQuery()" (input)="draftQuery.set($any($event.target).value); draftItemSelectorOpen.set(true)" placeholder="Search catalog by name or sku code..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
               
               @if (draftItemSelectorOpen() && draftQuery().length > 0) {
                 <div class="absolute z-30 left-0 right-0 top-11 p-2 bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl space-y-1 shadow-2xl max-h-50 overflow-y-auto font-sans">
@@ -131,7 +131,7 @@
                 <div class="flex items-center justify-between text-xs font-bold">
                   <span class="font-black text-zinc-900 dark:text-white uppercase truncate max-w-sm">{{ item.product.name }}</span>
                   <div class="flex items-center gap-3">
-                    <input type="number" [value]="item.qty" (change)="updateDraftItemQty(item.product.id, $any($event.target).value)" class="w-12 px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-850 rounded-md font-bold font-mono text-center text-zinc-900 dark:text-white">
+                    <input type="number" [value]="item.qty" (change)="updateDraftItemQty(item.product.id, $any($event.target).value)" class="w-12 px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-800 rounded-md font-bold font-mono text-center text-zinc-900 dark:text-white">
                     <button (click)="removeDraftItem(item.product.id)" class="text-red-400 cursor-pointer hover:text-red-650 transition-colors border-none bg-none">
                       <mat-icon class="text-base font-black">close</mat-icon>
                     </button>
@@ -220,7 +220,7 @@
           </div>
 
           <!-- Specifications parameters -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl text-zinc-550 dark:text-zinc-400 font-mono text-[10px]">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl text-zinc-550 dark:text-zinc-400 font-mono text-[10px]">
             <div>
               <span class="text-[9px] block text-zinc-400 font-black uppercase tracking-wider mb-0.5 font-sans">Specifications</span>
               <span class="font-black text-zinc-900 dark:text-white font-sans">{{ q.volumeCm3 }}cm³ Vol | {{ q.weightGrams }}g Mass</span>
@@ -248,7 +248,7 @@
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 font-sans text-xs font-bold">
             <div class="space-y-1">
               <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Modify Manual Cost Override (INR)</span>
-              <input type="number" [value]="q.estimatedCost" (change)="overrideQuotePrice(q.id, $event)" class="w-40 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none font-bold text-zinc-900 dark:text-white">
+              <input type="number" [value]="q.estimatedCost" (change)="overrideQuotePrice(q.id, $event)" class="w-40 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none font-bold text-zinc-900 dark:text-white">
             </div>
 
             <div class="flex items-center gap-2">
@@ -302,7 +302,7 @@
             <p class="text-[9px] text-zinc-400 uppercase font-black">Booked Parts SKUs:</p>
             <div class="space-y-1.5 pt-1">
               @for (item of order.items; track item.productId) {
-                <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2.5 rounded-xl border dark:border-zinc-850">
+                <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-2.5 rounded-xl border dark:border-zinc-800">
                   <span class="font-black text-zinc-900 dark:text-white uppercase truncate max-w-xs">{{ item.name }}</span>
                   <span class="font-mono text-zinc-400">(X{{ item.quantity }}) &middot; ₹{{ item.price | number }}</span>
                 </div>

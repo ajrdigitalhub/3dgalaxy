@@ -46,13 +46,13 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
         
         <!-- 1. General & Installation Controls -->
         <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs space-y-4">
-          <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-850">
+          <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
             <mat-icon class="text-orange-500 text-sm">settings</mat-icon>
             General & Installation Controls
           </h2>
 
           <div class="space-y-4">
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Enable PWA Module</span>
                 <span class="text-[10px] text-zinc-500">Enable progressive web app features for administrators.</span>
@@ -60,7 +60,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
               <input type="checkbox" [(ngModel)]="formSettings.enablePwa" class="w-5 h-5 accent-orange-600 cursor-pointer">
             </div>
 
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Show Install App Button</span>
                 <span class="text-[10px] text-zinc-500">Render native PWA install button in Admin Dashboard widget.</span>
@@ -68,7 +68,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
               <input type="checkbox" [(ngModel)]="formSettings.enableInstallButton" class="w-5 h-5 accent-orange-600 cursor-pointer">
             </div>
 
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Allow Offline Mode</span>
                 <span class="text-[10px] text-zinc-500">Cache essential static assets for offline admin navigation.</span>
@@ -76,7 +76,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
               <input type="checkbox" [(ngModel)]="formSettings.allowOfflineMode" class="w-5 h-5 accent-orange-600 cursor-pointer">
             </div>
 
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Background Sync</span>
                 <span class="text-[10px] text-zinc-500">Queue pending admin offline actions for automatic background sync.</span>
@@ -88,13 +88,13 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
 
         <!-- 2. Update & Caching Strategy -->
         <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs space-y-4">
-          <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-850">
+          <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
             <mat-icon class="text-orange-500 text-sm">cached</mat-icon>
             Update & Cache Policies
           </h2>
 
           <div class="space-y-4">
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Auto Background Update</span>
                 <span class="text-[10px] text-zinc-500">Automatically check and prepare new service worker builds.</span>
@@ -102,7 +102,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
               <input type="checkbox" [(ngModel)]="formSettings.autoUpdate" class="w-5 h-5 accent-orange-600 cursor-pointer">
             </div>
 
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
               <div>
                 <span class="text-xs font-bold text-zinc-900 dark:text-white block">Force Update On Outdated Version</span>
                 <span class="text-[10px] text-zinc-500">Prompt administrators immediately if critical security build released.</span>
@@ -134,7 +134,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
 
       <!-- 3. Allowed Environments -->
       <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 shadow-xs space-y-4">
-        <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-850">
+        <h2 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
           <mat-icon class="text-orange-500 text-sm">domain</mat-icon>
           Environment Permissions
         </h2>
@@ -142,7 +142,7 @@ import { PwaService, PwaSettings, DEFAULT_PWA_SETTINGS } from '../../../core/ser
         <p class="text-xs text-zinc-500 dark:text-zinc-400">Select host environments where PWA installation and caching commands are permitted for administrators.</p>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <label *ngFor="let env of availableEnvironments" class="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850/50 cursor-pointer select-none">
+          <label *ngFor="let env of availableEnvironments" class="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 cursor-pointer select-none">
             <input 
               type="checkbox" 
               [checked]="isEnvSelected(env.id)" 

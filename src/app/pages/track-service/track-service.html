@@ -21,7 +21,7 @@
           [(ngModel)]="trackingQuery"
           (keyup.enter)="searchTracking()"
           placeholder="Enter Tracking No. (e.g. TRK-849204) or Enquiry ID"
-          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors uppercase"
+          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors uppercase"
         />
       </div>
 
@@ -32,7 +32,7 @@
           [(ngModel)]="authVal"
           (keyup.enter)="searchTracking()"
           placeholder="Email / Phone (Optional)"
-          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-2xl text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
+          class="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-colors"
         />
       </div>
 
@@ -109,7 +109,7 @@
         <!-- Vertical Timeline Log for Mobile & Audit -->
         <div class="space-y-3 pt-2">
           @for (log of e.timeline; track log.timestamp) {
-            <div class="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+            <div class="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
               <div class="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
                 <mat-icon class="text-xs">check_circle</mat-icon>
               </div>
@@ -137,19 +137,19 @@
           </h3>
 
           <div class="grid grid-cols-2 gap-3 text-xs font-mono">
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
               <span class="block text-[9px] uppercase text-zinc-400 font-bold">Material & Color</span>
               <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.material }} ({{ e.color }})</span>
             </div>
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
               <span class="block text-[9px] uppercase text-zinc-400 font-bold">Quantity</span>
               <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.quantity }} Units</span>
             </div>
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
               <span class="block text-[9px] uppercase text-zinc-400 font-bold">Layer Height & Infill</span>
               <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.layerHeight }} / {{ e.infillPercent }}%</span>
             </div>
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800">
               <span class="block text-[9px] uppercase text-zinc-400 font-bold">Est. Volume & Weight</span>
               <span class="font-extrabold text-zinc-900 dark:text-zinc-100">{{ e.volumeCm3 }} cm³ ({{ e.weightGrams }}g)</span>
             </div>
@@ -211,7 +211,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           @for (file of files(); track file.id) {
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 flex items-center justify-between font-mono text-xs">
+            <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between font-mono text-xs">
               <div class="flex items-center gap-3 truncate max-w-[70%]">
                 <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
                   <mat-icon class="text-sm">insert_drive_file</mat-icon>

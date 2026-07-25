@@ -478,9 +478,12 @@ export class SettingsService {
         this.http.put<any>(environment.apiUrl + "/admin/settings", payload),
       );
       const d = resp.data !== undefined ? resp.data : resp;
-      if (typeof window !== "undefined" && d) {
-        localStorage.setItem("3d_galaxy_settings", JSON.stringify(d));
-        localStorage.setItem("3d_galaxy_settings_version", String(d.version || 1));
+      if (d) {
+        this.hydrateSettings(d);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("3d_galaxy_settings", JSON.stringify(d));
+          localStorage.setItem("3d_galaxy_settings_version", String(d.version || 1));
+        }
       }
       await this.loadSettings(true);
       return resp;

@@ -18,7 +18,7 @@
                 @if (br.active) {
                   <span class="bg-blue-500/15 text-blue-500 px-1.5 py-0.5 rounded text-[8px] font-black tracking-wide">ACTIVE</span>
                 } @else {
-                  <span class="bg-zinc-250 dark:bg-zinc-850 text-zinc-500 px-1.5 py-0.5 rounded text-[8px] font-black tracking-wide">INACTIVE</span>
+                  <span class="bg-zinc-200 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded text-[8px] font-black tracking-wide">INACTIVE</span>
                 }
               </h4>
               <p class="text-[9px] text-zinc-400 uppercase font-mono tracking-wide pt-0.5">TERRITORY: {{ br.country || 'Global HQ' }}</p>
@@ -47,30 +47,30 @@
           {{ editingBrand() ? 'Edit Verified Alliance' : 'Register Brand Alliance' }}
         </h3>
         @if (editingBrand()) {
-          <button (click)="cancelBrandEdit()" class="text-[9px] font-black uppercase px-2.5 py-1 bg-zinc-100 dark:bg-zinc-850 rounded text-zinc-500 cursor-pointer border-none font-bold">New</button>
+          <button (click)="cancelBrandEdit()" class="text-[9px] font-black uppercase px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500 cursor-pointer border-none font-bold">New</button>
         }
       </div>
 
       <div class="space-y-3">
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Name *</span>
-          <input type="text" [value]="brandName()" (input)="brandName.set($any($event.target).value)" placeholder="e.g. Creality Inc." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+          <input type="text" [value]="brandName()" (input)="brandName.set($any($event.target).value)" placeholder="e.g. Creality Inc." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
         </div>
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Alliance Slug Identification</span>
-          <input type="text" [value]="brandSlug()" (input)="brandSlug.set($any($event.target).value)" placeholder="creality-inc" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold">
+          <input type="text" [value]="brandSlug()" (input)="brandSlug.set($any($event.target).value)" placeholder="creality-inc" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold">
         </div>
         <div class="space-y-1 font-sans">
           <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Manufacturing Territory (Country)</span>
-          <input type="text" [value]="brandCountry()" (input)="brandCountry.set($any($event.target).value)" placeholder="e.g. Shenzhen HQ" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+          <input type="text" [value]="brandCountry()" (input)="brandCountry.set($any($event.target).value)" placeholder="e.g. Shenzhen HQ" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
         </div>
         <div class="space-y-1 font-sans">
           <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Logo URL (PNG/SVG)</span>
-          <input type="text" [value]="brandLogo()" (input)="brandLogo.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+          <input type="text" [value]="brandLogo()" (input)="brandLogo.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
         </div>
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Alliance Banner Description</span>
-          <textarea rows="2" [value]="brandDesc()" (input)="brandDesc.set($any($event.target).value)" placeholder="Exquisite summaries of machinery tools..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"></textarea>
+          <textarea rows="2" [value]="brandDesc()" (input)="brandDesc.set($any($event.target).value)" placeholder="Exquisite summaries of machinery tools..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"></textarea>
         </div>
         
         <div class="flex items-center gap-1.5 pt-2">

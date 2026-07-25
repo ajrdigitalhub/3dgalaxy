@@ -12,7 +12,7 @@ import { PwaService } from '../../../core/services/pwa.service';
     <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800/60 p-6 shadow-xs space-y-6 font-sans">
       
       <!-- Card Header -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-zinc-100 dark:border-zinc-850">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-zinc-100 dark:border-zinc-800">
         <div class="flex items-center gap-4">
           <div class="relative w-14 h-14 rounded-2xl bg-zinc-950 p-2.5 border border-zinc-800 shadow-md shrink-0 flex items-center justify-center">
             <img src="/3d-logo.png" alt="3D Galaxy Admin" class="w-full h-full object-contain">
@@ -63,7 +63,7 @@ import { PwaService } from '../../../core/services/pwa.service';
       <!-- Main Status Grid -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         
-        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850/60 space-y-1">
+        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 space-y-1">
           <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block">Portal Version</span>
           <div class="flex items-center gap-2">
             <mat-icon class="text-sm text-orange-500 w-4 h-4 flex items-center justify-center">token</mat-icon>
@@ -71,7 +71,7 @@ import { PwaService } from '../../../core/services/pwa.service';
           </div>
         </div>
 
-        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850/60 space-y-1">
+        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 space-y-1">
           <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block">Service Worker</span>
           <div class="flex items-center gap-2">
             <span [class.bg-emerald-500]="pwa.swRegistered()" [class.bg-red-500]="!pwa.swRegistered()" class="w-2 h-2 rounded-full"></span>
@@ -79,7 +79,7 @@ import { PwaService } from '../../../core/services/pwa.service';
           </div>
         </div>
 
-        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850/60 space-y-1">
+        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 space-y-1">
           <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block">Network Connection</span>
           <div class="flex items-center gap-2">
             <span [class.bg-emerald-500]="pwa.isOnline()" [class.bg-amber-500]="!pwa.isOnline()" class="w-2 h-2 rounded-full"></span>
@@ -87,7 +87,7 @@ import { PwaService } from '../../../core/services/pwa.service';
           </div>
         </div>
 
-        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-850/60 space-y-1">
+        <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 space-y-1">
           <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400 block">Last Storage Sync</span>
           <div class="flex items-center gap-2">
             <mat-icon class="text-sm text-zinc-400 w-4 h-4 flex items-center justify-center">schedule</mat-icon>
@@ -164,7 +164,7 @@ import { PwaService } from '../../../core/services/pwa.service';
       </div>
 
       <!-- Collapsible System Diagnostic Specs -->
-      <div class="pt-4 border-t border-zinc-100 dark:border-zinc-850">
+      <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800">
         <button 
           (click)="showDiagnostics.set(!showDiagnostics())"
           class="w-full flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition bg-transparent border-none cursor-pointer"

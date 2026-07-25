@@ -45,7 +45,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 @for (o of admin.ds.orders(); track o.id) {
                   <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
                     <td class="py-4">
-                      <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-850 uppercase">{{ o.orderNumber }}</span>
+                      <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-800 uppercase">{{ o.orderNumber }}</span>
                     </td>
                     <td class="py-4">
                       <p class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2">
@@ -76,7 +76,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors mr-2" title="Shipment">
                           <mat-icon class="scale-75">local_shipping</mat-icon>
                         </a>
-                        <select (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
+                        <select (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
                           <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending Auth</option>
                           <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
                           <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing Job</option>
@@ -112,7 +112,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Attach Catalog Product</span>
                 <div class="flex gap-2">
                   <div class="flex-1 relative">
-                    <input type="text" [value]="admin.draftQuery()" (input)="admin.draftQuery.set($any($event.target).value)" (focus)="admin.draftItemSelectorOpen.set(true)" placeholder="Search catalog by name or sku code..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl text-xs outline-none font-bold">
+                    <input type="text" [value]="admin.draftQuery()" (input)="admin.draftQuery.set($any($event.target).value)" (focus)="admin.draftItemSelectorOpen.set(true)" placeholder="Search catalog by name or sku code..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl text-xs outline-none font-bold">
                     @if (admin.draftItemSelectorOpen() && admin.draftQuery().length > 0) {
                       <div class="absolute z-30 left-0 right-0 top-11 p-2 bg-white dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl space-y-1 shadow-2xl max-h-50 overflow-y-auto">
                         @for (p of admin.ds.products(); track p.id) {
@@ -138,7 +138,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <div class="flex items-center justify-between text-xs">
                         <span class="font-black text-zinc-900 dark:text-white uppercase truncate max-w-sm">{{ item.product.name }}</span>
                         <div class="flex items-center gap-3">
-                          <input type="number" [value]="item.qty" (change)="admin.updateDraftItemQty(item.product.id, $any($event.target).value)" class="w-12 px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-850 rounded-md font-bold font-mono text-center">
+                          <input type="number" [value]="item.qty" (change)="admin.updateDraftItemQty(item.product.id, $any($event.target).value)" class="w-12 px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-800 rounded-md font-bold font-mono text-center">
                           <button (click)="admin.removeDraftItem(item.product.id)" class="text-red-400 cursor-pointer hover:text-red-600 transition-colors">
                             <mat-icon class="text-base">close</mat-icon>
                           </button>
@@ -249,7 +249,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </div>
 
                 <!-- METROLOGY METRICS -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-850 rounded-xl text-zinc-550 dark:text-zinc-400 font-mono text-[10px]">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl text-zinc-550 dark:text-zinc-400 font-mono text-[10px]">
                   <div>
                     <span class="text-[9px] block text-zinc-400 font-black uppercase tracking-wider mb-0.5">Specifications</span>
                     <span class="font-black text-zinc-900 dark:text-white font-sans">{{ q.volumeCm3 }}cm³ Vol | {{ q.weightGrams }}g Mass</span>
@@ -277,7 +277,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
                   <div class="space-y-1">
                     <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-widest pl-1">Modify Manual Cost Override (INR)</span>
-                    <input type="number" [value]="q.estimatedCost" (change)="admin.overrideQuotePrice(q.id, $event)" class="w-40 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none font-bold">
+                    <input type="number" [value]="q.estimatedCost" (change)="admin.overrideQuotePrice(q.id, $event)" class="w-40 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none font-bold">
                   </div>
 
                   <div class="flex items-center gap-2">

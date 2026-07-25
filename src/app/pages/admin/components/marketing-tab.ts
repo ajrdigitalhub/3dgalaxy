@@ -32,15 +32,15 @@ import { HeaderAnnouncementsTabComponent } from './header-announcements-tab';
               <div class="space-y-3">
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Voucher Code Tag</span>
-                  <input type="text" [value]="admin.newCouponCode()" (input)="admin.newCouponCode.set($any($event.target).value)" placeholder="e.g. MAKER15" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-850 rounded-xl text-xs uppercase font-black tracking-widest outline-none">
+                  <input type="text" [value]="admin.newCouponCode()" (input)="admin.newCouponCode.set($any($event.target).value)" placeholder="e.g. MAKER15" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs uppercase font-black tracking-widest outline-none">
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Discount percentage (%)</span>
-                  <input type="number" [value]="admin.newCouponDiscount()" (input)="admin.newCouponDiscount.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none">
+                  <input type="number" [value]="admin.newCouponDiscount()" (input)="admin.newCouponDiscount.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none">
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Min spent limit (INR)</span>
-                  <input type="number" [value]="admin.newCouponMinSpent()" (input)="admin.newCouponMinSpent.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none font-bold">
+                  <input type="number" [value]="admin.newCouponMinSpent()" (input)="admin.newCouponMinSpent.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono font-black outline-none font-bold">
                 </div>
                 <button (click)="admin.addCouponCustom()" class="w-full py-3.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 shadow-md shadow-blue-500/10 transition-colors">Publish Code</button>
               </div>
@@ -112,11 +112,11 @@ import { HeaderAnnouncementsTabComponent } from './header-announcements-tab';
               <div class="space-y-3">
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Campaign Name</span>
-                  <input type="text" [value]="admin.newCampTitle()" (input)="admin.newCampTitle.set($any($event.target).value)" placeholder="e.g. Creator PLA Sale Launch" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none">
+                  <input type="text" [value]="admin.newCampTitle()" (input)="admin.newCampTitle.set($any($event.target).value)" placeholder="e.g. Creator PLA Sale Launch" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Dispatch channel relay</span>
-                  <select [value]="admin.newCampType()" (change)="admin.onCampTypeChange($event)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                  <select [value]="admin.newCampType()" (change)="admin.onCampTypeChange($event)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
                     <option value="push">Firebase Push Engine</option>
                     <option value="email">SMTP Cloud Email System</option>
                     <option value="whatsapp">Business Whatsapp API Hub</option>
@@ -124,7 +124,7 @@ import { HeaderAnnouncementsTabComponent } from './header-announcements-tab';
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 pl-1 uppercase">Delivery Message</span>
-                  <textarea rows="3" [value]="admin.newCampMsg()" (input)="admin.newCampMsg.set($any($event.target).value)" placeholder="Compose broadcast details here..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none resize-none"></textarea>
+                  <textarea rows="3" [value]="admin.newCampMsg()" (input)="admin.newCampMsg.set($any($event.target).value)" placeholder="Compose broadcast details here..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none resize-none"></textarea>
                 </div>
                 <button (click)="admin.triggerCampaign()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer transition-all shadow-md shadow-blue-500/10">Launch Cloud Blast</button>
               </div>

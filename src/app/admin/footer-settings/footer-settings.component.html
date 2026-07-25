@@ -205,7 +205,7 @@
                       @let childLinks = links();
                       @for (lnk of childLinks; track lnk.id) {
                         @if (lnk.groupId === grp.id) {
-                          <div class="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-850 rounded-xl text-[10px]">
+                          <div class="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800 rounded-xl text-[10px]">
                             <div class="flex items-center gap-2 min-w-0">
                               <span class="truncate font-bold text-zinc-700 dark:text-zinc-300" [class.line-through]="!lnk.isActive">{{ lnk.title }}</span>
                               @if (lnk.openInNewTab) {

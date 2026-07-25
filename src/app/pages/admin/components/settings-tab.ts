@@ -62,7 +62,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
           <button
             (click)="restoreDefaults()"
             [disabled]="isSaving()"
-            class="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-205 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
+            class="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1.5"
             id="restore-defaults-settings-btn"
           >
             <mat-icon class="text-sm">settings_backup_restore</mat-icon>
@@ -181,7 +181,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                         $any($event.target).value
                       )
                     "
-                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"
+                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"
                   ></textarea>
                 </div>
               </div>
@@ -211,7 +211,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                     />
                   </div>
                   <div
-                    class="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl"
+                    class="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                   >
                     <span class="text-[10px] font-black uppercase text-zinc-500"
                       >Secondary Accent Palette</span
@@ -263,7 +263,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="0.3s">Fast (0.3s)</option>
                       <option value="0.5s">Default (0.5s)</option>
@@ -287,7 +287,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="cubic-bezier(0.16, 1, 0.3, 1)">
                         Framer Motion Spring (Cubic-Bezier)
@@ -313,7 +313,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="fade">Fade In</option>
                       <option value="slide">Slide Up & Fade</option>
@@ -334,7 +334,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="translateY(-8px)">
                         Premium Lift Offset (translateY -8px)
@@ -362,7 +362,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="glassmorphism">
                         Premium Frosted Glassmorphism
@@ -389,7 +389,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                     >
                       <option value="rounded-xl">
                         Dynamic Rounded Corner (rounded-xl)
@@ -405,7 +405,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 </div>
 
                 <div
-                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                 >
                   <input
                     type="checkbox"
@@ -527,7 +527,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="grid grid-cols-2 gap-2">
                   @for (preset of draft().colorPresets || []; track $index) {
                     <div
-                      class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                      class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                     >
                       <input
                         type="color"
@@ -580,7 +580,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="space-y-4">
                   @for (slide of draft().heroSlides || []; track $index) {
                     <div
-                      class="p-5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4 relative"
+                      class="p-5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4 relative"
                     >
                       <div class="absolute top-2 right-2">
                         <button
@@ -600,7 +600,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                           <input
                             type="text"
-                            [value]="slide.title"
+                            [value]="slide.title || ''"
                             (input)="
                               updateSlideField(
                                 $index,
@@ -608,7 +608,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 $any($event.target).value
                               )
                             "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                           />
                         </div>
                         <div class="space-y-1">
@@ -618,7 +618,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                           <input
                             type="text"
-                            [value]="slide.subtitle"
+                            [value]="slide.subtitle || slide.subheading || ''"
                             (input)="
                               updateSlideField(
                                 $index,
@@ -626,7 +626,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 $any($event.target).value
                               )
                             "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                           />
                         </div>
                         <div class="space-y-1">
@@ -636,7 +636,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                           <input
                             type="text"
-                            [value]="slide.linkUrl"
+                            [value]="slide.linkUrl || ''"
                             (input)="
                               updateSlideField(
                                 $index,
@@ -644,7 +644,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 $any($event.target).value
                               )
                             "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                           />
                         </div>
                       </div>
@@ -1207,7 +1207,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div
-                    class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
+                    class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
                   >
                     <div>
                       <span
@@ -1456,7 +1456,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="space-y-4">
                   @for (banner of draft().promoBanners || []; track $index) {
                     <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative"
+                      class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative"
                     >
                       <div class="absolute top-2 right-2">
                         <button
@@ -1551,7 +1551,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="space-y-4">
                   @for (ad of draft().advertisements || []; track $index) {
                     <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative"
+                      class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative"
                     >
                       <div class="absolute top-2 right-2">
                         <button
@@ -1754,7 +1754,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                         $any($event.target).value
                       )
                     "
-                    class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
+                    class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
                   />
                 </div>
                 <div class="space-y-1">
@@ -1772,7 +1772,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                         $any($event.target).value
                       )
                     "
-                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"
+                    class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-medium outline-none"
                   ></textarea>
                 </div>
               </div>
@@ -1865,11 +1865,11 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
                     />
                   </div>
                   <div
-                    class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4"
+                    class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                   >
                     <h3
                       class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
@@ -2066,7 +2066,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
                     />
                   </div>
                   <div class="space-y-1">
@@ -2084,7 +2084,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
                     />
                   </div>
                 </div>
@@ -2177,7 +2177,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
             @if (activeSubTab() === "Recent Purchase Settings") {
               <div class="space-y-6 font-sans">
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 rounded-2xl border border-zinc-250 dark:border-zinc-850 flex items-center justify-between"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
                 >
                   <div>
                     <span
@@ -2269,7 +2269,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                             +$any($event.target).value
                           )
                         "
-                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                         placeholder="20"
                       />
                       <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Limits the maximum queue count of recent purchase items.</p>
@@ -2290,7 +2290,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                             +$any($event.target).value
                           )
                         "
-                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                        class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                         placeholder="10"
                       />
                       <p class="text-[9px] text-zinc-450 dark:text-zinc-500">Only orders placed in the last N minutes will be fetched (defaults to 10 minutes).</p>
@@ -2299,7 +2299,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div
-                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                     >
                       <input
                         type="checkbox"
@@ -2320,7 +2320,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                     </div>
 
                     <div
-                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                      class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                     >
                       <input
                         type="checkbox"
@@ -2379,7 +2379,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                   <div class="space-y-6">
                     <!-- Global Toggle -->
                     <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-250 dark:border-zinc-850 flex items-center justify-between"
+                      class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
                     >
                       <div>
                         <span
@@ -2416,7 +2416,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                       </h3>
 
                       <div
-                        class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                        class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                       >
                         <input
                           type="checkbox"
@@ -2733,7 +2733,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 $any($event.target).value
                               )
                             "
-                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                         </div>
                         <div class="space-y-1">
@@ -2753,7 +2753,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 $any($event.target).value
                               )
                             "
-                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                         </div>
                         <div class="space-y-1">
@@ -2773,7 +2773,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 +$any($event.target).value
                               )
                             "
-                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                         </div>
                         <div class="space-y-1">
@@ -2793,14 +2793,14 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                 +$any($event.target).value
                               )
                             "
-                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                         </div>
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                         <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                         >
                           <input
                             type="checkbox"
@@ -2822,7 +2822,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                         </div>
                         <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                         >
                           <input
                             type="checkbox"
@@ -2844,7 +2844,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                         </div>
                         <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                         >
                           <input
                             type="checkbox"
@@ -2866,7 +2866,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                         </div>
                         <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-150 dark:border-zinc-800"
+                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
                         >
                           <input
                             type="checkbox"
@@ -2936,7 +2936,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           track trig.key
                         ) {
                           <div
-                            class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-850 rounded-xl"
+                            class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-xl"
                           >
                             <input
                               type="checkbox"
@@ -3030,7 +3030,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                       </div>
 
                       <div
-                        class="h-[1px] bg-zinc-150 dark:bg-zinc-800 my-4"
+                        class="h-[1px] bg-zinc-100 dark:bg-zinc-800 my-4"
                       ></div>
 
                       <!-- Form editor for activeTemplateKey -->
@@ -3102,7 +3102,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                   $any($event.target).value
                                 )
                               "
-                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer"
                             >
                               <option value="None">None</option>
                               <option value="Text">Text Header</option>
@@ -3158,7 +3158,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                               </button>
                               @if (showVarPicker()) {
                                 <div
-                                  class="absolute right-0 mt-1 w-48 rounded-xl bg-white dark:bg-zinc-950 shadow-lg border border-zinc-150 dark:border-zinc-800 z-50 py-1 grid grid-cols-1 max-h-48 overflow-y-auto"
+                                  class="absolute right-0 mt-1 w-48 rounded-xl bg-white dark:bg-zinc-950 shadow-lg border border-zinc-100 dark:border-zinc-800 z-50 py-1 grid grid-cols-1 max-h-48 overflow-y-auto"
                                 >
                                   @for (
                                     v of [
@@ -3272,7 +3272,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                       <!-- Test Sender Box -->
                       <div
-                        class="mt-6 pt-5 border-t border-zinc-150 dark:border-zinc-800 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-2xl"
+                        class="mt-6 pt-5 border-t border-zinc-100 dark:border-zinc-800 space-y-3 bg-zinc-50/50 dark:bg-zinc-950/20 p-4 rounded-2xl"
                       >
                         <span
                           class="block text-[10px] font-black uppercase text-blue-500"
@@ -3326,7 +3326,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                         <!-- Chat Header -->
                         <div
-                          class="bg-zinc-850 p-3.5 flex items-center gap-2.5 text-white border-b border-white/5"
+                          class="bg-zinc-800 p-3.5 flex items-center gap-2.5 text-white border-b border-white/5"
                         >
                           <div
                             class="w-8 h-8 rounded-full bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center font-bold text-xs"
@@ -3354,7 +3354,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                         >
                           <!-- Dispatched WhatsApp Bubble -->
                           <div
-                            class="bg-zinc-850 max-w-[85%] rounded-2xl rounded-tr-none ml-auto text-zinc-150 p-3 shadow-md space-y-1.5 border border-white/5 relative"
+                            class="bg-zinc-800 max-w-[85%] rounded-2xl rounded-tr-none ml-auto text-zinc-100 p-3 shadow-md space-y-1.5 border border-white/5 relative"
                           >
                             <!-- Header Attachment preview -->
                             @if (
@@ -3440,7 +3440,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           ) {
                             @for (btn of btns; track btn) {
                               <div
-                                class="w-[85%] ml-auto bg-zinc-850 border-t border-white/5 text-blue-400 text-[10px] font-bold py-2 text-center rounded-xl hover:bg-zinc-800 transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1"
+                                class="w-[85%] ml-auto bg-zinc-800 border-t border-white/5 text-blue-400 text-[10px] font-bold py-2 text-center rounded-xl hover:bg-zinc-800 transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1"
                               >
                                 <mat-icon class="text-xs text-[12px]"
                                   >open_in_new</mat-icon
@@ -3498,7 +3498,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           +$any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                     />
                   </div>
                 </div>
@@ -3563,7 +3563,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                   class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3"
                 >
                   <div
-                    class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-850"
+                    class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800"
                   >
                     <div class="flex items-center gap-2">
                       <input
@@ -3680,7 +3680,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                   class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3"
                 >
                   <div
-                    class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-850"
+                    class="flex items-center justify-between p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-100 dark:border-zinc-800"
                   >
                     <div class="flex items-center gap-2">
                       <input
@@ -3921,7 +3921,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                             $any($event.target).value
                           )
                         "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-205 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none"
+                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono outline-none"
                         placeholder="e.g. 560001, 600001"
                       />
                     </div>
@@ -3952,7 +3952,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           $any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
                     />
                   </div>
                   <div class="space-y-1">
@@ -3972,7 +3972,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           +$any($event.target).value
                         )
                       "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                     />
                   </div>
                 </div>
@@ -3983,7 +3983,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
             @if (activeSubTab() === "Chatbot") {
               <div class="space-y-4">
                 <div
-                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                 >
                   <input
                     type="checkbox"
@@ -4049,7 +4049,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
               <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div
-                    class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                    class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                   >
                     <input
                       type="checkbox"
@@ -4069,7 +4069,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                     >
                   </div>
                   <div
-                    class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                    class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                   >
                     <input
                       type="checkbox"
@@ -4098,7 +4098,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
             @if (activeSubTab() === "Tour Settings") {
               <div class="space-y-4">
                 <div
-                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl"
+                  class="flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
                 >
                   <input
                     type="checkbox"
@@ -4130,7 +4130,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
                   @for (faq of draft().faqs || []; track $index) {
                     <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative"
+                      class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative"
                     >
                       <div class="absolute top-2 right-2">
                         <button
@@ -4219,7 +4219,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 <div class="space-y-4">
                   @for (srv of draft().services || []; track $index) {
                     <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative"
+                      class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 relative"
                     >
                       <div class="absolute top-2 right-2">
                         <button
@@ -4309,7 +4309,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                 <!-- Pricing Core -->
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <h3
                     class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
@@ -4342,7 +4342,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                 <!-- Filament Materials Table -->
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <div class="flex justify-between items-center">
                     <h3
@@ -4364,7 +4364,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                       let parentIndex = $index
                     ) {
                       <div
-                        class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-150 dark:border-zinc-800 space-y-3.5 relative"
+                        class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 space-y-3.5 relative"
                       >
                         <!-- Material Fields -->
                         <div
@@ -4479,7 +4479,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                               let childIndex = $index
                             ) {
                               <div
-                                class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-955 p-1.5 rounded-lg border border-zinc-150 dark:border-zinc-850 relative pr-7"
+                                class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-lg border border-zinc-100 dark:border-zinc-800 relative pr-7"
                               >
                                 <input
                                   type="color"
@@ -4507,7 +4507,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                                         $any($event.target).value
                                       )
                                     "
-                                    class="w-full px-1.5 py-0.5 border border-zinc-250 dark:border-zinc-800 rounded text-[10px]"
+                                    class="w-full px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded text-[10px]"
                                   />
                                 </div>
                                 <button
@@ -4538,7 +4538,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                 <!-- Printer Qualities Profile -->
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <div class="flex justify-between items-center">
                     <h3
@@ -4559,7 +4559,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                       track $index
                     ) {
                       <div
-                        class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-150 dark:border-zinc-800 relative pr-10"
+                        class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 relative pr-10"
                       >
                         <div>
                           <span
@@ -4611,7 +4611,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
                 <!-- Infill Density Standards -->
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <div class="flex justify-between items-center">
                     <h3
@@ -4633,7 +4633,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                       track $index
                     ) {
                       <div
-                        class="grid grid-cols-1 sm:grid-cols-5 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-150 dark:border-zinc-800 relative pr-10"
+                        class="grid grid-cols-1 sm:grid-cols-5 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 relative pr-10"
                       >
                         <div>
                           <span
@@ -4747,7 +4747,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 </p>
 
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <h3
                     class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
@@ -4756,7 +4756,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                   </h3>
 
                   <div
-                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800 rounded-xl"
+                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl"
                   >
                     <input
                       type="checkbox"
@@ -4780,7 +4780,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                   </div>
 
                   <div
-                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-850 rounded-xl"
+                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl"
                   >
                     <input
                       type="checkbox"
@@ -4806,7 +4806,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 </div>
 
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <h3
                     class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
@@ -4874,7 +4874,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                 </div>
 
                 <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-4"
+                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
                 >
                   <h3
                     class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
@@ -5319,7 +5319,14 @@ export class AdminSettingsTab {
   updateSlideField(index: number, field: string, value: any) {
     this.draft.update((d) => {
       const list = [...(d.heroSlides || [])];
-      list[index] = { ...list[index], [field]: value };
+      const updatedItem = { ...list[index], [field]: value };
+      if (field === 'subtitle') updatedItem.subheading = value;
+      if (field === 'subheading') updatedItem.subtitle = value;
+      if (field === 'bgVideoUrl') updatedItem.videoUrl = value;
+      if (field === 'videoUrl') updatedItem.bgVideoUrl = value;
+      if (field === 'active') updatedItem.isActive = value;
+      if (field === 'isActive') updatedItem.active = value;
+      list[index] = updatedItem;
       return { ...d, heroSlides: list };
     });
   }

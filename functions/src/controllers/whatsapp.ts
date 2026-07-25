@@ -271,6 +271,142 @@ export const handleLogDispatchFailure = async (logId: string, settings: any, err
   }
 };
 
+// Dynamic WhatsApp Order Status Content Generator
+export function getDynamicOrderStatusContent(
+  statusKey: string,
+  order: any = null,
+  extraParams: any = {},
+  settings: any = {}
+) {
+  const normalizedKey = String(statusKey || '').toLowerCase().replace(/[\s_-]+/g, '');
+  const siteName = settings.storeName || '3D Galaxy';
+
+  let statusTitle = 'Order Confirmed';
+  let statusMessage = 'Your order status has been updated.';
+  let additionalInfo = `Thank you for choosing ${siteName}. Our support team is always happy to help.`;
+
+  switch (normalizedKey) {
+    case 'orderconfirmed':
+    case 'confirmed':
+    case 'pending':
+    case 'placed':
+      statusTitle = 'Order Confirmed';
+      statusMessage = 'Your order has been confirmed successfully and is now queued for processing.';
+      additionalInfo = 'Our warehouse team will begin preparing your order shortly.';
+      break;
+
+    case 'processing':
+    case 'inprogress':
+      statusTitle = 'Processing';
+      statusMessage = 'Your order is currently being processed and undergoing quality verification.';
+      additionalInfo = "We'll notify you once your order has been packed.";
+      break;
+
+    case 'packed':
+    case 'packing':
+    case 'readyfordispatch':
+      statusTitle = 'Packed';
+      statusMessage = 'Great news! Your order has been securely packed and is ready for dispatch.';
+      additionalInfo = 'Your shipment will be handed over to our logistics partner shortly.';
+      break;
+
+    case 'shipped':
+    case 'dispatched':
+    case 'intransit':
+      statusTitle = 'Shipped';
+      statusMessage = 'Your order has been shipped and is on its way.';
+      {
+        const trackingNumber = order?.trackingNumber || extraParams.trackingNumber || extraParams.tracking_number;
+        const courierName = order?.courier || extraParams.courierName || extraParams.courier;
+        const trackingUrl = order?.trackingUrl || extraParams.trackingUrl || extraParams.tracking_url;
+        const expectedDelivery = order?.estimatedDelivery
+          ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN')
+          : (extraParams.expectedDelivery || extraParams.estimatedDelivery);
+
+        const shippedLines: string[] = [];
+        if (trackingNumber && trackingNumber !== 'N/A') shippedLines.push(`Tracking Number: ${trackingNumber}`);
+        if (courierName && courierName !== 'N/A') shippedLines.push(`Courier Partner: ${courierName}`);
+        if (trackingUrl && trackingUrl !== 'N/A') shippedLines.push(`Track Here:\n${trackingUrl}`);
+        if (expectedDelivery && expectedDelivery !== 'N/A') shippedLines.push(`Expected Delivery: ${expectedDelivery}`);
+
+        if (shippedLines.length > 0) {
+          additionalInfo = shippedLines.join('\n');
+        } else {
+          additionalInfo = 'Your shipment is in transit. You can track live updates in your account.';
+        }
+      }
+      break;
+
+    case 'outfordelivery':
+    case 'outfordelivered':
+    case 'dispatch':
+      statusTitle = 'Out for Delivery';
+      statusMessage = 'Your order is out for delivery and should reach you today.';
+      additionalInfo = 'Please keep your phone available as our delivery partner may contact you.';
+      break;
+
+    case 'delivered':
+    case 'completed':
+      statusTitle = 'Delivered';
+      statusMessage = 'Your order has been delivered successfully.';
+      additionalInfo = 'We hope you enjoy your purchase. Thank you for choosing us.';
+      break;
+
+    case 'cancelled':
+    case 'canceled':
+      statusTitle = 'Cancelled';
+      statusMessage = 'Your order has been cancelled successfully.';
+      {
+        const reason = order?.cancellationReason || extraParams.cancellationReason || extraParams.reason;
+        if (reason) {
+          additionalInfo = `Reason: ${reason}\nIf any payment was received, the refund process will be initiated as per our refund policy.`;
+        } else {
+          additionalInfo = 'If any payment was received, the refund process will be initiated as per our refund policy.';
+        }
+      }
+      break;
+
+    case 'refunded':
+    case 'refundcompleted':
+    case 'refund':
+      statusTitle = 'Refunded';
+      statusMessage = 'Your refund has been processed successfully.';
+      {
+        const refundRef = order?.paymentId || order?.transactionId || extraParams.refundRef || extraParams.refundReference;
+        if (refundRef) {
+          additionalInfo = `Refund Reference: ${refundRef}\nThe refund amount will be credited to your original payment method within the applicable banking timeline.`;
+        } else {
+          additionalInfo = 'The refund amount will be credited to your original payment method within the applicable banking timeline.';
+        }
+      }
+      break;
+
+    case 'returned':
+    case 'returnreceived':
+    case 'return':
+      statusTitle = 'Returned';
+      statusMessage = 'We have received your returned product.';
+      additionalInfo = "Our team is inspecting the returned item. We'll update you once the inspection is completed.";
+      break;
+
+    default:
+      statusTitle = statusKey.split(/[\s_-]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      statusMessage = `Your order status has been updated to ${statusTitle}.`;
+      additionalInfo = `Thank you for choosing ${siteName}. Our support team is always happy to help.`;
+      break;
+  }
+
+  // Admin Custom Config Overrides (Requirement 6)
+  const customConfig = settings.statusMappings?.[statusKey] || settings.statusMappings?.[normalizedKey] || settings.statusConfigs?.[statusKey];
+  if (customConfig) {
+    if (customConfig.statusTitle) statusTitle = customConfig.statusTitle;
+    if (customConfig.message) statusMessage = customConfig.message;
+    if (customConfig.additionalInfo) additionalInfo = customConfig.additionalInfo;
+  }
+
+  return { statusTitle, statusMessage, additionalInfo };
+}
+
 // WhatsApp Automated Notification Trigger Helper
 export const triggerWhatsAppNotification = async (
   triggerKey: string,
@@ -303,6 +439,16 @@ export const triggerWhatsAppNotification = async (
     const currency = settings.currency || '₹';
 
     const isAdmin = !!extraParams.is_admin || triggerKey === 'admin_new_order';
+
+    const statusTriggers = [
+      'pending', 'confirmed', 'order_confirmed', 'processing', 'packed', 
+      'shipped', 'out_for_delivery', 'out for delivery', 'delivered', 
+      'cancelled', 'canceled', 'refunded', 'returned'
+    ];
+    const isStatusUpdateTrigger = statusTriggers.includes(triggerKey.toLowerCase()) || 
+                                  triggerKey.startsWith('order_status_') || 
+                                  extraParams.isOrderStatusUpdate === true || 
+                                  (order && ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'returned'].includes(order.status?.toLowerCase()));
 
     if (isAdmin) {
       templateName = settings.orderConfirmationAdminTemplateName || 'order_confirmation_admin';
@@ -403,51 +549,46 @@ export const triggerWhatsAppNotification = async (
           ]
         }
       ];
-    } else if (['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(triggerKey)) {
+    } else if (isStatusUpdateTrigger) {
+      // Reusable Single WhatsApp Template for All Order Status Updates (order_status_update)
       templateName = settings.orderStatusUpdateTemplateName || 'order_status_update';
       isStandardTemplate = true;
 
-      let orderDetails = "";
-      const statusTitle = triggerKey.charAt(0).toUpperCase() + triggerKey.slice(1);
-      switch (triggerKey) {
-        case "processing":
-          orderDetails = "Your order is currently being processed by our team. We are getting everything ready for you! ⏳";
-          break;
-        case "shipped":
-          orderDetails = `Great news! Your order has been shipped. 🚚\nTracking ID: ${order?.trackingNumber || 'N/A'}\nEstimated Delivery: ${order?.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN') : 'N/A'}`;
-          break;
-        case "delivered":
-          orderDetails = "Yay! Your order has been delivered successfully. We hope you love it! 🎉";
-          break;
-        case "cancelled":
-          orderDetails = `Your order has been cancelled. ❌\nReason: ${order?.cancellationReason || 'Not provided'}`;
-          break;
-        default:
-          orderDetails = `Your order status is now: ${statusTitle}.`;
-      }
-
-      const paymentMethodMap: any = {
-        'razorpay': 'Online Payment',
-        'cod': 'Cash on Delivery',
-        'manual': 'Manual Payment'
-      };
-      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
       const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+      const orderId = order?.orderNumber || order?.id || extraParams.orderId || 'N/A';
+      
+      const content = getDynamicOrderStatusContent(triggerKey, order, extraParams, settings);
+
+      // Prevent Duplicate WhatsApp Notifications within 2 minutes (Requirement 4 & 8)
+      if (order?.id) {
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+        const duplicate = await prisma.whatsappLog.findFirst({
+          where: {
+            orderId: order.id,
+            templateName: templateName,
+            createdAt: { gte: twoMinutesAgo },
+          },
+        });
+
+        if (duplicate) {
+          const reqPayload = duplicate.requestPayload as any;
+          if (reqPayload?.statusKey === triggerKey) {
+            console.log(`[WhatsApp] Duplicate notification suppressed for order ${order.id} status ${triggerKey}`);
+            return;
+          }
+        }
+      }
 
       components = [
         {
           type: "body",
           parameters: [
-            { type: "text", text: custName },
-            { type: "text", text: siteName },
-            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
-            { type: "text", text: statusTitle },
-            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
-            { type: "text", text: paymentMethod },
-            { type: "text", text: orderDetails },
-            { type: "text", text: custName },
-            { type: "text", text: siteName },
-            { type: "text", text: siteName },
+            { type: "text", text: custName },               // {{1}} Customer Name
+            { type: "text", text: orderId },                // {{2}} Order ID
+            { type: "text", text: content.statusTitle },    // {{3}} Current Order Status
+            { type: "text", text: content.statusMessage },  // {{4}} Dynamic Status Message
+            { type: "text", text: content.additionalInfo }, // {{5}} Additional Information
+            { type: "text", text: siteName },               // {{6}} Store Name
           ],
         },
         {
@@ -459,6 +600,8 @@ export const triggerWhatsAppNotification = async (
           ]
         }
       ];
+
+      extraParams.statusKey = triggerKey;
     } else if (triggerKey === 'order_delivered_review') {
       templateName = settings.orderDeliveredReviewTemplateName || 'order_delivered_review_template';
       isStandardTemplate = true;
@@ -731,6 +874,37 @@ export const handleManualSend = async (req: Request, res: Response) => {
   try {
     await triggerWhatsAppNotification(templateName, recipientNumber, null, null, parameters);
     return res.status(200).json({ success: true, message: 'Test WhatsApp message queued successfully.' });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Preview Dynamic WhatsApp Order Status Message
+export const handlePreviewOrderStatusMessage = async (req: Request, res: Response) => {
+  try {
+    const { status, customerName, orderId, extraParams } = req.body;
+    const settings = await getWhatsappSettings();
+    const siteName = settings.storeName || '3D Galaxy';
+    const content = getDynamicOrderStatusContent(status || 'Order Confirmed', null, extraParams || {}, settings);
+
+    const name = customerName || 'Alex Johnson';
+    const ordId = orderId || 'B3D-10294';
+
+    const previewText = `Hello ${name} 👋,\n\n📢 *Your Order Status Has Been Updated*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *Order Details*\n\n🧾 Order ID: ${ordId}\n\n📌 Current Status: *${content.statusTitle}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *Latest Update*\n\n${content.statusMessage}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n${content.additionalInfo}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nNeed assistance?\n\nOur support team is always happy to help.\n\nThank you for choosing *${siteName}*.\n\nBest Regards,\n\n*${siteName} Team*`;
+
+    return res.status(200).json({
+      success: true,
+      templateName: settings.orderStatusUpdateTemplateName || 'order_status_update',
+      variables: {
+        1: name,
+        2: ordId,
+        3: content.statusTitle,
+        4: content.statusMessage,
+        5: content.additionalInfo,
+        6: siteName
+      },
+      previewText
+    });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

@@ -44,28 +44,28 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
       <!-- DEVICE TELEMETRY GRID -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
         
-        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-1">
+        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-1">
           <span class="block text-[8px] uppercase font-bold text-zinc-400">Browser Permission</span>
           <span [class]="permissionState() === 'granted' ? 'text-emerald-600 dark:text-emerald-400 font-black' : 'text-amber-500 font-bold'" class="uppercase tracking-wider">
             {{ permissionState() }}
           </span>
         </div>
 
-        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-1">
+        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-1">
           <span class="block text-[8px] uppercase font-bold text-zinc-400">Current Device</span>
           <span class="font-extrabold text-zinc-900 dark:text-zinc-100 truncate block" [title]="deviceInfo().name">
             {{ deviceInfo().name }}
           </span>
         </div>
 
-        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-1">
+        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-1">
           <span class="block text-[8px] uppercase font-bold text-zinc-400">Browser & OS</span>
           <span class="font-extrabold text-zinc-900 dark:text-zinc-100 truncate block">
             {{ deviceInfo().browser }} ({{ deviceInfo().os }})
           </span>
         </div>
 
-        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-1">
+        <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-1">
           <span class="block text-[8px] uppercase font-bold text-zinc-400">FCM Token Hash</span>
           <span class="font-bold text-blue-600 dark:text-blue-400 truncate block" [title]="fcmToken()">
             {{ fcmToken() ? (fcmToken().slice(0, 8) + '...' + fcmToken().slice(-6)) : 'No Token' }}

@@ -44,7 +44,7 @@ interface AbandonedCheckout {
   standalone: true,
   imports: [CommonModule, MatIconModule, FormsModule],
   template: `
-    <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans text-zinc-900 dark:text-zinc-150">
+    <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans text-zinc-900 dark:text-zinc-100">
       
       <!-- HEADER & MAIN TITLE -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -167,13 +167,13 @@ interface AbandonedCheckout {
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Search Customer / Contact</label>
             <div class="relative">
-              <input type="text" [(ngModel)]="searchKeyword" (ngModelChange)="loadData()" placeholder="Enter name, email, phone..." class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+              <input type="text" [(ngModel)]="searchKeyword" (ngModelChange)="loadData()" placeholder="Enter name, email, phone..." class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
             </div>
           </div>
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Recovery Status</label>
-            <select [(ngModel)]="statusFilter" (change)="loadData()" class="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none focus:border-blue-500 font-bold cursor-pointer transition-all">
+            <select [(ngModel)]="statusFilter" (change)="loadData()" class="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold cursor-pointer transition-all">
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active (Pending)</option>
               <option value="RECOVERED">Recovered (Converted)</option>
@@ -183,12 +183,12 @@ interface AbandonedCheckout {
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Min Value (₹)</label>
-            <input type="number" [(ngModel)]="minValueFilter" (ngModelChange)="loadData()" placeholder="Minimum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+            <input type="number" [(ngModel)]="minValueFilter" (ngModelChange)="loadData()" placeholder="Minimum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
           </div>
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Max Value (₹)</label>
-            <input type="number" [(ngModel)]="maxValueFilter" (ngModelChange)="loadData()" placeholder="Maximum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+            <input type="number" [(ngModel)]="maxValueFilter" (ngModelChange)="loadData()" placeholder="Maximum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
           </div>
         </div>
 
@@ -310,7 +310,7 @@ interface AbandonedCheckout {
           <div class="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity" (click)="closeDrawer()" (keydown.escape)="closeDrawer()" role="button" tabindex="-1"></div>
 
           <!-- Drawer Panel -->
-          <div class="relative w-full max-w-xl bg-white dark:bg-zinc-950 shadow-2xl border-l border-zinc-200 dark:border-zinc-850 h-full flex flex-col z-50 animate-slide-in-right overflow-hidden font-sans">
+          <div class="relative w-full max-w-xl bg-white dark:bg-zinc-950 shadow-2xl border-l border-zinc-200 dark:border-zinc-800 h-full flex flex-col z-50 animate-slide-in-right overflow-hidden font-sans">
             
             <!-- Drawer Header -->
             <div class="p-6 border-b border-zinc-100 dark:border-zinc-900 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-950/20">
@@ -329,7 +329,7 @@ interface AbandonedCheckout {
             <div class="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
               
               <!-- 1. Customer Context Info Card -->
-              <div class="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-150 dark:border-zinc-850/80 p-5 rounded-2xl space-y-4">
+              <div class="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800/80 p-5 rounded-2xl space-y-4">
                 <h4 class="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
                   <mat-icon class="text-sm">person</mat-icon> Customer Contact Details
                 </h4>
@@ -359,7 +359,7 @@ interface AbandonedCheckout {
                 <h4 class="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
                   <mat-icon class="text-sm">shopping_bag</mat-icon> Pending Cart Products
                 </h4>
-                <div class="border border-zinc-150 dark:border-zinc-850 rounded-2xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div class="border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
                   @for (item of drawerCheckoutDetails()?.cartItems || []; track $index) {
                     <div class="p-3.5 flex justify-between items-center bg-zinc-50/20 dark:bg-zinc-950/20 text-xs">
                       <div>
@@ -393,7 +393,7 @@ interface AbandonedCheckout {
                         <span class="text-[9px] font-mono text-zinc-400 block mb-0.5">{{ log.createdAt | date:'mediumTime' }} &middot; {{ log.createdAt | date:'mediumDate' }}</span>
                         <p class="font-black text-zinc-900 dark:text-white uppercase tracking-wide">{{ log.activity }}</p>
                         @if (log.details) {
-                          <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed bg-zinc-50 dark:bg-zinc-900/50 p-2 rounded-lg border dark:border-zinc-850/80">{{ log.details }}</p>
+                          <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed bg-zinc-50 dark:bg-zinc-900/50 p-2 rounded-lg border dark:border-zinc-800/80">{{ log.details }}</p>
                         }
                       </div>
                     </div>
@@ -404,7 +404,7 @@ interface AbandonedCheckout {
               </div>
 
               <!-- 4. Recovery link utility & manual reminder -->
-              <div class="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-150 dark:border-zinc-850/80 p-5 rounded-2xl space-y-4">
+              <div class="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800/80 p-5 rounded-2xl space-y-4">
                 <h4 class="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
                   <mat-icon class="text-sm">link</mat-icon> Recovery Action Utilities
                 </h4>
@@ -413,7 +413,7 @@ interface AbandonedCheckout {
                   <div class="space-y-1">
                     <span class="block text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-0.5">Secure Recovery Link</span>
                     <div class="flex gap-2">
-                      <input type="text" readonly [value]="getRecoveryLink(selectedCheckout()?.recoveryToken)" class="flex-1 px-3 py-2 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-850 rounded-xl font-mono text-[10px] outline-none">
+                      <input type="text" readonly [value]="getRecoveryLink(selectedCheckout()?.recoveryToken)" class="flex-1 px-3 py-2 bg-zinc-100 dark:bg-zinc-950 border dark:border-zinc-800 rounded-xl font-mono text-[10px] outline-none">
                       <button (click)="copyLink(selectedCheckout()?.recoveryToken)" class="px-3.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase transition-all border-none cursor-pointer">
                         Copy
                       </button>
@@ -423,7 +423,7 @@ interface AbandonedCheckout {
                   <div class="space-y-2 border-t dark:border-zinc-800 pt-3">
                     <span class="block text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1 pl-0.5">Recovery Dispatches (Reminders Log)</span>
                     @for (note of drawerCheckoutDetails()?.recoveryNotifications || []; track note.id) {
-                      <div class="flex justify-between items-center text-[10px] bg-white dark:bg-zinc-950 border dark:border-zinc-850 p-2 rounded-xl">
+                      <div class="flex justify-between items-center text-[10px] bg-white dark:bg-zinc-950 border dark:border-zinc-800 p-2 rounded-xl">
                         <span class="font-bold text-zinc-650 dark:text-zinc-350 uppercase">Channel: {{ note.channel }}</span>
                         <span class="font-mono text-zinc-400">{{ note.sentAt | date:'short' }}</span>
                         <span class="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded font-black text-[8px] uppercase">{{ note.status }}</span>

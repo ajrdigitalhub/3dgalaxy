@@ -7,7 +7,7 @@
   
   <!-- EDITOR LABEL / BANNER -->
   @if (label && !isFullscreen()) {
-    <div class="px-4 py-2 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-150 dark:border-zinc-850 flex items-center justify-between">
+    <div class="px-4 py-2 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
       <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">{{ label }}</span>
       <span class="text-[9px] font-mono bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 px-1.5 py-0.5 rounded uppercase font-bold">Rich HTML System</span>
     </div>
@@ -345,7 +345,7 @@
       @if (editorImageMode() === 'upload') {
         <div class="space-y-3">
           <div 
-            class="relative border-2 border-dashed border-zinc-200 dark:border-zinc-850 rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all bg-zinc-50/20 dark:bg-zinc-950/20"
+            class="relative border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all bg-zinc-50/20 dark:bg-zinc-950/20"
             (click)="rteFileInput.click()"
           >
             <input 
@@ -396,7 +396,7 @@
           </div>
 
           @if (editorImageUrl().trim()) {
-            <div class="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-850 p-2 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center max-h-32">
+            <div class="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 p-2 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center max-h-32">
               <img [src]="editorImageUrl()" alt="External asset preview" class="max-h-24 rounded object-contain" referrerpolicy="no-referrer">
             </div>
           }

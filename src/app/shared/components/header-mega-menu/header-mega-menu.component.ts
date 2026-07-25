@@ -164,9 +164,9 @@ export interface HeaderMenuPayload {
               class="group/item flex items-center justify-between p-4 sm:p-4.5 rounded-3xl border cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60"
             >
               <div class="flex items-center gap-4 min-w-0">
-                <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl sm:rounded-3xl bg-neutral-100 dark:bg-neutral-900 p-2 shrink-0 flex items-center justify-center border border-neutral-200/60 dark:border-neutral-800 shadow-xs group-hover/item:scale-105 transition-transform">
-                  <img *ngIf="cat.image" [src]="cat.image" [alt]="cat.name" class="w-full h-full object-contain rounded-xl sm:rounded-2xl">
-                  <mat-icon *ngIf="!cat.image" class="text-2xl sm:text-3xl text-neutral-500 group-hover/item:text-[#d65108] transition-colors">{{ cat.icon || 'category' }}</mat-icon>
+                <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 shrink-0 flex items-center justify-center border-none bg-transparent group-hover/item:scale-110 transition-transform duration-300">
+                  <img *ngIf="cat.image" [src]="cat.image" [alt]="cat.name" class="w-full h-full object-contain border-none filter drop-shadow-md">
+                  <mat-icon *ngIf="!cat.image" class="text-3xl sm:text-4xl text-neutral-500 group-hover/item:text-[#d65108] transition-colors filter drop-shadow-xs">{{ cat.icon || 'category' }}</mat-icon>
                 </div>
 
                 <div class="min-w-0">

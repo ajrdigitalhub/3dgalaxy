@@ -381,8 +381,9 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
     const mappedProducts = products.map(mapProduct);
 
     // Hero slides
-    const bannersList = settingsData.banners || [];
-    const heroSlides = bannersList.filter((b: any) => b.position === 'HERO' || b.position === 'slider');
+    const heroSlides = (settingsData.heroSlides && Array.isArray(settingsData.heroSlides) && settingsData.heroSlides.length > 0)
+      ? settingsData.heroSlides
+      : (settingsData.banners || []).filter((b: any) => b.position === 'HERO' || b.position === 'slider');
 
     // Featured categories
     const featuredCategories = categories

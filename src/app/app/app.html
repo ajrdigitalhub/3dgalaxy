@@ -69,13 +69,13 @@
                   <img
                     [src]="cat.image"
                     [alt]="cat.name"
-                    class="w-5 h-5 rounded-md object-cover logo-img"
+                    class="w-8 h-8 md:w-9 md:h-9 object-contain border-none filter drop-shadow-sm logo-img shrink-0"
                     (error)="onImageError($event)"
                     referrerpolicy="no-referrer"
                   />
                   } @else {
                   <mat-icon
-                    class="text-neutral-400 group-hover:text-blue-500 transition-colors"
+                    class="text-neutral-400 group-hover:text-blue-500 transition-colors text-2xl md:text-3xl shrink-0"
                     >{{ getIcon(cat.id) }}</mat-icon
                   >
                   } {{ cat.name }}

@@ -111,7 +111,7 @@ export interface CustomerDetailProfile {
 
           <!-- Quick Metrics Bar -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
               <div class="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
                 <mat-icon>group</mat-icon>
               </div>
@@ -121,7 +121,7 @@ export interface CustomerDetailProfile {
               </div>
             </div>
 
-            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
               <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
                 <mat-icon>verified_user</mat-icon>
               </div>
@@ -131,7 +131,7 @@ export interface CustomerDetailProfile {
               </div>
             </div>
 
-            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
               <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
                 <mat-icon>shopping_bag</mat-icon>
               </div>
@@ -141,7 +141,7 @@ export interface CustomerDetailProfile {
               </div>
             </div>
 
-            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
               <div class="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
                 <mat-icon>block</mat-icon>
               </div>
@@ -153,7 +153,7 @@ export interface CustomerDetailProfile {
           </div>
 
           <!-- Controls & Filters Bar -->
-          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4">
+          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <!-- Search Input -->
               <div class="relative flex-1 max-w-md">
@@ -247,7 +247,7 @@ export interface CustomerDetailProfile {
           </div>
 
           <!-- Customer Data Table -->
-          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl overflow-x-auto no-scrollbar">
+          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl overflow-x-auto no-scrollbar">
             @if (isLoading()) {
               <!-- Skeleton Loading Grid -->
               <div class="space-y-3 py-4">
@@ -535,7 +535,7 @@ export interface CustomerDetailProfile {
             @let cust = activeCustomer()!;
 
             <!-- Profile Overview Header Card -->
-            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-3xl space-y-6 shadow-sm">
+            <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl space-y-6 shadow-sm">
               <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <!-- Avatar & Identity -->
                 <div class="flex items-center gap-4">
@@ -629,7 +629,7 @@ export interface CustomerDetailProfile {
                 <div class="space-y-6 animate-fadeIn">
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Summary Card -->
-                    <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4">
+                    <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4">
                       <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Account Summary</h3>
                       <div class="space-y-2 text-xs font-mono">
                         <div class="flex justify-between py-1 border-b dark:border-zinc-800">
@@ -652,7 +652,7 @@ export interface CustomerDetailProfile {
                     </div>
 
                     <!-- Orders Quick Status Breakdown -->
-                    <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 md:col-span-2">
+                    <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 md:col-span-2">
                       <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Order Fulfillment Distribution</h3>
                       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div class="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-center">
@@ -679,7 +679,7 @@ export interface CustomerDetailProfile {
 
               <!-- TAB 2: ORDERS -->
               @if (detailTab() === 'orders') {
-                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 animate-fadeIn">
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Order History ({{ customerOrders().length }})</h3>
                   <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs whitespace-nowrap">
@@ -758,7 +758,7 @@ export interface CustomerDetailProfile {
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @for (addr of customerAddresses(); track addr.id) {
-                      <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-3 relative">
+                      <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-3 relative">
                         @if (addr.isDefault) {
                           <span class="absolute top-4 right-4 px-2 py-0.5 bg-emerald-500/10 text-emerald-600 text-[9px] font-black uppercase rounded-md border border-emerald-500/20">
                             Default Address
@@ -799,7 +799,7 @@ export interface CustomerDetailProfile {
                         </div>
                       </div>
                     } @empty {
-                      <div class="col-span-2 p-8 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl text-center text-zinc-400 text-xs">
+                      <div class="col-span-2 p-8 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl text-center text-zinc-400 text-xs">
                         No saved delivery addresses. Click "Add Address" to create one.
                       </div>
                     }
@@ -809,11 +809,11 @@ export interface CustomerDetailProfile {
 
               <!-- TAB 4: WISHLIST -->
               @if (detailTab() === 'wishlist') {
-                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 animate-fadeIn">
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Wishlist Saved Products ({{ customerWishlist().length }})</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     @for (w of customerWishlist(); track w.productId) {
-                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl flex items-center gap-3 border border-zinc-150 dark:border-zinc-800">
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl flex items-center gap-3 border border-zinc-100 dark:border-zinc-800">
                         <div class="h-12 w-12 rounded-lg bg-white dark:bg-zinc-900 p-1 shrink-0 overflow-hidden border">
                           <img [src]="w.image || 'assets/images/user-placeholder.png'" class="w-full h-full object-contain" alt="prod" />
                         </div>
@@ -834,11 +834,11 @@ export interface CustomerDetailProfile {
 
               <!-- TAB 5: REVIEWS -->
               @if (detailTab() === 'reviews') {
-                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 animate-fadeIn">
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Customer Product Reviews ({{ customerReviews().length }})</h3>
                   <div class="space-y-4">
                     @for (r of customerReviews(); track r.id) {
-                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-2 border border-zinc-150 dark:border-zinc-800">
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-2 border border-zinc-100 dark:border-zinc-800">
                         <div class="flex items-center justify-between">
                           <h4 class="text-xs font-bold text-zinc-900 dark:text-white">{{ r.product?.name }}</h4>
                           <div class="flex items-center text-amber-500 font-bold text-xs">
@@ -859,7 +859,7 @@ export interface CustomerDetailProfile {
 
               <!-- TAB 6: ACTIVITY TIMELINE -->
               @if (detailTab() === 'activity') {
-                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 animate-fadeIn">
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Audit Activity Timeline</h3>
                   <div class="space-y-4 pl-4 border-l-2 border-zinc-200 dark:border-zinc-800">
                     @for (act of customerActivity(); track act.id) {
@@ -880,7 +880,7 @@ export interface CustomerDetailProfile {
 
               <!-- TAB 7: ADMIN NOTES -->
               @if (detailTab() === 'notes') {
-                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4 animate-fadeIn">
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
                   <div class="flex items-center justify-between">
                     <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Internal Admin Notes</h3>
                   </div>
@@ -910,7 +910,7 @@ export interface CustomerDetailProfile {
                   <!-- Notes List -->
                   <div class="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                     @for (n of customerNotes(); track n.id) {
-                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-150 dark:border-zinc-800 space-y-2 relative">
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800 space-y-2 relative">
                         <div class="flex items-center justify-between">
                           <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase">
                             Added by {{ n.author }} &middot; {{ n.createdAt | date:'short' }}
@@ -965,32 +965,32 @@ export interface CustomerDetailProfile {
 
             <!-- 6 KPI Dashboard Cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-zinc-400 font-bold uppercase block">Total Accounts</span>
                 <span class="text-xl font-black text-zinc-900 dark:text-white font-mono">{{ stats.totalCustomers }}</span>
               </div>
 
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-blue-500 font-bold uppercase block">New (Last 30d)</span>
                 <span class="text-xl font-black text-blue-600 font-mono">+{{ stats.newCustomers }}</span>
               </div>
 
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-emerald-500 font-bold uppercase block">Active Accounts</span>
                 <span class="text-xl font-black text-emerald-600 font-mono">{{ stats.activeCustomers }}</span>
               </div>
 
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-purple-500 font-bold uppercase block">Registered Members</span>
                 <span class="text-xl font-black text-purple-600 font-mono">{{ stats.registeredCustomers }}</span>
               </div>
 
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-amber-500 font-bold uppercase block">Guest Checkout</span>
                 <span class="text-xl font-black text-amber-600 font-mono">{{ stats.guestCustomers }}</span>
               </div>
 
-              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-1">
+              <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-1">
                 <span class="text-[9px] text-indigo-500 font-bold uppercase block">Returning Buyers</span>
                 <span class="text-xl font-black text-indigo-600 font-mono">{{ stats.returningCustomers }}</span>
               </div>
@@ -999,7 +999,7 @@ export interface CustomerDetailProfile {
             <!-- Top Customer Leaderboards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
               <!-- Leaderboard 1: Top Spend -->
-              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4">
+              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2">
                   <mat-icon class="text-amber-500 text-sm">emoji_events</mat-icon>
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Top 10 Spenders</h3>
@@ -1018,7 +1018,7 @@ export interface CustomerDetailProfile {
               </div>
 
               <!-- Leaderboard 2: Top Orders -->
-              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4">
+              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2">
                   <mat-icon class="text-blue-500 text-sm">shopping_bag</mat-icon>
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Top 10 Order Count</h3>
@@ -1037,7 +1037,7 @@ export interface CustomerDetailProfile {
               </div>
 
               <!-- Leaderboard 3: Top Reviews -->
-              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-850 rounded-2xl space-y-4">
+              <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4">
                 <div class="flex items-center gap-2">
                   <mat-icon class="text-purple-500 text-sm">rate_review</mat-icon>
                   <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Top 10 Reviewers</h3>

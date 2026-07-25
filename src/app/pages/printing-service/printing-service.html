@@ -43,7 +43,7 @@
           @if (selectedFileName()) {
             <span class="text-[9px] px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold uppercase rounded-full border border-emerald-500/20">Uploaded</span>
           } @else {
-            <span class="text-[9px] px-2 py-0.5 bg-zinc-100 text-zinc-500 dark:bg-zinc-850 dark:text-zinc-400 font-extrabold uppercase rounded-full border border-zinc-250 dark:border-zinc-800">Pending</span>
+            <span class="text-[9px] px-2 py-0.5 bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 font-extrabold uppercase rounded-full border border-zinc-200 dark:border-zinc-800">Pending</span>
           }
         </div>
 
@@ -66,7 +66,7 @@
                 <span class="font-bold">Parsing STL Geometry & Normals...</span>
                 <span>{{ uploadProgress() }}%</span>
               </div>
-              <div class="w-full h-1.5 bg-zinc-250 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                 <div class="h-full bg-blue-500 transition-all duration-150" [style.width.%]="uploadProgress()"></div>
               </div>
             </div>
@@ -232,7 +232,7 @@
             [class.border-transparent]="activeConfigTab() !== 'quality'"
             [class.text-zinc-450]="activeConfigTab() !== 'quality'"
             [class.hover:text-zinc-700]="activeConfigTab() !== 'quality'"
-            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'quality'">
+            [class.dark:hover:text-zinc-200]="activeConfigTab() !== 'quality'">
             <mat-icon class="scale-75">high_quality</mat-icon> Quality
           </button>
           <button type="button" (click)="activeConfigTab.set('material')"
@@ -242,7 +242,7 @@
             [class.border-transparent]="activeConfigTab() !== 'material'"
             [class.text-zinc-450]="activeConfigTab() !== 'material'"
             [class.hover:text-zinc-700]="activeConfigTab() !== 'material'"
-            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'material'">
+            [class.dark:hover:text-zinc-200]="activeConfigTab() !== 'material'">
             <mat-icon class="scale-75">palette</mat-icon> Material & Color
           </button>
           <button type="button" (click)="activeConfigTab.set('infill')"
@@ -252,7 +252,7 @@
             [class.border-transparent]="activeConfigTab() !== 'infill'"
             [class.text-zinc-450]="activeConfigTab() !== 'infill'"
             [class.hover:text-zinc-700]="activeConfigTab() !== 'infill'"
-            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'infill'">
+            [class.dark:hover:text-zinc-200]="activeConfigTab() !== 'infill'">
             <mat-icon class="scale-75">grid_view</mat-icon> Infill
           </button>
           <button type="button" (click)="activeConfigTab.set('quantity')"
@@ -262,7 +262,7 @@
             [class.border-transparent]="activeConfigTab() !== 'quantity'"
             [class.text-zinc-450]="activeConfigTab() !== 'quantity'"
             [class.hover:text-zinc-700]="activeConfigTab() !== 'quantity'"
-            [class.dark:hover:text-zinc-250]="activeConfigTab() !== 'quantity'">
+            [class.dark:hover:text-zinc-200]="activeConfigTab() !== 'quantity'">
             <mat-icon class="scale-75">tag</mat-icon> Quantity
           </button>
         </div>
@@ -281,7 +281,7 @@
                       ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
                       : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
                     class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
-                    <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ q.name.split(' ')[0] }}</span>
+                    <span class="text-xs font-black text-zinc-800 dark:text-zinc-100 block">{{ q.name.split(' ')[0] }}</span>
                     <span class="text-[9px] text-zinc-400 dark:text-zinc-550">{{ q.height.toFixed(2) }} mm</span>
                   </button>
                 }
@@ -302,9 +302,9 @@
                         [disabled]="!selectedFileName()"
                         [class]="selectedMaterial() === mat.name 
                           ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
-                          : 'p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
+                          : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
                         class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
-                        <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ mat.name }}</span>
+                        <span class="text-xs font-black text-zinc-800 dark:text-zinc-100 block">{{ mat.name }}</span>
                         <span class="text-[9px] text-zinc-450 dark:text-zinc-550">{{ mat.name === 'PLA' ? 'Standard' : mat.name === 'ABS' ? 'Durable' : mat.name === 'PETG' ? 'Balanced' : mat.name === 'TPU' ? 'Flexible' : 'Premium' }}</span>
                       </button>
                     }
@@ -315,7 +315,7 @@
               <!-- Color Swatches -->
               <div class="space-y-2">
                 <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Select {{ selectedMaterial() }} Color</span>
-                <div class="flex flex-wrap gap-3 p-4 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-2xl items-center">
+                <div class="flex flex-wrap gap-3 p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl items-center">
                   @for (col of colors(); track col.name) {
                     <button type="button" (click)="selectOption('color', col.name)"
                       [title]="col.name"
@@ -345,9 +345,9 @@
                     [disabled]="!selectedFileName()"
                     [class]="isInfillActive(inf) 
                       ? 'p-4 bg-blue-500/5 dark:bg-blue-500/10 border-2 border-blue-500 rounded-2xl text-center cursor-pointer transition-all' 
-                      : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 hover:border-zinc-350 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
+                      : 'p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-350 dark:hover:border-zinc-700 rounded-2xl text-center cursor-pointer transition-all'"
                     class="disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5">
-                    <span class="text-xs font-black text-zinc-850 dark:text-zinc-150 block">{{ inf.name }}</span>
+                    <span class="text-xs font-black text-zinc-800 dark:text-zinc-100 block">{{ inf.name }}</span>
                     <span class="text-[9px] text-zinc-440 dark:text-zinc-500">{{ inf.desc }}</span>
                   </button>
                 }
@@ -359,14 +359,14 @@
           @if (activeConfigTab() === 'quantity') {
             <div class="space-y-2 animate-fadeIn">
               <span class="block text-[9px] font-black uppercase tracking-wider text-zinc-400">Print Quantity</span>
-              <div class="flex items-center gap-3 w-fit bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl">
+              <div class="flex items-center gap-3 w-fit bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1 rounded-xl">
                 <button type="button" (click)="decrementQty()" [disabled]="!selectedFileName() || quantity() <= 1"
-                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 flex items-center justify-center text-zinc-550 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-550 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <mat-icon class="scale-75">remove</mat-icon>
                 </button>
                 <span class="text-xs font-black text-zinc-800 dark:text-zinc-200 px-3 min-w-8 text-center">{{ quantity() }}</span>
                 <button type="button" (click)="incrementQty()" [disabled]="!selectedFileName()"
-                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-250 dark:border-zinc-800 flex items-center justify-center text-zinc-555 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                  class="w-7 h-7 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-555 hover:text-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                   <mat-icon class="scale-75">add</mat-icon>
                 </button>
               </div>
@@ -452,7 +452,7 @@
                       </label>
                       <input type="text" [value]="custName()" (input)="custName.set($any($event.target).value)"
                         placeholder="e.g. Rahul Sharma"
-                        class="w-full px-3 py-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
+                        class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -462,7 +462,7 @@
                         </label>
                         <input type="email" [value]="custEmail()" (input)="custEmail.set($any($event.target).value)"
                           placeholder="e.g. rahul@example.com"
-                          class="w-full px-3 py-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
+                          class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
                       </div>
 
                       <div>
@@ -471,7 +471,7 @@
                         </label>
                         <input type="tel" [value]="custPhone()" (input)="custPhone.set($any($event.target).value)"
                           placeholder="e.g. 9876543210"
-                          class="w-full px-3 py-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
+                          class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors" />
                       </div>
                     </div>
                   </div>
@@ -486,7 +486,7 @@
               </label>
               <textarea [value]="notesText()" (input)="notesText.set($any($event.target).value)" rows="2"
                 placeholder="e.g. Needs high tolerance fit or specific infill density"
-                class="w-full px-3 py-2 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"></textarea>
+                class="w-full px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"></textarea>
             </div>
 
             <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-[11px] text-blue-600 dark:text-blue-400 space-y-1">
@@ -534,7 +534,7 @@
         </div>
 
         <!-- KEY REFERENCE DETAILS GRID -->
-        <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-850 space-y-4 font-mono">
+        <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-4 font-mono">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <span class="block text-[9px] uppercase font-bold text-zinc-400">Order ID</span>
@@ -557,7 +557,7 @@
             </div>
           </div>
 
-          <div class="pt-3 border-t border-zinc-200/60 dark:border-zinc-850 grid grid-cols-2 gap-4 text-xs">
+          <div class="pt-3 border-t border-zinc-200/60 dark:border-zinc-800 grid grid-cols-2 gap-4 text-xs">
             <div>
               <span class="block text-[9px] uppercase font-bold text-zinc-400">Submitted Date</span>
               <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ eq.submittedDate || 'Today' }}</span>
@@ -568,7 +568,7 @@
             </div>
           </div>
 
-          <div class="pt-3 border-t border-zinc-200/60 dark:border-zinc-850 text-xs">
+          <div class="pt-3 border-t border-zinc-200/60 dark:border-zinc-800 text-xs">
             <span class="block text-[9px] uppercase font-bold text-zinc-400">Customer Name</span>
             <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ eq.customerName }}</span>
           </div>

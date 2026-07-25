@@ -147,7 +147,7 @@
           <div class="inline-flex gap-1.5">
             <button
               (click)="viewProductDetails(p.id, $event)"
-              class="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 hover:bg-zinc-150/50 dark:hover:bg-zinc-800 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+              class="h-8 w-8 rounded-lg text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-zinc-800 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
               title="View Details"
             >
               <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">visibility</mat-icon>
@@ -226,7 +226,7 @@
       <button
         (click)="setPage(currentPageValid() - 1)"
         [disabled]="currentPageValid() === 1"
-        class="h-9 w-9 rounded-lg border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+        class="h-9 w-9 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
         title="Previous Page"
       >
         <mat-icon class="text-lg">chevron_left</mat-icon>
@@ -254,7 +254,7 @@
       <button
         (click)="setPage(currentPageValid() + 1)"
         [disabled]="currentPageValid() === totalPages()"
-        class="h-9 w-9 rounded-lg border border-zinc-250 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
+        class="h-9 w-9 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 disabled:opacity-40 disabled:hover:bg-transparent transition cursor-pointer flex items-center justify-center bg-transparent"
         title="Next Page"
       >
         <mat-icon class="text-lg">chevron_right</mat-icon>

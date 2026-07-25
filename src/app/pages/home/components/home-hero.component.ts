@@ -292,7 +292,7 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
                             [ngClass]="{
                               'bg-theme-gradient text-white hover:opacity-90 shadow-lg':
                                 slide.btnTheme === 'primary' || !slide.btnTheme,
-                              'bg-zinc-800 hover:bg-zinc-700 text-white shadow-zinc-850/20 hover:shadow-zinc-850/30':
+                              'bg-zinc-800 hover:bg-zinc-700 text-white shadow-zinc-800/20 hover:shadow-zinc-800/30':
                                 slide.btnTheme === 'secondary',
                               'bg-white/5 hover:bg-white/10 border border-white/10 text-white backdrop-blur-md':
                                 slide.btnTheme === 'accent',

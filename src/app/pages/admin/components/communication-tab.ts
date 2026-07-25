@@ -87,12 +87,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
           <!-- Top Templates used -->
           <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-150 dark:border-zinc-800">Top Dispatched Triggers</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Top Dispatched Triggers</h3>
             <div class="space-y-4">
               @for (t of topTemplates(); track t.name) {
                 <div class="space-y-1">
                   <div class="flex justify-between text-xs">
-                    <span class="font-bold text-zinc-850 dark:text-zinc-200 uppercase text-[10px]">{{ t.name }}</span>
+                    <span class="font-bold text-zinc-800 dark:text-zinc-200 uppercase text-[10px]">{{ t.name }}</span>
                     <span class="font-bold text-zinc-400">{{ t.count }} Sends</span>
                   </div>
                   <div class="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
@@ -117,7 +117,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
             <div class="space-y-1">
               <span class="block text-[8px] font-black text-zinc-400 uppercase">Status</span>
-              <select [(ngModel)]="filterStatus" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
+              <select [(ngModel)]="filterStatus" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
                 <option value="">All Statuses</option>
                 <option value="Queued">Queued</option>
                 <option value="Sent">Sent</option>
@@ -137,7 +137,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-zinc-50 dark:bg-zinc-955/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-850">
+                <tr class="bg-zinc-50 dark:bg-zinc-950/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                   <th class="p-4 pl-6">Log ID</th>
                   <th class="p-4">Customer</th>
                   <th class="p-4">Phone</th>
@@ -149,9 +149,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <th class="p-4 pr-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-850">
+              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @for (log of filteredLogs(); track log.id) {
-                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-955/50 transition-colors">
+                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-950/50 transition-colors">
                     <td class="p-4 pl-6 font-mono text-[10px] text-zinc-500">
                       {{ log.id.slice(0, 8) }}...{{ log.id.slice(-6) }}
                     </td>
@@ -199,7 +199,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-              <div class="flex justify-between items-center pb-4 border-b border-zinc-150 dark:border-zinc-800">
+              <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800">
                 <button (click)="selectedLog.set(null)" class="flex items-center gap-1 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors cursor-pointer border-none bg-transparent">
                   <mat-icon class="text-sm">arrow_back</mat-icon> Back to queue
                 </button>
@@ -229,7 +229,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <!-- Metadata & Actions -->
           <div class="space-y-6">
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-150 dark:border-zinc-850 pb-3">Log Metadata</h3>
+              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-3">Log Metadata</h3>
               
               <div class="space-y-3.5 text-xs">
                 <div class="flex justify-between">
@@ -264,7 +264,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
               <!-- Retrying Trigger actions -->
               @if (log.status === 'Failed' || log.status === 'Retrying') {
-                <div class="pt-4 border-t border-zinc-150 dark:border-zinc-800 space-y-3">
+                <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
                   <h4 class="text-[10px] font-black uppercase text-amber-500">Manual Retry Actions</h4>
                   <button (click)="retryLog(log)" [disabled]="actionLoading()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Re-Queue Message</button>
                 </div>
@@ -280,7 +280,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           
           <!-- Campaign Builder -->
           <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-5">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-3 border-b border-zinc-150 dark:border-zinc-800">Launch Bulk WhatsApp Campaign</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-3 border-b border-zinc-100 dark:border-zinc-800">Launch Bulk WhatsApp Campaign</h3>
             
             <div class="space-y-4 text-xs">
               <div class="space-y-1">
@@ -291,7 +291,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Target Audience Segments</span>
-                  <select [(ngModel)]="campaignTarget" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
+                  <select [(ngModel)]="campaignTarget" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
                     <option value="All">All Registered Customers</option>
                     <option value="Recently Purchased">Active Customers (Purchased last 30 days)</option>
                     <option value="Inactive">Inactive Customers (No orders last 90 days)</option>
@@ -299,7 +299,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </div>
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Select Dispatched Template</span>
-                  <select [(ngModel)]="campaignTemplate" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
+                  <select [(ngModel)]="campaignTemplate" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
                     <option value="registration">Welcome Message Template</option>
                     <option value="order_placed">Coupon / Promotion template</option>
                     <option value="delivered">Back in Stock Notification</option>
@@ -310,7 +310,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Scheduling Mode</span>
-                  <select [(ngModel)]="campaignScheduleMode" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
+                  <select [(ngModel)]="campaignScheduleMode" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl outline-none cursor-pointer">
                     <option value="immediate">Dispatch Immediately</option>
                     <option value="scheduled">Schedule for Date/Time</option>
                   </select>
@@ -331,13 +331,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
           <!-- Campaigns History list -->
           <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-3 border-b border-zinc-150 dark:border-zinc-800">Campaigns log</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-3 border-b border-zinc-100 dark:border-zinc-800">Campaigns log</h3>
             
             <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
               @for (c of campaigns(); track c.id) {
-                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-850 rounded-2xl space-y-2">
+                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl space-y-2">
                   <div class="flex justify-between items-start">
-                    <h4 class="text-xs font-bold text-zinc-850 dark:text-zinc-200 truncate pr-2">{{ c.title }}</h4>
+                    <h4 class="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate pr-2">{{ c.title }}</h4>
                     <span class="px-1.5 py-0.5 text-[7px] font-black uppercase rounded bg-blue-500/10 text-blue-500">{{ c.status }}</span>
                   </div>
                   <div class="grid grid-cols-4 gap-2 text-center text-[9px]">

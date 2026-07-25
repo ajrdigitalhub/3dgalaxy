@@ -272,9 +272,24 @@ export const getSettingsService = async () => {
       });
 
       if (banners.length > 0) {
-        const heroSlides = banners
-          .filter(b => b.position === "HERO" || b.position === "slider")
-          .map(b => ({
+        const storedHeroSlides = (settingsObj.heroSlides && Array.isArray(settingsObj.heroSlides)) ? settingsObj.heroSlides : [];
+        const heroBanners = banners.filter(b => b.position === "HERO" || b.position === "slider");
+        
+        if (storedHeroSlides.length > 0) {
+          settingsObj.heroSlides = storedHeroSlides.map((slide: any, idx: number) => {
+            const matchingBanner = heroBanners.find(b => b.id === slide.id || b.title === slide.title) || heroBanners[idx];
+            return {
+              ...slide,
+              id: matchingBanner?.id || slide.id || `slide_${idx + 1}`,
+              title: slide.title !== undefined ? slide.title : (matchingBanner?.title || ""),
+              imageUrl: slide.imageUrl || slide.bgImageUrl || matchingBanner?.imageUrl || "",
+              linkUrl: slide.linkUrl !== undefined ? slide.linkUrl : (matchingBanner?.linkUrl || ""),
+              position: "HERO",
+              isActive: matchingBanner?.isActive !== undefined ? matchingBanner.isActive : (slide.active !== undefined ? slide.active : true)
+            };
+          });
+        } else if (heroBanners.length > 0) {
+          settingsObj.heroSlides = heroBanners.map(b => ({
             id: b.id,
             title: b.title || "",
             imageUrl: b.imageUrl,
@@ -282,10 +297,25 @@ export const getSettingsService = async () => {
             position: b.position || "HERO",
             isActive: b.isActive
           }));
+        }
 
-        const promoBanners = banners
-          .filter(b => b.position === "PROMO" || b.position === "banner")
-          .map(b => ({
+        const storedPromoBanners = (settingsObj.promoBanners && Array.isArray(settingsObj.promoBanners)) ? settingsObj.promoBanners : [];
+        const promoBannersDb = banners.filter(b => b.position === "PROMO" || b.position === "banner");
+        if (storedPromoBanners.length > 0) {
+          settingsObj.promoBanners = storedPromoBanners.map((banner: any, idx: number) => {
+            const matchingBanner = promoBannersDb.find(b => b.id === banner.id || b.title === banner.title) || promoBannersDb[idx];
+            return {
+              ...banner,
+              id: matchingBanner?.id || banner.id || `banner_${idx + 1}`,
+              title: banner.title !== undefined ? banner.title : (matchingBanner?.title || ""),
+              imageUrl: banner.imageUrl || matchingBanner?.imageUrl || "",
+              linkUrl: banner.linkUrl !== undefined ? banner.linkUrl : (matchingBanner?.linkUrl || ""),
+              position: "PROMO",
+              isActive: matchingBanner?.isActive !== undefined ? matchingBanner.isActive : true
+            };
+          });
+        } else if (promoBannersDb.length > 0) {
+          settingsObj.promoBanners = promoBannersDb.map(b => ({
             id: b.id,
             title: b.title || "",
             imageUrl: b.imageUrl,
@@ -293,9 +323,8 @@ export const getSettingsService = async () => {
             position: b.position || "PROMO",
             isActive: b.isActive
           }));
+        }
 
-        settingsObj.heroSlides = heroSlides;
-        settingsObj.promoBanners = promoBanners;
         settingsObj.banners = banners;
       } else {
         // Seed banners table from settingsObj.heroSlides and settingsObj.promoBanners

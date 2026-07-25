@@ -35,7 +35,7 @@
     
     <!-- Left: List of Sections -->
     <div class="lg:col-span-8 space-y-4">
-      <div class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800 rounded-3xl p-6 shadow-xs">
+      <div class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-xs">
         <h2 class="text-sm font-black text-zinc-800 dark:text-zinc-200 uppercase tracking-wider mb-6 flex items-center gap-1.5">
           <mat-icon class="scale-90 text-orange-500">list</mat-icon>
           Active Storefront Sequence
@@ -44,7 +44,7 @@
         <div class="space-y-3">
           <div 
             *ngFor="let sec of sections(); let idx = index" 
-            class="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-150 dark:border-zinc-800/80 rounded-2xl group hover:border-orange-500/30 transition-all"
+            class="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl group hover:border-orange-500/30 transition-all"
           >
             <!-- Reorder & Info -->
             <div class="flex items-center gap-4">
@@ -120,7 +120,7 @@
 
     <!-- Right: Quick Editor Panel -->
     <div class="lg:col-span-4" *ngIf="editingSection(); as sec">
-      <div class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800 rounded-3xl p-6 shadow-xs space-y-6">
+      <div class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-6 shadow-xs space-y-6">
         <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
           <h2 class="text-sm font-black text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">
             {{ isNewSection ? 'Add Layout Section' : 'Edit Section Details' }}
@@ -154,7 +154,7 @@
           </div>
 
           <!-- Status Toggle -->
-          <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-800 rounded-2xl">
+          <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-2xl">
             <div class="text-left">
               <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 block">Enable Visibility</span>
               <span class="text-[10px] text-zinc-400 font-semibold block">Render this layout block on frontend</span>

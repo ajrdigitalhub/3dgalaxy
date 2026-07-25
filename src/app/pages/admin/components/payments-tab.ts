@@ -66,7 +66,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-zinc-50 dark:bg-zinc-950/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-850">
+                <tr class="bg-zinc-50 dark:bg-zinc-950/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                   <th class="p-4 pl-6">Transaction ID</th>
                   <th class="p-4">Order Ref</th>
                   <th class="p-4">Gateway</th>
@@ -77,9 +77,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <th class="p-4 pr-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-850">
+              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @for (tx of filteredTransactions(); track tx.id) {
-                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-955/50 transition-colors">
+                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-950/50 transition-colors">
                     <td class="p-4 pl-6 font-mono text-[10px] font-bold text-zinc-750 dark:text-zinc-300">
                       {{ tx.id ? (tx.id.length > 14 ? (tx.id.slice(0, 8) + '...' + tx.id.slice(-6)) : tx.id) : 'N/A' }}
                     </td>
@@ -126,7 +126,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             
             <!-- Timeline & Details -->
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-              <div class="flex justify-between items-center pb-4 border-b border-zinc-150 dark:border-zinc-800">
+              <div class="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800">
                 <button (click)="selectedTx.set(null)" class="flex items-center gap-1 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors cursor-pointer border-none bg-transparent">
                   <mat-icon class="text-sm">arrow_back</mat-icon> Back to list
                 </button>
@@ -180,7 +180,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <!-- Right sidebar: Action & Details -->
           <div class="space-y-6">
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-150 dark:border-zinc-800 pb-3">Transaction Summary</h3>
+              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-3">Transaction Summary</h3>
               
               <div class="space-y-3.5 text-xs">
                 <div class="flex justify-between">
@@ -215,7 +215,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
               <!-- Refund Action Launch -->
               @if (tx.status === 'Captured') {
-                <div class="pt-4 border-t border-zinc-150 dark:border-zinc-800 space-y-4">
+                <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
                   <h4 class="text-[10px] font-black uppercase text-amber-500">Refund Action Launcher</h4>
                   <div class="space-y-2">
                     <span class="block text-[8px] font-black text-zinc-400 uppercase">Amount to Refund</span>
@@ -241,7 +241,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-zinc-50 dark:bg-zinc-950/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-850">
+                <tr class="bg-zinc-50 dark:bg-zinc-950/40 text-[9px] font-black uppercase text-zinc-400 tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                   <th class="p-4 pl-6">Log ID</th>
                   <th class="p-4">Gateway</th>
                   <th class="p-4">Status</th>
@@ -249,9 +249,9 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <th class="p-4 pr-6 text-right">Event Name</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-850">
+              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @for (log of webhooks(); track log.id) {
-                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-955/50 transition-colors">
+                  <tr class="text-xs hover:bg-zinc-50 dark:hover:bg-zinc-950/50 transition-colors">
                     <td class="p-4 pl-6 font-mono text-[10px] text-zinc-500">
                       {{ log.id ? (log.id.length > 14 ? (log.id.slice(0, 8) + '...' + log.id.slice(-6)) : log.id) : 'N/A' }}
                     </td>

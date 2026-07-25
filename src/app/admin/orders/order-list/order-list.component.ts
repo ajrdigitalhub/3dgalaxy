@@ -66,7 +66,7 @@ export class OrderListComponent {
       case 'completed': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       case 'shipped': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
       case 'processing': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
-      default: return 'bg-zinc-150 text-zinc-500 border-zinc-250 dark:bg-zinc-800 dark:text-zinc-400';
+      default: return 'bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400';
     }
   }
 

@@ -52,7 +52,7 @@
       <!-- Specs Column -->
       <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 p-6 rounded-3xl md:col-span-2 space-y-6 shadow-xs">
         <!-- Pricing Block -->
-        <div class="bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-4">
+        <div class="bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between flex-wrap gap-4">
           <div>
             <span class="text-[10px] font-bold uppercase text-zinc-400 dark:text-zinc-500 tracking-wider">Storefront Price</span>
             <div class="flex items-baseline gap-2 mt-1">
@@ -74,7 +74,7 @@
         <!-- Specifications Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-sans text-xs">
           <!-- Brand -->
-          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
             <div class="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
               <mat-icon class="text-sm">verified</mat-icon>
             </div>
@@ -85,7 +85,7 @@
           </div>
 
           <!-- Category -->
-          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-855 rounded-2xl flex items-center gap-3">
+          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-855 rounded-2xl flex items-center gap-3">
             <div class="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
               <mat-icon class="text-sm">category</mat-icon>
             </div>
@@ -98,7 +98,7 @@
           </div>
 
           <!-- Barcode -->
-          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-850 rounded-2xl flex items-center gap-3">
+          <div class="p-4 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center gap-3">
             <div class="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
               <mat-icon class="text-sm">qr_code</mat-icon>
             </div>
@@ -112,7 +112,7 @@
         </div>
 
         <!-- Stock Control -->
-        <div class="p-5 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-150 dark:border-zinc-850 rounded-2xl space-y-3">
+        <div class="p-5 bg-zinc-50 dark:bg-zinc-950/20 border border-zinc-100 dark:border-zinc-800 rounded-2xl space-y-3">
           <p class="text-zinc-450 dark:text-zinc-500 uppercase text-[9px] font-bold tracking-wider">Inventory Stock & Real-time Allocation</p>
           <div class="flex items-center gap-4 flex-wrap">
             <span 
@@ -173,7 +173,7 @@
             <p class="text-zinc-400 uppercase text-[9px] font-black tracking-wide">Model Variants Configurations</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               @for (v of p.variants; track v.name) {
-                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/20 rounded-xl border border-zinc-150 dark:border-zinc-850 flex justify-between items-center font-bold">
+                <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950/20 rounded-xl border border-zinc-100 dark:border-zinc-800 flex justify-between items-center font-bold">
                   <span class="text-zinc-700 dark:text-zinc-300 font-bold text-xs">{{ v.name }}</span>
                   <span class="text-blue-500 font-mono text-xs">₹{{ v.price | number }}</span>
                 </div>

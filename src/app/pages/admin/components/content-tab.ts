@@ -25,7 +25,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
               @for (p of admin.ds.pages(); track p.id) {
                 <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-xl flex justify-between items-center transition-all hover:border-blue-500/20 shadow-xs">
                   <div class="flex items-center gap-4">
-                    <div class="h-10 w-10 bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-850 flex items-center justify-center text-zinc-400">
+                    <div class="h-10 w-10 bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 flex items-center justify-center text-zinc-400">
                       <mat-icon>article</mat-icon>
                     </div>
                     <div>
@@ -52,11 +52,11 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
               <h3 class="text-xs font-black uppercase pb-2 border-b dark:border-zinc-800">Add Informative Page</h3>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Page Title</span>
-                <input type="text" [value]="admin.newPageTitle()" (input)="admin.newPageTitle.set($any($event.target).value)" placeholder="e.g. Warranty Policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                <input type="text" [value]="admin.newPageTitle()" (input)="admin.newPageTitle.set($any($event.target).value)" placeholder="e.g. Warranty Policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">URL Slug</span>
-                <input type="text" [value]="admin.newPageSlug()" (input)="admin.newPageSlug.set($any($event.target).value)" placeholder="e.g. warranty-policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                <input type="text" [value]="admin.newPageSlug()" (input)="admin.newPageSlug.set($any($event.target).value)" placeholder="e.g. warranty-policy" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
               <div class="space-y-1">
                 <app-rich-text-editor label="Page Details" placeholder="Enter page contents..." [value]="admin.newPageContent()" (valueChange)="admin.newPageContent.set($event)"></app-rich-text-editor>
@@ -165,7 +165,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
               <h3 class="text-xs font-black uppercase pb-2 border-b dark:border-zinc-800">Add FAQ Item</h3>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Category Group</span>
-                <select [value]="admin.newFaqCategory()" (change)="admin.newFaqCategory.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+                <select [value]="admin.newFaqCategory()" (change)="admin.newFaqCategory.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
                   <option value="Pricing & B2B">Pricing & B2B</option>
                   <option value="Brahma 3D Farm">Brahma 3D Farm</option>
                   <option value="Shipping & Billing">Shipping & Billing</option>
@@ -173,11 +173,11 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
               </div>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Question Description</span>
-                <input type="text" [value]="admin.newFaqQuestion()" (input)="admin.newFaqQuestion.set($any($event.target).value)" placeholder="e.g. Lead delivery time?" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                <input type="text" [value]="admin.newFaqQuestion()" (input)="admin.newFaqQuestion.set($any($event.target).value)" placeholder="e.g. Lead delivery time?" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Technical Answer Description</span>
-                <textarea rows="3" [value]="admin.newFaqAnswer()" (input)="admin.newFaqAnswer.set($any($event.target).value)" placeholder="Enter responses details..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+                <textarea rows="3" [value]="admin.newFaqAnswer()" (input)="admin.newFaqAnswer.set($any($event.target).value)" placeholder="Enter responses details..." class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
               </div>
               <button (click)="admin.createFaq()" class="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase cursor-pointer hover:bg-blue-500 border-none transition-colors">Program FAQ</button>
             </div>
@@ -236,18 +236,18 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
               <h3 class="text-xs font-black uppercase pb-2 border-b dark:border-zinc-800">Add Campaign Banner</h3>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Banner Title</span>
-                <input type="text" [value]="admin.newBannerTitle()" (input)="admin.newBannerTitle.set($any($event.target).value)" placeholder="e.g. Summer TPU Deals" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                <input type="text" [value]="admin.newBannerTitle()" (input)="admin.newBannerTitle.set($any($event.target).value)" placeholder="e.g. Summer TPU Deals" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
               </div>
               <div class="space-y-1">
                 <app-image-picker label="Banner Image" [value]="admin.newBannerImageUrl()" (valueChange)="admin.newBannerImageUrl.set($event)"></app-image-picker>
               </div>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Target CTA Action Route</span>
-                <input type="text" [value]="admin.newBannerLinkUrl()" (input)="admin.newBannerLinkUrl.set($any($event.target).value)" placeholder="e.g. /category/filaments" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                <input type="text" [value]="admin.newBannerLinkUrl()" (input)="admin.newBannerLinkUrl.set($any($event.target).value)" placeholder="e.g. /category/filaments" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
               </div>
               <div class="space-y-1">
                 <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Carousel Display Position</span>
-                <select [value]="admin.newBannerPosition()" (change)="admin.newBannerPosition.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+                <select [value]="admin.newBannerPosition()" (change)="admin.newBannerPosition.set($any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
                   <option value="Main Carousel">Main Carousel</option>
                   <option value="Category Banner">Category Banner</option>
                   <option value="Footer Banner">Footer Banner</option>
@@ -279,8 +279,8 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                   <div class="flex items-center gap-4">
                     <!-- Reorder dials -->
                     <div class="flex flex-col gap-0.5">
-                      <button (click)="admin.moveLayoutSection(idx, 'up')" [disabled]="idx === 0" class="h-6 w-6 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 hover:bg-zinc-100 flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:pointer-events-none"><mat-icon class="text-xs">keyboard_arrow_up</mat-icon></button>
-                      <button (click)="admin.moveLayoutSection(idx, 'down')" [disabled]="idx === admin.ds.homeLayout().length - 1" class="h-6 w-6 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 hover:bg-zinc-100 flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:pointer-events-none"><mat-icon class="text-xs">keyboard_arrow_down</mat-icon></button>
+                      <button (click)="admin.moveLayoutSection(idx, 'up')" [disabled]="idx === 0" class="h-6 w-6 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:pointer-events-none"><mat-icon class="text-xs">keyboard_arrow_up</mat-icon></button>
+                      <button (click)="admin.moveLayoutSection(idx, 'down')" [disabled]="idx === admin.ds.homeLayout().length - 1" class="h-6 w-6 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:pointer-events-none"><mat-icon class="text-xs">keyboard_arrow_down</mat-icon></button>
                     </div>
                     <div>
                       <div class="flex items-center gap-2 font-bold">
@@ -322,7 +322,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                 <!-- Top level headers -->
                 @for (item of admin.ds.menuItems(); track item.id) {
                   @if (!item.parentId) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl space-y-2">
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
                       <div class="flex justify-between items-center">
                         <span class="text-xs font-black uppercase text-zinc-950 dark:text-white flex items-center gap-2">
                           <mat-icon class="text-blue-500 text-sm">link</mat-icon>
@@ -344,7 +344,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                       </div>
 
                       <!-- Level 2 children inside this menu -->
-                      <div class="pl-5 border-l border-zinc-200 dark:border-zinc-850 space-y-2.5 pt-1">
+                      <div class="pl-5 border-l border-zinc-200 dark:border-zinc-800 space-y-2.5 pt-1">
                         @for (sub of admin.ds.menuItems(); track sub.id) {
                           @if (sub.parentId === item.id) {
                             <div class="p-2.5 bg-blue-500/5 hover:bg-blue-500/10 rounded-lg border dark:border-white/5 space-y-1">
@@ -385,24 +385,24 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
                   {{ admin.editingMenuItem() ? 'Edit Menu Link' : 'Register Menu Link' }}
                 </h3>
                 @if (admin.editingMenuItem()) {
-                  <button (click)="admin.cancelMenuItemEdit()" class="text-[9px] font-black uppercase px-2 py-0.5 bg-zinc-100 dark:bg-zinc-850 rounded text-zinc-500 cursor-pointer border-none">New</button>
+                  <button (click)="admin.cancelMenuItemEdit()" class="text-[9px] font-black uppercase px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-zinc-500 cursor-pointer border-none">New</button>
                 }
               </div>
 
               <div class="space-y-3 text-zinc-900 dark:text-white">
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1 font-bold">Menu Display label Title *</span>
-                  <input type="text" [value]="admin.menuLabel()" (input)="admin.menuLabel.set($any($event.target).value)" placeholder="e.g. Creality Spools" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+                  <input type="text" [value]="admin.menuLabel()" (input)="admin.menuLabel.set($any($event.target).value)" placeholder="e.g. Creality Spools" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
                 </div>
 
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1 font-bold">Redirection URL link (Standard path)</span>
-                  <input type="text" [value]="admin.menuUrl()" (input)="admin.menuUrl.set($any($event.target).value)" placeholder="/categories/pla-filaments" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+                  <input type="text" [value]="admin.menuUrl()" (input)="admin.menuUrl.set($any($event.target).value)" placeholder="/categories/pla-filaments" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
                 </div>
 
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1 font-bold">Nesting parent Link (Choose null for Root header)</span>
-                  <select [value]="admin.menuParentId() || ''" (change)="admin.menuParentId.set($any($event.target).value || null)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold cursor-pointer">
+                  <select [value]="admin.menuParentId() || ''" (change)="admin.menuParentId.set($any($event.target).value || null)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold cursor-pointer">
                     <option value="">Top-Level Main link (Root)</option>
                     @for (m of admin.ds.menuItems(); track m.id) {
                       @if (!m.parentId && m.id !== admin.editingMenuItem()?.id) {
@@ -414,7 +414,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
 
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1 font-bold">Bind directly to dynamic Catalog Category</span>
-                  <select [value]="admin.menuCategoryId() || ''" (change)="admin.menuCategoryId.set($any($event.target).value || null)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold cursor-pointer">
+                  <select [value]="admin.menuCategoryId() || ''" (change)="admin.menuCategoryId.set($any($event.target).value || null)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold cursor-pointer">
                     <option value="">No Catalog Link constraints</option>
                     @for (c of admin.ds.categories(); track c.id) {
                       <option [value]="c.id">{{ c.name }}</option>
@@ -424,7 +424,7 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
 
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase pl-1 font-bold">Redirection weighting sortOrder (1-100)</span>
-                  <input type="number" [value]="admin.menuSortOrder()" (input)="admin.menuSortOrder.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
+                  <input type="number" [value]="admin.menuSortOrder()" (input)="admin.menuSortOrder.set(+$any($event.target).value)" class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white">
                 </div>
               </div>
 

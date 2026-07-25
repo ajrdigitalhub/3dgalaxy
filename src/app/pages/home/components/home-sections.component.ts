@@ -2033,7 +2033,7 @@ export class HomeCategoryShowcaseRowComponent {
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div 
           *ngFor="let p of deals()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
         >
           <div class="absolute top-4 left-4 z-10 bg-red-600 text-white px-2 py-0.5 text-[9px] font-black rounded-lg uppercase tracking-wider shadow-sm">
             {{ getDiscount(p.mrp, p.salePrice) }}% OFF
@@ -2136,7 +2136,7 @@ export class HomeFlashDealsComponent {
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div 
           *ngFor="let p of items()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
         >
           <div class="absolute top-4 left-4 z-10 bg-orange-600 text-white px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider shadow-sm">
             BESTSELLER
@@ -2170,7 +2170,7 @@ export class HomeFlashDealsComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
                 View Details
                 <mat-icon class="scale-75">arrow_forward</mat-icon>
               </a>
@@ -2234,7 +2234,7 @@ export class HomeBestSellersComponent {
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div 
           *ngFor="let p of items()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
         >
           <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
             <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
@@ -2255,7 +2255,7 @@ export class HomeBestSellersComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
                 View Details
                 <mat-icon class="scale-75">arrow_forward</mat-icon>
               </a>
@@ -2300,7 +2300,7 @@ export class HomeTrendingProductsComponent {
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         <div 
           *ngFor="let p of items()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
         >
           <div class="absolute top-4 left-4 z-10 bg-green-650 text-white px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider shadow-sm">
             NEW
@@ -2325,7 +2325,7 @@ export class HomeTrendingProductsComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-850 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
+              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
                 View Details
                 <mat-icon class="scale-75">arrow_forward</mat-icon>
               </a>
@@ -2369,7 +2369,7 @@ export class HomeNewArrivalsComponent {
           *ngFor="let m of materials()" 
           [routerLink]="['/products']" 
           [queryParams]="{ material: m.name }"
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col items-center text-center hover:shadow-lg hover:border-theme-primary/30 hover:-translate-y-0.5 transition-all group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col items-center text-center hover:shadow-lg hover:border-theme-primary/30 hover:-translate-y-0.5 transition-all group"
         >
           <div class="w-24 h-24 bg-theme-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
             <mat-icon class="text-theme-primary scale-125">category</mat-icon>
@@ -2452,7 +2452,7 @@ export class HomeApplicationsComponent {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div 
           *ngFor="let c of cols()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-6 min-h-[220px]"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-6 min-h-[220px]"
         >
           <div class="space-y-2 text-left">
             <h4 class="text-xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
@@ -2569,7 +2569,7 @@ export class HomeBundleOffersComponent {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div 
           *ngFor="let r of reviews()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col justify-between min-h-[220px]"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-6 flex flex-col justify-between min-h-[220px]"
         >
           <div class="space-y-4 text-left">
             <div class="flex items-center gap-1">
@@ -2625,7 +2625,7 @@ export class HomeReviewsComponent {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div 
           *ngFor="let b of blogs()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-150 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
         >
           <div class="relative w-full h-48 overflow-hidden bg-zinc-100">
             <img [src]="b.imageUrl || 'https://picsum.photos/seed/blog/400/200'" (error)="handleImageError($event)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Blog Title" />

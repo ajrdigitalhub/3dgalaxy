@@ -79,7 +79,7 @@ import { ToastService } from '../toast/toast.service';
             </div>
           } @else {
             <!-- Upload Success Preview Box -->
-            <div class="relative group rounded-2xl overflow-hidden border border-zinc-150 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-3 w-fit min-w-40 min-h-32">
+            <div class="relative group rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-3 w-fit min-w-40 min-h-32">
               <img 
                 [src]="value" 
                 alt="Uploaded media preview" 
@@ -136,7 +136,7 @@ import { ToastService } from '../toast/toast.service';
 
           @if (value) {
             <!-- URL Source Preview Container -->
-            <div class="relative group rounded-2xl overflow-hidden border border-zinc-150 dark:border-zinc-850 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-3 w-fit min-w-40 min-h-32">
+            <div class="relative group rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-3 w-fit min-w-40 min-h-32">
               <img 
                 [src]="value" 
                 alt="URL resource preview" 

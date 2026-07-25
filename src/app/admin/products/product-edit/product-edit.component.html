@@ -21,11 +21,11 @@
       <!-- Basic Group -->
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
-        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
       </div>
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
-        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
+        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
       </div>
 
       <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
@@ -55,11 +55,11 @@
       <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
-          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
-          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
+          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
@@ -71,7 +71,7 @@
       <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
-          <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
+          <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
@@ -86,7 +86,7 @@
       <!-- Image List Block -->
       <div class="space-y-1 md:col-span-2">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Media Images (One Absolute URL link per line)</span>
-        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
+        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
       </div>
 
       <!-- Specifications & Full Rich Description -->
@@ -100,7 +100,7 @@
       </div>
 
       <!-- Options Configurator -->
-      <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-100 dark:border-zinc-900">
+      <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900">
         <div class="flex justify-between items-center border-b dark:border-zinc-900 pb-3">
           <div>
             <h4 class="text-xs font-black uppercase text-blue-500 tracking-wider">Product Options Builder</h4>
@@ -136,7 +136,7 @@
             </div>
           </div>
         } @else {
-          <div class="py-6 text-center border border-dashed dark:border-zinc-850 rounded-xl">
+          <div class="py-6 text-center border border-dashed dark:border-zinc-800 rounded-xl">
             <p class="text-[11px] font-bold text-zinc-400">No options defined yet. Click "Add Option" to get started.</p>
           </div>
         }
@@ -144,13 +144,13 @@
 
       <!-- Generated Variants Table -->
       @if (adminVariants().length > 0) {
-        <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-955 rounded-xl border border-zinc-100 dark:border-zinc-900">
+        <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900">
           <div>
             <h4 class="text-xs font-black uppercase text-emerald-500 tracking-wider">Configure Generated Variants ({{ adminVariants().length }})</h4>
             <p class="text-[10px] text-zinc-400 font-medium">Configure SKU, prices, stock, and images for each unique variant.</p>
           </div>
 
-          <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-850 rounded-xl bg-white dark:bg-zinc-900">
+          <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-855 text-zinc-400 uppercase text-[9px] font-black tracking-wider">
@@ -162,26 +162,26 @@
                   <th class="py-3 px-4 font-black">Images (URL per line)</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-zinc-250 dark:divide-zinc-850">
+              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @for (v of adminVariants(); track $index) {
                   <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-950/20">
                     <td class="py-3 px-4 font-bold text-zinc-900 dark:text-white max-w-[200px] truncate">
                       {{ v.name }}
                     </td>
                     <td class="py-3 px-4">
-                      <input type="text" [(ngModel)]="v.sku" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="text" [(ngModel)]="v.sku" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.price" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.price" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.salePrice" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.salePrice" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
                     </td>
                     <td class="py-3 px-4">
-                      <textarea rows="1" [(ngModel)]="v.variantImages" placeholder="Image URLs..." class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-850 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white resize-y"></textarea>
+                      <textarea rows="1" [(ngModel)]="v.variantImages" placeholder="Image URLs..." class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white resize-y"></textarea>
                     </td>
                   </tr>
                 }

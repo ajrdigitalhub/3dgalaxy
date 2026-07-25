@@ -231,7 +231,7 @@ export class RichTextEditorComponent implements ControlValueAccessor, OnInit, On
   insertCodeBlock() {
     // Inserts structured block styling
     const selectedText = window.getSelection()?.toString() || 'code block';
-    const codeHtml = `<pre class="bg-zinc-900 border border-zinc-850 p-4 rounded-xl text-emerald-400 font-mono text-xs my-3 select-all"><code>${selectedText}</code></pre>`;
+    const codeHtml = `<pre class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-emerald-400 font-mono text-xs my-3 select-all"><code>${selectedText}</code></pre>`;
     this.execCommand('insertHTML', codeHtml);
   }
 

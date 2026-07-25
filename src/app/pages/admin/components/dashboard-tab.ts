@@ -230,7 +230,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
 
             <div class="space-y-3 mt-4 relative z-10">
               @for (p of admin.printerTelemetry; track p.id) {
-                <div class="p-3 bg-zinc-900/60 border border-zinc-850 rounded-2xl hover:border-zinc-800 transition duration-200 space-y-2">
+                <div class="p-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl hover:border-zinc-800 transition duration-200 space-y-2">
                   <div class="flex justify-between items-center text-[9px] font-mono">
                     <span class="font-black text-zinc-200 flex items-center gap-1.5">
                       <mat-icon class="text-xs text-zinc-450 w-3 h-3 flex items-center justify-center">print</mat-icon>
@@ -347,7 +347,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
                     <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase font-sans">
                       {{ tp.brand }}
                     </span>
-                    <span class="h-3 w-px bg-zinc-250 dark:bg-zinc-800"></span>
+                    <span class="h-3 w-px bg-zinc-200 dark:bg-zinc-800"></span>
                     <span class="text-[9px] text-blue-500 font-extrabold">
                       {{ tp.salesCount }} Sold
                     </span>

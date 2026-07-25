@@ -5,6 +5,7 @@ import {
   getAdminWhatsappLogs,
   getAdminWhatsappLogDetail,
   handleManualSend,
+  handlePreviewOrderStatusMessage,
   handleManualRetry,
   handleCampaignBroadcast,
   handleMetaWebhook,
@@ -22,6 +23,7 @@ router.get('/whatsapp/notifications/:id', authenticateToken, getCustomerNotifica
 router.get('/admin/whatsapp/logs', authenticateToken, getAdminWhatsappLogs);
 router.get('/admin/whatsapp/logs/:id', authenticateToken, getAdminWhatsappLogDetail);
 router.post('/admin/whatsapp/send', authenticateToken, handleManualSend);
+router.post('/admin/whatsapp/preview-status', authenticateToken, handlePreviewOrderStatusMessage);
 router.post('/admin/whatsapp/retry', authenticateToken, handleManualRetry);
 router.post('/admin/whatsapp/campaign', authenticateToken, handleCampaignBroadcast);
 
