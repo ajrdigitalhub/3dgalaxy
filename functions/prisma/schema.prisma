@@ -174,7 +174,7 @@ model Brand {
   id              String            @id @default(uuid()) @db.Uuid
   name            String            @db.VarChar(255)
   slug            String            @unique @db.VarChar(255)
-  logo            String?           @map("logo_url") @db.VarChar(255)
+  logo            String?           @map("logo_url") @db.Text
   description     String?           @db.Text
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz

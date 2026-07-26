@@ -373,6 +373,24 @@ export const sendTestNotification = async (req: Request, res: Response) => {
     });
   }
 
+  if (fcmToken === 'CRON_TRIGGER_DAILY_OFFER') {
+    try {
+      const { runDailyOfferJob } = require('../services/scheduler');
+      await runDailyOfferJob();
+      return res.status(200).json({
+        status: 'success',
+        success: true,
+        message: 'Daily Offer cron job executed successfully!'
+      });
+    } catch (e: any) {
+      return res.status(500).json({
+        status: 'error',
+        success: false,
+        message: 'Failed to run cron job: ' + e.message
+      });
+    }
+  }
+
   const messaging = getMessaging();
   if (!messaging) {
     return res.status(500).json({ status: 'error', success: false, message: 'FCM Client not initialized.' });

@@ -41,11 +41,12 @@ export class NotificationService {
   // Permission status signal: 'default' | 'granted' | 'denied'
   permission = signal<NotificationPermission>("default");
   fcmToken = signal<string>("");
+  popupConfig = signal<any>(null);
+  publicFcmConfig = signal<any>(null);
 
   private showPromptSubject = new BehaviorSubject<boolean>(false);
   private registrationKey = "";
-  private serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null =
-    null;
+  private serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
   showPrompt$ = this.showPromptSubject.asObservable();
 
   constructor() {
@@ -55,12 +56,9 @@ export class NotificationService {
         this.permission.set(Notification.permission);
       }
 
-      const dismissed = localStorage.getItem("fcm_prompt_dismissed");
-      if (this.permission() === "default" && !dismissed) {
-        setTimeout(() => {
-          this.showPromptSubject.next(true);
-        }, 4000);
-      }
+      // Fetch marketing and popup configurations from backend
+      this.fetchPopupConfig();
+      this.fetchFcmConfig();
 
       // Automatically fetch FCM token when permission is granted and settings are loaded
       effect(() => {
@@ -93,6 +91,96 @@ export class NotificationService {
     }
   }
 
+  fetchPopupConfig() {
+    this.api.get<any>('/notifications/popup-config').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data) {
+          this.popupConfig.set(res.data);
+          this.initPopupTriggers();
+        }
+      },
+      error: (err) => console.error("Failed to load popup config:", err)
+    });
+  }
+
+  fetchFcmConfig() {
+    this.api.get<any>('/notifications/fcm-config/public').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data) {
+          this.publicFcmConfig.set(res.data);
+        }
+      },
+      error: (err) => console.error("Failed to load public FCM config:", err)
+    });
+  }
+
+  private initPopupTriggers() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const config = this.popupConfig();
+    if (!config || !config.enabled) return;
+
+    // Check if browser permission already granted/denied
+    if (Notification.permission === 'granted' && config.hideExisting) {
+      return;
+    }
+
+    // Check checkout & payment page rules
+    const pathname = window.location.pathname;
+    if (config.hideCheckout && (pathname.includes('/checkout') || pathname.includes('/cart'))) return;
+    if (config.hidePayment && (pathname.includes('/payment') || pathname.includes('/pay') || pathname.includes('/returns'))) return;
+
+    // Check dismissed cooldown
+    const dismissedTimeStr = localStorage.getItem("fcm_prompt_dismissed_time");
+    if (dismissedTimeStr) {
+      const dismissedTime = Number(dismissedTimeStr);
+      if (config.showOnce) {
+        return;
+      }
+      if (config.reshowDays) {
+        const diffMs = Date.now() - dismissedTime;
+        const reshowMs = config.reshowDays * 24 * 60 * 60 * 1000;
+        if (diffMs < reshowMs) {
+          return;
+        }
+      }
+    }
+
+    let triggered = false;
+    const triggerShow = () => {
+      if (triggered) return;
+      triggered = true;
+      this.showPromptSubject.next(true);
+      window.removeEventListener('scroll', scrollHandler);
+    };
+
+    const scrollHandler = () => {
+      if (!config.scrollShow) return;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight <= 0) return;
+      const percent = (window.scrollY / docHeight) * 100;
+      if (percent >= config.scrollShow) {
+        triggerShow();
+      }
+    };
+
+    // 1. Timeout Delay Trigger
+    if (config.delayShow) {
+      setTimeout(() => {
+        triggerShow();
+      }, config.delayShow * 1000);
+    }
+
+    // 2. Scroll Trigger
+    if (config.scrollShow) {
+      window.addEventListener('scroll', scrollHandler);
+    }
+
+    // Fallback trigger if 0 or none configured
+    if (!config.delayShow && !config.scrollShow) {
+      triggerShow();
+    }
+  }
+
   // Request Permission flow
   async requestPermission(): Promise<boolean> {
     if (!isPlatformBrowser(this.platformId)) return false;
@@ -111,7 +199,7 @@ export class NotificationService {
           return true;
         }
       } else {
-        localStorage.setItem("fcm_prompt_dismissed", "true");
+        localStorage.setItem("fcm_prompt_dismissed_time", Date.now().toString());
       }
     } catch (err) {
       console.error("Error requesting notification permission:", err);
@@ -121,7 +209,7 @@ export class NotificationService {
 
   // Hide Prompt modal
   dismissPrompt() {
-    localStorage.setItem("fcm_prompt_dismissed", "true");
+    localStorage.setItem("fcm_prompt_dismissed_time", Date.now().toString());
     this.showPromptSubject.next(false);
   }
 
@@ -135,10 +223,8 @@ export class NotificationService {
       const messaging = getMessaging(app);
 
       const reg = await this.getOrCreateServiceWorkerRegistration();
-      const vapidKey =
-        this.ds.settings().pushNotifications?.vapidKey ||
-        this.ds.settings().pushNotificationSettings?.vapidKey ||
-        "BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215";
+      const config = this.publicFcmConfig() || {};
+      const vapidKey = config.vapidPublicKey || "BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215";
 
       const tokenOptions: any = {
         serviceWorkerRegistration: reg,
@@ -189,15 +275,25 @@ export class NotificationService {
       throw new Error("Service workers not supported in this browser.");
     }
 
-    const config =
-      this.ds.settings()?.pushNotifications ||
-      this.ds.settings()?.pushNotificationSettings ||
-      {};
+    let config = this.publicFcmConfig();
+    if (!config) {
+      try {
+        const res = await this.api.get<any>('/notifications/fcm-config/public').toPromise();
+        if (res && res.success && res.data) {
+          this.publicFcmConfig.set(res.data);
+          config = res.data;
+        }
+      } catch (err) {
+        console.warn("Failed to fetch public FCM config for SW registration:", err);
+      }
+    }
+
+    const cfg = config || {};
     const queryParams = new URLSearchParams({
-      apiKey: config.apiKey || '',
-      projectId: config.projectId || '',
-      senderId: config.senderId || '',
-      appId: config.appId || '',
+      apiKey: cfg.apiKey || '',
+      projectId: cfg.projectId || '',
+      senderId: cfg.messagingSenderId || '',
+      appId: cfg.appId || '',
     }).toString();
 
     this.serviceWorkerRegistrationPromise = navigator.serviceWorker.register(

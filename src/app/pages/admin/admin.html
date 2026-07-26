@@ -303,6 +303,16 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Advanced Search Button -->
+        <button
+          (click)="openOmniSearch()"
+          title="Open Omni Search (Ctrl+K)"
+          class="h-9 px-3 bg-zinc-900/10 dark:bg-zinc-800/40 hover:bg-zinc-900/20 dark:hover:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+        >
+          <mat-icon class="text-sm">search</mat-icon>
+          <span class="hidden sm:inline text-[10px] uppercase tracking-wider">Search (Ctrl+K)</span>
+        </button>
+
         <!-- Theme Switcher Button -->
         <button
           (click)="toggleTheme()"
@@ -519,8 +529,10 @@
       } @if (activeTab() === 'sales-reports' || activeTab() ===
       'product-reports' || activeTab() === 'customer-reports') {
       <app-admin-analytics-tab [admin]="this" />
-      } @if (activeTab().endsWith('-settings') || activeTab() ===
-      'user-management' || activeTab() === 'active-sessions') {
+      } @if (activeTab() === 'push-settings') {
+      <app-admin-push-settings-tab />
+      } @if (activeTab() !== 'push-settings' && (activeTab().endsWith('-settings') || activeTab() ===
+      'user-management' || activeTab() === 'active-sessions')) {
       <app-admin-settings-tab [admin]="this" />
       } @if (activeTab() === 'transactions' || activeTab() === 'webhook-logs') {
       <app-admin-payments-tab [admin]="this" />
@@ -532,5 +544,8 @@
       } }
     </div>
   </main>
+  }
+  @if (isOmniSearchOpen()) {
+    <app-admin-omni-search [admin]="this" (close)="isOmniSearchOpen.set(false)" />
   }
 </div>

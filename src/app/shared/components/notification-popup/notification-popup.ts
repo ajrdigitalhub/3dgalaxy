@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { NotificationService } from '../../../services/notification.service';
@@ -10,52 +10,48 @@ import { NotificationService } from '../../../services/notification.service';
   template: `
     @if (showPrompt$ | async) {
       <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
-        <div class="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] p-8 shadow-2xl animate-scale-in text-center relative overflow-hidden">
+        <div [style.backgroundColor]="config()?.backgroundColor || '#1e293b'"
+             [style.color]="config()?.textColor || '#ffffff'"
+             [style.borderRadius.px]="config()?.borderRadius || 24"
+             class="w-full max-w-md border border-neutral-200 dark:border-neutral-800 p-8 shadow-2xl text-center relative overflow-hidden transition-all duration-300"
+             [ngClass]="getAnimationClass()">
           
-          <!-- Background accent gradient blob -->
-          <div class="absolute -top-12 -left-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none"></div>
-          <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-orange-600/10 rounded-full blur-2xl pointer-events-none"></div>
+          <!-- Banner Image if set -->
+          @if (config()?.bannerUrl) {
+            <div class="-mt-8 -mx-8 mb-6 h-36 overflow-hidden relative">
+              <img [src]="config()?.bannerUrl" class="w-full h-full object-cover" alt="Banner" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            </div>
+          }
 
-          <!-- Premium Icon -->
-          <div class="mx-auto w-16 h-16 bg-[#f54f00]/10 text-[#f54f00] rounded-2xl flex items-center justify-center mb-6">
-            <mat-icon class="scale-125">notifications_active</mat-icon>
+          <!-- Premium Icon or Brand Logo -->
+          <div class="flex justify-center mb-4">
+            @if (config()?.logoUrl) {
+              <img [src]="config()?.logoUrl" class="w-16 h-16 object-contain rounded-xl shadow-md" alt="Logo" />
+            } @else {
+              <div class="w-14 h-14 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center">
+                <mat-icon class="scale-125">notifications_active</mat-icon>
+              </div>
+            }
           </div>
 
-          <h3 class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight mb-3">
-            Stay Updated!
+          <h3 class="text-xl font-bold tracking-tight mb-3">
+            {{ config()?.title || 'Never Miss Amazing Deals!' }}
           </h3>
           
-          <p class="text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed mb-6">
-            Enable push notifications to receive real-time updates on:
+          <p class="opacity-80 text-sm leading-relaxed mb-6 whitespace-pre-line">
+            {{ config()?.description || 'Enable notifications for deals, offers and status tracking.' }}
           </p>
-
-          <ul class="text-left max-w-xs mx-auto space-y-3 mb-8 text-sm text-neutral-600 dark:text-neutral-300 font-medium">
-            <li class="flex items-center gap-3">
-              <mat-icon class="text-emerald-500 scale-75">check_circle</mat-icon>
-              <span>Order Updates & Delivery Status</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <mat-icon class="text-emerald-500 scale-75">check_circle</mat-icon>
-              <span>Exclusive Offers & Discounts</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <mat-icon class="text-emerald-500 scale-75">check_circle</mat-icon>
-              <span>New Product Launches</span>
-            </li>
-            <li class="flex items-center gap-3">
-              <mat-icon class="text-emerald-500 scale-75">check_circle</mat-icon>
-              <span>3D Printing Service Updates</span>
-            </li>
-          </ul>
 
           <div class="flex flex-col sm:flex-row gap-3 justify-center">
             <button (click)="allow()" 
-                    class="h-12 px-6 bg-[#f54f00] hover:bg-orange-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-transform hover:scale-[1.02] cursor-pointer flex-1">
-              Allow Notifications
+                    [style.backgroundColor]="config()?.buttonColor || '#f97316'"
+                    class="h-12 px-6 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex-1 shadow-lg shadow-orange-500/20">
+              {{ config()?.allowText || 'Allow Notifications' }}
             </button>
             <button (click)="dismiss()" 
-                    class="h-12 px-6 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer">
-              Maybe Later
+                    class="h-12 px-6 bg-white/10 hover:bg-white/20 text-current rounded-xl font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer border border-white/20">
+              {{ config()?.cancelText || 'Maybe Later' }}
             </button>
           </div>
 
@@ -67,22 +63,48 @@ import { NotificationService } from '../../../services/notification.service';
     .animate-fade-in {
       animation: fadeIn 0.3s ease-out forwards;
     }
-    .animate-scale-in {
-      animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    .animate-slide-in-bottom {
+      animation: slideInBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    .animate-scale-in {
+      animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .animate-fade {
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .animate-bounce-in {
+      animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    @keyframes slideInBottom {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
     @keyframes scaleIn {
       from { transform: scale(0.9); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      70% { transform: scale(0.9); opacity: 0.9; }
+      100% { transform: scale(1); opacity: 1; }
     }
   `]
 })
 export class NotificationPopupComponent {
   private ns = inject(NotificationService);
   showPrompt$ = this.ns.showPrompt$;
+  config = this.ns.popupConfig;
+
+  getAnimationClass(): string {
+    const anim = this.config()?.animation || 'scale-in';
+    return `animate-${anim}`;
+  }
 
   allow() {
     this.ns.requestPermission();

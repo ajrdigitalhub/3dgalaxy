@@ -1,13 +1,14 @@
-import { Component, Input, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AdminPanel } from '../admin';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-admin-sales-tab',
-  imports: [CommonModule, MatIconModule, RouterModule],
+  imports: [CommonModule, MatIconModule, RouterModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -15,21 +16,140 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
       <!-- ========================= TAB: ORDERS MANAGEMENT ========================= -->
       @if (admin.activeTab() === 'orders') {
         <div class="space-y-8">
-          <div class="flex justify-between items-center">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 class="text-xl font-black uppercase tracking-tight">Active Fulfillment Logs</h1>
               <p class="text-xs text-zinc-500">Monitor active orders, track clearance status, and dispatch logistical courier details.</p>
             </div>
             <button
               (click)="exportOrdersCsv()"
-              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs border-none"
             >
               <mat-icon class="text-sm">download</mat-icon>
               <span>Export CSV</span>
             </button>
           </div>
 
-          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans">
+          <!-- Advanced Search & Filter Controls -->
+          <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <!-- Search Input Bar -->
+              <div class="flex-1 flex items-center gap-3 bg-white dark:bg-zinc-900 px-4 py-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+                <mat-icon class="text-zinc-400">search</mat-icon>
+                <input type="text"
+                       [value]="searchQuery()"
+                       (input)="onSearchChange($any($event.target).value)"
+                       placeholder="Search by Order ID, Customer Name, Email, Phone, Tracking Number..."
+                       class="flex-1 bg-transparent border-none outline-none text-xs text-zinc-900 dark:text-white placeholder-zinc-400 font-medium">
+                @if (searchQuery()) {
+                  <button (click)="resetSearch()" class="h-5 w-5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center border-none bg-transparent cursor-pointer text-zinc-400">
+                    <mat-icon class="text-xs">close</mat-icon>
+                  </button>
+                }
+              </div>
+
+              <!-- Action buttons -->
+              <div class="flex items-center gap-2">
+                <button (click)="showFilters.set(!showFilters())"
+                        [class]="showFilters() ? 'bg-blue-650 text-blue-100 bg-blue-600' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'"
+                        class="h-9 px-4 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none">
+                  <mat-icon class="text-sm">tune</mat-icon>
+                  <span>Advanced Filters</span>
+                </button>
+
+                @if (hasActiveFilters()) {
+                  <button (click)="resetFilters()"
+                          class="h-9 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none">
+                    <mat-icon class="text-sm">filter_alt_off</mat-icon>
+                    <span>Clear</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Collapsible Filters Drawer -->
+            @if (showFilters()) {
+              <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-fadeIn">
+                <!-- Status Filter -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Fulfillment Status</span>
+                  <select [value]="statusFilter()"
+                          (change)="onStatusChange($any($event.target).value)"
+                          class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending Auth</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Packed">Packed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <!-- Customer Type Filter -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Customer Type</span>
+                  <select [value]="customerTypeFilter()"
+                          (change)="onCustomerTypeChange($any($event.target).value)"
+                          class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
+                    <option value="">All Types</option>
+                    <option value="REG">Registered</option>
+                    <option value="GUEST">Guest</option>
+                  </select>
+                </div>
+
+                <!-- Price Range (Min/Max) -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Grand Total (Min - Max)</span>
+                  <div class="flex gap-2">
+                    <input type="number"
+                           [value]="minAmount() === null ? '' : minAmount()"
+                           (input)="setMinAmt($event)"
+                           placeholder="Min"
+                           class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                    <input type="number"
+                           [value]="maxAmount() === null ? '' : maxAmount()"
+                           (input)="setMaxAmt($event)"
+                           placeholder="Max"
+                           class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                </div>
+
+                <!-- Date Range (From/To) -->
+                <div class="space-y-1">
+                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Created Date (From - To)</span>
+                  <div class="flex gap-2">
+                    <input type="date"
+                           [value]="dateFrom()"
+                           (input)="onDateFromChange($any($event.target).value)"
+                           class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                    <input type="date"
+                           [value]="dateTo()"
+                           (input)="onDateToChange($any($event.target).value)"
+                           class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Match stats counter -->
+            <div class="flex justify-between items-center text-[10px] font-black uppercase text-zinc-400 pl-1">
+              <span>Showing {{ filteredOrders().length }} of {{ admin.ds.ordersTotal() }} total orders</span>
+            </div>
+          </div>
+
+          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans relative">
+            <!-- Loading Indicator Spinner Overlay -->
+            @if (admin.ds.ordersLoading()) {
+              <div class="absolute inset-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs z-10 flex items-center justify-center animate-fadeIn">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-[10px] font-black uppercase text-blue-500 tracking-wider">Syncing Fulfillment logs...</span>
+                </div>
+              </div>
+            }
+
             <table class="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
@@ -42,7 +162,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                @for (o of admin.ds.orders(); track o.id) {
+                @for (o of filteredOrders(); track o.id) {
                   <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
                     <td class="py-4">
                       <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-800 uppercase">{{ o.orderNumber }}</span>
@@ -50,7 +170,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                     <td class="py-4">
                       <p class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2">
                         {{ o.guestName || o.customerName }}
-                        @if (o.customerType === 'GUEST') {
+                        @if (o.customerType?.toUpperCase() === 'GUEST') {
                           <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none">GUEST</span>
                         } @else {
                           <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none">REG</span>
@@ -91,6 +211,41 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 }
               </tbody>
             </table>
+          </div>
+
+          <!-- Server-side Pagination Panel -->
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-2xl shadow-xs text-xs font-sans">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-500">Show</span>
+              <select [value]="pageSize()"
+                      (change)="onPageSizeChange($any($event.target).value)"
+                      class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl cursor-pointer outline-none font-bold">
+                <option [value]="10">10</option>
+                <option [value]="20">20</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+              <span class="text-zinc-500">orders per page</span>
+            </div>
+
+            <!-- Page Selection Controls -->
+            <div class="flex items-center gap-3">
+              <button [disabled]="currentPage() === 1 || admin.ds.ordersLoading()"
+                      (click)="goToPage(currentPage() - 1)"
+                      class="h-8 w-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-950 dark:hover:bg-zinc-850 text-zinc-700 dark:text-zinc-300 flex items-center justify-center border border-zinc-200 dark:border-zinc-800 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                <mat-icon class="text-sm">chevron_left</mat-icon>
+              </button>
+
+              <span class="font-bold text-zinc-800 dark:text-zinc-200">
+                Page {{ currentPage() }} of {{ totalPages() }}
+              </span>
+
+              <button [disabled]="currentPage() === totalPages() || admin.ds.ordersLoading()"
+                      (click)="goToPage(currentPage() + 1)"
+                      class="h-8 w-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-950 dark:hover:bg-zinc-850 text-zinc-700 dark:text-zinc-300 flex items-center justify-center border border-zinc-200 dark:border-zinc-800 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                <mat-icon class="text-sm">chevron_right</mat-icon>
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -305,15 +460,147 @@ export class AdminSalesTab {
   @Input({ required: true }) admin!: AdminPanel;
   private toastService = inject(ToastService);
 
+  // Advanced Search & Filters signals
+  searchQuery = signal('');
+  statusFilter = signal('');
+  customerTypeFilter = signal('');
+  minAmount = signal<number | null>(null);
+  maxAmount = signal<number | null>(null);
+  dateFrom = signal('');
+  dateTo = signal('');
+  showFilters = signal(false);
+
+  // Pagination signals
+  currentPage = signal(1);
+  pageSize = signal(20);
+  private searchTimeout: any;
+
+  totalPages = computed(() => {
+    const total = this.admin.ds.ordersTotal();
+    const limit = this.pageSize();
+    return Math.ceil(total / limit) || 1;
+  });
+
+  hasActiveFilters = computed(() => {
+    return !!this.searchQuery().trim() ||
+           !!this.statusFilter() ||
+           !!this.customerTypeFilter() ||
+           this.minAmount() !== null ||
+           this.maxAmount() !== null ||
+           !!this.dateFrom() ||
+           !!this.dateTo();
+  });
+
+  constructor() {
+    // Watch filters and reload orders from server
+    effect(() => {
+      const page = this.currentPage();
+      const limit = this.pageSize();
+      const search = this.searchQuery();
+      const status = this.statusFilter();
+      const customerType = this.customerTypeFilter();
+      const minAmt = this.minAmount();
+      const maxAmt = this.maxAmount();
+      const fromDate = this.dateFrom();
+      const toDate = this.dateTo();
+
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+
+      this.searchTimeout = setTimeout(() => {
+        this.admin.ds.reloadOrders(page, limit, {
+          search,
+          status,
+          customerType,
+          minAmount: minAmt,
+          maxAmount: maxAmt,
+          dateFrom: fromDate,
+          dateTo: toDate
+        });
+      }, 300);
+    });
+  }
+
+  // Filter setters that reset pagination to page 1
+  onSearchChange(val: string) {
+    this.searchQuery.set(val);
+    this.currentPage.set(1);
+  }
+
+  onStatusChange(val: string) {
+    this.statusFilter.set(val);
+    this.currentPage.set(1);
+  }
+
+  onCustomerTypeChange(val: string) {
+    this.customerTypeFilter.set(val);
+    this.currentPage.set(1);
+  }
+
+  setMinAmt(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    this.minAmount.set(val === '' ? null : Number(val));
+    this.currentPage.set(1);
+  }
+
+  setMaxAmt(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    this.maxAmount.set(val === '' ? null : Number(val));
+    this.currentPage.set(1);
+  }
+
+  onDateFromChange(val: string) {
+    this.dateFrom.set(val);
+    this.currentPage.set(1);
+  }
+
+  onDateToChange(val: string) {
+    this.dateTo.set(val);
+    this.currentPage.set(1);
+  }
+
+  resetSearch() {
+    this.searchQuery.set('');
+    this.currentPage.set(1);
+  }
+
+  resetFilters() {
+    this.searchQuery.set('');
+    this.statusFilter.set('');
+    this.customerTypeFilter.set('');
+    this.minAmount.set(null);
+    this.maxAmount.set(null);
+    this.dateFrom.set('');
+    this.dateTo.set('');
+    this.currentPage.set(1);
+  }
+
+  // Pagination navigation helpers
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  onPageSizeChange(size: string) {
+    this.pageSize.set(Number(size));
+    this.currentPage.set(1);
+  }
+
+  filteredOrders = computed(() => {
+    return this.admin.ds.orders() || [];
+  });
+
   isSameStatus(a: string | undefined, b: string): boolean {
     if (!a || !b) return false;
     return a.trim().toLowerCase() === b.trim().toLowerCase();
   }
 
   exportOrdersCsv() {
-    const dataToExport = this.admin.ds.orders() || [];
+    const dataToExport = this.filteredOrders() || [];
     if (dataToExport.length === 0) {
-      this.toastService.warning('No order records to export.');
+      this.toastService.warning('No matching order records to export.');
       return;
     }
 
@@ -338,6 +625,6 @@ export class AdminSalesTab {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    this.toastService.success(`Exported ${dataToExport.length} orders.`);
+    this.toastService.success(`Exported ${dataToExport.length} filtered orders.`);
   }
 }

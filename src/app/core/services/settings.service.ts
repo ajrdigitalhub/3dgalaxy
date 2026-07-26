@@ -440,7 +440,8 @@ export class SettingsService {
     }
 
     // Always fetch dynamic settings from Settings API to apply latest theme
-    this.loadPromise = firstValueFrom(this.http.get<any>(environment.apiUrl + "/settings"))
+    const url = force ? `${environment.apiUrl}/settings?t=${Date.now()}` : `${environment.apiUrl}/settings`;
+    this.loadPromise = firstValueFrom(this.http.get<any>(url))
       .then((resp) => {
         if (resp) {
           const d = resp.data !== undefined ? resp.data : resp;

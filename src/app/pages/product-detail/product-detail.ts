@@ -1109,7 +1109,7 @@ export class ProductDetail {
                   detailedProd.options || detailedProd.product?.options || [],
                 images: detailedProd.images,
                 variants: detailedProd.variants,
-                reviews: detailedProd.reviews,
+                reviews: detailedProd.reviews || detailedProd.product?.reviews || [],
                 relatedProducts: detailedProd.relatedProducts,
               };
               this.fetchedProduct.set(merged);
@@ -1118,8 +1118,9 @@ export class ProductDetail {
                 merged,
                 detailedProd.relatedProducts || merged.relatedProducts || [],
               );
-              // Check review eligibility after product loads
+              // Load fresh reviews and eligibility after product loads
               if (merged.id) {
+                this.loadReviews(merged.id);
                 this.checkPurchaseEligibility(merged.id);
               }
             }
@@ -1143,6 +1144,11 @@ export class ProductDetail {
           this.rotationAngle.set(0);
 
           this.initializeDefaultVariant(matched);
+
+          if (matched.id) {
+            this.loadReviews(matched.id);
+            this.checkPurchaseEligibility(matched.id);
+          }
 
           // Update SEO
           const pageTitle =
@@ -1556,35 +1562,47 @@ export class ProductDetail {
     });
   }
 
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
   async submitReview(productId: string) {
     if (this.isSubmittingReview()) return;
     const draft = this.reviewDraft();
-    if (!draft.comment.trim() || !draft.title.trim()) {
+    const comment = draft.comment.trim();
+    if (!comment) {
       this.toastService.error(
-        "Please add a title and detailed review before submitting.",
+        "Please add a detailed review before submitting.",
       );
       return;
     }
 
-    if (!this.canReviewProduct()) {
-      this.toastService.error(
-        "Only verified purchasers can review this product.",
-      );
-      return;
-    }
+    const title = draft.title.trim() || (comment.length > 35 ? comment.slice(0, 35) + "..." : comment);
 
     this.isSubmittingReview.set(true);
     this.reviewDraft.update((value) => ({ ...value, uploading: true }));
 
     try {
+      let base64Images: string[] = [];
+      if (draft.images && draft.images.length > 0) {
+        base64Images = await Promise.all(
+          draft.images.map((file: File) => this.fileToBase64(file))
+        );
+      }
+
       const payload: any = {
         productId,
         orderId: this.purchaseOrderId() || '',
         rating: draft.rating,
-        title: draft.title,
-        review: draft.comment,
+        title,
+        review: comment,
         recommended: draft.recommended,
-        images: [],
+        images: base64Images,
       };
 
       const res: any = await this.api.post("/reviews", payload).toPromise();
@@ -1603,6 +1621,7 @@ export class ProductDetail {
         );
       }
     } catch (error: any) {
+      console.error("Review submission error:", error);
       const msg = error?.error?.error || error?.message || "Unable to submit your review right now.";
       this.toastService.error(msg);
     } finally {
@@ -1612,13 +1631,16 @@ export class ProductDetail {
   }
 
   async loadReviews(productId: string) {
+    if (!productId) return;
     try {
       const res: any = await this.api
-        .get(`/products/${productId}/reviews`)
+        .get(`/products/${productId}/reviews`, null, true)
         .toPromise();
-      const reviews = res?.data || [];
+      const reviews = res?.data || res || [];
       const current = this.fetchedProduct();
-      this.fetchedProduct.set({ ...current, reviews });
+      if (current) {
+        this.fetchedProduct.set({ ...current, reviews });
+      }
     } catch (error) {
       console.error("Review load failed", error);
     }
@@ -1689,7 +1711,7 @@ export class ProductDetail {
     this.isCheckingReviewEligibility.set(true);
     try {
       const res: any = await this.api
-        .get(`/reviews/purchase-check/${productId}`)
+        .get(`/reviews/purchase-check/${productId}`, null, true)
         .toPromise();
       if (res?.success) {
         this.canReviewProduct.set(!!res.canReview);

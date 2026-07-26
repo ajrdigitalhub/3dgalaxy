@@ -432,39 +432,39 @@
         <div class="space-y-2.5 pt-1 font-mono text-xs text-neutral-500">
           <div class="flex justify-between">
             <span>Subtotal Net:</span>
-            <span>{{ ord.totalAmount - ord.shippingAmount - ord.taxAmount + ord.discountAmount - (ord.codCharge || (ord.paymentMethod === 'COD' ? 100 : 0)) |
-              currency:'INR':'symbol':'1.0-0' }}</span>
+            <span>{{ itemsSubtotal() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
 
-          @if (ord.discountAmount > 0) {
+          @if (orderDiscount() > 0) {
           <div class="flex justify-between text-emerald-500">
             <span>Loyalty rebates:</span>
-            <span>-{{ ord.discountAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span>-{{ orderDiscount() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
           }
 
           <div class="flex justify-between">
             <span>Logistic transport fee:</span>
-            <span>{{ ord.shippingAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span>{{ orderShipping() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
 
-          @if (ord.codCharge > 0 || ord.paymentMethod === 'COD') {
+          @if (orderCodCharge() > 0 || ord.paymentMethod === 'COD') {
           <div class="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
             <span>COD Handling Charge:</span>
-            <span class="font-bold text-[#d65108]">{{ (ord.codCharge || 100) | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span class="font-bold text-[#d65108]">{{ orderCodCharge() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
           }
 
+          @if (orderTax() > 0) {
           <div class="flex justify-between">
-            <span>Tax collection (18% included):</span>
-            <span>{{ ord.taxAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span>Tax collection:</span>
+            <span>{{ orderTax() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
+          }
 
           <div
             class="flex justify-between text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-150 dark:border-neutral-900">
             <span class="uppercase">Aggregate Total:</span>
-            <span class="text-blue-500 font-mono font-extrabold">{{ ord.totalAmount | currency:'INR':'symbol':'1.0-0'
-              }}</span>
+            <span class="text-blue-500 font-mono font-extrabold">{{ orderTotal() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
         </div>
       </div>

@@ -18,8 +18,20 @@ const safeParseArray = (val: any): any[] => {
 
 const mapOrderWithVariantDetails = (order: any) => {
   if (!order) return order;
-  if (order.items) {
+
+  order.totalAmount = order.totalAmount !== undefined ? Number(order.totalAmount) : 0;
+  order.shippingAmount = order.shippingAmount !== undefined ? Number(order.shippingAmount) : 0;
+  order.taxAmount = order.taxAmount !== undefined ? Number(order.taxAmount) : 0;
+  order.discountAmount = order.discountAmount !== undefined ? Number(order.discountAmount) : 0;
+  order.codCharge = order.codCharge !== undefined ? Number(order.codCharge) : 0;
+  order.paidAmount = order.paidAmount !== undefined ? Number(order.paidAmount) : 0;
+
+  if (order.items && Array.isArray(order.items)) {
     order.items = order.items.map((item: any) => {
+      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+      const qty = Number(item.quantity || 1);
+      const totalPrice = item.totalPrice ? Number(item.totalPrice) : unitPrice * qty;
+
       if (item.variant) {
         const variantImages = safeParseArray(item.variant.variantImages || item.variant.images);
         let firstImg = '';
@@ -32,8 +44,16 @@ const mapOrderWithVariantDetails = (order: any) => {
           imageUrl: firstImg || (item.product?.images && safeParseArray(item.product.images).length > 0 ? (typeof safeParseArray(item.product.images)[0] === 'string' ? safeParseArray(item.product.images)[0] : safeParseArray(item.product.images)[0].url) : '')
         };
       }
-      return item;
+      return {
+        ...item,
+        unitPrice,
+        quantity: qty,
+        totalPrice
+      };
     });
+
+    const itemsSubtotal = order.items.reduce((sum: number, i: any) => sum + i.totalPrice, 0);
+    order.subtotal = itemsSubtotal;
   }
   return order;
 };
@@ -44,9 +64,94 @@ export const getOrders = async (req: Request, res: Response) => {
     const limitNum = parseInt(req.query.limit as string, 10) || 20;
     const skip = (page - 1) * limitNum;
 
+    const search = req.query.search as string;
+    const status = req.query.status as string;
+    const customerType = req.query.customerType as string;
+    const minAmount = req.query.minAmount ? parseFloat(req.query.minAmount as string) : undefined;
+    const maxAmount = req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined;
+    const dateFrom = req.query.dateFrom as string;
+    const dateTo = req.query.dateTo as string;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+        {
+          customer: {
+            OR: [
+              { phone: { contains: search, mode: 'insensitive' } },
+              { customerType: { contains: search, mode: 'insensitive' } },
+              {
+                user: {
+                  OR: [
+                    { firstName: { contains: search, mode: 'insensitive' } },
+                    { lastName: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { mobile: { contains: search, mode: 'insensitive' } }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ];
+    }
+
+    if (status) {
+      where.status = { equals: status, mode: 'insensitive' };
+    }
+
+    if (customerType) {
+      if (customerType.toUpperCase() === 'REG') {
+        where.customer = {
+          customerType: { not: 'guest' }
+        };
+        where.customerId = { not: null };
+      } else if (customerType.toUpperCase() === 'GUEST') {
+        const guestCondition = {
+          OR: [
+            { customer: { customerType: 'guest' } },
+            { customerId: null }
+          ]
+        };
+        if (where.OR) {
+          const searchCondition = { OR: where.OR };
+          delete where.OR;
+          where.AND = [searchCondition, guestCondition];
+        } else {
+          where.OR = guestCondition.OR;
+        }
+      }
+    }
+
+    if (minAmount !== undefined || maxAmount !== undefined) {
+      where.totalAmount = {};
+      if (minAmount !== undefined) {
+        where.totalAmount.gte = minAmount;
+      }
+      if (maxAmount !== undefined) {
+        where.totalAmount.lte = maxAmount;
+      }
+    }
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        const toD = new Date(dateTo);
+        toD.setHours(23, 59, 59, 999);
+        where.createdAt.lte = toD;
+      }
+    }
+
     const [total, list] = await Promise.all([
-      prisma.order.count(),
+      prisma.order.count({ where }),
       prisma.order.findMany({
+        where,
         skip,
         take: limitNum,
         include: {

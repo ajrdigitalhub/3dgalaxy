@@ -947,4 +947,94 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/omni-search', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const q = (req.query.q as string || '').trim();
+    if (!q) {
+      return res.status(200).json({
+        success: true,
+        data: { products: [], orders: [], customers: [] }
+      });
+    }
+
+    const [products, orders, customers] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: 'insensitive' } },
+            { sku: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } }
+          ]
+        },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          basePrice: true,
+          salePrice: true,
+          image: true,
+          slug: true
+        },
+        take: 8
+      }),
+      prisma.order.findMany({
+        where: {
+          OR: [
+            { id: { contains: q, mode: 'insensitive' } },
+            { customerName: { contains: q, mode: 'insensitive' } },
+            { customerEmail: { contains: q, mode: 'insensitive' } },
+            { customerPhone: { contains: q, mode: 'insensitive' } },
+            { status: { contains: q, mode: 'insensitive' } }
+          ]
+        },
+        select: {
+          id: true,
+          customerName: true,
+          customerEmail: true,
+          totalAmount: true,
+          status: true,
+          createdAt: true
+        },
+        take: 8
+      }),
+      prisma.customer.findMany({
+        where: {
+          OR: [
+            { phone: { contains: q, mode: 'insensitive' } },
+            {
+              user: {
+                OR: [
+                  { email: { contains: q, mode: 'insensitive' } },
+                  { firstName: { contains: q, mode: 'insensitive' } },
+                  { lastName: { contains: q, mode: 'insensitive' } }
+                ]
+              }
+            }
+          ]
+        },
+        include: {
+          user: true
+        },
+        take: 8
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        products,
+        orders,
+        customers
+      }
+    });
+  } catch (error: any) {
+    console.error('Omni-search failed:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to perform search',
+      details: error.message
+    });
+  }
+});
+
 export default router;

@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { getFirebaseAdmin } from '../config/firebase';
+import cron from 'node-cron';
 
 const getMessaging = () => {
   try {
@@ -539,6 +540,154 @@ export const checkScheduledCampaigns = async () => {
   }
 };
 
+let dailyOfferCronTask: any = null;
+
+const parseJSON = (str: any, defaultVal: any = []) => {
+  if (!str) return defaultVal;
+  if (typeof str !== 'string') return str;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return defaultVal;
+  }
+};
+
+export const runDailyOfferJob = async () => {
+  console.log("⏳ Starting Daily Offer Auto Notification Job...");
+  try {
+    // 1. Fetch settings for rules
+    const rulesRecord = await prisma.setting.findUnique({
+      where: { settingKey: 'push-rules-settings' }
+    });
+
+    const rules = rulesRecord ? parseJSON(rulesRecord.settingData, {}) : {
+      randomProductCount: 3,
+      minDiscountPercent: 10,
+      maxDiscountPercent: 90,
+      categoriesInclude: [],
+      categoriesExclude: [],
+      brandsInclude: [],
+      brandsExclude: [],
+      stockThreshold: 5,
+      duplicatePreventionDays: 7
+    };
+
+    // Calculate prevention date limit
+    const prevDays = Number(rules.duplicatePreventionDays || 7);
+    const preventionDate = new Date();
+    preventionDate.setDate(preventionDate.getDate() - prevDays);
+
+    // Fetch product ids promoted in the previous X days
+    const recentCampaigns = await prisma.pushCampaign.findMany({
+      where: {
+        createdAt: { gte: preventionDate },
+        type: 'Daily Offer'
+      },
+      select: { productsConfig: true }
+    });
+
+    const promotedProductIds: string[] = [];
+    recentCampaigns.forEach(c => {
+      const cfg = c.productsConfig as any;
+      if (cfg && Array.isArray(cfg.productIds)) {
+        promotedProductIds.push(...cfg.productIds);
+      }
+    });
+
+    // Build product filtering query
+    const where: any = {
+      deletedAt: null,
+      isActive: true,
+      stock: { gte: Number(rules.stockThreshold || 1) },
+      salePrice: { not: null }
+    };
+
+    // Exclude recently promoted
+    if (promotedProductIds.length > 0) {
+      where.id = { notIn: promotedProductIds };
+    }
+
+    if (rules.categoriesInclude && rules.categoriesInclude.length > 0) {
+      where.categoryId = { in: rules.categoriesInclude };
+    } else if (rules.categoriesExclude && rules.categoriesExclude.length > 0) {
+      where.categoryId = { notIn: rules.categoriesExclude };
+    }
+
+    if (rules.brandsInclude && rules.brandsInclude.length > 0) {
+      where.brandId = { in: rules.brandsInclude };
+    } else if (rules.brandsExclude && rules.brandsExclude.length > 0) {
+      where.brandId = { notIn: rules.brandsExclude };
+    }
+
+    // Fetch active candidates
+    const candidates = await prisma.product.findMany({
+      where,
+      include: { category: true, brand: true }
+    });
+
+    // Filter candidates by discount percent threshold
+    const filteredCandidates = candidates.filter(p => {
+      const base = Number(p.basePrice);
+      const sale = p.salePrice ? Number(p.salePrice) : 0;
+      if (base <= 0 || sale <= 0) return false;
+      const discount = Math.round(((base - sale) / base) * 100);
+      return discount >= Number(rules.minDiscountPercent || 10) && 
+             discount <= Number(rules.maxDiscountPercent || 90);
+    });
+
+    if (filteredCandidates.length === 0) {
+      console.log("⚠️ No valid products found matching Daily Offer marketing criteria.");
+      return;
+    }
+
+    // Draw random products (1-5 products)
+    const drawCount = Math.min(
+      Number(rules.randomProductCount || 3),
+      filteredCandidates.length
+    );
+
+    // Shuffle and pick
+    const shuffled = [...filteredCandidates].sort(() => 0.5 - Math.random());
+    const selectedProducts = shuffled.slice(0, drawCount);
+
+    console.log(`🎯 Selected ${selectedProducts.length} products for Daily Offer notification.`);
+
+    // Send notifications for each selected product
+    for (const product of selectedProducts) {
+      const base = Number(product.basePrice);
+      const sale = product.salePrice ? Number(product.salePrice) : 0;
+      const discount = Math.round(((base - sale) / base) * 100);
+      
+      const images = parseJSON(product.images, []);
+      const imgUrl = images.length > 0 ? images[0] : '';
+
+      // Create a Campaign record
+      const campaign = await prisma.pushCampaign.create({
+        data: {
+          name: `Automated Daily Offer - ${product.name}`,
+          type: 'Daily Offer',
+          status: 'Draft',
+          title: `🔥 Today's Exclusive Deal`,
+          body: `${discount}% OFF on ${product.name}. Shop Now!`,
+          image: imgUrl,
+          actionUrl: `/product/${product.slug}?utm_source=push&utm_medium=fcm&utm_campaign=daily_offer`,
+          ctaText: 'Shop Now',
+          priority: 'High',
+          productsConfig: {
+            mode: 'Selected',
+            productIds: [product.id]
+          }
+        }
+      });
+
+      // Dispatch now
+      await queueCampaignMessages(campaign.id);
+    }
+  } catch (error) {
+    console.error("❌ Failed to execute Daily Offer Auto Job:", error);
+  }
+};
+
 /**
  * Initialize background scheduler daemon
  */
@@ -552,6 +701,14 @@ export const startScheduler = () => {
     await checkScheduledCampaigns();
     await processNotificationQueue();
   }, 20000);
+
+  // Daily Offer Cron - runs every day at 5:00 PM IST (17:00 Asia/Kolkata)
+  dailyOfferCronTask = cron.schedule('0 17 * * *', async () => {
+    await runDailyOfferJob();
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+  console.log('⏰ Daily Offer Auto Cron scheduled at 5:00 PM IST.');
 };
 
 /**
@@ -562,5 +719,10 @@ export const stopScheduler = () => {
     clearInterval(schedulerIntervalId);
     schedulerIntervalId = null;
     console.log('Push Campaign Scheduler stopped.');
+  }
+  if (dailyOfferCronTask) {
+    dailyOfferCronTask.stop();
+    dailyOfferCronTask = null;
+    console.log('Daily Offer Cron stopped.');
   }
 };

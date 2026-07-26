@@ -51,7 +51,7 @@ export const getThemeSettings = async (req: Request, res: Response) => {
     }
 
     const data = JSON.parse(settingRecord.value as string);
-    sysCache.set('theme_settings', data, 1800);
+    sysCache.set('theme_settings', data, 5);
     return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find storefront visual presets', details: error.message });
@@ -106,7 +106,7 @@ export const getSecuritySettings = async (req: Request, res: Response) => {
     }
 
     const data = JSON.parse(settingRecord.value as string);
-    sysCache.set('security_settings', data, 1800);
+    sysCache.set('security_settings', data, 5);
     return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to get security settings', details: error.message });
@@ -234,7 +234,7 @@ export const getServiceConfig = async (req: Request, res: Response) => {
       machineFeePerHour: config.machineFeePerHour !== undefined ? config.machineFeePerHour : 150
     };
 
-    sysCache.set('service_config', responseData, 1800);
+    sysCache.set('service_config', responseData, 5);
     return res.status(200).json(responseData);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve printing service configuration', details: error.message });

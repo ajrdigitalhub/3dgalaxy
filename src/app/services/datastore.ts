@@ -462,6 +462,10 @@ export class DatastoreService {
   featuredProducts = signal<Product[]>([]);
   featuredProductsLoading = signal<boolean>(true);
   orders = signal<Order[]>([]);
+  ordersTotal = signal<number>(0);
+  ordersPage = signal<number>(1);
+  ordersLimit = signal<number>(20);
+  ordersLoading = signal<boolean>(false);
   quotes = signal<QuoteRequest[]>([]);
   
   // Computed from SettingsService
@@ -1309,29 +1313,7 @@ export class DatastoreService {
         const role = this.userRole();
         if (!this.authReady()) return;
         if (role !== 'admin' && role !== 'super-admin') return;
-        this.api.get<any>('/orders').pipe(
-          catchError((err) => {
-            console.error('Error loading orders:', err);
-            return of(null as any);
-          })
-        ).subscribe({
-          next: (res: any) => { 
-            if (res) {
-              const ordersList = Array.isArray(res) ? res : (res.data || []);
-              this.orders.set(ordersList.map((o: any) => ({
-                ...o,
-                customerName: o.customer?.user?.firstName 
-                  ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
-                  : o.customer?.user?.name || o.guestName || o.customerName || 'Guest',
-                customerPhone: o.customer?.phone || o.customer?.user?.phone || o.guestPhone || o.customerPhone || 'N/A',
-                customerType: o.customer?.customerType || o.customerType || 'retail',
-                status: o.status ? o.status.toLowerCase() : 'pending',
-                grandTotal: Number(o.totalAmount) || 0,
-              })));
-            }
-          },
-          error: (e) => console.error(e)
-        });
+        this.reloadOrders(1, 20);
       });
     });
 
@@ -1412,8 +1394,12 @@ export class DatastoreService {
   }
 
   reloadBrands(force = false) {
+    if (force) {
+      this.api.clearCache();
+      this.brandsCache$ = undefined;
+    }
     if (force || !this.brandsCache$) {
-      this.brandsCache$ = this.api.get<Brand[]>('/brands').pipe(
+      this.brandsCache$ = this.api.get<Brand[]>('/brands', null, true).pipe(
         shareReplay(1),
         catchError(err => {
           this.brandsCache$ = undefined;
@@ -1615,6 +1601,64 @@ export class DatastoreService {
       variants: p.variants || [],
       tags: []
     };
+  }
+
+  reloadOrders(page: number = 1, limit: number = 20, filters: any = {}) {
+    const role = this.userRole();
+    if (!this.authReady()) return;
+    if (role !== 'admin' && role !== 'super-admin') return;
+
+    this.ordersLoading.set(true);
+
+    let params: any = { page: page.toString(), limit: limit.toString() };
+    if (filters.search) params.search = filters.search;
+    if (filters.status) params.status = filters.status;
+    if (filters.customerType) params.customerType = filters.customerType;
+    if (filters.minAmount !== undefined && filters.minAmount !== null) params.minAmount = filters.minAmount.toString();
+    if (filters.maxAmount !== undefined && filters.maxAmount !== null) params.maxAmount = filters.maxAmount.toString();
+    if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+    if (filters.dateTo) params.dateTo = filters.dateTo;
+
+    let queryParts = [];
+    for (const key in params) {
+      queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`);
+    }
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
+    this.api.get<any>(`/orders${queryString}`).pipe(
+      catchError((err) => {
+        console.error('Error loading orders:', err);
+        this.ordersLoading.set(false);
+        return of(null as any);
+      })
+    ).subscribe({
+      next: (res: any) => { 
+        this.ordersLoading.set(false);
+        if (res) {
+          const ordersList = Array.isArray(res) ? res : (res.data || []);
+          const totalCount = res.total !== undefined ? res.total : ordersList.length;
+          
+          this.ordersTotal.set(totalCount);
+          this.ordersPage.set(res.page || page);
+          this.ordersLimit.set(res.limit || limit);
+
+          this.orders.set(ordersList.map((o: any) => ({
+            ...o,
+            customerName: o.customer?.user?.firstName 
+              ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
+              : o.customer?.user?.name || o.guestName || o.customerName || 'Guest',
+            customerPhone: o.customer?.phone || o.customer?.user?.phone || o.guestPhone || o.customerPhone || 'N/A',
+            customerType: o.customer?.customerType || o.customerType || 'retail',
+            status: o.status ? o.status.toLowerCase() : 'pending',
+            grandTotal: Number(o.totalAmount) || 0,
+          })));
+        }
+      },
+      error: (e) => {
+        console.error(e);
+        this.ordersLoading.set(false);
+      }
+    });
   }
 
   reloadProducts(showLoader = true, force = false) {

@@ -71,6 +71,65 @@ export class OrderDetailsComponent implements OnInit {
     return this.shippingAddressObj();
   });
 
+  itemsSubtotal = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    if (Array.isArray(ord.items) && ord.items.length > 0) {
+      return ord.items.reduce((sum: number, item: any) => {
+        const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+        const qty = Number(item.quantity || 1);
+        const itemTotal = item.totalPrice ? Number(item.totalPrice) : unitPrice * qty;
+        return sum + itemTotal;
+      }, 0);
+    }
+    const total = Number(ord.totalAmount || 0);
+    const shipping = Number(ord.shippingAmount || 0);
+    const cod = ord.paymentMethod === 'COD' ? Number(ord.codCharge || 100) : Number(ord.codCharge || 0);
+    const tax = Number(ord.taxAmount || 0);
+    const discount = Number(ord.discountAmount || 0);
+    return Math.max(0, total - shipping - cod - tax + discount);
+  });
+
+  orderShipping = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    return Number(ord.shippingAmount || 0);
+  });
+
+  orderDiscount = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    return Number(ord.discountAmount || 0);
+  });
+
+  orderCodCharge = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    if (ord.codCharge !== undefined && ord.codCharge !== null && Number(ord.codCharge) > 0) {
+      return Number(ord.codCharge);
+    }
+    return ord.paymentMethod === 'COD' ? 100 : 0;
+  });
+
+  orderTax = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    return Number(ord.taxAmount || 0);
+  });
+
+  orderTotal = computed(() => {
+    const ord = this.order();
+    if (!ord) return 0;
+    const subtotal = this.itemsSubtotal();
+    const shipping = this.orderShipping();
+    const discount = this.orderDiscount();
+    const cod = this.orderCodCharge();
+    const tax = this.orderTax();
+    const calculated = subtotal - discount + shipping + cod + tax;
+    const dbTotal = Number(ord.totalAmount || 0);
+    return dbTotal > 0 ? dbTotal : calculated;
+  });
+
   // Previous orders history of this same customer
   previousOrders = signal<any[]>([]);
   loadingHistory = signal(false);

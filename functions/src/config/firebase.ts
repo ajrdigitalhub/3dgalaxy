@@ -1,35 +1,99 @@
 import * as admin from 'firebase-admin';
+import prisma from './database';
 
 let storageInstance: any = null;
 let bucketInstance: any = null;
 let initialized = false;
 
+export const loadFirebaseConfigFromDb = async () => {
+  try {
+    const record = await prisma.setting.findUnique({
+      where: { settingKey: 'firebase-settings' }
+    });
+    if (record && record.settingData) {
+      const data = typeof record.settingData === 'string'
+        ? JSON.parse(record.settingData)
+        : record.settingData as any;
+      if (data && data.enabled && data.serviceAccount) {
+        let sa = data.serviceAccount;
+        if (typeof sa === 'string') {
+          if (!sa.trim().startsWith('{')) {
+            try {
+              sa = Buffer.from(sa, 'base64').toString('utf-8');
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+        await setDynamicFirebaseConfig(sa, data.storageBucket || undefined);
+        console.log("Loaded Firebase settings dynamically from database.");
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load Firebase config from database:", error);
+  }
+};
+
+let dynamicServiceAccount: any = null;
+let dynamicStorageBucket: string | null = null;
+
+export const setDynamicFirebaseConfig = async (serviceAccount: any, storageBucket?: string) => {
+  dynamicServiceAccount = serviceAccount;
+  if (storageBucket) {
+    dynamicStorageBucket = storageBucket;
+  }
+  initialized = false;
+  if (admin.apps.length > 0) {
+    await Promise.all(admin.apps.map(async (app) => {
+      try {
+        await app.delete();
+      } catch (e) {
+        console.error("Error deleting firebase app during re-init:", e);
+      }
+    }));
+  }
+  // Re-trigger initialization
+  getFirebaseAdmin();
+};
+
 export const getFirebaseAdmin = () => {
   if (!initialized) {
     if (!admin.apps.length) {
       try {
-        const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
         let credential;
+        let storageBucket = dynamicStorageBucket || process.env.APP_FIREBASE_STORAGE_BUCKET;
 
-        if (base64ServiceAccount && base64ServiceAccount.trim() !== '' && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+        if (dynamicServiceAccount) {
           try {
-            let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
-            if (!decodedServiceAccount.trim().startsWith('{')) {
-              if (base64ServiceAccount.trim().startsWith('{')) {
-                decodedServiceAccount = base64ServiceAccount;
-              } else {
-                throw new Error('Not a JSON format');
+            const certObj = typeof dynamicServiceAccount === 'string' 
+              ? JSON.parse(dynamicServiceAccount) 
+              : dynamicServiceAccount;
+            credential = admin.credential.cert(certObj);
+          } catch (err) {
+            console.error("Failed to load Firebase cert from dynamic settings:", err);
+          }
+        } else {
+          const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
+          if (base64ServiceAccount && base64ServiceAccount.trim() !== '' && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
+            try {
+              let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
+              if (!decodedServiceAccount.trim().startsWith('{')) {
+                if (base64ServiceAccount.trim().startsWith('{')) {
+                  decodedServiceAccount = base64ServiceAccount;
+                } else {
+                  throw new Error('Not a JSON format');
+                }
               }
+              credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
+            } catch (parseError) {
+              console.warn('Invalid Firebase Service Account JSON provided:', parseError instanceof Error ? parseError.message : parseError);
             }
-            credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
-          } catch (parseError) {
-            console.warn('Invalid Firebase Service Account JSON provided:', parseError instanceof Error ? parseError.message : parseError);
           }
         }
 
         admin.initializeApp({
           credential,
-          storageBucket: process.env.APP_FIREBASE_STORAGE_BUCKET,
+          storageBucket,
         });
         console.log('Firebase Admin SDK initialized successfully.');
       } catch (error) {

@@ -39,6 +39,8 @@ import { AdminCommunicationTab } from "./components/communication-tab";
 import { AdminAbandonedCheckoutsTab } from "./components/abandoned-checkouts-tab";
 import { AdminServiceEnquiriesTab } from "./components/service-enquiries-tab";
 import { AdminNotificationCenterTabComponent } from "./components/notification-center-tab";
+import { PushSettingsTabComponent } from "./components/push-settings-tab";
+import { OmniSearchComponent } from "./components/omni-search";
 import { ToastService } from "../../shared/components/toast/toast.service";
 
 export type AdminTab =
@@ -110,6 +112,8 @@ export type AdminTab =
     AdminAbandonedCheckoutsTab,
     AdminServiceEnquiriesTab,
     AdminNotificationCenterTabComponent,
+    PushSettingsTabComponent,
+    OmniSearchComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -139,6 +143,11 @@ export class AdminPanel {
   }
   isAdminDetailsOpen = signal(false);
   isQuickLinksOpen = signal(false);
+  isOmniSearchOpen = signal(false);
+
+  openOmniSearch() {
+    this.isOmniSearchOpen.set(true);
+  }
 
   adminName = computed(() => this.ds.userProfile()?.name || this.ds.currentUser()?.displayName || 'System Admin');
   adminEmail = computed(() => this.ds.userProfile()?.email || this.ds.currentUser()?.email || 'admin@3dgalaxy.com');
@@ -232,9 +241,19 @@ export class AdminPanel {
       ],
     },
     {
+      group: "Notifications",
+      items: [
+        {
+          id: "push-settings",
+          label: "Push Notification Hub",
+          icon: "notifications_active",
+        },
+        { id: "notification-center", label: "Notification Inbox", icon: "inbox" },
+      ],
+    },
+    {
       group: "Communication",
       items: [
-        { id: "notification-center", label: "Notification Center", icon: "notifications_active" },
         { id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" },
       ],
     },
@@ -270,11 +289,7 @@ export class AdminPanel {
         // { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping' },
         // { id: 'tax-settings', label: 'Tax Settings', icon: 'percent' },
         { id: "print-settings", label: "Printing Service", icon: "print" },
-        {
-          id: "push-settings",
-          label: "Push Notification Config",
-          icon: "notifications",
-        },
+
         {
           id: "pwa-settings",
           label: "PWA Settings",
@@ -951,6 +966,15 @@ export class AdminPanel {
     this.fetchUserSessions();
     this.fetchDashboardStats();
     this.fetchCRMLists();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          this.isOmniSearchOpen.set(true);
+        }
+      });
+    }
     // Sync local signals with database settings
     effect(() => {
       const s = this.ds.settings();
@@ -1272,10 +1296,7 @@ export class AdminPanel {
       name,
       slug,
       logo: (this.brandLogo() || "").trim(),
-      country: (this.brandCountry() || "").trim(),
-      banner: (this.brandBanner() || "").trim(),
       description: (this.brandDesc() || "").trim(),
-      active: this.brandActive(),
     };
 
     this.isSavingBrand.set(true);
@@ -1285,13 +1306,14 @@ export class AdminPanel {
         this.toastService.success("Brand updated successfully!");
       } else {
         await this.ds.addBrand(brandData);
-        this.toastService.success("Brand added successfully!");
+        this.toastService.success("Brand registered successfully!");
       }
       this.cancelBrandEdit();
-    } catch {
-      this.toastService.error(
-        "Access Denied: Brand-level authentication token is missing or expired.",
-      );
+      this.ds.reloadBrands(true);
+    } catch (err: any) {
+      console.error("Brand save failed:", err);
+      const msg = err?.error?.error || err?.error?.details || err?.message || "Failed to save brand details.";
+      this.toastService.error(msg);
     } finally {
       this.isSavingBrand.set(false);
     }
@@ -1304,8 +1326,11 @@ export class AdminPanel {
     try {
       await this.ds.deleteBrand(id);
       this.toastService.success("Brand deleted successfully.");
-    } catch {
-      this.toastService.error("Access Denied: Delete Brand operation failed.");
+      this.ds.reloadBrands(true);
+    } catch (err: any) {
+      console.error("Brand delete failed:", err);
+      const msg = err?.error?.error || err?.error?.details || err?.message || "Failed to delete brand.";
+      this.toastService.error(msg);
     } finally {
       this.isDeletingBrand.set(false);
     }

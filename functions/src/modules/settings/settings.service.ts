@@ -411,13 +411,13 @@ export const getSettingsService = async () => {
       console.error("Error loading homepage sections into config:", sectionError);
     }
 
-    // CENTRAL CACHE: 30 minutes (1800 seconds)
-    sysCache.set("app_settings", settingsObj, 1800);
+    // CENTRAL CACHE: 5 seconds (to keep it real-time across instances while avoiding DB spam)
+    sysCache.set("app_settings", settingsObj, 5);
     return settingsObj;
   } catch (error: any) {
     if (isDatabaseUnavailableError(error)) {
       const fallbackSettings = { ...defaultSettings };
-      sysCache.set("app_settings", fallbackSettings, 1800);
+      sysCache.set("app_settings", fallbackSettings, 5);
       return fallbackSettings;
     }
     throw error;
@@ -589,7 +589,7 @@ export const updateSettingsService = async (payload: any) => {
         // ignore
       }
     }
-    sysCache.set("app_settings", finalSettingsObj, 1800);
+    sysCache.set("app_settings", finalSettingsObj, 5);
     clearCache(); // flush route-level cache
 
     return finalSettingsObj;
@@ -612,7 +612,7 @@ export const updateSettingsService = async (payload: any) => {
           // ignore
         }
       }
-      sysCache.set("app_settings", newSettings, 1800);
+      sysCache.set("app_settings", newSettings, 5);
       clearCache();
       return newSettings;
     }

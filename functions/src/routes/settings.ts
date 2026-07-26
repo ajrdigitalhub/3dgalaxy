@@ -6,7 +6,10 @@ import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
-router.get('/', cacheMiddleware(300), getSettings);
+router.get('/', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  next();
+}, getSettings);
 router.put('/', authenticateToken, requireRole(['Admin', 'Super Admin']), updateThemeSettings);
 router.get('/payment-gateways', getPaymentGateways);
 router.put('/payment-gateways/:id', authenticateToken, requireRole(['Admin', 'Super Admin']), updatePaymentGateway);

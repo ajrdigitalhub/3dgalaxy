@@ -3,7 +3,7 @@
     "id": "ENQ-305712",
     "trackingNumber": "TRK-975494",
     "createdAt": "2026-07-24T05:41:27.763Z",
-    "updatedAt": "2026-07-24T12:02:07.430Z",
+    "updatedAt": "2026-07-26T16:27:29.959Z",
     "userId": null,
     "customerName": "ajrgroup",
     "customerEmail": "ajrgroupconnect@gmail.com",
@@ -35,7 +35,7 @@
     "quantity": 2,
     "notes": "",
     "status": "file_review",
-    "estimatedCost": 450,
+    "estimatedCost": 500,
     "timeline": [
       {
         "status": "submitted",
@@ -100,6 +100,20 @@
         "label": "File Downloaded (ENQ-305712_Official_Quotation.pdf)",
         "timestamp": "2026-07-24T12:02:28.833Z",
         "remarks": "File \"ENQ-305712_Official_Quotation.pdf\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "file_review",
+        "label": "File Downloaded (ENQ-305712_Official_Quotation.pdf)",
+        "timestamp": "2026-07-26T16:26:01.684Z",
+        "remarks": "File \"ENQ-305712_Official_Quotation.pdf\" downloaded from Firebase Storage by Admin Staff.",
+        "updatedBy": "Admin Staff"
+      },
+      {
+        "status": "file_review",
+        "label": "Estimated Cost Updated",
+        "timestamp": "2026-07-26T16:27:29.959Z",
+        "remarks": "Estimated quote price updated to ₹500 by Admin Staff.",
         "updatedBy": "Admin Staff"
       }
     ],

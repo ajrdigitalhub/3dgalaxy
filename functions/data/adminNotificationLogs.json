@@ -1,5 +1,89 @@
 [
   {
+    "id": "ff7b0a23-3d1b-4cd5-b57d-afdc6b225246",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T16:34:14.001Z"
+    },
+    "sentAt": "2026-07-26T16:34:14.922Z",
+    "isRead": false
+  },
+  {
+    "id": "c4a451eb-ea19-42db-a000-ee56d1e860b5",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T16:23:07.583Z"
+    },
+    "sentAt": "2026-07-26T16:23:08.127Z",
+    "isRead": false
+  },
+  {
+    "id": "a7dabdbc-a046-4900-9508-07126842ed59",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T16:22:13.164Z"
+    },
+    "sentAt": "2026-07-26T16:22:13.663Z",
+    "isRead": false
+  },
+  {
+    "id": "c929d737-f21b-45f2-98c9-7d4f5b9c3536",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T16:22:05.581Z"
+    },
+    "sentAt": "2026-07-26T16:22:06.181Z",
+    "isRead": false
+  },
+  {
+    "id": "c346a706-9e87-4d03-ac4c-2565f970ef34",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T16:21:52.335Z"
+    },
+    "sentAt": "2026-07-26T16:21:53.297Z",
+    "isRead": false
+  },
+  {
+    "id": "7dc5fecd-d3e0-4d0c-a4c8-672da7e899d1",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-26T08:12:20.281Z"
+    },
+    "sentAt": "2026-07-26T08:12:21.254Z",
+    "isRead": false
+  },
+  {
     "id": "db6f5035-bff2-4bcb-bfcd-3e7a4d0004ea",
     "title": "🚀 3DGalaxy Admin Push Test",
     "body": "Admin push notification channel is active and receiving live events.",

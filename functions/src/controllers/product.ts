@@ -342,6 +342,17 @@ export const mapProductFields = (p: any): any => {
   variantImages = Array.from(new Set(variantImages));
   variantSecondaryImages = Array.from(new Set(variantSecondaryImages));
 
+  const rawReviews = Array.isArray(p.reviews) ? p.reviews : [];
+  let avgRating = 0;
+  let ratingCount = rawReviews.length;
+  if (ratingCount > 0) {
+    const sum = rawReviews.reduce((acc: number, r: any) => acc + (Number(r.rating || r.stars) || 0), 0);
+    avgRating = Number((sum / ratingCount).toFixed(1));
+  } else if (typeof p.avgRating === 'number' && p.avgRating > 0) {
+    avgRating = p.avgRating;
+    ratingCount = p.ratingCount || p.reviewCount || 0;
+  }
+
   return {
     ...p,
     images: imgs,
@@ -351,7 +362,10 @@ export const mapProductFields = (p: any): any => {
     variants: mappedVariants,
     variantImages,
     variantSecondaryImages,
-    thumbnail: primaryImage
+    thumbnail: primaryImage,
+    avgRating,
+    ratingCount,
+    reviewCount: ratingCount
   };
 };
 
@@ -726,6 +740,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
         brand: true,
         reviews: {
           include: { user: true },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -761,9 +776,49 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       relatedProducts: relations.relatedProducts
     };
 
+    const mappedReviews = (item.reviews || []).map((review: any) => {
+      const user = review.user || review.customer?.user;
+      let parsedTitle = "Verified Review";
+      let parsedComment = review.reviewText || "";
+      let parsedImages: string[] = [];
+      let parsedRecommended = true;
+
+      if (review.reviewText && review.reviewText.trim().startsWith("{")) {
+        try {
+          const parsed = JSON.parse(review.reviewText);
+          parsedTitle = parsed.title || parsedTitle;
+          parsedComment = parsed.comment || parsed.review || parsedComment;
+          parsedImages = Array.isArray(parsed.images) ? parsed.images : [];
+          if (typeof parsed.recommended === "boolean") {
+            parsedRecommended = parsed.recommended;
+          }
+        } catch (e) {
+          // Keep text fallback
+        }
+      }
+
+      return {
+        id: review.id,
+        productId: review.productId,
+        userName: user
+          ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+          : "Customer",
+        rating: Number(review.rating || 5),
+        title: parsedTitle,
+        comment: parsedComment,
+        date: review.createdAt ? review.createdAt.toISOString() : new Date().toISOString(),
+        verified: true,
+        images: parsedImages,
+        recommended: parsedRecommended,
+        helpfulCount: 0,
+        sellerReply: null,
+      };
+    });
+
     const catPath = await getCategoryPath(item.categoryId);
     const mappedProduct = mapProductFields({
       ...item,
+      reviews: mappedReviews,
       categoryPath: catPath,
       bundleProducts: relations.bundleProducts.map(p => mapProductFields(p)),
       recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
@@ -790,7 +845,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       },
       options: safeParseArray(item.options),
       variants: mappedProduct.variants || [],
-      reviews: item.reviews || [],
+      reviews: mappedReviews,
       // Keep backward compatibility lists
       images: mappedProduct.images,
       specifications: mappedProduct.specifications,

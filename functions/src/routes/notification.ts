@@ -28,7 +28,29 @@ router.get('/notifications', getNotifications);
 router.put('/notifications/read', markRead);
 router.delete('/notifications/:id', deleteNotification);
 
+// --- Public Push settings endpoints ---
+import {
+  getFirebaseSettings,
+  updateFirebaseSettings,
+  validateFirebaseConfig,
+  getPopupSettings,
+  updatePopupSettings,
+  getPublicFirebaseSettings,
+  searchProductsForPush,
+  getTargetAudienceCount
+} from '../controllers/pushMarketing';
+
+router.get('/notifications/popup-config', getPopupSettings);
+router.get('/notifications/fcm-config/public', getPublicFirebaseSettings);
+
 // --- Admin Endpoints ---
+router.get('/admin/push/config', adminGuard, getFirebaseSettings);
+router.post('/admin/push/config', adminGuard, updateFirebaseSettings);
+router.post('/admin/push/config/validate', adminGuard, validateFirebaseConfig);
+router.get('/admin/push/popup-config', adminGuard, getPopupSettings);
+router.post('/admin/push/popup-config', adminGuard, updatePopupSettings);
+router.get('/admin/push/products/search', adminGuard, searchProductsForPush);
+router.post('/admin/push/audience/estimate', adminGuard, getTargetAudienceCount);
 router.post('/admin/notifications/send', adminGuard, adminSendNotification);
 router.post('/admin/notifications/send-topic', adminGuard, adminSendTopic);
 router.post('/admin/notifications/send-user', adminGuard, adminSendUser);

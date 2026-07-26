@@ -16,10 +16,18 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
 import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
+
 @Component({
   selector: "app-admin-settings-tab",
   standalone: true,
-  imports: [CommonModule, MatIconModule, ImagePickerComponent, FormsModule, PwaSettingsTabComponent, MarketingTrackingTabComponent],
+  imports: [
+    CommonModule,
+    MatIconModule,
+    ImagePickerComponent,
+    FormsModule,
+    PwaSettingsTabComponent,
+    MarketingTrackingTabComponent
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
@@ -4738,208 +4746,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
               </div>
             }
 
-            <!-- PUSH NOTIFICATION SETTINGS -->
-            @if (activeSubTab() === "Push Settings") {
-              <div class="space-y-6">
-                <p class="text-xs text-zinc-500">
-                  Configure FCM Push Notification rules, templates, and
-                  automatic dispatch triggers when catalog changes occur.
-                </p>
 
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <h3
-                    class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                  >
-                    Automated Dispatch Triggers
-                  </h3>
-
-                  <div
-                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="
-                        draft().pushNotificationSettings?.autoNotifyNewProduct
-                      "
-                      (change)="
-                        setNested(
-                          'pushNotificationSettings',
-                          'autoNotifyNewProduct',
-                          $any($event.target).checked
-                        )
-                      "
-                      class="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                    />
-                    <span
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                      >Notify Users Automatically When a New Product is
-                      Created</span
-                    >
-                  </div>
-
-                  <div
-                    class="flex items-center gap-2 p-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="
-                        draft().pushNotificationSettings
-                          ?.autoGenerateMarketingContent
-                      "
-                      (change)="
-                        setNested(
-                          'pushNotificationSettings',
-                          'autoGenerateMarketingContent',
-                          $any($event.target).checked
-                        )
-                      "
-                      class="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                    />
-                    <span
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                      >Auto-Generate Premium Marketing Copy for
-                      Notifications</span
-                    >
-                  </div>
-                </div>
-
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <h3
-                    class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                  >
-                    Default Catalog Notification Templates
-                  </h3>
-
-                  <div class="space-y-3">
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >Notification Title Template</span
-                      >
-                      <input
-                        type="text"
-                        [value]="
-                          draft().pushNotificationSettings
-                            ?.notifyTitleTemplate ||
-                          'New Product Alert: {product_name}'
-                        "
-                        (input)="
-                          setNested(
-                            'pushNotificationSettings',
-                            'notifyTitleTemplate',
-                            $any($event.target).value
-                          )
-                        "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
-                      />
-                      <span class="text-[9px] text-zinc-400"
-                        >Variables available:
-                        <code>&#123;product_name&#125;</code></span
-                      >
-                    </div>
-
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >Notification Body Template</span
-                      >
-                      <textarea
-                        rows="3"
-                        [value]="
-                          draft().pushNotificationSettings
-                            ?.notifyBodyTemplate ||
-                          'We just added {product_name} to our catalog for only ₹{price}! Get it now.'
-                        "
-                        (input)="
-                          setNested(
-                            'pushNotificationSettings',
-                            'notifyBodyTemplate',
-                            $any($event.target).value
-                          )
-                        "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none resize-none"
-                      ></textarea>
-                      <span class="text-[9px] text-zinc-400"
-                        >Variables available:
-                        <code>&#123;product_name&#125;</code>,
-                        <code>&#123;price&#125;</code>,
-                        <code>&#123;sku&#125;</code></span
-                      >
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <h3
-                    class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                  >
-                    Firebase Cloud Messaging (FCM) Credentials
-                  </h3>
-
-                  <div class="space-y-3">
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >FCM VAPID Public Key</span
-                      >
-                      <input
-                        type="text"
-                        [value]="
-                          draft().pushNotificationSettings?.vapidKey ||
-                          'BEl62wpCL7jH7QNSTWmK8t0dIL60VwU5B564U829s29528s0921509215'
-                        "
-                        (input)="
-                          setNested(
-                            'pushNotificationSettings',
-                            'vapidKey',
-                            $any($event.target).value
-                          )
-                        "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
-                      />
-                      <span class="text-[9px] text-zinc-400"
-                        >Required for web browser push token generation.</span
-                      >
-                    </div>
-
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >Active Firebase Web Application Configuration
-                        (Read-Only)</span
-                      >
-                      <div
-                        class="p-3 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl"
-                      >
-                        <pre
-                          class="text-[10px] font-mono text-zinc-650 dark:text-zinc-450 overflow-x-auto whitespace-pre-wrap select-all"
-                        >
-&#123;
-  apiKey: "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8",
-  authDomain: "ajr3dgalaxy.firebaseapp.com",
-  projectId: "ajr3dgalaxy",
-  storageBucket: "ajr3dgalaxy.firebasestorage.app",
-  messagingSenderId: "111872927152",
-  appId: "1:111872927152:web:b498fd9a072f776a2ae275",
-  measurementId: "G-C9R96N5FR6"
-&#125;</pre
-                        >
-                      </div>
-                      <span class="text-[9px] text-zinc-400"
-                        >Loaded dynamically from
-                        <code>public/firebase-applet-config.json</code>.</span
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
 
             <!-- PWA SETTINGS -->
             @if (activeSubTab() === "PWA Settings") {
@@ -5130,7 +4937,7 @@ export class AdminSettingsTab {
     { name: "Email Settings", icon: "email" },
     { name: "WhatsApp Settings", icon: "chat" },
     { name: "Recent Purchase Settings", icon: "add_shopping_cart" },
-    { name: "Push Settings", icon: "notifications" },
+
     { name: "PWA Settings", icon: "install_mobile" },
     { name: "Marketing & Tracking", icon: "insights" },
     { name: "Shipping", icon: "local_shipping" },
@@ -5165,8 +4972,6 @@ export class AdminSettingsTab {
         this.activeSubTab.set("Payment Gateway");
       } else if (active === "shipping-settings") {
         this.activeSubTab.set("Shipping");
-      } else if (active === "push-settings") {
-        this.activeSubTab.set("Push Settings");
       } else if (active === "pwa-settings") {
         this.activeSubTab.set("PWA Settings");
       } else if (active === "marketing-settings") {

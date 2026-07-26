@@ -102,7 +102,14 @@ app.get(
   cacheMiddleware(300),
   getFeaturedProducts,
 );
-app.get("/api/service-config", cacheMiddleware(300), getServiceConfig);
+app.get(
+  "/api/service-config",
+  (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    next();
+  },
+  getServiceConfig,
+);
 app.get("/api/public/instagram-feed", cacheMiddleware(300), getInstagramFeed);
 app.post(
   "/api/public/instagram-feed/interaction",

@@ -23,23 +23,23 @@ export const initFirebase = async () => {
 
   let firebaseConfig: any = null;
   try {
-    const res = await fetch(environment.apiUrl + "/settings");
+    const res = await fetch(environment.apiUrl + "/notifications/fcm-config/public");
     if (res.ok) {
-      const settingsData = await res.json();
-      const pushConfig = settingsData?.data?.pushNotifications || settingsData?.data?.pushNotificationSettings;
+      const fcmRes = await res.json();
+      const pushConfig = fcmRes?.data;
       if (pushConfig && pushConfig.enabled && pushConfig.projectId && pushConfig.apiKey) {
         firebaseConfig = {
           apiKey: pushConfig.apiKey,
           authDomain: `${pushConfig.projectId}.firebaseapp.com`,
           projectId: pushConfig.projectId,
           storageBucket: `${pushConfig.projectId}.firebasestorage.app`,
-          messagingSenderId: pushConfig.senderId,
+          messagingSenderId: pushConfig.messagingSenderId,
           appId: pushConfig.appId,
         };
       }
     }
   } catch (err) {
-    console.warn("Failed to load Firebase configurations dynamically from settings:", err);
+    console.warn("Failed to load Firebase configurations dynamically from marketing settings API:", err);
   }
 
   if (!firebaseConfig) {
