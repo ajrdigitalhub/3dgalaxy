@@ -37,6 +37,10 @@ export interface Category {
   isFeatured?: boolean;
   seoTitle?: string;
   seoDescription?: string;
+  shippingCharge?: number | null;
+  estimatedDeliveryDays?: number | null;
+  freeShippingEligible?: boolean;
+  shippingRegion?: string | null;
 }
 
 export interface Brand {

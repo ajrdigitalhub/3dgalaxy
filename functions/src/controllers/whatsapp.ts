@@ -154,11 +154,13 @@ export const generateInvoicePDF = async (order: any): Promise<string> => {
       doc.text(`₹${itemsSubtotal.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
       doc.moveDown(0.4);
 
+      doc.text('Shipping:', 350, doc.y, { width: 90, align: 'right' });
       if (Number(order.shippingAmount || 0) > 0) {
-        doc.text('Shipping:', 350, doc.y, { width: 90, align: 'right' });
         doc.text(`₹${Number(order.shippingAmount).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-        doc.moveDown(0.4);
+      } else {
+        doc.text('Free', 450, doc.y, { width: 90, align: 'right' });
       }
+      doc.moveDown(0.4);
 
       if (Number(order.discountAmount || 0) > 0) {
         doc.text('Discount:', 350, doc.y, { width: 90, align: 'right' });

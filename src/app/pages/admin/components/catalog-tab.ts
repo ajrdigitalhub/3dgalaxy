@@ -2205,6 +2205,59 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       />
                     </div>
                   </div>
+
+                  <!-- Shipping Configuration -->
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                    <span class="text-[9px] font-black uppercase text-zinc-450 dark:text-zinc-500 tracking-widest block flex items-center gap-1">
+                      <mat-icon class="text-xs">local_shipping</mat-icon>
+                      Category Shipping Configuration
+                    </span>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Category Shipping Charge (₹)</span>
+                        <input
+                          type="number"
+                          [value]="admin.catShippingCharge() ?? ''"
+                          (input)="admin.catShippingCharge.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
+                          placeholder="e.g. 300"
+                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Est. Delivery (Days)</span>
+                        <input
+                          type="number"
+                          [value]="admin.catEstimatedDeliveryDays() ?? 3"
+                          (input)="admin.catEstimatedDeliveryDays.set($any($event.target).value !== '' ? Number($any($event.target).value) : 3)"
+                          placeholder="e.g. 3"
+                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Shipping Region</span>
+                        <input
+                          type="text"
+                          [value]="admin.catShippingRegion()"
+                          (input)="admin.catShippingRegion.set($any($event.target).value)"
+                          placeholder="e.g. Domestic / All"
+                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
+                      <div class="flex items-center pt-4">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            [checked]="admin.catFreeShippingEligible()"
+                            (change)="admin.catFreeShippingEligible.set($any($event.target).checked)"
+                            class="w-4 h-4 text-blue-600 rounded border-zinc-300"
+                          />
+                          <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Free Shipping Eligible</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="pt-2">

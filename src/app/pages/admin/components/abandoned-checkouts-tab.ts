@@ -274,12 +274,7 @@ interface AbandonedCheckout {
                     </button>
 
                     @if (c.recoveryStatus !== 'RECOVERED') {
-                      <button (click)="triggerResend(c.id, 'WHATSAPP')" class="inline-flex items-center justify-center w-7 h-7 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-lg transition-all border-none cursor-pointer" title="Send WhatsApp Reminder">
-                        <mat-icon class="scale-75">chat</mat-icon>
-                      </button>
-                      <button (click)="triggerResend(c.id, 'EMAIL')" class="inline-flex items-center justify-center w-7 h-7 bg-blue-500/10 hover:bg-blue-500 text-blue-600 hover:text-white rounded-lg transition-all border-none cursor-pointer" title="Send Email Reminder">
-                        <mat-icon class="scale-75">mail</mat-icon>
-                      </button>
+                      
                       <button (click)="markAsRecovered(c.id)" class="inline-flex items-center justify-center w-7 h-7 bg-zinc-100 hover:bg-emerald-600 dark:bg-zinc-800 dark:hover:bg-emerald-600 text-zinc-650 hover:text-white rounded-lg transition-all border-none cursor-pointer" title="Mark recovered manually">
                         <mat-icon class="scale-75">check</mat-icon>
                       </button>
@@ -652,7 +647,7 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
       c.createdAt
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' 
+    const csvContent = 'data:text/csv;charset=utf-8,'
       + [headers.join(','), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
 
     const encodedUri = encodeURI(csvContent);

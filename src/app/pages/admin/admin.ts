@@ -88,6 +88,7 @@ export type AdminTab =
   | "push-settings"
   | "pwa-settings"
   | "marketing-settings"
+  | "admin-devices"
   | "transactions"
   | "webhook-logs"
   | "whatsapp-logs"
@@ -202,110 +203,110 @@ export class AdminPanel {
     group: string;
     items: Array<{ id: AdminTab; label: string; icon: string }>;
   }> = [
-    {
-      group: "Overview",
-      items: [{ id: "dashboard", label: "Dashboard", icon: "grid_view" }],
-    },
-    {
-      group: "Catalog",
-      items: [
-        { id: "products", label: "Products", icon: "inventory_2" },
-        { id: "bulk-import", label: "Bulk Import", icon: "file_upload" },
-        { id: "categories", label: "Categories", icon: "account_tree" },
-        // { id: 'collections', label: 'Collections', icon: 'layers' },
-        { id: "brands", label: "Brands", icon: "label" },
-        // { id: 'inventory', label: 'Inventory', icon: 'shelves' }
-      ],
-    },
-    {
-      group: "Sales",
-      items: [
-        { id: "orders", label: "Orders", icon: "shopping_bag" },
-        {
-          id: "abandoned-carts",
-          label: "Abandoned Carts",
-          icon: "remove_shopping_cart",
-        },
-        {
-          id: "quotes",
-          label: "Service Inquiries",
-          icon: "precision_manufacturing",
-        },
-      ],
-    },
-    {
-      group: "Payments",
-      items: [
-        { id: "transactions", label: "Transactions", icon: "payments" },
-        { id: "webhook-logs", label: "Webhook Logs", icon: "history" },
-      ],
-    },
-    {
-      group: "Notifications",
-      items: [
-        {
-          id: "push-settings",
-          label: "Push Notification Hub",
-          icon: "notifications_active",
-        },
-        { id: "notification-center", label: "Notification Inbox", icon: "inbox" },
-      ],
-    },
-    {
-      group: "Communication",
-      items: [
-        { id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" },
-      ],
-    },
-    {
-      group: "Customers",
-      items: [
-        { id: "customer-list", label: "Customer List", icon: "people" },
-        { id: "customer-analytics", label: "Customer Analytics", icon: "insights" },
-      ],
-    },
-    {
-      group: "Marketing",
-      items: [
-        { id: "header-announcements", label: "Header Announcements", icon: "campaign" },
-        { id: "coupons", label: "Promo Vouchers", icon: "confirmation_number" },
-        { id: "whatsapp-campaign", label: "WhatsApp Campaign", icon: "chat" },
-      ],
-    },
-    // {
-    //   group: 'Analytics',
-    //   items: [
-    //     { id: 'sales-reports', label: 'Sales Reports', icon: 'analytics' },
-    //     { id: 'product-reports', label: 'Product Reports', icon: 'equalizer' },
-    //     { id: 'customer-reports', label: 'Customer Reports', icon: 'trending_up' }
-    //   ]
-    // },
-    {
-      group: "Settings",
-      items: [
-        { id: "store-settings", label: "Store Settings", icon: "store" },
-        { id: "theme-settings", label: "Theme Settings", icon: "brush" },
-        { id: "payment-settings", label: "Payment Settings", icon: "payment" },
-        // { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping' },
-        // { id: 'tax-settings', label: 'Tax Settings', icon: 'percent' },
-        { id: "print-settings", label: "Printing Service", icon: "print" },
+      {
+        group: "Overview",
+        items: [{ id: "dashboard", label: "Dashboard", icon: "grid_view" }],
+      },
+      {
+        group: "Catalog",
+        items: [
+          { id: "products", label: "Products", icon: "inventory_2" },
+          { id: "bulk-import", label: "Bulk Import", icon: "file_upload" },
+          { id: "categories", label: "Categories", icon: "account_tree" },
+          // { id: 'collections', label: 'Collections', icon: 'layers' },
+          { id: "brands", label: "Brands", icon: "label" },
+          // { id: 'inventory', label: 'Inventory', icon: 'shelves' }
+        ],
+      },
+      {
+        group: "Sales",
+        items: [
+          { id: "orders", label: "Orders", icon: "shopping_bag" },
+          {
+            id: "abandoned-carts",
+            label: "Abandoned Carts",
+            icon: "remove_shopping_cart",
+          },
+          {
+            id: "quotes",
+            label: "Service Inquiries",
+            icon: "precision_manufacturing",
+          },
+        ],
+      },
+      {
+        group: "Payments",
+        items: [
+          { id: "transactions", label: "Transactions", icon: "payments" },
+          // { id: "webhook-logs", label: "Webhook Logs", icon: "history" },
+        ],
+      },
+      {
+        group: "Notifications",
+        items: [
+          {
+            id: "push-settings",
+            label: "Push Notification Hub",
+            icon: "notifications_active",
+          },
+          // { id: "notification-center", label: "Notification Inbox", icon: "inbox" },
+        ],
+      },
+      {
+        group: "Communication",
+        items: [
+          { id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" },
+        ],
+      },
+      {
+        group: "Customers",
+        items: [
+          { id: "customer-list", label: "Customer List", icon: "people" },
+          { id: "customer-analytics", label: "Customer Analytics", icon: "insights" },
+        ],
+      },
+      {
+        group: "Marketing",
+        items: [
+          { id: "header-announcements", label: "Header Announcements", icon: "campaign" },
+          // { id: "coupons", label: "Promo Vouchers", icon: "confirmation_number" },
+          // { id: "whatsapp-campaign", label: "WhatsApp Campaign", icon: "chat" },
+        ],
+      },
+      // {
+      //   group: 'Analytics',
+      //   items: [
+      //     { id: 'sales-reports', label: 'Sales Reports', icon: 'analytics' },
+      //     { id: 'product-reports', label: 'Product Reports', icon: 'equalizer' },
+      //     { id: 'customer-reports', label: 'Customer Reports', icon: 'trending_up' }
+      //   ]
+      // },
+      {
+        group: "Settings",
+        items: [
+          { id: "store-settings", label: "Store Settings", icon: "store" },
+          { id: "theme-settings", label: "Theme Settings", icon: "brush" },
+          { id: "payment-settings", label: "Payment Settings", icon: "payment" },
+          // { id: 'shipping-settings', label: 'Shipping Settings', icon: 'local_shipping' },
+          // { id: 'tax-settings', label: 'Tax Settings', icon: 'percent' },
+          { id: "print-settings", label: "Printing Service", icon: "print" },
 
-        {
-          id: "pwa-settings",
-          label: "PWA Settings",
-          icon: "install_mobile",
-        },
-        {
-          id: "marketing-settings",
-          label: "Marketing & Tracking",
-          icon: "insights",
-        },
-        // { id: 'user-management', label: 'User Management', icon: 'badge' },
-        // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },
-        // { id: 'security-settings', label: 'Security Settings', icon: 'admin_panel_settings' }
-      ],
-    },
-  ];
+          {
+            id: "pwa-settings",
+            label: "PWA Settings",
+            icon: "install_mobile",
+          },
+          {
+            id: "marketing-settings",
+            label: "Marketing & Tracking",
+            icon: "insights",
+          },
+          // { id: 'user-management', label: 'User Management', icon: 'badge' },
+          // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },
+          // { id: 'security-settings', label: 'Security Settings', icon: 'admin_panel_settings' }
+        ],
+      },
+    ];
 
   // Helper arrays for backward compatibility on tabGroups loop in template
   get tabs() {
@@ -424,6 +425,10 @@ export class AdminPanel {
   catIsFeatured = signal<boolean>(false);
   catSeoTitle = signal<string>("");
   catSeoDescription = signal<string>("");
+  catShippingCharge = signal<number | null>(null);
+  catEstimatedDeliveryDays = signal<number | null>(3);
+  catFreeShippingEligible = signal<boolean>(false);
+  catShippingRegion = signal<string>("");
 
   // Branding states
   editingBrand = signal<any | null>(null);
@@ -1019,7 +1024,7 @@ export class AdminPanel {
         );
         this.defaultPlaceholderUrl.set(
           s.defaultPlaceholderUrl ||
-            "https://picsum.photos/seed/placeholder/400/400",
+          "https://picsum.photos/seed/placeholder/400/400",
         );
 
         this.defaultOgImageUrl.set(
@@ -1027,7 +1032,7 @@ export class AdminPanel {
         );
         this.defaultSocialShareImageUrl.set(
           s.defaultSocialShareImageUrl ||
-            "https://picsum.photos/seed/social/1200/630",
+          "https://picsum.photos/seed/social/1200/630",
         );
 
         this.razorpayLogoUrl.set(
@@ -1035,7 +1040,7 @@ export class AdminPanel {
         );
         this.paymentMethodIconsUrl.set(
           s.paymentMethodIconsUrl ||
-            "https://picsum.photos/seed/payments/400/100",
+          "https://picsum.photos/seed/payments/400/100",
         );
       }
     });
@@ -1072,12 +1077,12 @@ export class AdminPanel {
   setActiveProductTab(tab: string) {
     this.activeProductTab.set(
       tab as
-        | "general"
-        | "images"
-        | "pricing"
-        | "inventory"
-        | "seo"
-        | "variants",
+      | "general"
+      | "images"
+      | "pricing"
+      | "inventory"
+      | "seo"
+      | "variants",
     );
   }
 
@@ -1179,6 +1184,10 @@ export class AdminPanel {
     this.catIsFeatured.set(cat.isFeatured || false);
     this.catSeoTitle.set(cat.seoTitle || "");
     this.catSeoDescription.set(cat.seoDescription || "");
+    this.catShippingCharge.set(cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : null);
+    this.catEstimatedDeliveryDays.set(cat.estimatedDeliveryDays !== undefined && cat.estimatedDeliveryDays !== null ? Number(cat.estimatedDeliveryDays) : 3);
+    this.catFreeShippingEligible.set(cat.freeShippingEligible || false);
+    this.catShippingRegion.set(cat.shippingRegion || "");
   }
 
   cancelCategoryEdit() {
@@ -1193,6 +1202,10 @@ export class AdminPanel {
     this.catIsFeatured.set(false);
     this.catSeoTitle.set("");
     this.catSeoDescription.set("");
+    this.catShippingCharge.set(null);
+    this.catEstimatedDeliveryDays.set(3);
+    this.catFreeShippingEligible.set(false);
+    this.catShippingRegion.set("");
   }
 
   async saveCategory() {
@@ -1227,6 +1240,10 @@ export class AdminPanel {
       isFeatured: this.catIsFeatured(),
       seoTitle: this.catSeoTitle().trim(),
       seoDescription: this.catSeoDescription().trim(),
+      shippingCharge: this.catShippingCharge() !== null && this.catShippingCharge() !== undefined ? Number(this.catShippingCharge()) : null,
+      estimatedDeliveryDays: this.catEstimatedDeliveryDays() !== null && this.catEstimatedDeliveryDays() !== undefined ? Number(this.catEstimatedDeliveryDays()) : 3,
+      freeShippingEligible: this.catFreeShippingEligible(),
+      shippingRegion: this.catShippingRegion().trim() || null,
     };
 
     this.isSavingCategory.set(true);
@@ -1409,9 +1426,9 @@ export class AdminPanel {
     this.pImages.set(
       p.images && p.images.length
         ? p.images.map((img: string, i: number) => ({
-            url: img,
-            isPrimary: i === 0,
-          }))
+          url: img,
+          isPrimary: i === 0,
+        }))
         : [],
     );
     this.pStatus.set(p.status || "active");
@@ -1524,9 +1541,9 @@ export class AdminPanel {
           );
           this.pSeoDescription.set(
             master.seo?.description ||
-              master.seo?.seoDescription ||
-              detail.seoDescription ||
-              "",
+            master.seo?.seoDescription ||
+            detail.seoDescription ||
+            "",
           );
           this.pSpecs.set(master.specifications || detail.specifications || []);
           this.pFeatures.set(master.features || detail.features || []);
@@ -1534,18 +1551,18 @@ export class AdminPanel {
           this.pDownloads.set(master.downloads || detail.downloads || []);
           this.pWarranty.set(
             master.warranty ||
-              detail.warranty || {
-                warrantyPeriod: "",
-                warrantyDescription: "",
-              },
+            detail.warranty || {
+              warrantyPeriod: "",
+              warrantyDescription: "",
+            },
           );
           this.pShipping.set(
             master.shipping ||
-              detail.shipping || {
-                deliveryTime: "",
-                shippingCharges: 0,
-                shippingRegions: "",
-              },
+            detail.shipping || {
+              deliveryTime: "",
+              shippingCharges: 0,
+              shippingRegions: "",
+            },
           );
           this.pRelatedIds.set(
             master.relatedProducts?.map((rp: any) =>
@@ -1818,8 +1835,8 @@ export class AdminPanel {
           name: comboStr,
           sku: this.pSku()
             ? `${this.pSku()}-${comboArray.join("-")}`
-                .toUpperCase()
-                .replace(/\s+/g, "-")
+              .toUpperCase()
+              .replace(/\s+/g, "-")
             : "",
           price: this.pSale(),
           stock: this.pStock(),
@@ -2075,9 +2092,9 @@ export class AdminPanel {
   onCampTypeChange(event: Event) {
     this.newCampType.set(
       (event.target as HTMLSelectElement).value as
-        | "email"
-        | "whatsapp"
-        | "push",
+      | "email"
+      | "whatsapp"
+      | "push",
     );
   }
 

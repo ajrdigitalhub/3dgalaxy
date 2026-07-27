@@ -11,17 +11,38 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: ENV.PG_POOL_MAX, // Default 15 connection limit for active API requests
-  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS, // Retain idle sockets up to 30s
-  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS, // Allow up to 15s to establish socket / get available client
+  max: ENV.PG_POOL_MAX, // Default 10 connection limit for active API requests
+  idleTimeoutMillis: 10000, // Release idle connections quickly (10s) — cloud poolers drop them anyway
+  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS, // Allow up to 30s to establish socket / get available client
   keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
   keepAliveInitialDelayMillis: 10000,
+  allowExitOnIdle: true, // Let the pool shrink to 0 when idle — prevents stale sockets
 });
 
 // Automatic reconnect handling and error logging
 pool.on('error', (err: Error) => {
-  console.error('Unexpected database error on idle client', err);
+  console.error('⚠️ Unexpected database error on idle client:', err.message);
+  // Pool handles reconnection automatically for new queries — no process.exit needed
 });
+
+/**
+ * Lightweight connection health check. Returns true if the pool can
+ * successfully execute a trivial query, false otherwise. Used by the
+ * scheduler to skip a tick instead of flooding logs with connection errors.
+ */
+export const isPoolHealthy = async (): Promise<boolean> => {
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT 1');
+      return true;
+    } finally {
+      client.release();
+    }
+  } catch {
+    return false;
+  }
+};
 
 const adapter = new PrismaPg(pool);
 

@@ -19,6 +19,7 @@ import { HttpClient } from "@angular/common/http";
 import { ApiService } from "../../services/api.service";
 import { AppButton } from "../../shared/components/app-button/app-button";
 import { SettingsService } from "../../core/services/settings.service";
+import { ShippingService } from "../../core/services/shipping.service";
 import { firstValueFrom } from "rxjs";
 
 @Component({
@@ -36,6 +37,7 @@ export class CheckoutComponent implements OnInit {
   http = inject(HttpClient);
   api = inject(ApiService);
   settingsService = inject(SettingsService);
+  shippingService = inject(ShippingService);
 
   isSubmitting = signal(false);
   showAuthModal = signal(false);
@@ -125,14 +127,12 @@ export class CheckoutComponent implements OnInit {
     }, 0);
   });
 
-  shipping = computed(() => {
+  shippingDetails = computed(() => {
     const items = this.groupedCheckoutItems();
-    if (items.length === 0) return 0;
-    const isFreeEligible = items.every((i: any) => i.product?.freeShippingEligible !== false);
-    if (isFreeEligible && this.subtotal() >= 999) return 0;
-    const maxCharge = Math.max(...items.map((i: any) => Number(i.product?.baseShippingCharge || 0)), 0);
-    return isFinite(maxCharge) ? maxCharge : 0;
+    return this.shippingService.calculateCartShipping(items);
   });
+
+  shipping = computed(() => this.shippingDetails().shippingCharge);
 
   tax = computed(() => 0);
 
@@ -385,6 +385,10 @@ export class CheckoutComponent implements OnInit {
       notes: this.orderNotes(),
       businessPurchase: null,
       totalAmount: this.grandTotal(),
+      shippingAmount: this.shipping(),
+      shippingSource: this.shippingDetails().source,
+      estimatedDelivery: `${this.shippingDetails().estimatedDays} Days`,
+      shippingMethod: "Standard Delivery",
     };
 
     try {
@@ -397,7 +401,9 @@ export class CheckoutComponent implements OnInit {
       } else if (this.paymentMethod() === "CASHFREE") {
         this.openCashfree(res.data);
       } else if (this.paymentMethod() === "COD") {
-        this.finishOrder(res.data.id || res.data.orderId);
+        const orderData = res?.data?.order || res?.data;
+        const orderId = res?.data?.id || res?.data?.orderId || orderData?.id;
+        this.finishOrder(orderId, orderData);
       }
     } catch (e: any) {
       console.error(e);
@@ -425,14 +431,15 @@ export class CheckoutComponent implements OnInit {
       handler: async (response: any) => {
         try {
           this.loading.startLoading();
-          await firstValueFrom(
+          const verifyRes: any = await firstValueFrom(
             this.api.post<any>("/payment/verify-payment", {
               razorpay_order_id: response.razorpay_order_id || orderData.id || orderData.dbOrderId,
               razorpay_payment_id: response.razorpay_payment_id || "pay_mock_" + Date.now(),
               razorpay_signature: response.razorpay_signature || "mock_signature",
             }),
           );
-          this.finishOrder(orderData.dbOrderId || orderData.id);
+          const finalOrderId = verifyRes?.data?.orderId || orderData.dbOrderId || orderData.id;
+          this.finishOrder(finalOrderId, verifyRes?.data?.order);
         } catch (err: any) {
           console.error(err);
           this.toast.error(
@@ -542,7 +549,7 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  finishOrder(orderId: string) {
+  finishOrder(orderId: string, orderObj?: any) {
     this.ds.clearBuyNowItem();
     this.ds.cart.set([]);
     this.ds.activeCouponCode.set("");
@@ -555,6 +562,9 @@ export class CheckoutComponent implements OnInit {
     localStorage.removeItem("checkout_restored_addr1");
     localStorage.removeItem("checkout_restored_pay");
 
-    this.router.navigate(["/order-success"], { queryParams: { orderId } });
+    this.router.navigate(["/order-success"], {
+      queryParams: { orderId },
+      state: { order: orderObj || { id: orderId } }
+    });
   }
 }

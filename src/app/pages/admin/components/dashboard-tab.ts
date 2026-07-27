@@ -152,11 +152,10 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
         </div>
       </div>
 
-      <!-- CHART & TELEMETRY SECTION -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <!-- CHART SECTION -->
+      <div class="w-full">
         <!-- Commercial Sales Curve Chart -->
-        <div class="lg:col-span-2 p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs relative flex flex-col justify-between">
+        <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs relative flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 pb-4">
               <div>
@@ -204,7 +203,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
                         ₹{{ (data.val | number) }}
                       </div>
                     </div>
-                    <span class="text-[9px] font-mono font-bold text-zinc-400 dark:text-zinc-550 tracking-wide">{{ data.month }}</span>
+                    <span class="text-[9px] font-mono font-bold text-zinc-400 dark:text-zinc-555 tracking-wide">{{ data.month }}</span>
                   </div>
                 }
               </div>
@@ -212,58 +211,8 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
             </div>
           </div>
         </div>
-
-        <!-- Real-time Lab Telemetry Component -->
-        <div class="p-6 bg-zinc-950 text-white rounded-3xl border border-zinc-900 space-y-5 relative overflow-hidden shadow-xl flex flex-col justify-between min-h-[320px]">
-          <div class="absolute -right-8 -bottom-8 opacity-5 text-white pointer-events-none">
-            <mat-icon class="text-[9rem] h-auto w-auto">print</mat-icon>
-          </div>
-          
-          <div>
-            <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div class="flex items-center gap-2">
-                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">LAB TELEMETRY CLUSTER</span>
-              </div>
-              <span class="text-[9px] font-bold text-zinc-500 font-mono">4 Nodes Active</span>
-            </div>
-
-            <div class="space-y-3 mt-4 relative z-10">
-              @for (p of admin.printerTelemetry; track p.id) {
-                <div class="p-3 bg-zinc-900/60 border border-zinc-800 rounded-2xl hover:border-zinc-800 transition duration-200 space-y-2">
-                  <div class="flex justify-between items-center text-[9px] font-mono">
-                    <span class="font-black text-zinc-200 flex items-center gap-1.5">
-                      <mat-icon class="text-xs text-zinc-450 w-3 h-3 flex items-center justify-center">print</mat-icon>
-                      #{{ p.id }} - {{ p.model }}
-                    </span>
-                    <span 
-                      [class]="p.status === 'Printing' ? 'text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full' : 'text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full'" 
-                      class="font-black uppercase tracking-wider"
-                    >
-                      {{ p.status }} {{ p.status === 'Printing' ? p.progress + '%' : '' }}
-                    </span>
-                  </div>
-                  
-                  @if (p.status === 'Printing') {
-                    <div class="space-y-1.5">
-                      <div class="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" [style.width.%]="p.progress"></div>
-                      </div>
-                      <div class="flex justify-between text-[8px] text-zinc-450 tracking-wider">
-                        <span>{{ p.material }}</span>
-                        <span>N: {{ p.nozzleTemp }}° / B: {{ p.bedTemp }}°</span>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="text-[8px] text-zinc-500 italic">Standby Mode. Waiting for spool input payload.</div>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        </div>
       </div>
-
+      
       <!-- DYNAMIC DATA ACTIVITY ROW -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -281,32 +230,32 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
             <table class="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800/60">
-                  <th class="py-2.5">Order</th>
-                  <th class="py-2.5">Customer</th>
-                  <th class="py-2.5">Date</th>
-                  <th class="py-2.5">Status</th>
-                  <th class="py-2.5 text-right">Revenue</th>
+                  <th class="py-2.5 px-3">Order</th>
+                  <th class="py-2.5 px-3">Customer</th>
+                  <th class="py-2.5 px-3">Date</th>
+                  <th class="py-2.5 px-3">Status</th>
+                  <th class="py-2.5 px-3 text-right">Revenue</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-50 dark:divide-zinc-800/30">
                 @for (order of recentOrders(); track order.id) {
                   <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 font-semibold text-zinc-750 dark:text-zinc-350 transition-colors">
-                    <td class="py-3 font-mono text-zinc-900 dark:text-white uppercase font-bold text-[10px]">#{{ order.orderNumber }}</td>
-                    <td class="py-3 font-extrabold">{{ order.customerName }}</td>
-                    <td class="py-3 text-[10px] text-zinc-450">{{ order.date || 'Today' }}</td>
-                    <td class="py-3">
+                    <td class="py-3 px-3 font-mono text-zinc-900 dark:text-white uppercase font-bold text-[10px]">#{{ order.orderNumber }}</td>
+                    <td class="py-3 px-3 font-extrabold max-w-[180px] truncate" [title]="order.customerName">{{ order.customerName }}</td>
+                    <td class="py-3 px-3 text-[10px] text-zinc-450">{{ order.date || 'Today' }}</td>
+                    <td class="py-3 px-3">
                       <span 
                         [class]="
                           order.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
                           order.status === 'processing' || order.status === 'shipped' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
                           order.status === 'pending' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
                         "
-                        class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase border"
+                        class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase border inline-block"
                       >
                         {{ order.status }}
                       </span>
                     </td>
-                    <td class="py-3 text-right font-mono font-bold text-zinc-900 dark:text-white">₹{{ order.grandTotal | number }}</td>
+                    <td class="py-3 px-3 text-right font-mono font-bold text-zinc-900 dark:text-white">₹{{ order.grandTotal | number }}</td>
                   </tr>
                 } @empty {
                   <tr>
@@ -321,7 +270,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
         </div>
 
         <!-- Top Performing Products -->
-        <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs">
+        <div class="lg:col-span-1 p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs">
           <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 pb-4 mb-4">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-555 block">Performance Rank</span>
@@ -332,30 +281,32 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
 
           <div class="space-y-4">
             @for (tp of getTopProducts(); track tp.id) {
-              <div class="flex items-center gap-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/25 p-2 rounded-2xl transition duration-200">
-                <img 
-                  [src]="$any(tp.images[0]?.url || tp.images[0] || 'https://picsum.photos/100/100')" 
-                  alt="Rank product thumbnail" 
-                  class="h-10 w-10 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 shrink-0"
-                  referrerpolicy="no-referrer"
-                />
-                <div class="min-w-0 flex-1">
-                  <h5 class="text-xs font-black uppercase text-zinc-900 dark:text-white truncate" [title]="tp.name">
-                    {{ tp.name }}
-                  </h5>
-                  <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase font-sans">
-                      {{ tp.brand }}
-                    </span>
-                    <span class="h-3 w-px bg-zinc-200 dark:bg-zinc-800"></span>
-                    <span class="text-[9px] text-blue-500 font-extrabold">
-                      {{ tp.salesCount }} Sold
-                    </span>
+              <div class="flex items-center justify-between gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/25 p-2 rounded-2xl transition duration-200">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  <img 
+                    [src]="$any(tp.images[0]?.url || tp.images[0] || 'https://picsum.photos/100/100')" 
+                    alt="Rank product thumbnail" 
+                    class="h-10 w-10 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 shrink-0"
+                    referrerpolicy="no-referrer"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <h5 class="text-xs font-black uppercase text-zinc-900 dark:text-white truncate" [title]="tp.name">
+                      {{ tp.name }}
+                    </h5>
+                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase font-sans truncate max-w-[90px]">
+                        {{ tp.brand }}
+                      </span>
+                      <span class="h-2.5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
+                      <span class="text-[9px] text-blue-500 font-extrabold whitespace-nowrap">
+                        {{ tp.salesCount }} Sold
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div class="text-right shrink-0">
                   <p class="text-xs font-mono font-bold text-zinc-900 dark:text-white">₹{{ tp.totalRevenue | number }}</p>
-                  <span class="text-[8px] text-zinc-400 font-medium">Revenue</span>
+                  <span class="text-[8px] text-zinc-400 font-medium block">Revenue</span>
                 </div>
               </div>
             }

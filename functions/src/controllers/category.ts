@@ -184,7 +184,7 @@ export const getCategories = async (req: Request, res: Response) => {
 };
 
 export const createCategory = async (req: Request, res: Response) => {
-  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription } = req.body;
+  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription, shippingCharge, estimatedDeliveryDays, freeShippingEligible, shippingRegion } = req.body;
   if (!name || !slug) {
     return res.status(400).json({ error: 'Category name and slug represent mandatory specifications' });
   }
@@ -204,6 +204,10 @@ export const createCategory = async (req: Request, res: Response) => {
         isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
         seoTitle,
         seoDescription,
+        shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
+        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? Number(estimatedDeliveryDays) : undefined,
+        freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+        shippingRegion: shippingRegion || null,
       },
     });
     clearCategoryCache();
@@ -215,7 +219,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const updateCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription } = req.body;
+  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription, shippingCharge, estimatedDeliveryDays, freeShippingEligible, shippingRegion } = req.body;
 
   try {
     const updated = await prisma.category.update({
@@ -233,6 +237,10 @@ export const updateCategory = async (req: Request, res: Response) => {
         isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
         seoTitle,
         seoDescription,
+        shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
+        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? Number(estimatedDeliveryDays) : undefined,
+        freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+        shippingRegion: shippingRegion || null,
       },
     });
     clearCategoryCache();

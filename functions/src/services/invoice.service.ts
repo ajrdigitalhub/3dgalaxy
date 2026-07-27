@@ -238,11 +238,13 @@ export class InvoiceService {
         sumY += 12;
       }
 
+      doc.text('Shipping Charges:', rightX, sumY, { width: labelW, align: 'right' });
       if (shipping > 0) {
-        doc.text('Shipping:', rightX, sumY, { width: labelW, align: 'right' });
         doc.text(`₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, rightX + labelW, sumY, { width: valW, align: 'right' });
-        sumY += 12;
+      } else {
+        doc.text('Free', rightX + labelW, sumY, { width: valW, align: 'right' });
       }
+      sumY += 12;
 
       if (codCharge > 0) {
         doc.text('COD Fee:', rightX, sumY, { width: labelW, align: 'right' });

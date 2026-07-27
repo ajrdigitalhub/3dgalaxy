@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import prisma, { isPoolHealthy } from '../config/database';
 import { getFirebaseAdmin } from '../config/firebase';
 import cron from 'node-cron';
 
@@ -688,6 +688,33 @@ export const runDailyOfferJob = async () => {
   }
 };
 
+export const runDailyAdminDeviceCleanup = async () => {
+  console.log("🧹 Running Daily Admin Device Cleanup Job...");
+  try {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    // Deactivate tokens inactive for > 90 days
+    try {
+      const res = await (prisma as any).adminFcmToken.updateMany({
+        where: {
+          lastUsedAt: { lt: ninetyDaysAgo },
+          isActive: true,
+        },
+        data: { isActive: false },
+      });
+      console.log(`🧹 Deactivated ${res.count} admin device tokens inactive for > 90 days.`);
+    } catch (e) {
+      console.warn("DB Admin token cleanup warn:", e);
+    }
+  } catch (error) {
+    console.error("❌ Failed to run Daily Admin Device Cleanup Job:", error);
+  }
+};
+
+// Track consecutive DB failures so we don't flood logs
+let consecutiveDbFailures = 0;
+
 /**
  * Initialize background scheduler daemon
  */
@@ -698,6 +725,22 @@ export const startScheduler = () => {
   
   // Run every 20 seconds
   schedulerIntervalId = setInterval(async () => {
+    // Health-check the pool before hitting DB — skip this tick if unreachable
+    const healthy = await isPoolHealthy();
+    if (!healthy) {
+      consecutiveDbFailures++;
+      // Log on first failure, then every 30th failure (~10 min) to avoid log spam
+      if (consecutiveDbFailures === 1 || consecutiveDbFailures % 30 === 0) {
+        console.warn(`⚠️ Database unreachable (${consecutiveDbFailures} consecutive failures). Skipping scheduler tick.`);
+      }
+      return;
+    }
+    // Reset counter on successful connection
+    if (consecutiveDbFailures > 0) {
+      console.log(`✅ Database connection restored after ${consecutiveDbFailures} failures.`);
+      consecutiveDbFailures = 0;
+    }
+
     await checkScheduledCampaigns();
     await processNotificationQueue();
   }, 20000);
@@ -708,7 +751,15 @@ export const startScheduler = () => {
   }, {
     timezone: "Asia/Kolkata"
   });
-  console.log('⏰ Daily Offer Auto Cron scheduled at 5:00 PM IST.');
+
+  // Daily Admin Device Token Cleanup - runs every day at 2:00 AM IST
+  cron.schedule('0 2 * * *', async () => {
+    await runDailyAdminDeviceCleanup();
+  }, {
+    timezone: "Asia/Kolkata"
+  });
+
+  console.log('⏰ Daily Offer Auto Cron scheduled at 5:00 PM IST & Device Cleanup scheduled at 2:00 AM IST.');
 };
 
 /**

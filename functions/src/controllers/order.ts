@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { triggerWhatsAppNotification } from './whatsapp';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
+import { ShippingService } from '../services/shipping.service';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -297,7 +298,8 @@ export const getOrderById = async (req: any, res: Response) => {
 
     const normalizedRole = userRole ? userRole.toLowerCase().replace(/[\s\-_]/g, '') : '';
     if (normalizedRole !== 'admin' && normalizedRole !== 'superadmin' && normalizedRole !== 'manager') {
-      if (order.customer?.userId !== userId) {
+      const isGuestCustomer = order.customer?.customerType === 'guest' || !order.customer?.userId;
+      if (!isGuestCustomer && userId && order.customer?.userId && order.customer.userId !== userId) {
         return res.status(403).json({ error: 'Forbidden' });
       }
     }
@@ -515,7 +517,13 @@ export const createOrder = async (req: any, res: Response) => {
         });
       }
 
-      const shippingAmount = subtotal > 1000 ? 0 : 99;
+      // Calculate dynamic shipping using Centralized Shipping Engine
+      const shippingCalc = await ShippingService.calculateShipping(parsedItems);
+      const shippingAmount = shippingCalc.shippingCharge;
+      const shippingSource = shippingCalc.source;
+      const estimatedDelivery = `${shippingCalc.estimatedDays} Days`;
+      const shippingMethod = req.body.shippingMethod || 'Standard Delivery';
+
       const codCharge = paymentMethod === 'COD' ? 100 : 0;
       const taxAmount = 0; // GST already included in product price
       const discountAmount = 0;
@@ -529,6 +537,9 @@ export const createOrder = async (req: any, res: Response) => {
           totalAmount,
           taxAmount,
           shippingAmount,
+          shippingSource,
+          estimatedDelivery,
+          shippingMethod,
           discountAmount,
           status: 'Pending',
           shippingAddressId,

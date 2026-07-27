@@ -96,6 +96,21 @@
               ASSIGNMENTS</h3>
           </div>
 
+          @if (ord.shippingSource || ord.shippingMethod || ord.estimatedDelivery) {
+          <div class="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-xl space-y-1 text-xs font-mono">
+            <div class="flex items-center justify-between">
+              <span class="text-neutral-500">Shipping Engine Source:</span>
+              <span class="font-bold text-blue-600 dark:text-blue-400 uppercase">{{ ord.shippingSource || 'GLOBAL' }}</span>
+            </div>
+            @if (ord.estimatedDelivery) {
+            <div class="flex items-center justify-between">
+              <span class="text-neutral-500">Configured SLA:</span>
+              <span class="font-bold text-neutral-800 dark:text-neutral-200">{{ ord.estimatedDelivery }}</span>
+            </div>
+            }
+          </div>
+          }
+
           <div class="space-y-3 pt-1 text-xs">
             <div class="space-y-1">
               <span class="text-[9px] uppercase font-bold text-neutral-400 block font-mono">Carrier Service
@@ -444,7 +459,7 @@
 
           <div class="flex justify-between">
             <span>Logistic transport fee:</span>
-            <span>{{ orderShipping() | currency:'INR':'symbol':'1.0-0' }}</span>
+            <span>{{ orderShipping() === 0 ? 'Free' : (orderShipping() | currency:'INR':'symbol':'1.0-0') }}</span>
           </div>
 
           @if (orderCodCharge() > 0 || ord.paymentMethod === 'COD') {

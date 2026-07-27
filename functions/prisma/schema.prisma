@@ -71,6 +71,7 @@ model User {
   notificationDevices NotificationDevice[]
   productImportHistories ProductImportHistory[]
   customerNotes   CustomerNote[]
+  adminFcmTokens  AdminFcmToken[]
 
   @@index([mobile])
   @@index([isActive])
@@ -157,6 +158,10 @@ model Category {
   isFeatured      Boolean           @default(false) @map("is_featured")
   seoTitle        String?           @map("seo_title") @db.VarChar(255)
   seoDescription  String?           @map("seo_description") @db.Text
+  shippingCharge        Decimal?          @map("shipping_charge") @db.Decimal(10, 2)
+  estimatedDeliveryDays Int?              @default(3) @map("estimated_delivery_days")
+  freeShippingEligible  Boolean           @default(false) @map("free_shipping_eligible")
+  shippingRegion        String?           @map("shipping_region") @db.VarChar(100)
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -423,7 +428,7 @@ model Order {
   shippingAddressId String?         @map("shipping_address_id") @db.Uuid
   billingAddressId  String?         @map("billing_address_id") @db.Uuid
   notes           String?           @db.Text
-  invoiceUrl      String?           @map("invoice_url") @db.VarChar(255)
+  invoiceUrl      String?           @map("invoice_url") @db.Text
   gstNumber       String?           @map("gst_number") @db.VarChar(15)
   companyName     String?           @map("company_name") @db.VarChar(255)
   paymentMethod   String?           @map("payment_method") @db.VarChar(100)
@@ -434,6 +439,9 @@ model Order {
   gatewayResponse String?           @map("gateway_response") @db.Text
   codCharge       Decimal?          @default(0) @map("cod_charge") @db.Decimal(10, 2)
   paidAmount      Decimal?          @default(0) @map("paid_amount") @db.Decimal(10, 2)
+  shippingMethod  String?           @map("shipping_method") @db.VarChar(100)
+  shippingSource  String?           @map("shipping_source") @db.VarChar(50)
+  estimatedDelivery String?         @map("estimated_delivery") @db.VarChar(100)
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -1253,6 +1261,66 @@ model NotificationChannelSetting {
   @@index([category])
   @@map("notification_channel_settings")
 }
+
+model AdminFcmToken {
+  id                     String            @id @default(uuid()) @db.Uuid
+  adminId                String            @default("admin-main") @map("admin_id") @db.VarChar(100)
+  adminName              String?           @map("admin_name") @db.VarChar(255)
+  adminEmail             String?           @map("admin_email") @db.VarChar(255)
+  adminRole              String?           @map("admin_role") @default("Super Admin") @db.VarChar(100)
+  deviceName             String            @map("device_name") @db.VarChar(255)
+  deviceType             String            @default("Desktop") @map("device_type") @db.VarChar(50)
+  platform               String?           @db.VarChar(100)
+  browser                String?           @db.VarChar(100)
+  operatingSystem        String?           @map("operating_system") @db.VarChar(100)
+  fcmToken               String            @unique @map("fcm_token") @db.Text
+  ipAddress              String?           @map("ip_address") @db.VarChar(100)
+  userAgent              String?           @map("user_agent") @db.Text
+  isActive               Boolean           @default(true) @map("is_active")
+  isOnline               Boolean           @default(true) @map("is_online")
+  notificationEnabled    Boolean           @default(true) @map("notification_enabled")
+  lastNotificationSentAt DateTime?         @map("last_notification_sent_at") @db.Timestamptz
+  notificationCount      Int               @default(0) @map("notification_count")
+  lastUsedAt             DateTime          @default(now()) @map("last_used_at") @db.Timestamptz
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user                   User?             @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, fcmToken])
+  @@index([adminId])
+  @@index([isActive])
+  @@index([isOnline])
+  @@index([fcmToken])
+  @@map("admin_fcm_tokens")
+}
+
+model AdminNotificationDeliveryLog {
+  id              String            @id @default(uuid()) @db.Uuid
+  notificationId  String?           @map("notification_id") @db.VarChar(255)
+  adminId         String?           @map("admin_id") @db.VarChar(100)
+  adminEmail      String?           @map("admin_email") @db.VarChar(255)
+  deviceName      String?           @map("device_name") @db.VarChar(255)
+  fcmToken        String?           @map("fcm_token") @db.Text
+  title           String            @db.VarChar(255)
+  body            String            @db.Text
+  category        String?           @db.VarChar(100)
+  tokensSent      Int               @default(1) @map("tokens_sent")
+  successCount    Int               @default(1) @map("success_count")
+  failureCount    Int               @default(0) @map("failure_count")
+  failedTokens    Json?             @default("[]") @map("failed_tokens")
+  status          String            @default("DELIVERED") @db.VarChar(50)
+  failureReason   String?           @map("failure_reason") @db.Text
+  retryCount      Int               @default(0) @map("retry_count")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status])
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("admin_notification_delivery_logs")
+}
+
+
 
 
 

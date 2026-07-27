@@ -6,7 +6,7 @@ import {
   signal,
   effect,
 } from "@angular/core";
-import { CommonModule, NgFor } from "@angular/common";
+import { CommonModule } from "@angular/common";
 import { Router, ActivatedRoute, RouterModule } from "@angular/router";
 import {
   FormBuilder,
@@ -31,7 +31,6 @@ import { environment } from "../../../environments/environment";
     ReactiveFormsModule,
     MatIconModule,
     RouterModule,
-    NgFor,
   ],
   templateUrl: "./account.html",
 })

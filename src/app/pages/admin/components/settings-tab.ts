@@ -15,6 +15,7 @@ import { ThemeService } from "../../../core/services/theme.service";
 import { ToastService } from "../../../shared/components/toast/toast.service";
 import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
+import { AdminDevicesTab } from "./admin-devices-tab";
 
 
 @Component({
@@ -26,7 +27,8 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
     ImagePickerComponent,
     FormsModule,
     PwaSettingsTabComponent,
-    MarketingTrackingTabComponent
+    MarketingTrackingTabComponent,
+    AdminDevicesTab
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -3467,46 +3469,98 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 
             <!-- 16. SHIPPING -->
             @if (activeSubTab() === "Shipping") {
-              <div class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="space-y-6">
+                <!-- Priority Hierarchy Toggles -->
+                <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                    <mat-icon class="text-blue-500 text-sm">tune</mat-icon>
+                    Shipping Hierarchy Engine Controls
+                  </h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        [checked]="draft().shippingSettings?.enableProductShipping !== false"
+                        (change)="setNested('shippingSettings', 'enableProductShipping', $any($event.target).checked)"
+                        class="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <div>
+                        <span class="text-xs font-black block text-zinc-900 dark:text-white">Product Shipping (Priority 1)</span>
+                        <span class="text-[9px] text-zinc-500 block">Use product level shipping charges</span>
+                      </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        [checked]="draft().shippingSettings?.enableCategoryShipping !== false"
+                        (change)="setNested('shippingSettings', 'enableCategoryShipping', $any($event.target).checked)"
+                        class="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <div>
+                        <span class="text-xs font-black block text-zinc-900 dark:text-white">Category Shipping (Priority 2)</span>
+                        <span class="text-[9px] text-zinc-500 block">Fallback to category level shipping</span>
+                      </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        [checked]="draft().shippingSettings?.enableGlobalShipping !== false"
+                        (change)="setNested('shippingSettings', 'enableGlobalShipping', $any($event.target).checked)"
+                        class="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <div>
+                        <span class="text-xs font-black block text-zinc-900 dark:text-white">Global Shipping (Priority 3)</span>
+                        <span class="text-[9px] text-zinc-500 block">Fallback to system default shipping</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Global Rates & Thresholds -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div class="space-y-1">
-                    <span
-                      class="block text-[9px] font-black text-zinc-400 uppercase"
-                      >Global Minimum Threshold for Free Delivery (₹)</span
-                    >
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Default Shipping Charge (₹)</span>
                     <input
                       type="number"
-                      [value]="
-                        draft().shippingSettings?.freeShippingMinSpent || 999
-                      "
-                      (input)="
-                        setNested(
-                          'shippingSettings',
-                          'freeShippingMinSpent',
-                          +$any($event.target).value
-                        )
-                      "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                      [value]="draft().shippingSettings?.defaultShippingCharge ?? 150"
+                      (input)="setNested('shippingSettings', 'defaultShippingCharge', +$any($event.target).value)"
+                      placeholder="e.g. 150"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
                     />
                   </div>
+
                   <div class="space-y-1">
-                    <span
-                      class="block text-[9px] font-black text-zinc-400 uppercase"
-                      >Base Rate for Express Deliveries</span
-                    >
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Free Shipping Threshold (₹)</span>
                     <input
                       type="number"
-                      [value]="
-                        draft().shippingSettings?.fixedCourierRate || 120
-                      "
-                      (input)="
-                        setNested(
-                          'shippingSettings',
-                          'fixedCourierRate',
-                          +$any($event.target).value
-                        )
-                      "
-                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                      [value]="draft().shippingSettings?.freeShippingThreshold ?? 1000"
+                      (input)="setNested('shippingSettings', 'freeShippingThreshold', +$any($event.target).value)"
+                      placeholder="e.g. 1000"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Tax Rate (%)</span>
+                    <input
+                      type="number"
+                      [value]="draft().shippingSettings?.shippingTax ?? 0"
+                      (input)="setNested('shippingSettings', 'shippingTax', +$any($event.target).value)"
+                      placeholder="e.g. 0"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Label</span>
+                    <input
+                      type="text"
+                      [value]="draft().shippingSettings?.shippingLabel || 'Delivery Charges'"
+                      (input)="setNested('shippingSettings', 'shippingLabel', $any($event.target).value)"
+                      placeholder="Delivery Charges"
+                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -4174,7 +4228,7 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
                           >
                           <input
                             type="text"
-                            [value]="faq.category || 'General'"
+                            [value]="faq.category || 'Theme'"
                             (input)="
                               updateFaqField(
                                 $index,
@@ -4757,6 +4811,11 @@ import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
             @if (activeSubTab() === "Marketing & Tracking") {
               <app-admin-marketing-tracking-tab />
             }
+
+            <!-- ADMIN DEVICES -->
+            @if (activeSubTab() === "Admin Devices") {
+              <app-admin-devices-tab />
+            }
           </div>
         </div>
       </div>
@@ -4773,7 +4832,7 @@ export class AdminSettingsTab {
   private themeService = inject(ThemeService);
   private toastService = inject(ToastService);
 
-  activeSubTab = signal<string>("General");
+  activeSubTab = signal<string>("Theme");
   draft = signal<any>({});
   isSaving = signal<boolean>(false);
 
@@ -4919,17 +4978,17 @@ export class AdminSettingsTab {
   }
 
   subTabs = [
-    { name: "General", icon: "settings" },
+    // { name: "General", icon: "settings" },
     { name: "Theme", icon: "palette" },
-    { name: "Theme Effects", icon: "auto_awesome" },
-    { name: "Typography", icon: "font_download" },
-    { name: "Fonts", icon: "text_format" },
-    { name: "Color Presets", icon: "style" },
+    // { name: "Theme Effects", icon: "auto_awesome" },
+    // { name: "Typography", icon: "font_download" },
+    // { name: "Fonts", icon: "text_format" },
+    // { name: "Color Presets", icon: "style" },
     { name: "Hero Slides", icon: "slideshow" },
     { name: "Hero Carousel", icon: "view_carousel" },
     { name: "Promo Banners", icon: "campaign" },
     { name: "Advertisements", icon: "ad_units" },
-    { name: "Homepage Sections", icon: "view_quilt" },
+    // { name: "Homepage Sections", icon: "view_quilt" },
     { name: "Footer", icon: "vertical_align_bottom" },
     { name: "About Page", icon: "info" },
     { name: "Contact", icon: "contact_mail" },
@@ -4940,12 +4999,13 @@ export class AdminSettingsTab {
 
     { name: "PWA Settings", icon: "install_mobile" },
     { name: "Marketing & Tracking", icon: "insights" },
+    { name: "Admin Devices", icon: "devices" },
     { name: "Shipping", icon: "local_shipping" },
     { name: "Payment Gateway", icon: "payment" },
     { name: "Newsletter", icon: "alternate_email" },
-    { name: "Chatbot", icon: "smart_toy" },
+    // { name: "Chatbot", icon: "smart_toy" },
     { name: "Product Page", icon: "shopping_bag" },
-    { name: "Tour Settings", icon: "assistant" },
+    // { name: "Tour Settings", icon: "assistant" },
     { name: "FAQ", icon: "quiz" },
     { name: "Services", icon: "room_service" },
     { name: "3D Printing Service", icon: "print" },
@@ -4967,7 +5027,7 @@ export class AdminSettingsTab {
       } else if (active === "theme-settings") {
         this.activeSubTab.set("Theme");
       } else if (active === "store-settings") {
-        this.activeSubTab.set("General");
+        this.activeSubTab.set("Theme");
       } else if (active === "payment-settings") {
         this.activeSubTab.set("Payment Gateway");
       } else if (active === "shipping-settings") {
@@ -4976,6 +5036,8 @@ export class AdminSettingsTab {
         this.activeSubTab.set("PWA Settings");
       } else if (active === "marketing-settings") {
         this.activeSubTab.set("Marketing & Tracking");
+      } else if ((active as string) === "admin-devices" || (active as string) === "devices") {
+        this.activeSubTab.set("Admin Devices");
       }
     });
   }
@@ -5175,7 +5237,7 @@ export class AdminSettingsTab {
     this.appendArrayItem("faqs", {
       question: "",
       answer: "",
-      category: "General",
+      category: "Theme",
     });
   }
 

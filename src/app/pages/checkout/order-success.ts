@@ -1,18 +1,37 @@
-import {ChangeDetectionStrategy, Component, inject, OnInit, signal, AfterViewInit, ChangeDetectorRef} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal, AfterViewInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild} from '@angular/core';
 import {CommonModule, Location} from '@angular/common';
 import {RouterModule, Router, ActivatedRoute} from '@angular/router';
 import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
 import {ApiService} from '../../services/api.service';
+import {ToastService} from '../../shared/components/toast/toast.service';
 import {firstValueFrom} from 'rxjs';
+
+interface PaperParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  sizeW: number;
+  sizeH: number;
+  color: string;
+  rotation: number;
+  rotationSpeed: number;
+  wobble: number;
+  wobbleSpeed: number;
+  shape: 'strip' | 'square' | 'circle' | 'triangle';
+  alpha: number;
+  gravity: number;
+  drag: number;
+}
 
 @Component({
   selector: 'app-order-success',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, MatIconModule],
   template: `
-    <!-- Confetti Canvas -->
-    <canvas #confettiCanvas class="fixed inset-0 pointer-events-none z-50" [class.hidden]="!showConfetti()"></canvas>
+    <!-- Confetti / Color Paper Throw Canvas -->
+    <canvas #confettiCanvas class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
     <div class="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-12 px-4">
       <div class="max-w-2xl mx-auto space-y-8">
@@ -24,10 +43,12 @@ import {firstValueFrom} from 'rxjs';
           <div class="absolute -bottom-32 -left-32 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
 
           <div class="relative z-10">
-            <!-- Animated Checkmark -->
-            <div class="w-24 h-24 mx-auto mb-6 relative">
-              <div class="absolute inset-0 bg-emerald-100 dark:bg-emerald-900/30 rounded-full animate-ping opacity-30"></div>
-              <div class="relative w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <!-- Animated Checkmark / Click to trigger paper throw -->
+            <div (click)="triggerPaperThrow()" 
+                 class="w-24 h-24 mx-auto mb-6 relative cursor-pointer group"
+                 title="Click to celebrate again!">
+              <div class="absolute inset-0 bg-emerald-100 dark:bg-emerald-900/30 rounded-full animate-ping opacity-30 group-hover:opacity-60"></div>
+              <div class="relative w-24 h-24 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-transform group-hover:scale-105 active:scale-95">
                 <mat-icon class="scale-[2]">check</mat-icon>
               </div>
             </div>
@@ -35,9 +56,22 @@ import {firstValueFrom} from 'rxjs';
             <h1 class="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white uppercase tracking-tight leading-tight mb-2">
               Order Placed<br>Successfully!
             </h1>
-            <p class="text-sm font-medium text-neutral-500 mb-2">Thank you for shopping with 3D Galaxy.</p>
+            <p class="text-sm font-medium text-neutral-500 mb-3">Thank you for shopping with 3D Galaxy.</p>
+            
+            <!-- Order ID Pill with Copy Action -->
             @if (order) {
-              <p class="text-xs font-mono text-neutral-400 bg-neutral-100 dark:bg-neutral-800 inline-block px-3 py-1 rounded-full">Order #{{ order.orderNumber || order.id }}</p>
+              <div class="inline-flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 rounded-2xl px-4 py-2 mt-1 shadow-xs transition-all hover:border-emerald-500/50">
+                <span class="text-xs sm:text-sm font-mono font-bold text-neutral-800 dark:text-neutral-200 tracking-wider">
+                  Order #{{ displayOrderId }}
+                </span>
+                <button (click)="copyOrderId()" 
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-neutral-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-neutral-700 dark:text-neutral-300 hover:text-emerald-600 dark:hover:text-emerald-400 border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                        [title]="copied() ? 'Order ID Copied!' : 'Copy Order ID'">
+                  <mat-icon class="scale-75 transition-transform" [class.text-emerald-500]="copied()">{{ copied() ? 'check_circle' : 'content_copy' }}</mat-icon>
+                  <span>{{ copied() ? 'Copied!' : 'Copy ID' }}</span>
+                </button>
+              </div>
             }
           </div>
         </div>
@@ -46,12 +80,22 @@ import {firstValueFrom} from 'rxjs';
         @if (order) {
         <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-sm overflow-hidden">
           <div class="p-6 sm:p-8 space-y-5">
-            <h2 class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em]">Order Details</h2>
+            <div class="flex items-center justify-between">
+              <h2 class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em]">Order Details</h2>
+              
+              <!-- Quick Copy Button in Details -->
+              <button (click)="copyOrderId()" 
+                      type="button"
+                      class="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer">
+                <mat-icon class="scale-75">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+                <span>{{ copied() ? 'Copied' : 'Copy Order ID' }}</span>
+              </button>
+            </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800">
                 <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Customer</p>
-                <p class="text-sm font-bold text-neutral-900 dark:text-white">{{ customerName }}</p>
+                <p class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{ customerName }}</p>
               </div>
               <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800">
                 <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Total</p>
@@ -152,19 +196,26 @@ import {firstValueFrom} from 'rxjs';
     </div>
   `
 })
-export class OrderSuccessComponent implements AfterViewInit {
+export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('confettiCanvas') confettiCanvasRef!: ElementRef<HTMLCanvasElement>;
+
   location = inject(Location);
   router = inject(Router);
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
   api = inject(ApiService);
+  toast = inject(ToastService);
   cdr = inject(ChangeDetectorRef);
 
   order: any;
   customerName = '';
   isGuest = false;
-  showConfetti = signal(true);
   isLoading = signal(false);
+  copied = signal(false);
+
+  private particles: PaperParticle[] = [];
+  private animFrameId: number | null = null;
+  private resizeListener?: () => void;
 
   timelineSteps = [
     { label: 'Confirmed', icon: 'check_circle' },
@@ -174,19 +225,24 @@ export class OrderSuccessComponent implements AfterViewInit {
     { label: 'Delivered', icon: 'home' }
   ];
 
+  get displayOrderId(): string {
+    return this.order?.orderNumber || this.order?.id || '';
+  }
+
   constructor() {
     const state = this.location.getState() as any;
-    if (state && state.order) {
+    const orderId = this.route.snapshot.queryParamMap.get('orderId') || this.route.snapshot.queryParamMap.get('order_id');
+
+    if (state && state.order && (state.order.id || state.order.orderNumber)) {
       this.order = state.order[0] || state.order;
       this.resolveCustomerName();
-    } else {
-      // Check for orderId query parameter (used by finishOrder and Cashfree redirect)
-      const orderId = this.route.snapshot.queryParamMap.get('orderId') || this.route.snapshot.queryParamMap.get('order_id');
-      if (orderId) {
+      if (orderId && (!this.order.totalAmount || !this.order.items)) {
         this.loadOrderFromApi(orderId);
-      } else {
-        this.router.navigate(['/']);
       }
+    } else if (orderId) {
+      this.loadOrderFromApi(orderId);
+    } else {
+      this.router.navigate(['/']);
     }
   }
 
@@ -194,11 +250,17 @@ export class OrderSuccessComponent implements AfterViewInit {
     this.isLoading.set(true);
     try {
       const res: any = await firstValueFrom(this.api.get<any>(`/orders/${orderId}`));
-      this.order = res?.data || res;
-      this.resolveCustomerName();
+      const fetchedOrder = res?.data || res;
+      if (fetchedOrder && (fetchedOrder.id || fetchedOrder.orderNumber)) {
+        this.order = fetchedOrder;
+        this.resolveCustomerName();
+      }
     } catch (err) {
-      console.error('Failed to load order:', err);
-      this.router.navigate(['/']);
+      console.error('Failed to load order details from API:', err);
+      if (!this.order) {
+        this.order = { id: orderId };
+        this.resolveCustomerName();
+      }
     } finally {
       this.isLoading.set(false);
       this.cdr.detectChanges();
@@ -216,11 +278,222 @@ export class OrderSuccessComponent implements AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Simple confetti effect using CSS particles
-    setTimeout(() => this.showConfetti.set(false), 5000);
+    this.resizeCanvas();
+    this.resizeListener = () => this.resizeCanvas();
+    window.addEventListener('resize', this.resizeListener);
+
+    // Trigger color paper throw animation on mount!
+    setTimeout(() => this.triggerPaperThrow(), 200);
+  }
+
+  ngOnDestroy() {
+    if (this.animFrameId !== null) {
+      cancelAnimationFrame(this.animFrameId);
+    }
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+  }
+
+  copyOrderId() {
+    const id = this.displayOrderId;
+    if (!id) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(id).then(() => {
+        this.handleCopySuccess();
+      }).catch(err => {
+        this.fallbackCopy(id);
+      });
+    } else {
+      this.fallbackCopy(id);
+    }
+  }
+
+  private handleCopySuccess() {
+    this.copied.set(true);
+    this.toast.success(`Order ID #${this.displayOrderId} copied to clipboard!`);
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.copied.set(false);
+      this.cdr.detectChanges();
+    }, 3000);
+  }
+
+  private fallbackCopy(text: string) {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      this.handleCopySuccess();
+    } catch (e) {
+      this.toast.error('Failed to copy Order ID');
+    }
+  }
+
+  /**
+   * Color Paper Throw (Confetti) Particle System Engine
+   */
+  triggerPaperThrow() {
+    const canvas = this.confettiCanvasRef?.nativeElement;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    const colors = [
+      '#f43f5e', '#10b981', '#3b82f6', '#f59e0b',
+      '#8b5cf6', '#ec4899', '#06b6d4', '#eab308',
+      '#d65108', '#22c55e', '#a855f7', '#6366f1'
+    ];
+    const shapes: ('strip' | 'square' | 'circle' | 'triangle')[] = ['strip', 'square', 'circle', 'strip'];
+
+    const newParticles: PaperParticle[] = [];
+    const count = 220;
+
+    for (let i = 0; i < count; i++) {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const shape = shapes[Math.floor(Math.random() * shapes.length)];
+      
+      // Distribute launch points: Left Cannon (42%), Right Cannon (42%), Center Explosion (16%)
+      let startX: number;
+      let startY: number;
+      let angle: number;
+      let speed: number;
+
+      const randType = Math.random();
+      if (randType < 0.42) {
+        // Left bottom cannon
+        startX = Math.random() * (w * 0.25);
+        startY = h + 10;
+        angle = -Math.PI * (0.25 + Math.random() * 0.25); // -45 to -90 deg
+        speed = 18 + Math.random() * 16;
+      } else if (randType < 0.84) {
+        // Right bottom cannon
+        startX = w - Math.random() * (w * 0.25);
+        startY = h + 10;
+        angle = -Math.PI * (0.50 + Math.random() * 0.25); // -90 to -135 deg
+        speed = 18 + Math.random() * 16;
+      } else {
+        // Center Burst
+        startX = w * 0.5 + (Math.random() - 0.5) * 100;
+        startY = h * 0.35 + (Math.random() - 0.5) * 100;
+        angle = Math.random() * Math.PI * 2;
+        speed = 8 + Math.random() * 14;
+      }
+
+      newParticles.push({
+        x: startX,
+        y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        sizeW: shape === 'strip' ? 10 + Math.random() * 8 : 6 + Math.random() * 6,
+        sizeH: shape === 'strip' ? 4 + Math.random() * 4 : 6 + Math.random() * 6,
+        color,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.2,
+        wobble: Math.random() * 10,
+        wobbleSpeed: 0.05 + Math.random() * 0.08,
+        shape,
+        alpha: 1.0,
+        gravity: 0.22 + Math.random() * 0.12,
+        drag: 0.97 + Math.random() * 0.015
+      });
+    }
+
+    this.particles = [...this.particles, ...newParticles];
+
+    if (this.animFrameId === null) {
+      this.animateConfetti(ctx, canvas);
+    }
+  }
+
+  private animateConfetti(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+
+        p.vy += p.gravity;
+        p.vx *= p.drag;
+        p.vy *= p.drag;
+
+        p.wobble += p.wobbleSpeed;
+        p.x += p.vx + Math.sin(p.wobble) * 1.5;
+        p.y += p.vy;
+
+        p.rotation += p.rotationSpeed;
+
+        // Fade out as it nears bottom or over time
+        if (p.y > canvas.height * 0.75) {
+          p.alpha -= 0.015;
+        }
+
+        if (p.alpha <= 0 || p.y > canvas.height + 60) {
+          this.particles.splice(i, 1);
+          continue;
+        }
+
+        // Draw individual paper piece
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        
+        // 3D paper flutter flip simulation
+        ctx.scale(Math.cos(p.wobble), 1);
+
+        ctx.fillStyle = p.color;
+
+        if (p.shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.sizeW / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.shape === 'triangle') {
+          ctx.beginPath();
+          ctx.moveTo(-p.sizeW / 2, p.sizeH / 2);
+          ctx.lineTo(p.sizeW / 2, p.sizeH / 2);
+          ctx.lineTo(0, -p.sizeH / 2);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Strip / Square
+          ctx.fillRect(-p.sizeW / 2, -p.sizeH / 2, p.sizeW, p.sizeH);
+        }
+
+        ctx.restore();
+      }
+
+      if (this.particles.length > 0) {
+        this.animFrameId = requestAnimationFrame(render);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.animFrameId = null;
+      }
+    };
+
+    this.animFrameId = requestAnimationFrame(render);
+  }
+
+  private resizeCanvas() {
+    const canvas = this.confettiCanvasRef?.nativeElement;
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
   }
 
   navigateToRegister() {
     this.router.navigate(['/register'], { queryParams: { email: this.order?.guestEmail } });
   }
 }
+

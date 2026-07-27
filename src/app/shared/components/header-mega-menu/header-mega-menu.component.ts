@@ -85,7 +85,7 @@ export interface HeaderMenuPayload {
       <div 
         *ngIf="isOpen()"
         (mouseenter)="openMenu()"
-        class="absolute left-0 top-full w-[92vw] max-w-6xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-[2.5rem] transition-all duration-300 z-[100] p-6 sm:p-8 space-y-6 animate-fadeIn"
+        class="fixed left-1/2 -translate-x-1/2 top-16 sm:top-20 w-[94vw] max-w-6xl bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-[2rem] transition-all duration-300 z-[100] p-5 sm:p-7 space-y-5 animate-fadeIn max-h-[85vh] overflow-y-auto"
       >
         
         <!-- Header Bar: Tabs + Search Inside Mega Menu -->
@@ -149,10 +149,10 @@ export interface HeaderMenuPayload {
         </div>
 
         <!-- TAB 1: CATEGORIES VIEW -->
-        <div *ngIf="!loading() && activeTab() === 'categories'" class="grid grid-cols-12 gap-6 min-h-[26rem]">
+        <div *ngIf="!loading() && activeTab() === 'categories'" class="grid grid-cols-12 gap-5 min-h-[24rem]">
           
-          <!-- Left Column: Root Categories List (5 Cols for wider spacious cards) -->
-          <div class="col-span-12 md:col-span-5 space-y-2.5 max-h-[30rem] overflow-y-auto pr-3 scrollbar-none border-r border-neutral-100 dark:border-neutral-900">
+          <!-- Left Column: Root Categories List (4 Cols) -->
+          <div class="col-span-12 md:col-span-4 space-y-2 max-h-[28rem] overflow-y-auto pr-2 scrollbar-thin border-r border-neutral-100 dark:border-neutral-900">
             <div *ngIf="filteredCategories().length === 0" class="p-6 text-xs text-neutral-400 text-center">
               No categories found.
             </div>
@@ -161,30 +161,30 @@ export interface HeaderMenuPayload {
               (mouseenter)="onCategoryHover(cat)"
               (click)="navigateToCategory(cat.slug); closeMenu()"
               [ngClass]="{'bg-orange-500/10 text-[#d65108] border-orange-500/20 shadow-xs': selectedRootCategory()?.id === cat.id, 'border-transparent': selectedRootCategory()?.id !== cat.id}"
-              class="group/item flex items-center justify-between p-4 sm:p-4.5 rounded-3xl border cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60"
+              class="group/item flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-all hover:bg-neutral-100 dark:hover:bg-neutral-900/60"
             >
-              <div class="flex items-center gap-4 min-w-0">
-                <div class="w-20 h-20 sm:w-24 sm:h-24 p-1 shrink-0 flex items-center justify-center border-none bg-transparent group-hover/item:scale-110 transition-transform duration-300">
-                  <img *ngIf="cat.image" [src]="cat.image" [alt]="cat.name" class="w-full h-full object-contain border-none filter drop-shadow-md">
-                  <mat-icon *ngIf="!cat.image" class="text-3xl sm:text-4xl text-neutral-500 group-hover/item:text-[#d65108] transition-colors filter drop-shadow-xs">{{ cat.icon || 'category' }}</mat-icon>
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-11 h-11 p-1 shrink-0 flex items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-900 group-hover/item:scale-105 transition-transform duration-200">
+                  <img *ngIf="cat.image" [src]="cat.image" [alt]="cat.name" class="w-full h-full object-contain">
+                  <mat-icon *ngIf="!cat.image" class="text-xl text-neutral-500 group-hover/item:text-[#d65108] transition-colors">{{ cat.icon || 'category' }}</mat-icon>
                 </div>
 
                 <div class="min-w-0">
-                  <span class="text-sm sm:text-base font-black uppercase tracking-tight block truncate group-hover/item:text-[#d65108] transition-colors">
+                  <span class="text-xs sm:text-sm font-black uppercase tracking-tight block truncate group-hover/item:text-[#d65108] transition-colors">
                     {{ cat.name }}
                   </span>
-                  <span class="text-xs font-bold text-neutral-400 block mt-1">
+                  <span class="text-[10px] font-bold text-neutral-400 block mt-0.5">
                     {{ cat.productCount }} Products
                   </span>
                 </div>
               </div>
 
-              <mat-icon class="text-xl text-neutral-400 group-hover/item:translate-x-1.5 transition-transform">chevron_right</mat-icon>
+              <mat-icon class="text-lg text-neutral-400 group-hover/item:translate-x-1 transition-transform">chevron_right</mat-icon>
             </div>
           </div>
 
-          <!-- Middle Column: Subcategories & Child Grid (4 Cols) -->
-          <div class="col-span-12 md:col-span-4 space-y-4 max-h-[30rem] overflow-y-auto pr-2 scrollbar-none">
+          <!-- Middle Column: Subcategories & Child Grid (5 Cols) -->
+          <div class="col-span-12 md:col-span-5 space-y-4 max-h-[28rem] overflow-y-auto pr-2 scrollbar-thin">
             <div *ngIf="selectedRootCategory() as root" class="space-y-4">
               
               <div class="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-900">
@@ -192,28 +192,28 @@ export interface HeaderMenuPayload {
                   <span>Explore All {{ root.name }}</span>
                   <mat-icon class="text-base">arrow_forward</mat-icon>
                 </a>
-                <span class="text-xs font-extrabold text-[#d65108] bg-[#d65108]/10 px-3 py-1 rounded-full">
+                <span class="text-[10px] font-extrabold text-[#d65108] bg-[#d65108]/10 px-2.5 py-0.5 rounded-full">
                   {{ root.productCount }} Products
                 </span>
               </div>
 
-              <div *ngIf="root.children?.length; else noSubcats" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div *ngFor="let sub of root.children" class="p-3.5 bg-neutral-50 dark:bg-neutral-900/40 rounded-2xl border border-neutral-200/50 dark:border-neutral-850 space-y-2.5 hover:border-[#d65108]/30 transition-colors">
-                  <div class="flex items-center gap-3">
-                    <div *ngIf="sub.image" class="w-10 h-10 rounded-xl bg-white dark:bg-neutral-900 p-1 shrink-0 border border-neutral-200/50 dark:border-neutral-800">
+              <div *ngIf="root.children?.length; else noSubcats" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div *ngFor="let sub of root.children" class="p-3 bg-neutral-50 dark:bg-neutral-900/40 rounded-xl border border-neutral-200/50 dark:border-neutral-850 space-y-2 hover:border-[#d65108]/30 transition-colors">
+                  <div class="flex items-center gap-2.5">
+                    <div *ngIf="sub.image" class="w-8 h-8 rounded-lg bg-white dark:bg-neutral-900 p-0.5 shrink-0 border border-neutral-200/50 dark:border-neutral-800">
                       <img [src]="sub.image" [alt]="sub.name" class="w-full h-full object-contain">
                     </div>
                     <div class="min-w-0 flex-1">
-                      <a [routerLink]="['/category', sub.slug]" (click)="closeMenu()" class="text-xs sm:text-sm font-black uppercase text-neutral-900 dark:text-white hover:text-[#d65108] transition-colors block truncate">
+                      <a [routerLink]="['/category', sub.slug]" (click)="closeMenu()" class="text-xs font-black uppercase text-neutral-900 dark:text-white hover:text-[#d65108] transition-colors block truncate">
                         {{ sub.name }}
                       </a>
-                      <span class="text-[10px] font-bold text-neutral-400 block mt-0.5">{{ sub.productCount }} Products</span>
+                      <span class="text-[9px] font-bold text-neutral-400 block mt-0.5">{{ sub.productCount }} Products</span>
                     </div>
                   </div>
 
                   <!-- Child Categories List -->
-                  <div *ngIf="sub.children?.length" class="space-y-1.5 pt-2 border-t border-neutral-200/30 dark:border-neutral-800/50">
-                    <a *ngFor="let child of sub.children.slice(0, 4)" [routerLink]="['/category', child.slug]" (click)="closeMenu()" class="block text-xs font-bold text-neutral-500 hover:text-[#d65108] transition-colors truncate">
+                  <div *ngIf="sub.children?.length" class="space-y-1 pt-1.5 border-t border-neutral-200/30 dark:border-neutral-800/50">
+                    <a *ngFor="let child of sub.children.slice(0, 4)" [routerLink]="['/category', child.slug]" (click)="closeMenu()" class="block text-[11px] font-bold text-neutral-500 hover:text-[#d65108] transition-colors truncate">
                       • {{ child.name }} ({{ child.productCount }})
                     </a>
                   </div>
@@ -221,7 +221,7 @@ export interface HeaderMenuPayload {
               </div>
 
               <ng-template #noSubcats>
-                <div class="p-8 text-center text-xs sm:text-sm font-semibold text-neutral-400 bg-neutral-50 dark:bg-neutral-900/30 rounded-3xl">
+                <div class="p-6 text-center text-xs font-semibold text-neutral-400 bg-neutral-50 dark:bg-neutral-900/30 rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800">
                   Browse products directly in {{ root.name }} catalog.
                 </div>
               </ng-template>
@@ -233,13 +233,13 @@ export interface HeaderMenuPayload {
           <div class="col-span-12 md:col-span-3 space-y-4">
             
             <!-- Promotional Card -->
-            <div *ngIf="menuData()?.config?.promotionalBanner as banner" class="relative rounded-2xl overflow-hidden bg-neutral-900 text-white p-4 space-y-3 shadow-md group/banner">
+            <div *ngIf="menuData()?.config?.promotionalBanner as banner" class="relative rounded-2xl overflow-hidden bg-neutral-900 text-white p-4 space-y-2 shadow-sm group/banner">
               <img [src]="banner.image" [alt]="banner.title" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover/banner:scale-105 transition-transform duration-500">
-              <div class="relative z-10 space-y-2">
-                <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-orange-500 text-white inline-block">HOT OFFER</span>
-                <h4 class="text-sm font-black uppercase tracking-tight leading-snug">{{ banner.title }}</h4>
-                <p class="text-[10px] text-neutral-200 font-medium line-clamp-2">{{ banner.subtitle }}</p>
-                <a [routerLink]="[banner.link]" (click)="closeMenu()" class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-orange-400 hover:text-white transition-colors pt-1">
+              <div class="relative z-10 space-y-1.5">
+                <span class="px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-orange-500 text-white inline-block">HOT OFFER</span>
+                <h4 class="text-xs font-black uppercase tracking-tight leading-snug">{{ banner.title }}</h4>
+                <p class="text-[9px] text-neutral-200 font-medium line-clamp-2">{{ banner.subtitle }}</p>
+                <a [routerLink]="[banner.link]" (click)="closeMenu()" class="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-orange-400 hover:text-white transition-colors pt-1">
                   <span>{{ banner.ctaText }}</span>
                   <mat-icon class="text-xs">arrow_forward</mat-icon>
                 </a>
@@ -248,12 +248,12 @@ export interface HeaderMenuPayload {
 
             <!-- Mini Best Sellers Preview -->
             <div *ngIf="categoryBestSellers().length" class="space-y-2">
-              <span class="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Category Top Picks</span>
-              <div *ngFor="let p of categoryBestSellers().slice(0, 2)" [routerLink]="['/product', p.slug]" (click)="closeMenu()" class="flex items-center gap-3 p-2 bg-neutral-50 dark:bg-neutral-900/60 rounded-xl hover:bg-neutral-100 cursor-pointer transition-colors">
-                <img *ngIf="p.image" [src]="p.image" [alt]="p.name" class="w-10 h-10 object-cover rounded-lg">
+              <span class="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">Category Top Picks</span>
+              <div *ngFor="let p of categoryBestSellers().slice(0, 2)" [routerLink]="['/product', p.slug]" (click)="closeMenu()" class="flex items-center gap-2.5 p-2 bg-neutral-50 dark:bg-neutral-900/60 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-850 cursor-pointer transition-colors border border-neutral-200/40 dark:border-neutral-800">
+                <img *ngIf="p.image" [src]="p.image" [alt]="p.name" class="w-9 h-9 object-cover rounded-lg shrink-0">
                 <div class="min-w-0 flex-1">
-                  <span class="text-[11px] font-bold text-neutral-900 dark:text-white block truncate">{{ p.name }}</span>
-                  <span class="text-[10px] font-black text-[#d65108]">₹{{ p.salePrice || p.basePrice }}</span>
+                  <span class="text-[10px] font-bold text-neutral-900 dark:text-white block truncate">{{ p.name }}</span>
+                  <span class="text-[9px] font-black text-[#d65108]">₹{{ p.salePrice || p.basePrice }}</span>
                 </div>
               </div>
             </div>
@@ -263,24 +263,24 @@ export interface HeaderMenuPayload {
         </div>
 
         <!-- TAB 2: BRANDS VIEW -->
-        <div *ngIf="!loading() && activeTab() === 'brands'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-5 min-h-[22rem] max-h-96 overflow-y-auto pr-2 scrollbar-none">
+        <div *ngIf="!loading() && activeTab() === 'brands'" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 min-h-[22rem] max-h-96 overflow-y-auto pr-2 scrollbar-none">
           <div 
             *ngFor="let b of filteredBrands()"
             [routerLink]="['/products']"
             [queryParams]="{ brand: b.name }"
             (click)="closeMenu()"
-            class="group/brand p-4 bg-neutral-50 dark:bg-neutral-900/50 hover:bg-white dark:hover:bg-neutral-850 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 hover:border-[#d65108]/40 shadow-xs transition-all cursor-pointer text-center space-y-3 flex flex-col items-center justify-center"
+            class="group/brand p-3.5 bg-neutral-50 dark:bg-neutral-900/50 hover:bg-white dark:hover:bg-neutral-850 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 hover:border-[#d65108]/40 shadow-xs transition-all cursor-pointer text-center space-y-2 flex flex-col items-center justify-center"
           >
-            <div class="w-20 h-20 rounded-2xl bg-white dark:bg-neutral-950 p-3 shadow-xs flex items-center justify-center border border-neutral-100 dark:border-neutral-800 group-hover/brand:scale-110 transition-transform">
+            <div class="w-14 h-14 rounded-xl bg-white dark:bg-neutral-950 p-2 shadow-xs flex items-center justify-center border border-neutral-100 dark:border-neutral-800 group-hover/brand:scale-110 transition-transform">
               <img *ngIf="b.logo" [src]="b.logo" [alt]="b.name" class="max-w-full max-h-full object-contain">
-              <mat-icon *ngIf="!b.logo" class="text-2xl text-neutral-400">label</mat-icon>
+              <mat-icon *ngIf="!b.logo" class="text-xl text-neutral-400">label</mat-icon>
             </div>
             
             <div>
-              <span class="text-xs sm:text-sm font-black uppercase text-neutral-900 dark:text-white block truncate group-hover/brand:text-[#d65108] transition-colors">
+              <span class="text-xs font-black uppercase text-neutral-900 dark:text-white block truncate group-hover/brand:text-[#d65108] transition-colors">
                 {{ b.name }}
               </span>
-              <span class="text-[10px] font-bold text-neutral-400 block mt-0.5">
+              <span class="text-[9px] font-bold text-neutral-400 block mt-0.5">
                 {{ b.productCount }} Products
               </span>
             </div>

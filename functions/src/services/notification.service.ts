@@ -339,19 +339,27 @@ export class NotificationService {
    */
   private static async dispatchFcmPush(payload: NotificationPayload, category: NotificationCategory): Promise<boolean> {
     try {
-      const devices = await prisma.adminNotificationDevice.findMany({
-        where: { isActive: true },
-        select: {
-          id: true,
-          fcmToken: true,
-          isActive: true
-        }
-      });
+      let dbTokens: string[] = [];
+      try {
+        const [dev1, dev2] = await Promise.all([
+          (prisma as any).adminFcmToken.findMany({
+            where: { isActive: true },
+            select: { fcmToken: true },
+          }),
+          prisma.adminNotificationDevice.findMany({
+            where: { isActive: true },
+            select: { fcmToken: true },
+          }),
+        ]);
+        dbTokens = [...dev1.map((d: any) => d.fcmToken), ...dev2.map((d: any) => d.fcmToken)];
+      } catch (e) {
+        console.warn('[NotificationService] DB device query warn:', e);
+      }
 
       // Also gather tokens from fallback legacy JSON file if any
       const legacyTokens = this.getLegacyDeviceTokens();
       const allTokens = Array.from(
-        new Set([...devices.map((d) => d.fcmToken), ...legacyTokens].filter(Boolean))
+        new Set([...dbTokens, ...legacyTokens].filter(Boolean))
       );
 
       if (allTokens.length === 0) {
@@ -363,62 +371,85 @@ export class NotificationService {
       if (!fbAdmin.apps.length) return false;
 
       const targetLink = payload.deepLink || `/admin/${category}`;
-      const fcmMessage = {
-        tokens: allTokens,
-        notification: {
-          title: payload.title,
-          body: payload.body,
-        },
-        data: {
-          type: category,
-          eventKey: payload.eventKey,
-          deepLink: targetLink,
-          click_action: targetLink,
-          title: payload.title,
-          body: payload.body,
-          ...(payload.metadata
-            ? Object.fromEntries(
-                Object.entries(payload.metadata).map(([k, v]) => [k, String(v)])
-              )
-            : {}),
-        },
-        webpush: {
-          fcmOptions: {
-            link: targetLink,
-          },
+      let totalSuccess = 0;
+      let totalFailure = 0;
+      const invalidTokens: string[] = [];
+
+      // Chunk requests if token count exceeds 500
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < allTokens.length; i += BATCH_SIZE) {
+        const batch = allTokens.slice(i, i + BATCH_SIZE);
+        const fcmMessage = {
+          tokens: batch,
           notification: {
             title: payload.title,
             body: payload.body,
-            icon: '/assets/icons/icon-192x192.png',
-            badge: '/assets/icons/badge-72x72.png',
           },
-        },
-      };
+          data: {
+            type: category,
+            eventKey: payload.eventKey,
+            deepLink: targetLink,
+            click_action: targetLink,
+            title: payload.title,
+            body: payload.body,
+            ...(payload.metadata
+              ? Object.fromEntries(
+                  Object.entries(payload.metadata).map(([k, v]) => [k, String(v)])
+                )
+              : {}),
+          },
+          webpush: {
+            fcmOptions: {
+              link: targetLink,
+            },
+            notification: {
+              title: payload.title,
+              body: payload.body,
+              icon: '/assets/icons/icon-192x192.png',
+              badge: '/assets/icons/badge-72x72.png',
+            },
+          },
+        };
 
-      const response = await fbAdmin.messaging().sendEachForMulticast(fcmMessage);
-      console.log(`[NotificationService] FCM Push multicast sent: ${response.successCount} succeeded, ${response.failureCount} failed.`);
+        const response = await fbAdmin.messaging().sendEachForMulticast(fcmMessage);
+        totalSuccess += response.successCount;
+        totalFailure += response.failureCount;
 
-      // Clean up invalid FCM tokens automatically
-      if (response.failureCount > 0) {
-        response.responses.forEach(async (res, idx) => {
-          if (!res.success && res.error) {
-            const errCode = res.error.code;
-            if (
-              errCode === 'messaging/invalid-registration-token' ||
-              errCode === 'messaging/registration-token-not-registered'
-            ) {
-              const badToken = allTokens[idx];
-              console.log(`[NotificationService] Deactivating invalid FCM token: ${badToken.slice(-10)}`);
-              await prisma.adminNotificationDevice.updateMany({
-                where: { fcmToken: badToken },
-                data: { isActive: false },
-              });
+        if (response.failureCount > 0) {
+          response.responses.forEach((res, idx) => {
+            if (!res.success && res.error) {
+              const errCode = res.error.code;
+              if (
+                errCode === 'messaging/invalid-registration-token' ||
+                errCode === 'messaging/registration-token-not-registered'
+              ) {
+                invalidTokens.push(batch[idx]);
+              }
             }
-          }
-        });
+          });
+        }
       }
 
-      return response.successCount > 0;
+      console.log(`[NotificationService] FCM Push multicast sent: ${totalSuccess} succeeded, ${totalFailure} failed.`);
+
+      // Clean up invalid FCM tokens automatically
+      if (invalidTokens.length > 0) {
+        console.log(`[NotificationService] Deactivating ${invalidTokens.length} invalid FCM tokens`);
+        try {
+          await (prisma as any).adminFcmToken.updateMany({
+            where: { fcmToken: { in: invalidTokens } },
+            data: { isActive: false },
+          });
+          await prisma.adminNotificationDevice.updateMany({
+            where: { fcmToken: { in: invalidTokens } },
+            data: { isActive: false },
+          });
+        } catch (e) {
+          console.warn('[NotificationService] Error deactivating tokens in DB:', e);
+        }
+      }
+
+      return totalSuccess > 0;
     } catch (err: any) {
       console.error('[NotificationService] FCM Push Dispatch Error:', err.message || err);
       return false;

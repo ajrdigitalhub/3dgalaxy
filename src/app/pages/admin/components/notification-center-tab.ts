@@ -13,6 +13,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { FormsModule } from "@angular/forms";
 import { catchError } from "rxjs/operators";
 import { of } from "rxjs";
+import { AdminDevicesTab } from "./admin-devices-tab";
 
 export interface AdminNotification {
   id: string;
@@ -39,10 +40,11 @@ export interface ChannelSetting {
 @Component({
   selector: "app-admin-notification-center-tab",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, AdminDevicesTab],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6 text-left">
+
       <!-- HEADER & MAIN MODE TOGGLE -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
         <div>
@@ -79,13 +81,31 @@ export interface ChannelSetting {
             [class.dark:bg-neutral-900]="activeTab() === 'settings'"
             [class.shadow-sm]="activeTab() === 'settings'"
             [class.text-blue-600]="activeTab() === 'settings'"
-            class="px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 text-neutral-600 dark:text-neutral-300"
+            class="px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 text-neutral-600 dark:text-neutral-300 cursor-pointer"
           >
             <mat-icon class="text-sm scale-90">tune</mat-icon>
             Channel Routing Matrix
           </button>
+
+          <button
+            (click)="activeTab.set('devices')"
+            [class.bg-white]="activeTab() === 'devices'"
+            [class.dark:bg-neutral-900]="activeTab() === 'devices'"
+            [class.shadow-sm]="activeTab() === 'devices'"
+            [class.text-blue-600]="activeTab() === 'devices'"
+            class="px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 text-neutral-600 dark:text-neutral-300 cursor-pointer"
+          >
+            <mat-icon class="text-sm scale-90">devices</mat-icon>
+            Registered Devices
+          </button>
         </div>
       </div>
+
+      <!-- VIEW 3: REGISTERED ADMIN DEVICES -->
+      <div *ngIf="activeTab() === 'devices'">
+        <app-admin-devices-tab />
+      </div>
+
 
       <!-- VIEW 1: NOTIFICATION INBOX CENTER -->
       <div *ngIf="activeTab() === 'center'" class="space-y-6">
@@ -319,7 +339,7 @@ export class AdminNotificationCenterTabComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  activeTab = signal<"center" | "settings">("center");
+  activeTab = signal<"center" | "settings" | "devices">("center");
 
   notifications = signal<AdminNotification[]>([]);
   channelSettings = signal<ChannelSetting[]>([]);

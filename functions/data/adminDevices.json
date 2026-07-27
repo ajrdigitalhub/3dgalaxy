@@ -1,5 +1,27 @@
 [
   {
+    "id": "ADM-DEV-1785175698454-e4aqj",
+    "adminId": "admin-main",
+    "deviceName": "Windows (Chrome)",
+    "deviceType": "Desktop",
+    "platform": "Desktop",
+    "browser": "Chrome",
+    "operatingSystem": "Windows",
+    "fcmToken": "c8dM_IhNjyeyS1PRP4tonO:APA91bFuARmoXDZ2YopUtjDD0g4M_ITnrlkWHqzoseeM7D8J7iZNwxPWKAGFluIqu2XnAlZTeFk_ixsrO8aoXZmLjwmwchuhwbEaqDOaOe_CEAsloh6mGi4",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "isActive": true,
+    "notificationPermission": "granted",
+    "lastUsedAt": "2026-07-27T19:41:21.001Z",
+    "createdAt": "2026-07-27T18:08:18.454Z",
+    "updatedAt": "2026-07-27T19:41:21.001Z",
+    "isOnline": true,
+    "adminName": "Administrator",
+    "adminEmail": "admin@3dgalaxy.com",
+    "adminRole": "Super Admin",
+    "notificationEnabled": true
+  },
+  {
     "id": "ADM-DEV-1784573615809",
     "adminId": "admin-main",
     "deviceName": "Windows (Chrome)",
@@ -9,11 +31,13 @@
     "platform": "Desktop",
     "fcmToken": "dhXMS9tm9NWENRBLM47clx:APA91bGrERibWOw36IfCBMXtVHgjl5mYe7IbOZd-sMZwJFh3IYFONEilqq293e6WpHT4x2yBTVejrb8gE1NFhIV9BIHl--52acOmWd6YLqboox_R1G5nYFs",
     "deviceId": "DEV-6d57643659",
-    "isActive": true,
+    "isActive": false,
     "notificationPermission": "granted",
     "lastSeen": "2026-07-20T18:53:54.999Z",
     "lastTokenRefresh": "2026-07-20T18:53:54.999Z",
     "createdAt": "2026-07-20T18:53:35.809Z",
-    "updatedAt": "2026-07-20T18:53:54.999Z"
+    "updatedAt": "2026-07-27T19:41:04.416Z",
+    "isOnline": true,
+    "lastUsedAt": "2026-07-27T19:41:04.416Z"
   }
 ]

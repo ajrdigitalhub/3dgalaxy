@@ -1,0 +1,16 @@
+[debug] [2026-07-27T19:57:31.895Z] ----------------------------------------------------------------------
+[debug] [2026-07-27T19:57:31.897Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-07-27T19:57:31.898Z] CLI Version:   15.19.1
+[debug] [2026-07-27T19:57:31.898Z] Platform:      win32
+[debug] [2026-07-27T19:57:31.898Z] Node Version:  v22.22.3
+[debug] [2026-07-27T19:57:31.898Z] Time:          Tue Jul 28 2026 01:27:31 GMT+0530 (India Standard Time)
+[debug] [2026-07-27T19:57:31.898Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-27T19:57:33.404Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-27T19:57:33.405Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
+[debug] [2026-07-27T19:57:33.405Z] [iam] checking project ajr3dgalaxy for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-07-27T19:57:33.406Z] Checked if tokens are valid: true, expires at: 1785185763135
+[debug] [2026-07-27T19:57:33.406Z] Checked if tokens are valid: true, expires at: 1785185763135
+[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
+[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
+[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}

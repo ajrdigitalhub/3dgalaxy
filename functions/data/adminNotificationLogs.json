@@ -1,5 +1,228 @@
 [
   {
+    "id": "NOTIF-LOG-1785181335555",
+    "title": "🚨 System Admin Notification",
+    "body": "Important operational alert for all system administrators.",
+    "category": "system",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "failedTokens": [],
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:42:15.554Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181320834",
+    "title": "🚨 System Admin Notification",
+    "body": "Important operational alert for all system administrators.",
+    "category": "system",
+    "tokensSent": 2,
+    "successCount": 1,
+    "failureCount": 1,
+    "failedTokens": [
+      "dhXMS9tm9NWENRBLM47clx:APA91bGrERibWOw36IfCBMXtVHgjl5mYe7IbOZd-sMZwJFh3IYFONEilqq293e6WpHT4x2yBTVejrb8gE1NFhIV9BIHl--52acOmWd6YLqboox_R1G5nYFs"
+    ],
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:42:00.833Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181303328",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:41:43.328Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181282372",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:41:22.372Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181268458",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:41:08.458Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181255326",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:55.326Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181254268",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:54.267Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181252499",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:52.499Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181228026",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:28.026Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181219135",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:19.135Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181214871",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:14.871Z"
+  },
+  {
+    "id": "NOTIF-LOG-1785181210796",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-27T19:40:10.796Z"
+  },
+  {
+    "id": "dbc01947-52f6-4195-8b04-0136a2c6cfc4",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-27T17:02:07.607Z"
+    },
+    "sentAt": "2026-07-27T17:02:08.294Z",
+    "isRead": false
+  },
+  {
+    "id": "b3c2d7c4-4dd3-41b8-8bbb-8f66a2f554b2",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-27T17:01:49.896Z"
+    },
+    "sentAt": "2026-07-27T17:01:50.732Z",
+    "isRead": false
+  },
+  {
+    "id": "916c3cd1-9c5e-4391-a24c-1dabf510550a",
+    "title": "🖨️ New 3D Service Request",
+    "body": "admin123 uploaded 3D model \"yamaha order (3).stl\" (Tracking: TRK-781210)",
+    "type": "service",
+    "eventKey": "NEW_SERVICE_REQUEST",
+    "deepLink": "/admin/services",
+    "data": {
+      "material": "PLA",
+      "quantity": 1,
+      "enquiryId": "ENQ-240146",
+      "customerName": "admin123",
+      "trackingNumber": "TRK-781210"
+    },
+    "sentAt": "2026-07-27T16:20:48.365Z",
+    "isRead": false
+  },
+  {
+    "id": "8ecca3f5-8b61-40a4-862b-aca38e79097e",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-27T15:55:10.600Z"
+    },
+    "sentAt": "2026-07-27T15:55:11.222Z",
+    "isRead": false
+  },
+  {
+    "id": "bd50fd94-325c-4a05-9707-888d5c3cdaf6",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-27T15:54:39.878Z"
+    },
+    "sentAt": "2026-07-27T15:54:40.462Z",
+    "isRead": false
+  },
+  {
+    "id": "db78e13c-f201-477b-acb4-72852f01af2f",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Admin push notification channel is active and receiving live events.",
+    "type": "system",
+    "eventKey": "SYSTEM_ALERT",
+    "deepLink": "/admin",
+    "data": {
+      "test": true,
+      "timestamp": "2026-07-27T15:54:30.482Z"
+    },
+    "sentAt": "2026-07-27T15:54:31.372Z",
+    "isRead": false
+  },
+  {
     "id": "ff7b0a23-3d1b-4cd5-b57d-afdc6b225246",
     "title": "🚀 3DGalaxy Admin Push Test",
     "body": "Admin push notification channel is active and receiving live events.",

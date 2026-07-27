@@ -86,12 +86,12 @@ export class App {
       if (val instanceof NavigationEnd) {
         this.currentUrl.set(val.url);
 
-        // Auto close dropdowns on navigation
+        // Auto close mobile drawer & dropdowns on navigation
+        this.closeMobileMenu();
         this.isRoleDropdownOpen.set(false);
         this.isBellOpen.set(false);
         this.isSearchFocused.set(false);
         this.isMobileSearchOpen.set(false);
-        this.isMobileMenuOpen.set(false);
 
         // Capture push notification clicks for attribution tracking
         if (isPlatformBrowser(this.platformId)) {
@@ -137,7 +137,7 @@ export class App {
             this.isSearchFocused.set(false);
           }
           if (this.isMobileMenuOpen() && !target.closest('.mobile-menu-drawer') && !target.closest('.mobile-menu-trigger')) {
-            this.isMobileMenuOpen.set(false);
+            this.closeMobileMenu();
           }
         });
 
@@ -150,9 +150,31 @@ export class App {
           this.isBellOpen.set(false);
           this.isSearchFocused.set(false);
           this.isMobileSearchOpen.set(false);
-          this.isMobileMenuOpen.set(false);
+          this.closeMobileMenu();
         });
       });
+    }
+  }
+
+  openMobileMenu() {
+    this.isMobileMenuOpen.set(true);
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen.set(false);
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  toggleMobileMenu() {
+    if (this.isMobileMenuOpen()) {
+      this.closeMobileMenu();
+    } else {
+      this.openMobileMenu();
     }
   }
 

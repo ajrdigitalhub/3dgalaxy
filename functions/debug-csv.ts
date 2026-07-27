@@ -9,6 +9,8 @@ let current = "";
 let inQuotes = false;
 for (let i = 0; i < raw.length; i += 1) {
   const char = raw[i];
+
+
   const next = raw[i + 1];
 
   if (char === '"') {

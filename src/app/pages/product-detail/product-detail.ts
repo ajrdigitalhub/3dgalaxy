@@ -23,6 +23,8 @@ import { environment } from "../../../environments/environment";
 import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../shared/directives/tilt.directive";
 
+import { ShippingService } from "../../core/services/shipping.service";
+
 @Component({
   selector: "app-product-detail",
   imports: [
@@ -47,6 +49,13 @@ export class ProductDetail {
   api = inject(ApiService);
   toastService = inject(ToastService);
   router = inject(Router);
+  shippingService = inject(ShippingService);
+
+  productShippingInfo = computed(() => {
+    const p = this.product();
+    if (!p) return null;
+    return this.shippingService.getProductShippingInfo(p);
+  });
 
   isAddingToCart = signal(false);
   isSubmittingReview = signal(false);

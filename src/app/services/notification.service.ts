@@ -348,15 +348,23 @@ export class NotificationService {
 
     const user: any = this.ds.currentUser();
     const isAdminRoute = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
-    if (user?.role === "Admin" || isAdminRoute) {
+    if (user?.role === "Admin" || user?.role === "Super Admin" || isAdminRoute) {
+      const adminName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.displayName || "Administrator" : "Super Admin";
+      const adminEmail = user?.email || "admin@3dgalaxy.com";
+      const adminRole = user?.role || "Super Admin";
+
       const adminPayload = {
-        adminId: user?.uid || "admin-main",
-        deviceName: `${os} (${browser})`,
+        adminId: user?.uid || user?.id || "admin-main",
+        adminName,
+        adminEmail,
+        adminRole,
+        deviceName: `${browser} ${userAgent.indexOf("Mobi") > -1 ? "Mobile" : "Desktop"}`,
         browser,
         operatingSystem: os,
-        platform: userAgent.indexOf("Mobi") > -1 ? "Mobile" : "Desktop",
+        platform: os,
+        deviceType: userAgent.indexOf("Mobi") > -1 ? "Mobile" : "Desktop",
         fcmToken: token,
-        notificationPermission: Notification.permission,
+        notificationPermission: typeof Notification !== "undefined" ? Notification.permission : "granted",
       };
       this.registerAdminDevice(adminPayload).subscribe({
         next: () => console.log("Admin FCM device token registered with backend"),
@@ -507,6 +515,26 @@ export class NotificationService {
     return this.api.post("/admin/fcm/register", payload);
   }
 
+  updateAdminDevice(payload: any): Observable<any> {
+    return this.api.put("/admin/fcm/update", payload);
+  }
+
+  deleteAdminDevice(id: string): Observable<any> {
+    return this.api.delete(`/admin/fcm/${id}`);
+  }
+
+  getDeviceDetails(id: string): Observable<any> {
+    return this.api.get(`/admin/fcm/device-details/${id}`);
+  }
+
+  toggleNotificationStatus(payload: { id?: string; fcmToken?: string; notificationEnabled: boolean }): Observable<any> {
+    return this.api.put("/admin/fcm/toggle-notifications", payload);
+  }
+
+  forceRefreshToken(payload: { id?: string; fcmToken?: string }): Observable<any> {
+    return this.api.post("/admin/fcm/refresh-token", payload);
+  }
+
   sendTestNotification(fcmToken: string): Observable<any> {
     return this.api.post("/admin/fcm/test", {
       fcmToken,
@@ -521,14 +549,47 @@ export class NotificationService {
     deepLink?: string;
     data?: any;
   }): Observable<any> {
-    return this.api.post("/notifications/admin/send", payload);
+    return this.api.post("/admin/notifications/broadcast", payload);
+  }
+
+  broadcastAdminNotification(payload: {
+    title: string;
+    body: string;
+    type?: string;
+    deepLink?: string;
+    data?: any;
+  }): Observable<any> {
+    return this.api.post("/admin/notifications/broadcast", payload);
+  }
+
+  getAdminRegisteredDevices(params?: any): Observable<any> {
+    return this.api.get("/admin/fcm/devices", params || {});
+  }
+
+  getAdminDevicesList(params?: any): Observable<any> {
+    return this.api.get("/admin/fcm/devices", params || {});
   }
 
   getAdminDevices(): Observable<any> {
-    return this.api.get("/admin/fcm/devices");
+    return this.api.get("/admin/fcm/active");
+  }
+
+  getDeliveryHistoryLogs(params?: any): Observable<any> {
+    return this.api.get("/admin/fcm/delivery-history", params || {});
   }
 
   getAdminNotificationLogs(): Observable<any> {
-    return this.api.get("/admin/fcm/logs");
+    return this.api.get("/admin/fcm/delivery-history");
+  }
+
+  exportDevicesCsv(): void {
+    if (typeof window !== "undefined") {
+      window.open("/api/admin/fcm/export-csv", "_blank");
+    }
+  }
+
+  cleanupStaleDevices(): Observable<any> {
+    return this.api.post("/admin/fcm/cleanup", {});
   }
 }
+
