@@ -130,6 +130,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/customer", customerRoutes);
 app.use("/api/admin/customers", adminCustomerRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api", reviewRoutes);

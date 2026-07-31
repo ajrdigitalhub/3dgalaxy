@@ -295,20 +295,32 @@ import { firstValueFrom } from "rxjs";
                   </div>
 
                   <!-- CTAs -->
-                  <div class="grid grid-cols-2 gap-2 pt-2">
-                    <button
-                      (click)="$event.stopPropagation(); buyNow(p)"
-                      [disabled]="p.stock <= 0"
-                      class="h-9 bg-theme-gradient hover:opacity-90 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md cursor-pointer disabled:opacity-50"
-                    >
-                      Buy Now
-                    </button>
-                    <a
-                      [routerLink]="['/product', p.slug]"
-                      class="h-9 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center backdrop-blur-xl"
-                    >
-                      Details
-                    </a>
+                  <div class="pt-2">
+                    @if (p.variants && p.variants.length > 0) {
+                      <a
+                        [routerLink]="['/product', p.slug]"
+                        class="w-full h-9 bg-theme-gradient text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md no-underline"
+                      >
+                        <mat-icon class="scale-75">visibility</mat-icon>
+                        <span>View</span>
+                      </a>
+                    } @else {
+                      <div class="grid grid-cols-2 gap-2">
+                        <button
+                          (click)="$event.stopPropagation(); buyNow(p)"
+                          [disabled]="p.stock <= 0"
+                          class="h-9 bg-theme-gradient hover:opacity-90 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1 shadow-md cursor-pointer disabled:opacity-50"
+                        >
+                          Buy Now
+                        </button>
+                        <a
+                          [routerLink]="['/product', p.slug]"
+                          class="h-9 bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10 border border-neutral-200 dark:border-white/10 text-neutral-800 dark:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center backdrop-blur-xl"
+                        >
+                          Details
+                        </a>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
@@ -367,7 +379,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
   originalProductsLength = computed(() => {
     const activeCat = this.ds.filterCategory();
     let list = this.ds.products().filter((p) => p.isFeatured || p.featured);
-    
+
     if (activeCat) {
       const childIds = this.ds.categories()
         .filter((c) => c.parentId === activeCat || c.parent_id === activeCat)
@@ -386,7 +398,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
   featuredProducts = computed(() => {
     const activeCat = this.ds.filterCategory();
     let list = this.ds.products().filter((p) => p.isFeatured || p.featured);
-    
+
     if (activeCat) {
       const childIds = this.ds.categories()
         .filter((c) => c.parentId === activeCat || c.parent_id === activeCat)
@@ -432,7 +444,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
 
   getSafeDescription(description: string): SafeHtml {
     if (!description) return this.sanitizer.bypassSecurityTrustHtml("Premium quality 3D fabrication component.");
-    
+
     // Replace block-level tags that might break layout with space or simple styles
     let cleaned = description
       .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '$1 ')
@@ -441,7 +453,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
       .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
       .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
       .replace(/<iframe[^>]*>([\s\S]*?)<\/iframe>/gi, '');
-      
+
     return this.sanitizer.bypassSecurityTrustHtml(cleaned);
   }
 

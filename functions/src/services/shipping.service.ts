@@ -36,11 +36,15 @@ export class ShippingService {
 
     const settings = customGlobalSettings || (await getSettingsService())?.shippingSettings || {};
     
-    const enableProductShipping = settings.enableProductShipping !== false;
-    const enableCategoryShipping = settings.enableCategoryShipping !== false;
+    const enableProductShipping = settings.enableProductShipping === true;
+    const enableCategoryShipping = settings.enableCategoryShipping === true;
     const enableGlobalShipping = settings.enableGlobalShipping !== false;
-    const defaultShippingCharge = Number(settings.defaultShippingCharge || 0);
-    const freeShippingThreshold = settings.freeShippingThreshold ? Number(settings.freeShippingThreshold) : null;
+    const defaultShippingCharge = settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
+      ? Number(settings.defaultShippingCharge)
+      : 150;
+    const freeShippingThreshold = (settings.freeShippingMinSpent !== undefined && settings.freeShippingMinSpent !== null && !isNaN(Number(settings.freeShippingMinSpent)))
+      ? Number(settings.freeShippingMinSpent)
+      : ((settings.freeShippingThreshold !== undefined && settings.freeShippingThreshold !== null && !isNaN(Number(settings.freeShippingThreshold))) ? Number(settings.freeShippingThreshold) : null);
     const shippingLabel = settings.shippingLabel || 'Delivery Charges';
 
     let totalShippingCharge = 0;
@@ -72,30 +76,32 @@ export class ShippingService {
       let itemSource: 'Product' | 'Category' | 'Global' | 'Free' = 'Free';
       let itemDays = product.estimatedDeliveryDays ? Number(product.estimatedDeliveryDays) : 3;
 
-      // Priority 1: Product Shipping Charge
+      // Priority 1: Product Shipping Charge (only if Product Shipping Engine is enabled)
       const hasProductChargeConfigured =
         product.baseShippingCharge !== null &&
         product.baseShippingCharge !== undefined &&
+        !isNaN(Number(product.baseShippingCharge)) &&
         Number(product.baseShippingCharge) > 0;
       const isProductFreeEligible = product.freeShippingEligible === true;
 
-      if (isProductFreeEligible) {
+      if (enableProductShipping && isProductFreeEligible) {
         itemCharge = 0;
         itemSource = 'Free';
       } else if (enableProductShipping && hasProductChargeConfigured) {
         itemCharge = Number(product.baseShippingCharge);
         itemSource = 'Product';
       } else {
-        // Priority 2: Category Shipping Charge
+        // Priority 2: Category Shipping Charge (only if Category Shipping Engine is enabled)
         const category = product.category;
         const hasCategoryChargeConfigured =
           category &&
           category.shippingCharge !== null &&
           category.shippingCharge !== undefined &&
+          !isNaN(Number(category.shippingCharge)) &&
           Number(category.shippingCharge) > 0;
         const isCategoryFreeEligible = category && category.freeShippingEligible === true;
 
-        if (isCategoryFreeEligible) {
+        if (enableCategoryShipping && isCategoryFreeEligible) {
           itemCharge = 0;
           itemSource = 'Free';
         } else if (enableCategoryShipping && hasCategoryChargeConfigured) {
@@ -105,7 +111,7 @@ export class ShippingService {
             itemDays = Number(category.estimatedDeliveryDays);
           }
         } else {
-          // Priority 3: Global Shipping Charge
+          // Priority 3: Global Shipping Charge (only if Global Shipping Engine is enabled)
           if (enableGlobalShipping && defaultShippingCharge > 0 && !isGlobalThresholdMet) {
             itemCharge = defaultShippingCharge;
             itemSource = 'Global';

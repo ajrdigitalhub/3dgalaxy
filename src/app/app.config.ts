@@ -36,7 +36,7 @@ export const appConfig: ApplicationConfig = {
     provideExperimentalZonelessChangeDetection(),
     provideAppInitializer(() => {
       const settingsService = inject(SettingsService);
-      return settingsService.loadSettings();
+      settingsService.loadSettings();
     }),
     provideAnalytics({
       enabled: true,

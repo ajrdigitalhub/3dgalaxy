@@ -48,17 +48,71 @@ export class CustomerOrderDetailsComponent implements OnInit {
     return "Valued Customer";
   });
 
+  private cleanAddress(rawAddr: any, ord: any) {
+    if (!rawAddr) return null;
+    let addr = { ...rawAddr };
+
+    let fullName = addr.fullName || addr.name || '';
+    let phone = addr.phone || addr.mobile || addr.contactNumber || '';
+    let addressLine1 = addr.addressLine1 || addr.address || '';
+
+    if (addressLine1 && addressLine1.includes('|')) {
+      const parts = addressLine1.split('|').map((p: string) => p.trim());
+      if (parts.length >= 4) {
+        if (!fullName || fullName === 'Customer' || fullName === 'Valued Customer') {
+          if (parts[0] && parts[0] !== 'Customer' && parts[0] !== 'Valued Customer') {
+            fullName = parts[0];
+          }
+        }
+        if (!phone) {
+          if (/^\+?\d{8,15}$/.test(parts[1].replace(/[\s-]/g, ''))) {
+            phone = parts[1];
+          }
+        }
+        addressLine1 = parts.slice(3).join(' | ');
+      }
+    }
+
+    if (!fullName || fullName === 'Customer' || fullName === 'Valued Customer') {
+      const u = ord?.customer?.user;
+      fullName = 
+        ord?.customerName || 
+        ord?.contactDetails?.name || 
+        (u ? [u.firstName, u.lastName].filter(Boolean).join(' ') : null) || 
+        ord?.guestName || 
+        'Valued Customer';
+    }
+
+    if (!phone || phone === 'Not provided') {
+      const u = ord?.customer?.user;
+      phone = 
+        ord?.customerPhone || 
+        ord?.contactDetails?.phone || 
+        ord?.customer?.phone || 
+        u?.mobile || 
+        ord?.guestPhone || 
+        'Not provided';
+    }
+
+    return {
+      ...addr,
+      fullName,
+      phone,
+      addressLine1
+    };
+  }
+
   shippingAddressObj = computed(() => {
     const ord = this.order();
     if (!ord) return null;
-    if (ord.shippingAddress) return ord.shippingAddress;
+    if (ord.shippingAddress) return this.cleanAddress(ord.shippingAddress, ord);
     if (ord.guestAddress) {
       try {
         const parsed =
           typeof ord.guestAddress === "string"
             ? JSON.parse(ord.guestAddress)
             : ord.guestAddress;
-        return {
+        return this.cleanAddress({
           fullName: ord.guestName || "Guest User",
           addressLine1: parsed.addressLine1 || parsed.address || "",
           addressLine2: parsed.addressLine2 || "",
@@ -67,13 +121,13 @@ export class CustomerOrderDetailsComponent implements OnInit {
           postalCode: parsed.postalCode || parsed.pincode || "",
           country: parsed.country || "India",
           phone: ord.guestPhone || "Not provided",
-        };
+        }, ord);
       } catch (e) {
-        return {
+        return this.cleanAddress({
           fullName: ord.guestName || "Guest User",
           addressLine1: ord.guestAddress,
           phone: ord.guestPhone || "Not provided",
-        };
+        }, ord);
       }
     }
     return null;
@@ -82,7 +136,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
   billingAddressObj = computed(() => {
     const ord = this.order();
     if (!ord) return null;
-    if (ord.billingAddress) return ord.billingAddress;
+    if (ord.billingAddress) return this.cleanAddress(ord.billingAddress, ord);
     return this.shippingAddressObj();
   });
 

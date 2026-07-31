@@ -1,6 +1,7 @@
 import prisma from "../config/database";
 import { triggerWhatsAppNotification, getWhatsappSettings } from "../controllers/whatsapp";
 import { NotificationService } from "./notification.service";
+import { WhatsAppNotificationService } from "./whatsappNotificationService";
 
 export interface NotificationResult {
   customerWhatsApp: boolean;
@@ -45,30 +46,46 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
     // Cast to any for flexible field access across different order shapes
     const orderAny = order as any;
 
-    // Customer Name Resolution
+    // Customer Name & Phone Resolution
     const customerObj = order.customer;
-    const custName =
-      (orderAny.customerName) ||
-      (customerObj?.user
-        ? `${customerObj.user.firstName || ''} ${customerObj.user.lastName || ''}`.trim()
-        : 'Customer');
-
-    // Customer Phone Resolution
-    let custPhone = customerObj?.phone || customerObj?.user?.mobile || '';
-    if (!custPhone && order.shippingAddress) {
-      const addrObj = typeof order.shippingAddress === 'string'
-        ? (function() { try { return JSON.parse(order.shippingAddress as any); } catch { return {}; } })()
-        : (order.shippingAddress as any);
-      custPhone = addrObj?.phone || addrObj?.contactNumber || '';
+    let custName = orderAny.customerName || '';
+    if (!custName && customerObj?.user) {
+      custName = `${customerObj.user.firstName || ''} ${customerObj.user.lastName || ''}`.trim();
     }
+
+    let custPhone = customerObj?.phone || customerObj?.user?.mobile || orderAny.customerPhone || orderAny.mobile || orderAny.phone || '';
+
+    if (order.shippingAddress) {
+      let addrObj: any = order.shippingAddress;
+      if (typeof addrObj === 'string' && addrObj.trim().startsWith('{')) {
+        try { addrObj = JSON.parse(addrObj); } catch (e) {}
+      }
+
+      if (addrObj && typeof addrObj === 'object') {
+        if (!custPhone) {
+          custPhone = addrObj.phone || addrObj.mobile || addrObj.contactNumber || addrObj.phoneNumber || '';
+        }
+        if (!custPhone && addrObj.addressLine1 && typeof addrObj.addressLine1 === 'string' && addrObj.addressLine1.includes('|')) {
+          const parts = addrObj.addressLine1.split('|').map((p: string) => p.trim());
+          if (parts.length >= 2 && /^\+?\d{8,15}$/.test(parts[1].replace(/[\s-]/g, ''))) {
+            custPhone = parts[1];
+          }
+          if (!custName && parts[0]) {
+            custName = parts[0];
+          }
+        }
+      }
+    }
+
+    if (!custName) custName = 'Customer';
 
     // 1. CUSTOMER WHATSAPP NOTIFICATION
     if (custPhone && custPhone.trim().length >= 8) {
       try {
-        console.log(`[OrderNotificationPipeline] Sending Customer WhatsApp to ${custPhone}...`);
-        await triggerWhatsAppNotification('order_placed', custPhone, order, customerObj);
-        result.customerWhatsApp = true;
-        result.logs.push(`Customer WhatsApp dispatched to ${custPhone}`);
+        console.log(`[OrderNotificationPipeline] Sending Customer WhatsApp (order_confirmation_client_3dgal with PDF) to ${custPhone}...`);
+        const custRes = await WhatsAppNotificationService.sendOrderConfirmation(order, { recipientNumber: custPhone, customerName: custName });
+        result.customerWhatsApp = custRes.success;
+        result.logs.push(`Customer WhatsApp (order_confirmation_client_3dgal): ${custRes.success ? 'SENT' : 'FAILED (' + custRes.error + ')'}`);
       } catch (waErr: any) {
         console.error(`[OrderNotificationPipeline] Customer WhatsApp error:`, waErr);
         result.logs.push(`Customer WhatsApp failed: ${waErr.message}`);
@@ -78,7 +95,7 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
       result.logs.push(`No customer phone number available.`);
     }
 
-    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp Restricted to New Order)
+    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp order_confirmation_admin_3dgal to all active admins)
     try {
       const pushTitle = `🛒 New Order Received`;
       const pushBody = `${custName} placed Order #${order.orderNumber || order.id} for ₹${Number(order.totalAmount).toFixed(2)}`;
@@ -98,9 +115,12 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
         order,
       });
 
-      result.adminWhatsApp = dispatchResult.whatsappSent;
+      // Dispatch Order Notification to all Active Admin WhatsApp Numbers
+      const adminWaResult = await WhatsAppNotificationService.sendAdminOrderNotification(order);
+
+      result.adminWhatsApp = adminWaResult.success;
       result.adminPush = dispatchResult.pushSent;
-      result.logs.push(`Admin Central Dispatch: Push ${dispatchResult.pushSent ? 'SENT' : 'SKIPPED'}, WhatsApp ${dispatchResult.whatsappSent ? 'SENT' : 'SKIPPED'}`);
+      result.logs.push(`Admin Central Dispatch: Push ${dispatchResult.pushSent ? 'SENT' : 'SKIPPED'}, WhatsApp ${adminWaResult.success ? 'SENT (' + adminWaResult.dispatchedCount + ' admins)' : 'SKIPPED/FAILED'}`);
     } catch (adminErr: any) {
       console.error(`[OrderNotificationPipeline] Admin Central Dispatch error:`, adminErr);
       result.logs.push(`Admin Dispatch failed: ${adminErr.message}`);

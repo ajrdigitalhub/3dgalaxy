@@ -549,24 +549,16 @@ export class SettingsService {
       gradSettings.gradient ||
       `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
 
-    // Theme active mode resolution:
-    // 1. Explicit themeData.darkMode parameter passed to applyTheme
-    // 2. User's explicit saved preference in localStorage ('3d_galaxy_theme' or 'theme')
-    // 3. Backend database configuration (d.darkMode)
+    // Theme active mode resolution strictly from Settings API:
     let isDarkMode = false;
-    let userPrefMode: boolean | null = null;
-    if (typeof localStorage !== "undefined") {
-      const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
-      if (savedTheme === "light") userPrefMode = false;
-      else if (savedTheme === "dark") userPrefMode = true;
-    }
-
     if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
       isDarkMode = Boolean(themeData.darkMode);
-    } else if (userPrefMode !== null) {
-      isDarkMode = userPrefMode;
-    } else if (d.darkMode !== undefined && d.darkMode !== null) {
+    } else if (d && d.darkMode !== undefined && d.darkMode !== null) {
       isDarkMode = Boolean(d.darkMode);
+    } else if (typeof localStorage !== "undefined") {
+      const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
+      if (savedTheme === "dark") isDarkMode = true;
+      else if (savedTheme === "light") isDarkMode = false;
     }
 
     const lightColors = d.lightThemeColors || {};

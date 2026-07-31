@@ -696,14 +696,16 @@ export const runDailyAdminDeviceCleanup = async () => {
 
     // Deactivate tokens inactive for > 90 days
     try {
-      const res = await (prisma as any).adminFcmToken.updateMany({
-        where: {
-          lastUsedAt: { lt: ninetyDaysAgo },
-          isActive: true,
-        },
-        data: { isActive: false },
-      });
-      console.log(`🧹 Deactivated ${res.count} admin device tokens inactive for > 90 days.`);
+      if ((prisma as any).adminFcmToken?.updateMany) {
+        const res = await (prisma as any).adminFcmToken.updateMany({
+          where: {
+            lastUsedAt: { lt: ninetyDaysAgo },
+            isActive: true,
+          },
+          data: { isActive: false },
+        });
+        console.log(`🧹 Deactivated ${res.count} admin device tokens inactive for > 90 days.`);
+      }
     } catch (e) {
       console.warn("DB Admin token cleanup warn:", e);
     }

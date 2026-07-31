@@ -14,6 +14,7 @@ import {
 import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
 import { SettingsService, DEFAULT_FOOTER_GROUPS, DEFAULT_PAYMENT_ICONS } from '../core/services/settings.service';
+import { ShippingService } from '../core/services/shipping.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
@@ -145,6 +146,18 @@ export interface Product {
   warningText?: string;
   avgRating?: number;
   ratingCount?: number;
+  averageRating?: number;
+  totalReviews?: number;
+  rating?: number;
+  reviewCount?: number;
+  ratingDistribution?: {
+    '1': number;
+    '2': number;
+    '3': number;
+    '4': number;
+    '5': number;
+  };
+  latestReview?: any;
   options?: any[];
   variants?: ProductVariant[];
   status?: 'active' | 'draft' | 'out_of_stock';
@@ -540,8 +553,19 @@ export class DatastoreService {
     codAvailable: boolean;
   } | null>(null);
 
+  isCodAvailable(p: any): boolean {
+    if (!p) return false;
+    if (p.codAvailable !== undefined && p.codAvailable !== null) {
+      return Boolean(p.codAvailable);
+    }
+    if (p.is_cod_available !== undefined && p.is_cod_available !== null) {
+      return Boolean(p.is_cod_available);
+    }
+    return true;
+  }
+
   setBuyNowItem(item: { product: Product; variant?: ProductVariant | null; quantity: number; options?: any }) {
-    const codAvailable = item.product.codAvailable !== false && (!item.variant || item.variant.codAvailable !== false);
+    const codAvailable = this.isCodAvailable(item.product) && (!item.variant || item.variant.codAvailable !== false);
     const sessionData = { ...item, codAvailable };
     this.buyNowItem.set(sessionData);
     if (isPlatformBrowser(this.platformId)) {
@@ -586,7 +610,7 @@ export class DatastoreService {
     return items.every((item: any) => {
       const p = item.product;
       const v = item.variant;
-      const pCod = p?.codAvailable !== false;
+      const pCod = this.isCodAvailable(p);
       const vCod = !v || v?.codAvailable !== false;
       return pCod && vCod;
     });
@@ -597,7 +621,8 @@ export class DatastoreService {
     const items = this.activeCheckoutItems();
     if (!items || items.length === 0) return 0;
     return items.reduce((sum: number, item: any) => {
-      const price = item.variant?.price ? Number(item.variant.price) : (item.product?.salePrice ? Number(item.product.salePrice) : Number(item.product?.basePrice || item.product?.price || 0));
+      if (item.isFree) return sum;
+      const price = this.getItemPrice(item);
       return sum + price * (item.quantity || 1);
     }, 0);
   });
@@ -790,6 +815,7 @@ export class DatastoreService {
   private platformId = inject(PLATFORM_ID);
   api = inject(ApiService);
   settingsService = inject(SettingsService);
+  shippingService = inject(ShippingService);
   private injector = inject(Injector);
   private router = inject(Router);
   private toastService = inject(ToastService);
@@ -850,26 +876,16 @@ export class DatastoreService {
     }
     
     // Sync theme class & SettingsService theme updates
-    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
-      if (savedTheme === 'dark' || savedTheme === 'light') {
-        this.theme.set(savedTheme);
-      }
-    }
-
     effect(() => {
       this.syncThemeClass(this.theme());
     });
 
     effect(() => {
       const themeData = this.settingsService.theme();
-      if (themeData && themeData.darkMode !== undefined) {
-        const hasUserPref = typeof localStorage !== 'undefined' && (localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme'));
-        if (!hasUserPref) {
-          const targetMode = themeData.darkMode ? 'dark' : 'light';
-          if (this.theme() !== targetMode) {
-            this.theme.set(targetMode);
-          }
+      if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
+        const targetMode = themeData.darkMode ? 'dark' : 'light';
+        if (this.theme() !== targetMode) {
+          this.theme.set(targetMode);
         }
       }
     });
@@ -1599,7 +1615,7 @@ export class DatastoreService {
       featured: !!p.isFeatured || !!p.featured,
       isFeatured: !!p.isFeatured || !!p.featured,
       isExclusive: !!p.isExclusive,
-      codAvailable: !!p.codAvailable,
+      codAvailable: this.isCodAvailable(p),
       freeShippingEligible: !!p.freeShippingEligible,
       is360Supported: p.is360Supported || false,
       variants: p.variants || [],
@@ -2053,6 +2069,7 @@ export class DatastoreService {
   }
 
   addToCart(product: Product, quantity = 1, variant?: ProductVariant) {
+    this.clearBuyNowItem();
     this.cart.update(items => {
       const isVariantMatch = (i: CartItem) => {
          if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
@@ -2109,7 +2126,7 @@ export class DatastoreService {
   applyCoupon(code: string): boolean {
     const matched = this.coupons().find(c => c.code.toUpperCase() === code.trim().toUpperCase());
     if (matched) {
-      const sub = this.cartSubtotal();
+      const sub = this.checkoutSubtotal();
       if (sub >= matched.minSpent) {
         this.activeCouponCode.set(matched.code);
         const discount = Math.round((sub * matched.discountPercent) / 100);
@@ -2148,20 +2165,9 @@ export class DatastoreService {
   });
 
   cartShipping = computed(() => {
-    const sub = this.cartSubtotal();
-    if (sub === 0) return 0;
-
-    const threshold = this.freeShippingThreshold();
-    if (sub >= threshold) return 0;
-
-    const productShipping = this.resolvedCartItems().reduce((sum, item) => {
-      if (item.isFree) return sum;
-      return sum + (item.product.baseShippingCharge ? Number(item.product.baseShippingCharge) : 0);
-    }, 0);
-
-    const globalSettings = this.settingsService.shippingSettings() || {};
-    const baseRate = globalSettings.fixedCourierRate !== undefined ? Number(globalSettings.fixedCourierRate) : 150;
-    return productShipping > 0 ? productShipping : baseRate;
+    const items = this.groupedCartItems();
+    if (!items || items.length === 0) return 0;
+    return this.shippingService.calculateCartShipping(items).shippingCharge;
   });
 
   cartTax = computed(() => {
@@ -2169,15 +2175,16 @@ export class DatastoreService {
   });
 
   cartGrandTotal = computed(() => {
-    return this.cartSubtotal() - this.couponDiscountAmount() + this.cartShipping() + this.cartTax();
+    return Math.max(0, this.cartSubtotal() - this.couponDiscountAmount() + this.cartShipping() + this.cartTax());
   });
 
   recalcDiscount() {
     const code = this.activeCouponCode();
     if (code) {
       const matched = this.coupons().find(c => c.code.toUpperCase() === code.toUpperCase());
-      if (matched && this.cartSubtotal() >= matched.minSpent) {
-        this.couponDiscountAmount.set(Math.round((this.cartSubtotal() * matched.discountPercent) / 100));
+      const sub = this.checkoutSubtotal();
+      if (matched && sub >= matched.minSpent) {
+        this.couponDiscountAmount.set(Math.round((sub * matched.discountPercent) / 100));
       } else {
         this.removeCoupon();
       }

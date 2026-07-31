@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import crypto from 'crypto';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { getSettingsService } from '../modules/settings/settings.service';
+import { ShippingService } from '../services/shipping.service';
 import { createOrder, restoreInventory } from './order';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
 
@@ -230,25 +231,47 @@ export const processOrderCreation = async (tx: any, payload: any) => {
 
   if (shippingAddress) {
     const isObj = typeof shippingAddress === 'object' && shippingAddress !== null;
-    const addrLine1 = isObj ? (shippingAddress.addressLine1 || shippingAddress.address || 'N/A') : shippingAddress;
-    const addrLine2 = isObj ? (shippingAddress.addressLine2 || '') : '';
+    const name = isObj ? (shippingAddress.fullName || shippingAddress.name || customerName || '') : '';
+    const phone = isObj ? (shippingAddress.phone || shippingAddress.mobile || customerPhone || '') : '';
+    const addressType = isObj ? (shippingAddress.addressType || 'home') : 'home';
+
+    const rawLine1 = isObj ? (shippingAddress.street || (shippingAddress.houseNo ? `${shippingAddress.houseNo || ''} ${shippingAddress.street || ''}`.trim() : (shippingAddress.addressLine1 || shippingAddress.address || 'N/A'))) : shippingAddress;
+    const addrLine2 = isObj ? (shippingAddress.addressLine2 || shippingAddress.landmark || '') : '';
     const city = isObj ? (shippingAddress.city || 'N/A') : 'City';
     const state = isObj ? (shippingAddress.state || 'N/A') : 'State';
     const postalCode = isObj ? (shippingAddress.postalCode || shippingAddress.pincode || 'N/A') : '100001';
     const country = isObj ? (shippingAddress.country || 'India') : 'India';
 
-    const shipAddr = await tx.customerAddress.create({
-      data: {
+    let formattedLine1 = rawLine1;
+    if (!rawLine1.includes('|')) {
+      formattedLine1 = `${name || 'Customer'} | ${phone || ''} | ${addressType} | ${rawLine1}`.trim();
+    }
+
+    let shipAddr = await tx.customerAddress.findFirst({
+      where: {
         customerId,
-        addressLine1: addrLine1,
-        addressLine2: addrLine2,
-        city,
-        state,
-        postalCode,
-        country,
-        isDefault: !userId
+        OR: [
+          { addressLine1: formattedLine1 },
+          { addressLine1: rawLine1 },
+          ...(postalCode !== '100001' && postalCode !== 'N/A' ? [{ postalCode, city }] : [])
+        ]
       }
     });
+
+    if (!shipAddr) {
+      shipAddr = await tx.customerAddress.create({
+        data: {
+          customerId,
+          addressLine1: formattedLine1,
+          addressLine2: addrLine2,
+          city,
+          state,
+          postalCode,
+          country,
+          isDefault: !userId
+        }
+      });
+    }
     shippingAddressId = shipAddr.id;
     billingAddressId = shipAddr.id;
 
@@ -261,7 +284,7 @@ export const processOrderCreation = async (tx: any, payload: any) => {
       const billPostalCode = isBillObj ? (billingAddress.postalCode || billingAddress.pincode || 'N/A') : '100001';
       const billCountry = isBillObj ? (billingAddress.country || 'India') : 'India';
 
-      if (billAddrLine1 !== addrLine1) {
+      if (billAddrLine1 !== rawLine1) {
         const billAddr = await tx.customerAddress.create({
           data: {
             customerId,
@@ -443,7 +466,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       }
 
       return order;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     // Dispatch notifications after successful payment verification (non-blocking)
     dispatchOrderNotifications(createdOrder.id).catch((notifErr) => {
@@ -685,7 +708,7 @@ export const handleRazorpayWebhook = async (req: any, res: Response) => {
                   });
                 }
                 return order;
-              });
+              }, { maxWait: 15000, timeout: 30000 });
               orderId = createdOrder.id;
             }
           } else {
@@ -1237,7 +1260,8 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     }
 
     // Server-side calculation
-    const shippingAmount = subtotal >= 1000 ? 0 : 99;
+    const shippingResult = await ShippingService.calculateShipping(items);
+    const shippingAmount = shippingResult.shippingCharge;
     const taxAmount = 0;
     let discountAmount = 0;
 
@@ -1264,10 +1288,11 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
           error: 'Cash on Delivery is available only for eligible products with a cart total of ₹2,500 or below.'
         });
       }
-      codCharge = 100;
+      const shippingSettings = (await getSettingsService())?.shippingSettings || {};
+      codCharge = shippingSettings.codHandlingCharge !== undefined ? Number(shippingSettings.codHandlingCharge) : 100;
     }
 
-    const calculatedTotal = subtotal + shippingAmount + taxAmount + codCharge - discountAmount;
+    const calculatedTotal = Math.max(0, subtotal + shippingAmount + taxAmount + codCharge - discountAmount);
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
 
@@ -1302,7 +1327,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
           paymentStatus: 'PENDING',
           paidAmount: 0
         });
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       // Dispatch notifications for COD order placement
       dispatchOrderNotifications(createdOrder.id).catch(err => console.error('[COD Notification Error]:', err));

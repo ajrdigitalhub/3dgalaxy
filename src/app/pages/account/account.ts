@@ -21,6 +21,10 @@ import { ApiService } from "../../services/api.service";
 import { NotificationService } from "../../services/notification.service";
 import { ServiceEnquiryService } from "../../core/services/service-enquiry.service";
 import { environment } from "../../../environments/environment";
+import { AccountProductCardComponent, AccountProduct } from "./components/account-product-card.component";
+import { AccountOrderCardComponent, AccountOrder } from "./components/account-order-card.component";
+import { AccountReviewsComponent } from "./components/account-reviews.component";
+import { AccountAddressesComponent } from "./components/account-addresses.component";
 
 @Component({
   selector: "app-account",
@@ -31,6 +35,10 @@ import { environment } from "../../../environments/environment";
     ReactiveFormsModule,
     MatIconModule,
     RouterModule,
+    AccountProductCardComponent,
+    AccountOrderCardComponent,
+    AccountReviewsComponent,
+    AccountAddressesComponent,
   ],
   templateUrl: "./account.html",
 })
@@ -49,13 +57,74 @@ export class Account {
   myOrders = signal<any[]>([]);
   myServiceRequests = this.enquiryService.myEnquiries;
   wishlist = signal<any[]>([]);
+  savedForLater = signal<any[]>([]);
+  recentlyViewedItems = signal<any[]>([]);
   isOrdersLoading = signal(true);
   isWishlistLoading = signal(true);
   isProfileSaving = signal(false);
 
+  // Wishlist Toolbar Signals
+  wishlistSearch = signal<string>("");
+  wishlistSort = signal<string>("newest");
+
+  // Computed Filtered & Sorted Wishlist
+  filteredWishlist = computed(() => {
+    let items = [...this.wishlist()];
+    const query = this.wishlistSearch().trim().toLowerCase();
+
+    if (query) {
+      items = items.filter((item) => {
+        const name = (item.product?.name || "").toLowerCase();
+        const brand = (item.product?.brand || "").toLowerCase();
+        return name.includes(query) || brand.includes(query);
+      });
+    }
+
+    const sortBy = this.wishlistSort();
+    if (sortBy === "price-asc") {
+      items.sort((a, b) => (a.product?.salePrice || a.product?.price || 0) - (b.product?.salePrice || b.product?.price || 0));
+    } else if (sortBy === "price-desc") {
+      items.sort((a, b) => (b.product?.salePrice || b.product?.price || 0) - (a.product?.salePrice || a.product?.price || 0));
+    } else if (sortBy === "rating") {
+      items.sort((a, b) => (b.product?.rating || 4.8) - (a.product?.rating || 4.8));
+    }
+
+    return items;
+  });
+
+  totalWishlistCount = computed(() => this.wishlist().length);
   totalOrdersCount = computed(() => this.myOrders().length);
-  totalSpentAmount = computed(() => this.myOrders().reduce((sum, o) => sum + o.grandTotal, 0));
+  totalSpentAmount = computed(() => this.myOrders().reduce((sum, o) => sum + (o.grandTotal || 0), 0));
+  formattedTotalSpent = computed(() => this.totalSpentAmount().toLocaleString('en-IN'));
   activeOrdersCount = computed(() => this.myOrders().filter(o => ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'out for delivery'].includes(o.status.toLowerCase())).length);
+  myReviewsCount = signal<number>(0);
+
+  greetingMessage = computed(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning ☀️';
+    if (hour < 17) return 'Good Afternoon 🌤️';
+    return 'Good Evening 🌙';
+  });
+
+  customerName = computed(() => this.profile()?.name || 'Valued Customer');
+  customerEmail = computed(() => this.profile()?.email || '');
+  customerInitials = computed(() => {
+    const name = this.customerName();
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return (name[0] || 'U').toUpperCase();
+  });
+
+  profileCompletion = computed(() => {
+    const p = this.profile();
+    if (!p) return 20;
+    let score = 20;
+    if (p.name) score += 20;
+    if (p.email) score += 20;
+    if (p.phone) score += 20;
+    if (p.profileImage) score += 20;
+    return Math.min(100, score);
+  });
 
   activeTab = signal("dashboard");
 
@@ -83,6 +152,12 @@ export class Account {
       label: "Wishlist",
       icon: "favorite",
       path: "/account/wishlist",
+    },
+    {
+      id: "saved",
+      label: "Saved For Later",
+      icon: "bookmark",
+      path: "/account/saved",
     },
     {
       id: "addresses",
@@ -145,6 +220,8 @@ export class Account {
         });
         this.fetchMyOrders();
         this.fetchWishlist();
+        this.loadSavedForLater();
+        this.loadRecentlyViewed();
       }
     });
   }
@@ -173,13 +250,14 @@ export class Account {
         orders.map((o: any) => ({
           id: o.id,
           orderNumber: o.orderNumber,
-          date: new Date(o.createdAt).toLocaleDateString(),
+          date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
           status: o.status ? o.status.toLowerCase() : "pending",
           items: (o.items || []).map((i: any) => ({
             productId: i.productId,
-            name: i.product?.name || "Product",
+            name: i.product?.name || "3D Printing Product",
             quantity: i.quantity,
             price: i.unitPrice || i.price,
+            image: i.product?.primaryImage || i.product?.images?.[0]?.url || i.product?.images?.[0] || null,
           })),
           grandTotal: Number(o.totalAmount) || 0,
           subtotal:
@@ -252,13 +330,145 @@ export class Account {
   }
 
   addToCartFromWishlist(item: any) {
-    this.ds.addToCart(item.product);
-    this.removeFromWishlist(item.productId);
+    const prod = item.product || item;
+    const productId = item.productId || prod.id;
+    this.ds.addToCart(prod);
+    if (productId) {
+      this.removeFromWishlist(productId);
+    }
+    this.toastService.success(`Added ${prod.name || 'product'} to cart`);
+  }
+
+  async moveAllWishlistToCart() {
+    const items = this.filteredWishlist();
+    if (items.length === 0) {
+      this.toastService.info("No items in wishlist to move");
+      return;
+    }
+
+    for (const item of items) {
+      if (item.product) {
+        this.ds.addToCart(item.product);
+        if (item.productId) {
+          await this.removeFromWishlist(item.productId);
+        }
+      }
+    }
+    this.toastService.success(`Moved ${items.length} item(s) to cart`);
     this.router.navigate(["/cart"]);
+  }
+
+  async clearWishlist() {
+    const items = [...this.wishlist()];
+    if (items.length === 0) return;
+
+    for (const item of items) {
+      if (item.productId) {
+        await this.removeFromWishlist(item.productId);
+      }
+    }
+    this.wishlist.set([]);
+    this.toastService.success("Wishlist cleared");
+  }
+
+  // Saved for Later helpers
+  loadSavedForLater() {
+    try {
+      const stored = localStorage.getItem("account_saved_items");
+      if (stored) {
+        this.savedForLater.set(JSON.parse(stored));
+      }
+    } catch (e) {
+      this.savedForLater.set([]);
+    }
+  }
+
+  saveForLater(product: any) {
+    const current = this.savedForLater();
+    if (!current.some((i) => (i.id || i.productId) === (product.id || product.productId))) {
+      const updated = [...current, product];
+      this.savedForLater.set(updated);
+      localStorage.setItem("account_saved_items", JSON.stringify(updated));
+      this.toastService.success("Saved for later");
+    }
+  }
+
+  removeFromSaved(productId: string) {
+    const updated = this.savedForLater().filter((i) => (i.id || i.productId) !== productId);
+    this.savedForLater.set(updated);
+    localStorage.setItem("account_saved_items", JSON.stringify(updated));
+    this.toastService.info("Removed from saved items");
+  }
+
+  moveToCartFromSaved(product: any) {
+    this.ds.addToCart(product);
+    this.removeFromSaved(product.id || product.productId);
+    this.toastService.success(`Moved ${product.name} to cart`);
+  }
+
+  // Recently Viewed helpers
+  loadRecentlyViewed() {
+    try {
+      const stored = localStorage.getItem("account_recently_viewed");
+      if (stored) {
+        this.recentlyViewedItems.set(JSON.parse(stored));
+      } else {
+        // Fallback default sample items if empty
+        const sampleProducts = (this.ds.products() || []).slice(0, 6);
+        this.recentlyViewedItems.set(sampleProducts);
+      }
+    } catch (e) {
+      this.recentlyViewedItems.set([]);
+    }
+  }
+
+  // Reorder Order Items
+  reorder(order: any) {
+    if (order.items && order.items.length > 0) {
+      for (const item of order.items) {
+        this.ds.addToCart({
+          id: item.productId || 'prod-reorder',
+          name: item.name,
+          mrp: item.price * 1.2,
+          sale_price: item.price,
+          stock: 50,
+          brand: '3D GALAXY',
+          slug: 'product',
+          sku: 'SKU-' + (item.productId || 'REORDER'),
+          barcode: 'BC-' + (item.productId || 'REORDER'),
+          category_id: 'reorder',
+          description: item.name,
+          dealer_price: item.price,
+          reserved: 0,
+          images: item.image ? [item.image] : [],
+          specs: [],
+          reviews: [],
+          qnas: [],
+          featured: false,
+          is360Supported: false,
+          tags: []
+        }, item.quantity || 1);
+      }
+      this.toastService.success(`Items from order #${order.orderNumber} added to cart!`);
+      this.router.navigate(["/cart"]);
+    }
+  }
+
+  addToCart(product: any) {
+    this.ds.addToCart(product);
+    this.toastService.success(`Added ${product.name || 'Product'} to cart!`);
   }
 
   trackTabId(index: number, tab: { id: string }) {
     return tab?.id || index;
+  }
+
+  trackProductId(index: number, item: any) {
+    return item?.productId || item?.id || index;
+  }
+
+  trackOrderId(index: number, item: any) {
+    return item?.orderNumber || item?.id || index;
   }
 
   fetchMyServiceRequests() {

@@ -23,6 +23,7 @@ export class CartCheckout implements OnInit {
   showOffers = signal(false);
 
   ngOnInit() {
+    this.ds.clearBuyNowItem();
     this.ds.reloadProducts(false);
   }
 
@@ -67,6 +68,7 @@ export class CartCheckout implements OnInit {
   }
 
   proceedToCheckout() {
+    this.ds.clearBuyNowItem();
     this.router.navigate(['/checkout']);
   }
 }

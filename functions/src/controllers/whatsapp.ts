@@ -6,6 +6,8 @@ import PDFDocument from 'pdfkit';
 import prisma from '../config/database';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { getSettingsService } from '../modules/settings/settings.service';
+import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
+import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 
 // Helper to get WhatsApp settings
 export const getWhatsappSettings = async () => {
@@ -51,21 +53,21 @@ function resolvePlaceholders(order: any, customer: any, settings: any, extraPara
   }
   
   return {
-    customer_name: customerName,
-    order_id: order?.orderNumber || order?.id || 'N/A',
-    tracking_number: order?.trackingNumber || 'N/A',
-    courier: order?.courier || 'N/A',
-    estimated_delivery: order?.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'N/A',
-    payment_status: order?.paymentStatus || order?.payment?.status || 'Pending',
-    order_total: String(order?.totalAmount || '0'),
-    currency: settings.currency || 'INR',
-    invoice_url: order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : 'N/A',
-    store_name: storeName,
-    support_phone: supportPhone,
-    support_email: supportEmail,
-    site_url: siteUrl,
-    order_items: orderItems,
-    shipping_address: shippingAddress,
+    customer_name: sanitizeTemplateParam(customerName, 'Customer'),
+    order_id: sanitizeTemplateParam(order?.orderNumber || order?.id, 'N/A'),
+    tracking_number: sanitizeTemplateParam(order?.trackingNumber, 'N/A'),
+    courier: sanitizeTemplateParam(order?.courier, 'N/A'),
+    estimated_delivery: sanitizeTemplateParam(order?.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'N/A'),
+    payment_status: sanitizeTemplateParam(order?.paymentStatus || order?.payment?.status, 'Pending'),
+    order_total: sanitizeTemplateParam(String(order?.totalAmount || '0')),
+    currency: sanitizeTemplateParam(settings.currency, 'INR'),
+    invoice_url: sanitizeTemplateParam(order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : 'N/A'),
+    store_name: sanitizeTemplateParam(storeName, '3D Galaxy'),
+    support_phone: sanitizeTemplateParam(supportPhone, '9999999999'),
+    support_email: sanitizeTemplateParam(supportEmail, 'support@3dgalaxy.com'),
+    site_url: sanitizeTemplateParam(siteUrl, 'http://localhost:4200'),
+    order_items: sanitizeTemplateParam(orderItems, 'Order Items'),
+    shipping_address: sanitizeTemplateParam(shippingAddress, 'Address details in Admin'),
     ...extraParams
   };
 }
@@ -280,126 +282,16 @@ export function getDynamicOrderStatusContent(
   extraParams: any = {},
   settings: any = {}
 ) {
-  const normalizedKey = String(statusKey || '').toLowerCase().replace(/[\s_-]+/g, '');
   const siteName = settings.storeName || '3D Galaxy';
+  const content = WhatsAppNotificationService.generateStatusContent(statusKey, order, extraParams, siteName);
 
-  let statusTitle = 'Order Confirmed';
-  let statusMessage = 'Your order status has been updated.';
-  let additionalInfo = `Thank you for choosing ${siteName}. Our support team is always happy to help.`;
-
-  switch (normalizedKey) {
-    case 'orderconfirmed':
-    case 'confirmed':
-    case 'pending':
-    case 'placed':
-      statusTitle = 'Order Confirmed';
-      statusMessage = 'Your order has been confirmed successfully and is now queued for processing.';
-      additionalInfo = 'Our warehouse team will begin preparing your order shortly.';
-      break;
-
-    case 'processing':
-    case 'inprogress':
-      statusTitle = 'Processing';
-      statusMessage = 'Your order is currently being processed and undergoing quality verification.';
-      additionalInfo = "We'll notify you once your order has been packed.";
-      break;
-
-    case 'packed':
-    case 'packing':
-    case 'readyfordispatch':
-      statusTitle = 'Packed';
-      statusMessage = 'Great news! Your order has been securely packed and is ready for dispatch.';
-      additionalInfo = 'Your shipment will be handed over to our logistics partner shortly.';
-      break;
-
-    case 'shipped':
-    case 'dispatched':
-    case 'intransit':
-      statusTitle = 'Shipped';
-      statusMessage = 'Your order has been shipped and is on its way.';
-      {
-        const trackingNumber = order?.trackingNumber || extraParams.trackingNumber || extraParams.tracking_number;
-        const courierName = order?.courier || extraParams.courierName || extraParams.courier;
-        const trackingUrl = order?.trackingUrl || extraParams.trackingUrl || extraParams.tracking_url;
-        const expectedDelivery = order?.estimatedDelivery
-          ? new Date(order.estimatedDelivery).toLocaleDateString('en-IN')
-          : (extraParams.expectedDelivery || extraParams.estimatedDelivery);
-
-        const shippedLines: string[] = [];
-        if (trackingNumber && trackingNumber !== 'N/A') shippedLines.push(`Tracking Number: ${trackingNumber}`);
-        if (courierName && courierName !== 'N/A') shippedLines.push(`Courier Partner: ${courierName}`);
-        if (trackingUrl && trackingUrl !== 'N/A') shippedLines.push(`Track Here:\n${trackingUrl}`);
-        if (expectedDelivery && expectedDelivery !== 'N/A') shippedLines.push(`Expected Delivery: ${expectedDelivery}`);
-
-        if (shippedLines.length > 0) {
-          additionalInfo = shippedLines.join('\n');
-        } else {
-          additionalInfo = 'Your shipment is in transit. You can track live updates in your account.';
-        }
-      }
-      break;
-
-    case 'outfordelivery':
-    case 'outfordelivered':
-    case 'dispatch':
-      statusTitle = 'Out for Delivery';
-      statusMessage = 'Your order is out for delivery and should reach you today.';
-      additionalInfo = 'Please keep your phone available as our delivery partner may contact you.';
-      break;
-
-    case 'delivered':
-    case 'completed':
-      statusTitle = 'Delivered';
-      statusMessage = 'Your order has been delivered successfully.';
-      additionalInfo = 'We hope you enjoy your purchase. Thank you for choosing us.';
-      break;
-
-    case 'cancelled':
-    case 'canceled':
-      statusTitle = 'Cancelled';
-      statusMessage = 'Your order has been cancelled successfully.';
-      {
-        const reason = order?.cancellationReason || extraParams.cancellationReason || extraParams.reason;
-        if (reason) {
-          additionalInfo = `Reason: ${reason}\nIf any payment was received, the refund process will be initiated as per our refund policy.`;
-        } else {
-          additionalInfo = 'If any payment was received, the refund process will be initiated as per our refund policy.';
-        }
-      }
-      break;
-
-    case 'refunded':
-    case 'refundcompleted':
-    case 'refund':
-      statusTitle = 'Refunded';
-      statusMessage = 'Your refund has been processed successfully.';
-      {
-        const refundRef = order?.paymentId || order?.transactionId || extraParams.refundRef || extraParams.refundReference;
-        if (refundRef) {
-          additionalInfo = `Refund Reference: ${refundRef}\nThe refund amount will be credited to your original payment method within the applicable banking timeline.`;
-        } else {
-          additionalInfo = 'The refund amount will be credited to your original payment method within the applicable banking timeline.';
-        }
-      }
-      break;
-
-    case 'returned':
-    case 'returnreceived':
-    case 'return':
-      statusTitle = 'Returned';
-      statusMessage = 'We have received your returned product.';
-      additionalInfo = "Our team is inspecting the returned item. We'll update you once the inspection is completed.";
-      break;
-
-    default:
-      statusTitle = statusKey.split(/[\s_-]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-      statusMessage = `Your order status has been updated to ${statusTitle}.`;
-      additionalInfo = `Thank you for choosing ${siteName}. Our support team is always happy to help.`;
-      break;
-  }
-
-  // Admin Custom Config Overrides (Requirement 6)
+  // Admin Custom Config Overrides
+  const normalizedKey = String(statusKey || '').toLowerCase().replace(/[\s_-]+/g, '');
   const customConfig = settings.statusMappings?.[statusKey] || settings.statusMappings?.[normalizedKey] || settings.statusConfigs?.[statusKey];
+  let statusTitle = content.currentStatus;
+  let statusMessage = content.statusDescription;
+  let additionalInfo = content.additionalInformation;
+
   if (customConfig) {
     if (customConfig.statusTitle) statusTitle = customConfig.statusTitle;
     if (customConfig.message) statusMessage = customConfig.message;
@@ -479,18 +371,18 @@ export const triggerWhatsAppNotification = async (
       }
       const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
 
-      components = [
+      components = sanitizeComponents([
         {
           type: "body",
           parameters: [
-            { type: "text", text: custName },
-            { type: "text", text: recipientNumber || 'N/A' },
-            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
-            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
-            { type: "text", text: `${paymentMethod} (${paymentStatus})` },
-            { type: "text", text: new Date(order?.createdAt || Date.now()).toLocaleDateString('en-IN') },
-            { type: "text", text: fullAddress },
-            { type: "text", text: itemsSummary },
+            { type: "text", text: sanitizeTemplateParam(custName, 'Customer') },
+            { type: "text", text: sanitizeTemplateParam(recipientNumber, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(order?.orderNumber || order?.id, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(`${currency}${Number(order?.totalAmount || 0).toFixed(2)}`) },
+            { type: "text", text: sanitizeTemplateParam(`${paymentMethod} (${paymentStatus})`) },
+            { type: "text", text: sanitizeTemplateParam(new Date(order?.createdAt || Date.now()).toLocaleDateString('en-IN')) },
+            { type: "text", text: sanitizeTemplateParam(fullAddress, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(itemsSummary, 'Order Items') },
           ],
         },
         {
@@ -498,112 +390,37 @@ export const triggerWhatsAppNotification = async (
           sub_type: "url",
           index: "0",
           parameters: [
-            { type: "text", text: order ? `admin/orders/${order.id}` : '' }
+            { type: "text", text: sanitizeTemplateParam(order ? `admin/orders/${order.id}` : '') }
           ]
         }
-      ];
+      ]);
     } else if (triggerKey === 'registration' || triggerKey === 'welcome') {
       templateName = settings.welcomeMessageTemplateName || 'welcome_message';
       isStandardTemplate = true;
-      components = [
+      components = sanitizeComponents([
         {
           type: "body",
           parameters: [
-            { type: "text", text: customer?.firstName ? `${customer.firstName} ${customer.lastName || ''}`.trim() : (customer?.name || "Customer") },
-            { type: "text", text: siteUrl },
+            { type: "text", text: sanitizeTemplateParam(customer?.firstName ? `${customer.firstName} ${customer.lastName || ''}`.trim() : (customer?.name || "Customer")) },
+            { type: "text", text: sanitizeTemplateParam(siteUrl) },
           ],
         },
-      ];
-    } else if (triggerKey === 'order_placed') {
-      templateName = settings.orderConfirmationClientTemplateName || 'order_confirmation_client';
-      isStandardTemplate = true;
-      
-      const paymentMethodMap: any = {
-        'razorpay': 'Online Payment',
-        'cod': 'Cash on Delivery',
-        'manual': 'Manual Payment'
-      };
-      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
-      const isPaid = !!order?.paymentId || (order?.status !== 'Pending Payment' && order?.paymentMethod !== 'cod');
-      const paymentStatus = isPaid ? 'Paid ✅' : 'Pending ⏳';
-      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
-
-      components = [
-        {
-          type: "body",
-          parameters: [
-            { type: "text", text: custName },
-            { type: "text", text: siteName },
-            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
-            { type: "text", text: `${currency}${Number(order?.totalAmount || 0).toFixed(2)}` },
-            { type: "text", text: paymentMethod },
-            { type: "text", text: paymentStatus },
-            { type: "text", text: custName },
-            { type: "text", text: siteName },
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "url",
-          index: "0",
-          parameters: [
-            { type: "text", text: order ? `account/orders/${order.id}` : '' }
-          ]
-        }
-      ];
+      ]);
+    } else if (['order_placed', 'order_confirmed', 'order_confirmation'].includes(triggerKey.toLowerCase())) {
+      await WhatsAppNotificationService.sendOrderConfirmation(order, {
+        ...extraParams,
+        recipientNumber: recipientNumber || customer?.phone,
+        customerName: customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : undefined
+      });
+      return;
     } else if (isStatusUpdateTrigger) {
-      // Reusable Single WhatsApp Template for All Order Status Updates (order_status_update)
-      templateName = settings.orderStatusUpdateTemplateName || 'order_status_update';
-      isStandardTemplate = true;
-
-      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
-      const orderId = order?.orderNumber || order?.id || extraParams.orderId || 'N/A';
-      
-      const content = getDynamicOrderStatusContent(triggerKey, order, extraParams, settings);
-
-      // Prevent Duplicate WhatsApp Notifications within 2 minutes (Requirement 4 & 8)
-      if (order?.id) {
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-        const duplicate = await prisma.whatsappLog.findFirst({
-          where: {
-            orderId: order.id,
-            templateName: templateName,
-            createdAt: { gte: twoMinutesAgo },
-          },
-        });
-
-        if (duplicate) {
-          const reqPayload = duplicate.requestPayload as any;
-          if (reqPayload?.statusKey === triggerKey) {
-            console.log(`[WhatsApp] Duplicate notification suppressed for order ${order.id} status ${triggerKey}`);
-            return;
-          }
-        }
-      }
-
-      components = [
-        {
-          type: "body",
-          parameters: [
-            { type: "text", text: custName },               // {{1}} Customer Name
-            { type: "text", text: orderId },                // {{2}} Order ID
-            { type: "text", text: content.statusTitle },    // {{3}} Current Order Status
-            { type: "text", text: content.statusMessage },  // {{4}} Dynamic Status Message
-            { type: "text", text: content.additionalInfo }, // {{5}} Additional Information
-            { type: "text", text: siteName },               // {{6}} Store Name
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "url",
-          index: "0",
-          parameters: [
-            { type: "text", text: order ? `account/orders/${order.id}` : '' }
-          ]
-        }
-      ];
-
-      extraParams.statusKey = triggerKey;
+      await WhatsAppNotificationService.sendOrderStatusNotification(order, {
+        ...extraParams,
+        recipientNumber: recipientNumber || customer?.phone,
+        customerName: customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : undefined,
+        statusKey: triggerKey
+      });
+      return;
     } else if (triggerKey === 'order_delivered_review') {
       templateName = settings.orderDeliveredReviewTemplateName || 'order_delivered_review_template';
       isStandardTemplate = true;
@@ -613,7 +430,7 @@ export const triggerWhatsAppNotification = async (
       const reviewLink = order ? `${siteUrl}/feedback?orderId=${order.id}` : '';
       const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
 
-      components = [
+      components = sanitizeComponents([
         {
           type: "header",
           parameters: [
@@ -629,12 +446,12 @@ export const triggerWhatsAppNotification = async (
         {
           type: "body",
           parameters: [
-            { type: "text", text: custName },
-            { type: "text", text: order?.orderNumber || order?.id || 'N/A' },
-            { type: "text", text: reviewLink }
+            { type: "text", text: sanitizeTemplateParam(custName, 'Customer') },
+            { type: "text", text: sanitizeTemplateParam(order?.orderNumber || order?.id, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(reviewLink, '') }
           ]
         }
-      ];
+      ]);
     }
 
     if (!isStandardTemplate) {
@@ -646,15 +463,15 @@ export const triggerWhatsAppNotification = async (
       const keys = getPlaceholderKeys(template.body || '');
       const parameters = keys.map(k => {
         const val = resolvedVars[k as keyof typeof resolvedVars] || '';
-        return { type: 'text', text: String(val) };
+        return { type: 'text', text: sanitizeTemplateParam(val) };
       });
 
-      components = [
+      components = sanitizeComponents([
         {
           type: 'body',
           parameters,
         },
-      ];
+      ]);
 
       // Attach document if template type is Document
       if (template.headerType === 'Document' && resolvedVars.invoice_url && resolvedVars.invoice_url !== 'N/A') {
@@ -672,7 +489,9 @@ export const triggerWhatsAppNotification = async (
         });
       }
     }
-    
+
+    components = sanitizeComponents(components);
+
     const metaPayload: any = {
       messaging_product: 'whatsapp',
       to: formattedPhone,
@@ -724,14 +543,10 @@ export const triggerWhatsAppNotification = async (
     }
     
     // Handle Admin notifications trigger if enabled
-    if (settings.sendAdminNotification && settings.adminPhoneNumber && !isAdmin) {
-      const adminTriggers = ['order_placed', 'payment_success', 'cancelled', 'refund_completed'];
+    if (settings.sendAdminNotification !== false && !isAdmin) {
+      const adminTriggers = ['order_placed', 'payment_success'];
       if (adminTriggers.includes(triggerKey)) {
-        let adminTemplateKey = 'admin_new_order';
-        if (triggerKey === 'payment_success') adminTemplateKey = 'admin_payment_received';
-        if (triggerKey === 'cancelled') adminTemplateKey = 'admin_order_cancelled';
-        
-        await triggerWhatsAppNotification(adminTemplateKey, settings.adminPhoneNumber, order, customer, { ...extraParams, is_admin: true });
+        await WhatsAppNotificationService.sendAdminOrderNotification(order, extraParams);
       }
     }
   } catch (error) {
@@ -887,23 +702,27 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
     const { status, customerName, orderId, extraParams } = req.body;
     const settings = await getWhatsappSettings();
     const siteName = settings.storeName || '3D Galaxy';
-    const content = getDynamicOrderStatusContent(status || 'Order Confirmed', null, extraParams || {}, settings);
+    const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
+    const content = WhatsAppNotificationService.generateStatusContent(status || 'Order Confirmed', null, extraParams || {}, siteName);
 
     const name = customerName || 'Alex Johnson';
     const ordId = orderId || 'B3D-10294';
+    const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
 
-    const previewText = `Hello ${name} 👋,\n\n📢 *Your Order Status Has Been Updated*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *Order Details*\n\n🧾 Order ID: ${ordId}\n\n📌 Current Status: *${content.statusTitle}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *Latest Update*\n\n${content.statusMessage}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n${content.additionalInfo}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nNeed assistance?\n\nOur support team is always happy to help.\n\nThank you for choosing *${siteName}*.\n\nBest Regards,\n\n*${siteName} Team*`;
+    const previewText = `Hello ${name} 👋,\n\n📢 *Your Order Status Has Been Updated*\n\nWe're pleased to inform you that your order has reached a new stage.\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *ORDER DETAILS*\n\n🧾 Order ID: *${ordId}*\n\n📌 Current Status: *${content.currentStatus}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *Update*\n\n${content.statusDescription}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n${content.additionalInformation}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🔗 *View Order*\n\n${orderLink}\n\nNeed assistance?\n\nOur support team is always here to help.\n\nThank you for choosing *${siteName}*.\n\nWe appreciate your trust and look forward to serving you again.\n\nBest Regards,\n\n*${siteName} Team*`;
 
     return res.status(200).json({
       success: true,
-      templateName: settings.orderStatusUpdateTemplateName || 'order_status_update',
+      templateName: 'order_status_update_3dgal',
       variables: {
-        1: name,
-        2: ordId,
-        3: content.statusTitle,
-        4: content.statusMessage,
-        5: content.additionalInfo,
-        6: siteName
+        1: sanitizeTemplateParam(name, 'Customer'),
+        2: sanitizeTemplateParam(ordId, 'N/A'),
+        3: sanitizeTemplateParam(content.currentStatus, 'Order Update'),
+        4: sanitizeTemplateParam(content.statusDescription, 'Order status updated'),
+        5: sanitizeTemplateParam(content.additionalInformation, 'Thank you for shopping with 3D Galaxy'),
+        6: sanitizeTemplateParam(siteName, '3D Galaxy'),
+        7: sanitizeTemplateParam(siteName, '3D Galaxy'),
+        8: sanitizeTemplateParam(orderLink, 'https://3dgalaxy.co.in')
       },
       previewText
     });
@@ -1012,7 +831,7 @@ export const handleCampaignBroadcast = async (req: Request, res: Response) => {
       const keys = getPlaceholderKeys(template.body || '');
       const parameters = keys.map(k => {
         const val = resolvedVars[k as keyof typeof resolvedVars] || '';
-        return { type: 'text', text: String(val) };
+        return { type: 'text', text: sanitizeTemplateParam(val) };
       });
       
       const metaPayload = {
@@ -1024,12 +843,12 @@ export const handleCampaignBroadcast = async (req: Request, res: Response) => {
           language: {
             code: template.language || 'en',
           },
-          components: [
+          components: sanitizeComponents([
             {
               type: 'body',
               parameters,
             },
-          ],
+          ]),
         },
       };
       

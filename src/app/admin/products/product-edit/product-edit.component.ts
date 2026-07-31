@@ -92,7 +92,7 @@ export class ProductEditComponent implements OnInit {
     this.pName.set(p.name || '');
     this.pSku.set(p.sku || '');
     this.pCatId.set(p.categoryId || p.category_id || p.category?.slug || '');
-    this.pBrand.set(p.brandId || p.brand?.slug || p.brand || '3d-galaxy');
+    this.pBrand.set(p.brandId || p.brand_id || p.brand?.id || '');
     this.pMrp.set(p.mrp || p.basePrice || 1499);
     this.pSale.set(p.salePrice || p.sale_price || 1199);
     this.pDealer.set(p.dealerPrice || p.dealer_price || 999);

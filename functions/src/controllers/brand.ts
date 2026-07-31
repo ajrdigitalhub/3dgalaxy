@@ -2,11 +2,14 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { sysCache } from '../config/cache';
+import { clearProductCache } from './product';
 
 export const clearBrandCache = () => {
   sysCache.del('brands_list');
   sysCache.clearPattern('brand_slug_');
   sysCache.clearPattern('brand_id_');
+  sysCache.del('header_menu_data');
+  clearProductCache();
   clearCache();
 };
 

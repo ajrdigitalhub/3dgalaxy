@@ -22,6 +22,23 @@ import { SettingsService } from "../../core/services/settings.service";
 import { ShippingService } from "../../core/services/shipping.service";
 import { firstValueFrom } from "rxjs";
 
+export interface CustomerAddress {
+  id: string;
+  fullName?: string;
+  phone?: string;
+  addressType?: 'home' | 'office' | 'other' | string;
+  houseNo?: string;
+  street?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  postalCode?: string;
+  country: string;
+  isDefault: boolean;
+}
+
 @Component({
   selector: "app-checkout",
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +59,19 @@ export class CheckoutComponent implements OnInit {
   isSubmitting = signal(false);
   showAuthModal = signal(false);
   showTermsModal = signal(false);
+
+  // Address Selection & Management Signals
+  savedAddresses = signal<CustomerAddress[]>([]);
+  selectedAddressId = signal<string | null>(null);
+  addressMode = signal<'saved' | 'new'>('saved');
+  saveAddressToAccount = signal<boolean>(true);
+  isLoadingAddresses = signal<boolean>(false);
+
+  // New Address Form Signals
+  addressType = signal<'home' | 'office' | 'other'>('home');
+  houseNo = signal("");
+  street = signal("");
+  landmark = signal("");
 
   openTermsModal(event?: Event) {
     if (event) {
@@ -80,7 +110,7 @@ export class CheckoutComponent implements OnInit {
   email = signal("");
   phone = signal("");
 
-  // Shipping Address
+  // Shipping Address Fields
   accAddr1 = signal("");
   accAddr2 = signal("");
   accCity = signal("");
@@ -122,7 +152,7 @@ export class CheckoutComponent implements OnInit {
     const items = this.groupedCheckoutItems();
     return items.reduce((acc: number, item: any) => {
       if (item.isFree) return acc;
-      const price = item.variant?.salePrice || item.variant?.price || item.product?.salePrice || item.product?.basePrice || item.product?.price || 0;
+      const price = this.ds.getItemPrice(item);
       return acc + (Number(price) * (item.quantity || 1));
     }, 0);
   });
@@ -185,6 +215,11 @@ export class CheckoutComponent implements OnInit {
   ngOnInit() {
     this.restoreDraftState();
     this.ds.reloadProducts(false);
+    if (this.isLoggedIn()) {
+      this.fetchSavedAddresses();
+    } else {
+      this.addressMode.set('new');
+    }
   }
 
   constructor() {
@@ -193,6 +228,8 @@ export class CheckoutComponent implements OnInit {
       () => {
         if (!this.isLoggedIn() && !localStorage.getItem("guest_name")) {
           this.showAuthModal.set(true);
+        } else if (this.isLoggedIn()) {
+          this.fetchSavedAddresses();
         }
       },
       { allowSignalWrites: true },
@@ -265,6 +302,113 @@ export class CheckoutComponent implements OnInit {
     );
   }
 
+  // --- Saved Address Logic ---
+  fetchSavedAddresses() {
+    this.isLoadingAddresses.set(true);
+    this.api.get<any>("/customer/addresses").subscribe({
+      next: (res) => {
+        this.isLoadingAddresses.set(false);
+        const data = Array.isArray(res) ? res : res?.data || [];
+        this.savedAddresses.set(data);
+
+        if (data.length > 0) {
+          this.addressMode.set('saved');
+          const defaultAddr = data.find((a: any) => a.isDefault) || data[0];
+          this.selectSavedAddress(defaultAddr);
+        } else {
+          this.addressMode.set('new');
+        }
+      },
+      error: () => {
+        this.isLoadingAddresses.set(false);
+        this.savedAddresses.set([]);
+        this.addressMode.set('new');
+      },
+    });
+  }
+
+  selectSavedAddress(addr: CustomerAddress) {
+    if (!addr) return;
+    this.selectedAddressId.set(addr.id);
+
+    let parsedName = addr.fullName;
+    let parsedPhone = addr.phone;
+    let street = addr.addressLine1 || '';
+
+    if (street && street.includes('|')) {
+      const parts = street.split('|').map((p) => p.trim());
+      if (parts.length >= 4) {
+        if (!parsedName || parsedName === 'Customer' || parsedName === 'Valued Customer') {
+          if (parts[0] && parts[0] !== 'Customer' && parts[0] !== 'Valued Customer') {
+            parsedName = parts[0];
+          }
+        }
+        if (!parsedPhone) {
+          if (/^\+?\d{8,15}$/.test(parts[1].replace(/[\s-]/g, ''))) {
+            parsedPhone = parts[1];
+          }
+        }
+        street = parts.slice(3).join(' | ');
+      }
+    }
+
+    if (addr.houseNo || addr.street) {
+      const houseStreet = `${addr.houseNo || ''} ${addr.street || ''}`.trim();
+      if (houseStreet) street = houseStreet;
+    }
+
+    const u = this.ds.activeUser() || {};
+    const displayName = (parsedName && parsedName !== 'Customer' && parsedName !== 'Valued Customer')
+      ? parsedName
+      : (u.name || (this.name() && this.name() !== 'Valued Customer' ? this.name() : 'Valued Customer'));
+    const displayPhone = parsedPhone || u.phone || this.phone() || '';
+
+    this.name.set(displayName);
+    this.phone.set(displayPhone);
+    this.accAddr1.set(street || addr.addressLine1);
+    this.accAddr2.set(addr.addressLine2 || '');
+    this.accCity.set(addr.city || '');
+    this.accState.set(addr.state || '');
+    this.accPin.set(addr.pincode || addr.postalCode || '');
+    this.accCountry.set(addr.country || 'India');
+  }
+
+  switchToNewAddress() {
+    this.addressMode.set('new');
+    this.selectedAddressId.set(null);
+  }
+
+  onPincodeInput(pin: string) {
+    const cleanPin = (pin || '').trim();
+    this.accPin.set(cleanPin);
+
+    if (cleanPin.length === 6) {
+      if (cleanPin.startsWith('60') || cleanPin.startsWith('61') || cleanPin.startsWith('62') || cleanPin.startsWith('63')) {
+        this.accCity.set('Chennai');
+        this.accState.set('Tamil Nadu');
+      } else if (cleanPin.startsWith('56') || cleanPin.startsWith('57')) {
+        this.accCity.set('Bengaluru');
+        this.accState.set('Karnataka');
+      } else if (cleanPin.startsWith('40') || cleanPin.startsWith('41')) {
+        this.accCity.set('Mumbai');
+        this.accState.set('Maharashtra');
+      } else if (cleanPin.startsWith('11')) {
+        this.accCity.set('New Delhi');
+        this.accState.set('Delhi');
+      } else if (cleanPin.startsWith('50')) {
+        this.accCity.set('Hyderabad');
+        this.accState.set('Telangana');
+      }
+    }
+  }
+
+  getAddressTypeIcon(type?: string) {
+    const t = (type || '').toLowerCase();
+    if (t === 'home') return 'home';
+    if (t === 'office' || t === 'work') return 'business';
+    return 'location_on';
+  }
+
   restoreDraftState() {
     if (this.isLoggedIn()) {
       const u = this.ds.activeUser();
@@ -300,13 +444,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   goToStep(step: 1 | 2 | 3 | 4) {
-    // Allow going backwards without validation
     if (step < this.activeStep()) {
       this.activeStep.set(step);
       this.saveDraftState();
       return;
     }
-    // Validate before moving forward
     if (step > 1 && !this.validateStep1()) return;
     if (step > 2 && !this.validateStep2()) return;
     if (step > 3 && !this.validateStep3()) return;
@@ -367,6 +509,30 @@ export class CheckoutComponent implements OnInit {
     this.isSubmitting.set(true);
     this.loading.startLoading();
 
+    // If new address entered and user checked "Save this address to My Account"
+    if (this.isLoggedIn() && this.addressMode() === 'new' && this.saveAddressToAccount()) {
+      try {
+        await firstValueFrom(
+          this.api.post("/customer/address", {
+            fullName: this.name(),
+            phone: this.phone(),
+            addressType: this.addressType(),
+            houseNo: this.houseNo(),
+            street: this.street() || this.accAddr1(),
+            addressLine1: `${this.name()} | ${this.phone()} | ${this.addressType()} | ${this.accAddr1()}`,
+            addressLine2: this.accAddr2(),
+            city: this.accCity(),
+            state: this.accState(),
+            pincode: this.accPin(),
+            country: this.accCountry(),
+            isDefault: this.savedAddresses().length === 0,
+          })
+        );
+      } catch (err) {
+        // Continue even if background save fails
+      }
+    }
+
     const payload = {
       items: this.groupedCheckoutItems().map((item: any) => ({
         productId: item.product.id,
@@ -375,6 +541,16 @@ export class CheckoutComponent implements OnInit {
         price: this.getPrice(item),
       })),
       shippingAddress: `${this.accAddr1()} ${this.accAddr2()}, ${this.accCity()}, ${this.accState()} - ${this.accPin()}`,
+      shippingAddressSnapshot: {
+        fullName: this.name(),
+        phone: this.phone(),
+        addressLine1: this.accAddr1(),
+        addressLine2: this.accAddr2(),
+        city: this.accCity(),
+        state: this.accState(),
+        pincode: this.accPin(),
+        country: this.accCountry(),
+      },
       contactDetails: {
         name: this.name(),
         email: this.email(),
@@ -383,9 +559,15 @@ export class CheckoutComponent implements OnInit {
       paymentMethod: this.paymentMethod(),
       couponCode: this.ds.activeCouponCode() || null,
       notes: this.orderNotes(),
-      businessPurchase: null,
+      businessPurchase: this.isBusinessPurchase() ? {
+        gstNumber: this.gstNumber(),
+        companyName: this.companyName()
+      } : null,
+      subtotalAmount: this.subtotal(),
       totalAmount: this.grandTotal(),
       shippingAmount: this.shipping(),
+      codCharge: this.codSurcharge(),
+      discountAmount: this.discount(),
       shippingSource: this.shippingDetails().source,
       estimatedDelivery: `${this.shippingDetails().estimatedDays} Days`,
       shippingMethod: "Standard Delivery",

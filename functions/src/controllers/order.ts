@@ -314,9 +314,43 @@ export const createOrder = async (req: any, res: Response) => {
   const { customerType, guestName, guestEmail, guestPhone, guestSessionId, items, shippingAddress, billingAddress, paymentMethod } = req.body;
   const userId = req.user?.id; // from auth middleware
 
-  const resolvedName = guestName || req.body.name || req.body.customerName || '';
-  const resolvedEmail = guestEmail || req.body.email || req.body.customerEmail || '';
-  const resolvedPhone = guestPhone || req.body.phone || req.body.customerPhone || '';
+  let userRecord: any = null;
+  if (userId) {
+    try {
+      userRecord = await prisma.user.findUnique({ where: { id: userId } });
+    } catch (e) {}
+  }
+
+  const contactDetails = req.body.contactDetails || {};
+  const shippingAddressSnapshot = req.body.shippingAddressSnapshot || {};
+
+  const resolvedName = 
+    req.body.name || 
+    req.body.customerName || 
+    contactDetails.name || 
+    shippingAddressSnapshot.fullName || 
+    shippingAddressSnapshot.name || 
+    guestName || 
+    (userRecord ? `${userRecord.firstName || ''} ${userRecord.lastName || ''}`.trim() : null) || 
+    'Valued Customer';
+
+  const resolvedEmail = 
+    req.body.email || 
+    req.body.customerEmail || 
+    contactDetails.email || 
+    guestEmail || 
+    userRecord?.email || 
+    '';
+
+  const resolvedPhone = 
+    req.body.phone || 
+    req.body.customerPhone || 
+    contactDetails.phone || 
+    shippingAddressSnapshot.phone || 
+    guestPhone || 
+    userRecord?.mobile || 
+    '';
+
   const resolvedAddress = shippingAddress || req.body.address || null;
 
   const isGuest = customerType === 'GUEST' || !userId;
@@ -382,10 +416,24 @@ export const createOrder = async (req: any, res: Response) => {
         customer = await prisma.customer.create({
           data: {
             userId,
+            phone: resolvedPhone || null,
             customerType: 'retail'
           }
         });
+      } else if (!customer.phone && resolvedPhone) {
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: { phone: resolvedPhone }
+        });
       }
+
+      if (userRecord && !userRecord.mobile && resolvedPhone) {
+        await prisma.user.update({
+          where: { id: userRecord.id },
+          data: { mobile: resolvedPhone }
+        });
+      }
+
       customerIdToUse = customer.id;
     } else {
       const email = resolvedEmail || `guest-${Date.now()}@3dgalaxy.com`;
@@ -405,6 +453,7 @@ export const createOrder = async (req: any, res: Response) => {
             email,
             firstName: name.split(' ')[0] || 'Guest',
             lastName: name.split(' ').slice(1).join(' ') || 'Customer',
+            mobile: phone || null,
             passwordHash: '',
             isActive: true,
             roles: {
@@ -435,25 +484,48 @@ export const createOrder = async (req: any, res: Response) => {
 
       if (resolvedAddress) {
         const isObj = typeof resolvedAddress === 'object' && resolvedAddress !== null;
-        const addrLine1 = isObj ? (resolvedAddress.addressLine1 || resolvedAddress.address || 'N/A') : resolvedAddress;
-        const addrLine2 = isObj ? (resolvedAddress.addressLine2 || '') : '';
+        const name = isObj ? (resolvedAddress.fullName || resolvedAddress.name || shippingAddressSnapshot.fullName || resolvedName) : resolvedName;
+        const phone = isObj ? (resolvedAddress.phone || resolvedAddress.mobile || shippingAddressSnapshot.phone || resolvedPhone) : resolvedPhone;
+        const addressType = isObj ? (resolvedAddress.addressType || 'home') : 'home';
+
+        const rawLine1 = isObj ? (resolvedAddress.street || (resolvedAddress.houseNo ? `${resolvedAddress.houseNo || ''} ${resolvedAddress.street || ''}`.trim() : (resolvedAddress.addressLine1 || resolvedAddress.address || 'N/A'))) : resolvedAddress;
+        const addrLine2 = isObj ? (resolvedAddress.addressLine2 || resolvedAddress.landmark || '') : '';
         const city = isObj ? (resolvedAddress.city || 'N/A') : 'City';
         const state = isObj ? (resolvedAddress.state || 'N/A') : 'State';
         const postalCode = isObj ? (resolvedAddress.postalCode || resolvedAddress.pincode || 'N/A') : '100001';
         const country = isObj ? (resolvedAddress.country || 'India') : 'India';
 
-        const shipAddr = await tx.customerAddress.create({
-          data: {
+        let formattedLine1 = rawLine1;
+        if (!rawLine1.includes('|')) {
+          formattedLine1 = `${name} | ${phone} | ${addressType} | ${rawLine1}`.trim();
+        }
+
+        // Deduplication check: re-use existing address if already saved
+        let shipAddr = await tx.customerAddress.findFirst({
+          where: {
             customerId: customerIdToUse!,
-            addressLine1: addrLine1,
-            addressLine2: addrLine2,
-            city,
-            state,
-            postalCode,
-            country,
-            isDefault: !userId
+            OR: [
+              { addressLine1: formattedLine1 },
+              { addressLine1: rawLine1 },
+              ...(postalCode !== '100001' && postalCode !== 'N/A' ? [{ postalCode, city }] : [])
+            ]
           }
         });
+
+        if (!shipAddr) {
+          shipAddr = await tx.customerAddress.create({
+            data: {
+              customerId: customerIdToUse!,
+              addressLine1: formattedLine1,
+              addressLine2: addrLine2,
+              city,
+              state,
+              postalCode,
+              country,
+              isDefault: !userId
+            }
+          });
+        }
         shippingAddressId = shipAddr.id;
 
         billingAddressId = shipAddr.id;
@@ -466,7 +538,7 @@ export const createOrder = async (req: any, res: Response) => {
           const billPostalCode = isBillObj ? (billingAddress.postalCode || billingAddress.pincode || 'N/A') : '100001';
           const billCountry = isBillObj ? (billingAddress.country || 'India') : 'India';
 
-          if (billAddrLine1 !== addrLine1) {
+          if (billAddrLine1 !== rawLine1) {
             const billAddr = await tx.customerAddress.create({
               data: {
                 customerId: customerIdToUse!,

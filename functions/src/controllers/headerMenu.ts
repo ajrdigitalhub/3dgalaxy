@@ -141,24 +141,72 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       productCount: brandCountMap.get(b.id) || 0
     })).sort((a, b) => b.productCount - a.productCount);
 
-    // 5. Fetch Best Sellers / Featured Products
-    const bestSellers = await prisma.product.findMany({
+    // 5. Fetch Best Sellers / Featured Products with real review stats
+    const bestSellersRaw = await prisma.product.findMany({
       where: {
         isActive: true,
         deletedAt: null
       },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        images: true,
-        basePrice: true,
-        salePrice: true,
-        stock: true,
-        categoryId: true
+      include: {
+        reviews: true
       },
-      take: 6,
+      take: 12,
       orderBy: { createdAt: 'desc' }
+    });
+
+    const allCustReviews = await prisma.customerReview.findMany({
+      select: { productId: true, rating: true, reviewText: true }
+    });
+
+    const reviewsMap = new Map<string, number[]>();
+    for (const cr of allCustReviews) {
+      if (cr.reviewText && cr.reviewText.trim().startsWith("{")) {
+        try {
+          const parsed = JSON.parse(cr.reviewText);
+          if (parsed.status && parsed.status.toUpperCase() !== 'APPROVED') continue;
+        } catch (e) {}
+      }
+      if (!reviewsMap.has(cr.productId)) reviewsMap.set(cr.productId, []);
+      reviewsMap.get(cr.productId)!.push(Number(cr.rating || 5));
+    }
+
+    const bestSellers = bestSellersRaw.map(p => {
+      const prodReviews = p.reviews ? p.reviews.map(r => Number(r.rating || 5)) : [];
+      const custRevRatings = reviewsMap.get(p.id) || [];
+      const allRatings = [...prodReviews, ...custRevRatings];
+      
+      let rating: number | null = null;
+      let totalReviews = allRatings.length;
+      if (allRatings.length > 0) {
+        const sum = allRatings.reduce((a, b) => a + b, 0);
+        rating = Number((sum / allRatings.length).toFixed(1));
+      } else {
+        rating = null;
+      }
+
+      let primaryImage = null;
+      if (p.images) {
+        try {
+          const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            const first = imgs[0];
+            primaryImage = typeof first === 'string' ? first : first.url;
+          }
+        } catch (e) {}
+      }
+
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug || p.id,
+        image: primaryImage || `https://picsum.photos/seed/${p.slug || p.id}/300/300`,
+        basePrice: Number(p.basePrice),
+        salePrice: p.salePrice ? Number(p.salePrice) : null,
+        rating,
+        totalReviews,
+        inStock: p.stock > 0,
+        categoryId: p.categoryId
+      };
     });
 
     // 6. Fetch Admin Configuration Settings
@@ -172,17 +220,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       categories: categoryTree,
       brands,
       featuredCategories: categoryTree.filter((c: any) => c.productCount > 0).slice(0, 4),
-      bestSellers: bestSellers.map(p => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug || p.id,
-        image: Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[])[0] : null,
-        basePrice: Number(p.basePrice),
-        salePrice: p.salePrice ? Number(p.salePrice) : null,
-        rating: (p as any).rating ? Number((p as any).rating) : 4.8,
-        inStock: p.stock > 0,
-        categoryId: p.categoryId
-      })),
+      bestSellers,
       config
     };
 

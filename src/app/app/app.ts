@@ -71,14 +71,7 @@ export class App {
   constructor() {
     this.scrollRestoration.init();
 
-    if (isPlatformBrowser(this.platformId)) {
-      const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
-      if (savedTheme === 'light' || savedTheme === 'dark') {
-        this.ds.theme.set(savedTheme);
-      }
-    }
-    
-    // Ensure Settings API theme is fetched and applied first in application init
+    // Fetch and apply application theme strictly from Settings API
     this.settingsService.loadSettings();
 
     // Keep isHome updated with active path

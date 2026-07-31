@@ -138,61 +138,198 @@
         </div>
 
         @if (activeStep() === 2) {
-        <div class="px-5 pb-6 space-y-4 border-t border-neutral-100 dark:border-neutral-800 pt-5">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-1.5 md:col-span-2">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line 1
-                *</label>
-              <input type="text" [(ngModel)]="accAddr1" placeholder="House/Flat No., Building Name, Street"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-            <div class="space-y-1.5 md:col-span-2">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Line
-                2</label>
-              <input type="text" [(ngModel)]="accAddr2" placeholder="Locality, Area, Landmark (Optional)"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">City *</label>
-              <input type="text" [(ngModel)]="accCity"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">State *</label>
-              <input type="text" [(ngModel)]="accState"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">PIN / Pincode
-                *</label>
-              <input type="text" [(ngModel)]="accPin" placeholder="6-digit ZIP"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-            <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Country</label>
-              <input type="text" [(ngModel)]="accCountry"
-                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
-            </div>
-          </div>
+        <div class="px-5 pb-6 space-y-5 border-t border-neutral-100 dark:border-neutral-800 pt-5">
+          
+          <!-- Mode Switcher Tabs for Logged-In Users -->
+          @if (isLoggedIn()) {
+            <div class="flex items-center gap-3 bg-neutral-100 dark:bg-neutral-800/60 p-1.5 rounded-2xl border border-neutral-200/80 dark:border-neutral-700/80">
+              <button
+                type="button"
+                (click)="addressMode.set('saved')"
+                [class]="(addressMode() === 'saved' ? 'bg-white dark:bg-neutral-900 text-[#d65108] shadow-sm font-black' : 'text-neutral-600 dark:text-neutral-400 font-bold hover:text-neutral-900 dark:hover:text-white') + ' flex-1 py-2.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 border-none cursor-pointer transition-all'"
+              >
+                <mat-icon class="scale-75">location_on</mat-icon>
+                <span>Saved Addresses ({{ savedAddresses().length }})</span>
+              </button>
 
+              <button
+                type="button"
+                (click)="switchToNewAddress()"
+                [class]="(addressMode() === 'new' ? 'bg-white dark:bg-neutral-900 text-[#d65108] shadow-sm font-black' : 'text-neutral-600 dark:text-neutral-400 font-bold hover:text-neutral-900 dark:hover:text-white') + ' flex-1 py-2.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 border-none cursor-pointer transition-all'"
+              >
+                <mat-icon class="scale-75">add_circle_outline</mat-icon>
+                <span>Add New Address</span>
+              </button>
+            </div>
+          }
 
+          <!-- OPTION A: SAVED ADDRESSES GRID -->
+          @if (isLoggedIn() && addressMode() === 'saved') {
+            @if (isLoadingAddresses()) {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div *for="let i of [1,2]" class="h-36 animate-pulse rounded-2xl bg-neutral-200/80 dark:bg-neutral-800"></div>
+              </div>
+            } @else if (savedAddresses().length === 0) {
+              <div class="rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 p-6 text-center space-y-3">
+                <p class="text-xs text-neutral-500">You don't have any saved addresses in your account yet.</p>
+                <button (click)="switchToNewAddress()" class="px-4 py-2 bg-[#d65108] text-white text-xs font-extrabold uppercase rounded-xl border-none cursor-pointer">
+                  + Enter New Address
+                </button>
+              </div>
+            } @else {
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                @for (addr of savedAddresses(); track addr.id) {
+                  <div
+                    (click)="selectSavedAddress(addr)"
+                    [ngClass]="{
+                      'border-[#d65108] bg-[#d65108]/5 dark:bg-[#d65108]/10 shadow-md ring-2 ring-[#d65108]/20': selectedAddressId() === addr.id,
+                      'border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/40 hover:border-neutral-300 dark:hover:border-neutral-700': selectedAddressId() !== addr.id
+                    }"
+                    class="relative rounded-2xl border p-4 cursor-pointer transition-all duration-150 flex flex-col justify-between space-y-3"
+                  >
+                    <!-- Top row: Radio + Type badge + Default -->
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <div
+                          [class]="selectedAddressId() === addr.id ? 'bg-[#d65108] border-[#d65108]' : 'border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900'"
+                          class="h-4 w-4 rounded-full border flex items-center justify-center"
+                        >
+                          @if (selectedAddressId() === addr.id) {
+                            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                          }
+                        </div>
+
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-neutral-200/70 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                          <mat-icon class="scale-75 text-[14px]">{{ getAddressTypeIcon(addr.addressType) }}</mat-icon>
+                          {{ addr.addressType || 'Home' }}
+                        </span>
+                      </div>
+
+                      @if (addr.isDefault) {
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500 text-white shadow-xs">
+                          Default
+                        </span>
+                      }
+                    </div>
+
+                    <!-- Address details -->
+                    <div class="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed font-medium space-y-0.5">
+                      <p class="font-extrabold text-neutral-900 dark:text-white">
+                        {{ addr.fullName || name() || 'Valued Customer' }} · {{ addr.phone || phone() }}
+                      </p>
+                      <p class="line-clamp-2">
+                        {{ addr.houseNo ? addr.houseNo + ' ' : '' }}{{ addr.street || addr.addressLine1 }}
+                        {{ addr.addressLine2 ? ', ' + addr.addressLine2 : '' }}
+                      </p>
+                      <p class="font-bold text-neutral-900 dark:text-white mt-1">
+                        {{ addr.city }}, {{ addr.state }} - {{ addr.pincode || addr.postalCode }}
+                      </p>
+                    </div>
+
+                    <!-- Selection Status -->
+                    <div class="pt-2 border-t border-neutral-200/60 dark:border-neutral-800/60 flex items-center justify-between">
+                      <span [class]="selectedAddressId() === addr.id ? 'text-[#d65108] font-black' : 'text-neutral-400 font-bold'" class="text-[10px] uppercase tracking-wider flex items-center gap-1">
+                        @if (selectedAddressId() === addr.id) {
+                          <mat-icon class="scale-75 text-[14px]">check_circle</mat-icon> Selected for Delivery
+                        } @else {
+                          Click to Select
+                        }
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- OPTION B: MANUAL / NEW ADDRESS ENTRY FORM -->
+          @if (!isLoggedIn() || addressMode() === 'new') {
+            <div class="space-y-4">
+              
+              <!-- Address Type Selection (Home, Office, Other) -->
+              @if (isLoggedIn()) {
+                <div class="space-y-1">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Address Tag / Type</label>
+                  <div class="flex items-center gap-2">
+                    @for (t of ['home', 'office', 'other']; track t) {
+                      <button
+                        type="button"
+                        (click)="addressType.set($any(t))"
+                        [class]="(addressType() === t ? 'bg-[#d65108] text-white shadow-xs' : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300') + ' flex-1 h-8 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all border-none cursor-pointer flex items-center justify-center gap-1'"
+                      >
+                        <mat-icon class="scale-75 text-[14px]">{{ getAddressTypeIcon(t) }}</mat-icon>
+                        <span>{{ t }}</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Address Input Fields -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1.5 md:col-span-2">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">House / Flat No. & Building *</label>
+                  <input type="text" [ngModel]="accAddr1()" (ngModelChange)="accAddr1.set($event)" placeholder="e.g. Flat 302, Sai Heights"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+
+                <div class="space-y-1.5 md:col-span-2">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Street / Area / Landmark</label>
+                  <input type="text" [ngModel]="accAddr2()" (ngModelChange)="accAddr2.set($event)" placeholder="e.g. Anna Nagar, Near Metro Station"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">PIN / Pincode (6-digit) *</label>
+                  <input type="text" [ngModel]="accPin()" (ngModelChange)="onPincodeInput($event)" placeholder="e.g. 600040" maxlength="6"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm font-mono outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">City *</label>
+                  <input type="text" [ngModel]="accCity()" (ngModelChange)="accCity.set($event)" placeholder="e.g. Chennai"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">State *</label>
+                  <input type="text" [ngModel]="accState()" (ngModelChange)="accState.set($event)" placeholder="e.g. Tamil Nadu"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Country</label>
+                  <input type="text" [ngModel]="accCountry()" (ngModelChange)="accCountry.set($event)"
+                    class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all" />
+                </div>
+              </div>
+
+              <!-- Save to Account Checkbox (Logged-In Users Only) -->
+              @if (isLoggedIn()) {
+                <label class="flex items-center gap-2 cursor-pointer pt-1">
+                  <input type="checkbox" [checked]="saveAddressToAccount()" (change)="saveAddressToAccount.set($any($event.target).checked)" class="h-4 w-4 rounded border-neutral-300 text-[#d65108] focus:ring-[#d65108]" />
+                  <span class="text-xs font-bold text-neutral-800 dark:text-neutral-200">Save this address to My Account for future checkouts</span>
+                </label>
+              }
+            </div>
+          }
 
           <!-- Order Notes -->
-          <div class="space-y-1.5">
-            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Order Notes
-              (Optional)</label>
+          <div class="space-y-1.5 pt-2">
+            <label class="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">Order Notes (Optional)</label>
             <textarea rows="2" [(ngModel)]="orderNotes" placeholder="Delivery requests, packaging notes, etc..."
               class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#d65108] focus:ring-1 focus:ring-[#d65108]/20 transition-all resize-none"></textarea>
           </div>
 
-          <div class="flex gap-3">
+          <!-- Bottom Navigation Buttons -->
+          <div class="flex gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
             <button (click)="goToStep(1)"
-              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+              class="px-6 py-3.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors border-none cursor-pointer">
               Back
             </button>
             <button (click)="goToStep(3)"
-              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-              Continue <mat-icon class="scale-75">arrow_forward</mat-icon>
+              class="flex-1 bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 border-none cursor-pointer">
+              Continue to Payment <mat-icon class="scale-75">arrow_forward</mat-icon>
             </button>
           </div>
         </div>
@@ -658,46 +795,98 @@
         </button>
       </div>
 
-      <!-- Modal Body (Scrollable Content) -->
-      <div class="p-6 overflow-y-auto space-y-6 text-xs text-neutral-600 dark:text-neutral-350 leading-relaxed scrollbar-thin">
+      <!-- Modal Body (Scrollable Content - Full Application Terms of Service) -->
+      <div class="p-6 overflow-y-auto space-y-6 text-xs text-neutral-600 dark:text-neutral-350 leading-relaxed scrollbar-thin max-h-[60vh]">
         
         <div class="p-4 bg-orange-500/5 dark:bg-orange-500/10 rounded-2xl border border-orange-500/20 text-orange-700 dark:text-orange-300 font-medium">
-          By completing an order with 3DGalaxy, you agree to these standard terms governing payment, order fulfillment, shipping, and returns.
+          Please read these Terms of Service carefully before completing your purchase. By completing an order on 3DGalaxy, you agree to be bound by these terms.
         </div>
 
+        <!-- Overview -->
         <div class="space-y-2">
           <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
-            <mat-icon class="text-[#d65108] scale-75">payment</mat-icon> 1. Orders & Payments
+            <mat-icon class="text-[#d65108] scale-75">info</mat-icon> Overview
           </h4>
-          <p class="pl-6 text-neutral-600 dark:text-neutral-400">All orders are subject to acceptance and product availability. Prices displayed include GST where applicable. Payment must be cleared prior to dispatch via online gateway or Cash on Delivery (COD) where available.</p>
+          <div class="pl-6 space-y-2 text-neutral-600 dark:text-neutral-400">
+            <p>This website is operated by 3DGalaxy. Throughout the site, the terms "we", "us" and "our" refer to 3DGalaxy. 3DGalaxy offers this website, including all information, tools and Services available from this site to you, the user, conditioned upon your acceptance of all terms, conditions, policies and notices stated here.</p>
+            <p>By visiting our site and/or purchasing something from us, you engage in our "Service" and agree to be bound by the following terms and conditions ("Terms of Service", "Terms").</p>
+          </div>
         </div>
 
+        <!-- Section 1 -->
         <div class="space-y-2">
           <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
-            <mat-icon class="text-[#d65108] scale-75">local_shipping</mat-icon> 2. Shipping & Delivery
+            <mat-icon class="text-[#d65108] scale-75">store</mat-icon> Section 1 – Online Store Terms
           </h4>
-          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Delivery timeframes provided are estimates. Standard shipping typically takes 3 to 7 business days depending on delivery region. Risk of loss and title for items pass to you upon delivery to the carrier.</p>
+          <ul class="pl-6 list-disc space-y-1 text-neutral-600 dark:text-neutral-400">
+            <li>By agreeing to these Terms of Service, you represent that you are at least the age of majority in your state or province of residence.</li>
+            <li>You may not use our products for any illegal or unauthorized purpose nor violate any laws in your jurisdiction.</li>
+            <li>A breach or violation of any of the Terms will result in an immediate termination of your Services.</li>
+          </ul>
         </div>
 
+        <!-- Section 2 -->
         <div class="space-y-2">
           <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
-            <mat-icon class="text-[#d65108] scale-75">published_with_changes</mat-icon> 3. Cancellations & Returns
+            <mat-icon class="text-[#d65108] scale-75">settings</mat-icon> Section 2 – General Conditions
           </h4>
-          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Orders can be cancelled prior to dispatch by contacting support. Unopened hardware and spools in original packaging are eligible for return within 7 days of delivery per our Refund Policy.</p>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">We reserve the right to refuse Service to anyone for any reason at any time. You understand that your content (not including credit card information), may be transferred unencrypted across networks. Payment and credit card info is always encrypted during transfer.</p>
         </div>
 
+        <!-- Section 3 -->
         <div class="space-y-2">
           <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
-            <mat-icon class="text-[#d65108] scale-75">verified</mat-icon> 4. Warranty & Support
+            <mat-icon class="text-[#d65108] scale-75">fact_check</mat-icon> Section 3 – Accuracy & Timeliness of Information
           </h4>
-          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Hardware printers and digitizers come with standard manufacturer warranty against defective parts. Consumable items like opened filament spools or resin bottles are non-returnable once seal is broken.</p>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">We are not responsible if information made available on this site is not accurate, complete or current. The material on this site is provided for general information only.</p>
         </div>
 
+        <!-- Section 4 -->
         <div class="space-y-2">
           <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
-            <mat-icon class="text-[#d65108] scale-75">security</mat-icon> 5. Privacy & Data Security
+            <mat-icon class="text-[#d65108] scale-75">price_change</mat-icon> Section 4 – Modifications to Service and Prices
           </h4>
-          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Your personal data is encrypted and handled strictly in accordance with our Privacy Policy. We do not sell or share customer data with third parties beyond order execution requirements.</p>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Prices for our products are subject to change without notice. We reserve the right at any time to modify or discontinue the Service without notice.</p>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">inventory_2</mat-icon> Section 5 – Products or Services
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Certain products or Services may be available exclusively online. All descriptions of products or product pricing are subject to change at any time without notice at our sole discretion.</p>
+        </div>
+
+        <!-- Section 6 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">receipt_long</mat-icon> Section 6 – Accuracy of Billing and Account Information
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">We reserve the right to refuse any order placed with us. You agree to provide current, complete and accurate purchase and account information for all purchases made at our store.</p>
+        </div>
+
+        <!-- Section 7 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">security</mat-icon> Section 7 – Privacy & Personal Information
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Your submission of personal information through the store is governed by our Privacy Policy. Personal data is encrypted and handled securely.</p>
+        </div>
+
+        <!-- Section 8 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">balance</mat-icon> Section 8 – Governing Law
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">These Terms of Service and any separate agreements whereby we provide you Services shall be governed by and construed in accordance with the laws of India.</p>
+        </div>
+
+        <!-- Section 9 -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-wider text-xs flex items-center gap-2">
+            <mat-icon class="text-[#d65108] scale-75">contact_support</mat-icon> Contact Information
+          </h4>
+          <p class="pl-6 text-neutral-600 dark:text-neutral-400">Questions about the Terms of Service should be sent to us at <a href="mailto:galaxy.3d@hotmail.com" class="text-[#d65108] font-bold hover:underline">galaxy.3d&#64;hotmail.com</a>.</p>
         </div>
 
       </div>

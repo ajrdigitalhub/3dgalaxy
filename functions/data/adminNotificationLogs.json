@@ -1,5 +1,235 @@
 [
   {
+    "id": "7b195ff2-fe68-45c0-83a4-f18b0b5db831",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-509836 for ₹2049.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "57ca4ee3-236d-4487-bb6a-9d0ad6317227",
+      "orderNumber": "ORD-2026-509836",
+      "totalAmount": "2049",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T21:03:27.069Z",
+    "isRead": false
+  },
+  {
+    "id": "NOTIF-LOG-1785531119950",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-07-31T20:51:59.950Z"
+  },
+  {
+    "id": "936bb60e-844a-4bac-b1b8-2cbae57d2c94",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-157360 for ₹200.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "30e1996b-bb81-4c51-a466-7bb817e359c9",
+      "orderNumber": "ORD-2026-157360",
+      "totalAmount": "200",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T20:44:14.849Z",
+    "isRead": false
+  },
+  {
+    "id": "b1dd651d-9c20-480e-b61e-70b79543ff1e",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-163101 for ₹1899.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "07300089-c6a0-4d5b-8eda-7ea9a60c8937",
+      "orderNumber": "ORD-2026-163101",
+      "totalAmount": "1899",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T20:32:43.143Z",
+    "isRead": false
+  },
+  {
+    "id": "5c1287a8-1722-4188-bbe7-7ab4b37b7387",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-163101 for ₹1899.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "07300089-c6a0-4d5b-8eda-7ea9a60c8937",
+      "orderNumber": "ORD-2026-163101",
+      "totalAmount": "1899",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T20:32:01.726Z",
+    "isRead": false
+  },
+  {
+    "id": "fb1d53ba-7564-4ccc-8cd3-ab9174b692aa",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-163101 for ₹1899.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "07300089-c6a0-4d5b-8eda-7ea9a60c8937",
+      "orderNumber": "ORD-2026-163101",
+      "totalAmount": "1899",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T20:31:09.842Z",
+    "isRead": false
+  },
+  {
+    "id": "c3a45190-191e-486c-b4f2-6400d31e9313",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-163101 for ₹1899.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "07300089-c6a0-4d5b-8eda-7ea9a60c8937",
+      "orderNumber": "ORD-2026-163101",
+      "totalAmount": "1899",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T20:17:26.120Z",
+    "isRead": false
+  },
+  {
+    "id": "44eb0b7e-16f0-4c6f-9e69-aa4b62035edf",
+    "title": "👤 New Customer Registration",
+    "body": "Kumar  (kumar@gmail.com) created a new customer account.",
+    "type": "customers",
+    "eventKey": "NEW_CUSTOMER_REGISTRATION",
+    "deepLink": "/admin/customers",
+    "data": {
+      "email": "kumar@gmail.com",
+      "mobile": "9597935647",
+      "userId": "e101a9eb-8469-4fff-9781-44f99fd5d4cb"
+    },
+    "sentAt": "2026-07-31T19:12:01.546Z",
+    "isRead": false
+  },
+  {
+    "id": "a8c965cd-139c-40f4-b276-b3e693276a93",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-413399 for ₹699.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "95b08d22-52ee-4497-9c88-41fe3a981911",
+      "orderNumber": "ORD-2026-413399",
+      "totalAmount": "699",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T17:46:31.095Z",
+    "isRead": false
+  },
+  {
+    "id": "a28953e0-31f1-450b-be34-dac267edaf3c",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-413399 for ₹699.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "95b08d22-52ee-4497-9c88-41fe3a981911",
+      "orderNumber": "ORD-2026-413399",
+      "totalAmount": "699",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T17:41:27.350Z",
+    "isRead": false
+  },
+  {
+    "id": "6dcc2dd5-fb76-4c83-8a9b-cf05b6683957",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-413399 for ₹699.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "95b08d22-52ee-4497-9c88-41fe3a981911",
+      "orderNumber": "ORD-2026-413399",
+      "totalAmount": "699",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T17:23:29.316Z",
+    "isRead": false
+  },
+  {
+    "id": "217b5bdb-7555-49f7-b137-c842fe8d966c",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-510158 for ₹699.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "8cecfe5d-e477-499a-9080-8878fa7ce916",
+      "orderNumber": "ORD-2026-510158",
+      "totalAmount": "699",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-31T17:19:01.342Z",
+    "isRead": false
+  },
+  {
+    "id": "e1c24158-1a23-4e1f-93dc-5bbc3684117c",
+    "title": "🛒 New Order Received",
+    "body": "admin123 placed Order #ORD-2026-671807 for ₹714.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "ba6cdee3-9a23-4ac6-9d69-85b88c8d3d3d",
+      "orderNumber": "ORD-2026-671807",
+      "totalAmount": "714",
+      "customerName": "admin123",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-29T19:36:48.021Z",
+    "isRead": false
+  },
+  {
+    "id": "7dfc2b6d-f695-4406-b45d-e2e1b65158a2",
+    "title": "🛒 New Order Received",
+    "body": "AJR DIGITAL HUB placed Order #ORD-2026-107136 for ₹1098.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "9a05e5e3-0202-434c-9644-aa4e1bf1039b",
+      "orderNumber": "ORD-2026-107136",
+      "totalAmount": "1098",
+      "customerName": "AJR DIGITAL HUB",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-07-29T18:58:56.469Z",
+    "isRead": false
+  },
+  {
     "id": "NOTIF-LOG-1785181335555",
     "title": "🚨 System Admin Notification",
     "body": "Important operational alert for all system administrators.",

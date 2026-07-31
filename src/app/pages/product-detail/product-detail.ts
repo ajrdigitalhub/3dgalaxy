@@ -273,7 +273,7 @@ export class ProductDetail {
         if (
           matchedKey &&
           this.normalizeOptionValue(variantOptions[matchedKey]) ===
-            this.normalizeOptionValue(value)
+          this.normalizeOptionValue(value)
         ) {
           score += 1;
         }
@@ -747,8 +747,8 @@ export class ProductDetail {
         dealer_price: item.dealer_price || item.dealerPrice || 0,
         images: Array.isArray(item.images)
           ? item.images.map((img: any) =>
-              typeof img === "string" ? img : img?.url || img,
-            )
+            typeof img === "string" ? img : img?.url || img,
+          )
           : [],
       } as Product;
     }
@@ -1380,7 +1380,7 @@ export class ProductDetail {
         res.data.forEach((i: any) => ids.add(i.productId));
         this.wishlistIds.set(ids);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   async toggleWishlist(productId: string) {

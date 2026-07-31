@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { getFirebaseAdmin } from '../config/firebase';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { triggerWhatsAppNotification, getWhatsappSettings } from '../controllers/whatsapp';
+import { WhatsAppNotificationService } from './whatsappNotificationService';
 import fs from 'fs';
 import path from 'path';
 
@@ -334,6 +335,41 @@ export class NotificationService {
     return { pushEnabled, whatsappEnabled, emailEnabled };
   }
 
+  private static adminFcmTokenTableExists: boolean | null = null;
+  private static adminDevTableExists: boolean | null = null;
+
+  private static async checkFcmTokenTableExists(): Promise<boolean> {
+    if (this.adminFcmTokenTableExists !== null) return this.adminFcmTokenTableExists;
+    try {
+      const res: any = await prisma.$queryRaw`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' AND table_name = 'admin_fcm_tokens'
+        ) as "exists";
+      `;
+      this.adminFcmTokenTableExists = Boolean(res && res[0] && res[0].exists);
+    } catch (e) {
+      this.adminFcmTokenTableExists = false;
+    }
+    return this.adminFcmTokenTableExists;
+  }
+
+  private static async checkDevTableExists(): Promise<boolean> {
+    if (this.adminDevTableExists !== null) return this.adminDevTableExists;
+    try {
+      const res: any = await prisma.$queryRaw`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' AND table_name = 'admin_notification_devices'
+        ) as "exists";
+      `;
+      this.adminDevTableExists = Boolean(res && res[0] && res[0].exists);
+    } catch (e) {
+      this.adminDevTableExists = false;
+    }
+    return this.adminDevTableExists;
+  }
+
   /**
    * Multicast Dispatch FCM Push Notification to Active Admin Devices
    */
@@ -341,20 +377,41 @@ export class NotificationService {
     try {
       let dbTokens: string[] = [];
       try {
-        const [dev1, dev2] = await Promise.all([
-          (prisma as any).adminFcmToken.findMany({
-            where: { isActive: true },
-            select: { fcmToken: true },
-          }),
-          prisma.adminNotificationDevice.findMany({
-            where: { isActive: true },
-            select: { fcmToken: true },
-          }),
-        ]);
-        dbTokens = [...dev1.map((d: any) => d.fcmToken), ...dev2.map((d: any) => d.fcmToken)];
-      } catch (e) {
-        console.warn('[NotificationService] DB device query warn:', e);
-      }
+        const canFetchFcmToken = await this.checkFcmTokenTableExists();
+        const canFetchDev = await this.checkDevTableExists();
+
+        const fetchDev1 = async (): Promise<any[]> => {
+          if (!canFetchFcmToken) return [];
+          try {
+            if ((prisma as any).adminFcmToken?.findMany) {
+              return await (prisma as any).adminFcmToken.findMany({
+                where: { isActive: true },
+                select: { fcmToken: true },
+              });
+            }
+          } catch (e: any) {}
+          return [];
+        };
+
+        const fetchDev2 = async (): Promise<any[]> => {
+          if (!canFetchDev) return [];
+          try {
+            if ((prisma as any).adminNotificationDevice?.findMany) {
+              return await (prisma as any).adminNotificationDevice.findMany({
+                where: { isActive: true },
+                select: { fcmToken: true },
+              });
+            }
+          } catch (e: any) {}
+          return [];
+        };
+
+        const [dev1, dev2] = await Promise.all([fetchDev1(), fetchDev2()]);
+        dbTokens = [
+          ...(dev1 || []).map((d: any) => d.fcmToken),
+          ...(dev2 || []).map((d: any) => d.fcmToken),
+        ];
+      } catch (e) {}
 
       // Also gather tokens from fallback legacy JSON file if any
       const legacyTokens = this.getLegacyDeviceTokens();
@@ -434,18 +491,29 @@ export class NotificationService {
 
       // Clean up invalid FCM tokens automatically
       if (invalidTokens.length > 0) {
-        console.log(`[NotificationService] Deactivating ${invalidTokens.length} invalid FCM tokens`);
-        try {
-          await (prisma as any).adminFcmToken.updateMany({
-            where: { fcmToken: { in: invalidTokens } },
-            data: { isActive: false },
-          });
-          await prisma.adminNotificationDevice.updateMany({
-            where: { fcmToken: { in: invalidTokens } },
-            data: { isActive: false },
-          });
-        } catch (e) {
-          console.warn('[NotificationService] Error deactivating tokens in DB:', e);
+        const canUpdateFcmToken = await this.checkFcmTokenTableExists();
+        const canUpdateDev = await this.checkDevTableExists();
+
+        if (canUpdateFcmToken) {
+          try {
+            if ((prisma as any).adminFcmToken?.updateMany) {
+              await (prisma as any).adminFcmToken.updateMany({
+                where: { fcmToken: { in: invalidTokens } },
+                data: { isActive: false },
+              });
+            }
+          } catch (e: any) {}
+        }
+
+        if (canUpdateDev) {
+          try {
+            if ((prisma as any).adminNotificationDevice?.updateMany) {
+              await (prisma as any).adminNotificationDevice.updateMany({
+                where: { fcmToken: { in: invalidTokens } },
+                data: { isActive: false },
+              });
+            }
+          } catch (e: any) {}
         }
       }
 
@@ -466,8 +534,19 @@ export class NotificationService {
         return false;
       }
 
+      if (payload.order) {
+        const res = await WhatsAppNotificationService.sendAdminOrderNotification(payload.order);
+        return res.success;
+      }
+
       const settings = await getSettingsService();
-      const adminPhone = settings.adminPhoneNumber || settings.storeSettings?.phone || '9999999999';
+      const whatsappSettings = settings?.whatsappSettings || {};
+      const adminPhone = whatsappSettings.adminPhoneNumber || settings.adminPhoneNumber || settings.contact?.phone;
+
+      if (!adminPhone || adminPhone === '9999999999') {
+        console.log('[NotificationService] No valid admin phone configured for WhatsApp dispatch');
+        return false;
+      }
 
       await triggerWhatsAppNotification(
         'new_order',

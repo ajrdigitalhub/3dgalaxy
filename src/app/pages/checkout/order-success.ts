@@ -269,12 +269,37 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
 
   private resolveCustomerName() {
     const u = this.ds.activeUser();
-    if (u) {
-      this.customerName = (u as any).firstName ? `${(u as any).firstName} ${(u as any).lastName || ''}` : u.name;
-    } else if (this.order) {
-      this.customerName = this.order.guestName || this.order.customerName || 'Guest Customer';
-      this.isGuest = true;
+    let nameFromOrder = '';
+    if (this.order) {
+      const custObj = this.order.customer?.user || this.order.customer;
+      const addrObj = this.order.shippingAddress;
+      let rawLine1 = typeof addrObj === 'object' ? (addrObj?.addressLine1 || '') : (typeof addrObj === 'string' ? addrObj : '');
+      if (rawLine1.includes('|')) {
+        const p = rawLine1.split('|').map((s: string) => s.trim());
+        if (p[0] && p[0] !== 'Customer' && p[0] !== 'Valued Customer') {
+          nameFromOrder = p[0];
+        }
+      }
+      if (!nameFromOrder) {
+        nameFromOrder = 
+          this.order.guestName || 
+          this.order.customerName || 
+          (this.order.contactDetails?.name) || 
+          (typeof addrObj === 'object' ? (addrObj?.fullName || addrObj?.name) : null) || 
+          (custObj ? `${custObj.firstName || ''} ${custObj.lastName || ''}`.trim() : null) || 
+          '';
+      }
     }
+
+    if (nameFromOrder && nameFromOrder !== 'Customer' && nameFromOrder !== 'Valued Customer') {
+      this.customerName = nameFromOrder;
+    } else if (u) {
+      this.customerName = (u as any).firstName ? `${(u as any).firstName} ${(u as any).lastName || ''}`.trim() : (u.name || 'Valued Customer');
+    } else {
+      this.customerName = 'Valued Customer';
+    }
+
+    this.isGuest = !u && (this.order?.customerType === 'guest' || !!this.order?.guestName);
   }
 
   ngAfterViewInit() {

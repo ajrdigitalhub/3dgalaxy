@@ -19,7 +19,70 @@ export const clearProductCache = () => {
   sysCache.clearPattern('products_id_');
   sysCache.del('consolidated_home_payload');
   sysCache.del('featured_products_payload');
+  sysCache.del('header_menu_data');
   clearCache(); // Flushes route cache for /api/home and other routes
+};
+
+const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+export const resolveBrandId = async (input: any): Promise<string | null | undefined> => {
+  if (input === undefined) return undefined;
+  if (input === null || input === '' || input === 'null' || input === 'undefined') return null;
+
+  let val: string = '';
+  if (typeof input === 'object') {
+    val = String(input.id || input.slug || input.name || '').trim();
+  } else {
+    val = String(input).trim();
+  }
+  if (!val) return null;
+
+  const validUuid = isUuid(val);
+  if (validUuid) {
+    const exists = await prisma.brand.findUnique({ where: { id: val } });
+    if (exists) return exists.id;
+  }
+
+  const br = await prisma.brand.findFirst({
+    where: {
+      OR: [
+        ...(validUuid ? [{ id: val }] : []),
+        { slug: val },
+        { name: { equals: val, mode: 'insensitive' } }
+      ]
+    }
+  });
+  return br ? br.id : null;
+};
+
+export const resolveCategoryId = async (input: any): Promise<string | null | undefined> => {
+  if (input === undefined) return undefined;
+  if (input === null || input === '' || input === 'null' || input === 'undefined') return null;
+
+  let val: string = '';
+  if (typeof input === 'object') {
+    val = String(input.id || input.slug || input.name || '').trim();
+  } else {
+    val = String(input).trim();
+  }
+  if (!val) return null;
+
+  const validUuid = isUuid(val);
+  if (validUuid) {
+    const exists = await prisma.category.findUnique({ where: { id: val } });
+    if (exists) return exists.id;
+  }
+
+  const cat = await prisma.category.findFirst({
+    where: {
+      OR: [
+        ...(validUuid ? [{ id: val }] : []),
+        { slug: val },
+        { name: { equals: val, mode: 'insensitive' } }
+      ]
+    }
+  });
+  return cat ? cat.id : null;
 };
 
 export async function getAllMappedProductsCached(): Promise<any[]> {
@@ -34,14 +97,33 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
 
   pendingMappedProductsPromise = (async () => {
     try {
-      const items = await prisma.product.findMany({
-        where: { deletedAt: null, isActive: true },
-        include: {
-          brand: true,
-          category: true,
-          reviews: true,
+      const [items, allCustomerReviews] = await Promise.all([
+        prisma.product.findMany({
+          where: { deletedAt: null, isActive: true },
+          include: {
+            brand: true,
+            category: true,
+            reviews: {
+              include: { user: true }
+            },
+          }
+        }),
+        prisma.customerReview.findMany({
+          include: {
+            customer: {
+              include: { user: true }
+            }
+          }
+        })
+      ]);
+
+      const customerReviewsByProduct = new Map<string, any[]>();
+      for (const cr of allCustomerReviews) {
+        if (!customerReviewsByProduct.has(cr.productId)) {
+          customerReviewsByProduct.set(cr.productId, []);
         }
-      });
+        customerReviewsByProduct.get(cr.productId)!.push(cr);
+      }
 
       const getSpecsArray = (specsJson: any): any[] => {
         if (!specsJson) return [];
@@ -54,6 +136,48 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
 
       const allMapped = items.map(p => {
         const specs = getSpecsArray(p.specifications);
+        const prodCustReviews = customerReviewsByProduct.get(p.id) || [];
+        const combinedRawReviews = [...(p.reviews || []), ...prodCustReviews];
+
+        const mappedReviews = combinedRawReviews.map((review: any) => {
+          const user = review.user || review.customer?.user;
+          let parsedTitle = "Verified Review";
+          let parsedComment = review.reviewText || "";
+          let parsedImages: string[] = [];
+          let parsedRecommended = true;
+          let status = "APPROVED";
+
+          if (review.reviewText && review.reviewText.trim().startsWith("{")) {
+            try {
+              const parsed = JSON.parse(review.reviewText);
+              parsedTitle = parsed.title || parsedTitle;
+              parsedComment = parsed.comment || parsed.review || parsedComment;
+              parsedImages = Array.isArray(parsed.images) ? parsed.images : [];
+              if (typeof parsed.recommended === "boolean") {
+                parsedRecommended = parsed.recommended;
+              }
+              if (parsed.status) status = parsed.status;
+            } catch (e) {}
+          }
+
+          return {
+            id: review.id,
+            productId: review.productId,
+            userName: user
+              ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+              : "Customer",
+            rating: Number(review.rating || 5),
+            title: parsedTitle,
+            comment: parsedComment,
+            date: review.createdAt ? new Date(review.createdAt).toISOString() : new Date().toISOString(),
+            verified: true,
+            images: parsedImages,
+            recommended: parsedRecommended,
+            status,
+            helpfulCount: 0,
+            sellerReply: null,
+          };
+        }).filter(r => (r.status || '').toUpperCase() === 'APPROVED');
 
         // Extract Color
         const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
@@ -174,11 +298,13 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           stock: p.stock,
           isActive: p.isActive,
           isExclusive: p.isExclusive,
+          codAvailable: p.codAvailable,
+          isCodAvailable: p.codAvailable !== false,
           images: p.images,
           specifications: specs,
           brand: p.brand,
           category: p.category,
-          reviews: p.reviews,
+          reviews: mappedReviews,
           activePrice,
           colors,
           materials,
@@ -342,19 +468,67 @@ export const mapProductFields = (p: any): any => {
   variantImages = Array.from(new Set(variantImages));
   variantSecondaryImages = Array.from(new Set(variantSecondaryImages));
 
-  const rawReviews = Array.isArray(p.reviews) ? p.reviews : [];
+  const rawReviews = Array.isArray(p.reviews) ? p.reviews : (Array.isArray(p.customerReviews) ? p.customerReviews : []);
+  
+  const approvedReviews = rawReviews.filter((r: any) => {
+    if (r.isApproved === false) return false;
+    if (r.reviewText && typeof r.reviewText === 'string' && r.reviewText.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(r.reviewText);
+        if (parsed.status && parsed.status.toUpperCase() !== 'APPROVED') return false;
+      } catch (e) {}
+    }
+    return true;
+  });
+
   let avgRating = 0;
-  let ratingCount = rawReviews.length;
+  let ratingCount = approvedReviews.length;
+  let r1 = 0, r2 = 0, r3 = 0, r4 = 0, r5 = 0;
+  let latestReviewObj = null;
+
   if (ratingCount > 0) {
-    const sum = rawReviews.reduce((acc: number, r: any) => acc + (Number(r.rating || r.stars) || 0), 0);
+    let sum = 0;
+    for (const r of approvedReviews) {
+      const star = Math.min(5, Math.max(1, Math.round(Number(r.rating || r.stars) || 5)));
+      sum += star;
+      if (star === 1) r1++;
+      else if (star === 2) r2++;
+      else if (star === 3) r3++;
+      else if (star === 4) r4++;
+      else if (star === 5) r5++;
+    }
     avgRating = Number((sum / ratingCount).toFixed(1));
+    const latest = approvedReviews[0];
+    if (latest) {
+      latestReviewObj = {
+        id: latest.id,
+        rating: Number(latest.rating) || 5,
+        title: latest.title || 'Verified Review',
+        comment: latest.comment || latest.reviewText || '',
+        createdAt: latest.createdAt,
+      };
+    }
+  } else if (typeof p.averageRating === 'number' && p.averageRating > 0) {
+    avgRating = p.averageRating;
+    ratingCount = p.totalReviews || p.ratingCount || p.reviewCount || 0;
   } else if (typeof p.avgRating === 'number' && p.avgRating > 0) {
     avgRating = p.avgRating;
     ratingCount = p.ratingCount || p.reviewCount || 0;
   }
 
+  const ratingDist = p.ratingDistribution || { '5': r5, '4': r4, '3': r3, '2': r2, '1': r1 };
+
+  const codVal = p.codAvailable !== undefined && p.codAvailable !== null
+    ? Boolean(p.codAvailable)
+    : (p.isCodAvailable !== undefined && p.isCodAvailable !== null
+      ? Boolean(p.isCodAvailable)
+      : (p.is_cod_available !== undefined && p.is_cod_available !== null
+        ? Boolean(p.is_cod_available)
+        : true));
+
   return {
     ...p,
+    reviews: approvedReviews,
     images: imgs,
     primaryImage,
     secondaryImage,
@@ -363,9 +537,17 @@ export const mapProductFields = (p: any): any => {
     variantImages,
     variantSecondaryImages,
     thumbnail: primaryImage,
-    avgRating,
-    ratingCount,
-    reviewCount: ratingCount
+    averageRating: avgRating,
+    rating: avgRating,
+    avgRating: avgRating,
+    totalReviews: ratingCount,
+    reviewCount: ratingCount,
+    ratingCount: ratingCount,
+    ratingDistribution: ratingDist,
+    latestReview: latestReviewObj || p.latestReview || null,
+    codAvailable: codVal,
+    isCodAvailable: codVal,
+    is_cod_available: codVal,
   };
 };
 
@@ -826,6 +1008,9 @@ export const getProductBySlug = async (req: Request, res: Response) => {
     });
 
     const finalResponse = {
+      isCodAvailable: mappedProduct.isCodAvailable,
+      codAvailable: mappedProduct.codAvailable,
+      is_cod_available: mappedProduct.is_cod_available,
       categoryPath: catPath,
       variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
@@ -853,7 +1038,11 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       features: mappedProduct.features,
       faqs: mappedProduct.faqs,
       warranty: mappedProduct.warranty,
-      shipping: mappedProduct.shipping,
+      shipping: {
+        ...(safeParseObject(item.shipping) || {}),
+        isCodAvailable: mappedProduct.isCodAvailable,
+        codAvailable: mappedProduct.codAvailable
+      },
       seo: mappedProduct.seo,
       relatedProducts: mappedProduct.relatedProducts,
       bundleProducts: mappedProduct.bundleProducts,
@@ -863,7 +1052,9 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       masterData: {
         ...masterData,
         images: mappedProduct.images,
-        relatedProducts: mappedProduct.relatedProducts
+        relatedProducts: mappedProduct.relatedProducts,
+        isCodAvailable: mappedProduct.isCodAvailable,
+        codAvailable: mappedProduct.codAvailable
       }
     };
 
@@ -923,6 +1114,9 @@ export const getProductById = async (req: Request, res: Response) => {
     });
 
     const finalResponse = {
+      isCodAvailable: mappedProduct.isCodAvailable,
+      codAvailable: mappedProduct.codAvailable,
+      is_cod_available: mappedProduct.is_cod_available,
       categoryPath: catPath,
       variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
@@ -950,7 +1144,11 @@ export const getProductById = async (req: Request, res: Response) => {
       features: mappedProduct.features,
       faqs: mappedProduct.faqs,
       warranty: mappedProduct.warranty,
-      shipping: mappedProduct.shipping,
+      shipping: {
+        ...(safeParseObject(item.shipping) || {}),
+        isCodAvailable: mappedProduct.isCodAvailable,
+        codAvailable: mappedProduct.codAvailable
+      },
       seo: mappedProduct.seo,
       relatedProducts: mappedProduct.relatedProducts,
       bundleProducts: mappedProduct.bundleProducts,
@@ -960,7 +1158,9 @@ export const getProductById = async (req: Request, res: Response) => {
       masterData: {
         ...masterData,
         images: mappedProduct.images,
-        relatedProducts: mappedProduct.relatedProducts
+        relatedProducts: mappedProduct.relatedProducts,
+        isCodAvailable: mappedProduct.isCodAvailable,
+        codAvailable: mappedProduct.codAvailable
       }
     };
 
@@ -974,7 +1174,7 @@ export const getProductById = async (req: Request, res: Response) => {
 export const createProduct = async (req: Request, res: Response) => {
   const {
     name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, sale_price, dealer_price, stock,
-    categoryId, brandId, seoTitle, seoDescription, seoKeywords,
+    categoryId, brandId, category_id, brand_id, brand, category, seoTitle, seoDescription, seoKeywords,
     variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
     isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
     status
@@ -1014,20 +1214,11 @@ export const createProduct = async (req: Request, res: Response) => {
     const parsedBundleProducts = safeParseArray(bundleProducts);
     const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
 
-    let resolvedCategoryId = categoryId || null;
-    let resolvedBrandId = brandId || null;
+    const rawBrand = brandId !== undefined ? brandId : (brand_id !== undefined ? brand_id : brand);
+    const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
 
-    if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
-      const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
-      if (cat) resolvedCategoryId = cat.id;
-      else resolvedCategoryId = null;
-    }
-
-    if (resolvedBrandId && !resolvedBrandId.includes('-')) {
-      const br = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
-      if (br) resolvedBrandId = br.id;
-      else resolvedBrandId = null;
-    }
+    const resolvedBrandId = await resolveBrandId(rawBrand);
+    const resolvedCategoryId = await resolveCategoryId(rawCategory);
 
     const created = await prisma.$transaction(async (tx) => {
       const p = await tx.product.create({
@@ -1123,7 +1314,7 @@ export const createProduct = async (req: Request, res: Response) => {
           }
         }
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     // Dispatch automatic push notification if configured
     try {
@@ -1173,7 +1364,7 @@ export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
   const {
     name, slug, sku, description, short_description, mrp, price, salePrice, dealerPrice, sale_price, dealer_price, stock,
-    categoryId, brandId, seoTitle, seoDescription, seoKeywords,
+    categoryId, brandId, category_id, brand_id, brand, category, seoTitle, seoDescription, seoKeywords,
     variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
     isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
     status
@@ -1209,20 +1400,11 @@ export const updateProduct = async (req: Request, res: Response) => {
     const parsedBundleProducts = safeParseArray(bundleProducts);
     const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
 
-    let resolvedCategoryId = categoryId || undefined;
-    let resolvedBrandId = brandId || undefined;
+    const rawBrand = brandId !== undefined ? brandId : (brand_id !== undefined ? brand_id : brand);
+    const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
 
-    if (resolvedCategoryId && !resolvedCategoryId.includes('-')) {
-      const cat = await prisma.category.findFirst({ where: { OR: [{ slug: resolvedCategoryId }, { name: resolvedCategoryId }] } });
-      if (cat) resolvedCategoryId = cat.id;
-      else resolvedCategoryId = undefined;
-    }
-
-    if (resolvedBrandId && !resolvedBrandId.includes('-')) {
-      const br = await prisma.brand.findFirst({ where: { OR: [{ slug: resolvedBrandId }, { name: resolvedBrandId }] } });
-      if (br) resolvedBrandId = br.id;
-      else resolvedBrandId = undefined;
-    }
+    const resolvedBrandId = await resolveBrandId(rawBrand);
+    const resolvedCategoryId = await resolveCategoryId(rawCategory);
 
     const updated = await prisma.$transaction(async (tx) => {
       // Clear previously set variants to prevent duplication/orphans
@@ -1240,8 +1422,8 @@ export const updateProduct = async (req: Request, res: Response) => {
           salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : undefined,
           dealerPrice: resolvedDealerPrice !== undefined && resolvedDealerPrice !== null ? parseFloat(resolvedDealerPrice) : undefined,
           stock: stock !== undefined ? parseInt(stock, 10) : undefined,
-          categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : undefined,
-          brandId: resolvedBrandId !== undefined ? resolvedBrandId : undefined,
+          categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : (categoryId !== undefined ? categoryId : undefined),
+          brandId: resolvedBrandId !== undefined ? resolvedBrandId : (brandId !== undefined ? brandId : undefined),
           isActive: status !== undefined ? status === 'active' : undefined,
           isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : undefined),
           codAvailable: codAvailable !== undefined ? !!codAvailable : undefined,
@@ -1322,10 +1504,10 @@ export const updateProduct = async (req: Request, res: Response) => {
           }
         }
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     clearProductCache();
-    return res.status(200).json({ success: true, message: 'Success', data: updated });
+    return res.status(200).json({ success: true, message: 'Success', data: mapProductFields(updated) });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to record Product', message: error.message });
   }

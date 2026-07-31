@@ -1,16 +1,24 @@
-[debug] [2026-07-27T19:57:31.895Z] ----------------------------------------------------------------------
-[debug] [2026-07-27T19:57:31.897Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
-[debug] [2026-07-27T19:57:31.898Z] CLI Version:   15.19.1
-[debug] [2026-07-27T19:57:31.898Z] Platform:      win32
-[debug] [2026-07-27T19:57:31.898Z] Node Version:  v22.22.3
-[debug] [2026-07-27T19:57:31.898Z] Time:          Tue Jul 28 2026 01:27:31 GMT+0530 (India Standard Time)
-[debug] [2026-07-27T19:57:31.898Z] ----------------------------------------------------------------------
+[debug] [2026-07-31T21:05:09.026Z] ----------------------------------------------------------------------
+[debug] [2026-07-31T21:05:09.028Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-07-31T21:05:09.028Z] CLI Version:   15.19.1
+[debug] [2026-07-31T21:05:09.028Z] Platform:      win32
+[debug] [2026-07-31T21:05:09.028Z] Node Version:  v22.22.3
+[debug] [2026-07-31T21:05:09.029Z] Time:          Sat Aug 01 2026 02:35:09 GMT+0530 (India Standard Time)
+[debug] [2026-07-31T21:05:09.029Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-07-27T19:57:33.404Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-07-27T19:57:33.405Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
-[debug] [2026-07-27T19:57:33.405Z] [iam] checking project ajr3dgalaxy for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
-[debug] [2026-07-27T19:57:33.406Z] Checked if tokens are valid: true, expires at: 1785185763135
-[debug] [2026-07-27T19:57:33.406Z] Checked if tokens are valid: true, expires at: 1785185763135
-[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
-[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
-[debug] [2026-07-27T19:57:33.407Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-31T21:05:09.031Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-07-31T21:05:14.075Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-31T21:05:14.076Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
+[debug] [2026-07-31T21:05:14.076Z] [iam] checking project ajr3dgalaxy for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-07-31T21:05:14.077Z] Checked if tokens are valid: false, expires at: 1785390961102
+[debug] [2026-07-31T21:05:14.077Z] Checked if tokens are valid: false, expires at: 1785390961102
+[debug] [2026-07-31T21:05:14.077Z] > refreshing access token with scopes: []
+[debug] [2026-07-31T21:05:14.079Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-31T21:05:14.079Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-31T21:05:14.261Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-07-31T21:05:14.261Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-31T21:05:14.268Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
+[debug] [2026-07-31T21:05:14.268Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
+[debug] [2026-07-31T21:05:14.269Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-07-31T21:05:14.758Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-07-31T21:05:14.758Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}

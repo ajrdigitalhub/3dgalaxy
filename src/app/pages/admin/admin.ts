@@ -1417,7 +1417,7 @@ export class AdminPanel {
     this.pSku.set(p.sku || "");
     this.pDesc.set(p.description || "");
     this.pLongDesc.set(p.long_description || "");
-    this.pBrand.set(p.brand || "3D Galaxy");
+    this.pBrand.set(p.brandId || (p as any).brand_id || (p as any).brand?.id || p.brand || "");
     this.pCatId.set(p.category_id || "");
     this.pMrp.set(p.mrp || 0);
     this.pSale.set(p.sale_price || 0);
@@ -1502,7 +1502,7 @@ export class AdminPanel {
             detail.long_description || p.long_description || "",
           );
           this.pBrand.set(
-            detail.brandId || detail.brand || p.brand || "3D Galaxy",
+            detail.brandId || detail.brand_id || detail.brand?.id || p.brandId || (p as any).brand_id || ""
           );
           this.pCatId.set(
             detail.categoryId || detail.category_id || p.category_id || "",

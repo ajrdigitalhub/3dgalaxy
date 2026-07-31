@@ -71,11 +71,114 @@
       document.documentElement.classList.add('material-icons-loaded');
     }
   </script>
+
+  <!-- Instant Progress Loader Style - Prevents Blank White Screen on Refresh -->
+  <style>
+    app-root:empty {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background-color: #0d0b0a;
+      color: #f4f4f5;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .initial-loader-progress-track {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      z-index: 1000000;
+    }
+
+    .initial-loader-progress-bar {
+      height: 100%;
+      width: 45%;
+      background: linear-gradient(90deg, #f54f00, #ff8c00, #3b82f6);
+      box-shadow: 0 0 14px #f54f00, 0 0 8px #ff8c00;
+      border-radius: 9999px;
+      animation: initialProgressAnim 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes initialProgressAnim {
+      0% { transform: translateX(-100%) scaleX(0.4); }
+      50% { transform: translateX(100%) scaleX(1.2); }
+      100% { transform: translateX(300%) scaleX(0.4); }
+    }
+
+    .initial-loader-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      background: radial-gradient(circle at center, #544d47 0%, #2e2825 35%, #181413 70%, #0d0b0a 100%);
+    }
+
+    .initial-loader-logo {
+      height: 64px;
+      width: auto;
+      object-fit: contain;
+      animation: logo3dfloat 3s ease-in-out infinite;
+      transform-style: preserve-3d;
+    }
+
+    @keyframes logo3dfloat {
+      0%, 100% {
+        transform: translateY(0px) rotateX(0deg) scale(1);
+        filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(245, 79, 0, 0.3));
+      }
+      50% {
+        transform: translateY(-8px) rotateX(6deg) scale(1.04);
+        filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 25px rgba(245, 79, 0, 0.5));
+      }
+    }
+
+    .initial-loader-spinner {
+      width: 24px;
+      height: 24px;
+      margin-top: 1.75rem;
+      border: 2.5px solid rgba(255, 255, 255, 0.08);
+      border-top-color: #f54f00;
+      border-right-color: #ff7700;
+      border-radius: 50%;
+      animation: initialSpin 0.7s linear infinite;
+      box-shadow: 0 0 10px rgba(245, 79, 0, 0.4);
+    }
+
+    @keyframes initialSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .initial-loader-caption {
+      margin-top: 1.25rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+  </style>
 </head>
 
 <body
   class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 min-h-screen transition-all duration-300">
-  <app-root></app-root>
+  <app-root>
+    <div class="initial-loader-progress-track">
+      <div class="initial-loader-progress-bar"></div>
+    </div>
+    <div class="initial-loader-container">
+      <img src="3d-logo.png" alt="3D Galaxy" class="initial-loader-logo" />
+      <div class="initial-loader-spinner"></div>
+      <p class="initial-loader-caption">Loading 3D Galaxy...</p>
+    </div>
+  </app-root>
 </body>
 
 </html>

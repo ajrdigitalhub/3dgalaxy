@@ -19,6 +19,7 @@ export interface InboxNotification {
   guestId?: string | null;
   title: string;
   body: string;
+  message?: string;
   image?: string | null;
   actionUrl?: string | null;
   isRead: boolean;

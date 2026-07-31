@@ -521,12 +521,12 @@ export class Products implements OnInit {
     }
     if (params["brand"]) {
       params["brand"].split(",").forEach((val: string) => {
-        chips.push({ 
-          key: "brand", 
-          value: val, 
-          label: "Brand", 
-          display: val, 
-          icon: "sell" 
+        chips.push({
+          key: "brand",
+          value: val,
+          label: "Brand",
+          display: val,
+          icon: "sell"
         });
       });
     }
@@ -578,12 +578,12 @@ export class Products implements OnInit {
     }
     if (params["color"]) {
       params["color"].split(",").forEach((val: string) => {
-        chips.push({ 
-          key: "color", 
-          value: val, 
-          label: "Color", 
-          display: val, 
-          icon: "palette" 
+        chips.push({
+          key: "color",
+          value: val,
+          label: "Color",
+          display: val,
+          icon: "palette"
         });
       });
     }
@@ -600,23 +600,23 @@ export class Products implements OnInit {
     }
     if (params["technology"]) {
       params["technology"].split(",").forEach((val: string) => {
-        chips.push({ 
-          key: "technology", 
-          value: val, 
-          label: "Tech", 
-          display: val, 
-          icon: "precision_manufacturing" 
+        chips.push({
+          key: "technology",
+          value: val,
+          label: "Tech",
+          display: val,
+          icon: "precision_manufacturing"
         });
       });
     }
     if (params["printerType"]) {
       params["printerType"].split(",").forEach((val: string) => {
-        chips.push({ 
-          key: "printerType", 
-          value: val, 
-          label: "Type", 
-          display: val, 
-          icon: "print" 
+        chips.push({
+          key: "printerType",
+          value: val,
+          label: "Type",
+          display: val,
+          icon: "print"
         });
       });
     }
