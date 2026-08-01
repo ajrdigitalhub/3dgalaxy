@@ -1,5 +1,107 @@
 [
   {
+    "id": "68f29890-eb90-42fe-bf46-b18d90be016b",
+    "title": "🖨️ New 3D Service Request",
+    "body": "Ritesh uploaded 3D model \"yamaha order (4).stl\" (Tracking: TRK-955291)",
+    "type": "service",
+    "eventKey": "NEW_SERVICE_REQUEST",
+    "deepLink": "/admin/services",
+    "data": {
+      "material": "ABS",
+      "quantity": 2,
+      "enquiryId": "ENQ-401374",
+      "customerName": "Ritesh",
+      "trackingNumber": "TRK-955291"
+    },
+    "sentAt": "2026-08-01T10:36:50.228Z",
+    "isRead": false
+  },
+  {
+    "id": "dc8843dc-0c65-4f87-bef4-fd3b5a9041a0",
+    "title": "🛒 New Order Received",
+    "body": "Test User placed Order #ORD-2026-843261 for ₹1400.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "542df70a-1253-4e47-92a0-0597fe4ed052",
+      "orderNumber": "ORD-2026-843261",
+      "totalAmount": "1400",
+      "customerName": "Test User",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-08-01T10:27:18.463Z",
+    "isRead": false
+  },
+  {
+    "id": "f5d845c4-b452-4b31-b795-75bbb3854de9",
+    "title": "🛒 New Order Received",
+    "body": "Kumar placed Order #ORD-2026-502344 for ₹2.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "0af102f8-03b4-4bee-8bc6-15ffc8c58d42",
+      "orderNumber": "ORD-2026-502344",
+      "totalAmount": "2",
+      "customerName": "Kumar",
+      "paymentMethod": "RAZORPAY"
+    },
+    "sentAt": "2026-08-01T10:14:11.717Z",
+    "isRead": false
+  },
+  {
+    "id": "c84968ba-ceab-45cc-b259-d3309ebbfca2",
+    "title": "🛒 New Order Received",
+    "body": "Kumar placed Order #ORD-2026-210405 for ₹1400.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "89b93596-c738-4de3-9bbd-76bd9138aedc",
+      "orderNumber": "ORD-2026-210405",
+      "totalAmount": "1400",
+      "customerName": "Kumar",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-08-01T10:11:38.424Z",
+    "isRead": false
+  },
+  {
+    "id": "9edc16e2-dc5d-423d-ae76-5ce9706f3eab",
+    "title": "🛒 New Order Received",
+    "body": "Kumar placed Order #ORD-2026-395444 for ₹2.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "b34855f7-64d0-4d8e-9d90-c63feb831351",
+      "orderNumber": "ORD-2026-395444",
+      "totalAmount": "2",
+      "customerName": "Kumar",
+      "paymentMethod": "RAZORPAY"
+    },
+    "sentAt": "2026-08-01T09:34:58.987Z",
+    "isRead": false
+  },
+  {
+    "id": "d603587a-6c95-4dff-8fea-4e7020320490",
+    "title": "🛒 New Order Received",
+    "body": "Kumar placed Order #ORD-2026-425677 for ₹2.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "abaaac13-5890-46d6-ad56-a338bc5302cb",
+      "orderNumber": "ORD-2026-425677",
+      "totalAmount": "2",
+      "customerName": "Kumar",
+      "paymentMethod": "RAZORPAY"
+    },
+    "sentAt": "2026-08-01T09:32:31.218Z",
+    "isRead": false
+  },
+  {
     "id": "cdece7f8-ee43-401f-928a-032375d00cb4",
     "title": "🛒 New Order Received",
     "body": "Kumar placed Order #ORD-2026-375339 for ₹2.00",

@@ -485,6 +485,7 @@ export class AdminPanel {
   pBaseShippingCharge = signal<number>(0);
   pEstimatedDeliveryDays = signal<number>(3);
   pFreeShippingEligible = signal<boolean>(true);
+  pWeightInGrams = signal<number>(0);
   pBundleProducts = signal<any[]>([]);
   pRecommendedFilaments = signal<string[]>([]);
   pRelatedIds = signal<string[]>([]);
@@ -1577,6 +1578,9 @@ export class AdminPanel {
           );
           this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
           this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
+          this.pWeightInGrams.set(
+            detail.weightInGrams ? Number(detail.weightInGrams) : (detail.weight ? Number(detail.weight) : 0)
+          );
           this.pBundleProducts.set(
             detail.bundleProducts
               ? typeof detail.bundleProducts === "string"
@@ -1633,6 +1637,7 @@ export class AdminPanel {
     this.pBaseShippingCharge.set(0);
     this.pEstimatedDeliveryDays.set(3);
     this.pFreeShippingEligible.set(true);
+    this.pWeightInGrams.set(0);
     this.pBundleProducts.set([]);
     this.pRecommendedFilaments.set([]);
   }
@@ -1934,6 +1939,8 @@ export class AdminPanel {
       baseShippingCharge: this.pBaseShippingCharge(),
       estimatedDeliveryDays: this.pEstimatedDeliveryDays(),
       freeShippingEligible: this.pFreeShippingEligible(),
+      weightInGrams: this.pWeightInGrams(),
+      weight_in_grams: this.pWeightInGrams(),
       bundleProducts: this.pBundleProducts(),
       recommendedFilaments: this.pRecommendedFilaments(),
       is360Supported: isEdit

@@ -54,15 +54,15 @@ export class ShippingService {
     }
 
     const settings = this.globalSettings();
-    const enableProductShipping = settings.enableProductShipping === true;
-    const enableCategoryShipping = settings.enableCategoryShipping === true;
+    const enableProductShipping = settings.enableProductShipping !== false;
+    const enableCategoryShipping = settings.enableCategoryShipping !== false;
     const enableGlobalShipping = settings.enableGlobalShipping !== false;
     const defaultShippingCharge = settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
       ? Number(settings.defaultShippingCharge)
       : 150;
-    const freeShippingThreshold = (settings.freeShippingMinSpent !== undefined && settings.freeShippingMinSpent !== null && !isNaN(Number(settings.freeShippingMinSpent)))
-      ? Number(settings.freeShippingMinSpent)
-      : ((settings.freeShippingThreshold !== undefined && settings.freeShippingThreshold !== null && !isNaN(Number(settings.freeShippingThreshold))) ? Number(settings.freeShippingThreshold) : null);
+    const freeShippingThreshold = (settings.freeShippingThreshold !== undefined && settings.freeShippingThreshold !== null && !isNaN(Number(settings.freeShippingThreshold)))
+      ? Number(settings.freeShippingThreshold)
+      : ((settings.freeShippingMinSpent !== undefined && settings.freeShippingMinSpent !== null && !isNaN(Number(settings.freeShippingMinSpent))) ? Number(settings.freeShippingMinSpent) : null);
     const shippingLabel = settings.shippingLabel || "Delivery Charges";
 
     let totalShippingCharge = 0;
@@ -96,6 +96,7 @@ export class ShippingService {
       subtotal >= freeShippingThreshold;
 
     const allCategories = this.categories();
+    let reliesOnGlobalShipping = false;
 
     for (const item of cartItems) {
       const prod = item.product || item;
@@ -149,7 +150,8 @@ export class ShippingService {
         } else {
           // Priority 3: Global Shipping Charge (only if Global Shipping Engine is enabled)
           if (enableGlobalShipping && defaultShippingCharge > 0 && !isGlobalThresholdMet) {
-            itemCharge = defaultShippingCharge;
+            reliesOnGlobalShipping = true;
+            itemCharge = 0; // Flat order fee added once below
             itemSource = "Global";
           } else {
             // Priority 4: Free Shipping
@@ -159,8 +161,8 @@ export class ShippingService {
         }
       }
 
-      // If global threshold is met and item has no explicit product shipping charge, make it 0
-      if (isGlobalThresholdMet && itemSource !== "Product") {
+      // If global free shipping threshold is met and product does not explicitly opt out of free shipping, waive charge
+      if (isGlobalThresholdMet && prod.freeShippingEligible !== false) {
         itemCharge = 0;
         itemSource = "Free";
       }
@@ -178,6 +180,12 @@ export class ShippingService {
         source: itemSource,
         estimatedDays: itemDays,
       });
+    }
+
+    // Apply global shipping charge ONCE per order if any item relied on global shipping and threshold is not met
+    if (reliesOnGlobalShipping && !isGlobalThresholdMet && enableGlobalShipping && defaultShippingCharge > 0) {
+      totalShippingCharge += defaultShippingCharge;
+      sourcesUsed.add("Global");
     }
 
     // Determine aggregate order shipping source

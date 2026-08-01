@@ -144,6 +144,13 @@
                   <p class="text-[10px] font-mono text-neutral-400 mt-0.5">
                     SKU: {{ item.variant?.sku || item.product.sku }}
                   </p>
+                  @if (getItemWeight(item)) {
+                  <div class="mt-1">
+                    <span class="inline-flex items-center gap-1 text-[10px] font-mono font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-900/40">
+                      <mat-icon class="scale-[0.55] -mx-1 text-amber-500">scale</mat-icon> Weight: {{ getItemWeight(item) }}
+                    </span>
+                  </div>
+                  }
                 </div>
 
                 <!-- Pricing -->
@@ -329,6 +336,33 @@
             more to unlock free shipping!
           </p>
           }
+        </div>
+
+        <!-- Package Summary Card -->
+        <div class="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-5 rounded-3xl border border-amber-500/20 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+            <h4 class="text-xs font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <mat-icon class="scale-75 text-amber-500">inventory_2</mat-icon> Package Summary
+            </h4>
+            <span class="text-[10px] font-mono font-black px-2.5 py-0.5 bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-full border border-amber-500/30">
+              {{ packageSummary().displayWeight }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bg-white/80 dark:bg-neutral-900/80 p-2.5 rounded-2xl border border-amber-500/10">
+              <span class="block text-[9px] font-black uppercase text-neutral-400">Products</span>
+              <span class="text-sm font-black text-neutral-900 dark:text-white">{{ packageSummary().totalItems }}</span>
+            </div>
+            <div class="bg-white/80 dark:bg-neutral-900/80 p-2.5 rounded-2xl border border-amber-500/10">
+              <span class="block text-[9px] font-black uppercase text-neutral-400">Total Units</span>
+              <span class="text-sm font-black text-neutral-900 dark:text-white">{{ packageSummary().totalQuantity }}</span>
+            </div>
+            <div class="bg-white/80 dark:bg-neutral-900/80 p-2.5 rounded-2xl border border-amber-500/10">
+              <span class="block text-[9px] font-black uppercase text-neutral-400">Ship Weight</span>
+              <span class="text-sm font-black text-amber-600 dark:text-amber-400">{{ packageSummary().displayWeight }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Price Details Card -->

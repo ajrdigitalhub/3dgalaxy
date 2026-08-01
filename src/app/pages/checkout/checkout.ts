@@ -20,6 +20,8 @@ import { ApiService } from "../../services/api.service";
 import { AppButton } from "../../shared/components/app-button/app-button";
 import { SettingsService } from "../../core/services/settings.service";
 import { ShippingService } from "../../core/services/shipping.service";
+import { WeightPipe } from "../../shared/pipes/weight.pipe";
+import { calculateItemWeight, calculatePackageSummary, formatWeight, getItemWeightGrams } from "../../shared/utils/weight.utils";
 import { firstValueFrom } from "rxjs";
 
 export interface CustomerAddress {
@@ -42,7 +44,7 @@ export interface CustomerAddress {
 @Component({
   selector: "app-checkout",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule],
+  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, WeightPipe],
   templateUrl: "./checkout.html",
 })
 export class CheckoutComponent implements OnInit {
@@ -55,6 +57,15 @@ export class CheckoutComponent implements OnInit {
   api = inject(ApiService);
   settingsService = inject(SettingsService);
   shippingService = inject(ShippingService);
+
+  packageSummary = computed(() => {
+    return calculatePackageSummary(this.groupedCheckoutItems());
+  });
+
+  getItemWeight(item: any): string {
+    const res = calculateItemWeight(item);
+    return res.totalGrams > 0 ? res.display : '';
+  }
 
   isSubmitting = signal(false);
   showAuthModal = signal(false);
@@ -539,6 +550,7 @@ export class CheckoutComponent implements OnInit {
         variantId: item.variant?.id || null,
         quantity: item.quantity,
         price: this.getPrice(item),
+        weightInGrams: getItemWeightGrams(item),
       })),
       shippingAddress: `${this.accAddr1()} ${this.accAddr2()}, ${this.accCity()}, ${this.accState()} - ${this.accPin()}`,
       shippingAddressSnapshot: {
@@ -620,18 +632,19 @@ export class CheckoutComponent implements OnInit {
           this.loading.startLoading();
           const verifyRes: any = await firstValueFrom(
             this.api.post<any>("/payment/verify-payment", {
-              razorpay_order_id: response.razorpay_order_id || orderData.id || orderData.dbOrderId,
+              razorpay_order_id: response.razorpay_order_id || orderData.id || orderData.dbOrderId || orderData.razorpayOrderId,
               razorpay_payment_id: response.razorpay_payment_id || "pay_mock_" + Date.now(),
               razorpay_signature: response.razorpay_signature || "mock_signature",
+              checkoutId: orderData.checkoutId || orderData.dbOrderId,
+              dbOrderId: orderData.dbOrderId || orderData.checkoutId
             }),
           );
           const finalOrderId = verifyRes?.data?.orderId || orderData.dbOrderId || orderData.id;
           this.finishOrder(finalOrderId, verifyRes?.data?.order);
         } catch (err: any) {
-          console.error(err);
-          this.toast.error(
-            "Payment verification failed. If amount was deducted, it will be refunded.",
-          );
+          console.error('[Razorpay Verify Error]:', err);
+          const errMsg = err?.error?.error || err?.response?.data?.error || err?.message || "Payment verification failed. If amount was deducted, it will be refunded.";
+          this.toast.error(errMsg);
           this.isSubmitting.set(false);
           this.loading.stopLoading();
         }

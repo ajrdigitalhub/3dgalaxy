@@ -59,6 +59,11 @@ const HEADER_NORMALIZATION: Record<string, string> = {
   variant_grams: "variant_grams",
   grams: "variant_grams",
   weight: "variant_grams",
+  "weight (g)": "variant_grams",
+  "weight(g)": "variant_grams",
+  "product weight": "variant_grams",
+  "weight in grams": "variant_grams",
+  "weightingrams": "variant_grams",
   image_src: "image_src",
   image_url: "image_src",
   image_alt_text: "image_alt_text",
@@ -318,7 +323,12 @@ const buildVariantFromRow = (
   const rawWeight =
     getValue(row, "variant_grams") ||
     getValue(row, "grams") ||
-    getValue(row, "weight");
+    getValue(row, "weight") ||
+    getValue(row, "weight (g)") ||
+    getValue(row, "weight(g)") ||
+    getValue(row, "product weight") ||
+    getValue(row, "weight in grams") ||
+    getValue(row, "weightingrams");
 
   const variantImageSources = uniqueArray([
     ...splitCsvArray(getValue(row, "variant_image")),

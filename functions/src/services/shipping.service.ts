@@ -42,9 +42,9 @@ export class ShippingService {
     const defaultShippingCharge = settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
       ? Number(settings.defaultShippingCharge)
       : 150;
-    const freeShippingThreshold = (settings.freeShippingMinSpent !== undefined && settings.freeShippingMinSpent !== null && !isNaN(Number(settings.freeShippingMinSpent)))
-      ? Number(settings.freeShippingMinSpent)
-      : ((settings.freeShippingThreshold !== undefined && settings.freeShippingThreshold !== null && !isNaN(Number(settings.freeShippingThreshold))) ? Number(settings.freeShippingThreshold) : null);
+    const freeShippingThreshold = (settings.freeShippingThreshold !== undefined && settings.freeShippingThreshold !== null && !isNaN(Number(settings.freeShippingThreshold)))
+      ? Number(settings.freeShippingThreshold)
+      : ((settings.freeShippingMinSpent !== undefined && settings.freeShippingMinSpent !== null && !isNaN(Number(settings.freeShippingMinSpent))) ? Number(settings.freeShippingMinSpent) : null);
     const shippingLabel = settings.shippingLabel || 'Delivery Charges';
 
     let totalShippingCharge = 0;
@@ -70,6 +70,7 @@ export class ShippingService {
     }
 
     const isGlobalThresholdMet = freeShippingThreshold !== null && freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
+    let reliesOnGlobalShipping = false;
 
     for (const { item, product } of fullProducts) {
       let itemCharge = 0;
@@ -113,7 +114,8 @@ export class ShippingService {
         } else {
           // Priority 3: Global Shipping Charge (only if Global Shipping Engine is enabled)
           if (enableGlobalShipping && defaultShippingCharge > 0 && !isGlobalThresholdMet) {
-            itemCharge = defaultShippingCharge;
+            reliesOnGlobalShipping = true;
+            itemCharge = 0; // Flat order fee added once below
             itemSource = 'Global';
           } else {
             // Priority 4: Free Shipping
@@ -123,8 +125,8 @@ export class ShippingService {
         }
       }
 
-      // If global threshold is met and item has no explicit product shipping charge override, make it 0
-      if (isGlobalThresholdMet && itemSource !== 'Product') {
+      // If global free shipping threshold is met and product does not explicitly opt out of free shipping, waive charge
+      if (isGlobalThresholdMet && product.freeShippingEligible !== false) {
         itemCharge = 0;
         itemSource = 'Free';
       }
@@ -141,6 +143,12 @@ export class ShippingService {
         source: itemSource,
         estimatedDays: itemDays,
       });
+    }
+
+    // Apply global shipping charge ONCE per order if any item relied on global shipping and threshold is not met
+    if (reliesOnGlobalShipping && !isGlobalThresholdMet && enableGlobalShipping && defaultShippingCharge > 0) {
+      totalShippingCharge += defaultShippingCharge;
+      sourcesUsed.add('Global');
     }
 
     // Determine aggregate order shipping source

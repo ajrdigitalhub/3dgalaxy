@@ -24,6 +24,8 @@ import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.dir
 import { TiltDirective } from "../../shared/directives/tilt.directive";
 
 import { ShippingService } from "../../core/services/shipping.service";
+import { WeightPipe } from "../../shared/pipes/weight.pipe";
+import { formatWeight } from "../../shared/utils/weight.utils";
 
 @Component({
   selector: "app-product-detail",
@@ -36,6 +38,7 @@ import { ShippingService } from "../../core/services/shipping.service";
     ScrollRevealDirective,
     TiltDirective,
     FormsModule,
+    WeightPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./product-detail.html",
@@ -50,6 +53,15 @@ export class ProductDetail {
   toastService = inject(ToastService);
   router = inject(Router);
   shippingService = inject(ShippingService);
+
+  displayProductWeight = computed(() => {
+    const p = this.product();
+    if (!p) return null;
+    const v = this.selectedVariant();
+    const grams = Number(v?.weight || (v as any)?.weightInGrams || p.weightInGrams || (p as any).weight_in_grams || 0);
+    if (!grams || grams <= 0) return null;
+    return formatWeight(grams);
+  });
 
   productShippingInfo = computed(() => {
     const p = this.product();

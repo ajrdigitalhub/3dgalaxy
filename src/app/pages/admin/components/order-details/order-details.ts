@@ -6,11 +6,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { WeightPipe } from '../../../../shared/pipes/weight.pipe';
+import { formatWeight } from '../../../../shared/utils/weight.utils';
 
 @Component({
   selector: 'app-admin-order-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-details.html'
 })
@@ -27,6 +29,21 @@ export class OrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal('');
+
+  displayOrderWeight = computed(() => {
+    const ord = this.order();
+    if (!ord) return '0 g';
+    if (ord.displayWeight) return ord.displayWeight;
+    const totalGrams = Number(ord.totalWeightInGrams || 0);
+    if (totalGrams > 0) return formatWeight(totalGrams);
+
+    const items = ord.items || [];
+    const computedGrams = items.reduce((sum: number, i: any) => {
+      const g = Number(i.weightInGrams || i.product?.weightInGrams || (i.product && i.product.weight) || 0);
+      return sum + (g * (Number(i.quantity) || 1));
+    }, 0);
+    return formatWeight(computedGrams);
+  });
 
   customerName = computed(() => {
     const ord = this.order();

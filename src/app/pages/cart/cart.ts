@@ -5,10 +5,12 @@ import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {SettingsService} from '../../core/services/settings.service';
+import { WeightPipe } from '../../shared/pipes/weight.pipe';
+import { calculateItemWeight, calculatePackageSummary, formatWeight } from '../../shared/utils/weight.utils';
 
 @Component({
   selector: 'app-cart-checkout',
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.html',
   styleUrl: './cart.scss'
@@ -21,6 +23,15 @@ export class CartCheckout implements OnInit {
 
   couponInputText = signal<string>('');
   showOffers = signal(false);
+
+  packageSummary = computed(() => {
+    return calculatePackageSummary(this.ds.cart());
+  });
+
+  getItemWeight(item: any): string {
+    const res = calculateItemWeight(item);
+    return res.totalGrams > 0 ? res.display : '';
+  }
 
   ngOnInit() {
     this.ds.clearBuyNowItem();

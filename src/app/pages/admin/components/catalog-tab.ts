@@ -1237,6 +1237,29 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                   <div
                     class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4"
                   >
+                    <!-- Product Weight (g) -->
+                    <div class="space-y-1 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
+                      <div class="flex items-center justify-between">
+                        <span class="block text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <mat-icon class="scale-75 text-amber-500">scale</mat-icon> Product Weight (grams)
+                        </span>
+                        <span class="text-[9px] font-mono text-zinc-400 uppercase font-bold">Unit: Grams (g)</span>
+                      </div>
+                      <div class="relative mt-2">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          [value]="admin.pWeightInGrams()"
+                          (input)="admin.pWeightInGrams.set(+$any($event.target).value)"
+                          placeholder="Enter product weight in grams"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black text-zinc-900 dark:text-white outline-none focus:border-amber-500 pr-10"
+                        />
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-amber-500">g</span>
+                      </div>
+                      <p class="text-[10px] text-zinc-400 mt-1 font-medium">Weight is used for shipping calculations and checkout summary.</p>
+                    </div>
+
                     <div class="space-y-1">
                       <span
                         class="block text-[9px] font-black text-zinc-400 uppercase"

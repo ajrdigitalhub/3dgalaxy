@@ -1,5 +1,61 @@
 [
   {
+    "id": "ENQ-401374",
+    "trackingNumber": "TRK-955291",
+    "createdAt": "2026-08-01T10:36:33.474Z",
+    "updatedAt": "2026-08-01T10:36:33.474Z",
+    "userId": null,
+    "customerName": "Ritesh",
+    "customerEmail": "ajrdigitalhub@gmail.com",
+    "customerPhone": "9009005564",
+    "isGuest": true,
+    "modelName": "yamaha order (4).stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/services/TRK-955291/original/yamaha%20order%20%284%29.stl?GoogleAccessId=firebase-adminsdk-fbsvc%40ajr3dgalaxy.iam.gserviceaccount.com&Expires=1786185409&Signature=XIS7u1N6pS%2BaGLYNOUxGxS1EB472dRVm%2F6Ecq89QgQ6915F3YNZmTF%2B71nyHZv6H48K%2B%2FAd0%2BHtjo9twkQ6r5nWTO7%2BHYKm1C6RJEbYQJad%2F2pFkZfJPiJEijqPhk8%2BsbZE%2B64YAP2pZweQQapNI8cfXJzLZ2UDiOy3IqP8RM7BZd5PEcHm%2FkwogtpZOlaNSohByRMCsZF0ApxOVTzrXbiw1pFP05I9tWEoCHEOHEDabndqlOpaVVIpPSusAu0VuUW%2FJn83NJzHSkbgnq6yMagcDg9vJUYlFtPawY8AgkicIq2dUB%2FnRD2YVO9FW9N55KxCs5BM4LRHSzZ2gqlaz2w%3D%3D",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.8,
+      "z": 32
+    },
+    "volumeCm3": 8.65,
+    "surfaceAreaCm2": 61.44,
+    "weightGrams": 30,
+    "triangleCount": 14652,
+    "estimatedHours": 2.5,
+    "material": "ABS",
+    "color": "Red",
+    "infillPercent": 20,
+    "layerHeight": "0.1 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 2,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-08-01T10:36:33.474Z",
+        "remarks": "Customer uploaded STL file \"yamaha order (4).stl\" into Firebase Storage.",
+        "updatedBy": "Ritesh"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1785580609020",
+        "type": "push",
+        "sentAt": "2026-08-01T10:36:33.474Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-401374 (Tracking: TRK-955291) has been received successfully!"
+      }
+    ]
+  },
+  {
     "id": "ENQ-240146",
     "trackingNumber": "TRK-781210",
     "createdAt": "2026-07-27T16:20:40.961Z",

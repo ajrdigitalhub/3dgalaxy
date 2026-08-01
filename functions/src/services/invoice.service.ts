@@ -268,11 +268,32 @@ export class InvoiceService {
       doc.text('Grand Total:', rightX, sumY, { width: labelW, align: 'right' });
       doc.text(`₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, rightX + labelW, sumY, { width: valW, align: 'right' });
 
+      // --- PACKAGE SUMMARY BOX (Bottom Center-Left) ---
+      const itemsList = order.items || [];
+      const totalQty = order.totalQuantity || itemsList.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 1), 0);
+      let totalGrams = Number(order.totalWeightInGrams || 0);
+      if (!totalGrams) {
+        totalGrams = itemsList.reduce((sum: number, i: any) => sum + (Number(i.weightInGrams || i.product?.weightInGrams || 0) * (Number(i.quantity) || 1)), 0);
+      }
+      const dispWeight = order.displayWeight || (totalGrams < 1000 ? `${totalGrams} g` : `${(totalGrams / 1000).toFixed(2)} kg`);
+
+      const pkgBoxX = 175;
+      const pkgBoxY = summaryStartY;
+      const pkgBoxW = 160;
+      const pkgBoxH = 54;
+
+      doc.roundedRect(pkgBoxX, pkgBoxY, pkgBoxW, pkgBoxH, 4).fillAndStroke('#F9FAFB', '#E5E7EB');
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#D65108').text('PACKAGE SUMMARY', pkgBoxX + 8, pkgBoxY + 6);
+      doc.fontSize(7.5).font('Helvetica').fillColor('#374151');
+      doc.text(`Total Items: ${itemsList.length} products`, pkgBoxX + 8, pkgBoxY + 19);
+      doc.text(`Total Quantity: ${totalQty} units`, pkgBoxX + 8, pkgBoxY + 30);
+      doc.font('Helvetica-Bold').text(`Shipment Weight: ${dispWeight}`, pkgBoxX + 8, pkgBoxY + 41);
+
       // --- QR CODE & BANK DETAILS (Bottom Left) ---
       if (qrBuffer) {
         doc.image(qrBuffer, 35, summaryStartY, { width: 60, height: 60 });
         doc.fontSize(7).font('Helvetica').fillColor('#6B7280');
-        doc.text('Scan QR Code to Track Order', 35, summaryStartY + 64, { width: 140 });
+        doc.text('Scan QR Code to Track Order', 35, summaryStartY + 64, { width: 130 });
       }
 
       doc.fontSize(7.5).font('Helvetica-Bold').fillColor('#111827').text('Payment & Bank Information:', 35, summaryStartY + 76);

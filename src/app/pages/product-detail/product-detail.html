@@ -356,10 +356,20 @@
         <div class="text-right shrink-0">
           <span class="text-xs font-black uppercase text-neutral-400 block">Shipping Charge</span>
           @if (shipInfo.isFree || shipInfo.charge === 0) {
-          <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">FREE</span>
-          } @else {
+        } @else {
           <span class="text-sm font-black text-neutral-900 dark:text-white">₹{{ shipInfo.charge }}</span>
           }
+        </div>
+      </div>
+      }
+
+      <!-- PRODUCT WEIGHT BADGE -->
+      @if (displayProductWeight()) {
+      <div class="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-300">
+        <mat-icon class="text-amber-500">scale</mat-icon>
+        <div class="flex flex-col">
+          <span class="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Shipment Weight</span>
+          <span class="text-sm font-black">{{ displayProductWeight() }}</span>
         </div>
       </div>
       }

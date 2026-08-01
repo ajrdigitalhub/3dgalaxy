@@ -300,6 +300,8 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           salePrice: p.salePrice ? parseFloat(p.salePrice.toString()) : null,
           dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice.toString()) : null,
           stock: p.stock,
+          weightInGrams: p.weightInGrams !== undefined && p.weightInGrams !== null ? parseFloat(p.weightInGrams.toString()) : 0,
+          weightUnit: p.weightUnit || 'g',
           isActive: p.isActive,
           isExclusive: p.isExclusive,
           codAvailable: p.codAvailable,
@@ -532,8 +534,15 @@ export const mapProductFields = (p: any): any => {
         ? Boolean(p.is_cod_available)
         : true));
 
+  const weightInGrams = p.weightInGrams !== undefined && p.weightInGrams !== null
+    ? Number(p.weightInGrams)
+    : (p.weight !== undefined && p.weight !== null ? Number(p.weight) : 0);
+  const weightUnit = p.weightUnit || 'g';
+
   return {
     ...p,
+    weightInGrams,
+    weightUnit,
     reviews: approvedReviews,
     images: imgs,
     primaryImage,
@@ -1184,6 +1193,7 @@ export const createProduct = async (req: Request, res: Response) => {
     categoryId, brandId, category_id, brand_id, brand, category, seoTitle, seoDescription, seoKeywords,
     variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
     isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
+    weightInGrams, weight_in_grams, weightUnit, weight_unit,
     status
   } = req.body;
 
@@ -1194,6 +1204,9 @@ export const createProduct = async (req: Request, res: Response) => {
   try {
     const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
     const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+    const rawWeight = weightInGrams !== undefined ? weightInGrams : weight_in_grams;
+    const resolvedWeightInGrams = rawWeight !== undefined && rawWeight !== null ? parseFloat(rawWeight) : 0;
+    const resolvedWeightUnit = weightUnit || weight_unit || 'g';
 
     const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
@@ -1247,6 +1260,8 @@ export const createProduct = async (req: Request, res: Response) => {
           baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : 0,
           estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : 3,
           freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : true,
+          weightInGrams: isNaN(resolvedWeightInGrams) ? 0 : resolvedWeightInGrams,
+          weightUnit: resolvedWeightUnit,
           bundleProducts: parsedBundleProducts || [],
           recommendedFilaments: parsedRecommendedFilaments || [],
 
@@ -1374,12 +1389,16 @@ export const updateProduct = async (req: Request, res: Response) => {
     categoryId, brandId, category_id, brand_id, brand, category, seoTitle, seoDescription, seoKeywords,
     variants, options, images, specifications, downloads, features, faqs, warranty, shipping, relatedProducts, included_items, attributes,
     isFeatured, featured, codAvailable, baseShippingCharge, estimatedDeliveryDays, freeShippingEligible, bundleProducts, recommendedFilaments,
+    weightInGrams, weight_in_grams, weightUnit, weight_unit,
     status
   } = req.body;
 
   try {
     const resolvedSalePrice = salePrice !== undefined ? salePrice : sale_price;
     const resolvedDealerPrice = dealerPrice !== undefined ? dealerPrice : dealer_price;
+    const rawWeight = weightInGrams !== undefined ? weightInGrams : weight_in_grams;
+    const resolvedWeightInGrams = rawWeight !== undefined && rawWeight !== null ? parseFloat(rawWeight) : undefined;
+    const resolvedWeightUnit = weightUnit || weight_unit;
 
     const parsedImages = safeParseArray(images).map((img: any) => {
       if (!img) return null;
@@ -1437,6 +1456,8 @@ export const updateProduct = async (req: Request, res: Response) => {
           baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : undefined,
           estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : undefined,
           freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+          weightInGrams: resolvedWeightInGrams !== undefined && !isNaN(resolvedWeightInGrams) ? resolvedWeightInGrams : undefined,
+          weightUnit: resolvedWeightUnit !== undefined ? resolvedWeightUnit : undefined,
           bundleProducts: parsedBundleProducts !== undefined ? parsedBundleProducts : undefined,
           recommendedFilaments: parsedRecommendedFilaments !== undefined ? parsedRecommendedFilaments : undefined,
 

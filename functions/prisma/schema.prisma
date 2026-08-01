@@ -211,6 +211,8 @@ model Product {
   baseShippingCharge Decimal        @default(0) @map("base_shipping_charge") @db.Decimal(10, 2)
   estimatedDeliveryDays Int         @default(3) @map("estimated_delivery_days")
   freeShippingEligible Boolean      @default(true) @map("free_shipping_eligible")
+  weightInGrams   Decimal?          @default(0) @map("weight_in_grams") @db.Decimal(10, 2)
+  weightUnit      String?           @default("g") @map("weight_unit") @db.VarChar(20)
   bundleProducts  Json?             @map("bundle_products")
   recommendedFilaments Json?        @map("recommended_filaments")
   images          Json?             @default("[]")
@@ -442,6 +444,9 @@ model Order {
   shippingMethod  String?           @map("shipping_method") @db.VarChar(100)
   shippingSource  String?           @map("shipping_source") @db.VarChar(50)
   estimatedDelivery String?         @map("estimated_delivery") @db.VarChar(100)
+  totalWeightInGrams Decimal?       @default(0) @map("total_weight_in_grams") @db.Decimal(10, 2)
+  displayWeight   String?           @map("display_weight") @db.VarChar(50)
+  totalQuantity   Int?              @default(0) @map("total_quantity")
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -471,6 +476,7 @@ model OrderItem {
   quantity        Int
   unitPrice       Decimal           @map("unit_price") @db.Decimal(10, 2)
   totalPrice      Decimal           @map("total_price") @db.Decimal(10, 2)
+  weightInGrams   Decimal?          @default(0) @map("weight_in_grams") @db.Decimal(10, 2)
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
 
   order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)

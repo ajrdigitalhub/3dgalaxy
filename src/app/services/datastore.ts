@@ -183,6 +183,8 @@ export interface Product {
   freeShippingEligible?: boolean;
   bundleProducts?: any;
   recommendedFilaments?: any;
+  weightInGrams?: number;
+  weightUnit?: string;
   createdAt?: string;
   updatedAt?: string;
   primaryImage?: string;
@@ -199,6 +201,7 @@ export interface CartItem {
   quantity: number;
   selectedPriceType: 'sale' | 'dealer';
   isFree?: boolean;
+  weightInGrams?: number;
 }
 
 export interface OrderItem {
@@ -207,6 +210,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   mrp: number;
+  weightInGrams?: number;
 }
 
 export interface Order {
@@ -237,6 +241,9 @@ export interface Order {
   gstNumber?: string;
   companyName?: string;
   codCharge?: number;
+  totalWeightInGrams?: number;
+  displayWeight?: string;
+  totalQuantity?: number;
 }
 
 export interface QuoteRequest {
@@ -468,8 +475,16 @@ export class DatastoreService {
     };
   });
 
+  private getInitialTheme(): 'light' | 'dark' {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+    }
+    return 'light';
+  }
+
   // Theme Configuration
-  theme = signal<'light' | 'dark'>('light');
+  theme = signal<'light' | 'dark'>(this.getInitialTheme());
 
   // Core Data Signals
   categories = signal<Category[]>([]);
@@ -882,6 +897,15 @@ export class DatastoreService {
 
     effect(() => {
       const themeData = this.settingsService.theme();
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+        if (saved === 'dark' || saved === 'light') {
+          if (this.theme() !== saved) {
+            this.theme.set(saved);
+          }
+          return;
+        }
+      }
       if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
         const targetMode = themeData.darkMode ? 'dark' : 'light';
         if (this.theme() !== targetMode) {
@@ -1618,6 +1642,8 @@ export class DatastoreService {
       codAvailable: this.isCodAvailable(p),
       freeShippingEligible: !!p.freeShippingEligible,
       is360Supported: p.is360Supported || false,
+      weightInGrams: p.weightInGrams !== undefined && p.weightInGrams !== null ? Number(p.weightInGrams) : (p.weight_in_grams !== undefined && p.weight_in_grams !== null ? Number(p.weight_in_grams) : (p.weight !== undefined && p.weight !== null ? Number(p.weight) : 0)),
+      weightUnit: p.weightUnit || p.weight_unit || 'g',
       variants: p.variants || [],
       tags: []
     };
@@ -2159,9 +2185,9 @@ export class DatastoreService {
 
   freeShippingThreshold = computed(() => {
     const globalSettings = this.settingsService.shippingSettings() || {};
-    return globalSettings.freeShippingMinSpent !== undefined 
-      ? Number(globalSettings.freeShippingMinSpent) 
-      : (globalSettings.freeShippingThreshold !== undefined ? Number(globalSettings.freeShippingThreshold) : 3000);
+    return globalSettings.freeShippingThreshold !== undefined 
+      ? Number(globalSettings.freeShippingThreshold) 
+      : (globalSettings.freeShippingMinSpent !== undefined ? Number(globalSettings.freeShippingMinSpent) : 3500);
   });
 
   cartShipping = computed(() => {
