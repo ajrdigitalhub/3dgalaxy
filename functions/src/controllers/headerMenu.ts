@@ -148,7 +148,8 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         deletedAt: null
       },
       include: {
-        reviews: true
+        reviews: true,
+        variants: { where: { isActive: true } }
       },
       take: 12,
       orderBy: { createdAt: 'desc' }

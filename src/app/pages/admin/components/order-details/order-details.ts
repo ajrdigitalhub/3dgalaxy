@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -16,8 +16,13 @@ import { environment } from '../../../../../environments/environment';
 })
 export class OrderDetailsComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private http = inject(HttpClient);
   public location = inject(Location);
+
+  backToOrders() {
+    this.router.navigate(['/admin/orders']);
+  }
 
   order = signal<any>(null);
   loading = signal(true);

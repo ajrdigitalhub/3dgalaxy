@@ -22,6 +22,7 @@ export const clearProductCache = () => {
   sysCache.del('header_menu_data');
   clearCache(); // Flushes route cache for /api/home and other routes
 };
+clearProductCache();
 
 const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
@@ -103,6 +104,9 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           include: {
             brand: true,
             category: true,
+            variants: {
+              where: { isActive: true }
+            },
             reviews: {
               include: { user: true }
             },
@@ -304,6 +308,8 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           specifications: specs,
           brand: p.brand,
           category: p.category,
+          variants: p.variants,
+          hasVariants: p.variants && p.variants.length > 0,
           reviews: mappedReviews,
           activePrice,
           colors,
@@ -534,6 +540,7 @@ export const mapProductFields = (p: any): any => {
     secondaryImage,
     galleryImages,
     variants: mappedVariants,
+    hasVariants: Array.isArray(mappedVariants) && mappedVariants.length > 0,
     variantImages,
     variantSecondaryImages,
     thumbnail: primaryImage,
@@ -893,9 +900,9 @@ const populateProductRelations = async (item: any) => {
   const relatedIds = relatedList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId || x?.relatedToId)).filter(Boolean);
 
   const [bundleProducts, recommendedFilaments, relatedProducts] = await Promise.all([
-    bundleIds.length > 0 ? prisma.product.findMany({ where: { id: { in: bundleIds }, deletedAt: null } }) : Promise.resolve([]),
-    filamentIds.length > 0 ? prisma.product.findMany({ where: { id: { in: filamentIds }, deletedAt: null } }) : Promise.resolve([]),
-    relatedIds.length > 0 ? prisma.product.findMany({ where: { id: { in: relatedIds }, deletedAt: null } }) : Promise.resolve([])
+    bundleIds.length > 0 ? prisma.product.findMany({ where: { id: { in: bundleIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
+    filamentIds.length > 0 ? prisma.product.findMany({ where: { id: { in: filamentIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
+    relatedIds.length > 0 ? prisma.product.findMany({ where: { id: { in: relatedIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([])
   ]);
 
   return {
@@ -942,7 +949,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
           isActive: true,
         },
         take: 8,
-        include: { brand: true, category: true },
+        include: { brand: true, category: true, variants: { where: { isActive: true } } },
       });
     }
 

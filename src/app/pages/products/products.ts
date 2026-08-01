@@ -454,6 +454,10 @@ export class Products implements OnInit {
   }
 
   addToCart(p: any) {
+    if (p.hasVariants || (p.variants && p.variants.length > 0)) {
+      this.router.navigate(['/product', p.slug || p.id]);
+      return;
+    }
     this.ds.addToCart(p, 1);
   }
 

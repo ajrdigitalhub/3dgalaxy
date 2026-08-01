@@ -1,5 +1,33 @@
 [
   {
+    "id": "cdece7f8-ee43-401f-928a-032375d00cb4",
+    "title": "🛒 New Order Received",
+    "body": "Kumar placed Order #ORD-2026-375339 for ₹2.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "2357ec8c-124b-461f-a77b-5f31c2839767",
+      "orderNumber": "ORD-2026-375339",
+      "totalAmount": "2",
+      "customerName": "Kumar",
+      "paymentMethod": "RAZORPAY"
+    },
+    "sentAt": "2026-08-01T05:19:10.361Z",
+    "isRead": false
+  },
+  {
+    "id": "NOTIF-LOG-1785561158332",
+    "title": "🚀 3DGalaxy Admin Push Test",
+    "body": "Push notifications are active on Chrome Admin Desktop.",
+    "category": "System Alert",
+    "tokensSent": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "status": "DELIVERED",
+    "sentAt": "2026-08-01T05:12:38.332Z"
+  },
+  {
     "id": "7b195ff2-fe68-45c0-83a4-f18b0b5db831",
     "title": "🛒 New Order Received",
     "body": "admin123 placed Order #ORD-2026-509836 for ₹2049.00",

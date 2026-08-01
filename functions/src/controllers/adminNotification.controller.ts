@@ -221,15 +221,9 @@ export const getNotificationSettings = async (req: Request, res: Response) => {
       }
     }
 
-    // STRICT BUSINESS RULE: Ensure whatsappEnabled is FALSE for non-NEW_ORDER
-    const sanitizedSettings = fullSettings.map((s) => ({
-      ...s,
-      whatsappEnabled: s.eventKey === 'NEW_ORDER' ? s.whatsappEnabled : false,
-    }));
-
     return res.status(200).json({
       success: true,
-      data: sanitizedSettings,
+      data: fullSettings,
     });
   } catch (error: any) {
     console.error('getNotificationSettings error:', error);
@@ -257,8 +251,7 @@ export const updateNotificationSettings = async (req: Request, res: Response) =>
       const eventKey = item.eventKey as NotificationEventKey;
       const def = EVENT_DEFINITIONS[eventKey];
 
-      // STRICT BUSINESS RULE: WhatsApp enabled ONLY for NEW_ORDER
-      const whatsappEnabled = eventKey === 'NEW_ORDER' ? Boolean(item.whatsappEnabled) : false;
+      const whatsappEnabled = Boolean(item.whatsappEnabled);
 
       const record = await prisma.notificationChannelSetting.upsert({
         where: { eventKey },

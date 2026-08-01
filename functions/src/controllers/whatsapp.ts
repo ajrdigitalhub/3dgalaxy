@@ -311,10 +311,12 @@ export const triggerWhatsAppNotification = async (
 ) => {
   try {
     const settings = await getWhatsappSettings();
-    if (!settings.enabled) return;
+    if (settings.enabled === false) return;
     
-    // Check if trigger is enabled (defaulting to true if not specified)
-    const triggerEnabled = settings.triggers?.[triggerKey] !== false;
+    // Check if trigger is enabled (support alias keys like status_update, order_status_update, or specific status key)
+    const lowerKey = triggerKey.toLowerCase();
+    const explicitVal = settings.triggers?.[triggerKey] ?? settings.triggers?.[lowerKey] ?? settings.triggers?.['status_update'] ?? settings.triggers?.['order_status_update'];
+    const triggerEnabled = explicitVal !== false;
     if (!triggerEnabled) return;
 
     // Format recipient number (add default country code if missing)
@@ -410,14 +412,14 @@ export const triggerWhatsAppNotification = async (
       await WhatsAppNotificationService.sendOrderConfirmation(order, {
         ...extraParams,
         recipientNumber: recipientNumber || customer?.phone,
-        customerName: customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : undefined
+        customerName: WhatsAppNotificationService.extractCustomerName(order, { customer, ...extraParams })
       });
       return;
     } else if (isStatusUpdateTrigger) {
       await WhatsAppNotificationService.sendOrderStatusNotification(order, {
         ...extraParams,
         recipientNumber: recipientNumber || customer?.phone,
-        customerName: customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : undefined,
+        customerName: WhatsAppNotificationService.extractCustomerName(order, { customer, ...extraParams }),
         statusKey: triggerKey
       });
       return;
@@ -428,7 +430,7 @@ export const triggerWhatsAppNotification = async (
       const fileName = `invoice_${order?.orderNumber || order?.id}.pdf`;
       const invoiceUrl = order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : `${siteUrl}/uploads/invoices/${fileName}`;
       const reviewLink = order ? `${siteUrl}/feedback?orderId=${order.id}` : '';
-      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+      const custName = WhatsAppNotificationService.extractCustomerName(order, { customer, ...extraParams });
 
       components = sanitizeComponents([
         {

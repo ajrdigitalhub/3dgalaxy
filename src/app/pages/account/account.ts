@@ -153,24 +153,24 @@ export class Account {
       icon: "favorite",
       path: "/account/wishlist",
     },
-    {
-      id: "saved",
-      label: "Saved For Later",
-      icon: "bookmark",
-      path: "/account/saved",
-    },
+    // {
+    //   id: "saved",
+    //   label: "Saved For Later",
+    //   icon: "bookmark",
+    //   path: "/account/saved",
+    // },
     {
       id: "addresses",
       label: "Addresses",
       icon: "location_on",
       path: "/account/addresses",
     },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: "notifications",
-      path: "/account/notifications",
-    },
+    // {
+    //   id: "notifications",
+    //   label: "Notifications",
+    //   icon: "notifications",
+    //   path: "/account/notifications",
+    // },
     { id: "reviews", label: "Reviews", icon: "star", path: "/account/reviews" },
     {
       id: "profile",

@@ -23,7 +23,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         </div>
         <div class="flex items-center gap-2">
           <button (click)="subTab.set('transactions')" [class]="subTab() === 'transactions' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-350'" class="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Transactions</button>
-          <button (click)="subTab.set('webhooks')" [class]="subTab() === 'webhooks' ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-350'" class="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Webhook Logs</button>
         </div>
       </div>
 
@@ -213,19 +212,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </div>
               </div>
 
-              <!-- Refund Action Launch -->
-              @if (tx.status === 'Captured') {
-                <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-4">
-                  <h4 class="text-[10px] font-black uppercase text-amber-500">Refund Action Launcher</h4>
-                  <div class="space-y-2">
-                    <span class="block text-[8px] font-black text-zinc-400 uppercase">Amount to Refund</span>
-                    <div class="flex gap-2">
-                      <input type="number" [(ngModel)]="refundAmount" [max]="tx.amount" class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-amber-500 font-bold" [placeholder]="tx.amount">
-                      <button (click)="processRefund(tx)" [disabled]="refundLoading()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Refund</button>
-                    </div>
-                  </div>
-                </div>
-              }
+
             </div>
           </div>
         </div>

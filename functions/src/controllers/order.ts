@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { triggerWhatsAppNotification } from './whatsapp';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
 import { ShippingService } from '../services/shipping.service';
+import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -796,15 +797,18 @@ export const updateOrderStatus = async (req: any, res: Response) => {
         }
       },
       include: {
-        customer: true,
+        customer: { include: { user: true } },
+        shippingAddress: true,
         items: { include: { product: true } }
       }
     });
 
-    const phone = updated.customer?.phone;
+    const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
     if (phone) {
       const statusKey = String(status).toLowerCase();
-      await triggerWhatsAppNotification(statusKey, phone, updated, updated.customer);
+      triggerWhatsAppNotification(statusKey, phone, updated, updated.customer).catch((err) => {
+        console.error(`[updateOrderStatus] WhatsApp trigger error for order ${updated.orderNumber}:`, err);
+      });
     }
 
     return res.status(200).json(updated);
@@ -828,7 +832,8 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
       where: orderWhere,
       include: {
         payments: true,
-        customer: true,
+        customer: { include: { user: true } },
+        shippingAddress: true,
         items: { include: { product: true } }
       }
     });
@@ -850,14 +855,14 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
       });
     }
 
-    const phone = order.customer?.phone;
+    const phone = WhatsAppNotificationService.extractCustomerPhone(order);
     if (phone) {
       if (paymentStatus === 'PAID') {
-        await triggerWhatsAppNotification('payment_success', phone, order, order.customer);
+        triggerWhatsAppNotification('payment_success', phone, order, order.customer).catch(() => {});
       } else if (paymentStatus === 'FAILED') {
-        await triggerWhatsAppNotification('payment_failed', phone, order, order.customer);
+        triggerWhatsAppNotification('payment_failed', phone, order, order.customer).catch(() => {});
       } else if (paymentStatus === 'REFUNDED') {
-        await triggerWhatsAppNotification('refund_completed', phone, order, order.customer);
+        triggerWhatsAppNotification('refund_completed', phone, order, order.customer).catch(() => {});
       }
     }
 
@@ -874,7 +879,14 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
   try {
     let orderWhere: any = { id };
     if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
-    const order = await prisma.order.findUnique({ where: orderWhere });
+    const order = await prisma.order.findUnique({
+      where: orderWhere,
+      include: {
+        customer: { include: { user: true } },
+        shippingAddress: true,
+        items: { include: { product: true } }
+      }
+    });
     if (!order) return res.status(404).json({ error: 'Not found' });
 
     await prisma.shipment.create({
@@ -892,7 +904,25 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
       data: {
         status: 'SHIPPED',
       },
+      include: {
+        customer: { include: { user: true } },
+        shippingAddress: true,
+        items: { include: { product: true } }
+      }
     });
+
+    const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
+    if (phone) {
+      triggerWhatsAppNotification('shipped', phone, updated, updated.customer, {
+        courierName: shipmentCarrier,
+        trackingNumber,
+        trackingUrl,
+        estimatedDeliveryDate
+      }).catch((err) => {
+        console.error(`[updateShipmentTracking] WhatsApp trigger error:`, err);
+      });
+    }
+
     return res.status(200).json(updated);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to attach shipment registry details', details: error.message });

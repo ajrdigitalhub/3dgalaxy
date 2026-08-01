@@ -2,9 +2,9 @@
 
   <!-- BREADCRUMB NAVIGATION & QUICK METRIC STATUS -->
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-    <button (click)="location.back()"
-      class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
-      <mat-icon class="scale-75">arrow_back</mat-icon> Back to Order Registry
+    <button (click)="backToOrders()"
+      class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer border-none bg-transparent">
+      <mat-icon class="scale-75">arrow_back</mat-icon> Back to Orders List
     </button>
     <div class="flex items-center gap-2 text-xs font-mono text-neutral-400 uppercase">
       <span>Authority: ADMIN CONSOLE DIRECTIVE</span>
@@ -25,9 +25,9 @@
     <mat-icon class="text-rose-500 scale-125">error_outline</mat-icon>
     <h3 class="text-sm font-bold text-rose-500">Operation Denied</h3>
     <p class="text-xs text-neutral-500">{{ error() }}</p>
-    <button (click)="location.back()"
-      class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all">
-      Go Back
+    <button (click)="backToOrders()"
+      class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer border-none">
+      Back to Orders List
     </button>
   </div>
   } @else {

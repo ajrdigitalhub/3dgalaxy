@@ -130,8 +130,8 @@ export interface AccountProduct {
             [routerLink]="productUrl()"
             class="w-full h-8 mt-1 rounded-xl bg-neutral-900 dark:bg-neutral-800 hover:bg-orange-600 active:scale-[0.98] text-white text-xs font-extrabold uppercase tracking-wider shadow-sm hover:shadow-md flex items-center justify-center gap-1.5 transition-all duration-150 no-underline"
           >
-            <mat-icon class="scale-75 text-[16px] w-4 h-4 flex items-center justify-center">visibility</mat-icon>
-            <span>View Product</span>
+            <mat-icon class="scale-75 text-[16px] w-4 h-4 flex items-center justify-center">tune</mat-icon>
+            <span>Select Variant</span>
           </a>
         } @else {
           <button
@@ -172,7 +172,7 @@ export class AccountProductCardComponent {
   productUrl = computed(() => {
     const p = this.product();
     const id = p.id || p.productId;
-    return p.slug ? ['/products', p.slug] : ['/products', id];
+    return p.slug ? ['/product', p.slug] : ['/product', id];
   });
 
   brandName = computed(() => this.product().brand || '3D GALAXY');

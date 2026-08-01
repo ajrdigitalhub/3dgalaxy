@@ -299,10 +299,10 @@ import { firstValueFrom } from "rxjs";
                     @if (p.variants && p.variants.length > 0) {
                       <a
                         [routerLink]="['/product', p.slug]"
-                        class="w-full h-9 bg-theme-gradient text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md no-underline"
+                        class="w-full h-9 bg-neutral-900 dark:bg-neutral-800 hover:bg-[#d65108] text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md no-underline"
                       >
-                        <mat-icon class="scale-75">visibility</mat-icon>
-                        <span>View</span>
+                        <mat-icon class="scale-75">tune</mat-icon>
+                        <span>Select Variant</span>
                       </a>
                     } @else {
                       <div class="grid grid-cols-2 gap-2">

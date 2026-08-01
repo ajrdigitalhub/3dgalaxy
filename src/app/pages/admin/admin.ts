@@ -1960,18 +1960,11 @@ export class AdminPanel {
           pData,
         );
         this.toastService.success("Product updated successfully!");
-        // Reload details using the dedicated API to populate all fields correctly
-        this.startProductEdit({ id: this.editingProduct()!.id } as any);
+        this.cancelProductEdit();
       } else {
         const res: any = await this.ds.addProduct(pData);
         this.toastService.success("Product created successfully!");
-        const createdProd = res?.data || res?.product;
-        if (createdProd && createdProd.id) {
-          // Open the new product in edit mode using details API
-          this.startProductEdit({ id: createdProd.id } as any);
-        } else {
-          this.cancelProductEdit();
-        }
+        this.cancelProductEdit();
       }
     } catch {
       this.toastService.error("Save failed: Verify administrator privileges.");

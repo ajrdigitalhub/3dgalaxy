@@ -90,7 +90,7 @@ export interface AccountOrder {
               @if (order().items.length > 1) {
                 <span>+ {{ order().items.length - 1 }} additional item(s)</span>
               } @else {
-                <span>Qty: {{ order().items[0]?.quantity || 1 }} × ₹{{ (order().items[0]?.price || 0).toLocaleString('en-IN') }}</span>
+                <span>Qty: {{ order().items[0].quantity || 1 }} × ₹{{ (order().items[0].price || 0).toLocaleString('en-IN') }}</span>
               }
             </p>
           </div>

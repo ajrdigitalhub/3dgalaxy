@@ -734,9 +734,19 @@ export class ProductDetail {
       .slice(0, 8);
   });
 
+  isRelatedProductOutOfStock(rp: any): boolean {
+    if (!rp) return false;
+    if (rp.stockStatus === 'OUT_OF_STOCK') return true;
+    if (typeof rp.stock === 'number' && rp.stock <= 0) return true;
+    if (rp.inventory && typeof rp.inventory.stock === 'number' && rp.inventory.stock <= 0) return true;
+    return false;
+  }
+
   private normalizeRelatedProduct(item: any): Product | null {
     if (!item) return null;
     if (typeof item === "object" && item.name && item.slug) {
+      const vars = Array.isArray(item.variants) ? item.variants : [];
+      const hasVars = item.hasVariants !== undefined ? Boolean(item.hasVariants) : vars.length > 0;
       return {
         ...(item as Product),
         category_id: item.category_id || item.categoryId || "",
@@ -745,6 +755,8 @@ export class ProductDetail {
         sale_price: item.sale_price || item.salePrice || item.basePrice || 0,
         salePrice: item.salePrice || item.sale_price || item.basePrice || 0,
         dealer_price: item.dealer_price || item.dealerPrice || 0,
+        variants: vars,
+        hasVariants: hasVars,
         images: Array.isArray(item.images)
           ? item.images.map((img: any) =>
             typeof img === "string" ? img : img?.url || img,

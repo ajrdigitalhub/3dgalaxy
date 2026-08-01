@@ -248,14 +248,14 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
 
     let products = await prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
-      include: { brand: true }
+      include: { brand: true, variants: { where: { isActive: true } } }
     });
 
     if (products.length === 0) {
       products = await prisma.product.findMany({
         where: { isActive: true },
         take: 8,
-        include: { brand: true }
+        include: { brand: true, variants: { where: { isActive: true } } }
       });
     }
 

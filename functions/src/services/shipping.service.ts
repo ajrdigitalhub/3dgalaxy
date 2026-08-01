@@ -36,8 +36,8 @@ export class ShippingService {
 
     const settings = customGlobalSettings || (await getSettingsService())?.shippingSettings || {};
     
-    const enableProductShipping = settings.enableProductShipping === true;
-    const enableCategoryShipping = settings.enableCategoryShipping === true;
+    const enableProductShipping = settings.enableProductShipping !== false;
+    const enableCategoryShipping = settings.enableCategoryShipping !== false;
     const enableGlobalShipping = settings.enableGlobalShipping !== false;
     const defaultShippingCharge = settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
       ? Number(settings.defaultShippingCharge)

@@ -58,7 +58,7 @@ const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
 
   const primaryProducts = await prisma.product.findMany({
     where: primaryWhere,
-    include: { category: true, reviews: true, brand: true },
+    include: { category: true, reviews: true, brand: true, variants: { where: { isActive: true } } },
     ...(limit ? { take: limit * 3 } : {})
   });
 
@@ -80,7 +80,7 @@ const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
 
     const secondaryProducts = await prisma.product.findMany({
       where: secondaryWhere,
-      include: { category: true, reviews: true, brand: true },
+      include: { category: true, reviews: true, brand: true, variants: { where: { isActive: true } } },
       take: limit - allProducts.length
     });
 

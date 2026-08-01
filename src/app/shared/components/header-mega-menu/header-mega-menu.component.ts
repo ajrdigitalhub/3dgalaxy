@@ -347,8 +347,8 @@ export interface HeaderMenuPayload {
                         [routerLink]="['/product', prod.slug]"
                         class="h-8 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#d65108] text-slate-700 dark:text-slate-200 hover:text-white flex items-center justify-center shrink-0 border-none cursor-pointer transition-all text-[10px] font-bold no-underline gap-1"
                       >
-                        <mat-icon class="scale-75 text-[14px]">visibility</mat-icon>
-                        <span>View</span>
+                        <mat-icon class="scale-75 text-[14px]">tune</mat-icon>
+                        <span>Select Variant</span>
                       </a>
                     } @else {
                       <button

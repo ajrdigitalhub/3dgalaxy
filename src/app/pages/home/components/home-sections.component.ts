@@ -2170,10 +2170,18 @@ export class HomeFlashDealsComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
-                View Details
-                <mat-icon class="scale-75">arrow_forward</mat-icon>
-              </a>
+              <ng-container *ngIf="p.variants && p.variants.length > 0; else defaultBestSellerView">
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  <mat-icon class="scale-75">tune</mat-icon>
+                  Select Variant
+                </a>
+              </ng-container>
+              <ng-template #defaultBestSellerView>
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  View Details
+                  <mat-icon class="scale-75">arrow_forward</mat-icon>
+                </a>
+              </ng-template>
             </div>
           </div>
         </div>
@@ -2255,10 +2263,18 @@ export class HomeBestSellersComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
-                View Details
-                <mat-icon class="scale-75">arrow_forward</mat-icon>
-              </a>
+              <ng-container *ngIf="p.variants && p.variants.length > 0; else defaultTrendingView">
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  <mat-icon class="scale-75">tune</mat-icon>
+                  Select Variant
+                </a>
+              </ng-container>
+              <ng-template #defaultTrendingView>
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  View Details
+                  <mat-icon class="scale-75">arrow_forward</mat-icon>
+                </a>
+              </ng-template>
             </div>
           </div>
         </div>
@@ -2325,10 +2341,18 @@ export class HomeTrendingProductsComponent {
             </div>
 
             <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300">
-                View Details
-                <mat-icon class="scale-75">arrow_forward</mat-icon>
-              </a>
+              <ng-container *ngIf="p.variants && p.variants.length > 0; else defaultNewArrivalView">
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  <mat-icon class="scale-75">tune</mat-icon>
+                  Select Variant
+                </a>
+              </ng-container>
+              <ng-template #defaultNewArrivalView>
+                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
+                  View Details
+                  <mat-icon class="scale-75">arrow_forward</mat-icon>
+                </a>
+              </ng-template>
             </div>
           </div>
         </div>

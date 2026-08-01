@@ -67,6 +67,77 @@ export class WhatsAppNotificationService {
   }
 
   /**
+   * Helper to extract valid customer full name from order object, relations, or extraParams
+   */
+  public static extractCustomerName(order: any, extraParams: any = {}): string {
+    const isCleanName = (val: any): boolean => {
+      if (!val || typeof val !== 'string') return false;
+      const str = val.trim();
+      if (!str) return false;
+      const lower = str.toLowerCase();
+      return lower !== 'undefined' && lower !== 'null' && lower !== 'undefined undefined' && lower !== 'null null' && lower !== '[object object]';
+    };
+
+    if (extraParams && isCleanName(extraParams.customerName)) {
+      return extraParams.customerName.trim();
+    }
+
+    if (order) {
+      if (isCleanName(order.customerName)) return order.customerName.trim();
+      if (isCleanName(order.guestName)) return order.guestName.trim();
+
+      // Shipping Address fullName / name / combined
+      if (order.shippingAddress) {
+        let addr: any = order.shippingAddress;
+        if (typeof addr === 'string' && addr.trim().startsWith('{')) {
+          try { addr = JSON.parse(addr); } catch {}
+        }
+        if (addr && typeof addr === 'object') {
+          if (isCleanName(addr.fullName)) return addr.fullName.trim();
+          if (isCleanName(addr.name)) return addr.name.trim();
+          const combined = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
+          if (isCleanName(combined)) return combined;
+        }
+      }
+
+      // Billing Address fullName / name / combined
+      if (order.billingAddress) {
+        let addr: any = order.billingAddress;
+        if (typeof addr === 'string' && addr.trim().startsWith('{')) {
+          try { addr = JSON.parse(addr); } catch {}
+        }
+        if (addr && typeof addr === 'object') {
+          if (isCleanName(addr.fullName)) return addr.fullName.trim();
+          if (isCleanName(addr.name)) return addr.name.trim();
+          const combined = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
+          if (isCleanName(combined)) return combined;
+        }
+      }
+
+      // Order User
+      if (order.user) {
+        const combined = `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim();
+        if (isCleanName(combined)) return combined;
+        if (isCleanName(order.user.name)) return order.user.name.trim();
+      }
+
+      // Customer relation
+      if (order.customer) {
+        if (order.customer.user) {
+          const combined = `${order.customer.user.firstName || ''} ${order.customer.user.lastName || ''}`.trim();
+          if (isCleanName(combined)) return combined;
+          if (isCleanName(order.customer.user.name)) return order.customer.user.name.trim();
+        }
+        const combinedCust = `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim();
+        if (isCleanName(combinedCust)) return combinedCust;
+        if (isCleanName(order.customer.name)) return order.customer.name.trim();
+      }
+    }
+
+    return 'Valued Customer';
+  }
+
+  /**
    * Generate dynamic content for Current Status ({{3}}), Status Description ({{4}}), and Additional Info ({{5}})
    */
   public static generateStatusContent(

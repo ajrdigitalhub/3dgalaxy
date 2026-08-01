@@ -600,13 +600,18 @@ export class CheckoutComponent implements OnInit {
   }
 
   openRazorpay(orderData: any) {
+    const expectedPaise = Math.round(this.grandTotal() * 100);
+    const amountInPaise = (orderData && typeof orderData.amount === 'number' && orderData.amount >= expectedPaise)
+      ? orderData.amount
+      : expectedPaise;
+
     const options: any = {
       key:
-        orderData.keyId ||
-        orderData.key ||
+        orderData?.keyId ||
+        orderData?.key ||
         this.settingsService.paymentGatewaySettings()?.paymentMethods?.razorpay
           ?.keyId || "rzp_test_mock",
-      amount: orderData.amount,
+      amount: amountInPaise,
       currency: "INR",
       name: "3D Galaxy",
       description: "Purchase Order",

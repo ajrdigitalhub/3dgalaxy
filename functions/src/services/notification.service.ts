@@ -257,8 +257,8 @@ export class NotificationService {
         pushSent = await this.dispatchFcmPush(payload, def.category);
       }
 
-      // 3. Dispatch WhatsApp Notification (STRICT RULE: ONLY FOR NEW_ORDER)
-      if (channels.whatsappEnabled && payload.eventKey === 'NEW_ORDER') {
+      // 3. Dispatch WhatsApp Notification
+      if (channels.whatsappEnabled) {
         whatsappSent = await this.dispatchWhatsApp(payload);
       }
 
@@ -294,7 +294,7 @@ export class NotificationService {
   }
 
   /**
-   * Resolve Channel Configuration Matrix with DB overrides and Strict Non-Order WhatsApp Suppression
+   * Resolve Channel Configuration Matrix with DB overrides
    */
   static async resolveChannels(eventKey: NotificationEventKey): Promise<{
     pushEnabled: boolean;
@@ -325,11 +325,6 @@ export class NotificationService {
       }
     } catch (e) {
       console.warn('[NotificationService] Failed to load channel setting from DB, using default:', e);
-    }
-
-    // STRICT BUSINESS RULE: ONLY NEW_ORDER can EVER trigger WhatsApp!
-    if (eventKey !== 'NEW_ORDER') {
-      whatsappEnabled = false;
     }
 
     return { pushEnabled, whatsappEnabled, emailEnabled };

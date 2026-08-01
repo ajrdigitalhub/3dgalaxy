@@ -229,18 +229,26 @@ export const processOrderCreation = async (tx: any, payload: any) => {
   let shippingAddressId: string | null = null;
   let billingAddressId: string | null = null;
 
-  if (shippingAddress) {
-    const isObj = typeof shippingAddress === 'object' && shippingAddress !== null;
-    const name = isObj ? (shippingAddress.fullName || shippingAddress.name || customerName || '') : '';
-    const phone = isObj ? (shippingAddress.phone || shippingAddress.mobile || customerPhone || '') : '';
-    const addressType = isObj ? (shippingAddress.addressType || 'home') : 'home';
+  const shipObj = (typeof shippingAddress === 'object' && shippingAddress !== null)
+    ? shippingAddress
+    : (payload.shippingAddressSnapshot && typeof payload.shippingAddressSnapshot === 'object' ? payload.shippingAddressSnapshot : null);
 
-    const rawLine1 = isObj ? (shippingAddress.street || (shippingAddress.houseNo ? `${shippingAddress.houseNo || ''} ${shippingAddress.street || ''}`.trim() : (shippingAddress.addressLine1 || shippingAddress.address || 'N/A'))) : shippingAddress;
-    const addrLine2 = isObj ? (shippingAddress.addressLine2 || shippingAddress.landmark || '') : '';
-    const city = isObj ? (shippingAddress.city || 'N/A') : 'City';
-    const state = isObj ? (shippingAddress.state || 'N/A') : 'State';
-    const postalCode = isObj ? (shippingAddress.postalCode || shippingAddress.pincode || 'N/A') : '100001';
-    const country = isObj ? (shippingAddress.country || 'India') : 'India';
+  const customerName = payload.resolvedName || payload.contactDetails?.name || payload.guestName || payload.name || '';
+  const customerPhone = payload.resolvedPhone || payload.contactDetails?.phone || payload.guestPhone || payload.phone || '';
+
+  if (shippingAddress || shipObj) {
+    const name = shipObj ? (shipObj.fullName || shipObj.name || customerName || '') : customerName;
+    const phone = shipObj ? (shipObj.phone || shipObj.mobile || customerPhone || '') : customerPhone;
+    const addressType = shipObj ? (shipObj.addressType || 'home') : 'home';
+
+    const rawLine1 = shipObj
+      ? (shipObj.addressLine1 || shipObj.street || (shipObj.houseNo ? `${shipObj.houseNo || ''} ${shipObj.street || ''}`.trim() : (shipObj.address || 'N/A')))
+      : (typeof shippingAddress === 'string' ? shippingAddress : 'N/A');
+    const addrLine2 = shipObj ? (shipObj.addressLine2 || shipObj.landmark || '') : '';
+    const city = shipObj ? (shipObj.city || 'N/A') : 'N/A';
+    const state = shipObj ? (shipObj.state || 'N/A') : 'N/A';
+    const postalCode = shipObj ? (shipObj.postalCode || shipObj.pincode || 'N/A') : 'N/A';
+    const country = shipObj ? (shipObj.country || 'India') : 'India';
 
     let formattedLine1 = rawLine1;
     if (!rawLine1.includes('|')) {
@@ -352,7 +360,7 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     }
   };
 
-  if (orderId) {
+  if (orderId && isValidUuid(orderId)) {
     orderData.id = orderId;
   }
 
@@ -403,7 +411,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       where: {
         OR: [
           { sessionId: razorpay_order_id },
-          { id: razorpay_order_id }
+          ...(isValidUuid(razorpay_order_id) ? [{ id: razorpay_order_id }] : [])
         ]
       }
     });
@@ -413,7 +421,9 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
     }
 
     if (transaction?.orderId) {
-      const existingOrder = await prisma.order.findUnique({ where: { id: transaction.orderId } });
+      const existingOrder = isValidUuid(transaction.orderId)
+        ? await prisma.order.findUnique({ where: { id: transaction.orderId } })
+        : null;
       if (existingOrder) {
         return res.status(200).json({ success: true, message: 'Payment already processed', data: { orderId: existingOrder.id } });
       }
@@ -424,7 +434,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Checkout payload unavailable for order creation' });
     }
 
-    const targetOrderId = checkout?.id;
+    const targetOrderId = (checkout?.id && isValidUuid(checkout.id)) ? checkout.id : undefined;
 
     // Wrap in a transaction to create Order, Payment, update TransactionHistory & AbandonedCheckout
     const createdOrder = await prisma.$transaction(async (tx) => {
@@ -675,7 +685,12 @@ export const handleRazorpayWebhook = async (req: any, res: Response) => {
           where: { gatewayOrderId },
         });
         const checkout = await prisma.abandonedCheckout.findFirst({
-          where: { OR: [{ sessionId: gatewayOrderId }, { id: gatewayOrderId }] }
+          where: {
+            OR: [
+              { sessionId: gatewayOrderId },
+              ...(isValidUuid(gatewayOrderId) ? [{ id: gatewayOrderId }] : [])
+            ]
+          }
         });
 
         if (transaction || checkout) {
@@ -782,7 +797,12 @@ export const handleCashfreeWebhook = async (req: Request, res: Response) => {
         where: { gatewayOrderId },
       });
       const checkout = await prisma.abandonedCheckout.findFirst({
-        where: { OR: [{ sessionId: gatewayOrderId }, { id: gatewayOrderId }] }
+        where: {
+          OR: [
+            { sessionId: gatewayOrderId },
+            ...(isValidUuid(gatewayOrderId) ? [{ id: gatewayOrderId }] : [])
+          ]
+        }
       });
 
       if (transaction || checkout) {
@@ -1261,7 +1281,9 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
 
     // Server-side calculation
     const shippingResult = await ShippingService.calculateShipping(items);
-    const shippingAmount = shippingResult.shippingCharge;
+    const shippingAmount = (typeof req.body.shippingAmount === 'number' && !isNaN(req.body.shippingAmount) && req.body.shippingAmount >= 0)
+      ? req.body.shippingAmount
+      : shippingResult.shippingCharge;
     const taxAmount = 0;
     let discountAmount = 0;
 
@@ -1292,16 +1314,22 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       codCharge = shippingSettings.codHandlingCharge !== undefined ? Number(shippingSettings.codHandlingCharge) : 100;
     }
 
-    const calculatedTotal = Math.max(0, subtotal + shippingAmount + taxAmount + codCharge - discountAmount);
+    const computedTotal = Math.max(0, subtotal + shippingAmount + taxAmount + codCharge - discountAmount);
+    const calculatedTotal = (typeof frontendTotal === 'number' && !isNaN(frontendTotal) && frontendTotal > 0)
+      ? frontendTotal
+      : computedTotal;
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
+
+    const shippingAddressSnapshot = req.body.shippingAddressSnapshot || (typeof shippingAddress === 'object' ? shippingAddress : null);
 
     const checkoutPayload: any = {
       customerId: customerIdToUse,
       orderNumber,
       items: parsedItems,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
+      shippingAddress: shippingAddressSnapshot || shippingAddress,
+      shippingAddressSnapshot,
+      billingAddress: billingAddress || shippingAddressSnapshot || shippingAddress,
       paymentMethod,
       subtotal,
       shippingAmount,
@@ -1350,6 +1378,10 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     let gatewayData: any = null;
     let isRealOrder = false;
 
+    const formattedAddressStr = typeof shippingAddress === 'string'
+      ? shippingAddress
+      : `${shippingAddressSnapshot?.addressLine1 || ''}, ${shippingAddressSnapshot?.city || ''} - ${shippingAddressSnapshot?.pincode || shippingAddressSnapshot?.postalCode || ''}`;
+
     if (paymentMethod === 'RAZORPAY') {
       const rzConfig = settings.paymentMethods?.razorpay || {};
       const keyId = (rzConfig.keyId && rzConfig.keyId.trim()) || process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY || '';
@@ -1375,6 +1407,11 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
               amount: amountInPaise,
               currency: settings.currency || 'INR',
               receipt: orderNumber,
+              notes: {
+                shipping_address: formattedAddressStr,
+                customer_name: resolvedName,
+                customer_phone: resolvedPhone,
+              }
             }),
           });
           const resBody = (await response.json()) as any;
@@ -1483,12 +1520,14 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         order_id: checkoutSessionId,
         customer_details: {
           customer_id: customerIdToUse || 'GUEST_' + Date.now(),
+          customer_name: resolvedName || 'Customer',
           customer_phone: resolvedPhone || '9999999999',
           customer_email: resolvedEmail || 'guest@example.com',
         },
         order_meta: {
           return_url: `${(req.headers.origin || 'http://localhost:4200').replace(/^http:\/\//i, 'https://')}/order-success?orderId=${checkoutSessionId}`,
         },
+        order_note: `Shipping to: ${resolvedName} (${resolvedPhone}) - ${formattedAddressStr}`
       };
 
       const cfRes = await fetch(baseUrl, {

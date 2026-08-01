@@ -1,54 +1,39 @@
 <div
-  class="min-h-screen bg-slate-50/90 dark:bg-[#0F1115] text-slate-900 dark:text-slate-100 pt-24 pb-16 transition-colors duration-200"
->
+  class="min-h-screen bg-slate-50/90 dark:bg-[#0F1115] text-slate-900 dark:text-slate-100 pt-24 pb-16 transition-colors duration-200">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="flex flex-col gap-8 lg:flex-row">
-      
+
       <!-- ================= SIDEBAR NAVIGATION ================= -->
       <aside class="lg:w-72 lg:shrink-0">
         <div
-          class="sticky top-24 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-5 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] space-y-6"
-        >
+          class="sticky top-24 rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-5 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] space-y-6">
           <!-- User Profile Card -->
           <div
-            class="flex flex-col items-center text-center p-5 rounded-2xl bg-linear-to-b from-orange-500/10 via-orange-500/5 to-transparent border border-orange-500/15 dark:border-slate-800/80 relative overflow-hidden"
-          >
+            class="flex flex-col items-center text-center p-5 rounded-2xl bg-linear-to-b from-orange-500/10 via-orange-500/5 to-transparent border border-orange-500/15 dark:border-slate-800/80 relative overflow-hidden">
             <!-- Avatar Container -->
             <div class="relative group cursor-pointer w-20 h-20 shrink-0">
               <div
-                class="w-20 h-20 rounded-full border-2 border-orange-500 bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-105"
-              >
+                class="w-20 h-20 rounded-full border-2 border-orange-500 bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shadow-md transition-transform duration-200 group-hover:scale-105">
                 @if (profile()?.profileImage) {
-                  <img
-                    [src]="profile()?.profileImage"
-                    alt="Profile Avatar"
-                    class="h-full w-full object-cover"
-                  />
+                <img [src]="profile()?.profileImage" alt="Profile Avatar" class="h-full w-full object-cover" />
                 } @else {
-                  <span class="text-2xl font-black text-orange-600 dark:text-orange-400">
-                    {{ customerInitials() }}
-                  </span>
+                <span class="text-2xl font-black text-orange-600 dark:text-orange-400">
+                  {{ customerInitials() }}
+                </span>
                 }
               </div>
 
               <!-- Online Status Indicator -->
               <span
                 class="absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#161B22] shadow-xs"
-                title="Account Active"
-              ></span>
+                title="Account Active"></span>
 
               <!-- Hover Photo Upload Overlay -->
               <label
-                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 rounded-full flex flex-col items-center justify-center text-white text-[9px] font-black uppercase tracking-wider transition-opacity duration-200 cursor-pointer"
-              >
+                class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 rounded-full flex flex-col items-center justify-center text-white text-[9px] font-black uppercase tracking-wider transition-opacity duration-200 cursor-pointer">
                 <mat-icon class="scale-75">photo_camera</mat-icon>
                 <span>Edit</span>
-                <input
-                  type="file"
-                  class="hidden"
-                  accept="image/*"
-                  (change)="uploadImage($event)"
-                />
+                <input type="file" class="hidden" accept="image/*" (change)="uploadImage($event)" />
               </label>
             </div>
 
@@ -62,15 +47,10 @@
               </p>
 
               <div class="flex items-center justify-center gap-1.5 pt-2 flex-wrap">
-                <span
-                  class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wider"
-                >
-                  ⚡ VIP Member
-                </span>
+
 
                 <span
-                  class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider"
-                >
+                  class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
                   ● Active
                 </span>
               </div>
@@ -78,15 +58,13 @@
           </div>
 
           <!-- Mobile & Tablet Scrollable Navigation Bar -->
-          <div class="block lg:hidden overflow-x-auto no-scrollbar scrollbar-thin py-1 border-t border-slate-100 dark:border-slate-800 pt-3">
+          <div
+            class="block lg:hidden overflow-x-auto no-scrollbar scrollbar-thin py-1 border-t border-slate-100 dark:border-slate-800 pt-3">
             <div class="flex items-center gap-2 min-w-max">
-              <button
-                *ngFor="let tab of tabs; trackBy: trackTabId"
-                type="button"
-                (click)="switchTab(tab.id)"
-                [class]="(activeTab() === tab.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/20 font-black' : 'bg-slate-100 dark:bg-[#202632] hover:bg-slate-200 dark:hover:bg-[#28303f] text-slate-700 dark:text-slate-300 font-bold') + ' h-10 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 border-none cursor-pointer shrink-0'"
-              >
-                <mat-icon class="scale-90 text-[18px] w-5 h-5 flex items-center justify-center">{{ tab.icon }}</mat-icon>
+              <button *ngFor="let tab of tabs; trackBy: trackTabId" type="button" (click)="switchTab(tab.id)"
+                [class]="(activeTab() === tab.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/20 font-black' : 'bg-slate-100 dark:bg-[#202632] hover:bg-slate-200 dark:hover:bg-[#28303f] text-slate-700 dark:text-slate-300 font-bold') + ' h-10 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 border-none cursor-pointer shrink-0'">
+                <mat-icon class="scale-90 text-[18px] w-5 h-5 flex items-center justify-center">{{ tab.icon
+                  }}</mat-icon>
                 <span>{{ tab.label }}</span>
               </button>
             </div>
@@ -94,39 +72,37 @@
 
           <!-- Desktop Navigation Links -->
           <nav class="hidden lg:block space-y-1">
-            <button
-              *ngFor="let tab of tabs; trackBy: trackTabId"
-              type="button"
-              (click)="switchTab(tab.id)"
-              [class]="(activeTab() === tab.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black shadow-md shadow-orange-500/20' : 'hover:bg-slate-100 dark:hover:bg-[#202632] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold') + ' flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs uppercase tracking-wider transition-all border-none cursor-pointer h-11 group'"
-            >
+            <button *ngFor="let tab of tabs; trackBy: trackTabId" type="button" (click)="switchTab(tab.id)"
+              [class]="(activeTab() === tab.id ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white font-black shadow-md shadow-orange-500/20' : 'hover:bg-slate-100 dark:hover:bg-[#202632] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold') + ' flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs uppercase tracking-wider transition-all border-none cursor-pointer h-11 group'">
               <div class="flex items-center gap-3">
                 @if (activeTab() === tab.id) {
-                  <span class="w-1.5 h-5 bg-white rounded-full shrink-0"></span>
+                <span class="w-1.5 h-5 bg-white rounded-full shrink-0"></span>
                 }
-                <mat-icon class="scale-90 text-[18px] w-5 h-5 flex items-center justify-center">{{ tab.icon }}</mat-icon>
+                <mat-icon class="scale-90 text-[18px] w-5 h-5 flex items-center justify-center">{{ tab.icon
+                  }}</mat-icon>
                 <span>{{ tab.label }}</span>
               </div>
 
               <!-- Badge Indicators -->
               @if (tab.id === 'orders' && totalOrdersCount() > 0) {
-                <span [class]="activeTab() === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'" class="px-2 py-0.5 rounded-full text-[10px] font-black">
-                  {{ totalOrdersCount() }}
-                </span>
+              <span
+                [class]="activeTab() === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                class="px-2 py-0.5 rounded-full text-[10px] font-black">
+                {{ totalOrdersCount() }}
+              </span>
               } @else if (tab.id === 'wishlist' && totalWishlistCount() > 0) {
-                <span [class]="activeTab() === tab.id ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-500 dark:text-rose-400'" class="px-2 py-0.5 rounded-full text-[10px] font-black">
-                  {{ totalWishlistCount() }}
-                </span>
+              <span
+                [class]="activeTab() === tab.id ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-500 dark:text-rose-400'"
+                class="px-2 py-0.5 rounded-full text-[10px] font-black">
+                {{ totalWishlistCount() }}
+              </span>
               }
             </button>
 
             <div class="my-3 h-px bg-slate-100 dark:border-slate-800"></div>
 
-            <button
-              type="button"
-              (click)="logout()"
-              class="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition border-none cursor-pointer h-11"
-            >
+            <button type="button" (click)="logout()"
+              class="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition border-none cursor-pointer h-11">
               <mat-icon class="scale-90 text-[18px] w-5 h-5 flex items-center justify-center">logout</mat-icon>
               <span>Log Out</span>
             </button>
@@ -136,14 +112,14 @@
 
       <!-- ================= MAIN CONTENT SECTION ================= -->
       <div class="min-w-0 flex-1">
-        
+
         <!-- DASHBOARD TAB OVERVIEW -->
         <ng-container *ngIf="activeTab() === 'dashboard'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-8"
-          >
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-8">
             <!-- Command Center Greeting Header -->
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800/80 pb-6">
+            <div
+              class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800/80 pb-6">
               <div>
                 <span class="text-[10px] font-black uppercase tracking-[0.25em] text-orange-500 block">
                   {{ greetingMessage() }}
@@ -157,13 +133,16 @@
               </div>
 
               <!-- Profile Completion Tracker -->
-              <div class="bg-slate-50 dark:bg-[#181C23] border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-2xl min-w-[200px] space-y-1.5">
+              <div
+                class="bg-slate-50 dark:bg-[#181C23] border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-2xl min-w-[200px] space-y-1.5">
                 <div class="flex items-center justify-between text-[11px] font-bold">
                   <span class="text-slate-600 dark:text-slate-300">Profile Completion</span>
                   <span class="text-orange-500 font-mono font-black">{{ profileCompletion() }}%</span>
                 </div>
                 <div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div [style.width.%]="profileCompletion()" class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-500"></div>
+                  <div [style.width.%]="profileCompletion()"
+                    class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-500">
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,75 +154,70 @@
               </h2>
 
               <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                
+
                 <!-- Total Orders Card -->
-                <div
-                  (click)="switchTab('orders')"
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-orange-500/40 dark:hover:border-orange-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                <div (click)="switchTab('orders')"
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-orange-500/40 dark:hover:border-orange-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Total Orders</p>
                     @if (isOrdersLoading()) {
-                      <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
                     } @else {
-                      <p class="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                        {{ totalOrdersCount() }}
-                      </p>
+                    <p class="text-2xl font-black text-slate-900 dark:text-white font-mono">
+                      {{ totalOrdersCount() }}
+                    </p>
                     }
                     <p class="text-[10px] text-orange-500 font-bold group-hover:underline">View order history →</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-110">shopping_cart</mat-icon>
                   </div>
                 </div>
 
                 <!-- Active Orders Card -->
-                <div
-                  (click)="switchTab('orders')"
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-blue-500/40 dark:hover:border-blue-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                <div (click)="switchTab('orders')"
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-blue-500/40 dark:hover:border-blue-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Active Shipments</p>
                     @if (isOrdersLoading()) {
-                      <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
                     } @else {
-                      <p class="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono">
-                        {{ activeOrdersCount() }}
-                      </p>
+                    <p class="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono">
+                      {{ activeOrdersCount() }}
+                    </p>
                     }
                     <p class="text-[10px] text-blue-500 font-bold group-hover:underline">Live order tracking →</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-110">local_shipping</mat-icon>
                   </div>
                 </div>
 
                 <!-- Wishlist Items -->
-                <div
-                  (click)="switchTab('wishlist')"
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-rose-500/40 dark:hover:border-rose-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                <div (click)="switchTab('wishlist')"
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-rose-500/40 dark:hover:border-rose-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Saved Wishlist</p>
                     @if (isWishlistLoading()) {
-                      <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="h-7 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
                     } @else {
-                      <p class="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
-                        {{ totalWishlistCount() }}
-                      </p>
+                    <p class="text-2xl font-black text-rose-600 dark:text-rose-400 font-mono">
+                      {{ totalWishlistCount() }}
+                    </p>
                     }
                     <p class="text-[10px] text-rose-500 font-bold group-hover:underline">Manage wishlist →</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-110">favorite</mat-icon>
                   </div>
                 </div>
 
                 <!-- Service Jobs Card -->
-                <div
-                  (click)="switchTab('service-requests')"
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-purple-500/40 dark:hover:border-purple-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                <div (click)="switchTab('service-requests')"
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-purple-500/40 dark:hover:border-purple-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Service Quotes</p>
                     <p class="text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">
@@ -251,16 +225,15 @@
                     </p>
                     <p class="text-[10px] text-purple-500 font-bold group-hover:underline">3D printing jobs →</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-110">layers</mat-icon>
                   </div>
                 </div>
 
                 <!-- My Reviews Card -->
-                <div
-                  (click)="switchTab('reviews')"
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-amber-500/40 dark:hover:border-amber-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                <div (click)="switchTab('reviews')"
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] hover:border-amber-500/40 dark:hover:border-amber-500/40 p-5 flex items-center justify-between cursor-pointer group shadow-xs hover:shadow-lg dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Product Reviews</p>
                     <p class="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
@@ -268,27 +241,28 @@
                     </p>
                     <p class="text-[10px] text-amber-500 font-bold group-hover:underline">My ratings & feedback →</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-110">star</mat-icon>
                   </div>
                 </div>
 
                 <!-- Total Spent Card -->
                 <div
-                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] p-5 flex items-center justify-between shadow-xs dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200"
-                >
+                  class="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#181C23] p-5 flex items-center justify-between shadow-xs dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-200">
                   <div class="space-y-1">
                     <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Total Spent</p>
                     @if (isOrdersLoading()) {
-                      <div class="h-7 w-16 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="h-7 w-16 animate-pulse rounded bg-slate-200 dark:bg-slate-800"></div>
                     } @else {
-                      <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                        ₹{{ formattedTotalSpent() }}
-                      </p>
+                    <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                      ₹{{ formattedTotalSpent() }}
+                    </p>
                     }
                     <p class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Lifetime purchases</p>
                   </div>
-                  <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                  <div
+                    class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
                     <mat-icon class="scale-110">payments</mat-icon>
                   </div>
                 </div>
@@ -303,136 +277,129 @@
               </h2>
 
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                <button
-                  type="button"
-                  (click)="switchTab('orders')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-orange-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('orders')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-orange-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">local_shipping</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors">Orders</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors">Orders</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Track & reorder</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('wishlist')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-rose-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('wishlist')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-rose-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">favorite</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">Wishlist</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">Wishlist</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Saved products</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('addresses')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-blue-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('addresses')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-blue-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">location_on</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">Addresses</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">Addresses</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Manage locations</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('reviews')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-amber-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('reviews')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-amber-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">star</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">Reviews</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">Reviews</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">My feedback</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('service-requests')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-purple-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('service-requests')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-purple-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">layers</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">3D Services</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">3D
+                        Services</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Quotes & jobs</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('profile')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-emerald-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('profile')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-emerald-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">person</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">Profile</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">Profile</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Edit personal info</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('security')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-slate-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('security')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-slate-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-300 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">lock</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-slate-700 transition-colors">Security</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-slate-700 transition-colors">Security</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">Password & auth</span>
                   </div>
                 </button>
 
-                <button
-                  type="button"
-                  (click)="switchTab('notifications')"
-                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-sky-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group"
-                >
-                  <div class="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <button type="button" (click)="switchTab('notifications')"
+                  class="p-4 rounded-2xl bg-white dark:bg-[#181C23] hover:bg-sky-500/5 dark:hover:bg-[#222834] border border-slate-200/80 dark:border-slate-800 flex flex-col items-start gap-3 text-left transition-all cursor-pointer border-none group">
+                  <div
+                    class="h-10 w-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <mat-icon class="scale-90">notifications</mat-icon>
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <span class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">Alerts</span>
+                      <span
+                        class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">Alerts</span>
                       <span class="text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
                     </div>
                     <span class="text-[10px] text-slate-400 block mt-0.5">System inbox</span>
@@ -445,50 +412,48 @@
             <div class="border-t border-slate-100 dark:border-slate-800/80 pt-6">
               <div class="flex items-center justify-between mb-4">
                 <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Recent Orders</h2>
-                <button (click)="switchTab('orders')" class="text-xs font-bold text-orange-500 hover:underline border-none bg-transparent cursor-pointer">
+                <button (click)="switchTab('orders')"
+                  class="text-xs font-bold text-orange-500 hover:underline border-none bg-transparent cursor-pointer">
                   View All Orders →
                 </button>
               </div>
 
               @if (isOrdersLoading()) {
-                <div class="space-y-3">
-                  <div *for="let i of [1,2]" class="h-24 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800"></div>
+              <div class="space-y-3">
+                <div *for="let i of [1,2]" class="h-24 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800">
                 </div>
+              </div>
               } @else if (myOrders().length > 0) {
-                <div class="space-y-3">
-                  @for (ord of myOrders().slice(0, 2); track trackOrderId($index, ord)) {
-                    <app-account-order-card [order]="ord" (onReorder)="reorder(ord)"></app-account-order-card>
-                  }
-                </div>
+              <div class="space-y-3">
+                @for (ord of myOrders().slice(0, 2); track trackOrderId($index, ord)) {
+                <app-account-order-card [order]="ord" (onReorder)="reorder(ord)"></app-account-order-card>
+                }
+              </div>
               } @else {
-                <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-[#181C23] p-8 text-center text-xs text-slate-500">
-                  No orders placed yet. Explore our 3D Printers & materials to get started!
-                </div>
+              <div
+                class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-[#181C23] p-8 text-center text-xs text-slate-500">
+                No orders placed yet. Explore our 3D Printers & materials to get started!
+              </div>
               }
             </div>
 
             <!-- Recently Viewed Section -->
             @if (recentlyViewedItems().length > 0) {
-              <div class="border-t border-slate-100 dark:border-slate-800/80 pt-6">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Recently Viewed</h2>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Products you checked out recently</p>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
-                  @for (prod of recentlyViewedItems().slice(0, 5); track trackProductId($index, prod)) {
-                    <app-account-product-card
-                      [product]="prod"
-                      [showRemove]="false"
-                      [showWishlistToggle]="true"
-                      actionText="Add"
-                      (onAddToCart)="addToCart(prod)"
-                    ></app-account-product-card>
-                  }
+            <div class="border-t border-slate-100 dark:border-slate-800/80 pt-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Recently Viewed</h2>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Products you checked out recently</p>
                 </div>
               </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
+                @for (prod of recentlyViewedItems().slice(0, 5); track trackProductId($index, prod)) {
+                <app-account-product-card [product]="prod" [showRemove]="false" [showWishlistToggle]="true"
+                  actionText="Add" (onAddToCart)="addToCart(prod)"></app-account-product-card>
+                }
+              </div>
+            </div>
             }
           </div>
         </ng-container>
@@ -496,35 +461,24 @@
         <!-- PROFILE SETTINGS TAB -->
         <ng-container *ngIf="activeTab() === 'profile'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
             <h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Profile Settings
             </h2>
 
-            <div class="flex flex-col gap-6 sm:flex-row sm:items-center border-b border-slate-100 dark:border-slate-800 pb-6">
+            <div
+              class="flex flex-col gap-6 sm:flex-row sm:items-center border-b border-slate-100 dark:border-slate-800 pb-6">
               <div
-                class="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-orange-500 bg-slate-100 dark:bg-slate-800 shadow-md"
-              >
+                class="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-orange-500 bg-slate-100 dark:bg-slate-800 shadow-md">
                 @if (profile()?.profileImage) {
-                  <img
-                    [src]="profile()?.profileImage"
-                    alt="Profile Avatar"
-                    class="h-full w-full object-cover"
-                  />
+                <img [src]="profile()?.profileImage" alt="Profile Avatar" class="h-full w-full object-cover" />
                 } @else {
-                  <span class="text-3xl font-black text-orange-500">{{ customerInitials() }}</span>
+                <span class="text-3xl font-black text-orange-500">{{ customerInitials() }}</span>
                 }
                 <label
-                  class="absolute inset-x-0 bottom-0 cursor-pointer bg-black/60 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-black/80"
-                >
+                  class="absolute inset-x-0 bottom-0 cursor-pointer bg-black/60 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-white transition hover:bg-black/80">
                   <span>Edit</span>
-                  <input
-                    type="file"
-                    class="hidden"
-                    accept="image/*"
-                    (change)="uploadImage($event)"
-                  />
+                  <input type="file" class="hidden" accept="image/*" (change)="uploadImage($event)" />
                 </label>
               </div>
               <div>
@@ -535,54 +489,44 @@
               </div>
             </div>
 
-            <form
-              [formGroup]="profileForm"
-              (ngSubmit)="saveProfile()"
-              class="max-w-2xl space-y-5"
-            >
+            <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="max-w-2xl space-y-5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">First Name *</label>
-                  <input
-                    type="text"
-                    formControlName="firstName"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">First
+                    Name *</label>
+                  <input type="text" formControlName="firstName"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Last Name</label>
-                  <input
-                    type="text"
-                    formControlName="lastName"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Last
+                    Name</label>
+                  <input type="text" formControlName="lastName"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                 </div>
               </div>
 
               <div class="space-y-1.5">
-                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Email Address *</label>
-                <input
-                  type="email"
-                  formControlName="email"
-                  class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                />
+                <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Email
+                  Address *</label>
+                <input type="email" formControlName="email"
+                  class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Mobile Number</label>
-                  <input
-                    type="tel"
-                    formControlName="phone"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Mobile
+                    Number</label>
+                  <input type="tel" formControlName="phone"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                 </div>
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Gender</label>
-                  <select
-                    formControlName="gender"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white appearance-none cursor-pointer"
-                  >
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Gender</label>
+                  <select formControlName="gender"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white appearance-none cursor-pointer">
                     <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -592,13 +536,10 @@
               </div>
 
               <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="submit"
-                  [disabled]="profileForm.invalid || isProfileSaving()"
-                  class="inline-flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-8 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-orange-500/20 transition disabled:opacity-50 border-none cursor-pointer"
-                >
+                <button type="submit" [disabled]="profileForm.invalid || isProfileSaving()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-8 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-orange-500/20 transition disabled:opacity-50 border-none cursor-pointer">
                   @if (isProfileSaving()) {
-                    <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent"></span>
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/70 border-t-transparent"></span>
                   }
                   {{ isProfileSaving() ? 'Saving Changes...' : 'Save Profile' }}
                 </button>
@@ -610,8 +551,7 @@
         <!-- SECURITY SETTINGS TAB -->
         <ng-container *ngIf="activeTab() === 'security'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
             <h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Security & Authentication
             </h2>
@@ -620,45 +560,34 @@
               <h3 class="text-base font-extrabold text-slate-900 dark:text-white mb-4">
                 Change Account Password
               </h3>
-              <form
-                [formGroup]="passwordForm"
-                (ngSubmit)="changePassword()"
-                class="space-y-4"
-              >
+              <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="space-y-4">
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Current Password *</label>
-                  <input
-                    type="password"
-                    formControlName="currentPassword"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Current
+                    Password *</label>
+                  <input type="password" formControlName="currentPassword"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">New Password *</label>
-                  <input
-                    type="password"
-                    formControlName="newPassword"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">New
+                    Password *</label>
+                  <input type="password" formControlName="newPassword"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                   <p class="text-[10px] text-slate-400 mt-1">Must be at least 8 characters long.</p>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Confirm New Password *</label>
-                  <input
-                    type="password"
-                    formControlName="confirmPassword"
-                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white"
-                  />
+                  <label
+                    class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">Confirm
+                    New Password *</label>
+                  <input type="password" formControlName="confirmPassword"
+                    class="w-full px-4 py-3 bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-slate-900 dark:text-white" />
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="submit"
-                    [disabled]="passwordForm.invalid"
-                    class="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-orange-500/20 transition disabled:opacity-50 border-none cursor-pointer"
-                  >
+                  <button type="submit" [disabled]="passwordForm.invalid"
+                    class="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-orange-500/20 transition disabled:opacity-50 border-none cursor-pointer">
                     Update Password
                   </button>
                 </div>
@@ -670,16 +599,17 @@
         <!-- ORDERS TAB -->
         <ng-container *ngIf="activeTab() === 'orders'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5">
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5">
               <div>
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">Order History</p>
                 <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                   My Orders
                 </h2>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 dark:bg-[#181C23] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-extrabold bg-slate-100 dark:bg-[#181C23] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 Total Orders: {{ totalOrdersCount() }}
               </span>
             </div>
@@ -687,30 +617,25 @@
             <!-- Orders List -->
             <div class="space-y-4">
               @if (isOrdersLoading()) {
-                @for (item of [1,2,3]; track item) {
-                  <div class="h-32 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800"></div>
-                }
+              @for (item of [1,2,3]; track item) {
+              <div class="h-32 animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800"></div>
+              }
               } @else if (myOrders().length > 0) {
-                @for (ord of myOrders(); track trackOrderId($index, ord)) {
-                  <app-account-order-card
-                    [order]="ord"
-                    (onReorder)="reorder(ord)"
-                  ></app-account-order-card>
-                }
+              @for (ord of myOrders(); track trackOrderId($index, ord)) {
+              <app-account-order-card [order]="ord" (onReorder)="reorder(ord)"></app-account-order-card>
+              }
               } @else {
-                <div
-                  class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center"
-                >
-                  <mat-icon class="mb-3 text-5xl text-slate-400">inbox</mat-icon>
-                  <h3 class="font-extrabold text-base text-slate-900 dark:text-white">No orders placed yet</h3>
-                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                    Your purchases will show up here with live tracking and 1-click reordering.
-                  </p>
-                  <a
-                    routerLink="/products"
-                    class="inline-block mt-4 rounded-xl bg-orange-500 hover:bg-orange-600 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition no-underline shadow-md shadow-orange-500/20"
-                  >Browse Products</a>
-                </div>
+              <div
+                class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center">
+                <mat-icon class="mb-3 text-5xl text-slate-400">inbox</mat-icon>
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white">No orders placed yet</h3>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  Your purchases will show up here with live tracking and 1-click reordering.
+                </p>
+                <a routerLink="/products"
+                  class="inline-block mt-4 rounded-xl bg-orange-500 hover:bg-orange-600 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition no-underline shadow-md shadow-orange-500/20">Browse
+                  Products</a>
+              </div>
               }
             </div>
           </div>
@@ -719,104 +644,87 @@
         <!-- WISHLIST TAB -->
         <ng-container *ngIf="activeTab() === 'wishlist'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
             <div class="flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="flex items-center gap-3">
                   <h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
                     My Wishlist
                   </h2>
-                  <span class="px-3 py-1 rounded-full text-xs font-black bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-black bg-rose-500/10 text-rose-500 border border-rose-500/20">
                     {{ totalWishlistCount() }} Items
                   </span>
                 </div>
 
                 @if (wishlist().length > 0) {
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      (click)="moveAllWishlistToCart()"
-                      class="h-9 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all border-none cursor-pointer"
-                    >
-                      <mat-icon class="scale-75 text-[16px]">shopping_cart</mat-icon>
-                      <span>Move All To Cart</span>
-                    </button>
-                    <button
-                      type="button"
-                      (click)="clearWishlist()"
-                      class="h-9 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1 transition-all border-none cursor-pointer"
-                    >
-                      <mat-icon class="scale-75 text-[16px]">delete_sweep</mat-icon>
-                      <span>Clear</span>
-                    </button>
-                  </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button type="button" (click)="moveAllWishlistToCart()"
+                    class="h-9 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all border-none cursor-pointer">
+                    <mat-icon class="scale-75 text-[16px]">shopping_cart</mat-icon>
+                    <span>Move All To Cart</span>
+                  </button>
+                  <button type="button" (click)="clearWishlist()"
+                    class="h-9 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1 transition-all border-none cursor-pointer">
+                    <mat-icon class="scale-75 text-[16px]">delete_sweep</mat-icon>
+                    <span>Clear</span>
+                  </button>
+                </div>
                 }
               </div>
 
               <!-- Search & Filter Controls -->
               @if (wishlist().length > 0) {
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                  <div class="relative w-full sm:w-72">
-                    <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 scale-75">search</mat-icon>
-                    <input
-                      type="text"
-                      [value]="wishlistSearch()"
-                      (input)="wishlistSearch.set($any($event.target).value)"
-                      placeholder="Search saved products..."
-                      class="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                    />
-                  </div>
-
-                  <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">Sort By:</span>
-                    <select
-                      [value]="wishlistSort()"
-                      (change)="wishlistSort.set($any($event.target).value)"
-                      class="h-9 px-3 rounded-xl bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 text-xs font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer"
-                    >
-                      <option value="newest">Recently Added</option>
-                      <option value="price-asc">Price: Low to High</option>
-                      <option value="price-desc">Price: High to Low</option>
-                      <option value="rating">Highest Rated</option>
-                    </select>
-                  </div>
+              <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <div class="relative w-full sm:w-72">
+                  <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 scale-75">search</mat-icon>
+                  <input type="text" [value]="wishlistSearch()" (input)="wishlistSearch.set($any($event.target).value)"
+                    placeholder="Search saved products..."
+                    class="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 transition-all" />
                 </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">Sort By:</span>
+                  <select [value]="wishlistSort()" (change)="wishlistSort.set($any($event.target).value)"
+                    class="h-9 px-3 rounded-xl bg-slate-50 dark:bg-[#0F1115] border border-slate-200 dark:border-slate-700/80 text-xs font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
+                    <option value="newest">Recently Added</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="rating">Highest Rated</option>
+                  </select>
+                </div>
+              </div>
               }
             </div>
 
             <!-- Wishlist Product Cards Grid -->
             @if (isWishlistLoading()) {
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
-                @for (item of [1,2,3,4,5]; track item) {
-                  <div class="h-[340px] animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800"></div>
-                }
-              </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5">
+              @for (item of [1,2,3,4,5]; track item) {
+              <div class="h-[340px] animate-pulse rounded-2xl bg-slate-200/80 dark:bg-slate-800"></div>
+              }
+            </div>
             } @else if (wishlist().length === 0) {
-              <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center">
-                <mat-icon class="mb-4 text-5xl text-rose-500">favorite_border</mat-icon>
-                <h3 class="mb-2 text-lg font-extrabold text-slate-900 dark:text-white">Your wishlist is empty</h3>
-                <p class="mb-6 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                  Explore 3D printers, filaments, and parts to save items to your wishlist.
-                </p>
-                <a
-                  routerLink="/products"
-                  class="inline-block rounded-xl bg-orange-500 hover:bg-orange-600 px-8 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-orange-500/20 no-underline"
-                >Start Shopping</a>
-              </div>
+            <div
+              class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center">
+              <mat-icon class="mb-4 text-5xl text-rose-500">favorite_border</mat-icon>
+              <h3 class="mb-2 text-lg font-extrabold text-slate-900 dark:text-white">Your wishlist is empty</h3>
+              <p class="mb-6 text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                Explore 3D printers, filaments, and parts to save items to your wishlist.
+              </p>
+              <a routerLink="/products"
+                class="inline-block rounded-xl bg-orange-500 hover:bg-orange-600 px-8 py-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-orange-500/20 no-underline">Start
+                Shopping</a>
+            </div>
             } @else {
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 justify-items-center sm:justify-items-stretch">
-                @for (item of filteredWishlist(); track trackProductId($index, item)) {
-                  <app-account-product-card
-                    [product]="item.product || item"
-                    [showRemove]="true"
-                    [showWishlistToggle]="false"
-                    actionText="Add to Cart"
-                    (onAddToCart)="addToCartFromWishlist(item)"
-                    (onRemove)="removeFromWishlist(item.productId || item.id)"
-                  ></app-account-product-card>
-                }
-              </div>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 justify-items-center sm:justify-items-stretch">
+              @for (item of filteredWishlist(); track trackProductId($index, item)) {
+              <app-account-product-card [product]="item.product || item" [showRemove]="true"
+                [showWishlistToggle]="false" actionText="Add to Cart" (onAddToCart)="addToCartFromWishlist(item)"
+                (onRemove)="removeFromWishlist(item.productId || item.id)"></app-account-product-card>
+              }
+            </div>
             }
           </div>
         </ng-container>
@@ -824,36 +732,36 @@
         <!-- SAVED FOR LATER TAB -->
         <ng-container *ngIf="activeTab() === 'saved'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5">
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5">
               <div>
                 <h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Saved For Later</h2>
                 <p class="text-xs text-slate-400 mt-1">Products saved to purchase at a later date</p>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                 {{ savedForLater().length }} Item(s)
               </span>
             </div>
 
             @if (savedForLater().length === 0) {
-              <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center">
-                <mat-icon class="mb-3 text-5xl text-slate-400">bookmark_border</mat-icon>
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white">No saved items yet</h3>
-                <p class="text-xs text-slate-500 mt-1">Save items for later from your cart or wishlist for instant purchasing.</p>
-              </div>
+            <div
+              class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-[#0F1115] p-12 text-center">
+              <mat-icon class="mb-3 text-5xl text-slate-400">bookmark_border</mat-icon>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">No saved items yet</h3>
+              <p class="text-xs text-slate-500 mt-1">Save items for later from your cart or wishlist for instant
+                purchasing.</p>
+            </div>
             } @else {
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 justify-items-center sm:justify-items-stretch">
-                @for (item of savedForLater(); track trackProductId($index, item)) {
-                  <app-account-product-card
-                    [product]="item"
-                    [showRemove]="true"
-                    actionText="Move to Cart"
-                    (onAddToCart)="moveToCartFromSaved(item)"
-                    (onRemove)="removeFromSaved(item.id || item.productId)"
-                  ></app-account-product-card>
-                }
-              </div>
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 justify-items-center sm:justify-items-stretch">
+              @for (item of savedForLater(); track trackProductId($index, item)) {
+              <app-account-product-card [product]="item" [showRemove]="true" actionText="Move to Cart"
+                (onAddToCart)="moveToCartFromSaved(item)"
+                (onRemove)="removeFromSaved(item.id || item.productId)"></app-account-product-card>
+              }
+            </div>
             }
           </div>
         </ng-container>
@@ -866,24 +774,23 @@
         <!-- NOTIFICATIONS TAB -->
         <ng-container *ngIf="activeTab() === 'notifications'">
           <div
-            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6"
-          >
+            class="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#161B22] p-6 shadow-sm dark:shadow-[0_10px_35px_rgba(0,0,0,0.3)] sm:p-8 space-y-6">
             <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Notification Center
             </h2>
             <div class="space-y-3">
               @for (n of notifications; track n.id) {
-                <div
-                  class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#0F1115] flex items-center justify-between"
-                >
-                  <div>
-                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">{{ n.title }}</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ n.body || n.message }}</p>
-                  </div>
-                  <button (click)="deleteNotification(n.id)" class="text-slate-400 hover:text-rose-500 border-none bg-transparent cursor-pointer">
-                    <mat-icon class="scale-75">close</mat-icon>
-                  </button>
+              <div
+                class="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#0F1115] flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900 dark:text-white">{{ n.title }}</h4>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ n.body || n.message }}</p>
                 </div>
+                <button (click)="deleteNotification(n.id)"
+                  class="text-slate-400 hover:text-rose-500 border-none bg-transparent cursor-pointer">
+                  <mat-icon class="scale-75">close</mat-icon>
+                </button>
+              </div>
               }
             </div>
           </div>
