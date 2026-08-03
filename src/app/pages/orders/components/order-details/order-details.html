@@ -43,33 +43,23 @@
         </p>
       </div>
       <h1 class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-        Invoice Ref: <span class="text-blue-500">{{ ord.orderNumber }}</span>
+        Order Ref: <span class="text-blue-500">{{ ord.orderNumber }}</span>
       </h1>
       <div class="text-xs text-neutral-500 flex flex-wrap items-center gap-x-4 gap-y-1">
         <span>Date Placed:
           <strong>{{ ord.createdAt | date:'LLL dd, yyyy • hh:mm a' }}</strong></span>
         <span>•</span>
         <span>Recipient: <strong>{{ customerName() }}</strong></span>
+        @if (ord.estimatedDelivery) {
+        <span>•</span>
+        <span class="inline-flex items-center gap-1 text-[#d65108]">
+          Expected Delivery: <strong class="text-neutral-900 dark:text-white font-extrabold">{{ ord.estimatedDelivery }}</strong>
+        </span>
+        }
       </div>
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
-      @if (isDelivered()) {
-      <button (click)="viewInvoice()"
-        class="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-neutral-250 dark:border-neutral-800 text-neutral-800 dark:text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
-        <mat-icon class="text-sm scale-95">visibility</mat-icon> View Invoice
-      </button>
-      <button (click)="downloadInvoice()"
-        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
-        <mat-icon class="text-sm scale-95">download</mat-icon> Download Invoice
-      </button>
-      } @else {
-      <div
-        class="px-3.5 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold">
-        <mat-icon class="text-sm text-amber-500">info</mat-icon>
-        <span>Invoice available after delivery</span>
-      </div>
-      }
       <a href="#support-box"
         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
         <mat-icon class="text-sm scale-95">help_outline</mat-icon> Contact
@@ -439,14 +429,12 @@
             <span>WAYBILL tracking number:</span>
             <span class="font-bold text-blue-500 font-mono tracking-wider">{{ ord.shipments[0].trackingNumber }}</span>
           </div>
-          @if (ord.shipments[0].estimatedDelivery) {
           <div class="flex justify-between pb-1.5">
             <span>Estimated delivery slot:</span>
-            <span class="font-bold text-emerald-500 font-mono">{{ ord.shipments[0].estimatedDelivery | date:'LLL dd,
-              yyyy'
-              }}</span>
-          </div>
-          } @if (ord.shipments[0].trackingUrl ||
+            <span class="font-bold text-emerald-500 font-mono">
+              {{ ord.shipments[0].estimatedDelivery ? (ord.shipments[0].estimatedDelivery | date:'LLL dd, yyyy') : (ord.estimatedDelivery || 'N/A') }}
+            </span>
+          </div> @if (ord.shipments[0].trackingUrl ||
           ord.shipments[0].trackingNumber) {
           <a [href]="ord.shipments[0].trackingUrl || 'https://www.delhivery.com/'" target="_blank"
             class="w-full text-center block py-2 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-[10px] uppercase rounded-xl transition-all shadow-xs">

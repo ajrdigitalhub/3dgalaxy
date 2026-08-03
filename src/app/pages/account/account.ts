@@ -188,7 +188,6 @@ export class Account {
 
   profileForm: FormGroup;
   passwordForm: FormGroup;
-  activeInvoice = signal<any>(null);
 
   constructor() {
     this.profileForm = this.fb.group({
@@ -273,7 +272,7 @@ export class Account {
             o.payments && o.payments.length > 0
               ? o.payments[0].paymentMethod
               : "Unknown",
-          shippingAddress: "See details in actual invoice",
+          shippingAddress: "See order details",
         })),
       );
     } catch (e) {
@@ -478,7 +477,7 @@ export class Account {
 
   acceptServiceQuote(id: string) {
     this.enquiryService.customerAction(id, "accept_quote").subscribe({
-      next: () => this.toastService.success("Quotation accepted! Proceeding to invoice."),
+      next: () => this.toastService.success("Quotation accepted! Proceeding to payment."),
       error: () => this.toastService.error("Failed to accept quotation."),
     });
   }

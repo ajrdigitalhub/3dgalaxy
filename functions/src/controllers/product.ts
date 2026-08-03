@@ -4,6 +4,7 @@ import { sysCache } from '../config/cache';
 import { sendPushNotificationInternal } from './notification';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
+import { encodeDays } from '../utils/delivery';
 
 let pendingMappedProductsPromise: Promise<any[]> | null = null;
 let pendingCategoriesPromise: Promise<any[]> | null = null;
@@ -1258,7 +1259,7 @@ export const createProduct = async (req: Request, res: Response) => {
           isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : false),
           codAvailable: codAvailable !== undefined ? !!codAvailable : true,
           baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : 0,
-          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : 3,
+          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? encodeDays(estimatedDeliveryDays) : 3,
           freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : true,
           weightInGrams: isNaN(resolvedWeightInGrams) ? 0 : resolvedWeightInGrams,
           weightUnit: resolvedWeightUnit,
@@ -1454,7 +1455,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : undefined),
           codAvailable: codAvailable !== undefined ? !!codAvailable : undefined,
           baseShippingCharge: baseShippingCharge !== undefined ? parseFloat(baseShippingCharge) : undefined,
-          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? parseInt(estimatedDeliveryDays, 10) : undefined,
+          estimatedDeliveryDays: estimatedDeliveryDays !== undefined ? encodeDays(estimatedDeliveryDays) : undefined,
           freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
           weightInGrams: resolvedWeightInGrams !== undefined && !isNaN(resolvedWeightInGrams) ? resolvedWeightInGrams : undefined,
           weightUnit: resolvedWeightUnit !== undefined ? resolvedWeightUnit : undefined,

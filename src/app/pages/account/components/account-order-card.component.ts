@@ -20,6 +20,7 @@ export interface AccountOrder {
   items: OrderItem[];
   paymentMethod?: string;
   shippingAddress?: string;
+  estimatedDelivery?: string;
 }
 
 @Component({
@@ -93,6 +94,11 @@ export interface AccountOrder {
                 <span>Qty: {{ order().items[0].quantity || 1 }} × ₹{{ (order().items[0].price || 0).toLocaleString('en-IN') }}</span>
               }
             </p>
+            @if (order().estimatedDelivery) {
+            <p class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 mt-1 flex items-center gap-1">
+              Expected Delivery: <span class="text-neutral-800 dark:text-neutral-200">{{ order().estimatedDelivery }}</span>
+            </p>
+            }
           </div>
         </div>
 

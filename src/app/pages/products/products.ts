@@ -19,6 +19,8 @@ import { SkeletonProductCardComponent } from "../../shared/components/skeleton/s
 import { Subject } from "rxjs";
 import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 
+import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+
 @Component({
   selector: "app-products",
   imports: [
@@ -26,6 +28,7 @@ import { debounceTime, distinctUntilChanged } from "rxjs/operators";
     RouterModule,
     MatIconModule,
     SkeletonProductCardComponent,
+    DeliveryEstimatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./products.html",

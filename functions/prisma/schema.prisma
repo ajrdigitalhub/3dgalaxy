@@ -430,7 +430,6 @@ model Order {
   shippingAddressId String?         @map("shipping_address_id") @db.Uuid
   billingAddressId  String?         @map("billing_address_id") @db.Uuid
   notes           String?           @db.Text
-  invoiceUrl      String?           @map("invoice_url") @db.Text
   gstNumber       String?           @map("gst_number") @db.VarChar(15)
   companyName     String?           @map("company_name") @db.VarChar(255)
   paymentMethod   String?           @map("payment_method") @db.VarChar(100)
@@ -460,7 +459,6 @@ model Order {
   payments        Payment[]
   shipments       Shipment[]
   couponUsages    CouponUsage[]
-  invoice         Invoice?
 
   @@index([customerId])
   @@index([createdAt])
@@ -1195,25 +1193,7 @@ model NotificationQueue {
   @@map("notification_queues")
 }
 
-model Invoice {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @unique @map("order_id") @db.Uuid
-  invoiceNumber   String            @unique @map("invoice_number") @db.VarChar(100)
-  invoiceStatus   String            @default("ORIGINAL") @map("invoice_status") @db.VarChar(50)
-  pdfStoragePath  String?           @map("pdf_storage_path") @db.VarChar(255)
-  pdfDownloadUrl  String?           @map("pdf_download_url") @db.Text
-  generatedAt     DateTime          @default(now()) @map("generated_at") @db.Timestamptz
-  generatedBy     String?           @map("generated_by") @db.VarChar(255)
-  version         Int               @default(1)
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@index([invoiceNumber])
-  @@map("invoices")
-}
 
 model AdminNotificationDevice {
   id                      String            @id @default(uuid()) @db.Uuid

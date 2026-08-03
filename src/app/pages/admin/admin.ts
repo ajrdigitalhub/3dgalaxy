@@ -94,6 +94,8 @@ export type AdminTab =
   | "whatsapp-logs"
   | "whatsapp-campaign";
 
+import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
+
 @Component({
   selector: "app-admin-panel",
   imports: [
@@ -127,6 +129,7 @@ export class AdminPanel {
   http = inject(HttpClient);
   settingsService = inject(SettingsService);
   pwa = inject(PwaService);
+  deliveryService = inject(DeliveryEstimateService);
 
   loading = computed(() => {
     if (this.ds.products().length === 0 && this.ds.productsLoading())
@@ -427,6 +430,7 @@ export class AdminPanel {
   catSeoDescription = signal<string>("");
   catShippingCharge = signal<number | null>(null);
   catEstimatedDeliveryDays = signal<number | null>(3);
+  catEstimatedDeliveryDaysInput = signal<string>("3");
   catFreeShippingEligible = signal<boolean>(false);
   catShippingRegion = signal<string>("");
 
@@ -484,6 +488,30 @@ export class AdminPanel {
   pCodAvailable = signal<boolean>(true);
   pBaseShippingCharge = signal<number>(0);
   pEstimatedDeliveryDays = signal<number>(3);
+  pEstimatedDeliveryDaysInput = signal<string>("3");
+
+  catEstimatedDeliveryDaysPreview = computed(() => {
+    const val = this.catEstimatedDeliveryDaysInput();
+    return this.deliveryService.getDeliveryPreview(val);
+  });
+
+  pEstimatedDeliveryDaysPreview = computed(() => {
+    const val = this.pEstimatedDeliveryDaysInput();
+    return this.deliveryService.getDeliveryPreview(val);
+  });
+
+  catEstimatedDeliveryDaysError = computed(() => {
+    const val = this.catEstimatedDeliveryDaysInput();
+    if (!val) return '';
+    return this.deliveryService.isValidFormat(val) ? '' : 'Enter values like 3, 5-6 or 7-10.';
+  });
+
+  pEstimatedDeliveryDaysError = computed(() => {
+    const val = this.pEstimatedDeliveryDaysInput();
+    if (!val) return '';
+    return this.deliveryService.isValidFormat(val) ? '' : 'Enter values like 3, 5-6 or 7-10.';
+  });
+
   pFreeShippingEligible = signal<boolean>(true);
   pWeightInGrams = signal<number>(0);
   pBundleProducts = signal<any[]>([]);
@@ -1187,6 +1215,7 @@ export class AdminPanel {
     this.catSeoDescription.set(cat.seoDescription || "");
     this.catShippingCharge.set(cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : null);
     this.catEstimatedDeliveryDays.set(cat.estimatedDeliveryDays !== undefined && cat.estimatedDeliveryDays !== null ? Number(cat.estimatedDeliveryDays) : 3);
+    this.catEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(cat.estimatedDeliveryDays));
     this.catFreeShippingEligible.set(cat.freeShippingEligible || false);
     this.catShippingRegion.set(cat.shippingRegion || "");
   }
@@ -1205,6 +1234,7 @@ export class AdminPanel {
     this.catSeoDescription.set("");
     this.catShippingCharge.set(null);
     this.catEstimatedDeliveryDays.set(3);
+    this.catEstimatedDeliveryDaysInput.set("3");
     this.catFreeShippingEligible.set(false);
     this.catShippingRegion.set("");
   }
@@ -1242,7 +1272,7 @@ export class AdminPanel {
       seoTitle: this.catSeoTitle().trim(),
       seoDescription: this.catSeoDescription().trim(),
       shippingCharge: this.catShippingCharge() !== null && this.catShippingCharge() !== undefined ? Number(this.catShippingCharge()) : null,
-      estimatedDeliveryDays: this.catEstimatedDeliveryDays() !== null && this.catEstimatedDeliveryDays() !== undefined ? Number(this.catEstimatedDeliveryDays()) : 3,
+      estimatedDeliveryDays: this.deliveryService.parseEstimateDays(this.catEstimatedDeliveryDaysInput()),
       freeShippingEligible: this.catFreeShippingEligible(),
       shippingRegion: this.catShippingRegion().trim() || null,
     };
@@ -1439,6 +1469,7 @@ export class AdminPanel {
       p.baseShippingCharge ? Number(p.baseShippingCharge) : 0,
     );
     this.pEstimatedDeliveryDays.set(p.estimatedDeliveryDays || 3);
+    this.pEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(p.estimatedDeliveryDays));
     this.pFreeShippingEligible.set(p.freeShippingEligible !== false);
     this.pBundleProducts.set(
       p.bundleProducts
@@ -1577,6 +1608,7 @@ export class AdminPanel {
             detail.baseShippingCharge ? Number(detail.baseShippingCharge) : 0,
           );
           this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
+          this.pEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(detail.estimatedDeliveryDays));
           this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
           this.pWeightInGrams.set(
             detail.weightInGrams ? Number(detail.weightInGrams) : (detail.weight ? Number(detail.weight) : 0)
@@ -1636,6 +1668,7 @@ export class AdminPanel {
     this.pCodAvailable.set(true);
     this.pBaseShippingCharge.set(0);
     this.pEstimatedDeliveryDays.set(3);
+    this.pEstimatedDeliveryDaysInput.set("3");
     this.pFreeShippingEligible.set(true);
     this.pWeightInGrams.set(0);
     this.pBundleProducts.set([]);
@@ -1937,7 +1970,7 @@ export class AdminPanel {
       featured: this.pFeatured(),
       codAvailable: this.pCodAvailable(),
       baseShippingCharge: this.pBaseShippingCharge(),
-      estimatedDeliveryDays: this.pEstimatedDeliveryDays(),
+      estimatedDeliveryDays: this.deliveryService.parseEstimateDays(this.pEstimatedDeliveryDaysInput()),
       freeShippingEligible: this.pFreeShippingEligible(),
       weightInGrams: this.pWeightInGrams(),
       weight_in_grams: this.pWeightInGrams(),

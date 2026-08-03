@@ -11,7 +11,7 @@
       Active Logs
     </button>
     <button (click)="setSubTab('draft-orders')" [class]="activeSubTab() === 'draft-orders' ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-zinc-900 text-zinc-655 hover:bg-zinc-50 dark:text-zinc-300'" class="px-4 py-2 text-xs font-black uppercase rounded-lg border-none cursor-pointer transition-all">
-      Offline Invoicer
+      Offline Booking
     </button>
     <button (click)="setSubTab('abandoned-carts')" [class]="activeSubTab() === 'abandoned-carts' ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-zinc-900 text-zinc-655 hover:bg-zinc-50 dark:text-zinc-300'" class="px-4 py-2 text-xs font-black uppercase rounded-lg border-none cursor-pointer transition-all">
       Abandoned Checkouts
@@ -32,7 +32,7 @@
               <th class="py-3">Customer</th>
               <th class="py-3">Financial status</th>
               <th class="py-3">Product count</th>
-              <th class="py-3">Total Invoice</th>
+              <th class="py-3">Total Amount</th>
               <th class="py-3 text-right">Logistics action Status</th>
             </tr>
           </thead>
@@ -67,7 +67,7 @@
             } @empty {
               <tr>
                 <td colspan="6" class="py-8 text-center text-zinc-400 uppercase tracking-widest font-sans font-bold">
-                  No registered active invoices.
+                  No registered active orders.
                 </td>
               </tr>
             }
@@ -77,7 +77,7 @@
     </div>
   }
 
-  <!-- SECTION 2: OFFLINE DIRECT INVOICER -->
+  <!-- SECTION 2: OFFLINE DIRECT BOOKING -->
   @if (activeSubTab() === 'draft-orders') {
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn font-sans">
       <div class="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl p-6 space-y-6">
@@ -153,7 +153,7 @@
           </div>
 
           <div class="flex justify-between items-center py-2 border-t border-b border-white/5 font-black text-white">
-            <span class="text-zinc-300">Grand Invoice Total:</span>
+            <span class="text-zinc-300">Grand Total:</span>
             <span class="text-emerald-400">₹{{ draftGrandTotal() | number }}</span>
           </div>
         </div>
@@ -276,7 +276,7 @@
         <div class="p-6 border-b dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 flex justify-between items-center">
           <div>
             <span class="text-[9px] font-mono text-zinc-400 uppercase tracking-widest leading-none">Inspect Sales Ledger</span>
-            <h2 class="text-xs font-black uppercase text-zinc-950 dark:text-white mt-0.5">Invoice: {{ order.orderNumber }}</h2>
+            <h2 class="text-xs font-black uppercase text-zinc-950 dark:text-white mt-0.5">Order: {{ order.orderNumber }}</h2>
           </div>
           <button (click)="closeInspect()" class="h-8 w-8 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors inline-flex items-center justify-center border-none bg-none cursor-pointer">
             <mat-icon>close</mat-icon>

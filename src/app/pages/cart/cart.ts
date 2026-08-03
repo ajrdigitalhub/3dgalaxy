@@ -8,9 +8,11 @@ import {SettingsService} from '../../core/services/settings.service';
 import { WeightPipe } from '../../shared/pipes/weight.pipe';
 import { calculateItemWeight, calculatePackageSummary, formatWeight } from '../../shared/utils/weight.utils';
 
+import { DeliveryEstimatePipe } from '../../shared/pipes/delivery-estimate.pipe';
+
 @Component({
   selector: 'app-cart-checkout',
-  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe],
+  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, DeliveryEstimatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.html',
   styleUrl: './cart.scss'

@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, input, output, computed } from '@an
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { DeliveryEstimatePipe } from '../../../shared/pipes/delivery-estimate.pipe';
 
 export interface AccountProduct {
   id?: string;
@@ -19,12 +20,13 @@ export interface AccountProduct {
   rating?: number;
   reviewCount?: number;
   isWishlisted?: boolean;
+  estimatedDeliveryDays?: number;
 }
 
 @Component({
   selector: 'app-account-product-card',
   standalone: true,
-  imports: [CommonModule, MatIconModule, RouterModule],
+  imports: [CommonModule, MatIconModule, RouterModule, DeliveryEstimatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article
@@ -122,6 +124,14 @@ export interface AccountProduct {
               {{ stockStatusText() }}
             </span>
           </div>
+
+          <!-- Delivery estimate -->
+          <div class="text-[10px] text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1 mt-1">
+            <span>🚚 Delivery:</span>
+            <strong class="text-neutral-700 dark:text-neutral-300 font-bold">
+              {{ estimatedDeliveryDays() | deliveryEstimate:'mobile' }}
+            </strong>
+          </div>
         </div>
 
         <!-- Compact Action Button -->
@@ -189,6 +199,15 @@ export class AccountProductCardComponent {
   });
 
   isWishlisted = computed(() => !!this.product().isWishlisted);
+
+  estimatedDeliveryDays = computed(() => {
+    const p = this.product();
+    if (p.estimatedDeliveryDays !== undefined && p.estimatedDeliveryDays !== null) {
+      return p.estimatedDeliveryDays;
+    }
+    const rawProd = (p as any).product;
+    return rawProd?.estimatedDeliveryDays ?? 3;
+  });
 
   salePrice = computed(() => {
     const p = this.product();

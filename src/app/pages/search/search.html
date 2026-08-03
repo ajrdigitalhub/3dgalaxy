@@ -228,6 +228,14 @@
                 {{ p.name }}
               </h4>
 
+              <!-- Delivery estimate -->
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1 mt-1 mb-2">
+                <span>Delivery by</span>
+                <strong class="text-neutral-700 dark:text-neutral-300 font-bold">
+                  {{ p.estimatedDeliveryDays || 3 | deliveryEstimate:'mobile' }}
+                </strong>
+              </div>
+
               <!-- Stock & Offer details pill -->
               <div class="flex items-center gap-1.5 flex-wrap text-[10px] my-1.5">
                 @if (p.stock === 0 || p.stockStatus === 'OUT_OF_STOCK') {

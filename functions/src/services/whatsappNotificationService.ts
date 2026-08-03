@@ -1,6 +1,5 @@
 import prisma from '../config/database';
 import { getSettingsService } from '../modules/settings/settings.service';
-import { generateInvoicePDF } from '../controllers/whatsapp';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 
 export interface StatusContent {
@@ -829,7 +828,7 @@ export class WhatsAppNotificationService {
   }
 
   /**
-   * Centralized method to send Customer Order Confirmation WhatsApp Notification with Invoice PDF attachment using template order_confirmation_client_3dgal
+   * Centralized method to send Customer Order Confirmation WhatsApp Notification using template order_confirmation_client_3dgal
    */
   public static async sendOrderConfirmation(
     order: any,
@@ -882,26 +881,6 @@ export class WhatsAppNotificationService {
 
       const paymentStatus = isPaid ? 'Paid ✅' : (isCOD ? 'Pending ⏳ (COD)' : 'Pending ⏳');
 
-      // Invoice PDF Generation
-      let invoiceRelPath = order?.invoiceUrl;
-      if (!invoiceRelPath) {
-        try {
-          invoiceRelPath = await generateInvoicePDF(order);
-          if (order?.id) {
-            await prisma.order.update({
-              where: { id: order.id },
-              data: { invoiceUrl: invoiceRelPath }
-            });
-          }
-        } catch (pdfErr) {
-          console.error('[WhatsAppNotificationService] Error generating PDF invoice for confirmation:', pdfErr);
-          invoiceRelPath = `/uploads/invoices/invoice_${orderId}.pdf`;
-        }
-      }
-
-      const fullInvoiceUrl = invoiceRelPath.startsWith('http') ? invoiceRelPath : `${siteUrl}${invoiceRelPath}`;
-      const invoiceFileName = `Invoice-${orderId}.pdf`;
-
       const templateName = whatsappSettings.orderConfirmationClientTemplateName || 'order_confirmation_client_3dgal';
       const languageCode = whatsappSettings.languageCode || whatsappSettings.templateLanguage || 'en';
 
@@ -951,9 +930,7 @@ export class WhatsAppNotificationService {
           language: { code: languageCode },
           components: components
         },
-        orderId: order?.id,
-        invoiceFileName: invoiceFileName,
-        invoiceUrl: fullInvoiceUrl
+        orderId: order?.id
       };
 
       const log = await prisma.whatsappLog.create({

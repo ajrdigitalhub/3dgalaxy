@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { sysCache } from '../config/cache';
+import { encodeDays } from '../utils/delivery';
 
 // Helper to construct recursively nested tree paths
 interface CategoryNode {
@@ -205,7 +206,7 @@ export const createCategory = async (req: Request, res: Response) => {
         seoTitle,
         seoDescription,
         shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
-        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? Number(estimatedDeliveryDays) : undefined,
+        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
         freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
         shippingRegion: shippingRegion || null,
       },
@@ -238,7 +239,7 @@ export const updateCategory = async (req: Request, res: Response) => {
         seoTitle,
         seoDescription,
         shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
-        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? Number(estimatedDeliveryDays) : undefined,
+        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
         freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
         shippingRegion: shippingRegion || null,
       },

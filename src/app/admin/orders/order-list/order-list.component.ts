@@ -79,7 +79,7 @@ export class OrderListComponent {
     }
   }
 
-  // --- Invoice draft creator ---
+  // --- Draft order creator ---
   selectDraftItem(product: Product) {
     const list = this.draftSelectedItemsList();
     const existing = list.find(x => x.product.id === product.id);

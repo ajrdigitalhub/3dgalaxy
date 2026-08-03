@@ -51,9 +51,9 @@ Thank you for your service.
 
 - Kall Me Team`,
 
-  CUSTOMER_INVOICE: (params: TemplateParams) => `Hello ${params['CustomerName'] || params['customerName'] || 'Customer'},
+  CUSTOMER_ORDER_CONFIRMATION: (params: TemplateParams) => `Hello ${params['CustomerName'] || params['customerName'] || 'Customer'},
 
-Thank you for your order with Kall Me! Here is your invoice:
+Thank you for your order with 3D Galaxy! Here is your order confirmation:
 
 Order ID: ${params['OrderId'] || params['orderId'] || 'N/A'}
 Date: ${params['OrderDate'] || params['orderDate'] || 'Today'}
@@ -62,7 +62,7 @@ Total Amount: ₹${params['TotalAmount'] || params['totalAmount'] || '0'}
 
 Thank you for shopping with us!
 
-- Kall Me Team`,
+- 3D Galaxy Team`,
 
   CAMPAIGN_BROADCAST: (params: TemplateParams) => `📢 ${params['Title'] || 'Special Broadcast'}:
 ${params['Message'] || params['message'] || ''}

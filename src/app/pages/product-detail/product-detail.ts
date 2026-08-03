@@ -22,10 +22,12 @@ import { AppButton } from "../../shared/components/app-button/app-button";
 import { environment } from "../../../environments/environment";
 import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../shared/directives/tilt.directive";
+import { VariantChipSelectorComponent, VariantOptionGroup } from "../../shared/components/variant-selector/variant-chip-selector";
 
 import { ShippingService } from "../../core/services/shipping.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { formatWeight } from "../../shared/utils/weight.utils";
+import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 
 @Component({
   selector: "app-product-detail",
@@ -39,6 +41,8 @@ import { formatWeight } from "../../shared/utils/weight.utils";
     TiltDirective,
     FormsModule,
     WeightPipe,
+    VariantChipSelectorComponent,
+    DeliveryEstimatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./product-detail.html",
@@ -149,9 +153,46 @@ export class ProductDetail {
   rotationAngle = signal<number>(0);
   activeTab = signal<string>("overview");
   wishlistIds = signal<Set<string>>(new Set());
+  showVariantValidation = signal<boolean>(false);
 
   // Variant Logic
   selectedOptions = signal<Record<string, string>>({}); // { optionName: valueString }
+
+  /** Transforms product options into VariantOptionGroup[] for the chip selector */
+  computedOptionGroups = computed<VariantOptionGroup[]>(() => {
+    const p = this.product();
+    if (!p || !Array.isArray(p.options)) return [];
+    return p.options
+      .filter((opt: any) => {
+        const optName = String(opt?.name || '').trim().toLowerCase();
+        if (optName === 'title') {
+          const vals = Array.isArray(opt.values) ? opt.values : [];
+          if (vals.every((v: any) => this.isDefaultVariantName(this.getOptionValueStr(v)))) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map((opt: any) => ({
+        name: this.getOptionValueStr(opt.name),
+        values: (Array.isArray(opt.values) ? opt.values : []).map((v: any) => this.getOptionValueStr(v)),
+      }));
+  });
+
+  /** Returns group names where no selection has been made */
+  missingVariantGroups = computed<string[]>(() => {
+    if (!this.showVariantValidation()) return [];
+    const groups = this.computedOptionGroups();
+    const selected = this.selectedOptions();
+    return groups
+      .filter(g => !selected[g.name])
+      .map(g => g.name);
+  });
+
+  /** Handler for chip selection events from VariantChipSelectorComponent */
+  onChipSelected(event: { optionName: string; value: string }): void {
+    this.selectOption(event.optionName, event.value);
+  }
 
   private normalizeOptionKey(value: unknown): string {
     return String(value ?? "")
@@ -431,7 +472,9 @@ export class ProductDetail {
   getColorCode(colorName: string): string {
     if (!colorName || typeof colorName !== "string") return "#e2e8f0";
     const name = colorName.toLowerCase().trim();
+
     const colors: Record<string, string> = {
+      // ── Core Colors ──────────────────────────────────
       white: "#ffffff",
       black: "#000000",
       red: "#ef4444",
@@ -439,21 +482,189 @@ export class ProductDetail {
       green: "#22c55e",
       yellow: "#eab308",
       orange: "#f97316",
-      grey: "#6b7280",
-      gray: "#6b7280",
       purple: "#a855f7",
       pink: "#ec4899",
       brown: "#78350f",
+      grey: "#6b7280",
+      gray: "#6b7280",
+      // ── Extended Standard ─────────────────────────────
+      cyan: "#06b6d4",
+      teal: "#14b8a6",
+      indigo: "#6366f1",
+      violet: "#8b5cf6",
+      magenta: "#d946ef",
+      fuchsia: "#d946ef",
+      lime: "#84cc16",
+      amber: "#f59e0b",
+      rose: "#f43f5e",
+      coral: "#ff7f50",
+      salmon: "#fa8072",
+      crimson: "#dc143c",
+      maroon: "#800000",
+      burgundy: "#800020",
+      navy: "#1e3a5f",
+      aqua: "#00ffff",
+      turquoise: "#40e0d0",
+      lavender: "#b4a7d6",
+      lilac: "#c8a2c8",
+      peach: "#ffcba4",
+      beige: "#f5f5dc",
+      cream: "#fffdd0",
       ivory: "#fffff0",
+      khaki: "#c3b091",
+      tan: "#d2b48c",
+      wheat: "#f5deb3",
+      olive: "#808000",
+      chartreuse: "#7fff00",
+      mint: "#98fba0",
+      sage: "#9caf88",
+      forest: "#228b22",
+      emerald: "#50c878",
+      jade: "#00a86b",
+      // ── Metallics ─────────────────────────────────────
       silver: "#c0c0c0",
       gold: "#ffd700",
       copper: "#b87333",
-      natural: "#e2e8f0",
-      translucent: "#f1f5f9",
-      sky_blue: "#0ea5e9",
-      metallic_blue: "#1d4ed8",
+      bronze: "#cd7f32",
+      brass: "#b5a642",
+      platinum: "#e5e4e2",
+      chrome: "#dbe4eb",
+      titanium: "#878681",
+      steel: "#71797e",
+      gunmetal: "#2c3539",
+      // ── Special / Filament ────────────────────────────
+      natural: "#e8dcc8",
+      translucent: "#d4e5f7",
+      transparent: "#d4e5f7",
+      clear: "#e0eef9",
+      neon: "#39ff14",
+      fluorescent: "#ccff00",
+      glow: "#b8f785",
+      matte: "#8a8a8a",
+      silk: "#e6c88c",
+      wood: "#a0785a",
+      marble: "#d1d1d1",
+      stone: "#928e85",
+      sand: "#c2b280",
+      clay: "#b66a50",
+      charcoal: "#36454f",
+      ash: "#b2beb5",
+      smoke: "#738276",
+      midnight: "#191970",
+      // ── Blues ──────────────────────────────────────────
+      "sky blue": "#0ea5e9",
+      skyblue: "#0ea5e9",
+      "sky_blue": "#0ea5e9",
+      "light blue": "#87ceeb",
+      "baby blue": "#89cff0",
+      "royal blue": "#4169e1",
+      "dark blue": "#00008b",
+      "metallic blue": "#1d4ed8",
+      "metalic blue": "#1d4ed8",
+      "ocean blue": "#0077be",
+      "cobalt blue": "#0047ab",
+      cobalt: "#0047ab",
+      // ── Reds ──────────────────────────────────────────
+      "dark red": "#8b0000",
+      "light red": "#ff6961",
+      "brick red": "#cb4154",
+      scarlet: "#ff2400",
+      ruby: "#e0115f",
+      cherry: "#de3163",
+      wine: "#722f37",
+      blood: "#8a0303",
+      // ── Greens ────────────────────────────────────────
+      "dark green": "#006400",
+      "light green": "#90ee90",
+      "neon green": "#39ff14",
+      "army green": "#4b5320",
+      moss: "#8a9a5b",
+      pine: "#01796f",
+      // ── Grays ─────────────────────────────────────────
+      "dark grey": "#3f3f46",
+      "dark gray": "#3f3f46",
+      "light grey": "#d1d5db",
+      "light gray": "#d1d5db",
+      "warm grey": "#a8a29e",
+      "warm gray": "#a8a29e",
+      "cool grey": "#9ca3af",
+      "cool gray": "#9ca3af",
+      // ── Oranges / Yellows ─────────────────────────────
+      "dark orange": "#cc5500",
+      tangerine: "#ff9966",
+      apricot: "#fbceb1",
+      mustard: "#ffdb58",
+      lemon: "#fff44f",
+      "neon orange": "#ff6700",
+      // ── Pinks / Purples ───────────────────────────────
+      "hot pink": "#ff69b4",
+      "neon pink": "#ff6ec7",
+      plum: "#8e4585",
+      mauve: "#e0b0ff",
+      orchid: "#da70d6",
+      "dark purple": "#4a0080",
+      // ── Browns / Earth ────────────────────────────────
+      "dark brown": "#3e2723",
+      "light brown": "#a0826d",
+      chocolate: "#7b3f00",
+      coffee: "#6f4e37",
+      mocha: "#967969",
+      caramel: "#ffd59a",
+      rust: "#b7410e",
+      // ── Whites / Neutrals ─────────────────────────────
+      "off white": "#faf9f6",
+      "warm white": "#fdfbf5",
+      "cool white": "#f0f8ff",
+      pearl: "#eae6de",
+      snow: "#fffafa",
+      bone: "#e3dac9",
+
+      skin: "#eb8b3dff",
     };
-    return colors[name] || colors[name.replace(/\s+/g, "_")] || name;
+
+    // 1. Direct match
+    if (colors[name]) return colors[name];
+
+    // 2. Underscore → space normalization
+    const spaced = name.replace(/[_-]+/g, " ");
+    if (colors[spaced]) return colors[spaced];
+
+    // 3. Space → underscore normalization
+    const underscored = name.replace(/\s+/g, "_");
+    if (colors[underscored]) return colors[underscored];
+
+    // 4. Strip common prefixes/qualifiers to find base color
+    //    e.g. "transparent red" → "red", "matte black" → "black", "neon green" → check map first, else "green"
+    const qualifiers = [
+      "transparent", "translucent", "matte", "matt", "glossy", "gloss",
+      "metallic", "metalic", "satin", "silk", "neon", "fluorescent",
+      "pastel", "dark", "light", "deep", "bright", "vivid", "pale",
+      "warm", "cool", "royal", "baby", "electric", "galaxy", "cosmic",
+      "sparkle", "glitter", "shimmer", "rainbow", "gradient", "marble",
+    ];
+    const words = spaced.split(/\s+/);
+    if (words.length > 1) {
+      // Try removing each qualifier from the front
+      const filtered = words.filter(w => !qualifiers.includes(w));
+      if (filtered.length > 0) {
+        const baseColor = filtered.join(" ");
+        if (colors[baseColor]) return colors[baseColor];
+        if (colors[baseColor.replace(/\s+/g, "_")]) return colors[baseColor.replace(/\s+/g, "_")];
+        // Try just the last word (most likely the actual color)
+        const lastWord = filtered[filtered.length - 1];
+        if (colors[lastWord]) return colors[lastWord];
+      }
+      // Also try last word of original
+      const lastWord = words[words.length - 1];
+      if (colors[lastWord]) return colors[lastWord];
+    }
+
+    // 5. Try as a valid CSS color name (browser will resolve "magenta", "cyan", etc.)
+    if (/^#[0-9a-f]{3,8}$/i.test(name)) return name;
+    if (/^(rgb|hsl)/i.test(name)) return name;
+
+    // 6. Fallback: try using the name directly as CSS color (works for standard CSS color keywords)
+    return name;
   }
 
   isOptionValueOutOfStock(optionName: string, val: string): boolean {
@@ -1275,8 +1486,25 @@ export class ProductDetail {
   }
 
   selectImage(img: any) {
-    this.activeImage.set(this.getImageUrl(img));
-    this.is360Active.set(false);
+    try {
+      const imgUrl = this.getImageUrl(img);
+      this.activeImage.set(imgUrl);
+      this.is360Active.set(false);
+
+      const p = this.product();
+      if (p && Array.isArray(p.variants) && p.variants.length > 0) {
+        const matchedVariant = p.variants.find((v: any) => {
+          const varImages = this.extractVariantImages(v);
+          return varImages.some((vi: any) => this.getImageUrl(vi) === imgUrl);
+        });
+
+        if (matchedVariant) {
+          this.syncVariantSelection(p, matchedVariant);
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing variant from image selection:", error);
+    }
   }
 
   isMobile() {
@@ -1331,7 +1559,15 @@ export class ProductDetail {
     if (p.variants && p.variants.length > 0) {
       const selected = this.selectedVariant();
       if (!selected) {
-        this.toastService.error("Please select all variant options.");
+        this.showVariantValidation.set(true);
+        const missing = this.computedOptionGroups()
+          .filter(g => !this.selectedOptions()[g.name])
+          .map(g => g.name);
+        if (missing.length > 0) {
+          this.toastService.error(`Please select a ${missing[0]}.`);
+        } else {
+          this.toastService.error("Please select all variant options.");
+        }
         return;
       }
       if (selected.stock <= 0) {
@@ -1443,7 +1679,15 @@ export class ProductDetail {
     if (p.variants && p.variants.length > 0) {
       selected = this.selectedVariant();
       if (!selected) {
-        this.toastService.error("Please select all variant options.");
+        this.showVariantValidation.set(true);
+        const missing = this.computedOptionGroups()
+          .filter(g => !this.selectedOptions()[g.name])
+          .map(g => g.name);
+        if (missing.length > 0) {
+          this.toastService.error(`Please select a ${missing[0]}.`);
+        } else {
+          this.toastService.error("Please select all variant options.");
+        }
         return;
       }
       if (selected.stock <= 0) {

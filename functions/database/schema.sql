@@ -296,7 +296,6 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_address_id UUID REFERENCES customer_addresses(id),
     billing_address_id UUID REFERENCES customer_addresses(id),
     notes TEXT,
-    invoice_url VARCHAR(255),
     gst_number VARCHAR(15),
     company_name VARCHAR(255),
     deleted_at TIMESTAMP WITH TIME ZONE,

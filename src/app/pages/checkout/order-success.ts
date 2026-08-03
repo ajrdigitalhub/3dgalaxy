@@ -107,7 +107,7 @@ interface PaperParticle {
               </div>
               <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800">
                 <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Est. Delivery</p>
-                <p class="text-sm font-bold text-neutral-900 dark:text-white">3-5 Business Days</p>
+                <p class="text-sm font-bold text-neutral-900 dark:text-white">{{ order.estimatedDelivery || '3-5 Business Days' }}</p>
               </div>
             </div>
           </div>

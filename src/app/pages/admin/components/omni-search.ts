@@ -30,7 +30,7 @@ const ADMIN_PAGES: PageItem[] = [
   { id: 'categories', label: 'Product Categories Settings', category: 'Pages', icon: 'category', desc: 'Arrange categories, parent relationships, and banners.' },
   { id: 'brands', label: 'Brands & Manufacturers List', category: 'Pages', icon: 'copyright', desc: 'Configure brands, logos, and manufacturer tags.' },
   { id: 'inventory', label: 'Inventory & Stock Control', category: 'Pages', icon: 'inventory', desc: 'Update inventory, monitor low stock alerts, and set stock limits.' },
-  { id: 'orders', label: 'Sales Orders', category: 'Pages', icon: 'receipt', desc: 'Fulfill customer orders, track packages, and print invoices.' },
+  { id: 'orders', label: 'Sales Orders', category: 'Pages', icon: 'receipt', desc: 'Fulfill customer orders, track packages, and manage logistics.' },
   { id: 'quotes', label: '3D Printing Quote Inquiries', category: 'Pages', icon: 'print', desc: 'View custom STL uploads and service price requests.' },
   { id: 'abandoned-carts', label: 'Abandoned Checkouts List', category: 'Pages', icon: 'shopping_cart_checkout', desc: 'Inspect items left in checkout and trigger reminders.' },
   { id: 'customer-list', label: 'Customer Directory', category: 'Pages', icon: 'people', desc: 'Examine accounts, check verify statuses, and add helper notes.' },

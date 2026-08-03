@@ -420,12 +420,6 @@
         &.success { background: rgba(34, 197, 94, 0.08); color: #16a34a; }
         &.pending { background: rgba(234, 88, 12, 0.08); color: #ea580c; }
       }
-
-      .btn-invoice {
-        color: #ef4444;
-        &:hover { color: #b91c1c; }
-        mat-icon { font-size: 1.25rem; }
-      }
     }
 
     // 3. ADDRESSES GRID

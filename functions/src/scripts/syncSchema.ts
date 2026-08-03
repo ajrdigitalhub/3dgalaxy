@@ -16,36 +16,8 @@ async function main() {
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "gateway_response" TEXT;`,
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "cod_charge" DECIMAL(10,2) DEFAULT 0;`,
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "paid_amount" DECIMAL(10,2) DEFAULT 0;`,
-    `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "invoice_url" TEXT;`,
-    `ALTER TABLE "orders" ALTER COLUMN "invoice_url" TYPE TEXT;`,
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "gst_number" VARCHAR(15);`,
     `ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "company_name" VARCHAR(255);`,
-
-    // Invoices table columns
-    `CREATE TABLE IF NOT EXISTS "invoices" (
-      "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      "order_id" UUID UNIQUE NOT NULL REFERENCES "orders"("id") ON DELETE CASCADE,
-      "invoice_number" VARCHAR(100) UNIQUE NOT NULL,
-      "invoice_status" VARCHAR(50) NOT NULL DEFAULT 'ORIGINAL',
-      "pdf_storage_path" VARCHAR(255),
-      "pdf_download_url" TEXT,
-      "version" INT NOT NULL DEFAULT 1,
-      "generated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "generated_by" VARCHAR(255)
-    );`,
-    `ALTER TABLE "invoices" ALTER COLUMN "generated_by" TYPE VARCHAR(255) USING "generated_by"::text;`,
-    `ALTER TABLE "invoices" ALTER COLUMN "pdf_url" DROP NOT NULL;`,
-    `ALTER TABLE "invoices" ALTER COLUMN "pdf_storage_path" DROP NOT NULL;`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "pdf_download_url" TEXT;`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "pdf_storage_path" VARCHAR(255);`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "invoice_status" VARCHAR(50) DEFAULT 'ORIGINAL';`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "generated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "generated_by" VARCHAR(255);`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "version" INT DEFAULT 1;`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`,
-    `ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`,
 
     // Admin Notification Devices table
     `CREATE TABLE IF NOT EXISTS "admin_notification_devices" (

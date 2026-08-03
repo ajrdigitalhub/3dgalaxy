@@ -20,6 +20,7 @@ import { ApiService } from "../../services/api.service";
 import { AppButton } from "../../shared/components/app-button/app-button";
 import { SettingsService } from "../../core/services/settings.service";
 import { ShippingService } from "../../core/services/shipping.service";
+import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { calculateItemWeight, calculatePackageSummary, formatWeight, getItemWeightGrams } from "../../shared/utils/weight.utils";
 import { firstValueFrom } from "rxjs";
@@ -41,10 +42,12 @@ export interface CustomerAddress {
   isDefault: boolean;
 }
 
+import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+
 @Component({
   selector: "app-checkout",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, WeightPipe],
+  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, WeightPipe, DeliveryEstimatePipe],
   templateUrl: "./checkout.html",
 })
 export class CheckoutComponent implements OnInit {
@@ -57,6 +60,7 @@ export class CheckoutComponent implements OnInit {
   api = inject(ApiService);
   settingsService = inject(SettingsService);
   shippingService = inject(ShippingService);
+  deliveryService = inject(DeliveryEstimateService);
 
   packageSummary = computed(() => {
     return calculatePackageSummary(this.groupedCheckoutItems());
@@ -581,7 +585,7 @@ export class CheckoutComponent implements OnInit {
       codCharge: this.codSurcharge(),
       discountAmount: this.discount(),
       shippingSource: this.shippingDetails().source,
-      estimatedDelivery: `${this.shippingDetails().estimatedDays} Days`,
+      estimatedDelivery: this.deliveryService.formatDeliveryRange(this.shippingDetails().estimatedDays),
       shippingMethod: "Standard Delivery",
     };
 

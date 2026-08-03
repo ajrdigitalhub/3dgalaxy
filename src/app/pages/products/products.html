@@ -404,6 +404,17 @@
                   </span>
                   }
               </div>
+              
+              <!-- Delivery estimate -->
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1 mt-1">
+                <span>🚚 Delivery by</span>
+                <strong class="text-neutral-700 dark:text-neutral-300 font-bold hidden sm:inline">
+                  {{ p.estimatedDeliveryDays || 3 | deliveryEstimate:'desktop' }}
+                </strong>
+                <strong class="text-neutral-700 dark:text-neutral-300 font-bold sm:hidden">
+                  {{ p.estimatedDeliveryDays || 3 | deliveryEstimate:'mobile' }}
+                </strong>
+              </div>
             </div>
 
             <!-- Price & Action buttons -->

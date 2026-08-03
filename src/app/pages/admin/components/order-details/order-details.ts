@@ -343,73 +343,7 @@ export class OrderDetailsComponent implements OnInit {
     ).join(', ');
   }
 
-  printInvoice() {
-    window.print();
-  }
 
-  viewInvoice() {
-    const ord = this.order();
-    if (!ord) return;
-    const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
-    const apiUrl = environment.apiUrl;
-    const streamUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=false`;
-
-    this.http.get(streamUrl, { ...this.getHeaders(), responseType: 'blob' as 'json' }).subscribe({
-      next: (res: any) => {
-        const blob = new Blob([res], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-      },
-      error: () => {
-        // Direct absolute URL fallback
-        const fallbackUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=false&token=${encodeURIComponent(token)}`;
-        window.open(fallbackUrl, '_blank');
-      }
-    });
-  }
-
-  downloadInvoice() {
-    const ord = this.order();
-    if (!ord) return;
-    const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
-    const apiUrl = environment.apiUrl;
-    const streamUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=true`;
-
-    this.http.get(streamUrl, { ...this.getHeaders(), responseType: 'blob' as 'json' }).subscribe({
-      next: (res: any) => {
-        const blob = new Blob([res], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `Invoice_${ord.orderNumber || ord.id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      },
-      error: () => {
-        // Direct absolute URL fallback
-        const fallbackUrl = `${apiUrl}/orders/${ord.id}/invoice/stream?download=true&token=${encodeURIComponent(token)}`;
-        window.open(fallbackUrl, '_blank');
-      }
-    });
-  }
-
-  regenerateInvoice() {
-    const ord = this.order();
-    if (!ord) return;
-    if (!confirm(`Are you sure you want to force-regenerate the PDF invoice for Order ${ord.orderNumber}?`)) return;
-
-    this.http.post<any>('/api/admin/invoices/regenerate', { orderId: ord.id }, this.getHeaders()).subscribe({
-      next: (res) => {
-        alert(res.message || 'Invoice regenerated successfully!');
-        this.fetchOrder(ord.orderNumber);
-      },
-      error: (err) => {
-        alert(err.error?.error || 'Failed to regenerate invoice');
-      }
-    });
-  }
 
   getStatusBadgeClass(status: string): string {
     switch (status?.toUpperCase()) {

@@ -1376,16 +1376,22 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                           >Estimated Delivery Days</span
                         >
                         <input
-                          type="number"
-                          [value]="admin.pEstimatedDeliveryDays()"
-                          (input)="
-                            admin.pEstimatedDeliveryDays.set(
-                              +$any($event.target).value
-                            )
-                          "
+                          type="text"
+                          [value]="admin.pEstimatedDeliveryDaysInput()"
+                          (input)="admin.pEstimatedDeliveryDaysInput.set($any($event.target).value)"
                           placeholder="Default: 3"
                           class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
                         />
+                        @if (admin.pEstimatedDeliveryDaysPreview()) {
+                          <span class="block text-[10px] text-emerald-500 font-bold mt-1">
+                            Preview: {{ admin.pEstimatedDeliveryDaysPreview() }}
+                          </span>
+                        }
+                        @if (admin.pEstimatedDeliveryDaysError()) {
+                          <span class="block text-[10px] text-red-500 font-semibold mt-1">
+                            {{ admin.pEstimatedDeliveryDaysError() }}
+                          </span>
+                        }
                       </div>
                     </div>
                   </div>
@@ -2249,12 +2255,22 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       <div>
                         <span class="block text-[9px] font-bold text-zinc-400 mb-1">Est. Delivery (Days)</span>
                         <input
-                          type="number"
-                          [value]="admin.catEstimatedDeliveryDays() ?? 3"
-                          (input)="admin.catEstimatedDeliveryDays.set($any($event.target).value !== '' ? Number($any($event.target).value) : 3)"
+                          type="text"
+                          [value]="admin.catEstimatedDeliveryDaysInput()"
+                          (input)="admin.catEstimatedDeliveryDaysInput.set($any($event.target).value)"
                           placeholder="e.g. 3"
                           class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
                         />
+                        @if (admin.catEstimatedDeliveryDaysPreview()) {
+                          <span class="block text-[10px] text-emerald-500 font-bold mt-1">
+                            Preview: {{ admin.catEstimatedDeliveryDaysPreview() }}
+                          </span>
+                        }
+                        @if (admin.catEstimatedDeliveryDaysError()) {
+                          <span class="block text-[10px] text-red-500 font-semibold mt-1">
+                            {{ admin.catEstimatedDeliveryDaysError() }}
+                          </span>
+                        }
                       </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3 pt-1">

@@ -478,7 +478,6 @@ export const getCustomerOrders = async (req: Request, res: Response) => {
         paymentStatus: payment?.status || 'PENDING',
         deliveryStatus: o.status,
         trackingStatus: shipment?.status || 'UNSHIPPED',
-        invoiceUrl: o.invoiceUrl || '',
         items: itemsMapped,
       };
     });

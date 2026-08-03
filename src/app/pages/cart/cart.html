@@ -151,6 +151,14 @@
                     </span>
                   </div>
                   }
+                  
+                  <div class="mt-2 text-xs text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5">
+                    <mat-icon class="scale-[0.65] text-neutral-400 -mx-0.5">local_shipping</mat-icon>
+                    <span>Estimated Delivery:</span>
+                    <strong class="text-neutral-800 dark:text-neutral-200">
+                      {{ item.product.estimatedDeliveryDays || 3 | deliveryEstimate:'desktop' }}
+                    </strong>
+                  </div>
                 </div>
 
                 <!-- Pricing -->

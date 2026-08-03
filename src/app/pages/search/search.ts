@@ -14,10 +14,12 @@ import { FormsModule } from "@angular/forms";
 import { PLATFORM_ID } from "@angular/core";
 import { DatastoreService } from "../../services/datastore";
 
+import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+
 @Component({
   selector: "app-search-results",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, FormsModule],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, DeliveryEstimatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./search.html",
 })

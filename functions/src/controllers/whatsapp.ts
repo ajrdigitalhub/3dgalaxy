@@ -61,7 +61,6 @@ function resolvePlaceholders(order: any, customer: any, settings: any, extraPara
     payment_status: sanitizeTemplateParam(order?.paymentStatus || order?.payment?.status, 'Pending'),
     order_total: sanitizeTemplateParam(String(order?.totalAmount || '0')),
     currency: sanitizeTemplateParam(settings.currency, 'INR'),
-    invoice_url: sanitizeTemplateParam(order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : 'N/A'),
     store_name: sanitizeTemplateParam(storeName, '3D Galaxy'),
     support_phone: sanitizeTemplateParam(supportPhone, '9999999999'),
     support_email: sanitizeTemplateParam(supportEmail, 'support@3dgalaxy.com'),
@@ -72,132 +71,7 @@ function resolvePlaceholders(order: any, customer: any, settings: any, extraPara
   };
 }
 
-// Generate Invoice PDF
-export const generateInvoicePDF = async (order: any): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    try {
-      const doc = new PDFDocument({ margin: 50 });
-      const filename = `invoice_${order.orderNumber || order.id}.pdf`;
-      const uploadsPath = path.resolve(__dirname, '../../../uploads');
-      const invoicesDir = path.join(uploadsPath, 'invoices');
-      if (!fs.existsSync(invoicesDir)) {
-        fs.mkdirSync(invoicesDir, { recursive: true });
-      }
-      const filePath = path.join(invoicesDir, filename);
-      const writeStream = fs.createWriteStream(filePath);
-      
-      doc.pipe(writeStream);
-      
-      // Header
-      doc.fontSize(20).text('INVOICE', { align: 'right' });
-      doc.fontSize(14).text('3D Galaxy Hub', { align: 'left' });
-      doc.fontSize(10).text('Website: https://3dgalaxy.com', { align: 'left' });
-      doc.moveDown();
-      
-      // Order Metadata
-      doc.fontSize(10).text(`Invoice Number: INV-${order.orderNumber || order.id.slice(0, 8)}`);
-      doc.text(`Invoice Date: ${new Date().toLocaleDateString()}`);
-      doc.text(`Order Reference: ${order.id}`);
-      doc.text(`Payment Status: ${order.paymentStatus || 'PAID'}`);
-      doc.moveDown();
-      
-      // Address Info
-      let shippingAddress = order.shippingAddress;
-      if (typeof shippingAddress === 'string') {
-        try {
-          shippingAddress = JSON.parse(shippingAddress);
-        } catch {
-          shippingAddress = null;
-        }
-      }
-      
-      if (shippingAddress) {
-        doc.fontSize(11).text('Shipping Address:', { underline: true });
-        doc.fontSize(10).text(`${shippingAddress.name || ''}`);
-        doc.text(`${shippingAddress.addressLine1 || ''}, ${shippingAddress.addressLine2 || ''}`);
-        doc.text(`${shippingAddress.city || ''}, ${shippingAddress.state || ''} - ${shippingAddress.pincode || ''}`);
-        doc.text(`Phone: ${shippingAddress.phone || ''}`);
-        doc.moveDown();
-      }
-      
-      // Order Items
-      doc.fontSize(11).text('Order Summary:', { underline: true });
-      doc.moveDown(0.5);
-      
-      doc.fontSize(10).text('Item Description', 50, doc.y, { width: 250 });
-      doc.text('Qty', 300, doc.y, { width: 50, align: 'right' });
-      doc.text('Unit Price', 370, doc.y, { width: 70, align: 'right' });
-      doc.text('Total', 460, doc.y, { width: 80, align: 'right' });
-      doc.moveDown(0.3);
-      doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-      doc.moveDown(0.5);
-      
-      if (order.items && order.items.length > 0) {
-        order.items.forEach((item: any) => {
-          doc.text(item.product?.name || 'Product', 50, doc.y, { width: 250 });
-          doc.text(String(item.quantity), 300, doc.y, { width: 50, align: 'right' });
-          doc.text(`₹${item.unitPrice || item.price || 0}`, 370, doc.y, { width: 70, align: 'right' });
-          doc.text(`₹${item.quantity * (item.unitPrice || item.price || 0)}`, 460, doc.y, { width: 80, align: 'right' });
-          doc.moveDown();
-        });
-      }
-      
-      let itemsSubtotal = 0;
-      if (order.items && order.items.length > 0) {
-        order.items.forEach((item: any) => {
-          itemsSubtotal += item.quantity * Number(item.unitPrice || item.price || 0);
-        });
-      }
 
-      doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-      doc.moveDown(0.5);
-
-      doc.text('Subtotal:', 350, doc.y, { width: 90, align: 'right' });
-      doc.text(`₹${itemsSubtotal.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-      doc.moveDown(0.4);
-
-      doc.text('Shipping:', 350, doc.y, { width: 90, align: 'right' });
-      if (Number(order.shippingAmount || 0) > 0) {
-        doc.text(`₹${Number(order.shippingAmount).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-      } else {
-        doc.text('Free', 450, doc.y, { width: 90, align: 'right' });
-      }
-      doc.moveDown(0.4);
-
-      if (Number(order.discountAmount || 0) > 0) {
-        doc.text('Discount:', 350, doc.y, { width: 90, align: 'right' });
-        doc.text(`-₹${Number(order.discountAmount).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-        doc.moveDown(0.4);
-      }
-
-      const codFee = Number(order.codCharge || 0) || (order.paymentMethod === 'COD' ? 100 : 0);
-      if (codFee > 0) {
-        doc.text('COD Charge:', 350, doc.y, { width: 90, align: 'right' });
-        doc.text(`₹${codFee.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-        doc.moveDown(0.4);
-      }
-
-      const taxVal = Number(order.taxAmount || 0);
-      doc.text('Tax / GST:', 350, doc.y, { width: 90, align: 'right' });
-      doc.text(`₹${taxVal.toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-      doc.moveDown(0.5);
-
-      doc.fontSize(11).font('Helvetica-Bold').text('Grand Total:', 350, doc.y, { width: 90, align: 'right' });
-      doc.text(`₹${Number(order.totalAmount || 0).toFixed(2)}`, 450, doc.y, { width: 90, align: 'right' });
-      
-      doc.end();
-      
-      writeStream.on('finish', () => {
-        resolve(`/uploads/invoices/${filename}`);
-      });
-      writeStream.on('error', (err) => {
-        reject(err);
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
 
 // Meta Dispatch Service
 export const dispatchMetaNotification = async (logId: string, settings: any, payload: any) => {
@@ -427,24 +301,10 @@ export const triggerWhatsAppNotification = async (
       templateName = settings.orderDeliveredReviewTemplateName || 'order_delivered_review_template';
       isStandardTemplate = true;
       
-      const fileName = `invoice_${order?.orderNumber || order?.id}.pdf`;
-      const invoiceUrl = order?.invoiceUrl ? `${siteUrl}${order.invoiceUrl}` : `${siteUrl}/uploads/invoices/${fileName}`;
       const reviewLink = order ? `${siteUrl}/feedback?orderId=${order.id}` : '';
       const custName = WhatsAppNotificationService.extractCustomerName(order, { customer, ...extraParams });
 
       components = sanitizeComponents([
-        {
-          type: "header",
-          parameters: [
-            {
-              type: "document",
-              document: {
-                link: invoiceUrl,
-                filename: `Invoice_${order?.orderNumber || 'Download'}.pdf`
-              }
-            }
-          ]
-        },
         {
           type: "body",
           parameters: [
@@ -475,21 +335,7 @@ export const triggerWhatsAppNotification = async (
         },
       ]);
 
-      // Attach document if template type is Document
-      if (template.headerType === 'Document' && resolvedVars.invoice_url && resolvedVars.invoice_url !== 'N/A') {
-        components.push({
-          type: 'header',
-          parameters: [
-            {
-              type: 'document',
-              document: {
-                link: resolvedVars.invoice_url,
-                filename: `Invoice_${order?.orderNumber || 'Download'}.pdf`,
-              },
-            },
-          ],
-        });
-      }
+
     }
 
     components = sanitizeComponents(components);
@@ -525,24 +371,7 @@ export const triggerWhatsAppNotification = async (
     // Dispatch
     await dispatchMetaNotification(log.id, settings, metaPayload);
     
-    // Handle Delivered Order generation of Invoice PDF
-    if (triggerKey === 'delivered' && settings.sendInvoiceOnDelivered) {
-      // If invoice attachment is required but not yet generated
-      if (settings.attachInvoicePdf && !order?.invoiceUrl && order) {
-        try {
-          const pdfPath = await generateInvoicePDF(order);
-          const updatedOrder = await prisma.order.update({
-            where: { id: order.id },
-            data: { invoiceUrl: pdfPath },
-          });
-          
-          // Trigger Invoice Sent Template
-          await triggerWhatsAppNotification('order_delivered_review', formattedPhone, updatedOrder, customer, extraParams);
-        } catch (pdfErr) {
-          console.error('Failed to auto generate invoice PDF on delivery:', pdfErr);
-        }
-      }
-    }
+
     
     // Handle Admin notifications trigger if enabled
     if (settings.sendAdminNotification !== false && !isAdmin) {

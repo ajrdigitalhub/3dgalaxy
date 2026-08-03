@@ -413,19 +413,6 @@ export interface HeaderMenuPayload {
         <!-- TAB 2: BRANDS VIEW (GRID WITH ALPHABETICAL FILTER) -->
         <div *ngIf="!loading() && activeTab() === 'brands'" class="space-y-4 min-h-[26rem]">
           
-          <!-- Alphabetical Letter Filter Bar -->
-          <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-2 border-b border-slate-100 dark:border-slate-800">
-            <button
-              *ngFor="let letter of brandLetters"
-              type="button"
-              (click)="selectedBrandLetter.set(letter)"
-              [class]="selectedBrandLetter() === letter ? 'bg-orange-500 text-white font-black' : 'bg-slate-100 dark:bg-[#0F1115] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#1C222D] font-bold'"
-              class="h-8 px-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all border-none cursor-pointer shrink-0"
-            >
-              {{ letter }}
-            </button>
-          </div>
-
           <!-- Brands Grid -->
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 max-h-[26rem] overflow-y-auto pr-2 scrollbar-thin">
             <div 

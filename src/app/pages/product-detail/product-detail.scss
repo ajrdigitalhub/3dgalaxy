@@ -224,3 +224,33 @@
     box-shadow: 0 0 0 0 rgba(214, 81, 8, 0);
   }
 }
+
+// ─── Single Row Scrollable Thumbnails ──────────────────────
+.product-thumbnails-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem 0.75rem;
+  overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+  }
+
+  .dark &::-webkit-scrollbar-thumb {
+    background-color: #475569;
+  }
+}

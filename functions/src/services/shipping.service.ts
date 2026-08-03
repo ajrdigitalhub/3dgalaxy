@@ -133,7 +133,9 @@ export class ShippingService {
 
       totalShippingCharge += itemCharge;
       sourcesUsed.add(itemSource);
-      if (itemDays > maxEstimatedDays) {
+      const currentItemMax = itemDays >= 100 ? (itemDays % 100) : itemDays;
+      const currentMaxMax = maxEstimatedDays >= 100 ? (maxEstimatedDays % 100) : maxEstimatedDays;
+      if (currentItemMax > currentMaxMax) {
         maxEstimatedDays = itemDays;
       }
 

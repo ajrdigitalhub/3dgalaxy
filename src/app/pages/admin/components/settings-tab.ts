@@ -2815,50 +2815,6 @@ import { AdminDevicesTab } from "./admin-devices-tab";
                           <input
                             type="checkbox"
                             [checked]="
-                              draft().whatsappSettings?.sendInvoiceOnDelivered
-                            "
-                            (change)="
-                              setNested(
-                                'whatsappSettings',
-                                'sendInvoiceOnDelivered',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer"
-                          />
-                          <span
-                            class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300"
-                            >Generate invoice on delivery</span
-                          >
-                        </div>
-                        <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
-                        >
-                          <input
-                            type="checkbox"
-                            [checked]="
-                              draft().whatsappSettings?.attachInvoicePdf
-                            "
-                            (change)="
-                              setNested(
-                                'whatsappSettings',
-                                'attachInvoicePdf',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 text-blue-600 bg-zinc-100 border-zinc-300 rounded focus:ring-blue-500 cursor-pointer"
-                          />
-                          <span
-                            class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300"
-                            >Attach Invoice PDF Document</span
-                          >
-                        </div>
-                        <div
-                          class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-800"
-                        >
-                          <input
-                            type="checkbox"
-                            [checked]="
                               draft().whatsappSettings?.sendAdminNotification
                             "
                             (change)="
@@ -3180,7 +3136,6 @@ import { AdminDevicesTab } from "./admin-devices-tab";
                                       "payment_status",
                                       "order_total",
                                       "currency",
-                                      "invoice_url",
                                       "store_name",
                                       "support_phone",
                                       "support_email",
@@ -3385,7 +3340,7 @@ import { AdminDevicesTab } from "./admin-devices-tab";
                                   <p
                                     class="text-[9px] font-bold text-white truncate leading-none"
                                   >
-                                    Invoice_B3D-4890.pdf
+                                    Order_Summary_B3D-4890.pdf
                                   </p>
                                   <span
                                     class="text-[7px] text-zinc-500 leading-none"
@@ -4917,7 +4872,6 @@ export class AdminSettingsTab {
       payment_status: "PAID",
       order_total: "4,890.00",
       currency: "INR",
-      invoice_url: "https://3dgalaxy.com/uploads/invoices/inv_4890.pdf",
       store_name: "3D Galaxy Hub",
       support_phone: "+91 99999 99999",
       support_email: "support@3dgalaxy.com",

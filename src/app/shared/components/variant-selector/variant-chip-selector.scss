@@ -1,0 +1,288 @@
+// ─── Variant Chip Selector — Premium Choice Chips ──────────────────────────
+
+// ─── Chip Selection Animation ─────────────────────────────────
+@keyframes chipSelect {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes chipFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Ripple ───────────────────────────────────────────────────
+@keyframes chipRipple {
+  0% { transform: scale(0); opacity: 0.4; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+// ─── Group Container ──────────────────────────────────────────
+.variant-chip-group {
+  margin-bottom: 1.25rem;
+  animation: chipFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ─── Group Label ──────────────────────────────────────────────
+.variant-chip-label {
+  font-size: 0.6875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #0f172a;
+  margin-bottom: 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.variant-chip-label-value {
+  font-weight: 500;
+  color: #64748b;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+}
+
+// ─── Chips Row ────────────────────────────────────────────────
+.variant-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 0.25rem;
+
+  // Mobile: horizontal scroll
+  @media (max-width: 639px) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+// ─── Individual Chip ──────────────────────────────────────────
+.variant-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 2.375rem; // 38px
+  padding: 0 1rem;
+  border-radius: 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  background-color: #fff;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  outline: none;
+  overflow: hidden;
+  transition:
+    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Ripple pseudo-element
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: rgba(214, 81, 8, 0.15);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:active:not(:disabled)::after {
+    animation: chipRipple 400ms ease-out;
+  }
+
+  // ─── Hover State ────────────────────
+  &:hover:not(:disabled):not(.variant-chip--selected) {
+    border-color: #d65108;
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(214, 81, 8, 0.1);
+    transform: translateY(-1px);
+  }
+
+  // ─── Focus Visible ──────────────────
+  &:focus-visible {
+    outline: 2px solid #d65108;
+    outline-offset: 2px;
+  }
+
+  // ─── Active Press ───────────────────
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  // ─── Selected State ─────────────────
+  &--selected {
+    background-color: #d65108;
+    border-color: #d65108;
+    color: #fff;
+    font-weight: 800;
+    box-shadow:
+      0 2px 10px rgba(214, 81, 8, 0.25),
+      0 0 0 1px rgba(214, 81, 8, 0.15);
+    animation: chipSelect 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+      background-color: #c04907;
+      border-color: #c04907;
+      box-shadow:
+        0 4px 14px rgba(214, 81, 8, 0.3),
+        0 0 0 1px rgba(214, 81, 8, 0.2);
+    }
+  }
+
+  // ─── Disabled / Out of Stock ────────
+  &--disabled,
+  &:disabled {
+    background-color: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+    transform: none;
+
+    &:hover {
+      box-shadow: none;
+      transform: none;
+      border-color: #e2e8f0;
+      color: #94a3b8;
+    }
+  }
+}
+
+// ─── Check Icon ───────────────────────────────────────────────
+.variant-chip-check {
+  font-size: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  line-height: 0.875rem;
+  margin-left: -0.125rem;
+  color: inherit;
+}
+
+// ─── Color Dot ────────────────────────────────────────────
+.variant-chip-color-dot {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+
+  .variant-chip--selected & {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  }
+}
+
+// ─── Chip Text ────────────────────────────────────────────────
+.variant-chip-text {
+  line-height: 1;
+}
+
+.variant-chip-text--strike {
+  text-decoration: line-through;
+  text-decoration-color: #94a3b8;
+  text-decoration-thickness: 1.5px;
+}
+
+// ─── Out of Stock Badge ───────────────────────────────────────
+.variant-chip-oos-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  margin-left: 0.125rem;
+  line-height: 1.2;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── DARK THEME ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+:host-context(.dark) {
+  .variant-chip-label {
+    color: #f8fafc;
+  }
+
+  .variant-chip-label-value {
+    color: #94a3b8;
+  }
+
+  .variant-chip {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #cbd5e1;
+
+    &:hover:not(:disabled):not(.variant-chip--selected) {
+      border-color: #d65108;
+      color: #f8fafc;
+      box-shadow: 0 2px 8px rgba(214, 81, 8, 0.15);
+    }
+
+    &--selected {
+      background-color: #d65108;
+      border-color: #d65108;
+      color: #fff;
+
+      &:hover {
+        background-color: #c04907;
+        border-color: #c04907;
+      }
+    }
+
+    &--disabled,
+    &:disabled {
+      background-color: #1e293b;
+      border-color: #334155;
+      color: #475569;
+    }
+  }
+
+  .variant-chip-color-dot {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .variant-chip-oos-badge {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+}

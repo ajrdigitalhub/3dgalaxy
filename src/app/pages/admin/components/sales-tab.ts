@@ -157,7 +157,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                   <th class="py-3">Customer</th>
                   <th class="py-3">Financial status</th>
                   <th class="py-3">Product count</th>
-                  <th class="py-3">Total Invoice</th>
+                  <th class="py-3">Total Amount</th>
                   <th class="py-3 text-right">Logistics action Status</th>
                 </tr>
               </thead>
@@ -189,9 +189,6 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                       <div class="inline-flex gap-1.5 align-middle items-center">
                         <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-2">
                           <mat-icon class="text-[14px] leading-none">visibility</mat-icon> Details
-                        </a>
-                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors" title="Invoice">
-                          <mat-icon class="scale-75">receipt_long</mat-icon>
                         </a>
                         <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors mr-2" title="Shipment">
                           <mat-icon class="scale-75">local_shipping</mat-icon>
@@ -250,12 +247,12 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
         </div>
       }
 
-      <!-- ========================= TAB: DRAFT ORDERS INVOICER ========================= -->
+      <!-- ========================= TAB: DRAFT ORDERS CONSOLE ========================= -->
       @if (admin.activeTab() === 'draft-orders') {
         <div class="space-y-8">
           <div>
-            <h1 class="text-xl font-black uppercase">Manual Invoicing Console</h1>
-            <p class="text-xs text-zinc-500">Draft customized direct invoices and register individual cash bookings offline.</p>
+            <h1 class="text-xl font-black uppercase">Manual Order Console</h1>
+            <p class="text-xs text-zinc-500">Register individual cash bookings and direct offline sales.</p>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -315,7 +312,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 </div>
 
                 <div class="flex justify-between items-center py-2 border-t border-b border-white/5 font-black text-white">
-                  <span class="text-zinc-300">Grand Invoice Total:</span>
+                  <span class="text-zinc-300">Grand Total:</span>
                   <span class="text-emerald-400">₹{{ admin.draftGrandTotal() | number }}</span>
                 </div>
               </div>

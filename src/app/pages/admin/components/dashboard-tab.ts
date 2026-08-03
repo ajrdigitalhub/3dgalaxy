@@ -221,7 +221,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
           <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 pb-4 mb-4">
             <div>
               <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-555 block">Global Store Sales</span>
-              <h4 class="text-sm font-black text-zinc-800 dark:text-zinc-300 mt-0.5">Recent Checkout Invoices</h4>
+              <h4 class="text-sm font-black text-zinc-800 dark:text-zinc-300 mt-0.5">Recent Store Orders</h4>
             </div>
             <span class="text-[10px] font-bold text-zinc-550 uppercase tracking-wide bg-zinc-100 dark:bg-zinc-800/60 px-2.5 py-1 rounded-lg">Realtime Stream</span>
           </div>

@@ -26,7 +26,6 @@ export class OrdersTracking {
   ds = inject(DatastoreService);
 
   searchPhoneQuery = signal<string>("");
-  activeInvoice = signal<Order | null>(null);
 
   // Ticket inputs
   ticketCat = signal<string>("Nozzle Clog");
@@ -185,31 +184,7 @@ export class OrdersTracking {
     this.sortOrder.set(value);
   }
 
-  openInvoiceSimulation(ord: Order) {
-    this.activeInvoice.set(ord);
-  }
 
-  triggerPrintInvoice(ord: Order) {
-    const pdfData = `
-3D GALAXY PRINTING LABS - OFFICIAL INVOICE
-===================================================
-Invoice Number: ${ord.orderNumber}
-Issued To: ${ord.customerName} (Email: ${ord.customerEmail}, Phone: ${ord.customerPhone})
-Date of Invoice: ${ord.date}
-
-Particular Component list:
-${ord.items.map((i) => `- ${i.name} (x${i.quantity}) @ ₹${i.price} each.`).join("\n")}
-
-Subtotal Net: ₹${ord.subtotal}
-Loyalty Code Rebates: -₹${ord.discount}
-Secured Logistics Shipping Run: ₹${ord.shippingFee}
----------------------------------------------------
-Grand Net Payable (INR): ₹${ord.grandTotal} (Paid via ${ord.paymentMethod})
-===================================================
-Thank you for building the future with 3D Galaxy!
-    `;
-    this.toastService.info(pdfData);
-  }
 
   simulateDownload(name: string) {
     this.toastService.info(

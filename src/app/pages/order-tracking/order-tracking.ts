@@ -274,6 +274,15 @@ import { LoadingService } from '../../core/services/loading.service';
                         </span>
                       </div>
 
+                      @if (order().estimatedDelivery) {
+                      <div class="border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5">
+                        <span class="text-[9px] sm:text-[10px] text-neutral-400 dark:text-neutral-500 block font-black uppercase tracking-wider">Expected Delivery</span>
+                        <span class="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                          {{order().estimatedDelivery}}
+                        </span>
+                      </div>
+                      }
+
                       <div class="border-t border-neutral-200/60 dark:border-neutral-800 pt-2.5 space-y-1.5">
                         <span class="text-[9px] sm:text-[10px] text-neutral-400 dark:text-neutral-500 block font-black uppercase tracking-wider">Items summary</span>
                         <div class="max-h-[100px] overflow-y-auto space-y-1.5 pr-1 no-scrollbar">

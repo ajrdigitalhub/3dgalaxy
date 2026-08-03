@@ -155,7 +155,6 @@
               <th class="text-right">Amount</th>
               <th>Payment Status</th>
               <th>Delivery Status</th>
-              <th class="text-right">Invoice</th>
             </tr>
           </thead>
           <tbody>
@@ -185,12 +184,6 @@
                 <span class="badge-status-sm" [class.success]="o.deliveryStatus === 'DELIVERED'" [class.pending]="o.deliveryStatus === 'PROCESSING' || o.deliveryStatus === 'PENDING'">
                   {{ o.deliveryStatus }}
                 </span>
-              </td>
-              <td class="text-right">
-                <a [href]="o.invoiceUrl" target="_blank" class="btn-invoice" *ngIf="o.invoiceUrl">
-                  <mat-icon>picture_as_pdf</mat-icon>
-                </a>
-                <span *ngIf="!o.invoiceUrl">—</span>
               </td>
             </tr>
           </tbody>
