@@ -446,6 +446,7 @@ model Order {
   totalWeightInGrams Decimal?       @default(0) @map("total_weight_in_grams") @db.Decimal(10, 2)
   displayWeight   String?           @map("display_weight") @db.VarChar(50)
   totalQuantity   Int?              @default(0) @map("total_quantity")
+  shipment        Json?             @map("shipment")
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -517,16 +518,25 @@ model Payment {
 }
 
 model Shipment {
-  id              String            @id @default(uuid()) @db.Uuid
-  orderId         String            @map("order_id") @db.Uuid
-  carrier         String?           @db.VarChar(100)
-  trackingNumber  String?           @map("tracking_number") @db.VarChar(255)
-  status          String            @db.VarChar(50)
-  shippedAt       DateTime?         @map("shipped_at") @db.Timestamptz
-  deliveredAt     DateTime?         @map("delivered_at") @db.Timestamptz
-  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  id                    String            @id @default(uuid()) @db.Uuid
+  orderId               String            @map("order_id") @db.Uuid
+  carrier               String?           @db.VarChar(100)
+  courierPartner        String?           @map("courier_partner") @db.VarChar(100)
+  courierDisplayName    String?           @map("courier_display_name") @db.VarChar(100)
+  trackingNumber        String?           @map("tracking_number") @db.VarChar(255)
+  trackingUrl           String?           @map("tracking_url") @db.Text
+  dispatchLocation      String?           @map("dispatch_location") @db.VarChar(255)
+  shippingNotes         String?           @map("shipping_notes") @db.Text
+  estimatedDeliveryStart DateTime?        @map("estimated_delivery_start") @db.Timestamptz
+  estimatedDeliveryEnd   DateTime?        @map("estimated_delivery_end") @db.Timestamptz
+  status                String            @db.VarChar(50)
+  shippedAt             DateTime?         @map("shipped_at") @db.Timestamptz
+  deliveredAt           DateTime?         @map("delivered_at") @db.Timestamptz
+  lastTrackingSync      DateTime?         @map("last_tracking_sync") @db.Timestamptz
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order                 Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@map("shipments")

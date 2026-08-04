@@ -18,11 +18,12 @@ export class PageHeaderComponent {
   logoUrlComputed = computed(() => {
     const theme = this.ds.theme();
     const settings = this.ds.settings();
-    if (!settings) return '/3d-logo.png';
+    const fallback = '/3d-logo.png';
+    if (!settings) return fallback;
     if (theme === 'dark') {
-      return settings.appIconUrl || settings.darkModeLogoUrl || settings.logoUrl || '/3d-logo.png';
+      return settings.appIconUrl || settings.darkModeLogoUrl || settings.logoUrl || fallback;
     } else {
-      return settings.logoUrl || settings.headerLogoUrl || '/3d-logo.png';
+      return settings.logoUrl || settings.headerLogoUrl || fallback;
     }
   });
 
@@ -30,13 +31,6 @@ export class PageHeaderComponent {
     const img = event.target as HTMLImageElement;
     if (img.getAttribute('data-error-handled')) return;
     img.setAttribute('data-error-handled', 'true');
-    const isDark = document.documentElement.classList.contains('dark');
-    const placeholder = this.ds.settings()?.defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
-    
-    if (isDark) {
-      img.src = this.ds.settings()?.darkModeLogoUrl || this.ds.settings()?.logoUrl || placeholder;
-    } else {
-      img.src = this.ds.settings()?.logoUrl || this.ds.settings()?.headerLogoUrl || placeholder;
-    }
+    img.src = '/3d-logo.png';
   }
 }

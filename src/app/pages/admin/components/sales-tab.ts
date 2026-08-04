@@ -1,14 +1,16 @@
 import { Component, Input, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminPanel } from '../admin';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dialog/shipment-dialog.component';
 
 @Component({
   selector: 'app-admin-sales-tab',
-  imports: [CommonModule, MatIconModule, RouterModule, FormsModule],
+  imports: [CommonModule, MatIconModule, RouterModule, FormsModule, ShipmentDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -155,10 +157,13 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
                   <th class="py-3">Order Code</th>
                   <th class="py-3">Customer</th>
-                  <th class="py-3">Financial status</th>
-                  <th class="py-3">Product count</th>
+                  <th class="py-3">Financial Status</th>
+                  <th class="py-3">Courier</th>
+                  <th class="py-3">Tracking Number</th>
+                  <th class="py-3">Shipment Date</th>
+                  <th class="py-3">Estimated Delivery</th>
                   <th class="py-3">Total Amount</th>
-                  <th class="py-3 text-right">Logistics action Status</th>
+                  <th class="py-3 text-right">Logistics Action</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -183,17 +188,86 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                         {{ o.status }}
                       </span>
                     </td>
-                    <td class="py-4 font-mono font-medium">{{ o.items.length }} SKU(s)</td>
+
+                    <!-- Courier Partner Column -->
+                    <td class="py-4">
+                      @if (o.shipment?.courierDisplayName || o.shipment?.courierPartner) {
+                        <span class="px-2 py-1 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-black uppercase border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 w-max">
+                          <mat-icon class="text-xs scale-75">local_shipping</mat-icon>
+                          {{ o.shipment.courierDisplayName || o.shipment.courierPartner }}
+                        </span>
+                      } @else {
+                        <span class="text-zinc-400 text-[10px] italic">Not Assigned</span>
+                      }
+                    </td>
+
+                    <!-- Tracking Number Column & Quick Actions -->
+                    <td class="py-4">
+                      @if (o.shipment?.trackingNumber) {
+                        <div class="flex items-center gap-1.5 font-mono">
+                          <span class="font-bold text-zinc-900 dark:text-white text-[11px]">{{ o.shipment.trackingNumber }}</span>
+                          <button
+                            (click)="copyTrackingId(o.shipment.trackingNumber)"
+                            class="h-6 w-6 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors"
+                            title="Copy Tracking ID"
+                          >
+                            <mat-icon class="text-xs scale-75">content_copy</mat-icon>
+                          </button>
+                          @if (o.shipment?.trackingUrl) {
+                            <button
+                              (click)="trackShipment(o.shipment.trackingUrl)"
+                              class="h-6 px-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center gap-1 border-none cursor-pointer transition-colors text-[9px] font-black uppercase"
+                              title="Track Shipment"
+                            >
+                              <mat-icon class="text-xs scale-75">open_in_new</mat-icon>
+                              Track
+                            </button>
+                          }
+                        </div>
+                      } @else {
+                        <span class="text-zinc-400 text-[10px] italic">—</span>
+                      }
+                    </td>
+
+                    <!-- Shipment Date Column -->
+                    <td class="py-4 font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
+                      @if (o.shipment?.shipmentDate) {
+                        {{ o.shipment.shipmentDate | date:'dd MMM yyyy' }}
+                      } @else {
+                        <span class="text-zinc-400 italic">—</span>
+                      }
+                    </td>
+
+                    <!-- Estimated Delivery Column -->
+                    <td class="py-4 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      @if (o.shipment?.estimatedDelivery || o.estimatedDelivery) {
+                        {{ o.shipment?.estimatedDelivery || o.estimatedDelivery }}
+                      } @else {
+                        <span class="text-zinc-400 italic">—</span>
+                      }
+                    </td>
+
                     <td class="py-4 font-mono font-black text-zinc-800 dark:text-white">₹{{ o.grandTotal | number }}</td>
+
+                    <!-- Actions & Status Selector -->
                     <td class="py-4 text-right">
                       <div class="inline-flex gap-1.5 align-middle items-center">
                         <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-2">
                           <mat-icon class="text-[14px] leading-none">visibility</mat-icon> Details
                         </a>
-                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center justify-center h-7 w-7 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors mr-2" title="Shipment">
+                        <button
+                          (click)="openShipmentModalForOrder(o)"
+                          class="flex items-center justify-center h-7 w-7 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors mr-2 cursor-pointer"
+                          title="Configure Shipment"
+                        >
                           <mat-icon class="scale-75">local_shipping</mat-icon>
-                        </a>
-                        <select (change)="admin.updateOrderStatus(o.orderNumber, $any($event.target).value)" class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer">
+                        </button>
+                        <select
+                          #statusSelect
+                          [value]="o.status"
+                          (change)="handleStatusSelect(o, $any($event.target).value, statusSelect)"
+                          class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer"
+                        >
                           <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending Auth</option>
                           <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
                           <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing Job</option>
@@ -245,6 +319,16 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
           </div>
         </div>
+      }
+
+      <!-- SHIPMENT DETAILS DIALOG POPUP -->
+      @if (showShipmentModal() && selectedOrderForShipment()) {
+        <app-shipment-dialog
+          [orderNumber]="selectedOrderForShipment().orderNumber"
+          [orderItems]="selectedOrderForShipment().items || []"
+          (saveShipment)="onSaveShipmentPayload($event)"
+          (cancel)="showShipmentModal.set(false)"
+        ></app-shipment-dialog>
       }
 
       <!-- ========================= TAB: DRAFT ORDERS CONSOLE ========================= -->
@@ -594,6 +678,77 @@ export class AdminSalesTab {
     return a.trim().toLowerCase() === b.trim().toLowerCase();
   }
 
+  private http = inject(HttpClient);
+
+  // Shipment Dialog Modal signals
+  showShipmentModal = signal(false);
+  selectedOrderForShipment = signal<any>(null);
+
+  handleStatusSelect(order: any, newStatus: string, selectEl: HTMLSelectElement) {
+    if (!newStatus) return;
+    if (newStatus.toLowerCase() === 'shipped') {
+      // Intercept transition to Shipped -> Require Shipment Details Dialog first
+      selectEl.value = order.status || 'Confirmed';
+      this.openShipmentModalForOrder(order);
+    } else {
+      this.admin.updateOrderStatus(order.orderNumber, newStatus);
+    }
+  }
+
+  openShipmentModalForOrder(order: any) {
+    this.selectedOrderForShipment.set(order);
+    this.showShipmentModal.set(true);
+  }
+
+  onSaveShipmentPayload(payload: ShipmentDetailsPayload) {
+    const targetOrder = this.selectedOrderForShipment();
+    if (!targetOrder) return;
+
+    let headers = {};
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token');
+      if (token) headers = { headers: { 'Authorization': `Bearer ${token}` } };
+    }
+
+    this.http.put(`/api/orders/${targetOrder.id}/status`, {
+      status: 'Shipped',
+      ...payload
+    }, headers).subscribe({
+      next: (res: any) => {
+        this.toastService.success(`Order ${targetOrder.orderNumber} successfully shipped via ${payload.courierDisplayName}!`);
+        this.showShipmentModal.set(false);
+        this.selectedOrderForShipment.set(null);
+        this.admin.ds.reloadOrders(this.currentPage(), this.pageSize(), {
+          search: this.searchQuery(),
+          status: this.statusFilter(),
+          customerType: this.customerTypeFilter(),
+          minAmount: this.minAmount(),
+          maxAmount: this.maxAmount(),
+          dateFrom: this.dateFrom(),
+          dateTo: this.dateTo()
+        });
+      },
+      error: (err: any) => {
+        this.toastService.error(err?.error?.error || 'Failed to save shipment details.');
+      }
+    });
+  }
+
+  copyTrackingId(trackingNum: string) {
+    if (!trackingNum) return;
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(trackingNum);
+      this.toastService.success(`Copied Tracking ID: ${trackingNum}`);
+    } else {
+      this.toastService.info(`Tracking ID: ${trackingNum}`);
+    }
+  }
+
+  trackShipment(url: string) {
+    if (!url) return;
+    window.open(url, '_blank');
+  }
+
   exportOrdersCsv() {
     const dataToExport = this.filteredOrders() || [];
     if (dataToExport.length === 0) {
@@ -601,7 +756,7 @@ export class AdminSalesTab {
       return;
     }
 
-    const headers = ['Order ID', 'Order Number', 'Customer Name', 'Customer Phone', 'Type', 'Financial Status', 'Items Count', 'Grand Total (INR)', 'Created At'];
+    const headers = ['Order ID', 'Order Number', 'Customer Name', 'Customer Phone', 'Type', 'Financial Status', 'Courier', 'Tracking Number', 'Shipment Date', 'Estimated Delivery', 'Items Count', 'Grand Total (INR)', 'Created At'];
     const rows = dataToExport.map(o => [
       `"${o.id}"`,
       `"${o.orderNumber}"`,
@@ -609,6 +764,10 @@ export class AdminSalesTab {
       `"${o.guestPhone || o.customerPhone || ''}"`,
       `"${o.customerType || 'REG'}"`,
       `"${o.status}"`,
+      `"${o.shipment?.courierDisplayName || o.shipment?.courierPartner || ''}"`,
+      `"${o.shipment?.trackingNumber || ''}"`,
+      `"${o.shipment?.shipmentDate || ''}"`,
+      `"${o.shipment?.estimatedDelivery || o.estimatedDelivery || ''}"`,
       o.items?.length || 0,
       o.grandTotal || 0,
       `"${o.date || ''}"`

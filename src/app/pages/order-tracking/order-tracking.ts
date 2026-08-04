@@ -224,6 +224,36 @@ import { LoadingService } from '../../core/services/loading.service';
                     
                     <!-- Vertical Timeline (Left Column) -->
                     <div class="md:col-span-7 space-y-4">
+                      <!-- Shipment Courier Card if Shipped -->
+                      @if (order().shipment || (order().shipments && order().shipments.length > 0)) {
+                        @let sh = order().shipment || order().shipments[0];
+                        <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl space-y-3 text-left">
+                          <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                              <mat-icon class="text-xs scale-75">local_shipping</mat-icon>
+                              {{ sh.courierDisplayName || sh.courierPartner || sh.carrier || 'Delhivery' }}
+                            </span>
+                            @if (sh.estimatedDelivery || order().estimatedDelivery) {
+                              <span class="text-[10px] font-bold text-emerald-500 font-mono">
+                                SLA: {{ sh.estimatedDelivery || order().estimatedDelivery }}
+                              </span>
+                            }
+                          </div>
+
+                          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs">
+                            <div>
+                              <span class="text-[9px] text-neutral-400 uppercase font-bold block">Tracking / AWB ID</span>
+                              <span class="font-extrabold text-neutral-900 dark:text-white">{{ sh.trackingNumber || 'N/A' }}</span>
+                            </div>
+                            @if (sh.trackingUrl) {
+                              <a [href]="sh.trackingUrl" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider no-underline flex items-center gap-1 shadow-xs transition-colors">
+                                <span>Track Package →</span>
+                              </a>
+                            }
+                          </div>
+                        </div>
+                      }
+
                       <span class="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-500 block mb-1">Order Status</span>
                       
                       <!-- Vertical timeline wrapper -->

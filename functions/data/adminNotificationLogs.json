@@ -1,5 +1,22 @@
 [
   {
+    "id": "b9117ec7-dd65-49d3-bf45-727f7708aa12",
+    "title": "🛒 New Order Received",
+    "body": "admin123 R placed Order #ORD-2026-325981 for ₹1951.00",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "1abbcfaf-f899-4bc4-9004-3ed8f5f2f114",
+      "orderNumber": "ORD-2026-325981",
+      "totalAmount": "1951",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD"
+    },
+    "sentAt": "2026-08-04T18:57:03.761Z",
+    "isRead": false
+  },
+  {
     "id": "68f29890-eb90-42fe-bf46-b18d90be016b",
     "title": "🖨️ New 3D Service Request",
     "body": "Ritesh uploaded 3D model \"yamaha order (4).stl\" (Tracking: TRK-955291)",

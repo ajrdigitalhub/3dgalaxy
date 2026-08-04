@@ -243,6 +243,8 @@ export interface Order {
   codCharge?: number;
   totalWeightInGrams?: number;
   displayWeight?: string;
+  shipment?: any;
+  estimatedDelivery?: string;
   totalQuantity?: number;
 }
 
@@ -948,6 +950,9 @@ export class DatastoreService {
     const refresh = localStorage.getItem('refresh_token');
 
     if (token) {
+      // Synchronously decode role and profile from JWT token immediately on page refresh
+      this.trySyncAuthFromToken();
+
       this.fetchProfileAndSetState().then(success => {
         if (!success && refresh) {
           this.refreshJWT(refresh).then(refreshed => {
@@ -1011,7 +1016,7 @@ export class DatastoreService {
 
   private mapRole(roleName: string | undefined): 'guest' | 'customer' | 'admin' | 'super-admin' {
     if (!roleName) return 'customer';
-    const normalized = roleName.toLowerCase().replace(/[^a-z]+/g, '');
+    const normalized = String(roleName).toLowerCase().replace(/[^a-z]+/g, '');
     if (normalized.includes('superadmin')) return 'super-admin';
     if (normalized.includes('admin')) return 'admin';
     if (normalized.includes('manager')) return 'admin';
@@ -1072,23 +1077,24 @@ export class DatastoreService {
     if (token) {
       const decoded = this.decodeJWT(token);
       if (decoded) {
-        const role = this.mapRole(decoded.role);
+        const rawRole = decoded.role || (decoded.roles && decoded.roles[0]?.role?.name) || (decoded.roles && decoded.roles[0]);
+        const role = this.mapRole(rawRole);
         this.userRole.set(role);
         this.userProfile.set({
-          id: decoded.id,
-          name: decoded.email,
-          email: decoded.email,
+          id: decoded.id || decoded.sub || '',
+          name: `${decoded.firstName || ''} ${decoded.lastName || ''}`.trim() || decoded.email || 'User',
+          email: decoded.email || '',
           role: role,
           active: true,
-          phone: '',
-          profileImage: '',
+          phone: decoded.mobile || '',
+          profileImage: decoded.profileImage || '',
         });
         this.currentUser.set({
-          uid: decoded.id,
-          email: decoded.email,
-          displayName: decoded.email,
-          phoneNumber: '',
-          photoURL: ''
+          uid: decoded.id || decoded.sub || '',
+          email: decoded.email || '',
+          displayName: `${decoded.firstName || ''} ${decoded.lastName || ''}`.trim() || decoded.email || 'User',
+          phoneNumber: decoded.mobile || '',
+          photoURL: decoded.profileImage || ''
         } as any);
       }
     }

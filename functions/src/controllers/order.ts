@@ -4,6 +4,7 @@ import { triggerWhatsAppNotification } from './whatsapp';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
 import { ShippingService } from '../services/shipping.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
+import { TrackingService } from '../services/tracking.service';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -775,7 +776,12 @@ export const updateOrderStatus = async (req: any, res: Response) => {
   try {
     let orderWhere: any = { id };
     if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
-    const existing = await prisma.order.findUnique({ where: orderWhere });
+    const existing = await prisma.order.findUnique({
+      where: orderWhere,
+      include: {
+        items: { include: { product: true } }
+      }
+    });
     if (!existing) return res.status(404).json({ error: 'Not found' });
 
     if (String(status).toUpperCase() === 'CANCELLED') {
@@ -784,14 +790,66 @@ export const updateOrderStatus = async (req: any, res: Response) => {
       });
     }
 
+    const isShippedStatus = String(status).toUpperCase() === 'SHIPPED';
+    let shipmentDataToSave: any = (existing as any).shipment || null;
+
+    if (isShippedStatus || req.body.courierPartner || req.body.trackingNumber) {
+      const courierPartner = req.body.courierPartner || req.body.shipmentCarrier || req.body.shipment?.courierPartner || 'Delhivery';
+      const courierDisplayName = req.body.courierDisplayName || req.body.courierName || req.body.shipment?.courierDisplayName || (courierPartner === 'Others' ? (req.body.courierName || 'Custom Courier') : courierPartner);
+      const trackingNumber = req.body.trackingNumber || req.body.shipment?.trackingNumber || '';
+      const trackingUrl = req.body.trackingUrl || req.body.shipment?.trackingUrl || TrackingService.generateTrackingUrl(courierPartner, trackingNumber, req.body.customUrlPattern);
+      const shipmentDate = req.body.shipmentDate || req.body.shipment?.shipmentDate ? new Date(req.body.shipmentDate || req.body.shipment?.shipmentDate) : new Date();
+      const estimatedDelivery = req.body.estimatedDelivery || req.body.estimatedDeliveryDate || req.body.shipment?.estimatedDelivery || '3-5 Days';
+      const shippingNotes = req.body.shippingNotes || req.body.shipment?.shippingNotes || '';
+      const dispatchLocation = req.body.dispatchLocation || req.body.shipment?.dispatchLocation || 'Warehouse';
+      const awbNumber = req.body.awbNumber || req.body.shipment?.awbNumber || trackingNumber;
+
+      shipmentDataToSave = {
+        courierPartner,
+        courierDisplayName,
+        trackingNumber,
+        trackingUrl,
+        shipmentDate,
+        estimatedDeliveryStart: req.body.estimatedDeliveryStart || req.body.shipment?.estimatedDeliveryStart || null,
+        estimatedDeliveryEnd: req.body.estimatedDeliveryEnd || req.body.shipment?.estimatedDeliveryEnd || null,
+        estimatedDelivery,
+        shippingNotes,
+        dispatchLocation,
+        awbNumber,
+        lastTrackingSync: new Date().toISOString(),
+        status: 'SHIPPED'
+      };
+
+      try {
+        await prisma.shipment.create({
+          data: {
+            orderId: existing.id,
+            carrier: courierDisplayName,
+            courierPartner,
+            courierDisplayName,
+            trackingNumber,
+            trackingUrl,
+            dispatchLocation,
+            shippingNotes,
+            status: 'SHIPPED',
+            shippedAt: shipmentDate,
+            lastTrackingSync: new Date()
+          }
+        });
+      } catch (shipErr) {
+        console.error('[updateOrderStatus] Shipment record creation error:', shipErr);
+      }
+    }
+
     const updated = await prisma.order.update({
       where: { id: existing.id },
       data: { 
-        status, 
+        status,
+        ...(shipmentDataToSave?.estimatedDelivery ? { estimatedDelivery: shipmentDataToSave.estimatedDelivery } : {}),
         statusHistory: {
           create: {
             status,
-            comments: `Status updated to ${status}`,
+            comments: isShippedStatus && shipmentDataToSave?.trackingNumber ? `Order shipped via ${shipmentDataToSave.courierDisplayName} (Tracking: ${shipmentDataToSave.trackingNumber})` : `Status updated to ${status}`,
             createdBy: req.user?.id
           }
         }
@@ -799,14 +857,33 @@ export const updateOrderStatus = async (req: any, res: Response) => {
       include: {
         customer: { include: { user: true } },
         shippingAddress: true,
-        items: { include: { product: true } }
+        items: { include: { product: true } },
+        shipments: { orderBy: { createdAt: 'desc' } }
       }
     });
+
+    if (shipmentDataToSave) {
+      try {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "orders" SET "shipment" = $1::jsonb WHERE "id" = $2`,
+          JSON.stringify(shipmentDataToSave),
+          existing.id
+        );
+      } catch (rawErr) {
+        console.warn('[updateOrderStatus] Raw JSON shipment update warning:', rawErr);
+      }
+      (updated as any).shipment = shipmentDataToSave;
+    }
 
     const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
     if (phone) {
       const statusKey = String(status).toLowerCase();
-      triggerWhatsAppNotification(statusKey, phone, updated, updated.customer).catch((err) => {
+      triggerWhatsAppNotification(statusKey, phone, updated, updated.customer, shipmentDataToSave ? {
+        courierName: shipmentDataToSave.courierDisplayName,
+        trackingNumber: shipmentDataToSave.trackingNumber,
+        trackingUrl: shipmentDataToSave.trackingUrl,
+        estimatedDeliveryDate: shipmentDataToSave.estimatedDelivery
+      } : undefined).catch((err) => {
         console.error(`[updateOrderStatus] WhatsApp trigger error for order ${updated.orderNumber}:`, err);
       });
     }
@@ -874,7 +951,7 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
 export const updateShipmentTracking = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { shipmentCarrier, trackingNumber, trackingUrl, estimatedDeliveryDate } = req.body;
+  const { courierPartner, courierDisplayName, courierName, shipmentCarrier, trackingNumber, trackingUrl, estimatedDelivery, estimatedDeliveryDate, shipmentDate, dispatchLocation, shippingNotes, awbNumber } = req.body;
 
   try {
     let orderWhere: any = { id };
@@ -889,35 +966,85 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
     });
     if (!order) return res.status(404).json({ error: 'Not found' });
 
+    const partner = courierPartner || shipmentCarrier || 'Delhivery';
+    const displayName = courierDisplayName || courierName || (partner === 'Others' ? (courierName || 'Custom Courier') : partner);
+    const trackNum = trackingNumber || '';
+    const trackUrl = trackingUrl || TrackingService.generateTrackingUrl(partner, trackNum);
+    const shipDate = shipmentDate ? new Date(shipmentDate) : new Date();
+    const estDelivery = estimatedDelivery || estimatedDeliveryDate || '3-5 Days';
+    const loc = dispatchLocation || 'Warehouse';
+    const notes = shippingNotes || '';
+    const awb = awbNumber || trackNum;
+
+    const shipmentObj = {
+      courierPartner: partner,
+      courierDisplayName: displayName,
+      trackingNumber: trackNum,
+      trackingUrl: trackUrl,
+      shipmentDate: shipDate,
+      estimatedDelivery: estDelivery,
+      shippingNotes: notes,
+      dispatchLocation: loc,
+      awbNumber: awb,
+      lastTrackingSync: new Date().toISOString(),
+      status: 'SHIPPED'
+    };
+
     await prisma.shipment.create({
       data: {
         orderId: order.id,
-        carrier: shipmentCarrier || 'Unknown',
-        trackingNumber: trackingNumber || '',
+        carrier: displayName,
+        courierPartner: partner,
+        courierDisplayName: displayName,
+        trackingNumber: trackNum,
+        trackingUrl: trackUrl,
+        dispatchLocation: loc,
+        shippingNotes: notes,
         status: 'SHIPPED',
-        shippedAt: new Date()
+        shippedAt: shipDate,
+        lastTrackingSync: new Date()
       }
     });
 
     const updated = await prisma.order.update({
       where: { id: order.id },
       data: {
-        status: 'SHIPPED',
+        status: 'Shipped',
+        estimatedDelivery: estDelivery,
+        statusHistory: {
+          create: {
+            status: 'Shipped',
+            comments: `Shipment details updated: ${displayName} (${trackNum})`,
+            createdBy: (req as any).user?.id
+          }
+        }
       },
       include: {
         customer: { include: { user: true } },
         shippingAddress: true,
-        items: { include: { product: true } }
+        items: { include: { product: true } },
+        shipments: { orderBy: { createdAt: 'desc' } }
       }
     });
+
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "orders" SET "shipment" = $1::jsonb WHERE "id" = $2`,
+        JSON.stringify(shipmentObj),
+        order.id
+      );
+    } catch (rawErr) {
+      console.warn('[updateShipmentTracking] Raw JSON shipment update warning:', rawErr);
+    }
+    (updated as any).shipment = shipmentObj;
 
     const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
     if (phone) {
       triggerWhatsAppNotification('shipped', phone, updated, updated.customer, {
-        courierName: shipmentCarrier,
-        trackingNumber,
-        trackingUrl,
-        estimatedDeliveryDate
+        courierName: displayName,
+        trackingNumber: trackNum,
+        trackingUrl: trackUrl,
+        estimatedDeliveryDate: estDelivery
       }).catch((err) => {
         console.error(`[updateShipmentTracking] WhatsApp trigger error:`, err);
       });

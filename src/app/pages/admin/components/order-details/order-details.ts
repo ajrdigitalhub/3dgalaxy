@@ -8,11 +8,12 @@ import { of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { WeightPipe } from '../../../../shared/pipes/weight.pipe';
 import { formatWeight } from '../../../../shared/utils/weight.utils';
+import { ShipmentDialogComponent, ShipmentDetailsPayload } from '../shipment-dialog/shipment-dialog.component';
 
 @Component({
   selector: 'app-admin-order-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe],
+  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, ShipmentDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-details.html'
 })
@@ -29,6 +30,7 @@ export class OrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal('');
+  showShipmentModal = signal(false);
 
   displayOrderWeight = computed(() => {
     const ord = this.order();
@@ -241,8 +243,17 @@ export class OrderDetailsComponent implements OnInit {
     });
   }
 
-  updateOrderStatus(status: string) {
+  updateOrderStatus(status: string, selectEl?: HTMLSelectElement) {
     if (!status) return;
+
+    if (status.toLowerCase() === 'shipped') {
+      if (selectEl && this.order()) {
+        selectEl.value = this.order().status || 'Confirmed';
+      }
+      this.showShipmentModal.set(true);
+      return;
+    }
+
     this.statusUpdating.set(true);
     this.http.put(`/api/orders/${this.order().id}/status`, { status }, this.getHeaders()).subscribe({
       next: () => {
@@ -254,6 +265,40 @@ export class OrderDetailsComponent implements OnInit {
         this.statusUpdating.set(false);
       }
     });
+  }
+
+  onSaveShipmentPayload(payload: ShipmentDetailsPayload) {
+    const ord = this.order();
+    if (!ord) return;
+
+    this.statusUpdating.set(true);
+    this.http.put(`/api/orders/${ord.id}/status`, {
+      status: 'Shipped',
+      ...payload
+    }, this.getHeaders()).subscribe({
+      next: () => {
+        this.showShipmentModal.set(false);
+        this.fetchOrder(ord.orderNumber);
+        this.statusUpdating.set(false);
+      },
+      error: (err: any) => {
+        alert(err?.error?.error || 'Failed to save shipment details.');
+        this.statusUpdating.set(false);
+      }
+    });
+  }
+
+  copyTrackingId(trackingNum: string) {
+    if (!trackingNum) return;
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(trackingNum);
+      alert(`Copied Tracking ID: ${trackingNum}`);
+    }
+  }
+
+  trackShipment(url: string) {
+    if (!url) return;
+    window.open(url, '_blank');
   }
 
   updatePaymentStatus(paymentStatus: string) {

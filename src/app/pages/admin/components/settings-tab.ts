@@ -16,6 +16,7 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
 import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 import { AdminDevicesTab } from "./admin-devices-tab";
+import { TrackingService, CourierPartnerConfig } from "../../../core/services/tracking.service";
 
 
 @Component({
@@ -4771,6 +4772,87 @@ import { AdminDevicesTab } from "./admin-devices-tab";
             @if (activeSubTab() === "Admin Devices") {
               <app-admin-devices-tab />
             }
+
+            <!-- SHIPPING & COURIER PARTNERS MANAGEMENT -->
+            @if (activeSubTab() === "Shipping") {
+              <div class="space-y-6 animate-fadeIn font-sans">
+                <div class="p-5 bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent border border-blue-500/20 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <h3 class="text-sm font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Courier Partner Management</h3>
+                    <p class="text-xs text-zinc-500 font-medium">Enable or disable courier partners, customize tracking URL formats, and manage custom logistical partners.</p>
+                  </div>
+                  <button (click)="addCustomCourierPartner()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs cursor-pointer border-none">
+                    <mat-icon class="text-sm">add</mat-icon> Add Custom Courier
+                  </button>
+                </div>
+
+                <!-- Active Courier Partners Grid -->
+                <div class="space-y-4">
+                  <h4 class="text-xs font-black uppercase tracking-wider text-zinc-400">Supported Courier Partners & Tracking Patterns</h4>
+                  <div class="grid grid-cols-1 gap-4">
+                    @for (courier of getCourierSettingsList(); track courier.id; let idx = $index) {
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3 relative">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                              <mat-icon class="text-base scale-90">local_shipping</mat-icon>
+                            </div>
+                            <div>
+                              <h5 class="text-xs font-black text-zinc-900 dark:text-white uppercase">{{ courier.name }}</h5>
+                              <span class="text-[9px] font-mono text-zinc-400">ID: {{ courier.id }}</span>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-4">
+                            <!-- Enabled Toggle -->
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <span class="text-[10px] font-black uppercase text-zinc-500">{{ courier.enabled !== false ? 'Active' : 'Disabled' }}</span>
+                              <input
+                                type="checkbox"
+                                [checked]="courier.enabled !== false"
+                                (change)="updateCourierField(idx, 'enabled', $any($event.target).checked)"
+                                class="w-4 h-4 rounded text-blue-600 accent-blue-600 cursor-pointer"
+                              />
+                            </label>
+
+                            <!-- Remove Custom Courier -->
+                            @if (courier.isCustom) {
+                              <button (click)="removeCustomCourierPartner(idx)" class="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg border-none bg-transparent cursor-pointer" title="Delete Custom Courier">
+                                <mat-icon class="text-sm">delete</mat-icon>
+                              </button>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- URL Pattern & Sort Order -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1 text-xs">
+                          <div class="md:col-span-8 space-y-1">
+                            <label class="block text-[9px] font-black uppercase text-zinc-400">Tracking URL Pattern (use {{ '{{' }}trackingNumber{{ '}}' }})</label>
+                            <input
+                              type="text"
+                              [value]="courier.urlPattern || ''"
+                              (input)="updateCourierField(idx, 'urlPattern', $any($event.target).value)"
+                              [placeholder]="'https://example.com/track?id={{trackingNumber}}'"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-mono text-xs outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          <div class="md:col-span-4 space-y-1">
+                            <label class="block text-[9px] font-black uppercase text-zinc-400">Sort Order</label>
+                            <input
+                              type="number"
+                              [value]="courier.sortOrder || (idx + 1)"
+                              (input)="updateCourierField(idx, 'sortOrder', +$any($event.target).value)"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl font-mono text-xs outline-none focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -4786,6 +4868,7 @@ export class AdminSettingsTab {
   @Input({ required: true }) admin!: AdminPanel;
   private themeService = inject(ThemeService);
   private toastService = inject(ToastService);
+  private trackingService = inject(TrackingService);
 
   activeSubTab = signal<string>("Theme");
   draft = signal<any>({});
@@ -5420,6 +5503,62 @@ export class AdminSettingsTab {
     } finally {
       this.isSaving.set(false);
     }
+  }
+
+  getCourierSettingsList(): CourierPartnerConfig[] {
+    const settings = this.draft().courierPartners || [];
+    return this.trackingService.getCourierList(settings);
+  }
+
+  updateCourierField(index: number, field: string, value: any) {
+    this.draft.update((d) => {
+      const list = [...(d.courierPartners || [])];
+      const currentList = this.getCourierSettingsList();
+      const targetCourier = currentList[index];
+      if (!targetCourier) return d;
+
+      const existingIdx = list.findIndex((c: any) => c.id === targetCourier.id || c.name === targetCourier.name);
+      if (existingIdx >= 0) {
+        list[existingIdx] = { ...list[existingIdx], [field]: value };
+      } else {
+        list.push({
+          id: targetCourier.id,
+          name: targetCourier.name,
+          urlPattern: targetCourier.urlPattern,
+          enabled: true,
+          sortOrder: index + 1,
+          [field]: value
+        });
+      }
+      return { ...d, courierPartners: list };
+    });
+  }
+
+  addCustomCourierPartner() {
+    this.draft.update((d) => {
+      const list = [...(d.courierPartners || [])];
+      const newId = 'custom_' + Date.now();
+      list.push({
+        id: newId,
+        name: 'Custom Express ' + (list.length + 1),
+        urlPattern: 'https://www.google.com/search?q={{trackingNumber}}',
+        enabled: true,
+        isCustom: true,
+        sortOrder: list.length + 1
+      });
+      return { ...d, courierPartners: list };
+    });
+  }
+
+  removeCustomCourierPartner(index: number) {
+    this.draft.update((d) => {
+      const currentList = this.getCourierSettingsList();
+      const targetCourier = currentList[index];
+      if (!targetCourier) return d;
+
+      const list = (d.courierPartners || []).filter((c: any) => c.id !== targetCourier.id && c.name !== targetCourier.name);
+      return { ...d, courierPartners: list };
+    });
   }
 
   async restoreDefaults() {
