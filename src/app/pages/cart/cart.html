@@ -131,7 +131,25 @@
                       >{{ item.product.name }}</a
                     >
                   </h4>
-                  @if (item.variant) {
+                  @if (item.bundleDetails) {
+                    <div class="mt-2 p-2.5 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 rounded-xl space-y-1.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-black uppercase text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <mat-icon class="scale-75 text-emerald-500">inventory_2</mat-icon>
+                          Bundle: {{ item.bundleDetails.bundleName }} ({{ item.bundleDetails.bundleCount }} Items)
+                        </span>
+                        <span *ngIf="item.bundleDetails.bundleDiscount > 0" class="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-white">
+                          Save ₹{{ item.bundleDetails.bundleDiscount }}
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap gap-1.5 pt-1">
+                        <span *ngFor="let slot of item.bundleDetails.selectedVariants" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-[10px] font-bold text-neutral-800 dark:text-neutral-200">
+                          <span class="w-2 h-2 rounded-full border border-neutral-300" [style.background-color]="ds.getColorCode(slot.color || '')"></span>
+                          <span>{{ slot.slotLabel }}: <strong>{{ slot.color || slot.name }}</strong></span>
+                        </span>
+                      </div>
+                    </div>
+                  } @else if (item.variant) {
                   <p
                     class="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-medium"
                   >

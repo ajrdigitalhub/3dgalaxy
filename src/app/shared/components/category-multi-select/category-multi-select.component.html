@@ -1,0 +1,113 @@
+<div class="category-multi-select-container">
+  <!-- Search Bar & Controls -->
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <div class="relative flex-1">
+      <mat-icon class="absolute left-3 top-2.5 text-neutral-400 text-sm scale-90">search</mat-icon>
+      <input 
+        type="text" 
+        [ngModel]="searchQuery()" 
+        (ngModelChange)="searchQuery.set($event)"
+        placeholder="Search categories by name..." 
+        class="w-full pl-9 pr-4 py-2 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs outline-none text-neutral-900 dark:text-white focus:border-blue-500 transition-colors" />
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button 
+        type="button" 
+        (click)="selectAll()" 
+        class="px-2.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-850 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors border-none cursor-pointer">
+        Select All
+      </button>
+      <button 
+        type="button" 
+        (click)="clearAll()" 
+        class="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors border-none cursor-pointer">
+        Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Selected Category Chips Display Section -->
+  @if (selectedCategoryObjects().length > 0) {
+    <div class="mb-3 p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-150 dark:border-blue-900/30 rounded-xl space-y-1.5">
+      <div class="flex items-center justify-between">
+        <span class="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 flex items-center gap-1">
+          <mat-icon class="scale-75 text-blue-500">check_circle</mat-icon>
+          Selected Categories ({{ selectedCategoryObjects().length }})
+        </span>
+        <span class="text-[9px] text-neutral-400 font-medium">Click <mat-icon class="scale-50 inline align-middle text-amber-500">star</mat-icon> to set Primary (used for Breadcrumb & Canonical URL)</span>
+      </div>
+
+      <div class="flex flex-wrap gap-2 pt-1">
+        @for (cat of selectedCategoryObjects(); track cat.id) {
+          <div 
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border shadow-xs"
+            [ngClass]="getChipClass(cat.id)">
+            
+            <button 
+              type="button" 
+              (click)="setPrimary(cat.id, $event)" 
+              class="border-none bg-transparent p-0 cursor-pointer flex items-center justify-center transition-transform hover:scale-125"
+              [title]="isPrimary(cat.id) ? 'Primary Category' : 'Click to set as Primary Category'">
+              <mat-icon 
+                class="scale-75 w-4 h-4 flex items-center justify-center"
+                [class.text-amber-500]="isPrimary(cat.id)"
+                [class.text-neutral-300]="!isPrimary(cat.id)">
+                {{ isPrimary(cat.id) ? 'star' : 'star_border' }}
+              </mat-icon>
+            </button>
+
+            <span>{{ cat.name }}</span>
+            
+            @if (isPrimary(cat.id)) {
+              <span class="text-[9px] font-black px-1.5 py-0.2 bg-amber-500 text-white rounded uppercase tracking-wider">Primary</span>
+            }
+
+            <button 
+              type="button" 
+              (click)="removeCategory(cat.id, $event)" 
+              class="text-neutral-400 hover:text-red-500 border-none bg-transparent p-0 cursor-pointer flex items-center justify-center transition-colors">
+              <mat-icon class="scale-75 w-4 h-4 flex items-center justify-center">close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Categories Checkbox Tree Container -->
+  <div class="max-h-60 overflow-y-auto border border-neutral-200 dark:border-neutral-800 rounded-xl p-2 bg-neutral-50/50 dark:bg-neutral-900/50 space-y-1 divide-y divide-neutral-100 dark:divide-neutral-850">
+    @for (cat of filteredCategories(); track cat.id) {
+      <label 
+        class="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-neutral-850 transition-colors cursor-pointer select-none group border border-transparent hover:border-neutral-200 dark:hover:border-neutral-800">
+        <div class="flex items-center gap-2.5 flex-1">
+          <input 
+            type="checkbox" 
+            [checked]="isSelected(cat.id)" 
+            (change)="toggleCategory(cat.id)"
+            class="w-4 h-4 rounded text-blue-600 border-neutral-300 focus:ring-blue-500 cursor-pointer" />
+          <span class="text-xs font-semibold text-neutral-800 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {{ cat.name }}
+          </span>
+          <span class="text-[10px] text-neutral-400 font-mono">({{ cat.slug }})</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          @if (isSelected(cat.id)) {
+            <button 
+              type="button" 
+              (click)="setPrimary(cat.id, $event)"
+              class="px-2 py-0.5 rounded text-[9px] font-bold uppercase border-none cursor-pointer transition-colors"
+              [ngClass]="getSetPrimaryBtnClass(cat.id)">
+              {{ isPrimary(cat.id) ? 'Primary★' : 'Set Primary' }}
+            </button>
+          }
+        </div>
+      </label>
+    } @empty {
+      <div class="py-6 text-center text-xs text-neutral-400 space-y-1">
+        <mat-icon class="scale-90 text-neutral-300 dark:text-neutral-700">folder_off</mat-icon>
+        <p>No categories match "{{ searchQuery() }}"</p>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,176 @@
+<div class="admin-variant-config-wrapper">
+  <div class="config-header">
+    <div class="header-left">
+      <mat-icon class="header-icon">tune</mat-icon>
+      <div>
+        <h3 class="title">Product Variant & Bundle Group Architecture</h3>
+        <p class="subtitle">Configure display types, selection modes, bundle pricing, duplicate rules, and test live rendering.</p>
+      </div>
+    </div>
+    <button type="button" class="add-group-btn" (click)="addGroup()">
+      <mat-icon>add</mat-icon> Add Variant Group
+    </button>
+  </div>
+
+  <div class="config-layout">
+    <!-- LEFT SIDEBAR: GROUP TABS & SETTINGS FORM -->
+    <div class="form-panel">
+      <!-- Tabs -->
+      <div class="group-tabs-row">
+        <button 
+          type="button"
+          *ngFor="let gItem of groups(); let i = index" 
+          class="tab-btn"
+          [class.active]="activeGroupIndex() === i"
+          (click)="activeGroupIndex.set(i)">
+          {{ gItem.displayName || gItem.variantName || 'Group #' + (i + 1) }}
+        </button>
+      </div>
+
+      @if (currentGroup(); as grp) {
+        <div class="form-card">
+          <div class="form-section-title flex items-center justify-between">
+            <span>General Settings</span>
+            <button type="button" class="remove-btn" *ngIf="groups().length > 1" (click)="removeGroup(activeGroupIndex())">
+              <mat-icon>delete</mat-icon> Remove Group
+            </button>
+          </div>
+
+          <div class="form-grid">
+            <div class="field-cell">
+              <label>Variant Name (Internal)</label>
+              <input type="text" [(ngModel)]="grp.variantName" (ngModelChange)="updateCurrentGroup(grp)" placeholder="e.g. Color Variants" />
+            </div>
+
+            <div class="field-cell">
+              <label>Display Name (Frontend Label)</label>
+              <input type="text" [(ngModel)]="grp.displayName" (ngModelChange)="updateCurrentGroup(grp)" placeholder="e.g. Select Color" />
+            </div>
+
+            <div class="field-cell">
+              <label>Display Type</label>
+              <select [ngModel]="grp.displayType" (ngModelChange)="onDisplayTypeChange($event)">
+                <option *ngFor="let t of displayTypes" [value]="t.value">{{ t.label }}</option>
+              </select>
+            </div>
+
+            <div class="field-cell">
+              <label>Selection Mode</label>
+              <select [(ngModel)]="grp.selectionMode" (ngModelChange)="updateCurrentGroup(grp)">
+                <option *ngFor="let m of selectionModes" [value]="m.value">{{ m.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="checkbox-row">
+            <label class="cb-label">
+              <input type="checkbox" [(ngModel)]="grp.required" (ngModelChange)="updateCurrentGroup(grp)" />
+              <span>Required Field</span>
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" [(ngModel)]="grp.active" (ngModelChange)="updateCurrentGroup(grp)" />
+              <span>Active</span>
+            </label>
+            <label class="cb-label">
+              <input type="checkbox" [(ngModel)]="grp.allowDuplicates" (ngModelChange)="updateCurrentGroup(grp)" />
+              <span>Allow Duplicate Selection in Slots</span>
+            </label>
+          </div>
+
+          <!-- BUNDLE BUILDER CONFIGURATION SECTION -->
+          @if (grp.displayType === 'bundle-builder' || grp.selectionMode === 'bundle') {
+            <div class="bundle-config-section">
+              <div class="section-sub-header">
+                <span class="sub-title">Bundle Builder Pricing & Tiers</span>
+                <button type="button" class="add-tier-btn" (click)="addTier(grp)">
+                  <mat-icon>add_circle</mat-icon> Add Tier
+                </button>
+              </div>
+
+              <div class="tiers-list">
+                <div *ngFor="let tier of grp.bundleTiers; let tIdx = index" class="tier-card">
+                  <div class="tier-row-1">
+                    <input type="text" class="t-input name" [(ngModel)]="tier.name" (ngModelChange)="updateCurrentGroup(grp)" placeholder="Tier Name (Buy 5)" />
+                    <input type="number" class="t-input count" [(ngModel)]="tier.count" (ngModelChange)="updateCurrentGroup(grp)" placeholder="Slot Count (5)" title="Slot Count" />
+                    <select class="t-select type" [(ngModel)]="tier.priceType" (ngModelChange)="updateCurrentGroup(grp)">
+                      <option *ngFor="let pt of pricingTypes" [value]="pt.value">{{ pt.label }}</option>
+                    </select>
+                    <input type="number" class="t-input price" [(ngModel)]="tier.priceValue" (ngModelChange)="updateCurrentGroup(grp)" placeholder="Price Value" />
+                    <button type="button" class="del-tier" (click)="removeTier(grp, tIdx)">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+
+                  <div class="tier-row-2">
+                    <input type="text" class="t-input text" [(ngModel)]="tier.savingsText" (ngModelChange)="updateCurrentGroup(grp)" placeholder="Savings Label (e.g. Rs. 693.00 / each)" />
+                    <input type="text" class="t-input badge" [(ngModel)]="tier.badgeText" (ngModelChange)="updateCurrentGroup(grp)" placeholder="Badge Text (e.g. Popular)" />
+                    <label class="t-pop">
+                      <input type="checkbox" [(ngModel)]="tier.isPopular" (ngModelChange)="updateCurrentGroup(grp)" />
+                      <span>Popular Badge</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- RIGHT SIDEBAR: LIVE INTERACTIVE PREVIEW PANEL -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <mat-icon class="prev-icon">visibility</mat-icon>
+        <span>Live Interactive Preview</span>
+        <span class="preview-badge">Renders as customer sees</span>
+      </div>
+
+      @if (currentGroup(); as grp) {
+        <div class="preview-body">
+          <!-- If Bundle Builder mode -->
+          @if (grp.displayType === 'bundle-builder' || grp.selectionMode === 'bundle') {
+            <app-bundle-selector
+              [bundleTiers]="grp.bundleTiers || []"
+              [selectedTier]="previewSelectedTier()"
+              [basePrice]="basePrice"
+              (tierSelected)="previewSelectedTier.set($event)" />
+
+            @if (previewSelectedTier(); as tier) {
+              <div class="preview-slots-box">
+                <div class="box-title">Slot Configurator Preview ({{ tier.count }} Slots):</div>
+                <div class="slots-col">
+                  <div *ngFor="let slotNum of getSlotsArray(tier.count); let sIdx = index; trackBy: trackByIndex" class="prev-slot">
+                    <span class="s-num">#{{ sIdx + 1 }}</span>
+                    <select class="prev-select">
+                      <option *ngFor="let v of previewVariants()" [value]="v.id">
+                        {{ v.name }} {{ v.stock <= 0 ? '(Out of Stock)' : '' }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- If Standard Choice Chips mode -->
+          @if (grp.displayType !== 'bundle-builder' && grp.selectionMode !== 'bundle') {
+            <div class="standard-preview-card">
+              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
+              <div class="chips-flex">
+                <button 
+                  type="button" 
+                  *ngFor="let v of previewVariants()" 
+                  class="prev-chip"
+                  [class.disabled]="v.stock <= 0">
+                  <span class="dot" [style.background-color]="getColorCode(v.name)"></span>
+                  <span>{{ v.name }}</span>
+                  <span class="oos" *ngIf="v.stock <= 0">Out of Stock</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

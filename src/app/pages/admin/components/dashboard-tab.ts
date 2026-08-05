@@ -239,7 +239,7 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
               </thead>
               <tbody class="divide-y divide-zinc-50 dark:divide-zinc-800/30">
                 @for (order of recentOrders(); track order.id) {
-                  <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 font-semibold text-zinc-750 dark:text-zinc-350 transition-colors">
+                  <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 font-semibold text-zinc-750 dark:text-zinc-350 transition-colors" [class.line-through]="(order.status || '').toLowerCase() === 'cancelled'" [class.opacity-60]="(order.status || '').toLowerCase() === 'cancelled'">
                     <td class="py-3 px-3 font-mono text-zinc-900 dark:text-white uppercase font-bold text-[10px]">#{{ order.orderNumber }}</td>
                     <td class="py-3 px-3 font-extrabold max-w-[180px] truncate" [title]="order.customerName">{{ order.customerName }}</td>
                     <td class="py-3 px-3 text-[10px] text-zinc-450">{{ order.date || 'Today' }}</td>

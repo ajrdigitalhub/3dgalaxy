@@ -576,7 +576,10 @@ export const createOrder = async (req: any, res: Response) => {
           }
         }
 
-        if (it.variantId) {
+        if (it.bundleDetails && Array.isArray(it.bundleDetails.selectedVariants)) {
+          const totalSlotPrice = it.bundleDetails.selectedVariants.reduce((sum: number, v: any) => sum + Number(v.price || 0), 0);
+          if (totalSlotPrice > 0) price = totalSlotPrice;
+        } else if (it.variantId) {
           const variant = await tx.productVariant.findUnique({ where: { id: it.variantId } });
           if (variant) price = Number(variant.price);
         }

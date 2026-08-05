@@ -1,0 +1,67 @@
+<div class="slot-container" [class.error]="!!slot.error">
+  <div class="slot-label">
+    <span class="slot-number">#{{ slot.slotIndex + 1 }}</span>
+    <span class="slot-title">{{ slot.slotLabel }}</span>
+  </div>
+
+  <div class="slot-selector-wrapper">
+    <!-- Selected Thumbnail Preview -->
+    <div class="slot-thumbnail">
+      <img [src]="getVariantImage(slot.selectedVariant)" [alt]="getVariantColor(slot.selectedVariant)" />
+      <span 
+        class="color-dot" 
+        [style.background-color]="getColorCode(getVariantColor(slot.selectedVariant))"
+        [title]="getVariantColor(slot.selectedVariant)">
+      </span>
+    </div>
+
+    <!-- Custom Select Trigger -->
+    <div class="custom-select-trigger" (click)="toggleDropdown()">
+      <span class="selected-name">{{ getVariantColor(slot.selectedVariant) }}</span>
+      <mat-icon class="arrow-icon" [class.rotated]="isOpen()">keyboard_arrow_down</mat-icon>
+    </div>
+
+    <!-- Options Dropdown Menu -->
+    <div class="options-dropdown" *ngIf="isOpen()">
+      <div class="dropdown-search" *ngIf="availableVariants.length > 5">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input 
+          type="text" 
+          placeholder="Search variant color..." 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          (click)="$event.stopPropagation()" />
+      </div>
+
+      <div class="options-list">
+        <div 
+          *ngFor="let v of filteredVariants(); trackBy: trackByVariant" 
+          class="option-item"
+          [class.selected]="v.id === slot.selectedVariantId"
+          [class.out-of-stock]="isOutOfStock(v)"
+          [class.duplicate-disabled]="isDuplicateForbidden(v)"
+          (click)="selectVariant(v)">
+          
+          <img class="opt-img" [src]="getVariantImage(v)" [alt]="getVariantColor(v)" />
+          <span 
+            class="opt-color-swatch" 
+            [style.background-color]="getColorCode(getVariantColor(v))">
+          </span>
+          <span class="opt-name">{{ getVariantColor(v) }}</span>
+
+          <span class="opt-status-badge out-stock" *ngIf="isOutOfStock(v)">
+            Out of Stock
+          </span>
+
+          <span class="opt-status-badge duplicate" *ngIf="!isOutOfStock(v) && isDuplicateForbidden(v)">
+            Already Selected
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slot-error-msg" *ngIf="slot.error">
+    {{ slot.error }}
+  </div>
+</div>

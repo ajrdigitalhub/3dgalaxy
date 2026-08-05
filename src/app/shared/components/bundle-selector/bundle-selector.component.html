@@ -1,0 +1,43 @@
+<div class="bundle-selector-container">
+  <div class="bundle-header">
+    <div class="header-divider"></div>
+    <span class="header-title">Bundle & Save</span>
+    <div class="header-divider"></div>
+  </div>
+
+  <div class="bundle-cards-grid">
+    <div 
+      *ngFor="let tier of bundleTiers; trackBy: trackByTier" 
+      class="bundle-card" 
+      [class.active]="isTierSelected(tier)"
+      [class.popular]="tier.isPopular"
+      (click)="onSelect(tier)"
+      role="radio"
+      [attr.aria-checked]="isTierSelected(tier)"
+      tabindex="0"
+      (keydown.enter)="onSelect(tier)"
+      (keydown.space)="onSelect(tier)">
+      
+      <div *ngIf="tier.badgeText" class="tier-badge">
+        {{ tier.badgeText }}
+      </div>
+
+      <div class="card-radio-cell">
+        <div class="custom-radio" [class.checked]="isTierSelected(tier)">
+          <div class="radio-inner" *ngIf="isTierSelected(tier)"></div>
+        </div>
+      </div>
+
+      <div class="card-info-cell">
+        <div class="tier-name">{{ tier.name }}</div>
+      </div>
+
+      <div class="card-price-cell">
+        <div class="current-price">{{ getDisplayPrice(tier) }}</div>
+        <div class="original-price" *ngIf="getOriginalPrice(tier) && isTierSelected(tier) && tier.count > 1">
+          <s>{{ getOriginalPrice(tier) }}</s>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

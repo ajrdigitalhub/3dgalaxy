@@ -2,6 +2,7 @@ import prisma from "../config/database";
 import { triggerWhatsAppNotification, getWhatsappSettings } from "../controllers/whatsapp";
 import { NotificationService } from "./notification.service";
 import { WhatsAppNotificationService } from "./whatsappNotificationService";
+import { NotificationTemplateResolver } from "./notificationTemplateResolver";
 
 export interface NotificationResult {
   customerWhatsApp: boolean;
@@ -79,13 +80,13 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
 
     if (!custName) custName = 'Customer';
 
-    // 1. CUSTOMER WHATSAPP NOTIFICATION
+    // 1. CUSTOMER WHATSAPP NOTIFICATION (INTELLIGENT ROUTING: COD vs PREPAID)
     if (custPhone && custPhone.trim().length >= 8) {
       try {
-        console.log(`[OrderNotificationPipeline] Sending Customer WhatsApp (order_confirmation_client_3dgal with PDF) to ${custPhone}...`);
+        console.log(`[OrderNotificationPipeline] Sending Customer Order Confirmation WhatsApp to ${custPhone}...`);
         const custRes = await WhatsAppNotificationService.sendOrderConfirmation(order, { recipientNumber: custPhone, customerName: custName });
         result.customerWhatsApp = custRes.success;
-        result.logs.push(`Customer WhatsApp (order_confirmation_client_3dgal): ${custRes.success ? 'SENT' : 'FAILED (' + custRes.error + ')'}`);
+        result.logs.push(`Customer WhatsApp Order Confirmation: ${custRes.success ? 'SENT' : 'FAILED (' + custRes.error + ')'}`);
       } catch (waErr: any) {
         console.error(`[OrderNotificationPipeline] Customer WhatsApp error:`, waErr);
         result.logs.push(`Customer WhatsApp failed: ${waErr.message}`);
@@ -95,10 +96,12 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
       result.logs.push(`No customer phone number available.`);
     }
 
-    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp order_confirmation_admin_3dgal to all active admins)
+    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp order_confirmation_admin to all active admins)
     try {
-      const pushTitle = `🛒 New Order Received`;
-      const pushBody = `${custName} placed Order #${order.orderNumber || order.id} for ₹${Number(order.totalAmount).toFixed(2)}`;
+      const isCod = NotificationTemplateResolver.isCodPayment(order.paymentMethod);
+      const pushTitle = `🛒 Order Confirmed`;
+      const paymentNote = isCod ? 'Payment Pending (COD)' : 'Payment Received';
+      const pushBody = `${custName} placed Order #${order.orderNumber || order.id} for ₹${Number(order.totalAmount).toFixed(2)}. ${paymentNote}`;
 
       const dispatchResult = await NotificationService.dispatch({
         eventKey: 'NEW_ORDER',
@@ -110,7 +113,8 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
           orderNumber: order.orderNumber,
           totalAmount: String(order.totalAmount),
           customerName: custName,
-          paymentMethod: order.paymentMethod || 'Online',
+          paymentMethod: order.paymentMethod || (isCod ? 'Cash on Delivery' : 'Online'),
+          paymentStatus: isCod ? 'Pending (COD)' : 'Paid',
         },
         order,
       });

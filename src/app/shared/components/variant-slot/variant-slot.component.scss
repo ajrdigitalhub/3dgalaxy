@@ -1,0 +1,242 @@
+.slot-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+
+  &.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+}
+
+.slot-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 60px;
+
+  .slot-number {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .slot-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    display: none; // Hidden on very small screens, shown if space permits
+    @media (min-width: 480px) {
+      display: inline;
+    }
+  }
+}
+
+.slot-selector-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.slot-thumbnail {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .color-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+}
+
+.custom-select-trigger {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ffffff;
+    border-color: #94a3b8;
+  }
+
+  .selected-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .arrow-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #64748b;
+    transition: transform 0.2s ease;
+
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.options-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  max-height: 260px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .dropdown-search {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+
+    .search-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #94a3b8;
+      margin-right: 8px;
+    }
+
+    input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      font-size: 0.85rem;
+      color: #1e293b;
+    }
+  }
+
+  .options-list {
+    overflow-y: auto;
+    max-height: 210px;
+  }
+
+  .option-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+
+    &.selected {
+      background: #f0fdf4;
+      font-weight: 700;
+
+      .opt-name {
+        color: #00d084;
+      }
+    }
+
+    &.out-of-stock, &.duplicate-disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+
+      &:hover {
+        background: #ffffff;
+      }
+    }
+
+    .opt-img {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    .opt-color-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid #cbd5e1;
+    }
+
+    .opt-name {
+      flex: 1;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+
+    .opt-status-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+
+      &.out-stock {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      &.duplicate {
+        background: #feefc3;
+        color: #92400e;
+      }
+    }
+  }
+}
+
+.slot-error-msg {
+  position: absolute;
+  bottom: -18px;
+  left: 14px;
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 600;
+}

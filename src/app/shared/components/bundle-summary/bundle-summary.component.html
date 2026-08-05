@@ -1,0 +1,59 @@
+<div class="bundle-summary-card" *ngIf="result && result.selectedTier">
+  <div class="summary-header">
+    <div class="header-left">
+      <span class="bundle-title">Selected Bundle</span>
+      <span class="bundle-badge">{{ result.selectedTier.name }}</span>
+    </div>
+    <div class="savings-tag" *ngIf="result.pricing.savings > 0">
+      Save ₹{{ result.pricing.savings | number }} ({{ result.pricing.savingsPercentage }}% OFF)
+    </div>
+  </div>
+
+  <!-- Itemized Variant Selections Preview -->
+  <div class="summary-selections">
+    <span class="label">Selections:</span>
+    <div class="color-chips-row">
+      <span 
+        *ngFor="let color of getSelectedColors(); trackBy: trackByColor" 
+        class="mini-color-chip">
+        <span class="dot" [style.background-color]="getColorCode(color)"></span>
+        <span class="name">{{ color }}</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Pricing Breakdown Grid -->
+  <div class="summary-pricing-grid">
+    <div class="price-row">
+      <span class="row-label">Price per item</span>
+      <span class="row-value">₹{{ result.pricing.pricePerItem | number }}</span>
+    </div>
+
+    <div class="price-row" *ngIf="result.pricing.savings > 0">
+      <span class="row-label">Original Price</span>
+      <span class="row-value strike">₹{{ result.pricing.originalSubtotal | number }}</span>
+    </div>
+
+    <div class="price-row highlight">
+      <span class="row-label">Total Subtotal</span>
+      <span class="row-value total">₹{{ result.pricing.subtotal | number }}</span>
+    </div>
+  </div>
+
+  <!-- Validation warning banner if incomplete -->
+  <div class="validation-warning" *ngIf="!result.isComplete">
+    <mat-icon class="warn-icon">info</mat-icon>
+    <span>Please complete all slot selections to proceed to cart.</span>
+  </div>
+
+  <!-- CTA Button -->
+  <button 
+    class="add-bundle-btn" 
+    [disabled]="!result.isComplete || isAddingToCart"
+    (click)="onAddToCartClick()">
+    <span *ngIf="!isAddingToCart">
+      Add {{ result.selectedTier.name }} to Cart • ₹{{ result.pricing.subtotal | number }}
+    </span>
+    <span *ngIf="isAddingToCart">Adding Bundle to Cart...</span>
+  </button>
+</div>

@@ -616,7 +616,18 @@
                       Available</span>
                     }
                   </div>
-                  @if (item.variant) {
+                  @if (item.bundleDetails) {
+                    <div class="mt-1 p-2 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 rounded-lg">
+                      <span class="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-400 block mb-1">
+                        Bundle: {{ item.bundleDetails.bundleName }} ({{ item.bundleDetails.bundleCount }} Items)
+                      </span>
+                      <div class="flex flex-wrap gap-1">
+                        <span *ngFor="let s of item.bundleDetails.selectedVariants" class="inline-flex items-center gap-1 text-[8px] font-bold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-800">
+                          <span>{{ s.slotLabel }}: {{ s.color || s.name }}</span>
+                        </span>
+                      </div>
+                    </div>
+                  } @else if (item.variant) {
                   <span class="text-[10px] text-neutral-400 font-medium uppercase">{{ item.variant.name }}</span>
                   }
                   <div class="text-[10px] text-neutral-550 dark:text-neutral-400 font-bold flex items-center gap-1.5 mt-0.5">

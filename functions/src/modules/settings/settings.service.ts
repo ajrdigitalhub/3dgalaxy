@@ -73,7 +73,15 @@ const defaultSettings = {
     codEnabled: true,
   },
   shippingSettings: {},
-  whatsappSettings: {},
+  whatsappSettings: {
+    orderConfirmationCodTemplateName: "order_confirmation_cod_3dgal",
+    orderConfirmationPaidTemplateName: "order_confirmation_paid_3dgal",
+    orderConfirmationAdminTemplateName: "order_confirmation_admin",
+    welcomeMessageTemplateName: "welcome_message",
+    orderStatusUpdateTemplateName: "order_status_update",
+    enableCodNotifications: true,
+    enablePaidNotifications: true
+  },
   emailSettings: {},
   newsletterSettings: {},
   chatbotSettings: {},

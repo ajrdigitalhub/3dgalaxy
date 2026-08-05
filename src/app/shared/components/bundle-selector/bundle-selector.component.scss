@@ -1,0 +1,142 @@
+.bundle-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.bundle-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  .header-divider {
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+  }
+
+  .header-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.bundle-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bundle-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+
+  &:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    border-color: #00d084; // Premium Bambu / Emerald green accent
+    background: #f0fdf4;
+    box-shadow: 0 4px 14px rgba(0, 208, 132, 0.12);
+
+    .tier-name {
+      color: #0f172a;
+      font-weight: 700;
+    }
+  }
+
+  &.popular {
+    border-color: #6366f1;
+
+    &.active {
+      border-color: #4f46e5;
+      background: #eef2ff;
+    }
+  }
+}
+
+.tier-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  padding: 2px 10px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+
+.card-radio-cell {
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.custom-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &.checked {
+    border-color: #00d084;
+
+    .radio-inner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00d084;
+    }
+  }
+}
+
+.card-info-cell {
+  flex: 1;
+
+  .tier-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #334155;
+  }
+}
+
+.card-price-cell {
+  text-align: right;
+
+  .current-price {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .original-price {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+}

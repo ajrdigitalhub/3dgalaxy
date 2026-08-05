@@ -19,6 +19,7 @@ import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
 import { catchError, finalize, shareReplay } from 'rxjs/operators';
+import { CartBundleDetails } from '../core/models/variant-engine.model';
 
 
 
@@ -119,6 +120,8 @@ export interface Product {
   category_id: string;
   categoryId?: string;
   category?: any;
+  categories?: Array<Category & { isPrimary?: boolean }>;
+  primaryCategory?: Category;
   subcategory_id?: string;
   brand: string;
   brandId?: string;
@@ -202,6 +205,7 @@ export interface CartItem {
   selectedPriceType: 'sale' | 'dealer';
   isFree?: boolean;
   weightInGrams?: number;
+  bundleDetails?: CartBundleDetails;
 }
 
 export interface OrderItem {
@@ -2121,6 +2125,22 @@ export class DatastoreService {
     this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name} to cart.`);
   }
 
+  addBundleToCart(product: Product, bundleDetails: CartBundleDetails) {
+    this.clearBuyNowItem();
+    this.cart.update(items => {
+      const role = this.userRole();
+      const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
+      return [...items, {
+        product,
+        quantity: 1,
+        selectedPriceType: priceType,
+        bundleDetails
+      }];
+    });
+    this.recalcDiscount();
+    this.logCartActivity('Added Bundle to Cart', `Added ${bundleDetails.bundleName} for ${product.name} to cart.`);
+  }
+
   updateCartQty(productId: string, qty: number, variantId?: string) {
     const item = this.cart().find(i => i.product.id === productId);
     const prevQty = item?.quantity || 0;
@@ -2143,6 +2163,10 @@ export class DatastoreService {
 
   getItemPrice(item: any): number {
     if (item.isFree) return 0;
+    if (item.bundleDetails && item.bundleDetails.selectedVariants) {
+      const totalBundleSlotsPrice = item.bundleDetails.selectedVariants.reduce((sum: number, v: any) => sum + Number(v.price || 0), 0);
+      return Math.max(0, totalBundleSlotsPrice);
+    }
     const p = item.product || item;
     const variant = item.variant;
     const role = this.userRole();
@@ -2153,6 +2177,22 @@ export class DatastoreService {
       price = variant.salePrice || variant.price || price;
     }
     return price;
+  }
+
+  getColorCode(colorName: string): string {
+    if (!colorName || typeof colorName !== 'string') return '#cbd5e1';
+    const c = colorName.toLowerCase().trim();
+    if (c.includes('black')) return '#000000';
+    if (c.includes('white')) return '#ffffff';
+    if (c.includes('grey') || c.includes('gray')) return '#6b7280';
+    if (c.includes('blue')) return '#3b82f6';
+    if (c.includes('green')) return '#22c55e';
+    if (c.includes('red')) return '#ef4444';
+    if (c.includes('yellow')) return '#eab308';
+    if (c.includes('orange')) return '#f97316';
+    if (c.includes('purple')) return '#a855f7';
+    if (c.includes('pink')) return '#ec4899';
+    return '#cbd5e1';
   }
 
   applyCoupon(code: string): boolean {

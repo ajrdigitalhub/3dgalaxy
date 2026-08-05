@@ -4,7 +4,6 @@ import {
   Input,
   Output,
   EventEmitter,
-  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +12,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 export interface VariantOptionGroup {
   name: string;
   values: string[];
+  displayType?: string;
 }
 
 @Component({
@@ -36,12 +36,21 @@ export class VariantChipSelectorComponent {
   /** Callback to resolve a color name to a hex code (for color dot rendering) */
   @Input() getColorCode: (colorName: string) => string = () => '#e2e8f0';
 
+  /** Optional callback to resolve image for an option value */
+  @Input() getOptionImage: (groupName: string, value: string) => string | null = () => null;
+
   /** Emits when a chip is selected */
   @Output() optionSelected = new EventEmitter<{ optionName: string; value: string }>();
 
   isColorGroup(groupName: string): boolean {
     const name = (groupName || '').toLowerCase().trim();
     return name === 'color' || name === 'colour' || name === 'colors' || name === 'colours';
+  }
+
+  getGroupDisplayType(group: VariantOptionGroup): string {
+    if (group.displayType) return group.displayType;
+    if (this.isColorGroup(group.name)) return 'color-chips';
+    return 'chip';
   }
 
   isSelected(groupName: string, value: string): boolean {
@@ -55,6 +64,13 @@ export class VariantChipSelectorComponent {
   onChipClick(groupName: string, value: string): void {
     if (this.isOutOfStock(groupName, value)) return;
     this.optionSelected.emit({ optionName: groupName, value });
+  }
+
+  onDropdownChange(groupName: string, event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    if (target && target.value) {
+      this.onChipClick(groupName, target.value);
+    }
   }
 
   onKeydown(event: KeyboardEvent, groupName: string, value: string, values: string[]): void {
@@ -75,14 +91,12 @@ export class VariantChipSelectorComponent {
 
     if (targetIndex !== -1) {
       const targetValue = values[targetIndex];
-      // Focus the target chip
       const container = (event.target as HTMLElement).closest('[role="radiogroup"]');
       if (container) {
         const chips = container.querySelectorAll('[role="radio"]');
         const targetChip = chips[targetIndex] as HTMLElement;
         if (targetChip) {
           targetChip.focus();
-          // Auto-select on arrow navigation if not out of stock
           if (!this.isOutOfStock(groupName, targetValue)) {
             this.onChipClick(groupName, targetValue);
           }

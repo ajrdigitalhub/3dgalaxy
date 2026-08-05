@@ -87,6 +87,36 @@ export const resolveCategoryId = async (input: any): Promise<string | null | und
   return cat ? cat.id : null;
 };
 
+export const resolveCategoryIds = async (body: any): Promise<Array<{ id: string; isPrimary: boolean }>> => {
+  let items: any[] = [];
+  if (Array.isArray(body.categoryIds)) {
+    items = body.categoryIds;
+  } else if (Array.isArray(body.categories)) {
+    items = body.categories;
+  } else if (body.categoryId || body.category_id || body.category) {
+    items = [body.categoryId || body.category_id || body.category];
+  }
+
+  const result: Array<{ id: string; isPrimary: boolean }> = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < items.length; i++) {
+    const raw = items[i];
+    const catId = await resolveCategoryId(raw);
+    if (catId && !seen.has(catId)) {
+      seen.add(catId);
+      const isPrimary = typeof raw === 'object' && raw !== null && 'isPrimary' in raw ? !!raw.isPrimary : i === 0;
+      result.push({ id: catId, isPrimary });
+    }
+  }
+
+  if (result.length > 0 && !result.some(r => r.isPrimary)) {
+    result[0].isPrimary = true;
+  }
+
+  return result;
+};
+
 export async function getAllMappedProductsCached(): Promise<any[]> {
   const cached = sysCache.get('all_mapped_products') as any[];
   if (cached && cached.length > 0) {
@@ -105,6 +135,9 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           include: {
             brand: true,
             category: true,
+            productCategories: {
+              include: { category: true }
+            },
             variants: {
               where: { isActive: true }
             },
@@ -288,10 +321,37 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
         const isNewArrival = new Date(p.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
         const isOnSale = p.salePrice && parseFloat(p.salePrice.toString()) < parseFloat(p.basePrice.toString());
 
+        // Extract Categories & Primary Category
+        const rawPCS = (p as any).productCategories || [];
+        let categoriesList: any[] = rawPCS.map((pc: any) => ({
+          id: pc.category?.id || pc.categoryId,
+          name: pc.category?.name || '',
+          slug: pc.category?.slug || '',
+          image: pc.category?.image || null,
+          isPrimary: !!pc.isPrimary,
+          sortOrder: pc.sortOrder || 0
+        })).filter((c: any) => c.id);
+
+        if (categoriesList.length === 0 && p.category) {
+          categoriesList = [{
+            id: p.category.id,
+            name: p.category.name,
+            slug: p.category.slug,
+            image: p.category.image || null,
+            isPrimary: true,
+            sortOrder: 0
+          }];
+        }
+
+        const primaryCategory = categoriesList.find((c: any) => c.isPrimary) || categoriesList[0] || p.category || null;
+        const primaryCategoryId = primaryCategory?.id || p.categoryId || null;
+
         return mapProductFields({
           id: p.id,
           brandId: p.brandId,
-          categoryId: p.categoryId,
+          categoryId: primaryCategoryId,
+          categories: categoriesList,
+          primaryCategory,
           name: p.name,
           slug: p.slug,
           sku: p.sku,
@@ -310,7 +370,7 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           images: p.images,
           specifications: specs,
           brand: p.brand,
-          category: p.category,
+          category: primaryCategory || p.category,
           variants: p.variants,
           hasVariants: p.variants && p.variants.length > 0,
           reviews: mappedReviews,
@@ -542,6 +602,8 @@ export const mapProductFields = (p: any): any => {
 
   return {
     ...p,
+    categories: p.categories || (p.category ? [{ ...p.category, isPrimary: true }] : []),
+    primaryCategory: p.primaryCategory || p.category || null,
     weightInGrams,
     weightUnit,
     reviews: approvedReviews,

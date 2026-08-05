@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
+import { NotificationTemplateResolver } from './notificationTemplateResolver';
 
 export interface StatusContent {
   currentStatus: string;
@@ -651,8 +652,22 @@ export class WhatsAppNotificationService {
       const mobileNumber = rawMobile ? this.formatPhoneNumber(rawMobile, whatsappSettings?.defaultCountryCode || '+91') : 'N/A';
       const emailId = order?.customer?.email || order?.customer?.user?.email || order?.shippingAddress?.email || 'N/A';
 
-      // Amount
-      const orderAmount = `₹${Number(order?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      // Amount (without duplicate currency symbol as template contains ₹{{6}})
+      const orderAmountStr = Number(order?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // City Extraction
+      let city = extraParams?.city;
+      if (!city && order?.shippingAddress) {
+        let addr = order.shippingAddress;
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        city = addr?.city;
+      }
+      if (!city && order?.billingAddress) {
+        let addr = order.billingAddress;
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        city = addr?.city;
+      }
+      city = city || 'N/A';
 
       // Payment Details
       const rawMethod = String(order?.paymentMethod || extraParams?.paymentMethod || '').toLowerCase();
@@ -665,14 +680,16 @@ export class WhatsAppNotificationService {
       else if (rawMethod.includes('stripe')) paymentMethod = 'Online Payment (Stripe)';
       else if (rawMethod.includes('upi')) paymentMethod = 'UPI Payment';
 
-      const paymentStatus = isPaid ? 'Paid ✅' : (isCOD ? 'Pending ⏳ (COD)' : 'Pending ⏳');
+      const paymentStatus = isPaid ? 'Paid' : (isCOD ? 'Pending (COD)' : 'Pending');
 
-      // Product List & Shipping Address
+      // Product List
       const productList = this.formatProductList(order);
-      const shippingAddress = this.formatShippingAddress(order, customerName);
+
+      // Admin Portal Link
+      const adminPortalUrl = orderUrl;
 
       // Template Name
-      const templateName = whatsappSettings.orderConfirmationAdminTemplateName || 'order_confirmation_admin_3dgal';
+      const templateName = whatsappSettings.orderConfirmationAdminTemplateName || 'order_confirmation_admin';
       const languageCode = whatsappSettings.languageCode || whatsappSettings.templateLanguage || 'en';
 
       // Admin Recipients
@@ -682,23 +699,22 @@ export class WhatsAppNotificationService {
         return { success: false, dispatchedCount: 0, logs: [], error: 'No active admin WhatsApp numbers configured' };
       }
 
-      // Parameters for order_confirmation_admin_3dgal (11 variables)
-      // {{1}} siteName, {{2}} orderId, {{3}} customerName, {{4}} mobileNumber, {{5}} emailId, {{6}} orderAmount, {{7}} paymentMethod, {{8}} paymentStatus, {{9}} productList, {{10}} shippingAddress, {{11}} orderUrl
+      // Parameters for order_confirmation_admin (10 variables)
+      // {{1}} orderId, {{2}} customerName, {{3}} mobile, {{4}} email, {{5}} city, {{6}} orderAmount, {{7}} paymentMethod, {{8}} paymentStatus, {{9}} products, {{10}} adminPortalUrl
       const components = sanitizeComponents([
         {
           type: 'body',
           parameters: [
-            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
             { type: 'text', text: sanitizeTemplateParam(orderId, 'N/A') },
             { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
             { type: 'text', text: sanitizeTemplateParam(mobileNumber, 'N/A') },
             { type: 'text', text: sanitizeTemplateParam(emailId, 'N/A') },
-            { type: 'text', text: sanitizeTemplateParam(orderAmount, '₹0.00') },
+            { type: 'text', text: sanitizeTemplateParam(city, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(orderAmountStr, '0.00') },
             { type: 'text', text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
             { type: 'text', text: sanitizeTemplateParam(paymentStatus, 'Pending') },
             { type: 'text', text: sanitizeTemplateParam(productList, '• Order Items') },
-            { type: 'text', text: sanitizeTemplateParam(shippingAddress, 'Address details in Admin') },
-            { type: 'text', text: sanitizeTemplateParam(orderUrl, 'https://admin.3dgalaxy.in') }
+            { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'https://admin.3dgalaxy.in') }
           ]
         }
       ]);
@@ -828,7 +844,7 @@ export class WhatsAppNotificationService {
   }
 
   /**
-   * Centralized method to send Customer Order Confirmation WhatsApp Notification using template order_confirmation_client_3dgal
+   * Centralized method to send Customer Order Confirmation WhatsApp Notification (Intelligent COD vs Prepaid Routing)
    */
   public static async sendOrderConfirmation(
     order: any,
@@ -838,50 +854,24 @@ export class WhatsAppNotificationService {
       const settingsObj = await getSettingsService();
       const whatsappSettings = settingsObj?.whatsappSettings || {};
 
-      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
-      const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
+      // 1. Resolve template selection, payment type (COD vs PREPAID), and 8 dynamic variables
+      const resolved = await NotificationTemplateResolver.resolveOrderConfirmationTemplate(order, whatsappSettings, extraParams);
 
-      const orderId = order?.orderNumber || order?.id || 'N/A';
-      const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders/${order?.id || orderId}`;
-
-      // Customer Details
-      let customerName = extraParams?.customerName || order?.customerName;
-      if (!customerName && order?.customer) {
-        customerName = [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ');
+      if (!resolved.shouldSend) {
+        console.log(`[WhatsAppNotificationService] Order confirmation suppressed for order ${order?.id || 'N/A'} (resolved type: ${resolved.type})`);
+        return { success: true, messageId: 'order_confirmation_suppressed' };
       }
-      if (!customerName && order?.shippingAddress) {
-        let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
-        customerName = addr?.name;
-      }
-      customerName = customerName || 'Valued Customer';
 
       // Phone Details
       const rawPhone = this.extractCustomerPhone(order, extraParams);
 
       if (!rawPhone) {
-        console.warn(`[WhatsAppNotificationService] No recipient phone for customer order confirmation ${orderId}`);
+        console.warn(`[WhatsAppNotificationService] No recipient phone for customer order confirmation ${resolved.variables.orderId}`);
         return { success: false, error: 'Recipient phone number is missing' };
       }
 
       const formattedPhone = this.formatPhoneNumber(rawPhone, whatsappSettings?.defaultCountryCode || '+91');
-
-      // Amount & Payment Details
-      const orderAmount = `₹${Number(order?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-      const rawMethod = String(order?.paymentMethod || extraParams?.paymentMethod || '').toLowerCase();
-      const isCOD = rawMethod === 'cod' || rawMethod === 'cash_on_delivery';
-      const isPaid = !!order?.paymentId || order?.paymentStatus === 'PAID' || order?.paymentStatus === 'Paid';
-
-      let paymentMethod = 'Online Payment';
-      if (isCOD) paymentMethod = 'Cash on Delivery (COD)';
-      else if (rawMethod.includes('razorpay')) paymentMethod = 'Online Payment (Razorpay)';
-      else if (rawMethod.includes('stripe')) paymentMethod = 'Online Payment (Stripe)';
-      else if (rawMethod.includes('upi')) paymentMethod = 'UPI Payment';
-
-      const paymentStatus = isPaid ? 'Paid ✅' : (isCOD ? 'Pending ⏳ (COD)' : 'Pending ⏳');
-
-      const templateName = whatsappSettings.orderConfirmationClientTemplateName || 'order_confirmation_client_3dgal';
+      const templateName = resolved.templateName;
       const languageCode = whatsappSettings.languageCode || whatsappSettings.templateLanguage || 'en';
 
       // Deduplication Check (2 minutes)
@@ -903,23 +893,46 @@ export class WhatsAppNotificationService {
         }
       }
 
-      // Parameters for order_confirmation_client_3dgal (8 Body Variables):
-      // {{1}} customerName, {{2}} siteName, {{3}} orderId, {{4}} orderAmount, {{5}} paymentMethod, {{6}} paymentStatus, {{7}} orderLink, {{8}} siteName
-      const components = sanitizeComponents([
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
-            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
-            { type: 'text', text: sanitizeTemplateParam(orderId, 'N/A') },
-            { type: 'text', text: sanitizeTemplateParam(orderAmount, '₹0.00') },
-            { type: 'text', text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
-            { type: 'text', text: sanitizeTemplateParam(paymentStatus, 'Pending') },
-            { type: 'text', text: sanitizeTemplateParam(orderLink, 'https://3dgalaxy.co.in/account/orders') },
-            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') }
-          ]
-        }
-      ]);
+      // 2. Build 8 Body Component Variables for COD/Prepaid templates:
+      // {{1}} customerName, {{2}} orderId, {{3}} orderAmount, {{4}} paymentMethod, {{5}} paymentStatus, {{6}} estimatedDeliveryDate, {{7}} orderUrl, {{8}} siteName
+      const vars = resolved.variables;
+      let components: any[] = [];
+
+      if (templateName.includes('cod') || templateName.includes('paid') || templateName.includes('prepaid')) {
+        components = sanitizeComponents([
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') },
+              { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(vars.orderAmount, '0.00') },
+              { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
+              { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
+              { type: 'text', text: sanitizeTemplateParam(vars.estimatedDeliveryDate, '3-5 Business Days') },
+              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, 'https://3dgalaxy.co.in/account/orders') },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') }
+            ]
+          }
+        ]);
+      } else {
+        // Fallback for legacy order_confirmation_client_3dgal template (8 variables):
+        // {{1}} customerName, {{2}} siteName, {{3}} orderId, {{4}} orderAmount, {{5}} paymentMethod, {{6}} paymentStatus, {{7}} orderUrl, {{8}} siteName
+        components = sanitizeComponents([
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') },
+              { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(`₹${vars.orderAmount}`, '₹0.00') },
+              { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
+              { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
+              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, 'https://3dgalaxy.co.in/account/orders') },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') }
+            ]
+          }
+        ]);
+      }
 
       const requestPayload = {
         messaging_product: 'whatsapp',

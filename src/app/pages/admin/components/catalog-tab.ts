@@ -19,6 +19,8 @@ import { ProductImportComponent } from "../../../admin/products/product-import/p
 
 import { ImagePickerComponent } from "../../../shared/components/image-picker/image-picker.component";
 import { AppButton } from "../../../shared/components/app-button/app-button";
+import { AdminVariantGroupConfigComponent } from "./admin-variant-group-config/admin-variant-group-config.component";
+import { CategoryMultiSelectComponent } from "../../../shared/components/category-multi-select/category-multi-select.component";
 
 @Component({
   selector: "app-admin-catalog-tab",
@@ -30,6 +32,8 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
     ImagePickerComponent,
     AppButton,
     ProductImportComponent,
+    AdminVariantGroupConfigComponent,
+    CategoryMultiSelectComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -184,95 +188,16 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                   </div>
 
                   <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
-                    <div class="space-y-1 relative">
+                    <div class="space-y-1 col-span-1 md:col-span-2">
                       <span
                         class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1"
-                        >Linked Category *</span
+                        >Categories Architecture (Multi-Category Assignment & Primary Tag) *</span
                       >
-                      <button
-                        type="button"
-                        (click)="pCatDropdownOpen.set(!pCatDropdownOpen())"
-                        class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
-                      >
-                        <span>{{
-                          getCategoryPath(admin.pCatId()) ||
-                            "Select category segment..."
-                        }}</span>
-                        <mat-icon class="text-zinc-400 text-sm"
-                          >keyboard_arrow_down</mat-icon
-                        >
-                      </button>
-
-                      @if (pCatDropdownOpen()) {
-                        <div
-                          class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col"
-                        >
-                          <div
-                            class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1"
-                          >
-                            <mat-icon
-                              class="text-zinc-400 text-sm shrink-0 mr-1.5"
-                              >search</mat-icon
-                            >
-                            <input
-                              type="text"
-                              [value]="pCatSearchQuery()"
-                              (input)="
-                                pCatSearchQuery.set($any($event.target).value)
-                              "
-                              placeholder="Search categories by name..."
-                              class="w-full bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-white py-1"
-                            />
-                          </div>
-
-                          <div
-                            class="flex-1 overflow-y-auto max-h-[200px] space-y-1 no-scrollbar"
-                          >
-                            <button
-                              type="button"
-                              (click)="
-                                admin.pCatId.set('');
-                                pCatDropdownOpen.set(false);
-                                pCatSearchQuery.set('')
-                              "
-                              class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-550 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-none bg-transparent"
-                            >
-                              None (Clear selection)
-                            </button>
-                            @for (c of admin.ds.categories(); track c.id) {
-                              @if (
-                                !pCatSearchQuery() ||
-                                getCategoryPath(c.id)
-                                  .toLowerCase()
-                                  .includes(pCatSearchQuery().toLowerCase())
-                              ) {
-                                <button
-                                  type="button"
-                                  (click)="
-                                    admin.pCatId.set(c.id);
-                                    pCatDropdownOpen.set(false);
-                                    pCatSearchQuery.set('')
-                                  "
-                                  [class.bg-blue-50]="admin.pCatId() === c.id"
-                                  [class.text-blue-500]="
-                                    admin.pCatId() === c.id
-                                  "
-                                  class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex flex-col border-none bg-transparent"
-                                >
-                                  <span
-                                    class="font-black text-zinc-900 dark:text-white"
-                                    >{{ c.name }}</span
-                                  >
-                                  <span
-                                    class="text-[9px] text-zinc-450 mt-0.5"
-                                    >{{ getCategoryPath(c.id) }}</span
-                                  >
-                                </button>
-                              }
-                            }
-                          </div>
-                        </div>
-                      }
+                      <app-category-multi-select
+                        [categories]="admin.ds.categories()"
+                        [selectedCategoryIds]="admin.pCategoryIds()"
+                        [primaryCategoryId]="admin.pCatId()"
+                        (selectionChange)="onCategorySelectionChange($event)" />
                     </div>
 
                     <div class="space-y-1">
@@ -678,13 +603,20 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                 >
                   <!-- Options Management -->
                   <div class="space-y-4">
+                    <!-- Advanced Variant Group & Bundle Architecture Editor with Live Preview -->
+                    <app-admin-variant-group-config
+                      [variantGroups]="admin.pOptions()"
+                      [availableVariants]="admin.pVariants()"
+                      [basePrice]="admin.pSale() || admin.pMrp() || 756"
+                      (groupsChanged)="admin.pOptions.set($event)" />
+
                     <div
-                      class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2"
+                      class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2 mt-6"
                     >
                       <h4
                         class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider"
                       >
-                        Product Options
+                        Option Keys & Values Mapping
                       </h4>
                       <button
                         (click)="admin.addOption()"
@@ -706,7 +638,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                       <div class="space-y-4">
                         @for (
                           opt of admin.pOptions();
-                          track opt.id;
+                          track opt.id || opt.name || i;
                           let i = $index
                         ) {
                           <div
@@ -1283,7 +1215,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         >
                         <input
                           type="number"
-                          [value]="admin.pShipping().shippingCharges"
+                          [value]="admin.pShipping().shippingCharges ?? ''"
                           (input)="
                             admin.updateShippingCharges(
                               $any($event.target).value
@@ -1359,7 +1291,7 @@ import { AppButton } from "../../../shared/components/app-button/app-button";
                         >
                         <input
                           type="number"
-                          [value]="admin.pBaseShippingCharge()"
+                          [value]="admin.pBaseShippingCharge() ?? ''"
                           (input)="
                             admin.pBaseShippingCharge.set(
                               +$any($event.target).value
@@ -2850,6 +2782,17 @@ export class AdminCatalogTab {
   toastService = inject(ToastService);
   http = inject(HttpClient);
   @Input({ required: true }) admin!: AdminPanel;
+
+  onCategorySelectionChange(event: { categoryIds: string[]; primaryCategoryId: string | null }) {
+    this.admin.pCategoryIds.set(event.categoryIds);
+    if (event.primaryCategoryId) {
+      this.admin.pCatId.set(event.primaryCategoryId);
+    } else if (event.categoryIds.length > 0) {
+      this.admin.pCatId.set(event.categoryIds[0]);
+    } else {
+      this.admin.pCatId.set('');
+    }
+  }
 
   async handleDocumentUploadForRow(event: Event, index?: number) {
     const input = event.target as HTMLInputElement;

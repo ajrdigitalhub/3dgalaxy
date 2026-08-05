@@ -41,6 +41,7 @@ import { AdminServiceEnquiriesTab } from "./components/service-enquiries-tab";
 import { AdminNotificationCenterTabComponent } from "./components/notification-center-tab";
 import { PushSettingsTabComponent } from "./components/push-settings-tab";
 import { OmniSearchComponent } from "./components/omni-search";
+import { AdminVariantGroupConfigComponent } from "./components/admin-variant-group-config/admin-variant-group-config.component";
 import { ToastService } from "../../shared/components/toast/toast.service";
 
 export type AdminTab =
@@ -117,6 +118,7 @@ import { DeliveryEstimateService } from "../../core/services/delivery-estimate.s
     AdminNotificationCenterTabComponent,
     PushSettingsTabComponent,
     OmniSearchComponent,
+    AdminVariantGroupConfigComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -457,6 +459,7 @@ export class AdminPanel {
   pSlug = signal<string>("");
   pBrand = signal<string>("3D Galaxy");
   pCatId = signal<string>("");
+  pCategoryIds = signal<string[]>([]);
   pSku = signal<string>("");
   pMrp = signal<number>(1499);
   pSale = signal<number>(1199);

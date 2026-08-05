@@ -696,7 +696,7 @@ export interface CustomerDetailProfile {
                       </thead>
                       <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                         @for (o of customerOrders(); track o.orderId) {
-                          <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                          <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40" [class.line-through]="(o.deliveryStatus || '').toLowerCase() === 'cancelled'" [class.opacity-60]="(o.deliveryStatus || '').toLowerCase() === 'cancelled'">
                             <td class="py-3 font-mono font-bold text-blue-600 dark:text-blue-400">
                               #{{ o.orderNumber || o.orderId.slice(0,8) }}
                             </td>

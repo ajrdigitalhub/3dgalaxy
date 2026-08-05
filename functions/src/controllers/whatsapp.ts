@@ -229,45 +229,54 @@ export const triggerWhatsAppNotification = async (
         'cod': 'Cash on Delivery',
         'manual': 'Manual Payment'
       };
-      const paymentMethod = paymentMethodMap[order?.paymentMethod] || order?.paymentMethod || 'Cash on Delivery';
-      const isPaid = !!order?.paymentId || (order?.status !== 'Pending Payment' && order?.paymentMethod !== 'cod');
-      const paymentStatus = isPaid ? 'Paid' : 'Pending';
+      const rawMethod = String(order?.paymentMethod || extraParams?.paymentMethod || '').toLowerCase();
+      const isCOD = rawMethod === 'cod' || rawMethod === 'cash_on_delivery';
+      const isPaid = !!order?.paymentId || (order?.status !== 'Pending Payment' && !isCOD);
+
+      let paymentMethod = 'Online Payment';
+      if (isCOD) paymentMethod = 'Cash on Delivery (COD)';
+      else if (rawMethod.includes('razorpay')) paymentMethod = 'Online Payment (Razorpay)';
+      else if (rawMethod.includes('stripe')) paymentMethod = 'Online Payment (Stripe)';
+      else if (rawMethod.includes('upi')) paymentMethod = 'UPI Payment';
+
+      const paymentStatus = isPaid ? 'Paid' : (isCOD ? 'Pending (COD)' : 'Pending');
 
       let shippingAddress = order?.shippingAddress;
       if (typeof shippingAddress === 'string') {
         try { shippingAddress = JSON.parse(shippingAddress); } catch { shippingAddress = {}; }
       }
-      const fullAddress = shippingAddress 
-        ? `${shippingAddress.name || ''}, ${shippingAddress.addressLine1 || ''}, ${shippingAddress.city || ''}, ${shippingAddress.state || ''}, ${shippingAddress.pincode || ''}`
-        : 'N/A';
+      const city = shippingAddress?.city || extraParams?.city || 'N/A';
+      const emailId = customer?.email || customer?.user?.email || shippingAddress?.email || 'N/A';
+      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+      const mobileNumber = recipientNumber || customer?.phone || customer?.mobile || 'N/A';
+
+      const orderAmountStr = Number(order?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
       let itemsSummary = '';
       if (order?.items && order.items.length > 0) {
-        itemsSummary = order.items.map((i: any) => `${i.quantity} x ${i.product?.name || 'Product'}`).join(', ');
+        itemsSummary = order.items.map((i: any) => `${i.product?.name || 'Product'} x ${i.quantity}`).join(', ');
+      } else {
+        itemsSummary = 'Order Items';
       }
-      const custName = order?.customerName || (customer ? `${customer.firstName} ${customer.lastName || ''}`.trim() : 'Customer');
+
+      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminPortalUrl = order ? `${adminBaseUrl}/orders/${order.id}` : adminBaseUrl;
 
       components = sanitizeComponents([
         {
           type: "body",
           parameters: [
-            { type: "text", text: sanitizeTemplateParam(custName, 'Customer') },
-            { type: "text", text: sanitizeTemplateParam(recipientNumber, 'N/A') },
             { type: "text", text: sanitizeTemplateParam(order?.orderNumber || order?.id, 'N/A') },
-            { type: "text", text: sanitizeTemplateParam(`${currency}${Number(order?.totalAmount || 0).toFixed(2)}`) },
-            { type: "text", text: sanitizeTemplateParam(`${paymentMethod} (${paymentStatus})`) },
-            { type: "text", text: sanitizeTemplateParam(new Date(order?.createdAt || Date.now()).toLocaleDateString('en-IN')) },
-            { type: "text", text: sanitizeTemplateParam(fullAddress, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(custName, 'Customer') },
+            { type: "text", text: sanitizeTemplateParam(mobileNumber, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(emailId, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(city, 'N/A') },
+            { type: "text", text: sanitizeTemplateParam(orderAmountStr, '0.00') },
+            { type: "text", text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
+            { type: "text", text: sanitizeTemplateParam(paymentStatus, 'Pending') },
             { type: "text", text: sanitizeTemplateParam(itemsSummary, 'Order Items') },
+            { type: "text", text: sanitizeTemplateParam(adminPortalUrl, 'https://admin.3dgalaxy.in') }
           ],
-        },
-        {
-          type: "button",
-          sub_type: "url",
-          index: "0",
-          parameters: [
-            { type: "text", text: sanitizeTemplateParam(order ? `admin/orders/${order.id}` : '') }
-          ]
         }
       ]);
     } else if (triggerKey === 'registration' || triggerKey === 'welcome') {

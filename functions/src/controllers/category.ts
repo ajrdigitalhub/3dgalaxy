@@ -67,10 +67,51 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
   try {
     let category = sysCache.get(cacheKey);
     if (!category) {
-      category = await prisma.category.findUnique({
-        where: { slug }
+      const cat = await prisma.category.findUnique({
+        where: { slug },
+        include: {
+          children: {
+            where: { isActive: true, deletedAt: null },
+            orderBy: { name: 'asc' }
+          }
+        }
       });
-      if (!category) return res.status(404).json({ error: 'Category not found' });
+      if (!cat) return res.status(404).json({ error: 'Category not found' });
+
+      // Fetch distinct brands & product count for category catalog
+      const productMatches = await prisma.product.findMany({
+        where: {
+          deletedAt: null,
+          isActive: true,
+          OR: [
+            { categoryId: cat.id },
+            { productCategories: { some: { categoryId: cat.id } } }
+          ]
+        },
+        select: {
+          id: true,
+          brand: {
+            select: { id: true, name: true, slug: true, logo: true }
+          }
+        }
+      });
+
+      const productCount = productMatches.length;
+      const brandMap = new Map<string, any>();
+      productMatches.forEach(p => {
+        if (p.brand && !brandMap.has(p.brand.id)) {
+          brandMap.set(p.brand.id, p.brand);
+        }
+      });
+      const brands = Array.from(brandMap.values());
+
+      category = {
+        ...cat,
+        productCount,
+        brands,
+        subcategories: cat.children || []
+      };
+
       sysCache.set(cacheKey, category, 1800);
     }
     return res.status(200).json(category);

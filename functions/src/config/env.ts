@@ -6,23 +6,23 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), 'functions/.env') });
 
-// Sanitize/Fix legacy invalid Supabase host if present in environment
-if (!process.env.PG_HOST || process.env.PG_HOST.includes('aws-1-ap-northeast-1.pooler.supabase.com')) {
-  process.env.PG_HOST = 'db.glaljifokncxzjvajzrg.supabase.co';
+// Sanitize/Fix broken direct Supabase host to use working pooler host
+if (!process.env.PG_HOST || process.env.PG_HOST.includes('db.glaljifokncxzjvajzrg.supabase.co')) {
+  process.env.PG_HOST = 'aws-1-ap-northeast-1.pooler.supabase.com';
 }
-if (!process.env.PG_USER || process.env.PG_USER === 'postgres.glaljifokncxzjvajzrg') {
-  process.env.PG_USER = 'postgres';
+if (!process.env.PG_USER || process.env.PG_USER === 'postgres') {
+  process.env.PG_USER = 'postgres.glaljifokncxzjvajzrg';
 }
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('aws-1-ap-northeast-1.pooler.supabase.com')) {
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('db.glaljifokncxzjvajzrg.supabase.co')) {
   process.env.DATABASE_URL = process.env.DATABASE_URL.replace(
-    'aws-1-ap-northeast-1.pooler.supabase.com',
-    'db.glaljifokncxzjvajzrg.supabase.co'
-  ).replace('postgres.glaljifokncxzjvajzrg', 'postgres');
+    'db.glaljifokncxzjvajzrg.supabase.co',
+    'aws-1-ap-northeast-1.pooler.supabase.com'
+  ).replace('postgres:', 'postgres.glaljifokncxzjvajzrg:');
 }
 
 export const ENV = {
-  PG_USER: process.env.PG_USER || 'postgres',
-  PG_HOST: process.env.PG_HOST || 'db.glaljifokncxzjvajzrg.supabase.co',
+  PG_USER: process.env.PG_USER || 'postgres.glaljifokncxzjvajzrg',
+  PG_HOST: process.env.PG_HOST || 'aws-1-ap-northeast-1.pooler.supabase.com',
   PG_DATABASE: process.env.PG_DATABASE || 'postgres',
   PG_PASSWORD: process.env.PG_PASSWORD || 'Mec170761$1',
   PG_PORT: Number(process.env.PG_PORT || 5432),
@@ -42,3 +42,7 @@ export const getDatabaseUrl = () => {
   // for Supabase / PgBouncer connection pools.
   return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}&statement_cache_size=0&pgbouncer=true`;
 };
+
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = getDatabaseUrl();
+}

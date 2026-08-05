@@ -2650,22 +2650,44 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                         <div class="space-y-1">
                           <span
                             class="block text-[9px] font-black text-zinc-400 uppercase"
-                            >Order Confirmation (Client) Template Name</span
+                            >COD Order Confirmation Template Name</span
                           >
                           <input
                             type="text"
-                            [value]="draft().whatsappSettings?.orderConfirmationClientTemplateName || 'order_confirmation_client'"
+                            [value]="draft().whatsappSettings?.orderConfirmationCodTemplateName || 'order_confirmation_cod_3dgal'"
                             (input)="
                               setNested(
                                 'whatsappSettings',
-                                'orderConfirmationClientTemplateName',
+                                'orderConfirmationCodTemplateName',
                                 $any($event.target).value
                               )
                             "
                             class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                           <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
-                            Template for customer order confirmation.
+                            Template sent when a Cash on Delivery (COD) order is placed.
+                          </p>
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Prepaid Order Confirmation Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.orderConfirmationPaidTemplateName || 'order_confirmation_paid_3dgal'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'orderConfirmationPaidTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template sent when an Online/Prepaid order is successfully paid.
                           </p>
                         </div>
 

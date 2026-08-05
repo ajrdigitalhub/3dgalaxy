@@ -30,6 +30,30 @@ pool.on('error', (err: Error) => {
  * successfully execute a trivial query, false otherwise. Used by the
  * scheduler to skip a tick instead of flooding logs with connection errors.
  */
+export const initProductCategoriesTable = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS product_categories (
+        product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+        sort_order INT NOT NULL DEFAULT 0,
+        is_primary BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (product_id, category_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_product_categories_product_id ON product_categories(product_id);
+      CREATE INDEX IF NOT EXISTS idx_product_categories_category_id ON product_categories(category_id);
+      CREATE INDEX IF NOT EXISTS idx_product_categories_is_primary ON product_categories(is_primary);
+    `);
+  } catch (err: any) {
+    console.error('⚠️ Could not initialize product_categories table:', err.message);
+  }
+};
+
+// Initialize table asynchronously
+initProductCategoriesTable();
+
 export const isPoolHealthy = async (): Promise<boolean> => {
   try {
     const client = await pool.connect();

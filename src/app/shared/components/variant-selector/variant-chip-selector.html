@@ -1,4 +1,4 @@
-<!-- Variant Chip Selector — Premium Choice Chips UI -->
+<!-- Variant Chip Selector — Multi-Display Type UI -->
 @for (group of optionGroups; track trackByGroup($index, group)) {
 <div class="variant-chip-group">
   <!-- Group Label -->
@@ -9,49 +9,72 @@
     }
   </h4>
 
-  <!-- Chips Row -->
-  <div class="variant-chips-row"
-       role="radiogroup"
-       [attr.aria-label]="'Select ' + group.name">
-    @for (val of group.values; track trackByValue($index, val)) {
-      <button type="button"
-              role="radio"
-              class="variant-chip"
-              [class.variant-chip--selected]="isSelected(group.name, val)"
-              [class.variant-chip--disabled]="isOutOfStock(group.name, val)"
-              [attr.aria-checked]="isSelected(group.name, val)"
-              [attr.aria-disabled]="isOutOfStock(group.name, val)"
-              [attr.aria-label]="val + (isOutOfStock(group.name, val) ? ' - Currently unavailable' : '')"
-              [tabindex]="isSelected(group.name, val) ? 0 : -1"
-              [disabled]="isOutOfStock(group.name, val)"
-              [matTooltip]="isOutOfStock(group.name, val) ? 'Currently unavailable' : ''"
-              matTooltipPosition="above"
-              (click)="onChipClick(group.name, val)"
-              (keydown)="onKeydown($event, group.name, val, group.values)">
+  <!-- DROPDOWN DISPLAY TYPE -->
+  @if (getGroupDisplayType(group) === 'dropdown') {
+    <div class="variant-dropdown-wrapper">
+      <select 
+        class="variant-select"
+        [value]="selectedOptions[group.name] || ''"
+        (change)="onDropdownChange(group.name, $event)">
+        <option *ngFor="let val of group.values" [value]="val" [disabled]="isOutOfStock(group.name, val)">
+          {{ val }} {{ isOutOfStock(group.name, val) ? ' (Out of Stock)' : '' }}
+        </option>
+      </select>
+    </div>
+  }
 
-        <!-- Check Icon (Selected State) -->
-        @if (isSelected(group.name, val)) {
-          <mat-icon class="variant-chip-check">check</mat-icon>
-        }
+  <!-- CHIP / COLOR-CHIPS / RADIO-CHIPS / BUTTON-GROUP DISPLAY TYPES -->
+  @if (getGroupDisplayType(group) !== 'dropdown') {
+    <div class="variant-chips-row"
+         [class.grid-mode]="getGroupDisplayType(group) === 'grid-cards' || getGroupDisplayType(group) === 'card'"
+         role="radiogroup"
+         [attr.aria-label]="'Select ' + group.name">
+      @for (val of group.values; track trackByValue($index, val)) {
+        <button type="button"
+                role="radio"
+                class="variant-chip"
+                [class.variant-chip--card]="getGroupDisplayType(group) === 'card' || getGroupDisplayType(group) === 'grid-cards'"
+                [class.variant-chip--selected]="isSelected(group.name, val)"
+                [class.variant-chip--disabled]="isOutOfStock(group.name, val)"
+                [attr.aria-checked]="isSelected(group.name, val)"
+                [attr.aria-disabled]="isOutOfStock(group.name, val)"
+                [attr.aria-label]="val + (isOutOfStock(group.name, val) ? ' - Currently unavailable' : '')"
+                [tabindex]="isSelected(group.name, val) ? 0 : -1"
+                [disabled]="isOutOfStock(group.name, val)"
+                [matTooltip]="isOutOfStock(group.name, val) ? 'Currently unavailable' : ''"
+                matTooltipPosition="above"
+                (click)="onChipClick(group.name, val)"
+                (keydown)="onKeydown($event, group.name, val, group.values)">
 
-        <!-- Color Dot (Color Groups Only) -->
-        @if (isColorGroup(group.name)) {
-          <span class="variant-chip-color-dot"
-                [style.backgroundColor]="getColorCode(val)"></span>
-        }
+          <!-- Image Preview if Image Selector -->
+          @if ((getGroupDisplayType(group) === 'image' || getGroupDisplayType(group) === 'card') && getOptionImage(group.name, val)) {
+            <img class="variant-chip-img" [src]="getOptionImage(group.name, val)!" [alt]="val" />
+          }
 
-        <!-- Label -->
-        <span class="variant-chip-text"
-              [class.variant-chip-text--strike]="isOutOfStock(group.name, val)">
-          {{ val }}
-        </span>
+          <!-- Check Icon (Selected State) -->
+          @if (isSelected(group.name, val)) {
+            <mat-icon class="variant-chip-check">check</mat-icon>
+          }
 
-        <!-- Out of Stock Badge -->
-        @if (isOutOfStock(group.name, val)) {
-          <span class="variant-chip-oos-badge">Out of Stock</span>
-        }
-      </button>
-    }
-  </div>
+          <!-- Color Dot (Color Groups / Color Chips) -->
+          @if (isColorGroup(group.name) || getGroupDisplayType(group) === 'color-chips') {
+            <span class="variant-chip-color-dot"
+                  [style.backgroundColor]="getColorCode(val)"></span>
+          }
+
+          <!-- Label -->
+          <span class="variant-chip-text"
+                [class.variant-chip-text--strike]="isOutOfStock(group.name, val)">
+            {{ val }}
+          </span>
+
+          <!-- Out of Stock Badge -->
+          @if (isOutOfStock(group.name, val)) {
+            <span class="variant-chip-oos-badge">Out of Stock</span>
+          }
+        </button>
+      }
+    </div>
+  }
 </div>
 }

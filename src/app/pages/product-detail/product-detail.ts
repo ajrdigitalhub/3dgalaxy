@@ -23,6 +23,10 @@ import { environment } from "../../../environments/environment";
 import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../shared/directives/tilt.directive";
 import { VariantChipSelectorComponent, VariantOptionGroup } from "../../shared/components/variant-selector/variant-chip-selector";
+import { VariantSelectionEngineService } from "../../services/variant-selection-engine.service";
+import { BundleSelectorComponent } from "../../shared/components/bundle-selector/bundle-selector.component";
+import { VariantSlotComponent } from "../../shared/components/variant-slot/variant-slot.component";
+import { BundleSummaryComponent } from "../../shared/components/bundle-summary/bundle-summary.component";
 
 import { ShippingService } from "../../core/services/shipping.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
@@ -42,6 +46,9 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
     FormsModule,
     WeightPipe,
     VariantChipSelectorComponent,
+    BundleSelectorComponent,
+    VariantSlotComponent,
+    BundleSummaryComponent,
     DeliveryEstimatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +59,7 @@ export class ProductDetail {
   private sanitizer = inject(DomSanitizer);
   route = inject(ActivatedRoute);
   ds = inject(DatastoreService);
+  variantEngine = inject(VariantSelectionEngineService);
   loadingService = inject(LoadingService);
   api = inject(ApiService);
   toastService = inject(ToastService);
@@ -696,6 +704,7 @@ export class ProductDetail {
 
   initializeDefaultVariant(p: any) {
     if (!p) return;
+    this.variantEngine.initializeProduct(p, p.variants || [], p.options || []);
     const queryParams = this.route.snapshot.queryParams;
     const initialVariantId = queryParams["variant"];
 
@@ -1555,6 +1564,24 @@ export class ProductDetail {
 
   addToCart(p: Product) {
     if (this.isAddingToCart()) return;
+
+    if (this.variantEngine.activeBundleGroup()) {
+      const result = this.variantEngine.bundleResult();
+      if (!result.isComplete) {
+        this.toastService.error(result.errorMessages[0] || "Please select all required slot choices for the bundle.");
+        return;
+      }
+      const bundleDetails = this.variantEngine.buildCartBundleDetails();
+      if (bundleDetails) {
+        this.isAddingToCart.set(true);
+        this.ds.addBundleToCart(p, bundleDetails);
+        setTimeout(() => {
+          this.isAddingToCart.set(false);
+          this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
+        }, 600);
+        return;
+      }
+    }
 
     if (p.variants && p.variants.length > 0) {
       const selected = this.selectedVariant();

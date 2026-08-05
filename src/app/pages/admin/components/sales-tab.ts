@@ -168,7 +168,7 @@ import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dial
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                 @for (o of filteredOrders(); track o.id) {
-                  <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                  <tr class="transition-colors" [ngClass]="getOrderRowBgClass(o.status)">
                     <td class="py-4">
                       <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-800 uppercase">{{ o.orderNumber }}</span>
                     </td>
@@ -747,6 +747,33 @@ export class AdminSalesTab {
   trackShipment(url: string) {
     if (!url) return;
     window.open(url, '_blank');
+  }
+
+  getOrderRowBgClass(status: string): string {
+    if (!status) return '';
+    const s = status.toLowerCase().trim();
+    if (s === 'delivered') {
+      return 'bg-emerald-500/10 dark:bg-emerald-950/30 hover:bg-emerald-500/15 border-l-4 border-l-emerald-500';
+    }
+    if (s === 'shipped') {
+      return 'bg-teal-500/10 dark:bg-teal-950/30 hover:bg-teal-500/15 border-l-4 border-l-teal-500';
+    }
+    if (s === 'packed') {
+      return 'bg-purple-500/10 dark:bg-purple-950/30 hover:bg-purple-500/15 border-l-4 border-l-purple-500';
+    }
+    if (s === 'processing') {
+      return 'bg-blue-500/10 dark:bg-blue-950/30 hover:bg-blue-500/15 border-l-4 border-l-blue-500';
+    }
+    if (s === 'confirmed') {
+      return 'bg-indigo-500/10 dark:bg-indigo-950/30 hover:bg-indigo-500/15 border-l-4 border-l-indigo-500';
+    }
+    if (s === 'pending') {
+      return 'bg-amber-500/10 dark:bg-amber-950/30 hover:bg-amber-500/15 border-l-4 border-l-amber-500';
+    }
+    if (s === 'cancelled') {
+      return 'bg-rose-500/10 dark:bg-rose-950/30 hover:bg-rose-500/15 border-l-4 border-l-rose-500 line-through opacity-75';
+    }
+    return '';
   }
 
   exportOrdersCsv() {

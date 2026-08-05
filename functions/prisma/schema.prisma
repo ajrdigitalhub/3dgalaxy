@@ -169,6 +169,7 @@ model Category {
   parent          Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children        Category[]        @relation("CategoryHierarchy")
   products        Product[]
+  productCategories ProductCategory[]
   homepageItems   HomepageSectionItem[]
 
   @@map("categories")
@@ -233,6 +234,7 @@ model Product {
 
   brand           Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
   category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  productCategories ProductCategory[]
   variants        ProductVariant[]
   reviews         ProductReview[]
   inventory       Inventory[]
@@ -248,6 +250,24 @@ model Product {
   @@index([isActive])
   @@index([isFeatured])
   @@map("products")
+}
+
+model ProductCategory {
+  productId         String   @map("product_id") @db.Uuid
+  categoryId        String   @map("category_id") @db.Uuid
+  sortOrder         Int      @default(0) @map("sort_order")
+  isPrimary         Boolean  @default(false) @map("is_primary")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category          Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+  @@index([isPrimary])
+  @@map("product_categories")
 }
 
 
