@@ -32,7 +32,7 @@ export class WhatsAppNotificationService {
     }
 
     const orderAny = (order as any) || {};
-    let phone = 
+    let phone =
       order?.customer?.phone ||
       order?.customer?.user?.mobile ||
       order?.customerUserPhone ||
@@ -44,12 +44,12 @@ export class WhatsAppNotificationService {
     if (!phone && order?.shippingAddress) {
       let addr: any = order.shippingAddress;
       if (typeof addr === 'string' && addr.trim().startsWith('{')) {
-        try { addr = JSON.parse(addr); } catch {}
+        try { addr = JSON.parse(addr); } catch { }
       }
 
       if (addr && typeof addr === 'object') {
         phone = addr.phone || addr.mobile || addr.contactNumber || addr.phoneNumber || '';
-        
+
         if (!phone && addr.addressLine1 && typeof addr.addressLine1 === 'string' && addr.addressLine1.includes('|')) {
           const parts = addr.addressLine1.split('|').map((p: string) => p.trim());
           for (const part of parts) {
@@ -90,7 +90,7 @@ export class WhatsAppNotificationService {
       if (order.shippingAddress) {
         let addr: any = order.shippingAddress;
         if (typeof addr === 'string' && addr.trim().startsWith('{')) {
-          try { addr = JSON.parse(addr); } catch {}
+          try { addr = JSON.parse(addr); } catch { }
         }
         if (addr && typeof addr === 'object') {
           if (isCleanName(addr.fullName)) return addr.fullName.trim();
@@ -104,7 +104,7 @@ export class WhatsAppNotificationService {
       if (order.billingAddress) {
         let addr: any = order.billingAddress;
         if (typeof addr === 'string' && addr.trim().startsWith('{')) {
-          try { addr = JSON.parse(addr); } catch {}
+          try { addr = JSON.parse(addr); } catch { }
         }
         if (addr && typeof addr === 'object') {
           if (isCleanName(addr.fullName)) return addr.fullName.trim();
@@ -334,14 +334,14 @@ export class WhatsAppNotificationService {
     try {
       const settingsObj = await getSettingsService();
       const whatsappSettings = settingsObj?.whatsappSettings || {};
-      
+
       // Site defaults
       const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
       const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
 
       // Status key
       const statusKey = extraParams?.statusKey || order?.status || 'Order Confirmed';
-      
+
       // Dynamic content generator
       const content = this.generateStatusContent(statusKey, order, extraParams, siteName);
 
@@ -363,7 +363,7 @@ export class WhatsAppNotificationService {
       if (!customerName && order?.shippingAddress) {
         let addr = order.shippingAddress;
         if (typeof addr === 'string') {
-          try { addr = JSON.parse(addr); } catch {}
+          try { addr = JSON.parse(addr); } catch { }
         }
         customerName = addr?.name;
       }
@@ -373,7 +373,7 @@ export class WhatsAppNotificationService {
       const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
 
       // Approved single template name strictly set to order_status_update_3dgal
-      const templateName = 'order_status_update_3dgal';
+      const templateName = 'order_status_update';
 
       // Deduplication check: prevent duplicate notifications within 2 minutes for same status
       if (order?.id) {
@@ -638,7 +638,7 @@ export class WhatsAppNotificationService {
       }
       if (!customerName && order?.shippingAddress) {
         let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
         customerName = addr?.name;
       }
       customerName = customerName || 'Valued Customer';
@@ -646,7 +646,7 @@ export class WhatsAppNotificationService {
       let rawMobile = order?.customer?.phone || order?.customer?.mobile;
       if (!rawMobile && order?.shippingAddress) {
         let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
         rawMobile = addr?.phone;
       }
       const mobileNumber = rawMobile ? this.formatPhoneNumber(rawMobile, whatsappSettings?.defaultCountryCode || '+91') : 'N/A';
@@ -659,12 +659,12 @@ export class WhatsAppNotificationService {
       let city = extraParams?.city;
       if (!city && order?.shippingAddress) {
         let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
         city = addr?.city;
       }
       if (!city && order?.billingAddress) {
         let addr = order.billingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
         city = addr?.city;
       }
       city = city || 'N/A';

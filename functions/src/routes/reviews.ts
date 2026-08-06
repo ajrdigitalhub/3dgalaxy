@@ -382,7 +382,7 @@ router.post("/reviews", authenticateToken, async (req, res) => {
       comment: review || "",
       images: Array.isArray(images) ? images : [],
       recommended: Boolean(recommended),
-      status: "APPROVED", // Auto approve verified customer reviews or set to PENDING
+      status: isAdmin ? "APPROVED" : "PENDING", // Customer reviews require admin moderation
       orderId: purchaseCheck.orderId || orderId || null,
     };
 
@@ -518,7 +518,71 @@ router.get("/admin/reviews", authenticateToken, async (req, res) => {
       include: { product: true, customer: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
     });
-    return res.status(200).json({ success: true, data: reviews });
+
+    const mapped = await Promise.all(
+      reviews.map(async (review: any) => {
+        let title = "Verified Review";
+        let comment = review.reviewText || "";
+        let images: string[] = [];
+        let status = "APPROVED"; // Default fallback status
+        let adminRemarks = null;
+        let helpfulCount = 0;
+
+        let rawText = (review.reviewText || "").trim();
+        if (rawText.startsWith("{") || rawText.startsWith("[")) {
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed && typeof parsed === "object") {
+              title = parsed.title || title;
+              comment = parsed.comment || parsed.review || parsed.text || comment;
+              images = Array.isArray(parsed.images) ? parsed.images : [];
+              status = parsed.status || status;
+              adminRemarks = parsed.adminRemarks || parsed.sellerReply || null;
+              helpfulCount = parsed.helpfulCount || 0;
+            }
+          } catch (e) {}
+        }
+
+        const prod = review.product;
+        let productImage = null;
+        if (prod) {
+          try {
+            const mappedProd = mapProductFields(prod);
+            productImage = mappedProd?.primaryImage || mappedProd?.thumbnail || null;
+          } catch (e) {}
+        }
+        if (!productImage || typeof productImage !== "string" || productImage.includes("undefined")) {
+          productImage = `https://picsum.photos/seed/${prod?.slug || review.productId || '3dgalaxy'}/300/300`;
+        }
+
+        const user = review.customer?.user;
+        const userName = user
+          ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+          : "Customer";
+
+        return {
+          id: review.id,
+          productId: review.productId,
+          productName: prod?.name || "3D Printing Product",
+          productSlug: prod?.slug || review.productId,
+          productImage,
+          rating: Number(review.rating) || 5,
+          title,
+          comment,
+          images,
+          status: (status || "APPROVED").toUpperCase(),
+          userName,
+          userEmail: user?.email || "",
+          userMobile: user?.mobile || review.customer?.phone || "",
+          adminRemarks,
+          createdAt: review.createdAt.toISOString(),
+          updatedAt: review.updatedAt ? review.updatedAt.toISOString() : review.createdAt.toISOString(),
+          helpfulCount,
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, data: mapped });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -546,56 +610,78 @@ router.post("/admin/reviews/:id/reply", authenticateToken, async (req, res) => {
   return res.status(200).json({ success: true, message: "Reply saved" });
 });
 
-router.post(
-  "/admin/reviews/:id/approve",
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const reviewId = req.params.id;
-      const review = await prisma.customerReview.findUnique({ where: { id: reviewId } });
-      if (review) {
-        let existingData: any = {};
-        if (review.reviewText && review.reviewText.startsWith("{")) {
-          try { existingData = JSON.parse(review.reviewText); } catch(e){}
-        }
-        existingData.status = "APPROVED";
-        await prisma.customerReview.update({
-          where: { id: reviewId },
-          data: { reviewText: JSON.stringify(existingData) },
-        });
-        await ReviewAggregationService.updateProductRating(review.productId);
-      }
-      return res.status(200).json({ success: true, message: "Approved" });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message });
+// Approve Review (supports both POST and PUT)
+const handleApprove = async (req: any, res: any) => {
+  try {
+    const reviewId = req.params.id;
+    const review = await prisma.customerReview.findUnique({ where: { id: reviewId } });
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
     }
-  },
-);
+    let existingData: any = {};
+    if (review.reviewText && review.reviewText.startsWith("{")) {
+      try { existingData = JSON.parse(review.reviewText); } catch(e){}
+    } else {
+      existingData = { comment: review.reviewText || "" };
+    }
+    existingData.status = "APPROVED";
+    const updated = await prisma.customerReview.update({
+      where: { id: reviewId },
+      data: { reviewText: JSON.stringify(existingData) },
+    });
+    await ReviewAggregationService.updateProductRating(review.productId);
+    return res.status(200).json({ success: true, message: "Review approved successfully", data: updated });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
 
-router.post(
-  "/admin/reviews/:id/reject",
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const reviewId = req.params.id;
-      const review = await prisma.customerReview.findUnique({ where: { id: reviewId } });
-      if (review) {
-        let existingData: any = {};
-        if (review.reviewText && review.reviewText.startsWith("{")) {
-          try { existingData = JSON.parse(review.reviewText); } catch(e){}
-        }
-        existingData.status = "REJECTED";
-        await prisma.customerReview.update({
-          where: { id: reviewId },
-          data: { reviewText: JSON.stringify(existingData) },
-        });
-        await ReviewAggregationService.updateProductRating(review.productId);
-      }
-      return res.status(200).json({ success: true, message: "Rejected" });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message });
+router.post("/admin/reviews/:id/approve", authenticateToken, handleApprove);
+router.put("/admin/reviews/:id/approve", authenticateToken, handleApprove);
+
+// Reject Review (supports both POST and PUT)
+const handleReject = async (req: any, res: any) => {
+  try {
+    const reviewId = req.params.id;
+    const review = await prisma.customerReview.findUnique({ where: { id: reviewId } });
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
     }
-  },
-);
+    let existingData: any = {};
+    if (review.reviewText && review.reviewText.startsWith("{")) {
+      try { existingData = JSON.parse(review.reviewText); } catch(e){}
+    } else {
+      existingData = { comment: review.reviewText || "" };
+    }
+    existingData.status = "REJECTED";
+    const updated = await prisma.customerReview.update({
+      where: { id: reviewId },
+      data: { reviewText: JSON.stringify(existingData) },
+    });
+    await ReviewAggregationService.updateProductRating(review.productId);
+    return res.status(200).json({ success: true, message: "Review rejected successfully", data: updated });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+router.post("/admin/reviews/:id/reject", authenticateToken, handleReject);
+router.put("/admin/reviews/:id/reject", authenticateToken, handleReject);
+
+// Delete Review (Admin)
+router.delete("/admin/reviews/:id", authenticateToken, async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+    const review = await prisma.customerReview.findUnique({ where: { id: reviewId } });
+    if (!review) {
+      return res.status(404).json({ success: false, error: "Review not found" });
+    }
+    await prisma.customerReview.delete({ where: { id: reviewId } });
+    await ReviewAggregationService.updateProductRating(review.productId);
+    return res.status(200).json({ success: true, message: "Review deleted successfully" });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 export default router;

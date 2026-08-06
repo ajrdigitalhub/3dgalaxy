@@ -733,14 +733,20 @@ export const getProducts = async (req: Request, res: Response) => {
     if (category) {
       const catsArray = (category as string).split(',').map(s => s.trim()).filter(Boolean);
       filtered = filtered.filter(p => {
-        return catsArray.some(cVal => isCategoryChildOf(p.category, cVal));
+        const prodCats = Array.isArray(p.categories) && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
+        return catsArray.some(cVal => prodCats.some((cItem: any) => isCategoryChildOf(cItem, cVal)));
       });
     }
 
     if (subcategory) {
       const subcatsArray = (subcategory as string).split(',').map(s => s.trim()).filter(Boolean);
       filtered = filtered.filter(p => {
-        return subcatsArray.some(sVal => p.categoryId === sVal || p.category?.slug === sVal);
+        const prodCats = Array.isArray(p.categories) && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
+        return subcatsArray.some(sVal =>
+          p.categoryId === sVal ||
+          p.category?.slug === sVal ||
+          prodCats.some((cItem: any) => cItem.id === sVal || cItem.slug === sVal)
+        );
       });
     }
 

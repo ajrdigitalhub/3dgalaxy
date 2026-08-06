@@ -7,10 +7,12 @@ import { FormsModule } from '@angular/forms';
 import { AdminPanel } from '../admin';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dialog/shipment-dialog.component';
+import { PackagingSlipService } from '../../../services/packaging-slip.service';
+import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-slip-dialog.component';
 
 @Component({
   selector: 'app-admin-sales-tab',
-  imports: [CommonModule, MatIconModule, RouterModule, FormsModule, ShipmentDialogComponent],
+  imports: [CommonModule, MatIconModule, RouterModule, FormsModule, ShipmentDialogComponent, PackagingSlipDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-8 animate-fadeIn animate-duration-300">
@@ -252,12 +254,20 @@ import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dial
                     <!-- Actions & Status Selector -->
                     <td class="py-4 text-right">
                       <div class="inline-flex gap-1.5 align-middle items-center">
-                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-2">
+                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-1">
                           <mat-icon class="text-[14px] leading-none">visibility</mat-icon> Details
                         </a>
                         <button
+                          (click)="openPackagingSlipModal(o)"
+                          class="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 rounded-lg text-[9px] font-black uppercase transition-colors mr-1 cursor-pointer"
+                          title="Preview & Edit Packaging Slip"
+                        >
+                          <mat-icon class="text-[14px] leading-none">assignment</mat-icon>
+                          <span>Packaging Slip</span>
+                        </button>
+                        <button
                           (click)="openShipmentModalForOrder(o)"
-                          class="flex items-center justify-center h-7 w-7 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors mr-2 cursor-pointer"
+                          class="flex items-center justify-center h-7 w-7 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors mr-1 cursor-pointer"
                           title="Configure Shipment"
                         >
                           <mat-icon class="scale-75">local_shipping</mat-icon>
@@ -329,6 +339,14 @@ import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dial
           (saveShipment)="onSaveShipmentPayload($event)"
           (cancel)="showShipmentModal.set(false)"
         ></app-shipment-dialog>
+      }
+
+      <!-- INTERACTIVE PACKAGING SLIP EDIT & PREVIEW DIALOG -->
+      @if (showSlipModal() && selectedOrderForSlip()) {
+        <app-packaging-slip-dialog
+          [order]="selectedOrderForSlip()"
+          (cancel)="showSlipModal.set(false)"
+        ></app-packaging-slip-dialog>
       }
 
       <!-- ========================= TAB: DRAFT ORDERS CONSOLE ========================= -->
@@ -540,6 +558,19 @@ import { ShipmentDialogComponent, ShipmentDetailsPayload } from './shipment-dial
 export class AdminSalesTab {
   @Input({ required: true }) admin!: AdminPanel;
   private toastService = inject(ToastService);
+  private packagingSlipService = inject(PackagingSlipService);
+
+  showSlipModal = signal(false);
+  selectedOrderForSlip = signal<any>(null);
+
+  openPackagingSlipModal(order: any) {
+    this.selectedOrderForSlip.set(order);
+    this.showSlipModal.set(true);
+  }
+
+  downloadPackagingSlip(orderId: string, orderNumber?: string) {
+    this.packagingSlipService.downloadPackagingSlip(orderId, orderNumber);
+  }
 
   // Advanced Search & Filters signals
   searchQuery = signal('');

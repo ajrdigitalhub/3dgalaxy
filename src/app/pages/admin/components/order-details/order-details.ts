@@ -9,11 +9,13 @@ import { environment } from '../../../../../environments/environment';
 import { WeightPipe } from '../../../../shared/pipes/weight.pipe';
 import { formatWeight } from '../../../../shared/utils/weight.utils';
 import { ShipmentDialogComponent, ShipmentDetailsPayload } from '../shipment-dialog/shipment-dialog.component';
+import { PackagingSlipService } from '../../../../services/packaging-slip.service';
+import { PackagingSlipDialogComponent } from '../packaging-slip-dialog/packaging-slip-dialog.component';
 
 @Component({
   selector: 'app-admin-order-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, ShipmentDialogComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, ShipmentDialogComponent, PackagingSlipDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-details.html'
 })
@@ -22,6 +24,20 @@ export class OrderDetailsComponent implements OnInit {
   private router = inject(Router);
   private http = inject(HttpClient);
   public location = inject(Location);
+  private packagingSlipService = inject(PackagingSlipService);
+
+  showSlipModal = signal(false);
+
+  openPackagingSlipModal() {
+    this.showSlipModal.set(true);
+  }
+
+  downloadPackagingSlip() {
+    const ord = this.order();
+    if (ord) {
+      this.packagingSlipService.downloadPackagingSlip(ord.id, ord.orderNumber);
+    }
+  }
 
   backToOrders() {
     this.router.navigate(['/admin/orders']);

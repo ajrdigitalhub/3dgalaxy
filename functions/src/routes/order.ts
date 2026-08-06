@@ -11,6 +11,7 @@ import {
   resendOrderNotification,
   trackOrder
 } from '../controllers/order';
+import { getPackagingSlipPDF } from '../controllers/packagingSlip';
 import { authenticateToken, optionalAuthenticateToken, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -20,6 +21,10 @@ router.post('/track', trackOrder);
 
 // Authenticated customer my-orders
 router.get('/my-orders', authenticateToken, getMyOrders);
+
+// Admin packaging slip PDF download (Admin, Manager, Staff)
+router.get('/:id/packaging-slip', authenticateToken, requireRole(['Admin', 'Manager', 'Staff', 'Super Admin', 'admin', 'super-admin']), getPackagingSlipPDF);
+router.post('/:id/packaging-slip', authenticateToken, requireRole(['Admin', 'Manager', 'Staff', 'Super Admin', 'admin', 'super-admin']), getPackagingSlipPDF);
 
 // Admin-only order index list
 router.get('/', authenticateToken, requireRole(['Admin', 'Manager']), getOrders);

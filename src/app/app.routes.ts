@@ -11,6 +11,12 @@ export const routes: Routes = [
     data: { preload: true },
   },
   {
+    path: "explore",
+    loadComponent: () =>
+      import("./pages/explore/explore.component").then((m) => m.ExplorePageComponent),
+    data: { preload: true },
+  },
+  {
     path: "search",
     loadComponent: () =>
       import("./pages/search/search").then((m) => m.SearchComponent),

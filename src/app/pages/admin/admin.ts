@@ -42,6 +42,7 @@ import { AdminNotificationCenterTabComponent } from "./components/notification-c
 import { PushSettingsTabComponent } from "./components/push-settings-tab";
 import { OmniSearchComponent } from "./components/omni-search";
 import { AdminVariantGroupConfigComponent } from "./components/admin-variant-group-config/admin-variant-group-config.component";
+import { AdminReviewsTabComponent } from "./components/reviews-tab";
 import { ToastService } from "../../shared/components/toast/toast.service";
 
 export type AdminTab =
@@ -89,6 +90,7 @@ export type AdminTab =
   | "push-settings"
   | "pwa-settings"
   | "marketing-settings"
+  | "explore-config"
   | "admin-devices"
   | "transactions"
   | "webhook-logs"
@@ -96,6 +98,7 @@ export type AdminTab =
   | "whatsapp-campaign";
 
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
+import { AdminExploreConfigTabComponent } from "./components/admin-explore-config-tab";
 
 @Component({
   selector: "app-admin-panel",
@@ -119,6 +122,8 @@ import { DeliveryEstimateService } from "../../core/services/delivery-estimate.s
     PushSettingsTabComponent,
     OmniSearchComponent,
     AdminVariantGroupConfigComponent,
+    AdminReviewsTabComponent,
+    AdminExploreConfigTabComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -170,6 +175,7 @@ export class AdminPanel {
     { label: 'Orders & Sales', tab: 'orders' as AdminTab, icon: 'shopping_bag', color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20', desc: 'View live customer orders & status' },
     { label: 'Customers List', tab: 'customer-list' as AdminTab, icon: 'group', color: 'text-purple-500 bg-purple-500/10 border-purple-500/20', desc: 'Manage user profiles & reward points' },
     { label: 'CAD Quote Enquiries', tab: 'quotes' as AdminTab, icon: 'layers', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20', desc: 'Process STL/STEP print requests' },
+    { label: 'Product Reviews', tab: 'reviews' as AdminTab, icon: 'rate_review', color: 'text-amber-500 bg-amber-500/10 border-amber-500/20', desc: 'Approve, reject or delete customer feedback' },
     { label: 'Banners & Promotions', tab: 'banners' as AdminTab, icon: 'view_carousel', color: 'text-pink-500 bg-pink-500/10 border-pink-500/20', desc: 'Manage hero banners & ad cards' },
     { label: 'Coupons & Deals', tab: 'coupons' as AdminTab, icon: 'local_offer', color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20', desc: 'Manage promotional promo codes' },
     { label: 'Store Theme Settings', tab: 'theme-settings' as AdminTab, icon: 'palette', color: 'text-orange-500 bg-orange-500/10 border-orange-500/20', desc: 'Customize store design & colors' },
@@ -220,6 +226,7 @@ export class AdminPanel {
           { id: "categories", label: "Categories", icon: "account_tree" },
           // { id: 'collections', label: 'Collections', icon: 'layers' },
           { id: "brands", label: "Brands", icon: "label" },
+          { id: "reviews", label: "Product Reviews", icon: "rate_review" },
           // { id: 'inventory', label: 'Inventory', icon: 'shelves' }
         ],
       },
@@ -305,6 +312,11 @@ export class AdminPanel {
             id: "marketing-settings",
             label: "Marketing & Tracking",
             icon: "insights",
+          },
+          {
+            id: "explore-config",
+            label: "Explore Navigation",
+            icon: "explore",
           },
           // { id: 'user-management', label: 'User Management', icon: 'badge' },
           // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },

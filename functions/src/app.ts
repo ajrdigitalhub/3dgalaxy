@@ -142,6 +142,8 @@ app.use("/api", paymentRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", pwaRoutes);
 app.use("/api", headerMenuRoutes);
+import exploreConfigRoutes from "./routes/exploreConfig";
+app.use("/api", exploreConfigRoutes);
 app.use("/api", marketingRoutes);
 import headerAnnouncementRoutes from "./routes/headerAnnouncements";
 app.use("/api", headerAnnouncementRoutes);
