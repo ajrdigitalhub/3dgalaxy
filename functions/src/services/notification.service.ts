@@ -5,6 +5,7 @@ import { triggerWhatsAppNotification, getWhatsappSettings } from '../controllers
 import { WhatsAppNotificationService } from './whatsappNotificationService';
 import fs from 'fs';
 import path from 'path';
+import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 
 export type NotificationCategory =
   | 'orders'
@@ -632,6 +633,427 @@ export class NotificationService {
       });
     } catch (e) {
       console.warn('[NotificationService] NotificationLog write error:', e);
+    }
+  }
+
+  public static async getCustomerFcmTokens(userId: string | null): Promise<string[]> {
+    if (!userId) return [];
+    try {
+      const devices = await prisma.notificationDevice.findMany({
+        where: { userId, notificationEnabled: true },
+        select: { fcmToken: true }
+      });
+      return devices.map(d => d.fcmToken).filter(Boolean);
+    } catch (e) {
+      console.warn('[NotificationService] getCustomerFcmTokens error:', e);
+      return [];
+    }
+  }
+
+  public static async getAdminFcmTokens(): Promise<string[]> {
+    let dbTokens: string[] = [];
+    try {
+      const canFetchFcmToken = await this.checkFcmTokenTableExists();
+      const canFetchDev = await this.checkDevTableExists();
+
+      const fetchDev1 = async (): Promise<any[]> => {
+        if (!canFetchFcmToken) return [];
+        try {
+          if ((prisma as any).adminFcmToken?.findMany) {
+            return await (prisma as any).adminFcmToken.findMany({
+              where: { isActive: true },
+              select: { fcmToken: true },
+            });
+          }
+        } catch (e: any) {}
+        return [];
+      };
+
+      const fetchDev2 = async (): Promise<any[]> => {
+        if (!canFetchDev) return [];
+        try {
+          if ((prisma as any).adminNotificationDevice?.findMany) {
+            return await (prisma as any).adminNotificationDevice.findMany({
+              where: { isActive: true },
+              select: { fcmToken: true },
+            });
+          }
+        } catch (e: any) {}
+        return [];
+      };
+
+      const [dev1, dev2] = await Promise.all([fetchDev1(), fetchDev2()]);
+      dbTokens = [
+        ...(dev1 || []).map((d: any) => d.fcmToken),
+        ...(dev2 || []).map((d: any) => d.fcmToken),
+      ];
+    } catch (e) {}
+
+    const legacyTokens = this.getLegacyDeviceTokens();
+    return Array.from(new Set([...dbTokens, ...legacyTokens].filter(Boolean)));
+  }
+
+  public static async dispatchServiceRequestNotifications(enquiry: any, extraParams: any = {}): Promise<void> {
+    try {
+      const settings = await getSettingsService();
+      const whatsappSettings = settings.whatsappSettings || {};
+
+      const customerPhone = enquiry.customerPhone;
+      const customerName = enquiry.customerName || 'Valued Customer';
+      const trackingNumber = enquiry.trackingNumber;
+      const trackingId = enquiry.id;
+      const requestDate = new Date(enquiry.createdAt).toLocaleDateString('en-IN');
+      const estResponseTime = "24-48 Hours";
+      const serviceType = "3D Printing Service";
+      const websiteName = settings.storeName || whatsappSettings.storeName || '3D Galaxy';
+      const siteUrl = process.env.APP_URL || 'https://3dgalaxy.co.in';
+      const trackUrl = `${siteUrl}/services/track?trk=${trackingNumber}`;
+      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminPortalUrl = `${adminBaseUrl}/services/${enquiry.id}`;
+
+      // 1. NOTIFY CUSTOMER
+      
+      // A. WhatsApp
+      const enableCustWhatsapp = whatsappSettings.enableServiceRequestCustomerNotifications !== false;
+      if (enableCustWhatsapp && customerPhone) {
+        const custTemplate = whatsappSettings.serviceRequestCustomerTemplateName || 'service_request_customer';
+        let clean = (customerPhone || '').replace(/[^\d+]/g, '');
+        if (!clean.startsWith('+')) {
+          const code = (whatsappSettings.defaultCountryCode || '+91').replace(/[^\d+]/g, '') || '91';
+          clean = `${code}${clean}`;
+        }
+        const recipient = clean.replace('+', '');
+
+        const components = sanitizeComponents([
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
+              { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(requestDate, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(estResponseTime, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(websiteName, '3D Galaxy') },
+              { type: 'text', text: sanitizeTemplateParam(trackUrl, 'N/A') }
+            ]
+          }
+        ]);
+
+        const whatsappPayload = {
+          messaging_product: 'whatsapp',
+          to: recipient,
+          type: 'template',
+          template: {
+            name: custTemplate,
+            language: { code: 'en' },
+            components
+          }
+        };
+
+        const log = await prisma.whatsappLog.create({
+          data: {
+            phone: recipient,
+            templateName: custTemplate,
+            templateLanguage: 'en',
+            messageType: 'transactional',
+            provider: settings.provider || 'meta',
+            status: 'Pending',
+            requestPayload: whatsappPayload as any,
+            retryCount: 0
+          }
+        });
+
+        const apiUrl = whatsappSettings.apiUrl || `https://graph.facebook.com/v19.0/${whatsappSettings.phoneNumberId}/messages`;
+        const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
+        let wsStatus = 'SENT';
+        let wsDelivery = '';
+
+        if (whatsappSettings.enabled && whatsappSettings.apiEnabled && accessToken) {
+          try {
+            const wsRes = await fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`
+              },
+              body: JSON.stringify(whatsappPayload)
+            });
+            const wsData = await wsRes.json() as any;
+            if (wsRes.ok) {
+              const msgId = wsData?.messages?.[0]?.id || null;
+              await prisma.whatsappLog.update({
+                where: { id: log.id },
+                data: { status: 'Sent', messageId: msgId, responsePayload: wsData }
+              });
+              wsDelivery = `Meta MsgID: ${msgId}`;
+            } else {
+              wsStatus = 'FAILED';
+              wsDelivery = wsData?.error?.message || 'Meta API failed';
+              await prisma.whatsappLog.update({
+                where: { id: log.id },
+                data: { status: 'Failed', responsePayload: wsData, errorMessage: wsDelivery }
+              });
+            }
+          } catch (e: any) {
+            wsStatus = 'FAILED';
+            wsDelivery = e.message || 'Meta API network timeout';
+            await prisma.whatsappLog.update({
+              where: { id: log.id },
+              data: { status: 'Failed', errorMessage: wsDelivery }
+            });
+          }
+        } else {
+          await prisma.whatsappLog.update({
+            where: { id: log.id },
+            data: { status: 'Sent', responsePayload: { simulated: true } }
+          });
+          wsDelivery = 'Simulated Sandbox';
+        }
+
+        await prisma.notificationLog.create({
+          data: {
+            title: 'Service Request Customer WhatsApp',
+            body: `WhatsApp template "${custTemplate}" sent to ${recipient}`,
+            type: 'SERVICE_REQUEST_CUSTOMER_WHATSAPP',
+            actionUrl: trackUrl,
+            sentTo: recipient,
+            topic: custTemplate,
+            status: wsStatus,
+            deliveryStatus: wsDelivery,
+            payload: whatsappPayload as any
+          }
+        });
+      }
+
+      // B. Push Notification (Customer)
+      if (enquiry.userId) {
+        const custTokens = await this.getCustomerFcmTokens(enquiry.userId);
+        if (custTokens.length > 0) {
+          const pushTitle = 'Service Request Submitted';
+          const pushBody = 'Your 3D printing request has been received successfully.';
+          const pushPayload = {
+            tokens: custTokens,
+            notification: { title: pushTitle, body: pushBody },
+            data: {
+              type: 'service',
+              eventKey: 'NEW_SERVICE_REQUEST',
+              deepLink: `/services/track?trk=${trackingNumber}`,
+              click_action: `/services/track?trk=${trackingNumber}`,
+              title: pushTitle,
+              body: pushBody
+            }
+          };
+
+          const fbAdmin = getFirebaseAdmin();
+          let pushSuccess = false;
+          let pushDelivery = '';
+          if (fbAdmin.apps.length) {
+            try {
+              const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
+              pushSuccess = pushRes.successCount > 0;
+              pushDelivery = `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`;
+            } catch (e: any) {
+              pushDelivery = e.message || 'FCM failed';
+            }
+          }
+
+          for (const token of custTokens) {
+            await prisma.notificationLog.create({
+              data: {
+                title: pushTitle,
+                body: pushBody,
+                type: 'SERVICE_REQUEST_CUSTOMER_PUSH',
+                actionUrl: `/services/track?trk=${trackingNumber}`,
+                sentTo: token,
+                status: pushSuccess ? 'SENT' : 'FAILED',
+                deliveryStatus: pushDelivery,
+                payload: pushPayload as any
+              }
+            });
+          }
+        }
+      }
+
+      // 2. NOTIFY REGISTERED ADMINS
+      
+      // A. WhatsApp
+      const enableAdminWhatsapp = whatsappSettings.enableServiceRequestAdminNotifications !== false;
+      const adminPhonesRaw = whatsappSettings.adminPhoneNumber || settings.adminPhoneNumber || settings.contact?.phone || '';
+      const adminPhones = String(adminPhonesRaw)
+        .split(',')
+        .map(p => p.trim())
+        .filter(Boolean);
+
+      if (enableAdminWhatsapp && adminPhones.length > 0) {
+        const adminTemplate = whatsappSettings.serviceRequestAdminTemplateName || 'service_request_admin';
+        const fileCount = String(extraParams.fileCount || 1);
+        const material = enquiry.material || 'PLA';
+        const color = enquiry.color || 'White';
+        const remarks = enquiry.notes || 'None';
+
+        const apiUrl = whatsappSettings.apiUrl || `https://graph.facebook.com/v19.0/${whatsappSettings.phoneNumberId}/messages`;
+        const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
+
+        for (const phone of adminPhones) {
+          let clean = phone.replace(/[^\d+]/g, '');
+          if (!clean.startsWith('+')) {
+            const code = (whatsappSettings.defaultCountryCode || '+91').replace(/[^\d+]/g, '') || '91';
+            clean = `${code}${clean}`;
+          }
+          const recipient = clean.replace('+', '');
+
+          const components = sanitizeComponents([
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
+                { type: 'text', text: sanitizeTemplateParam(enquiry.customerPhone || 'N/A', 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(enquiry.customerEmail || 'N/A', 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(extraParams.city || 'N/A', 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(fileCount, '1') },
+                { type: 'text', text: sanitizeTemplateParam(material, 'PLA') },
+                { type: 'text', text: sanitizeTemplateParam(color, 'White') },
+                { type: 'text', text: sanitizeTemplateParam(remarks, 'None') },
+                { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'N/A') }
+              ]
+            }
+          ]);
+
+          const whatsappPayload = {
+            messaging_product: 'whatsapp',
+            to: recipient,
+            type: 'template',
+            template: {
+              name: adminTemplate,
+              language: { code: 'en' },
+              components
+            }
+          };
+
+          const log = await prisma.whatsappLog.create({
+            data: {
+              phone: recipient,
+              templateName: adminTemplate,
+              templateLanguage: 'en',
+              messageType: 'transactional',
+              provider: settings.provider || 'meta',
+              status: 'Pending',
+              requestPayload: whatsappPayload as any,
+              retryCount: 0
+            }
+          });
+
+          let wsStatus = 'SENT';
+          let wsDelivery = '';
+
+          if (whatsappSettings.enabled && whatsappSettings.apiEnabled && accessToken) {
+            try {
+              const wsRes = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(whatsappPayload)
+              });
+              const wsData = await wsRes.json() as any;
+              if (wsRes.ok) {
+                const msgId = wsData?.messages?.[0]?.id || null;
+                await prisma.whatsappLog.update({
+                  where: { id: log.id },
+                  data: { status: 'Sent', messageId: msgId, responsePayload: wsData }
+                });
+                wsDelivery = `Meta MsgID: ${msgId}`;
+              } else {
+                wsStatus = 'FAILED';
+                wsDelivery = wsData?.error?.message || 'Meta API failed';
+                await prisma.whatsappLog.update({
+                  where: { id: log.id },
+                  data: { status: 'Failed', responsePayload: wsData, errorMessage: wsDelivery }
+                });
+              }
+            } catch (e: any) {
+              wsStatus = 'FAILED';
+              wsDelivery = e.message || 'Meta API network timeout';
+              await prisma.whatsappLog.update({
+                where: { id: log.id },
+                data: { status: 'Failed', errorMessage: wsDelivery }
+              });
+            }
+          } else {
+            await prisma.whatsappLog.update({
+              where: { id: log.id },
+              data: { status: 'Sent', responsePayload: { simulated: true } }
+            });
+            wsDelivery = 'Simulated Sandbox';
+          }
+
+          await prisma.notificationLog.create({
+            data: {
+              title: 'Service Request Admin WhatsApp',
+              body: `WhatsApp template "${adminTemplate}" sent to ${recipient}`,
+              type: 'SERVICE_REQUEST_ADMIN_WHATSAPP',
+              actionUrl: adminPortalUrl,
+              sentTo: recipient,
+              topic: adminTemplate,
+              status: wsStatus,
+              deliveryStatus: wsDelivery,
+              payload: whatsappPayload as any
+            }
+          });
+        }
+      }
+
+      // B. Push Notification (Admins)
+      const adminTokens = await this.getAdminFcmTokens();
+      if (adminTokens.length > 0) {
+        const pushTitle = 'New Service Request';
+        const pushBody = 'A customer has submitted a new 3D printing enquiry.';
+        const pushPayload = {
+          tokens: adminTokens,
+          notification: { title: pushTitle, body: pushBody },
+          data: {
+            type: 'service',
+            eventKey: 'NEW_SERVICE_REQUEST',
+            deepLink: `/admin/services`,
+            click_action: `/admin/services`,
+            title: pushTitle,
+            body: pushBody
+          }
+        };
+
+        const fbAdmin = getFirebaseAdmin();
+        let pushSuccess = false;
+        let pushDelivery = '';
+        if (fbAdmin.apps.length) {
+          try {
+            const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
+            pushSuccess = pushRes.successCount > 0;
+            pushDelivery = `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`;
+          } catch (e: any) {
+            pushDelivery = e.message || 'FCM failed';
+          }
+        }
+
+        for (const token of adminTokens) {
+          await prisma.notificationLog.create({
+            data: {
+              title: pushTitle,
+              body: pushBody,
+              type: 'SERVICE_REQUEST_ADMIN_PUSH',
+              actionUrl: `/admin/services`,
+              sentTo: token,
+              status: pushSuccess ? 'SENT' : 'FAILED',
+              deliveryStatus: pushDelivery,
+              payload: pushPayload as any
+            }
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('[NotificationService] dispatchServiceRequestNotifications error:', err);
     }
   }
 }

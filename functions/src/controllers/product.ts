@@ -1469,7 +1469,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     const resolvedWeightInGrams = rawWeight !== undefined && rawWeight !== null ? parseFloat(rawWeight) : undefined;
     const resolvedWeightUnit = weightUnit || weight_unit;
 
-    const parsedImages = safeParseArray(images).map((img: any) => {
+    const parsedImages = images !== undefined ? safeParseArray(images).map((img: any) => {
       if (!img) return null;
       if (typeof img === 'string') {
         return { url: img, isPrimary: false, sortOrder: 0 };
@@ -1479,21 +1479,21 @@ export const updateProduct = async (req: Request, res: Response) => {
         isPrimary: !!img.isPrimary,
         sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
       };
-    }).filter((img: any) => img && img.url.trim().length > 0);
+    }).filter((img: any) => img && img.url.trim().length > 0) : undefined;
 
-    const parsedSpecs = safeParseArray(specifications).filter((s: any) => s?.name && s?.value);
-    const parsedDownloads = safeParseArray(downloads).filter((d: any) => d?.title || d?.name);
-    const parsedFeatures = safeParseArray(features);
-    const parsedFaqs = safeParseArray(faqs).filter((f: any) => f?.question && f?.answer);
-    const parsedVariants = safeParseArray(variants).filter((v: any) => v?.name && v?.sku);
-    const parsedOptions = safeParseArray(options);
-    const parsedAttributes = safeParseArray(attributes);
-    const parsedWarranty = safeParseObject(warranty);
-    const parsedShipping = safeParseObject(shipping);
-    const parsedRelatedProducts = safeParseArray(relatedProducts);
-    const parsedIncludedItems = safeParseArray(included_items);
-    const parsedBundleProducts = safeParseArray(bundleProducts);
-    const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
+    const parsedSpecs = specifications !== undefined ? safeParseArray(specifications).filter((s: any) => s?.name && s?.value) : undefined;
+    const parsedDownloads = downloads !== undefined ? safeParseArray(downloads).filter((d: any) => d?.title || d?.name) : undefined;
+    const parsedFeatures = features !== undefined ? safeParseArray(features) : undefined;
+    const parsedFaqs = faqs !== undefined ? safeParseArray(faqs).filter((f: any) => f?.question && f?.answer) : undefined;
+    const parsedVariants = variants !== undefined ? safeParseArray(variants).filter((v: any) => v?.name && v?.sku) : undefined;
+    const parsedOptions = options !== undefined ? safeParseArray(options) : undefined;
+    const parsedAttributes = attributes !== undefined ? safeParseArray(attributes) : undefined;
+    const parsedWarranty = warranty !== undefined ? safeParseObject(warranty) : undefined;
+    const parsedShipping = shipping !== undefined ? safeParseObject(shipping) : undefined;
+    const parsedRelatedProducts = relatedProducts !== undefined ? safeParseArray(relatedProducts) : undefined;
+    const parsedIncludedItems = included_items !== undefined ? safeParseArray(included_items) : undefined;
+    const parsedBundleProducts = bundleProducts !== undefined ? safeParseArray(bundleProducts) : undefined;
+    const parsedRecommendedFilaments = recommendedFilaments !== undefined ? safeParseArray(recommendedFilaments) : undefined;
 
     const rawBrand = brandId !== undefined ? brandId : (brand_id !== undefined ? brand_id : brand);
     const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
@@ -1502,15 +1502,17 @@ export const updateProduct = async (req: Request, res: Response) => {
     const resolvedCategoryId = await resolveCategoryId(rawCategory);
 
     const updated = await prisma.$transaction(async (tx) => {
-      // Clear previously set variants to prevent duplication/orphans
-      await tx.productVariant.deleteMany({ where: { productId: id } });
+      // Clear previously set variants ONLY if variants array was explicitly passed
+      if (parsedVariants !== undefined) {
+        await tx.productVariant.deleteMany({ where: { productId: id } });
+      }
 
       const p = await tx.product.update({
         where: { id },
         data: {
-          name,
-          slug,
-          sku,
+          name: name !== undefined ? name : undefined,
+          slug: slug !== undefined ? slug : undefined,
+          sku: sku !== undefined ? sku : undefined,
           description: description !== undefined ? description : undefined,
           shortDescription: short_description !== undefined ? short_description : undefined,
           basePrice: mrp ? parseFloat(mrp) : (price ? parseFloat(price) : undefined),
@@ -1530,27 +1532,27 @@ export const updateProduct = async (req: Request, res: Response) => {
           bundleProducts: parsedBundleProducts !== undefined ? parsedBundleProducts : undefined,
           recommendedFilaments: parsedRecommendedFilaments !== undefined ? parsedRecommendedFilaments : undefined,
 
-          // Store inside JSON fields
-          images: parsedImages,
-          specifications: parsedSpecs,
-          downloads: parsedDownloads,
-          features: parsedFeatures,
-          faqs: parsedFaqs,
-          seo: {
+          // Store inside JSON fields only if provided
+          images: parsedImages !== undefined ? parsedImages : undefined,
+          specifications: parsedSpecs !== undefined ? parsedSpecs : undefined,
+          downloads: parsedDownloads !== undefined ? parsedDownloads : undefined,
+          features: parsedFeatures !== undefined ? parsedFeatures : undefined,
+          faqs: parsedFaqs !== undefined ? parsedFaqs : undefined,
+          seo: (seoTitle !== undefined || seoDescription !== undefined || seoKeywords !== undefined) ? {
             title: seoTitle || null,
             description: seoDescription || null,
             keywords: seoKeywords || []
-          },
-          shipping: parsedShipping || {},
-          warranty: parsedWarranty || {},
-          relatedProducts: parsedRelatedProducts || [],
-          includedItems: parsedIncludedItems || [],
-          attributes: parsedAttributes || [],
-          options: parsedOptions || []
+          } : undefined,
+          shipping: parsedShipping !== undefined ? parsedShipping : undefined,
+          warranty: parsedWarranty !== undefined ? parsedWarranty : undefined,
+          relatedProducts: parsedRelatedProducts !== undefined ? parsedRelatedProducts : undefined,
+          includedItems: parsedIncludedItems !== undefined ? parsedIncludedItems : undefined,
+          attributes: parsedAttributes !== undefined ? parsedAttributes : undefined,
+          options: parsedOptions !== undefined ? parsedOptions : undefined
         }
       });
 
-      if (parsedVariants.length > 0) {
+      if (parsedVariants && parsedVariants.length > 0) {
         for (const v of parsedVariants) {
           const optVals: Record<string, string> = {};
           if (v.optionsData && Array.isArray(v.optionsData)) {

@@ -385,6 +385,7 @@ model Customer {
   couponUsages    CouponUsage[]
   notes           CustomerNote[]
   activities      CustomerActivityLog[]
+  supportRequests SupportRequest[]
 
   @@index([phone])
   @@index([customerType])
@@ -480,6 +481,7 @@ model Order {
   payments        Payment[]
   shipments       Shipment[]
   couponUsages    CouponUsage[]
+  supportRequests SupportRequest[]
 
   @@index([customerId])
   @@index([createdAt])
@@ -1336,8 +1338,21 @@ model AdminNotificationDeliveryLog {
   @@map("admin_notification_delivery_logs")
 }
 
+model SupportRequest {
+  id           String    @id @default(uuid()) @db.Uuid
+  customerId   String?   @map("customer_id") @db.Uuid
+  orderId      String?   @map("order_id") @db.Uuid
+  type         String    @db.VarChar(50) // Return, Refund, Exchange, Damaged, Wrong Product, Missing Items, Other
+  reason       String    @db.VarChar(100) // Changed Mind, Product Damaged, etc.
+  comments     String?   @db.Text
+  status       String    @default("OPEN") @db.VarChar(50) // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  attachments  Json?     // Array of attachment URLs / metadata [{url: string, name: string, type: string}]
+  resolution   String?   @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
+  customer     Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  order        Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
-
-
-
+  @@map("support_requests")
+}

@@ -273,6 +273,7 @@ export class SettingsService {
   public faqs = signal<any[]>([]);
   public services = signal<any[]>([]);
   public companyInfo = signal<any>({});
+  public supportSettings = signal<any>({});
   public themeSettings = signal<any>({});
   public gradientSettings = signal<any>({});
   public security = signal<any>({});
@@ -418,6 +419,7 @@ export class SettingsService {
     if (d.faqs) this.faqs.set(d.faqs);
     if (d.services) this.services.set(d.services);
     if (d.companyInfo) this.companyInfo.set(d.companyInfo);
+    if (d.supportSettings) this.supportSettings.set(d.supportSettings);
     if (d.gradientSettings) this.gradientSettings.set(d.gradientSettings);
     if (d.security) this.security.set(d.security);
     if (d.printServiceSettings)

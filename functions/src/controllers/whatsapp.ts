@@ -291,6 +291,66 @@ export const triggerWhatsAppNotification = async (
           ],
         },
       ]);
+    } else if (triggerKey === 'service_request_customer') {
+      templateName = settings.serviceRequestCustomerTemplateName || 'service_request_customer';
+      isStandardTemplate = true;
+
+      const custName = order?.customerName || customer?.name || extraParams.customerName || 'Customer';
+      const trackingId = order?.id || extraParams.trackingId || 'ENQ-123456';
+      const requestDate = extraParams.requestDate || (order?.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN'));
+      const estResponseTime = extraParams.estimatedResponseTime || '24-48 Hours';
+      const serviceType = extraParams.serviceType || '3D Printing Service';
+      const trackUrl = extraParams.trackUrl || `${siteUrl}/services/track?trk=${order?.trackingNumber || 'TRK-123456'}`;
+
+      components = sanitizeComponents([
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: sanitizeTemplateParam(custName, 'Customer') },
+            { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(requestDate, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(estResponseTime, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
+            { type: 'text', text: sanitizeTemplateParam(trackUrl, 'N/A') }
+          ]
+        }
+      ]);
+    } else if (triggerKey === 'service_request_admin') {
+      templateName = settings.serviceRequestAdminTemplateName || 'service_request_admin';
+      isStandardTemplate = true;
+
+      const trackingId = order?.id || extraParams.trackingId || 'ENQ-123456';
+      const custName = order?.customerName || customer?.name || extraParams.customerName || 'Customer';
+      const mobileNumber = order?.customerPhone || customer?.phone || extraParams.mobile || 'N/A';
+      const emailId = order?.customerEmail || customer?.email || extraParams.email || 'N/A';
+      const city = extraParams.city || 'N/A';
+      const serviceType = extraParams.serviceType || '3D Printing Service';
+      const fileCount = String(extraParams.fileCount || 1);
+      const material = order?.material || extraParams.material || 'PLA';
+      const color = order?.color || extraParams.color || 'White';
+      const remarks = order?.notes || extraParams.remarks || 'None';
+      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminPortalUrl = extraParams.adminPortalUrl || (order ? `${adminBaseUrl}/services/${order.id}` : `${adminBaseUrl}/services/ENQ-123456`);
+
+      components = sanitizeComponents([
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(custName, 'Customer') },
+            { type: 'text', text: sanitizeTemplateParam(mobileNumber, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(emailId, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(city, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(fileCount, '1') },
+            { type: 'text', text: sanitizeTemplateParam(material, 'PLA') },
+            { type: 'text', text: sanitizeTemplateParam(color, 'White') },
+            { type: 'text', text: sanitizeTemplateParam(remarks, 'None') },
+            { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'N/A') }
+          ]
+        }
+      ]);
     } else if (['order_placed', 'order_confirmed', 'order_confirmation'].includes(triggerKey.toLowerCase())) {
       await WhatsAppNotificationService.sendOrderConfirmation(order, {
         ...extraParams,
@@ -566,6 +626,76 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
       },
       previewText
     });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// Preview Service Template
+export const handlePreviewServiceTemplate = async (req: Request, res: Response) => {
+  try {
+    const { templateType, customerName, trackingId, email, mobile, city, material, color, remarks } = req.body;
+    const settings = await getWhatsappSettings();
+    const siteName = settings.storeName || '3D Galaxy';
+    const siteUrl = process.env.APP_URL || 'https://3dgalaxy.co.in';
+
+    const name = customerName || 'Jayakumar';
+    const trkId = trackingId || 'ENQ-123456';
+    const requestDate = new Date().toLocaleDateString('en-IN');
+    const estResponseTime = '24-48 Hours';
+    const serviceType = '3D Printing Service';
+    const trackUrl = `${siteUrl}/services/track?trk=TRK-123456`;
+
+    if (templateType === 'customer') {
+      const templateName = settings.serviceRequestCustomerTemplateName || 'service_request_customer';
+      const previewText = `Hello ${name} 👋,\n\nThank you for choosing *${siteName}*!\n\nYour *${serviceType}* request has been received successfully.\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *REQUEST SUMMARY*\n\n📌 Tracking ID: *${trkId}*\n📅 Request Date: *${requestDate}*\n⏳ Est. Response Time: *${estResponseTime}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nYou can track the progress of your quote using the link below:\n\n🔗 *Track Request*\n${trackUrl}\n\nNeed assistance? Feel free to contact our customer support team.\n\nBest Regards,\n*${siteName} Support Team*`;
+      return res.status(200).json({
+        success: true,
+        templateName,
+        variables: {
+          1: name,
+          2: trkId,
+          3: requestDate,
+          4: estResponseTime,
+          5: serviceType,
+          6: siteName,
+          7: trackUrl
+        },
+        previewText
+      });
+    } else {
+      const templateName = settings.serviceRequestAdminTemplateName || 'service_request_admin';
+      const custMail = email || 'customer@example.com';
+      const custPhone = mobile || '+919999999999';
+      const custCity = city || 'Bangalore';
+      const fileCount = '2';
+      const prMaterial = material || 'PLA';
+      const prColor = color || 'Black';
+      const prRemarks = remarks || 'High infill print';
+      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminPortalUrl = `${adminBaseUrl}/services/${trkId}`;
+
+      const previewText = `📢 *NEW SERVICE REQUEST RECEIVED* [${trkId}]\n\nHello Admin,\n\nA new 3D Printing Service enquiry has been submitted.\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n👤 *CUSTOMER DETAILS*\n\nName: *${name}*\nMobile: *${custPhone}*\nEmail: *${custMail}*\nCity: *${custCity}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *ENQUIRY DETAILS*\n\nService Type: *${serviceType}*\nUploaded Files: *${fileCount}*\nMaterial: *${prMaterial}*\nColor: *${prColor}*\nRemarks: *${prRemarks}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🔗 *View in Admin Portal*\n${adminPortalUrl}`;
+
+      return res.status(200).json({
+        success: true,
+        templateName,
+        variables: {
+          1: trkId,
+          2: name,
+          3: custPhone,
+          4: custMail,
+          5: custCity,
+          6: serviceType,
+          7: fileCount,
+          8: prMaterial,
+          9: prColor,
+          10: prRemarks,
+          11: adminPortalUrl
+        },
+        previewText
+      });
+    }
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

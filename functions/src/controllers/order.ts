@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { triggerWhatsAppNotification } from './whatsapp';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
+import { generateNextOrderNumber } from '../utils/orderNumber';
 import { ShippingService } from '../services/shipping.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { TrackingService } from '../services/tracking.service';
@@ -232,7 +233,7 @@ export const getOrderById = async (req: any, res: Response) => {
   const userRole = req.user?.role;
   try {
     let orderWhere: any;
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) {
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) {
       orderWhere = { orderNumber: id };
     } else {
       orderWhere = { id };
@@ -406,8 +407,7 @@ export const createOrder = async (req: any, res: Response) => {
   }
 
   try {
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
+    const orderNumber = await generateNextOrderNumber(prisma);
 
     // Resolve or create Customer record
     let customerIdToUse: string | null = null;
@@ -778,7 +778,7 @@ export const updateOrderStatus = async (req: any, res: Response) => {
 
   try {
     let orderWhere: any = { id };
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const existing = await prisma.order.findUnique({
       where: orderWhere,
       include: {
@@ -907,7 +907,7 @@ export const updatePaymentStatus = async (req: Request, res: Response) => {
 
   try {
     let orderWhere: any = { id };
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const order = await prisma.order.findUnique({
       where: orderWhere,
       include: {
@@ -958,7 +958,7 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
 
   try {
     let orderWhere: any = { id };
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const order = await prisma.order.findUnique({
       where: orderWhere,
       include: {
@@ -1065,7 +1065,7 @@ export const addOrderNotes = async (req: any, res: Response) => {
 
   try {
     let orderWhere: any = { id };
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const order = await prisma.order.findUnique({ where: orderWhere });
     if (!order) return res.status(404).json({ error: 'Not found' });
 
@@ -1088,7 +1088,7 @@ export const resendOrderNotification = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
     let orderWhere: any = { id };
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
+    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) orderWhere = { orderNumber: id };
     const order = await prisma.order.findUnique({
       where: orderWhere,
     });

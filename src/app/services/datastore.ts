@@ -2272,7 +2272,7 @@ export class DatastoreService {
     const tax = this.cartTax();
     const grand = this.cartGrandTotal();
 
-    const orderNum = 'ORD-' + Math.floor(Math.random() * 1000000);
+    const orderNum = '3DX' + String(this.orders().length + 1).padStart(4, '0');
     const docId = `ord-${Date.now()}`;
     
     const newOrder = {

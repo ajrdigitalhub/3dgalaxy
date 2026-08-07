@@ -233,13 +233,13 @@ export class HomeCategoryViewFilamentComponent {
   products = computed(() => {
     const cat = this.category();
     if (!cat) return [];
-    
+
     const categories = this.ds.categories();
     const childIds = categories
       .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
-    
+
     return this.ds.products()
       .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
       .slice(0, 6);
@@ -250,13 +250,13 @@ export class HomeCategoryViewFilamentComponent {
     const price = isDealer
       ? p.dealer_price || p.sale_price || p.mrp
       : p.sale_price || p.mrp;
-      
+
     const hasVariants = p.variants && p.variants.length > 0;
     const formatted = Number(price).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    
+
     const prefix = hasVariants ? 'From ' : '';
     return `${prefix}Rs. ${formatted}`;
   }
@@ -365,13 +365,13 @@ export class HomeCategoryViewSparePartsComponent {
   products = computed(() => {
     const cat = this.category();
     if (!cat) return [];
-    
+
     const categories = this.ds.categories();
     const childIds = categories
       .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
-    
+
     return this.ds.products()
       .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
       .slice(0, 6);
@@ -382,13 +382,13 @@ export class HomeCategoryViewSparePartsComponent {
     const price = isDealer
       ? p.dealer_price || p.sale_price || p.mrp
       : p.sale_price || p.mrp;
-      
+
     const hasVariants = p.variants && p.variants.length > 0;
     const formatted = Number(price).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    
+
     const prefix = hasVariants ? 'From ' : '';
     return `${prefix}Rs. ${formatted}`;
   }
@@ -497,13 +497,13 @@ export class HomeCategoryView3DPrinterComponent {
   products = computed(() => {
     const cat = this.category();
     if (!cat) return [];
-    
+
     const categories = this.ds.categories();
     const childIds = categories
       .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
-    
+
     return this.ds.products()
       .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
       .slice(0, 6);
@@ -514,13 +514,13 @@ export class HomeCategoryView3DPrinterComponent {
     const price = isDealer
       ? p.dealer_price || p.sale_price || p.mrp
       : p.sale_price || p.mrp;
-      
+
     const hasVariants = p.variants && p.variants.length > 0;
     const formatted = Number(price).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    
+
     const prefix = hasVariants ? 'From ' : '';
     return `${prefix}Rs. ${formatted}`;
   }
@@ -1552,154 +1552,6 @@ export class HomeStatisticsComponent {
 }
 
 @Component({
-  selector: "app-home-testimonials",
-  standalone: true,
-  imports: [CommonModule, MatIconModule, ScrollRevealDirective, TiltDirective],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <section
-      [id]="section.id"
-      class="max-w-7xl mx-auto px-6 py-12"
-      appScrollReveal="fade"
-    >
-      <div class="text-center space-y-2 max-w-2xl mx-auto mb-12">
-        <h2
-          class="text-[10px] font-black uppercase tracking-[0.4em] text-orange-600 font-display"
-        >
-          Client Testimonials
-        </h2>
-        <h3
-          class="text-3xl md:text-4xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display"
-        >
-          Ecosystem Reviews
-        </h3>
-        <p class="text-neutral-500 dark:text-neutral-400 text-sm">
-          See how aerospace labs, auto designers, and creators leverage our
-          high-fidelity print ecosystem.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Card 1 -->
-        <div
-          appTilt
-          [tiltMax]="5"
-          class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left"
-        >
-          <div class="flex items-center gap-1 text-amber-500 mb-4">
-            <mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon>
-          </div>
-          <p
-            class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic"
-          >
-            "3D Galaxy revolutionized our design verification cycle. Their Bambu
-            AMC contracts keep our 40-printer manufacturing farm running 24/7
-            with zero bottlenecks."
-          </p>
-          <div class="flex items-center gap-4 mt-6">
-            <div
-              class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs"
-            >
-              AS
-            </div>
-            <div class="space-y-0.5">
-              <h4 class="text-xs font-black text-neutral-900 dark:text-white">
-                Dr. A. Sen
-              </h4>
-              <p class="text-[10px] text-neutral-400">
-                R&D Director, Aero-Space India
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div
-          appTilt
-          [tiltMax]="5"
-          class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left"
-        >
-          <div class="flex items-center gap-1 text-amber-500 mb-4">
-            <mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon>
-          </div>
-          <p
-            class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic"
-          >
-            "Their custom quotation portal is incredibly fast. We uploaded the
-            suspension mounts, selected PETG-CF, and got our structural batches
-            in perfect spec."
-          </p>
-          <div class="flex items-center gap-4 mt-6">
-            <div
-              class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs"
-            >
-              MJ
-            </div>
-            <div class="space-y-0.5">
-              <h4 class="text-xs font-black text-neutral-900 dark:text-white">
-                Meera J.
-              </h4>
-              <p class="text-[10px] text-neutral-400">
-                Lead Product Designer, Nexa Motors
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div
-          appTilt
-          [tiltMax]="5"
-          class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-850/40 p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] hover:shadow-[0_20px_50px_rgba(0,0,0,0.03)] hover:border-orange-500/30 transition-all duration-300 text-left"
-        >
-          <div class="flex items-center gap-1 text-amber-500 mb-4">
-            <mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon
-            ><mat-icon class="scale-75">star</mat-icon>
-          </div>
-          <p
-            class="text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed italic"
-          >
-            "Outstanding post-sales training and customer service. Our
-            university makerspace runs completely on 3D Galaxy filaments, which
-            yield highly consistent prints."
-          </p>
-          <div class="flex items-center gap-4 mt-6">
-            <div
-              class="h-10 w-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center font-bold text-xs"
-            >
-              RK
-            </div>
-            <div class="space-y-0.5">
-              <h4 class="text-xs font-black text-neutral-900 dark:text-white">
-                Prof. Rajesh K.
-              </h4>
-              <p class="text-[10px] text-neutral-400">
-                Makerspace Admin, IIT Delhi
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  `,
-})
-export class HomeTestimonialsComponent {
-  ds = inject(DatastoreService);
-  @Input() section!: any;
-}
-
-@Component({
   selector: "app-home-instagram-feed",
   standalone: true,
   imports: [CommonModule],
@@ -1874,8 +1726,8 @@ export class HomeInstagramFeedComponent {
         postId,
       })
       .subscribe({
-        next: () => {},
-        error: () => {},
+        next: () => { },
+        error: () => { },
       });
   }
 }
@@ -1954,7 +1806,7 @@ export class HomeInstagramFeedComponent {
 export class HomeCategoryShowcaseRowComponent {
   ds = inject(DatastoreService);
   router = inject(Router);
-  
+
   @Input() category!: Category;
 
   isDealerPriceActive = computed(() => {
@@ -1969,13 +1821,13 @@ export class HomeCategoryShowcaseRowComponent {
   products = computed(() => {
     const cat = this.category;
     if (!cat) return [];
-    
+
     const categories = this.ds.categories();
     const childIds = categories
       .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
-    
+
     return this.ds.products()
       .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
@@ -1987,13 +1839,13 @@ export class HomeCategoryShowcaseRowComponent {
     const price = isDealer
       ? p.dealer_price || p.sale_price || p.mrp
       : p.sale_price || p.mrp;
-      
+
     const hasVariants = p.variants && p.variants.length > 0;
     const formatted = Number(price).toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
-    
+
     const prefix = hasVariants ? 'From ' : '';
     return `${prefix}Rs. ${formatted}`;
   }

@@ -15,11 +15,12 @@ import { catchError } from "rxjs/operators";
 import { of, firstValueFrom } from "rxjs";
 import { SettingsService } from "../../../../core/services/settings.service";
 import { environment } from "../../../../../environments/environment";
+import { SupportRequestDialogComponent } from "../support-request-dialog/support-request-dialog.component";
 
 @Component({
   selector: "app-customer-order-details",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, SupportRequestDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./order-details.html",
 })
@@ -34,6 +35,45 @@ export class CustomerOrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal("");
+
+  showSupportDialog = signal(false);
+  selectedSupportType = signal('Return');
+
+  deliveredDate = computed(() => {
+    const ord = this.order();
+    if (!ord) return null;
+    const deliveredLog = ord.statusHistory?.find(
+      (h: any) => h.status.toLowerCase() === 'delivered'
+    );
+    if (deliveredLog) {
+      return new Date(deliveredLog.createdAt);
+    }
+    if (ord.status && ord.status.toLowerCase() === 'delivered') {
+      return new Date(ord.updatedAt || ord.createdAt);
+    }
+    return null;
+  });
+
+  isReturnEligible = computed(() => {
+    const delDate = this.deliveredDate();
+    if (!delDate) return false;
+    const windowDays = this.settingsService.supportSettings()?.returnWindowDays || 10;
+    const elapsedMs = Date.now() - delDate.getTime();
+    return elapsedMs <= windowDays * 24 * 60 * 60 * 1000;
+  });
+
+  isRefundEligible = computed(() => {
+    const delDate = this.deliveredDate();
+    if (!delDate) return false;
+    const windowDays = this.settingsService.supportSettings()?.refundWindowDays || 10;
+    const elapsedMs = Date.now() - delDate.getTime();
+    return elapsedMs <= windowDays * 24 * 60 * 60 * 1000;
+  });
+
+  openSupportDialog(type: string) {
+    this.selectedSupportType.set(type);
+    this.showSupportDialog.set(true);
+  }
 
   customerName = computed(() => {
     const ord = this.order();

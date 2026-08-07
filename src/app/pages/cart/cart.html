@@ -412,6 +412,18 @@
             </div>
 
             <div
+              class="flex justify-between items-start text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            >
+              <div>
+                <span>Subtotal</span>
+                <span class="block text-[10px] text-neutral-400 font-normal">Incl. 18% GST & taxes</span>
+              </div>
+              <span class="font-bold text-neutral-900 dark:text-white"
+                >{{ ds.cartSubtotal() | currency:'INR':'symbol':'1.0-0' }}</span
+              >
+            </div>
+
+            <div
               class="flex justify-between text-sm font-medium text-emerald-600 dark:text-emerald-400"
             >
               <span>Discount</span>
@@ -453,9 +465,12 @@
           <div
             class="border-t border-neutral-200 dark:border-neutral-800 border-dashed pt-4 flex justify-between items-end"
           >
-            <span class="text-base font-bold text-neutral-900 dark:text-white"
-              >Total Amount</span
-            >
+            <div>
+              <span class="text-base font-bold text-neutral-900 dark:text-white block"
+                >Total Amount</span
+              >
+              <span class="text-[10px] text-neutral-400 font-normal">Incl. 18% GST & taxes</span>
+            </div>
             <span
               class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight"
               >{{ ds.cartGrandTotal() | currency:'INR':'symbol':'1.0-0' }}</span
@@ -492,8 +507,7 @@
             </div>
             @if (ds.isCodEligibleForCheckout()) {
             <p class="text-[11px] font-medium leading-relaxed">
-              Orders up to ₹2,500 are eligible.<br/>
-              Additional COD handling charge of ₹100 will be applied at checkout.
+              Available for orders up to ₹2,500 (+₹100 COD fee at checkout).
             </p>
             } @else if (!ds.areAllProductsCodAvailable()) {
             <p class="text-[11px] font-medium leading-relaxed">

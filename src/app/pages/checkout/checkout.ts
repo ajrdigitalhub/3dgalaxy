@@ -195,11 +195,15 @@ export class CheckoutComponent implements OnInit {
 
   isCodAllowed = computed(() => this.codError() === null);
 
-  codSurcharge = computed(() => {
-    if (this.paymentMethod() !== "COD") return 0;
+  codBaseFee = computed(() => {
     const globalSettings = this.settingsService.shippingSettings() || {};
     const charge = globalSettings.codHandlingCharge !== undefined ? Number(globalSettings.codHandlingCharge) : 100;
     return charge > 0 ? charge : 100;
+  });
+
+  codSurcharge = computed(() => {
+    if (this.paymentMethod() !== "COD") return 0;
+    return this.codBaseFee();
   });
 
   grandTotal = computed(

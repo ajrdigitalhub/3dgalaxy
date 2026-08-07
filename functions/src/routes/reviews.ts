@@ -512,6 +512,96 @@ router.delete("/reviews/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Helper: Extract clean title, comment, and images from review text string
+function extractReviewDetails(rawText: string | null | undefined, defaultTitle = 'Verified Review'): {
+  title: string;
+  comment: string;
+  images: string[];
+  status?: string;
+  adminRemarks?: string | null;
+  helpfulCount?: number;
+} {
+  let title = defaultTitle;
+  let comment = '';
+  let images: string[] = [];
+  let status: string | undefined = undefined;
+  let adminRemarks: string | null = null;
+  let helpfulCount = 0;
+
+  if (!rawText) return { title, comment: '', images };
+
+  let str = String(rawText).trim();
+
+  // Handle up to 3 levels of JSON encoding
+  for (let i = 0; i < 3; i++) {
+    if ((str.startsWith('{') && str.endsWith('}')) || (str.startsWith('[') && str.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(str);
+        if (typeof parsed === 'string') {
+          str = parsed.trim();
+          continue;
+        }
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          if (parsed.title && typeof parsed.title === 'string') title = parsed.title;
+          
+          const rawCmt = parsed.comment || parsed.review || parsed.text || parsed.reviewText || parsed.message || parsed.body;
+          if (rawCmt && typeof rawCmt === 'string') {
+            comment = rawCmt;
+          }
+
+          if (Array.isArray(parsed.images)) {
+            images = parsed.images.filter((img: any) => typeof img === 'string' && img.trim().length > 0);
+          }
+          if (parsed.status && typeof parsed.status === 'string') {
+            status = parsed.status;
+          }
+          if (parsed.adminRemarks || parsed.sellerReply) {
+            adminRemarks = parsed.adminRemarks || parsed.sellerReply;
+          }
+          if (typeof parsed.helpfulCount === 'number') {
+            helpfulCount = parsed.helpfulCount;
+          }
+
+          // If extracted comment itself is JSON, loop again with the comment
+          if (comment && (comment.trim().startsWith('{') || comment.trim().startsWith('['))) {
+            str = comment.trim();
+            continue;
+          }
+          break;
+        }
+      } catch (e) {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  // Fallback if no comment was extracted
+  if (!comment) {
+    const commentMatch = str.match(/"comment"\s*:\s*"([^"]+)"/);
+    if (commentMatch && commentMatch[1]) {
+      comment = commentMatch[1];
+    } else {
+      comment = str;
+    }
+  }
+
+  // Final check: if comment starts with JSON braces, extract text
+  if (comment.trim().startsWith('{') && comment.trim().endsWith('}')) {
+    try {
+      const p = JSON.parse(comment);
+      if (p && typeof p === 'object') {
+        if (p.comment) comment = p.comment;
+        if (p.title) title = p.title;
+        if (Array.isArray(p.images) && images.length === 0) images = p.images;
+      }
+    } catch (e) {}
+  }
+
+  return { title, comment, images, status, adminRemarks, helpfulCount };
+}
+
 router.get("/admin/reviews", authenticateToken, async (req, res) => {
   try {
     const reviews = await prisma.customerReview.findMany({
@@ -521,27 +611,7 @@ router.get("/admin/reviews", authenticateToken, async (req, res) => {
 
     const mapped = await Promise.all(
       reviews.map(async (review: any) => {
-        let title = "Verified Review";
-        let comment = review.reviewText || "";
-        let images: string[] = [];
-        let status = "APPROVED"; // Default fallback status
-        let adminRemarks = null;
-        let helpfulCount = 0;
-
-        let rawText = (review.reviewText || "").trim();
-        if (rawText.startsWith("{") || rawText.startsWith("[")) {
-          try {
-            const parsed = JSON.parse(rawText);
-            if (parsed && typeof parsed === "object") {
-              title = parsed.title || title;
-              comment = parsed.comment || parsed.review || parsed.text || comment;
-              images = Array.isArray(parsed.images) ? parsed.images : [];
-              status = parsed.status || status;
-              adminRemarks = parsed.adminRemarks || parsed.sellerReply || null;
-              helpfulCount = parsed.helpfulCount || 0;
-            }
-          } catch (e) {}
-        }
+        const details = extractReviewDetails(review.reviewText);
 
         const prod = review.product;
         let productImage = null;
@@ -560,6 +630,8 @@ router.get("/admin/reviews", authenticateToken, async (req, res) => {
           ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
           : "Customer";
 
+        const status = (details.status || (review as any).status || "APPROVED").toUpperCase();
+
         return {
           id: review.id,
           productId: review.productId,
@@ -567,17 +639,17 @@ router.get("/admin/reviews", authenticateToken, async (req, res) => {
           productSlug: prod?.slug || review.productId,
           productImage,
           rating: Number(review.rating) || 5,
-          title,
-          comment,
-          images,
-          status: (status || "APPROVED").toUpperCase(),
-          userName,
+          title: details.title,
+          comment: details.comment,
+          images: details.images,
+          status,
+          userName: userName || "Verified Customer",
           userEmail: user?.email || "",
           userMobile: user?.mobile || review.customer?.phone || "",
-          adminRemarks,
+          adminRemarks: details.adminRemarks,
           createdAt: review.createdAt.toISOString(),
           updatedAt: review.updatedAt ? review.updatedAt.toISOString() : review.createdAt.toISOString(),
-          helpfulCount,
+          helpfulCount: details.helpfulCount || 0,
         };
       })
     );
@@ -625,9 +697,15 @@ const handleApprove = async (req: any, res: any) => {
       existingData = { comment: review.reviewText || "" };
     }
     existingData.status = "APPROVED";
+
+    const updatePayload: any = { reviewText: JSON.stringify(existingData) };
+    if ('status' in review) {
+      updatePayload.status = "APPROVED";
+    }
+
     const updated = await prisma.customerReview.update({
       where: { id: reviewId },
-      data: { reviewText: JSON.stringify(existingData) },
+      data: updatePayload,
     });
     await ReviewAggregationService.updateProductRating(review.productId);
     return res.status(200).json({ success: true, message: "Review approved successfully", data: updated });
@@ -654,9 +732,15 @@ const handleReject = async (req: any, res: any) => {
       existingData = { comment: review.reviewText || "" };
     }
     existingData.status = "REJECTED";
+
+    const updatePayload: any = { reviewText: JSON.stringify(existingData) };
+    if ('status' in review) {
+      updatePayload.status = "REJECTED";
+    }
+
     const updated = await prisma.customerReview.update({
       where: { id: reviewId },
-      data: { reviewText: JSON.stringify(existingData) },
+      data: updatePayload,
     });
     await ReviewAggregationService.updateProductRating(review.productId);
     return res.status(200).json({ success: true, message: "Review rejected successfully", data: updated });

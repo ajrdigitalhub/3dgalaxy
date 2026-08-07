@@ -6,6 +6,7 @@ import { getSettingsService } from '../modules/settings/settings.service';
 import { ShippingService } from '../services/shipping.service';
 import { createOrder, restoreInventory } from './order';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
+import { generateNextOrderNumber } from '../utils/orderNumber';
 
 // Helper to validate UUID format
 const isValidUuid = (val: any): boolean => {
@@ -200,7 +201,7 @@ export const createRazorpayOrder = async (req: Request, res: Response) => {
 };
 
 export const processOrderCreation = async (tx: any, payload: any) => {
-  const {
+  let {
     orderId,
     customerId,
     orderNumber,
@@ -225,6 +226,10 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     userId,
     isGuest
   } = payload;
+
+  if (!orderNumber || orderNumber.startsWith('ORD-')) {
+    orderNumber = await generateNextOrderNumber(tx);
+  }
 
   let shippingAddressId: string | null = null;
   let billingAddressId: string | null = null;
@@ -1361,8 +1366,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     const calculatedTotal = (typeof frontendTotal === 'number' && !isNaN(frontendTotal) && frontendTotal > 0)
       ? frontendTotal
       : computedTotal;
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const orderNumber = `ORD-2026-${randomSuffix.toString().padStart(6, '0')}`;
+    const orderNumber = await generateNextOrderNumber(prisma);
 
     const shippingAddressSnapshot = req.body.shippingAddressSnapshot || (typeof shippingAddress === 'object' ? shippingAddress : null);
 

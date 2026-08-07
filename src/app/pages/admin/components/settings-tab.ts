@@ -2737,6 +2737,111 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                       </div>
                     </div>
 
+                    <!-- Service Request Templates Config -->
+                    <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs">
+                      <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+                          <mat-icon class="text-blue-500 text-sm">print</mat-icon>
+                          Service Request Templates
+                        </h3>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                        <!-- Customer Service Request Template Name -->
+                        <div class="space-y-1.5">
+                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Customer Service Request Template Name</span>
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.serviceRequestCustomerTemplateName || 'service_request_customer'"
+                            (input)="setNested('whatsappSettings', 'serviceRequestCustomerTemplateName', $any($event.target).value)"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template name triggered to notify the customer upon quoting request.
+                          </p>
+                          <div class="flex items-center gap-2 mt-1">
+                            <input
+                              type="checkbox"
+                              [checked]="draft().whatsappSettings?.enableServiceRequestCustomerNotifications !== false"
+                              (change)="setNested('whatsappSettings', 'enableServiceRequestCustomerNotifications', $any($event.target).checked)"
+                              class="w-3.5 h-3.5 text-blue-600 cursor-pointer"
+                            />
+                            <span class="text-[9px] font-bold text-zinc-700 dark:text-zinc-300 uppercase">Enable Notification</span>
+                          </div>
+                        </div>
+
+                        <!-- Admin Service Request Template Name -->
+                        <div class="space-y-1.5">
+                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Admin Service Request Template Name</span>
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.serviceRequestAdminTemplateName || 'service_request_admin'"
+                            (input)="setNested('whatsappSettings', 'serviceRequestAdminTemplateName', $any($event.target).value)"
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Template name triggered to alert admins of a new quoting request.
+                          </p>
+                          <div class="flex items-center gap-2 mt-1">
+                            <input
+                              type="checkbox"
+                              [checked]="draft().whatsappSettings?.enableServiceRequestAdminNotifications !== false"
+                              (change)="setNested('whatsappSettings', 'enableServiceRequestAdminNotifications', $any($event.target).checked)"
+                              class="w-3.5 h-3.5 text-blue-600 cursor-pointer"
+                            />
+                            <span class="text-[9px] font-bold text-zinc-700 dark:text-zinc-300 uppercase">Enable Notification</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Sandbox & Preview Tools -->
+                      <div class="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3 text-left">
+                        <span class="block text-[10px] font-black uppercase text-blue-500">Preview & Test Send Sandbox</span>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            (click)="previewServiceTemplate('customer')"
+                            class="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-none shadow-2xs"
+                          >
+                            Preview Customer Template
+                          </button>
+                          <button
+                            type="button"
+                            (click)="previewServiceTemplate('admin')"
+                            class="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-none shadow-2xs"
+                          >
+                            Preview Admin Template
+                          </button>
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                          <input
+                            type="text"
+                            [(ngModel)]="testServiceRecipient"
+                            class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                            placeholder="Test recipient number with prefix (e.g. +919999999999)"
+                          />
+                          <button
+                            type="button"
+                            (click)="sendTestServiceWhatsApp('customer')"
+                            [disabled]="testSendLoading()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs disabled:opacity-50"
+                          >
+                            Test Customer
+                          </button>
+                          <button
+                            type="button"
+                            (click)="sendTestServiceWhatsApp('admin')"
+                            [disabled]="testSendLoading()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs disabled:opacity-50"
+                          >
+                            Test Admin
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Dispatch Rules -->
                     <div
                       class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-2xs"
@@ -2968,7 +3073,8 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                         <select
                           [value]="activeTemplateKey()"
                           (change)="
-                            activeTemplateKey.set($any($event.target).value)
+                            activeTemplateKey.set($any($event.target).value);
+                            serviceTemplatePreviewActive.set(false);
                           "
                           class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                         >
@@ -3391,13 +3497,17 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                             <p
                               class="text-[11px] whitespace-pre-line leading-relaxed"
                             >
-                              {{
-                                getResolvedPreviewText(
-                                  draft().whatsappSettings?.templates?.[
-                                    activeTemplateKey()
-                                  ]?.body
-                                )
-                              }}
+                              @if (serviceTemplatePreviewActive()) {
+                                {{ serviceTemplatePreviewText() }}
+                              } @else {
+                                {{
+                                  getResolvedPreviewText(
+                                    draft().whatsappSettings?.templates?.[
+                                      activeTemplateKey()
+                                    ]?.body
+                                  )
+                                }}
+                              }
                             </p>
 
                             <!-- Footer -->
@@ -3442,6 +3552,121 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                     </div>
                   </div>
                 }
+              </div>
+            }
+
+            <!-- Customer Support -->
+            @if (activeSubTab() === "Customer Support") {
+              <div class="space-y-4 font-sans text-xs">
+                <div>
+                  <h3 class="text-sm font-black uppercase text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                    <mat-icon class="text-blue-500">support_agent</mat-icon>
+                    Return / Refund Request support settings
+                  </h3>
+                  <p class="text-[10px] text-zinc-500 mt-1">Configure parameters for Return/Refund request workflows, customer eligibility windows, and contact methods.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Support WhatsApp Number -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Support WhatsApp Number</span>
+                    <input
+                      type="text"
+                      [value]="draft().supportSettings?.whatsappNumber || ''"
+                      (input)="setNested('supportSettings', 'whatsappNumber', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. +91 9876543210"
+                    />
+                  </div>
+
+                  <!-- Support Email -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Support Email Address</span>
+                    <input
+                      type="email"
+                      [value]="draft().supportSettings?.email || ''"
+                      (input)="setNested('supportSettings', 'email', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. support@3dgalaxy.com"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Business Hours -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Business Hours</span>
+                    <input
+                      type="text"
+                      [value]="draft().supportSettings?.businessHours || ''"
+                      (input)="setNested('supportSettings', 'businessHours', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. 9 AM - 6 PM"
+                    />
+                  </div>
+
+                  <!-- Auto Reply Message -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Auto Reply Message</span>
+                    <input
+                      type="text"
+                      [value]="draft().supportSettings?.autoReply || ''"
+                      (input)="setNested('supportSettings', 'autoReply', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. Thank you for contacting support! We will get back to you shortly."
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Return Policy URL -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Return Policy URL</span>
+                    <input
+                      type="text"
+                      [value]="draft().supportSettings?.returnPolicyUrl || ''"
+                      (input)="setNested('supportSettings', 'returnPolicyUrl', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. /return-policy"
+                    />
+                  </div>
+
+                  <!-- Refund Policy URL -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Refund Policy URL</span>
+                    <input
+                      type="text"
+                      [value]="draft().supportSettings?.refundPolicyUrl || ''"
+                      (input)="setNested('supportSettings', 'refundPolicyUrl', $any($event.target).value)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                      placeholder="e.g. /refund-policy"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Return Window (Days) -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Return Window Eligibility (Days)</span>
+                    <input
+                      type="number"
+                      [value]="draft().supportSettings?.returnWindowDays || 10"
+                      (input)="setNested('supportSettings', 'returnWindowDays', $any($event.target).valueAsNumber)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    />
+                  </div>
+
+                  <!-- Refund Window (Days) -->
+                  <div class="space-y-1 text-left">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Refund Window Eligibility (Days)</span>
+                    <input
+                      type="number"
+                      [value]="draft().supportSettings?.refundWindowDays || 10"
+                      (input)="setNested('supportSettings', 'refundWindowDays', $any($event.target).valueAsNumber)"
+                      class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    />
+                  </div>
+                </div>
               </div>
             }
 
@@ -4903,6 +5128,10 @@ export class AdminSettingsTab {
   testNumber = "";
   testSendLoading = signal<boolean>(false);
 
+  serviceTemplatePreviewActive = signal<boolean>(false);
+  serviceTemplatePreviewText = signal<string>('');
+  testServiceRecipient = "";
+
   toggleWhatsappTrigger(triggerKey: string, checked: boolean) {
     this.draft.update((d) => {
       const ws = d.whatsappSettings ? { ...d.whatsappSettings } : {};
@@ -5036,6 +5265,75 @@ export class AdminSettingsTab {
       });
   }
 
+  previewServiceTemplate(type: 'customer' | 'admin') {
+    this.admin.http
+      .post<any>("/api/admin/whatsapp/preview-service", {
+        templateType: type,
+        customerName: "Jayakumar",
+        trackingId: "ENQ-748920",
+        email: "jayakumar@example.com",
+        mobile: "+919876543210",
+        city: "Bangalore",
+        material: "PLA",
+        color: "Black",
+        remarks: "Print with high resolution"
+      })
+      .subscribe({
+        next: (res) => {
+          if (res && res.success) {
+            this.serviceTemplatePreviewText.set(res.previewText);
+            this.serviceTemplatePreviewActive.set(true);
+            this.toastService.success(`Loaded mock preview for ${type} service request template.`);
+          }
+        },
+        error: (err) => {
+          this.toastService.error(err.error?.error || "Failed to load service template preview");
+        }
+      });
+  }
+
+  sendTestServiceWhatsApp(type: 'customer' | 'admin') {
+    if (!this.testServiceRecipient) {
+      this.toastService.error("Please enter a recipient number to dispatch test");
+      return;
+    }
+
+    this.testSendLoading.set(true);
+    const triggerKey = type === 'customer' ? 'service_request_customer' : 'service_request_admin';
+
+    this.admin.http
+      .post("/api/admin/whatsapp/send", {
+        recipientNumber: this.testServiceRecipient,
+        templateName: triggerKey,
+        parameters: {
+          customerName: "Jayakumar",
+          trackingId: "ENQ-748920",
+          requestDate: new Date().toLocaleDateString('en-IN'),
+          estimatedResponseTime: "24-48 Hours",
+          serviceType: "3D Printing Service",
+          trackUrl: "https://3dgalaxy.co.in/services/track?trk=TRK-748920",
+          mobile: "+919876543210",
+          email: "jayakumar@example.com",
+          city: "Bangalore",
+          fileCount: "2",
+          material: "PLA",
+          color: "Black",
+          remarks: "Print with high resolution",
+          adminPortalUrl: "https://admin.3dgalaxy.in/services/ENQ-748920"
+        }
+      })
+      .subscribe({
+        next: () => {
+          this.toastService.success(`Test Service Request ${type} message queued successfully!`);
+          this.testSendLoading.set(false);
+        },
+        error: (err) => {
+          this.toastService.error(err.error?.error || "Failed to dispatch test service message");
+          this.testSendLoading.set(false);
+        }
+      });
+  }
+
   subTabs = [
     // { name: "General", icon: "settings" },
     { name: "Theme", icon: "palette" },
@@ -5054,6 +5352,7 @@ export class AdminSettingsTab {
     { name: "Social Links", icon: "share" },
     { name: "Email Settings", icon: "email" },
     { name: "WhatsApp Settings", icon: "chat" },
+    { name: "Customer Support", icon: "support_agent" },
     { name: "Recent Purchase Settings", icon: "add_shopping_cart" },
 
     { name: "PWA Settings", icon: "install_mobile" },

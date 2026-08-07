@@ -74,10 +74,12 @@ $stars-shadow-l: generate-stars(40);
   width: 100%;
   display: flex;
   overflow: hidden;
+  background-color: #04010a;
   background: linear-gradient(-45deg, #030008, #0a0314, #020719, #05000a);
   background-size: 400% 400%;
   animation: gradientShift 18s ease infinite;
   z-index: 1;
+  -webkit-tap-highlight-color: transparent;
 }
 
 // Stars background parallax
@@ -453,6 +455,62 @@ $stars-shadow-l: generate-stars(40);
     &::after {
       transform: scaleX(1);
       transform-origin: bottom left;
+    }
+  }
+}
+
+/* Mobile View Flickering Prevention & Performance Optimization */
+@media (max-width: 1024px) {
+  html, body {
+    background-color: #04010a !important;
+  }
+
+  .login-page-container {
+    background-color: #04010a !important;
+    background-image: none !important;
+    animation: none !important;
+  }
+
+  .stars-s,
+  .stars-m,
+  .stars-l,
+  .perspective-grid,
+  .grid-overlay {
+    display: none !important;
+  }
+
+  .nebula-orb {
+    mix-blend-mode: normal !important;
+    filter: blur(80px) !important;
+    opacity: 0.25 !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+
+  .glass-card {
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(12, 10, 24, 0.92) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8) !important;
+
+    &::before {
+      display: none !important;
+    }
+
+    &::after {
+      opacity: 0.3 !important;
+    }
+
+    &:hover {
+      transform: none !important;
+    }
+  }
+
+  .custom-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+
+    &:focus {
+      transform: none !important;
     }
   }
 }

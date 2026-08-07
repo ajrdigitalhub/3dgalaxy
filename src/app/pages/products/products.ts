@@ -49,7 +49,7 @@ export class Products implements OnInit {
   totalProducts = signal<number>(0);
   currentPage = signal<number>(1);
   totalPages = signal<number>(1);
-  itemsPerPage = signal<number>(24);
+  itemsPerPage = signal<number>(15);
   isLoading = signal<boolean>(true);
 
   // Available filters from API response
@@ -185,7 +185,7 @@ export class Products implements OnInit {
 
   syncParamsToSignals(params: any) {
     this.currentPage.set(params["page"] ? parseInt(params["page"], 10) : 1);
-    this.itemsPerPage.set(params["limit"] ? parseInt(params["limit"], 10) : 24);
+    this.itemsPerPage.set(params["limit"] ? parseInt(params["limit"], 10) : 15);
 
     this.activeSearch.set(params["search"] || "");
     this.activeCategory.set(params["category"] || "");

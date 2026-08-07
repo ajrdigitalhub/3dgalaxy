@@ -11,6 +11,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
 import { HttpClient } from "@angular/common/http";
+import { ApiService } from "../../../services/api.service";
 import { firstValueFrom } from "rxjs";
 import { AdminPanel } from "../admin";
 import { ToastService } from "../../../shared/components/toast/toast.service";
@@ -1743,509 +1744,793 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
         </div>
       }
 
-      <!-- ========================= TAB: CATEGORIES ========================= -->
+      <!-- ========================= TAB: CATEGORIES (SHOPIFY COLLECTION STYLE) ========================= -->
       @if (admin.activeTab() === "categories") {
-        <div class="space-y-8">
-          <div class="flex justify-between items-center">
+        <div class="space-y-6 font-sans">
+          
+          <!-- TOP ACTION BAR -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-xs">
             <div>
-              <h1 class="text-xl font-black uppercase font-sans">
-                Taxonomy Tree
-              </h1>
-              <p class="text-xs text-zinc-500">
-                Manage structure taxonomy, parent mappings, SEO attributes, and
-                media.
+              <div class="flex items-center gap-2.5">
+                <h1 class="text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-white font-display">
+                  Taxonomy & Collection Manager
+                </h1>
+                <span class="px-3 py-0.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-mono font-black rounded-full border border-orange-500/20">
+                  {{ admin.ds.categories().length }} Collections
+                </span>
+              </div>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Explore taxonomy hierarchy, view linked collection products, manage SEO metadata and product assignments.
               </p>
             </div>
-            <button
-              (click)="exportCategoriesCsv()"
-              class="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-            >
-              <mat-icon class="text-sm">download</mat-icon>
-              <span>Export CSV</span>
-            </button>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                (click)="openCreateCategoryModal()"
+                class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer border-none shadow-md shadow-orange-500/20 active:scale-95"
+              >
+                <mat-icon class="text-sm">add_circle</mat-icon>
+                <span>New Category</span>
+              </button>
+
+              <button
+                (click)="exportCategoriesCsv()"
+                class="px-3.5 py-2.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-xs"
+              >
+                <mat-icon class="text-sm">download</mat-icon>
+                <span>Export CSV</span>
+              </button>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- TAXONOMY DIRECTORY GRID -->
-            <div
-              class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-4 shadow-sm font-sans lg:col-span-1"
-            >
-              <div
-                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b dark:border-zinc-800 pb-4"
-              >
+          <!-- MAIN 2-COLUMN LAYOUT: 30% LEFT TREE, 70% RIGHT COLLECTION DETAIL -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT PANEL (30% -> lg:col-span-4): TAXONOMY EXPLORER TREE -->
+            <div class="lg:col-span-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 space-y-4 shadow-xs">
+              <div class="flex items-center justify-between border-b dark:border-zinc-800 pb-3">
                 <div>
-                  <h3
-                    class="text-xs font-mono font-black text-zinc-400 uppercase tracking-widest"
-                  >
-                    Active Tree Nodes
+                  <h3 class="text-xs font-mono font-black text-zinc-400 uppercase tracking-widest">
+                    Taxonomy Tree
                   </h3>
-                  <span
-                    class="text-[11px] font-bold text-zinc-450 dark:text-zinc-500"
-                    >{{ admin.ds.categories().length }} Categories</span
-                  >
+                  <span class="text-[11px] font-bold text-zinc-500">
+                    {{ sortedCategories().length }} Categories
+                  </span>
                 </div>
-                <div class="relative w-full sm:w-64">
-                  <mat-icon
-                    class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"
-                    >search</mat-icon
-                  >
-                  <input
-                    type="text"
-                    [value]="categorySearchQuery()"
-                    (input)="categorySearchQuery.set($any($event.target).value)"
-                    placeholder="Search categories..."
-                    class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                  />
-                </div>
+                <button
+                  (click)="openCreateCategoryModal()"
+                  class="text-xs font-bold text-orange-500 hover:underline cursor-pointer flex items-center gap-1 border-none bg-transparent"
+                >
+                  <mat-icon class="text-xs">add</mat-icon>
+                  <span>Add New</span>
+                </button>
               </div>
 
-              <div
-                class="overflow-x-auto no-scrollbar max-h-[600px] overflow-y-auto pr-1"
-              >
-                <table class="w-full text-left text-xs whitespace-nowrap">
-                  <thead>
-                    <tr
-                      class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800"
-                    >
-                      <th class="py-2.5 text-left w-20 px-2">Actions</th>
-                      <th class="py-2.5 text-center w-16">Count</th>
-                      <th class="py-2.5">Category Name</th>
-                      <th class="py-2.5 text-right pr-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    @for (c of sortedCategories(); track c.id) {
-                      <tr
-                        class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100"
-                      >
-                        <!-- 1. ACTIONS ON THE LEFT -->
-                        <td class="py-3 text-left px-2">
-                          <div class="inline-flex items-center gap-1">
-                            <button
-                              (click)="admin.startCategoryEdit(c)"
-                              title="Edit Category"
-                              class="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg cursor-pointer bg-transparent border-none transition-colors"
-                            >
-                              <mat-icon class="text-sm font-bold w-4 h-4 flex items-center justify-center"
-                                >edit</mat-icon
-                              >
-                            </button>
-                            <button
-                              (click)="admin.deleteCategory(c.id)"
-                              title="Delete Category"
-                              class="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg cursor-pointer bg-transparent border-none transition-colors"
-                            >
-                              <mat-icon class="text-sm font-bold w-4 h-4 flex items-center justify-center"
-                                >delete_outline</mat-icon
-                              >
-                            </button>
-                          </div>
-                        </td>
+              <!-- Search input -->
+              <div class="relative">
+                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                <input
+                  type="text"
+                  [value]="categorySearchQuery()"
+                  (input)="categorySearchQuery.set($any($event.target).value)"
+                  placeholder="Search taxonomy..."
+                  class="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                />
+                @if (categorySearchQuery()) {
+                  <button (click)="categorySearchQuery.set('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 border-none bg-transparent cursor-pointer">
+                    <mat-icon class="text-sm">close</mat-icon>
+                  </button>
+                }
+              </div>
 
-                        <!-- 2. PRODUCT COUNT -->
-                        <td
-                          class="py-3 text-center font-mono font-extrabold text-zinc-600 dark:text-zinc-400"
-                        >
+              <!-- Category List Tree -->
+              <div class="max-h-[650px] overflow-y-auto pr-1 space-y-1.5 no-scrollbar">
+                @for (c of sortedCategories(); track c.id) {
+                  <div
+                    (click)="selectCategory(c.id)"
+                    (dragover)="onCategoryDragOver($event, c.id)"
+                    (dragleave)="onCategoryDragLeave($event, c.id)"
+                    (drop)="onCategoryDrop($event, c)"
+                    class="group p-2.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-2 relative"
+                    [ngClass]="{
+                      'border-2 border-dashed border-orange-500 bg-orange-500/20 text-orange-600 dark:text-orange-400 scale-[1.02] shadow-lg z-10': (draggedOverCategoryId() === c.id),
+                      'bg-orange-500/10 border-orange-500/30 text-orange-600 dark:text-orange-400 shadow-xs font-black': (selectedCategory()?.id === c.id && draggedOverCategoryId() !== c.id),
+                      'bg-zinc-50/50 dark:bg-zinc-950/40 border-zinc-200/60 dark:border-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200': (selectedCategory()?.id !== c.id && draggedOverCategoryId() !== c.id)
+                    }"
+                    [style.padding-left.px]="10 + (c.level * 14)"
+                  >
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                      @if (c.level > 0) {
+                        <span class="text-zinc-400 font-mono text-[10px] shrink-0">└─</span>
+                      }
+                      <div class="h-7 w-7 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shrink-0 flex items-center justify-center">
+                        @if (c.image) {
+                          <img [src]="c.image" [alt]="c.name" class="h-full w-full object-contain" />
+                        } @else {
+                          <mat-icon class="text-xs text-orange-500">{{ c.icon || 'folder' }}</mat-icon>
+                        }
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-xs font-extrabold truncate uppercase font-display leading-tight">
+                          {{ c.name }}
+                        </p>
+                        @if (c.level > 1) {
+                          <p class="text-[9px] text-zinc-400 truncate font-mono">{{ c.path }}</p>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      @if (draggedOverCategoryId() === c.id) {
+                        <span class="px-2 py-0.5 bg-orange-500 text-white font-mono text-[9px] font-black rounded-full shadow-md animate-pulse">
+                          Drop to Move
+                        </span>
+                      } @else {
+                        <span class="px-2 py-0.5 bg-zinc-200/60 dark:bg-zinc-800 font-mono text-[10px] font-black rounded-full text-zinc-600 dark:text-zinc-400">
                           {{ getProductCount(c.id) }}
-                        </td>
+                        </span>
 
-                        <!-- 3. CATEGORY NAME & TREE -->
-                        <td class="py-3 font-semibold">
-                          <div
-                            class="flex items-center gap-2"
-                            [style.padding-left.px]="c.level * 16"
-                          >
-                            @if (c.level > 0) {
-                              <span
-                                class="text-zinc-350 dark:text-zinc-700 font-mono"
-                                >└─</span
-                              >
-                            } @else {
-                              <mat-icon class="text-blue-500 text-base shrink-0"
-                                >folder</mat-icon
-                              >
-                            }
-                            <div>
-                              <p
-                                class="font-extrabold uppercase text-zinc-900 dark:text-white"
-                              >
-                                {{ c.name }}
-                              </p>
-                              @if (c.level > 1) {
-                                <p
-                                  class="text-[8px] text-zinc-400 font-mono tracking-tight"
-                                >
-                                  {{ c.path }}
-                                </p>
-                              }
-                            </div>
-                          </div>
-                        </td>
-
-                        <!-- 4. STATUS -->
-                        <td class="py-3 text-right pr-2">
-                          <div class="inline-flex items-center justify-end gap-1">
-                            <span
-                              [class]="
-                                c.isActive !== false
-                                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/15'
-                                  : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500'
-                              "
-                              class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
-                            >
-                              {{ c.isActive !== false ? "ACTIVE" : "DRAFT" }}
-                            </span>
-                            @if (c.isFeatured) {
-                              <span
-                                class="bg-amber-500/10 text-amber-500 border border-amber-500/15 px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
-                              >
-                                FEATURED
-                              </span>
-                            }
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                    @if (sortedCategories().length === 0) {
-                      <tr>
-                        <td
-                          colspan="4"
-                          class="py-8 text-center text-zinc-400 font-bold text-xs"
+                        <span
+                          [class]="c.isActive !== false ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500'"
+                          class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
                         >
-                          No categories found matching your query.
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                          {{ c.isActive !== false ? 'ACT' : 'DFT' }}
+                        </span>
+                      }
+
+                      <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          (click)="$event.stopPropagation(); openEditCategoryModal(c)"
+                          title="Edit Category Details"
+                          class="p-1 hover:bg-blue-500/10 text-blue-500 rounded-lg border-none bg-transparent cursor-pointer"
+                        >
+                          <mat-icon class="text-xs">edit</mat-icon>
+                        </button>
+                        <button
+                          (click)="$event.stopPropagation(); admin.deleteCategory(c.id)"
+                          title="Delete Category"
+                          class="p-1 hover:bg-rose-500/10 text-rose-500 rounded-lg border-none bg-transparent cursor-pointer"
+                        >
+                          <mat-icon class="text-xs">delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                }
+                @if (sortedCategories().length === 0) {
+                  <div class="py-8 text-center text-zinc-400 text-xs font-bold">
+                    No categories found.
+                  </div>
+                }
               </div>
             </div>
 
-            <!-- ROOT ADDITION MODULE -->
-            <div
-              class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-3xl space-y-6 shadow-sm relative overflow-hidden font-sans"
-            >
-              <div class="relative space-y-4 font-sans">
-                <div
-                  class="flex justify-between items-center pb-2 border-b dark:border-zinc-800"
-                >
-                  <h3
-                    class="text-sm font-black uppercase text-zinc-900 dark:text-white leading-none"
-                  >
-                    {{
-                      admin.editingCategory()
-                        ? "Update Segment Node"
-                        : "Initialize Segment Node"
-                    }}
-                  </h3>
-                  @if (admin.editingCategory()) {
-                    <button
-                      (click)="admin.cancelCategoryEdit()"
-                      class="text-[9px] font-black uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-zinc-650 dark:text-zinc-350 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                    >
-                      New Segment
-                    </button>
+            <!-- RIGHT PANEL (70% -> lg:col-span-8): SHOPIFY COLLECTION VIEW -->
+            <div class="lg:col-span-8 space-y-6">
+
+              @if (selectedCategory(); as cat) {
+                <!-- CATEGORY SUMMARY CARD -->
+                <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4 shadow-xs">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b dark:border-zinc-800 pb-4">
+                    <div class="flex items-center gap-4">
+                      <div class="h-16 w-16 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-xs">
+                        @if (cat.image) {
+                          <img [src]="cat.image" [alt]="cat.name" class="h-full w-full object-contain" />
+                        } @else {
+                          <mat-icon class="text-2xl text-orange-500">{{ cat.icon || 'folder' }}</mat-icon>
+                        }
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <h2 class="text-xl font-black uppercase text-zinc-900 dark:text-white font-display tracking-tight">
+                            {{ cat.name }}
+                          </h2>
+                          <span
+                            [class]="cat.isActive !== false ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500'"
+                            class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border"
+                          >
+                            {{ cat.isActive !== false ? 'Active Collection' : 'Draft' }}
+                          </span>
+                          @if (cat.isFeatured) {
+                            <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[9px] font-black uppercase">
+                              ★ Featured
+                            </span>
+                          }
+                        </div>
+                        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
+                          Slug: /category/{{ cat.slug }} &middot; Path: {{ getCategoryPath(cat.id) }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2">
+                      <button
+                        (click)="openEditCategoryModal(cat)"
+                        class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
+                      >
+                        <mat-icon class="text-sm">tune</mat-icon>
+                        <span>Edit Settings</span>
+                      </button>
+
+                      <button
+                        (click)="isAssignProductsModalOpen.set(true)"
+                        class="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
+                      >
+                        <mat-icon class="text-sm">add_link</mat-icon>
+                        <span>Assign Products</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (cat.description) {
+                    <div class="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed line-clamp-2" [innerHTML]="cat.description"></div>
                   }
                 </div>
 
-                <div class="space-y-4">
-                  <div class="space-y-1">
-                    <span
-                      class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1"
-                      >Name / Label *</span
-                    >
-                    <input
-                      type="text"
-                      [value]="admin.newCatName()"
-                      (input)="admin.newCatName.set($any($event.target).value)"
-                      placeholder="e.g. FDM Accessories"
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                    />
+                <!-- COLLECTION METRICS CARDS -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Total Products</span>
+                    <span class="text-base font-black text-zinc-900 dark:text-white font-mono">{{ collectionMetrics().total }}</span>
+                  </div>
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-emerald-500 uppercase tracking-wider block">Active</span>
+                    <span class="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ collectionMetrics().active }}</span>
+                  </div>
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-amber-500 uppercase tracking-wider block">Out of Stock</span>
+                    <span class="text-base font-black text-amber-600 dark:text-amber-400 font-mono">{{ collectionMetrics().outOfStock }}</span>
+                  </div>
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Draft</span>
+                    <span class="text-base font-black text-zinc-500 font-mono">{{ collectionMetrics().draft }}</span>
+                  </div>
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-purple-500 uppercase tracking-wider block">Featured</span>
+                    <span class="text-base font-black text-purple-600 dark:text-purple-400 font-mono">{{ collectionMetrics().featured }}</span>
+                  </div>
+                  <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-center shadow-xs">
+                    <span class="text-[9px] font-bold text-amber-400 uppercase tracking-wider block">Avg Rating</span>
+                    <span class="text-base font-black text-amber-500 font-mono">{{ collectionMetrics().avgRating }} ★</span>
+                  </div>
+                </div>
+
+                <!-- COLLECTION PRODUCTS CATALOG TABLE -->
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 space-y-4 shadow-xs">
+                  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b dark:border-zinc-800 pb-3">
+                    <div>
+                      <h3 class="text-xs font-mono font-black text-zinc-400 uppercase tracking-widest">
+                        Products in Category ({{ productsInSelectedCategory().length }})
+                      </h3>
+                      <span class="text-[11px] text-zinc-500">Live products belonging to {{ cat.name }}</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                      <div class="relative flex-1 sm:w-64">
+                        <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                        <input
+                          type="text"
+                          [value]="productSearchQueryInCollection()"
+                          (input)="productSearchQueryInCollection.set($any($event.target).value)"
+                          placeholder="Search in collection..."
+                          class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
+                      <button
+                        (click)="isAssignProductsModalOpen.set(true)"
+                        class="px-3.5 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-xl text-xs font-bold uppercase transition-colors border-none cursor-pointer flex items-center gap-1 shrink-0"
+                      >
+                        <mat-icon class="text-sm">add</mat-icon>
+                        <span>Assign</span>
+                      </button>
+                    </div>
                   </div>
 
-                  <div class="space-y-1 relative">
-                    <span
-                      class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1"
-                      >Parent Segment Node (Leave empty if root)</span
-                    >
+                  <!-- PRODUCTS TABLE -->
+                  <div class="overflow-x-auto no-scrollbar max-h-[500px] overflow-y-auto">
+                    <table class="w-full text-left text-xs whitespace-nowrap">
+                      <thead>
+                        <tr class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+                          <th class="py-2.5 px-3">Product</th>
+                          <th class="py-2.5">Brand</th>
+                          <th class="py-2.5">SKU</th>
+                          <th class="py-2.5">Price</th>
+                          <th class="py-2.5 text-center">Stock</th>
+                          <th class="py-2.5 text-center">Status</th>
+                          <th class="py-2.5 text-right pr-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        @for (p of productsInSelectedCategory(); track p.id) {
+                          <tr
+                            draggable="true"
+                            (dragstart)="onProductDragStart($event, p)"
+                            (dragend)="onProductDragEnd($event)"
+                            class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors cursor-grab active:cursor-grabbing group"
+                            [class.opacity-40]="draggedProduct()?.id === p.id"
+                          >
+                            <td class="py-3 px-3">
+                              <div class="flex items-center gap-2.5">
+                                <mat-icon class="text-zinc-300 group-hover:text-orange-500 text-sm cursor-grab shrink-0 transition-colors" title="Drag & drop product onto a category in taxonomy tree">drag_indicator</mat-icon>
+                                <img
+                                  [src]="p.primaryImage || p.thumbnail || p.images?.[0] || 'https://picsum.photos/100/100'"
+                                  [alt]="p.name"
+                                  class="h-10 w-10 rounded-xl object-contain border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 shrink-0"
+                                />
+                                <div>
+                                  <a [href]="'/product/' + p.slug" target="_blank" class="font-extrabold text-zinc-900 dark:text-white hover:text-orange-500 transition-colors">
+                                    {{ p.name }}
+                                  </a>
+                                  @if (p.variants && p.variants.length > 0) {
+                                    <span class="text-[9px] font-mono text-zinc-400 block">{{ p.variants.length }} Variants</span>
+                                  }
+                                </div>
+                              </div>
+                            </td>
+
+                            <td class="py-3 font-semibold text-zinc-600 dark:text-zinc-400">
+                              {{ p.brand || '3D Galaxy' }}
+                            </td>
+
+                            <td class="py-3 font-mono text-[10px] text-zinc-400">
+                              {{ p.sku || 'N/A' }}
+                            </td>
+
+                            <td class="py-3 font-mono font-black text-zinc-900 dark:text-white">
+                              ₹{{ (p.sale_price || p.salePrice || p.mrp || 0) | number:'1.0-0' }}
+                              @if (p.mrp > (p.sale_price || p.salePrice || 0)) {
+                                <span class="text-[10px] text-zinc-400 line-through font-normal ml-1">₹{{ p.mrp | number:'1.0-0' }}</span>
+                              }
+                            </td>
+
+                            <td class="py-3 text-center">
+                              <span
+                                [class]="p.stock === 0 ? 'bg-rose-500/10 text-rose-500' : (p.stock <= 5 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500')"
+                                class="px-2 py-0.5 rounded-full text-[9px] font-black font-mono"
+                              >
+                                {{ p.stock === 0 ? 'Out of Stock' : p.stock + ' left' }}
+                              </span>
+                            </td>
+
+                            <td class="py-3 text-center">
+                              <span
+                                [class]="p.isActive !== false ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-300 dark:bg-zinc-800 text-zinc-500'"
+                                class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase"
+                              >
+                                {{ p.isActive !== false ? 'ACTIVE' : 'DRAFT' }}
+                              </span>
+                            </td>
+
+                            <td class="py-3 text-right pr-3">
+                              <div class="inline-flex items-center gap-1">
+                                <button
+                                  (click)="admin.startProductEdit(p)"
+                                  title="Edit Product Details"
+                                  class="p-1.5 hover:bg-blue-500/10 text-blue-500 rounded-lg border-none bg-transparent cursor-pointer"
+                                >
+                                  <mat-icon class="text-xs">edit</mat-icon>
+                                </button>
+                                <button
+                                  (click)="removeProductFromCategory(p)"
+                                  title="Remove from Collection"
+                                  class="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg border-none bg-transparent cursor-pointer"
+                                >
+                                  <mat-icon class="text-xs">link_off</mat-icon>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        }
+                        @if (productsInSelectedCategory().length === 0) {
+                          <tr>
+                            <td colspan="7" class="py-12 text-center text-zinc-400 font-bold text-xs space-y-2">
+                              <mat-icon class="text-2xl text-zinc-300">inventory_2</mat-icon>
+                              <p class="block">No products currently assigned to this category.</p>
+                              <button
+                                (click)="isAssignProductsModalOpen.set(true)"
+                                class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold uppercase transition-colors border-none cursor-pointer"
+                              >
+                                Assign Products Now
+                              </button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+            </div>
+
+          </div>
+
+          <!-- CATEGORY EDIT MODAL POPUP -->
+          @if (isCategoryModalOpen()) {
+            <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+              <div class="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+                
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                  <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                      <mat-icon>{{ admin.editingCategory() ? 'edit' : 'add_circle' }}</mat-icon>
+                    </div>
+                    <div>
+                      <h2 class="text-base font-black uppercase text-zinc-900 dark:text-white font-display">
+                        {{ admin.editingCategory() ? 'Edit Category Settings' : 'Create New Category' }}
+                      </h2>
+                      <p class="text-[10px] text-zinc-400 font-mono">Configure details, SEO tags, media, and rules</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
                     <button
-                      type="button"
-                      (click)="
-                        editorCatDropdownOpen.set(!editorCatDropdownOpen())
-                      "
-                      class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-left text-zinc-900 dark:text-white flex justify-between items-center cursor-pointer"
+                      (click)="admin.saveCategory(); isCategoryModalOpen.set(false)"
+                      [disabled]="admin.isSavingCategory()"
+                      class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border-none cursor-pointer shadow-md disabled:opacity-50"
                     >
-                      <span>{{
-                        getCategoryPath(admin.newCatParentId()) ||
-                          "None (Top-Level Category)"
-                      }}</span>
-                      <mat-icon class="text-zinc-400 text-sm"
-                        >keyboard_arrow_down</mat-icon
-                      >
+                      <mat-icon class="text-sm">check</mat-icon>
+                      <span>Save Changes</span>
                     </button>
+                    <button
+                      (click)="isCategoryModalOpen.set(false); admin.cancelCategoryEdit()"
+                      class="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center cursor-pointer border-none"
+                    >
+                      <mat-icon class="text-sm">close</mat-icon>
+                    </button>
+                  </div>
+                </div>
 
-                    @if (editorCatDropdownOpen()) {
-                      <div
-                        class="absolute z-50 w-full mt-1.5 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl space-y-2 animate-fadeIn max-h-[300px] overflow-hidden flex flex-col"
-                      >
-                        <div
-                          class="relative flex items-center bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1"
-                        >
-                          <mat-icon
-                            class="text-zinc-400 text-sm shrink-0 mr-1.5"
-                            >search</mat-icon
-                          >
-                          <input
-                            type="text"
-                            [value]="editorCatSearchQuery()"
-                            (input)="
-                              editorCatSearchQuery.set(
-                                $any($event.target).value
-                              )
-                            "
-                            placeholder="Search parent by name..."
-                            class="w-full bg-transparent border-none outline-none text-xs font-bold text-zinc-900 dark:text-white py-1"
-                          />
-                        </div>
+                <!-- Modal Tabs Bar -->
+                <div class="flex items-center gap-2 px-6 py-2 bg-zinc-100/80 dark:bg-zinc-800/80 border-b dark:border-zinc-800 overflow-x-auto no-scrollbar">
+                  <button
+                    (click)="categoryModalTab.set('general')"
+                    [class]="categoryModalTab() === 'general' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">tune</mat-icon>
+                    <span>General</span>
+                  </button>
 
-                        <div
-                          class="flex-1 overflow-y-auto max-h-[200px] space-y-1 no-scrollbar"
+                  <button
+                    (click)="categoryModalTab.set('description')"
+                    [class]="categoryModalTab() === 'description' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">description</mat-icon>
+                    <span>Description</span>
+                  </button>
+
+                  <button
+                    (click)="categoryModalTab.set('media')"
+                    [class]="categoryModalTab() === 'media' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">image</mat-icon>
+                    <span>Media & Banner</span>
+                  </button>
+
+                  <button
+                    (click)="categoryModalTab.set('seo')"
+                    [class]="categoryModalTab() === 'seo' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">travel_explore</mat-icon>
+                    <span>SEO Meta</span>
+                  </button>
+
+                  <button
+                    (click)="categoryModalTab.set('products')"
+                    [class]="categoryModalTab() === 'products' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">inventory_2</mat-icon>
+                    <span>Products ({{ productsInSelectedCategory().length }})</span>
+                  </button>
+
+                  <button
+                    (click)="categoryModalTab.set('advanced')"
+                    [class]="categoryModalTab() === 'advanced' ? 'bg-white dark:bg-zinc-900 text-orange-500 font-black shadow-xs' : 'text-zinc-600 dark:text-zinc-400 font-bold'"
+                    class="px-4 py-2 rounded-xl text-xs uppercase transition-all cursor-pointer border-none flex items-center gap-1.5"
+                  >
+                    <mat-icon class="text-sm">settings</mat-icon>
+                    <span>Advanced</span>
+                  </button>
+                </div>
+
+                <!-- Modal Content Body -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                  
+                  <!-- TAB 1: GENERAL -->
+                  @if (categoryModalTab() === 'general') {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Category Name *</label>
+                        <input
+                          type="text"
+                          [value]="admin.newCatName()"
+                          (input)="admin.newCatName.set($any($event.target).value)"
+                          placeholder="e.g. 3D Printers"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Parent Category</label>
+                        <select
+                          [value]="admin.newCatParentId()"
+                          (change)="admin.newCatParentId.set($any($event.target).value)"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                         >
-                          <button
-                            type="button"
-                            (click)="
-                              admin.newCatParentId.set('');
-                              editorCatDropdownOpen.set(false);
-                              editorCatSearchQuery.set('')
-                            "
-                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-550 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-none bg-transparent"
-                          >
-                            None (Top-Level Category)
-                          </button>
+                          <option value="">None (Top-Level Category)</option>
                           @for (c of admin.ds.categories(); track c.id) {
                             @if (c.id !== admin.editingCategory()?.id) {
-                              @if (
-                                !editorCatSearchQuery() ||
-                                getCategoryPath(c.id)
-                                  .toLowerCase()
-                                  .includes(
-                                    editorCatSearchQuery().toLowerCase()
-                                  )
-                              ) {
-                                <button
-                                  type="button"
-                                  (click)="
-                                    admin.newCatParentId.set(c.id);
-                                    editorCatDropdownOpen.set(false);
-                                    editorCatSearchQuery.set('')
-                                  "
-                                  [class.bg-blue-50]="
-                                    admin.newCatParentId() === c.id
-                                  "
-                                  [class.text-blue-500]="
-                                    admin.newCatParentId() === c.id
-                                  "
-                                  class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex flex-col border-none bg-transparent"
-                                >
-                                  <span
-                                    class="font-black text-zinc-900 dark:text-white"
-                                    >{{ c.name }}</span
-                                  >
-                                  <span
-                                    class="text-[9px] text-zinc-450 mt-0.5"
-                                    >{{ getCategoryPath(c.id) }}</span
-                                  >
-                                </button>
-                              }
+                              <option [value]="c.id">{{ c.name }}</option>
                             }
                           }
-                        </div>
+                        </select>
                       </div>
-                    }
-                  </div>
 
-                  <div class="space-y-1">
-                    <app-rich-text-editor
-                      label="Segment Description"
-                      placeholder="Short explanatory copy..."
-                      [value]="admin.newCatDesc()"
-                      (valueChange)="admin.newCatDesc.set($event)"
-                    ></app-rich-text-editor>
-                  </div>
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Grid Icon (Material Icon)</label>
+                        <input
+                          type="text"
+                          [value]="admin.catIcon()"
+                          (input)="admin.catIcon.set($any($event.target).value)"
+                          placeholder="folder"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
 
-                  <!-- Extra Shopify Layout details -->
-                  <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-1">
+                      <div class="flex items-center gap-6 pt-6">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            [checked]="admin.catIsActive()"
+                            (change)="admin.catIsActive.set($any($event.target).checked)"
+                            class="rounded text-orange-500 h-4 w-4"
+                          />
+                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Active Status</span>
+                        </label>
+
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            [checked]="admin.catIsFeatured()"
+                            (change)="admin.catIsFeatured.set($any($event.target).checked)"
+                            class="rounded text-orange-500 h-4 w-4"
+                          />
+                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Featured Collection</span>
+                        </label>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- TAB 2: DESCRIPTION -->
+                  @if (categoryModalTab() === 'description') {
+                    <div class="space-y-4">
+                      <app-rich-text-editor
+                        label="Collection Description"
+                        placeholder="Write a descriptive summary for this category..."
+                        [value]="admin.newCatDesc()"
+                        (valueChange)="admin.newCatDesc.set($event)"
+                      ></app-rich-text-editor>
+                    </div>
+                  }
+
+                  <!-- TAB 3: MEDIA -->
+                  @if (categoryModalTab() === 'media') {
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <app-image-picker
-                        label="Image Grid"
+                        label="Category Thumbnail / Image Grid"
                         [value]="admin.catImage()"
                         (valueChange)="admin.catImage.set($event)"
                       ></app-image-picker>
-                    </div>
-                    <div class="space-y-1">
+
                       <app-image-picker
-                        label="Banner Overlay"
+                        label="Banner Overlay Image"
                         [value]="admin.catBanner()"
                         (valueChange)="admin.catBanner.set($event)"
                       ></app-image-picker>
                     </div>
-                  </div>
+                  }
 
-                  <div
-                    class="grid grid-cols-3 gap-4 text-xs text-zinc-900 dark:text-white"
-                  >
-                    <div class="space-y-1 col-span-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1"
-                        >Grid Icon</span
-                      >
-                      <input
-                        type="text"
-                        [value]="admin.catIcon()"
-                        (input)="admin.catIcon.set($any($event.target).value)"
-                        placeholder="folder"
-                        class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-lg text-xs outline-none text-zinc-900 dark:text-white font-bold"
-                      />
-                    </div>
-                    <div class="flex items-center gap-1.5 pt-4">
-                      <input
-                        type="checkbox"
-                        [checked]="admin.catIsActive()"
-                        (change)="
-                          admin.catIsActive.set($any($event.target).checked)
-                        "
-                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
-                      />
-                      <span
-                        class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest"
-                        >Active</span
-                      >
-                    </div>
-                    <div class="flex items-center gap-1.5 pt-4">
-                      <input
-                        type="checkbox"
-                        [checked]="admin.catIsFeatured()"
-                        (change)="
-                          admin.catIsFeatured.set($any($event.target).checked)
-                        "
-                        class="rounded text-blue-600 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 h-4 w-4"
-                      />
-                      <span
-                        class="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest"
-                        >Featured</span
-                      >
-                    </div>
-                  </div>
-
-                  <!-- Category SEO tags -->
-                  <div
-                    class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2"
-                  >
-                    <span
-                      class="text-[9px] font-black uppercase text-zinc-450 dark:text-zinc-500 tracking-widest block"
-                      >Taxonomy Meta Tags (Shopify Standard)</span
-                    >
-                    <div class="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        [value]="admin.catSeoTitle()"
-                        (input)="
-                          admin.catSeoTitle.set($any($event.target).value)
-                        "
-                        placeholder="SEO Meta Title"
-                        class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[10px] outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
-                      />
-                      <input
-                        type="text"
-                        [value]="admin.catSeoDescription()"
-                        (input)="
-                          admin.catSeoDescription.set($any($event.target).value)
-                        "
-                        placeholder="SEO Meta Desc"
-                        class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[10px] outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Shipping Configuration -->
-                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
-                    <span class="text-[9px] font-black uppercase text-zinc-450 dark:text-zinc-500 tracking-widest block flex items-center gap-1">
-                      <mat-icon class="text-xs">local_shipping</mat-icon>
-                      Category Shipping Configuration
-                    </span>
-                    <div class="grid grid-cols-2 gap-3">
-                      <div>
-                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Category Shipping Charge (₹)</span>
-                        <input
-                          type="number"
-                          [value]="admin.catShippingCharge() ?? ''"
-                          (input)="admin.catShippingCharge.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
-                          placeholder="e.g. 300"
-                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Est. Delivery (Days)</span>
+                  <!-- TAB 4: SEO META -->
+                  @if (categoryModalTab() === 'seo') {
+                    <div class="space-y-4">
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">SEO Meta Title</label>
                         <input
                           type="text"
-                          [value]="admin.catEstimatedDeliveryDaysInput()"
-                          (input)="admin.catEstimatedDeliveryDaysInput.set($any($event.target).value)"
-                          placeholder="e.g. 3"
-                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
+                          [value]="admin.catSeoTitle()"
+                          (input)="admin.catSeoTitle.set($any($event.target).value)"
+                          placeholder="e.g. Best 3D Printers & Accessories | 3D Galaxy"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                         />
-                        @if (admin.catEstimatedDeliveryDaysPreview()) {
-                          <span class="block text-[10px] text-emerald-500 font-bold mt-1">
-                            Preview: {{ admin.catEstimatedDeliveryDaysPreview() }}
-                          </span>
+                      </div>
+
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">SEO Meta Description</label>
+                        <textarea
+                          [value]="admin.catSeoDescription()"
+                          (input)="admin.catSeoDescription.set($any($event.target).value)"
+                          rows="3"
+                          placeholder="Summary for search engines..."
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-sans"
+                        ></textarea>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- TAB 5: PRODUCTS LIST IN MODAL -->
+                  @if (categoryModalTab() === 'products') {
+                    <div class="space-y-4">
+                      <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-black uppercase text-zinc-900 dark:text-white">Assigned Products ({{ productsInSelectedCategory().length }})</h4>
+                        <button (click)="isAssignProductsModalOpen.set(true)" class="px-3 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold uppercase border-none cursor-pointer">
+                          + Assign Products
+                        </button>
+                      </div>
+
+                      <div class="space-y-2 max-h-60 overflow-y-auto no-scrollbar border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3">
+                        @for (p of productsInSelectedCategory(); track p.id) {
+                          <div class="flex items-center justify-between p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                            <span class="text-xs font-bold text-zinc-900 dark:text-white">{{ p.name }}</span>
+                            <button (click)="removeProductFromCategory(p)" class="text-xs text-rose-500 font-bold border-none bg-transparent cursor-pointer">Remove</button>
+                          </div>
                         }
-                        @if (admin.catEstimatedDeliveryDaysError()) {
-                          <span class="block text-[10px] text-red-500 font-semibold mt-1">
-                            {{ admin.catEstimatedDeliveryDaysError() }}
-                          </span>
+                        @if (productsInSelectedCategory().length === 0) {
+                          <p class="text-xs text-zinc-400 text-center py-4">No products in this category yet.</p>
                         }
                       </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 pt-1">
-                      <div>
-                        <span class="block text-[9px] font-bold text-zinc-400 mb-1">Shipping Region</span>
-                        <input
-                          type="text"
-                          [value]="admin.catShippingRegion()"
-                          (input)="admin.catShippingRegion.set($any($event.target).value)"
-                          placeholder="e.g. Domestic / All"
-                          class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                        />
+                  }
+
+                  <!-- TAB 6: ADVANCED -->
+                  @if (categoryModalTab() === 'advanced') {
+                    <div class="space-y-4">
+                      <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Shipping Charge (₹)</label>
+                          <input
+                            type="number"
+                            [value]="admin.catShippingCharge() ?? ''"
+                            (input)="admin.catShippingCharge.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
+                            placeholder="e.g. 100"
+                            class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                          />
+                        </div>
+
+                        <div class="space-y-1">
+                          <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Shipping Region</label>
+                          <input
+                            type="text"
+                            [value]="admin.catShippingRegion()"
+                            (input)="admin.catShippingRegion.set($any($event.target).value)"
+                            placeholder="e.g. All India"
+                            class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                          />
+                        </div>
                       </div>
-                      <div class="flex items-center pt-4">
-                        <label class="flex items-center gap-2 cursor-pointer select-none">
+
+                      <div class="pt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             [checked]="admin.catFreeShippingEligible()"
                             (change)="admin.catFreeShippingEligible.set($any($event.target).checked)"
-                            class="w-4 h-4 text-blue-600 rounded border-zinc-300"
+                            class="rounded text-orange-500 h-4 w-4"
                           />
-                          <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Free Shipping Eligible</span>
+                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Free Shipping Eligible</span>
                         </label>
                       </div>
                     </div>
+                  }
+
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex items-center justify-between px-6 py-4 border-t dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                  <button (click)="isCategoryModalOpen.set(false); admin.cancelCategoryEdit()" class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-800 uppercase border-none bg-transparent cursor-pointer">
+                    Cancel
+                  </button>
+                  <button
+                    (click)="admin.saveCategory(); isCategoryModalOpen.set(false)"
+                    [disabled]="admin.isSavingCategory()"
+                    class="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    Save Collection
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          }
+
+          <!-- PRODUCT ASSIGNMENT PICKER MODAL -->
+          @if (isAssignProductsModalOpen()) {
+            <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+              <div class="relative w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+                
+                <div class="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                  <div>
+                    <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-white">
+                      Assign Products to {{ selectedCategory()?.name }}
+                    </h3>
+                    <p class="text-[10px] text-zinc-400 font-mono">Select products from catalog to link to this category</p>
+                  </div>
+                  <button (click)="isAssignProductsModalOpen.set(false)" class="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 flex items-center justify-center cursor-pointer border-none">
+                    <mat-icon class="text-sm">close</mat-icon>
+                  </button>
+                </div>
+
+                <div class="p-4 border-b dark:border-zinc-800">
+                  <div class="relative">
+                    <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                    <input
+                      type="text"
+                      [value]="productSearchQueryForAssign()"
+                      (input)="productSearchQueryForAssign.set($any($event.target).value)"
+                      placeholder="Search unassigned products by name, SKU..."
+                      class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                    />
                   </div>
                 </div>
 
-                <div class="pt-2">
+                <div class="flex-1 overflow-y-auto p-4 space-y-2 max-h-[400px] no-scrollbar">
+                  @for (p of productsNotInSelectedCategory(); track p.id) {
+                    <label
+                      class="flex items-center justify-between p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors"
+                      [ngClass]="selectedAssignProductIds().has(p.id) ? 'bg-orange-500/5 border-orange-500/30' : ''"
+                    >
+                      <div class="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          [checked]="selectedAssignProductIds().has(p.id)"
+                          (change)="toggleAssignProductSelection(p.id)"
+                          class="rounded text-orange-500 h-4 w-4"
+                        />
+                        <img
+                          [src]="p.primaryImage || p.thumbnail || p.images?.[0] || 'https://picsum.photos/100/100'"
+                          [alt]="p.name"
+                          class="h-9 w-9 rounded-xl object-contain border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 shrink-0"
+                        />
+                        <div>
+                          <p class="text-xs font-extrabold text-zinc-900 dark:text-white leading-tight">{{ p.name }}</p>
+                          <span class="text-[10px] text-zinc-400 font-mono">{{ p.sku || 'No SKU' }} &middot; ₹{{ p.sale_price || p.salePrice || p.mrp }}</span>
+                        </div>
+                      </div>
+
+                      <span class="text-[10px] font-mono font-bold text-zinc-400">
+                        {{ p.stock }} in stock
+                      </span>
+                    </label>
+                  }
+                  @if (productsNotInSelectedCategory().length === 0) {
+                    <div class="py-8 text-center text-zinc-400 text-xs font-bold">
+                      All products in store are already assigned to this category!
+                    </div>
+                  }
+                </div>
+
+                <div class="flex items-center justify-between px-6 py-4 border-t dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                  <span class="text-xs font-mono font-bold text-zinc-500">
+                    {{ selectedAssignProductIds().size }} product(s) selected
+                  </span>
                   <button
-                    (click)="admin.saveCategory()"
-                    class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg transition-colors cursor-pointer border-none font-mono"
+                    (click)="assignSelectedProductsToCategory()"
+                    [disabled]="selectedAssignProductIds().size === 0"
+                    class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer shadow-md disabled:opacity-50"
                   >
-                    {{
-                      admin.editingCategory()
-                        ? "Publish Node Update"
-                        : "Program Node Segment"
-                    }}
+                    Assign Selected Products
                   </button>
                 </div>
+
               </div>
             </div>
-          </div>
+          }
+
         </div>
       }
 
@@ -2781,7 +3066,299 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
 export class AdminCatalogTab {
   toastService = inject(ToastService);
   http = inject(HttpClient);
+  api = inject(ApiService);
   @Input({ required: true }) admin!: AdminPanel;
+
+  // --- SHOPIFY COLLECTION MANAGEMENT SIGNALS & HELPERS ---
+  draggedProduct = signal<any | null>(null);
+  draggedOverCategoryId = signal<string | null>(null);
+
+  selectedCategoryId = signal<string | null>(null);
+  isCategoryModalOpen = signal<boolean>(false);
+  categoryModalTab = signal<'general' | 'description' | 'media' | 'seo' | 'products' | 'advanced'>('general');
+  isAssignProductsModalOpen = signal<boolean>(false);
+
+  productSearchQueryInCollection = signal<string>('');
+  productSearchQueryForAssign = signal<string>('');
+  selectedAssignProductIds = signal<Set<string>>(new Set());
+
+  // Drag and Drop Event Handlers
+  onProductDragStart(event: DragEvent, product: any) {
+    this.draggedProduct.set(product);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', product.id);
+    }
+  }
+
+  onProductDragEnd(event: DragEvent) {
+    this.draggedProduct.set(null);
+    this.draggedOverCategoryId.set(null);
+  }
+
+  onCategoryDragOver(event: DragEvent, categoryId: string) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    if (this.draggedOverCategoryId() !== categoryId) {
+      this.draggedOverCategoryId.set(categoryId);
+    }
+  }
+
+  onCategoryDragLeave(event: DragEvent, categoryId: string) {
+    event.preventDefault();
+    if (this.draggedOverCategoryId() === categoryId) {
+      this.draggedOverCategoryId.set(null);
+    }
+  }
+
+  async onCategoryDrop(event: DragEvent, targetCategory: any) {
+    event.preventDefault();
+    this.draggedOverCategoryId.set(null);
+    const p = this.draggedProduct();
+    if (!p || !targetCategory) return;
+
+    const currentCatId = p.categoryId || p.category_id;
+    if (currentCatId === targetCategory.id) {
+      this.toastService.info(`"${p.name}" is already in "${targetCategory.name}".`);
+      this.draggedProduct.set(null);
+      return;
+    }
+
+    try {
+      await firstValueFrom(
+        this.api.put(`/products/${p.id}`, {
+          categoryId: targetCategory.id,
+          category_id: targetCategory.id,
+          images: p.images || (p.primaryImage ? [p.primaryImage] : undefined),
+        })
+      );
+      this.admin.ds.products.update((list) =>
+        list.map((item) => (item.id === p.id ? ({ ...item, categoryId: targetCategory.id, category_id: targetCategory.id } as any) : item))
+      );
+      this.toastService.success(`Moved "${p.name}" to "${targetCategory.name}" collection!`);
+    } catch (err: any) {
+      console.error('[DragDropCategory] Error:', err);
+      this.toastService.error(err?.error?.message || 'Failed to update product category.');
+    } finally {
+      this.draggedProduct.set(null);
+    }
+  }
+
+  categorySearchQuery = signal<string>('');
+  editorCatDropdownOpen = signal<boolean>(false);
+  editorCatSearchQuery = signal<string>('');
+
+  selectedCategory = computed(() => {
+    const cats = this.admin.ds.categories();
+    if (cats.length === 0) return null;
+    const currentId = this.selectedCategoryId();
+    if (currentId) {
+      const match = cats.find((c) => c.id === currentId);
+      if (match) return match;
+    }
+    return cats[0] || null;
+  });
+
+  selectCategory(catId: string) {
+    this.selectedCategoryId.set(catId);
+    this.productSearchQueryInCollection.set('');
+  }
+
+  openCreateCategoryModal() {
+    this.admin.cancelCategoryEdit();
+    this.categoryModalTab.set('general');
+    this.isCategoryModalOpen.set(true);
+  }
+
+  openEditCategoryModal(cat: any) {
+    this.admin.startCategoryEdit(cat);
+    this.selectedCategoryId.set(cat.id);
+    this.categoryModalTab.set('general');
+    this.isCategoryModalOpen.set(true);
+  }
+
+  productsInSelectedCategory = computed(() => {
+    const cat = this.selectedCategory();
+    if (!cat) return [];
+    const catId = cat.id;
+
+    const allProds = this.admin.ds.products();
+    const q = this.productSearchQueryInCollection().toLowerCase().trim();
+
+    let list = allProds.filter((p) => {
+      const pCatId = p.categoryId || p.category_id || p.category?.id || p.primaryCategory?.id;
+      const inPrimary = pCatId === catId;
+      const inCategories = p.categories?.some((c: any) => c.id === catId);
+      return inPrimary || inCategories;
+    });
+
+    if (q) {
+      list = list.filter((p) =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.sku && p.sku.toLowerCase().includes(q)) ||
+        (p.brand && typeof p.brand === 'string' && p.brand.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  });
+
+  collectionMetrics = computed(() => {
+    const prods = this.productsInSelectedCategory();
+    const total = prods.length;
+    const active = prods.filter((p) => p.isActive !== false).length;
+    const outOfStock = prods.filter((p) => p.stock === 0 || (p as any).stockStatus === 'OUT_OF_STOCK').length;
+    const draft = prods.filter((p) => p.isActive === false).length;
+    const featured = prods.filter((p) => p.featured || p.isFeatured).length;
+
+    let totalRating = 0;
+    let ratingCount = 0;
+    for (const p of prods) {
+      const r = Number(p.avgRating || p.averageRating || p.rating || 0);
+      if (r > 0) {
+        totalRating += r;
+        ratingCount++;
+      }
+    }
+    const avgRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(1) : '5.0';
+
+    return { total, active, outOfStock, draft, featured, avgRating };
+  });
+
+  productsNotInSelectedCategory = computed(() => {
+    const cat = this.selectedCategory();
+    if (!cat) return [];
+    const catId = cat.id;
+
+    const allProds = this.admin.ds.products();
+    const q = this.productSearchQueryForAssign().toLowerCase().trim();
+
+    let list = allProds.filter((p) => {
+      const pCatId = p.categoryId || p.category_id || p.category?.id || p.primaryCategory?.id;
+      const inPrimary = pCatId === catId;
+      const inCategories = p.categories?.some((c: any) => c.id === catId);
+      return !inPrimary && !inCategories;
+    });
+
+    if (q) {
+      list = list.filter((p) =>
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.sku && p.sku.toLowerCase().includes(q)) ||
+        (p.brand && typeof p.brand === 'string' && p.brand.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  });
+
+  toggleAssignProductSelection(productId: string) {
+    const set = new Set(this.selectedAssignProductIds());
+    if (set.has(productId)) {
+      set.delete(productId);
+    } else {
+      set.add(productId);
+    }
+    this.selectedAssignProductIds.set(set);
+  }
+
+  async assignSelectedProductsToCategory() {
+    const cat = this.selectedCategory();
+    if (!cat) return;
+    const catId = cat.id;
+
+    const productIds = Array.from(this.selectedAssignProductIds());
+    if (productIds.length === 0) {
+      this.toastService.warning('Please select at least one product to assign.');
+      return;
+    }
+
+    try {
+      for (const pId of productIds) {
+        await firstValueFrom(this.api.put(`/products/${pId}`, { categoryId: catId, category_id: catId }));
+        this.admin.ds.products.update((list) =>
+          list.map((p) => (p.id === pId ? { ...p, categoryId: catId, category_id: catId } : p))
+        );
+      }
+      this.toastService.success(`Assigned ${productIds.length} product(s) to "${cat.name}" successfully!`);
+      this.selectedAssignProductIds.set(new Set());
+      this.isAssignProductsModalOpen.set(false);
+    } catch (err: any) {
+      console.error('[AssignProducts] Error:', err);
+      this.toastService.error(err?.error?.message || 'Failed to assign products to category');
+    }
+  }
+
+  async removeProductFromCategory(product: any) {
+    const cat = this.selectedCategory();
+    if (!cat) return;
+
+    if (!confirm(`Remove "${product.name}" from "${cat.name}" collection?`)) return;
+
+    try {
+      await firstValueFrom(this.api.put(`/products/${product.id}`, { categoryId: '', category_id: '' }));
+      this.admin.ds.products.update((list) =>
+        list.map((p) => (p.id === product.id ? ({ ...p, categoryId: '', category_id: '' } as any) : p))
+      );
+      this.toastService.info(`Removed "${product.name}" from category.`);
+    } catch (err: any) {
+      console.error('[RemoveProductCategory] Error:', err);
+      this.toastService.error(err?.error?.message || 'Failed to remove product from category');
+    }
+  }
+
+  sortedCategories = computed(() => {
+    const cats = this.admin.ds.categories();
+    const q = this.categorySearchQuery().toLowerCase().trim();
+
+    const buildTree = (parentId: string | null = null, level = 0, path = ''): any[] => {
+      let result: any[] = [];
+      const children = cats.filter((c) => (c.parent_id || c.parentId || null) === parentId);
+
+      for (const child of children) {
+        const currentPath = path ? `${path} > ${child.name}` : child.name;
+        const matchesSearch = !q || child.name.toLowerCase().includes(q) || currentPath.toLowerCase().includes(q);
+
+        const subChildren = buildTree(child.id, level + 1, currentPath);
+
+        if (matchesSearch || subChildren.length > 0) {
+          result.push({
+            ...child,
+            level,
+            path: currentPath,
+            hasChildren: subChildren.length > 0,
+          });
+          result = result.concat(subChildren);
+        }
+      }
+      return result;
+    };
+
+    return buildTree();
+  });
+
+  getProductCount(categoryId: string): number {
+    return (this.admin.ds.products() || []).filter(
+      (p) => p.category_id === categoryId || p.categoryId === categoryId,
+    ).length;
+  }
+
+  getCategoryPath(categoryId: string | null): string {
+    if (!categoryId) return "";
+    const cats = this.admin.ds.categories();
+    let current = cats.find((c) => c.id === categoryId);
+    if (!current) return "";
+
+    const path: string[] = [current.name];
+    while (current?.parent_id || current?.parentId) {
+      const parentId: string | null = current.parent_id || current.parentId || null;
+      current = cats.find((c) => c.id === parentId);
+      if (current) path.unshift(current.name);
+      else break;
+    }
+    return path.join(" > ");
+  }
 
   onCategorySelectionChange(event: { categoryIds: string[]; primaryCategoryId: string | null }) {
     this.admin.pCategoryIds.set(event.categoryIds);
@@ -2847,60 +3424,9 @@ export class AdminCatalogTab {
 
   activeVariantForImages = signal<number | null>(null);
 
-  // Search signals for product and categories
+  // Search signals for product
   pCatSearchQuery = signal<string>("");
   pCatDropdownOpen = signal<boolean>(false);
-  editorCatSearchQuery = signal<string>("");
-  editorCatDropdownOpen = signal<boolean>(false);
-  categorySearchQuery = signal<string>("");
-
-  sortedCategories = computed(() => {
-    const cats = this.admin.ds.categories() || [];
-    const query = this.categorySearchQuery().toLowerCase().trim();
-
-    const list = cats.map((c) => ({
-      ...c,
-      path: this.getCategoryPath(c.id),
-      level: this.getCategoryLevel(c.id),
-    }));
-
-    const filtered = query
-      ? list.filter(
-          (c) =>
-            c.name.toLowerCase().includes(query) ||
-            c.path.toLowerCase().includes(query),
-        )
-      : list;
-
-    return filtered.sort((a, b) => a.path.localeCompare(b.path));
-  });
-
-  getCategoryLevel(catId: string | null): number {
-    if (!catId) return 0;
-    const cats = this.admin.ds.categories();
-    const cat = cats.find((c) => c.id === catId);
-    if (!cat) return 0;
-    const parentId = cat.parent_id || cat.parentId;
-    return parentId ? 1 + this.getCategoryLevel(parentId) : 0;
-  }
-
-  getProductCount(catId: string): number {
-    return (this.admin.ds.products() || []).filter(
-      (p) => p.category_id === catId || p.categoryId === catId,
-    ).length;
-  }
-
-  getCategoryPath(catId: string | null): string {
-    if (!catId) return "";
-    const cats = this.admin.ds.categories();
-    const cat = cats.find((c) => c.id === catId);
-    if (!cat) return "";
-    const parentId = cat.parent_id || cat.parentId;
-    if (parentId) {
-      return `${this.getCategoryPath(parentId)} > ${cat.name}`;
-    }
-    return cat.name;
-  }
 
   openVariantImageModal(variantIdx: number) {
     this.activeVariantForImages.set(variantIdx);

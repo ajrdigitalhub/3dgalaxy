@@ -34,37 +34,100 @@ export interface AdminReviewItem {
   helpfulCount?: number;
 }
 
+// Client-side helper to clean and extract title, comment, and images if stringified JSON is passed
+function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
+  let title = item.title || 'Verified Review';
+  let comment = item.comment || '';
+  let images: string[] = Array.isArray(item.images) ? [...item.images] : [];
+
+  const rawComment = (item.comment || '').trim();
+  const rawTitle = (item.title || '').trim();
+
+  // Helper to parse JSON string
+  const parseJsonStr = (str: string) => {
+    if ((str.startsWith('{') && str.endsWith('}')) || (str.startsWith('[') && str.endsWith(']'))) {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // 1. Try parsing comment
+  let p = parseJsonStr(rawComment) || parseJsonStr(rawTitle);
+  if (p && typeof p === 'object' && !Array.isArray(p)) {
+    if (p.title && typeof p.title === 'string') title = p.title;
+    if (p.comment || p.review || p.text || p.message) {
+      comment = p.comment || p.review || p.text || p.message;
+    }
+    if (Array.isArray(p.images) && p.images.length > 0) {
+      images = p.images.filter((img: any) => typeof img === 'string' && img.length > 0);
+    }
+  }
+
+  // 2. If comment is still a JSON string, try 2nd level extraction
+  if (comment && (comment.trim().startsWith('{') || comment.trim().startsWith('['))) {
+    const p2 = parseJsonStr(comment.trim());
+    if (p2 && typeof p2 === 'object') {
+      if (p2.comment || p2.review || p2.text) {
+        comment = p2.comment || p2.review || p2.text;
+      }
+      if (p2.title && typeof p2.title === 'string') title = p2.title;
+      if (Array.isArray(p2.images) && p2.images.length > 0 && images.length === 0) {
+        images = p2.images;
+      }
+    }
+  }
+
+  // Fallback if comment is stringified JSON containing regex key
+  if (comment.includes('"comment"')) {
+    const match = comment.match(/"comment"\s*:\s*"([^"]+)"/);
+    if (match && match[1]) {
+      comment = match[1];
+    }
+  }
+
+  return {
+    ...item,
+    title: title || 'Verified Review',
+    comment: comment || 'No comment text provided.',
+    images: images.filter((img) => typeof img === 'string' && img.trim().length > 0),
+  };
+}
+
 @Component({
   selector: 'app-admin-reviews-tab',
   standalone: true,
   imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="space-y-8 animate-fadeIn animate-duration-300 font-sans">
+    <div class="space-y-6 animate-fadeIn animate-duration-300 font-sans pb-12">
       
       <!-- PAGE HEADER -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs">
         <div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-2xl font-black uppercase tracking-tight text-zinc-900 dark:text-white font-display">
-              Review Management
+              Customer Reviews
             </h1>
-            <span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-mono font-bold rounded-full border border-blue-500/20">
-              {{ reviews().length }} Total Reviews
+            <span class="px-3 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-mono font-bold rounded-full border border-blue-500/20">
+              {{ reviews().length }} Total
             </span>
             @if (pendingCount() > 0) {
-              <span class="px-2.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-mono font-bold rounded-full border border-amber-500/30 animate-pulse flex items-center gap-1">
-                <mat-icon class="text-xs">hourglass_top</mat-icon>
-                {{ pendingCount() }} Pending Approval
+              <span class="px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-mono font-bold rounded-full border border-amber-500/30 animate-pulse flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>
+                {{ pendingCount() }} Action Required
               </span>
             }
           </div>
           <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Moderate customer product feedback. Approve, reject, or delete submitted reviews across the catalog.
+            Review, moderate, and approve customer ratings and submitted product feedback across your store.
           </p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
           <button
             type="button"
             (click)="fetchReviews()"
@@ -86,57 +149,57 @@ export interface AdminReviewItem {
         </div>
       </div>
 
-      <!-- METRICS DASHBOARD SUMMARY CARDS -->
+      <!-- SUMMARY METRIC CARDS -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <!-- Total Reviews -->
-        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3 shadow-xs">
-          <div class="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-            <mat-icon>rate_review</mat-icon>
+        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3.5 shadow-xs">
+          <div class="h-11 w-11 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+            <mat-icon class="scale-110">rate_review</mat-icon>
           </div>
           <div>
-            <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Total Feedback</span>
-            <span class="text-lg font-black text-zinc-900 dark:text-white">{{ reviews().length }}</span>
+            <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Total Reviews</span>
+            <span class="text-xl font-black text-zinc-900 dark:text-white font-mono">{{ reviews().length }}</span>
           </div>
         </div>
 
         <!-- Pending Moderation -->
-        <div class="p-4 bg-white dark:bg-zinc-900 border border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 rounded-2xl flex items-center gap-3 shadow-xs relative overflow-hidden">
+        <div class="p-4 bg-white dark:bg-zinc-900 border border-amber-500/30 dark:border-amber-500/30 bg-amber-500/5 rounded-2xl flex items-center gap-3.5 shadow-xs relative overflow-hidden">
           @if (pendingCount() > 0) {
             <div class="absolute top-0 right-0 h-2 w-2 bg-amber-500 rounded-full animate-ping m-2"></div>
           }
-          <div class="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <mat-icon>hourglass_empty</mat-icon>
+          <div class="h-11 w-11 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <mat-icon class="scale-110">hourglass_empty</mat-icon>
           </div>
           <div>
             <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider block">Pending Approval</span>
-            <span class="text-lg font-black text-amber-600 dark:text-amber-400">{{ pendingCount() }}</span>
+            <span class="text-xl font-black text-amber-600 dark:text-amber-400 font-mono">{{ pendingCount() }}</span>
           </div>
         </div>
 
         <!-- Approved -->
-        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3 shadow-xs">
-          <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-            <mat-icon>check_circle</mat-icon>
+        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3.5 shadow-xs">
+          <div class="h-11 w-11 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+            <mat-icon class="scale-110">check_circle</mat-icon>
           </div>
           <div>
-            <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Approved / Live</span>
-            <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">{{ approvedCount() }}</span>
+            <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Approved & Live</span>
+            <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ approvedCount() }}</span>
           </div>
         </div>
 
         <!-- Rejected -->
-        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3 shadow-xs">
-          <div class="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
-            <mat-icon>cancel</mat-icon>
+        <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl flex items-center gap-3.5 shadow-xs">
+          <div class="h-11 w-11 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+            <mat-icon class="scale-110">cancel</mat-icon>
           </div>
           <div>
             <span class="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Rejected</span>
-            <span class="text-lg font-black text-rose-600 dark:text-rose-400">{{ rejectedCount() }}</span>
+            <span class="text-xl font-black text-rose-600 dark:text-rose-400 font-mono">{{ rejectedCount() }}</span>
           </div>
         </div>
       </div>
 
-      <!-- CONTROLS & FILTER BAR -->
+      <!-- FILTER & SEARCH TOOLBAR -->
       <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 shadow-xs">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
           
@@ -146,8 +209,8 @@ export interface AdminReviewItem {
               type="button"
               (click)="selectedStatusFilter.set('ALL')"
               [class]="selectedStatusFilter() === 'ALL'
-                ? 'px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-lg text-xs font-black uppercase shadow-xs'
-                : 'px-3 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase'"
+                ? 'px-3.5 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-lg text-xs font-black uppercase shadow-xs'
+                : 'px-3.5 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase cursor-pointer'"
             >
               All ({{ reviews().length }})
             </button>
@@ -155,20 +218,20 @@ export interface AdminReviewItem {
               type="button"
               (click)="selectedStatusFilter.set('PENDING')"
               [class]="selectedStatusFilter() === 'PENDING'
-                ? 'px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-black uppercase shadow-xs'
-                : 'px-3 py-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg text-xs font-bold uppercase flex items-center gap-1'"
+                ? 'px-3.5 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-black uppercase shadow-xs flex items-center gap-1.5'
+                : 'px-3.5 py-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-lg text-xs font-bold uppercase flex items-center gap-1.5 cursor-pointer'"
             >
               <span>Pending</span>
               @if (pendingCount() > 0) {
-                <span class="px-1.5 py-0.2 bg-amber-700 text-white text-[9px] font-black rounded-full">{{ pendingCount() }}</span>
+                <span class="px-1.5 py-0.2 bg-amber-700 text-white text-[9px] font-black rounded-full font-mono">{{ pendingCount() }}</span>
               }
             </button>
             <button
               type="button"
               (click)="selectedStatusFilter.set('APPROVED')"
               [class]="selectedStatusFilter() === 'APPROVED'
-                ? 'px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase shadow-xs'
-                : 'px-3 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase'"
+                ? 'px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black uppercase shadow-xs'
+                : 'px-3.5 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase cursor-pointer'"
             >
               Approved ({{ approvedCount() }})
             </button>
@@ -176,14 +239,14 @@ export interface AdminReviewItem {
               type="button"
               (click)="selectedStatusFilter.set('REJECTED')"
               [class]="selectedStatusFilter() === 'REJECTED'
-                ? 'px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-black uppercase shadow-xs'
-                : 'px-3 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase'"
+                ? 'px-3.5 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-black uppercase shadow-xs'
+                : 'px-3.5 py-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase cursor-pointer'"
             >
               Rejected ({{ rejectedCount() }})
             </button>
           </div>
 
-          <!-- Search & Rating Filters -->
+          <!-- Search & Rating Dropdowns -->
           <div class="flex items-center gap-3 w-full md:w-auto">
             <!-- Search Box -->
             <div class="relative flex-1 md:w-64">
@@ -192,13 +255,13 @@ export interface AdminReviewItem {
                 type="text"
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
-                placeholder="Search product, customer, text..."
-                class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 transition-colors"
+                placeholder="Search product, customer, title..."
+                class="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 transition-colors"
               />
               @if (searchQuery()) {
                 <button
                   (click)="searchQuery.set('')"
-                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
                 >
                   <mat-icon class="text-sm">close</mat-icon>
                 </button>
@@ -209,7 +272,7 @@ export interface AdminReviewItem {
             <select
               [ngModel]="ratingFilter()"
               (ngModelChange)="ratingFilter.set($event)"
-              class="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-700 dark:text-zinc-300"
+              class="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-700 dark:text-zinc-300 cursor-pointer"
             >
               <option value="ALL">All Ratings</option>
               <option value="5">5 ★ Only</option>
@@ -222,27 +285,27 @@ export interface AdminReviewItem {
         </div>
       </div>
 
-      <!-- REVIEWS LISTING TABLE / CARDS VIEW -->
+      <!-- REVIEWS LISTING -->
       @if (loading()) {
-        <div class="p-12 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3">
-          <div class="h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Loading Customer Reviews...</p>
+        <div class="p-16 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-3 shadow-xs">
+          <div class="h-9 w-9 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Loading Customer Feedback...</p>
         </div>
       } @else if (filteredReviews().length === 0) {
-        <div class="p-16 text-center bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl space-y-4">
-          <div class="h-16 w-16 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto text-zinc-400">
+        <div class="p-16 text-center bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl space-y-4 shadow-xs">
+          <div class="h-16 w-16 bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl flex items-center justify-center mx-auto text-zinc-400">
             <mat-icon class="text-3xl">rate_review</mat-icon>
           </div>
           <div>
             <h3 class="text-base font-black uppercase text-zinc-900 dark:text-white">No Reviews Found</h3>
-            <p class="text-xs text-zinc-400 mt-1">No customer reviews match your search filter criteria.</p>
+            <p class="text-xs text-zinc-400 mt-1 max-w-md mx-auto">No customer reviews match your active filter criteria.</p>
           </div>
           @if (searchQuery() || selectedStatusFilter() !== 'ALL' || ratingFilter() !== 'ALL') {
             <button
               (click)="searchQuery.set(''); selectedStatusFilter.set('ALL'); ratingFilter.set('ALL')"
-              class="px-4 py-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-xl text-xs font-bold uppercase transition-colors border-none cursor-pointer"
+              class="px-4 py-2 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 rounded-xl text-xs font-bold uppercase transition-colors border-none cursor-pointer"
             >
-              Reset Filters
+              Reset All Filters
             </button>
           }
         </div>
@@ -250,27 +313,47 @@ export interface AdminReviewItem {
         <div class="space-y-4">
           @for (review of filteredReviews(); track review.id) {
             <div
-              class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-3xl space-y-4 transition-all shadow-xs"
-              [ngClass]="{'border-amber-500/40 bg-amber-500/5': review.status === 'PENDING'}"
+              class="p-5 bg-white dark:bg-zinc-900 border rounded-3xl space-y-4 transition-all shadow-xs hover:shadow-md"
+              [ngClass]="{
+                'border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/5': review.status === 'PENDING',
+                'border-zinc-200/80 dark:border-zinc-800': review.status !== 'PENDING'
+              }"
             >
-              <!-- Card Top Row: Product Info & Review Status Badge -->
+              <!-- 1. TOP HEADER ROW: Product Info & Status Badge -->
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800/80">
+                
+                <!-- Product Details -->
                 <div class="flex items-center gap-3">
-                  <img
-                    [src]="review.productImage"
-                    [alt]="review.productName"
-                    class="h-12 w-12 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800 shrink-0 bg-zinc-100 dark:bg-zinc-950"
-                  />
+                  <div class="h-12 w-12 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                    <img
+                      [src]="review.productImage"
+                      [alt]="review.productName"
+                      class="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                   <div>
-                    <h3 class="text-xs font-black uppercase tracking-tight text-zinc-900 dark:text-white font-display">
-                      {{ review.productName }}
-                    </h3>
-                    <p class="text-[10px] text-zinc-400 font-mono">ID: {{ review.productId }}</p>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-xs font-black uppercase tracking-tight text-zinc-900 dark:text-white font-display">
+                        {{ review.productName }}
+                      </h3>
+                      @if (review.productSlug) {
+                        <a
+                          [href]="'/product/' + review.productSlug"
+                          target="_blank"
+                          class="text-zinc-400 hover:text-orange-500 transition-colors flex items-center"
+                          title="View Product Page"
+                        >
+                          <mat-icon class="text-xs">open_in_new</mat-icon>
+                        </a>
+                      }
+                    </div>
+                    <span class="text-[10px] text-zinc-400 font-mono">Product ID: {{ review.productId }}</span>
                   </div>
                 </div>
 
-                <!-- Status Badge -->
-                <div class="flex items-center gap-2">
+                <!-- Review Status Badge & Date -->
+                <div class="flex items-center gap-2.5">
                   @if (review.status === 'APPROVED') {
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-emerald-500/20">
                       <mat-icon class="text-xs">check_circle</mat-icon>
@@ -291,18 +374,23 @@ export interface AdminReviewItem {
                 </div>
               </div>
 
-              <!-- Customer Info & Star Rating -->
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2.5">
-                  <div class="h-8 w-8 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-black uppercase shadow-xs">
+              <!-- 2. CUSTOMER INFO & STAR RATING ROW -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                
+                <!-- Reviewer User Profile -->
+                <div class="flex items-center gap-3">
+                  <div class="h-9 w-9 rounded-full bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center text-xs font-black uppercase shadow-xs shrink-0 font-mono">
                     {{ review.userName.slice(0, 2) }}
                   </div>
                   <div>
                     <div class="flex items-center gap-2">
                       <span class="text-xs font-black text-zinc-900 dark:text-white">{{ review.userName }}</span>
-                      <span class="px-1.5 py-0.2 bg-blue-500/10 text-blue-500 text-[9px] font-mono font-bold rounded-md">Verified Purchaser</span>
+                      <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold rounded-md flex items-center gap-1 border border-emerald-500/20">
+                        <mat-icon class="text-[10px] w-2.5 h-2.5 flex items-center justify-center">verified</mat-icon>
+                        Verified Purchaser
+                      </span>
                     </div>
-                    <div class="flex items-center gap-3 text-[10px] text-zinc-400">
+                    <div class="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5">
                       @if (review.userEmail) { <span>{{ review.userEmail }}</span> }
                       @if (review.userMobile) { <span>• {{ review.userMobile }}</span> }
                     </div>
@@ -310,44 +398,63 @@ export interface AdminReviewItem {
                 </div>
 
                 <!-- Star Rating Display -->
-                <div class="flex items-center gap-1">
-                  @for (star of [1, 2, 3, 4, 5]; track star) {
-                    <mat-icon
-                      class="text-base"
-                      [class.text-amber-400]="star <= review.rating"
-                      [class.text-zinc-200]="star > review.rating"
-                      [class.dark:text-zinc-800]="star > review.rating"
-                    >
-                      {{ star <= review.rating ? 'star' : 'star_border' }}
-                    </mat-icon>
-                  }
-                  <span class="text-xs font-black text-amber-500 ml-1 font-mono">{{ review.rating }}.0</span>
+                <div class="flex items-center gap-1 bg-amber-500/5 dark:bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                  <div class="flex items-center text-amber-400">
+                    @for (star of [1, 2, 3, 4, 5]; track star) {
+                      <mat-icon
+                        class="text-sm scale-90"
+                        [class.text-amber-400]="star <= review.rating"
+                        [class.text-zinc-200]="star > review.rating"
+                        [class.dark:text-zinc-800]="star > review.rating"
+                      >
+                        {{ star <= review.rating ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    }
+                  </div>
+                  <span class="text-xs font-black text-amber-600 dark:text-amber-400 ml-1 font-mono">{{ review.rating }}.0</span>
                 </div>
               </div>
 
-              <!-- Review Title & Comment Body -->
-              <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800/60 space-y-1.5">
-                <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ review.title }}</h4>
-                <p class="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed whitespace-pre-line">{{ review.comment }}</p>
+              <!-- 3. CLEAN REVIEW TITLE & COMMENT BODY BOX -->
+              <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/60 space-y-2">
+                @if (review.title && review.title !== 'Verified Review') {
+                  <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase tracking-wide">
+                    {{ review.title }}
+                  </h4>
+                }
+                <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans whitespace-pre-wrap">
+                  {{ review.comment }}
+                </p>
 
-                <!-- Photo Gallery (if images attached) -->
+                <!-- Attached Photos Gallery -->
                 @if (review.images && review.images.length > 0) {
-                  <div class="flex items-center gap-2 pt-2">
-                    @for (img of review.images; track img) {
-                      <a [href]="img" target="_blank" rel="noopener">
-                        <img
-                          [src]="img"
-                          alt="Review image"
-                          class="h-14 w-14 rounded-xl object-cover border border-zinc-200 dark:border-zinc-800 hover:scale-105 transition-transform"
-                        />
-                      </a>
-                    }
+                  <div class="pt-3 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-1.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                      Customer Customer Attachments ({{ review.images.length }}):
+                    </span>
+                    <div class="flex items-center gap-2.5 flex-wrap">
+                      @for (img of review.images; track $index) {
+                        <div
+                          (click)="lightboxImage.set(img)"
+                          class="relative group h-16 w-16 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 cursor-pointer shadow-xs hover:shadow-md transition-all duration-200"
+                        >
+                          <img
+                            [src]="img"
+                            alt="Customer Attachment"
+                            class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <mat-icon class="text-sm">zoom_in</mat-icon>
+                          </div>
+                        </div>
+                      }
+                    </div>
                   </div>
                 }
               </div>
 
-              <!-- ACTION BUTTONS: APPROVE, REJECT, DELETE -->
-              <div class="flex items-center justify-end gap-2 pt-2">
+              <!-- 4. ACTION BUTTONS: APPROVE, REJECT, DELETE -->
+              <div class="flex items-center justify-end gap-2.5 pt-1">
                 @if (review.status !== 'APPROVED') {
                   <button
                     type="button"
@@ -386,6 +493,35 @@ export interface AdminReviewItem {
           }
         </div>
       }
+
+      <!-- LIGHTBOX MODAL FOR ATTACHED REVIEW IMAGES -->
+      @if (lightboxImage()) {
+        <div
+          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          (click)="lightboxImage.set(null)"
+        >
+          <div
+            class="relative max-w-3xl max-h-[90vh] bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden p-2 shadow-2xl space-y-2"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800">
+              <span class="text-xs font-bold text-zinc-300">Customer Submitted Attachment</span>
+              <button
+                (click)="lightboxImage.set(null)"
+                class="h-7 w-7 rounded-full bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer border-none"
+              >
+                <mat-icon class="text-sm">close</mat-icon>
+              </button>
+            </div>
+            <img
+              [src]="lightboxImage()"
+              alt="Full Preview"
+              class="max-h-[75vh] w-auto mx-auto object-contain rounded-2xl"
+            />
+          </div>
+        </div>
+      }
+
     </div>
   `,
 })
@@ -398,6 +534,7 @@ export class AdminReviewsTabComponent implements OnInit {
   reviews = signal<AdminReviewItem[]>([]);
   loading = signal(true);
   processingId = signal<string | null>(null);
+  lightboxImage = signal<string | null>(null);
 
   selectedStatusFilter = signal<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
   ratingFilter = signal<string>('ALL');
@@ -448,7 +585,8 @@ export class AdminReviewsTabComponent implements OnInit {
     this.api.get<{ success: boolean; data: AdminReviewItem[] }>('/admin/reviews').subscribe({
       next: (res) => {
         if (res.success && Array.isArray(res.data)) {
-          this.reviews.set(res.data);
+          const cleaned = res.data.map((item) => cleanReviewPayload(item));
+          this.reviews.set(cleaned);
         } else {
           this.reviews.set([]);
         }

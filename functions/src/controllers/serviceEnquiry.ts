@@ -347,7 +347,6 @@ export async function createServiceEnquiry(req: Request, res: Response): Promise
     enquiries.unshift(newEnquiry);
     saveEnquiries(enquiries);
 
-    // Dispatch Central Admin Notification (Push Only, WhatsApp Suppressed)
     NotificationService.dispatch({
       eventKey: 'NEW_SERVICE_REQUEST',
       title: '🖨️ New 3D Service Request',
@@ -361,6 +360,16 @@ export async function createServiceEnquiry(req: Request, res: Response): Promise
         quantity: newEnquiry.quantity,
       },
     });
+
+    // Dispatch service request WhatsApp & Push Notifications to customer and registered admins
+    try {
+      await NotificationService.dispatchServiceRequestNotifications(newEnquiry, {
+        city: body.city || body.shippingAddress?.city || body.address?.city || 'N/A',
+        fileCount: body.fileCount || body.uploadedFileCount || 1
+      });
+    } catch (notifErr) {
+      console.warn("[createServiceEnquiry] Notification dispatch error:", notifErr);
+    }
 
     // File metadata record pointing to Firebase Storage
     const initialFile: ServiceFile = {

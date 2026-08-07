@@ -364,8 +364,11 @@
         </h3>
 
         <div class="space-y-2.5 pt-1 font-mono text-xs">
-          <div class="flex justify-between text-neutral-500">
-            <span>Price (Items subtotal):</span>
+          <div class="flex justify-between items-start text-neutral-500">
+            <div>
+              <span>Price (Items subtotal):</span>
+              <span class="block text-[10px] text-neutral-400 font-normal font-sans">Incl. 18% GST & taxes</span>
+            </div>
             <span>{{ itemsSubtotal() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
 
@@ -396,14 +399,17 @@
 
           @if (orderTax() > 0) {
           <div class="flex justify-between text-neutral-500">
-            <span>Estimated Tax / GST:</span>
+            <span>Estimated Tax / GST (18%):</span>
             <span>{{ orderTax() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
           }
 
           <div
-            class="flex justify-between text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-100 dark:border-neutral-850">
-            <span>Total Amount:</span>
+            class="flex justify-between items-end text-base font-black text-neutral-900 dark:text-white pt-3 border-t border-neutral-100 dark:border-neutral-850">
+            <div>
+              <span class="block">Total Amount:</span>
+              <span class="text-[10px] text-neutral-400 font-normal font-sans">Incl. 18% GST & taxes</span>
+            </div>
             <span class="text-blue-500 font-bold font-mono">{{ orderTotal() | currency:'INR':'symbol':'1.0-0' }}</span>
           </div>
         </div>
@@ -477,66 +483,95 @@
       </div>
       }
 
-      <!-- MODULE: ACCESSIBLE HELP SUPPORT CONTACT TICKET -->
+       <!-- MODULE: ACCESSIBLE HELP SUPPORT CONTACT TICKET (Only for Delivered orders) -->
+      @if (ord.status && ord.status.toLowerCase() === 'delivered') {
       <div id="support-box"
-        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-4 shadow-sm">
-        <h3 class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">
-          CONTACT TECH SUPPORT
-        </h3>
-        <p class="text-[10px] text-neutral-500 leading-relaxed">
-          Need help with delivery, an address update, or a billing issue? Our
-          support team can help you resolve it quickly.
-        </p>
+        class="p-6 bg-white dark:bg-neutral-950 border border-neutral-250 dark:border-neutral-900 rounded-3xl text-left space-y-6 shadow-sm">
+        <div>
+          <h3 class="text-sm font-black uppercase text-neutral-900 dark:text-white flex items-center gap-2">
+            <mat-icon class="text-blue-500">support_agent</mat-icon>
+            Need Help With Your Order?
+          </h3>
+          <p class="text-[10px] text-neutral-500 mt-1">
+            Choose an option below to initiate a return, refund, exchange or report issues with your delivery.
+          </p>
+        </div>
 
-        <div class="space-y-3 pt-1">
-          <div class="space-y-1">
-            <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Category
-              issue:</span>
-            <select [value]="ticketCat()" (change)="ticketCat.set($any($event.target).value)"
-              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:ring-1 focus:ring-blue-500">
-              <option value="Delivery delay">Delivery or shipment delay</option>
-              <option value="Address update">Address or contact update</option>
-              <option value="Billing discrepancies">
-                Billing or payment issue
-              </option>
-              <option value="Return request">Return or refund request</option>
-            </select>
-          </div>
+        <!-- Eligibility Warnings -->
+        @if (!isReturnEligible()) {
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center gap-2.5 text-xs">
+          <mat-icon class="scale-90 shrink-0">warning</mat-icon>
+          <span>This order is no longer eligible for return.</span>
+        </div>
+        }
+        @if (!isRefundEligible()) {
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center gap-2.5 text-xs">
+          <mat-icon class="scale-90 shrink-0">warning</mat-icon>
+          <span>This order is no longer eligible for refund.</span>
+        </div>
+        }
 
-          <div class="space-y-1">
-            <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Subject:</span>
-            <input type="text" [value]="ticketSub()" (input)="ticketSub.set($any($event.target).value)"
-              placeholder="e.g. My shipment is delayed beyond the expected date"
-              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500" />
-          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <!-- Return Request -->
+          <button (click)="openSupportDialog('Return')" [disabled]="!isReturnEligible()"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">undo</mat-icon>
+            <span>Return Request</span>
+          </button>
 
-          <div class="space-y-1">
-            <span class="text-[9px] uppercase font-bold text-neutral-400 font-mono tracking-wider block">Elaborated
-              Query Details:</span>
-            <textarea rows="3" [value]="ticketDesc()" (input)="ticketDesc.set($any($event.target).value)"
-              placeholder="Share the issue details and any relevant order information..."
-              class="w-full p-2.5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
-          </div>
+          <!-- Refund Request -->
+          <button (click)="openSupportDialog('Refund')" [disabled]="!isRefundEligible()"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">payments</mat-icon>
+            <span>Refund Request</span>
+          </button>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <button (click)="openWhatsAppSupport($event)"
-              class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md text-center no-underline cursor-pointer border-none">
-              <mat-icon class="text-sm scale-90">chat</mat-icon> Chat on
-              WhatsApp
-            </button>
+          <!-- Exchange Product -->
+          <button (click)="openSupportDialog('Exchange')"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">swap_horiz</mat-icon>
+            <span>Exchange Product</span>
+          </button>
 
-          </div>
+          <!-- Report Damaged Product -->
+          <button (click)="openSupportDialog('Damaged')"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">broken_image</mat-icon>
+            <span>Report Damaged Product</span>
+          </button>
 
-          <button (click)="submitSupportTicket()" [disabled]="ticketSubmitting()"
-            class="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white font-mono font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md mt-3 cursor-pointer">
-            @if (ticketSubmitting()) {
-            <div class="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            DISPATCHING HELPDESK RECORD... } @else {
-            <mat-icon class="text-sm scale-90">contact_support</mat-icon> SUBMIT
-            LOCAL TICKET FORM }
+          <!-- Wrong Item Received -->
+          <button (click)="openSupportDialog('Wrong Product')"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">warning_amber</mat-icon>
+            <span>Wrong Item Received</span>
+          </button>
+
+          <!-- Missing Items -->
+          <button (click)="openSupportDialog('Missing Items')"
+            class="px-4 py-3 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-800 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 justify-center">
+            <mat-icon class="scale-90">rule</mat-icon>
+            <span>Missing Items</span>
           </button>
         </div>
+
+        <button (click)="openSupportDialog('Other')"
+          class="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 border-none">
+          <mat-icon class="scale-90">contact_support</mat-icon>
+          <span>Contact Support</span>
+        </button>
       </div>
+      }
+
+      @if (showSupportDialog()) {
+        @defer (on idle) {
+          <app-support-request-dialog
+            [order]="ord"
+            [supportType]="selectedSupportType()"
+            (close)="showSupportDialog.set(false)"
+          ></app-support-request-dialog>
+        }
+      }
     </div>
   </div>
 

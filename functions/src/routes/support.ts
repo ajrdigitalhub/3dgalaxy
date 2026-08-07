@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { generateSupportMessage } from '../controllers/support';
+import { generateAndSaveSupportRequest, uploadAttachment } from '../controllers/support';
+import { upload } from '../middleware/upload';
 
 const router = Router();
 
-router.post('/generate', generateSupportMessage);
+router.post('/request', generateAndSaveSupportRequest);
+router.post('/upload', upload.single('file'), uploadAttachment);
 
 export default router;

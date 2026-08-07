@@ -80,7 +80,12 @@ const defaultSettings = {
     welcomeMessageTemplateName: "welcome_message",
     orderStatusUpdateTemplateName: "order_status_update",
     enableCodNotifications: true,
-    enablePaidNotifications: true
+    enablePaidNotifications: true,
+    serviceRequestCustomerTemplateName: "service_request_customer",
+    serviceRequestAdminTemplateName: "service_request_admin",
+    enableServiceRequestCustomerNotifications: true,
+    enableServiceRequestAdminNotifications: true,
+    enableServiceRequestEmailNotifications: false
   },
   emailSettings: {},
   newsletterSettings: {},
@@ -204,6 +209,16 @@ const defaultSettings = {
     instagram: "",
     linkedin: "",
     youtube: "",
+  },
+  supportSettings: {
+    whatsappNumber: "+919876543210",
+    email: "3dgalaxy@hotmail.com",
+    businessHours: "9 AM - 6 PM",
+    autoReply: "Thank you for contacting support! We will get back to you shortly.",
+    returnPolicyUrl: "/return-policy",
+    refundPolicyUrl: "/refund-policy",
+    returnWindowDays: 10,
+    refundWindowDays: 10
   },
 };
 

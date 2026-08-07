@@ -2351,7 +2351,7 @@ export class AdminPanel {
     }
 
     const randomId = "order-" + Date.now();
-    const orderNum = "GLX-" + Math.floor(100000 + Math.random() * 900000);
+    const orderNum = "3DX" + String(this.ds.orders().length + 1).padStart(4, "0");
     const items = this.draftSelectedItemsList().map((i) => ({
       productId: i.product.id,
       name: i.product.name,
