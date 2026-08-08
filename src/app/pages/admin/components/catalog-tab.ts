@@ -1216,7 +1216,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                         >
                         <input
                           type="number"
-                          [value]="admin.pShipping().shippingCharges ?? ''"
+                          [value]="admin.pShipping().shippingCharges"
                           (input)="
                             admin.updateShippingCharges(
                               $any($event.target).value
@@ -1292,7 +1292,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                         >
                         <input
                           type="number"
-                          [value]="admin.pBaseShippingCharge() ?? ''"
+                          [value]="admin.pBaseShippingCharge()"
                           (input)="
                             admin.pBaseShippingCharge.set(
                               +$any($event.target).value
@@ -1585,6 +1585,20 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                   </span>
                                 }
                               </div>
+                              <!-- Variant Accordion Badge Indicator -->
+                              @if (getProductVariantsCount(p) > 0) {
+                                <button
+                                  type="button"
+                                  (click)="toggleExpandVariants(p)"
+                                  class="mt-1 px-2 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-md text-[9px] font-mono font-black uppercase inline-flex items-center gap-1 transition-colors border-none cursor-pointer"
+                                  [title]="'View ' + getProductVariantsCount(p) + ' Variants'"
+                                >
+                                  <span>{{ getProductVariantsCount(p) }} VARIANTS</span>
+                                  <mat-icon class="text-xs w-3 h-3 flex items-center justify-center transition-transform" [class.rotate-180]="expandedProductIds().has(p.id)">
+                                    expand_more
+                                  </mat-icon>
+                                </button>
+                              }
                             </div>
                           </div>
                         </td>
@@ -1600,50 +1614,261 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                         >
                           {{ p.sku }}
                         </td>
+
+                        <!-- STOCK REMAINING (Inline Edit vs Display) -->
                         <td class="py-4">
-                          @if (p.stock === 0) {
-                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400">
-                              <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                              OUT OF STOCK (0 units)
-                            </span>
-                          } @else if (p.stock <= 10) {
-                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400">
-                              <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                              LOW STOCK ({{ p.stock }} units)
-                            </span>
+                          @if (quickEditingProductId() === p.id) {
+                            <div class="relative w-24">
+                              <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                [value]="quickEditForm().stock"
+                                (input)="updateQuickEditFormField('stock', $any($event.target).value)"
+                                class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-blue-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                                placeholder="Qty"
+                              />
+                            </div>
                           } @else {
-                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
-                              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                              IN STOCK ({{ p.stock }} units)
-                            </span>
+                            @if (p.stock === 0) {
+                              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                OUT OF STOCK (0 units)
+                              </span>
+                            } @else if (p.stock <= 10) {
+                              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                LOW STOCK ({{ p.stock }} units)
+                              </span>
+                            } @else {
+                              <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                IN STOCK ({{ p.stock }} units)
+                              </span>
+                            }
                           }
                         </td>
+
+                        <!-- RETAIL COST (Inline Edit vs Display) -->
                         <td class="py-4 font-mono font-bold">
-                          ₹{{ p.sale_price | number }}
+                          @if (quickEditingProductId() === p.id) {
+                            <div class="relative w-28">
+                              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-zinc-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                [value]="quickEditForm().salePrice"
+                                (input)="updateQuickEditFormField('salePrice', $any($event.target).value)"
+                                class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-blue-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                              />
+                            </div>
+                          } @else {
+                            ₹{{ (p.sale_price || p.salePrice || 0) | number }}
+                          }
                         </td>
+
+                        <!-- DEALER PRICING (Inline Edit vs Display) -->
                         <td class="py-4 font-mono text-emerald-500 font-bold">
-                          ₹{{ p.dealer_price | number }}
+                          @if (quickEditingProductId() === p.id) {
+                            <div class="relative w-28">
+                              <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-zinc-400">₹</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                [value]="quickEditForm().dealerPrice"
+                                (input)="updateQuickEditFormField('dealerPrice', $any($event.target).value)"
+                                class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-blue-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                              />
+                            </div>
+                          } @else {
+                            ₹{{ (p.dealer_price || p.dealerPrice || 0) | number }}
+                          }
                         </td>
+
+                        <!-- ACTIONS COLUMN -->
                         <td class="py-4 text-right">
-                          <div class="inline-flex gap-1.5">
-                            <button
-                              (click)="admin.startProductEdit(p)"
-                              class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
-                              title="Edit Asset"
-                            >
-                              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">edit</mat-icon>
-                            </button>
-                            <button
-                              (click)="admin.deleteProduct(p.id)"
-                              [disabled]="admin.isDeletingProduct()"
-                              class="h-8 w-8 rounded-lg text-red-400 hover:text-red-650 hover:bg-red-50 dark:hover:bg-red-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent disabled:opacity-40"
-                              title="Delete SKU"
-                            >
-                              <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">delete_outline</mat-icon>
-                            </button>
-                          </div>
+                          @if (quickEditingProductId() === p.id) {
+                            <div class="inline-flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                (click)="saveQuickEditProduct(p)"
+                                [disabled]="isQuickSavingProduct()"
+                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold uppercase transition-all border-none cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50"
+                                title="Save Changes"
+                              >
+                                <mat-icon class="text-xs w-3.5 h-3.5 flex items-center justify-center">done</mat-icon>
+                                <span>{{ isQuickSavingProduct() ? 'Saving...' : 'Save' }}</span>
+                              </button>
+                              <button
+                                type="button"
+                                (click)="cancelQuickEditProduct()"
+                                [disabled]="isQuickSavingProduct()"
+                                class="px-2.5 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-bold uppercase transition-all border-none cursor-pointer flex items-center gap-1"
+                                title="Cancel Changes"
+                              >
+                                <mat-icon class="text-xs w-3.5 h-3.5 flex items-center justify-center">close</mat-icon>
+                                <span>Cancel</span>
+                              </button>
+                            </div>
+                          } @else {
+                            <div class="inline-flex gap-1.5">
+                              <button
+                                (click)="startQuickEditProduct(p)"
+                                class="h-8 w-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+                                [title]="getProductVariantsCount(p) > 0 ? 'Quick Edit Variants in Popup' : 'Quick Edit Price & Stock'"
+                              >
+                                <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">bolt</mat-icon>
+                              </button>
+                              <button
+                                (click)="getProductVariantsCount(p) > 0 ? openVariantEditModal(p) : admin.startProductEdit(p)"
+                                class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+                                [title]="getProductVariantsCount(p) > 0 ? 'Edit Product Variants in Popup' : 'Full Edit Asset'"
+                              >
+                                <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">edit</mat-icon>
+                              </button>
+                              <button
+                                (click)="admin.deleteProduct(p.id)"
+                                [disabled]="admin.isDeletingProduct()"
+                                class="h-8 w-8 rounded-lg text-red-400 hover:text-red-650 hover:bg-red-50 dark:hover:bg-red-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent disabled:opacity-40"
+                                title="Delete SKU"
+                              >
+                                <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">delete_outline</mat-icon>
+                              </button>
+                            </div>
+                          }
                         </td>
                       </tr>
+
+                      <!-- EXPANDABLE VARIANT ACCORDION ROW -->
+                      @if (expandedProductIds().has(p.id)) {
+                        <tr class="bg-zinc-50/70 dark:bg-zinc-950/70 animate-fadeIn">
+                          <td colspan="7" class="p-4 sm:p-6">
+                            <div class="border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-xs">
+                              <div class="flex items-center justify-between border-b dark:border-zinc-800 pb-2.5">
+                                <div class="flex items-center gap-2">
+                                  <mat-icon class="text-blue-500 text-sm">view_module</mat-icon>
+                                  <span class="text-xs font-black uppercase text-zinc-900 dark:text-white tracking-wider">
+                                    Variants for {{ p.name }} ({{ getProductVariantsList(p).length }})
+                                  </span>
+                                </div>
+                                <span class="text-[10px] font-mono text-zinc-400 font-medium">Click ✏️ on any variant row to quick edit price & stock</span>
+                              </div>
+
+                              @if (loadingVariantsProductIds().has(p.id)) {
+                                <div class="py-6 text-center text-xs text-zinc-400 font-mono animate-pulse">
+                                  Loading variants data...
+                                </div>
+                              } @else if (getProductVariantsList(p).length === 0) {
+                                <div class="py-6 text-center text-xs text-zinc-400 font-medium">
+                                  No variants configured for this product.
+                                </div>
+                              } @else {
+                                <div class="overflow-x-auto">
+                                  <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                      <tr class="text-[9px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+                                        <th class="py-2.5 px-3">Variant</th>
+                                        <th class="py-2.5 px-3">SKU</th>
+                                        <th class="py-2.5 px-3">Price</th>
+                                        <th class="py-2.5 px-3">Stock</th>
+                                        <th class="py-2.5 px-3">Status</th>
+                                        <th class="py-2.5 px-3 text-right">Action</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800 font-mono">
+                                      @for (v of getProductVariantsList(p); track (v.id || v.sku)) {
+                                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+                                          <td class="py-3 px-3 font-sans font-bold text-zinc-900 dark:text-white">
+                                            {{ getVariantDisplayName(v) }}
+                                          </td>
+                                          <td class="py-3 px-3 text-zinc-500 text-[10px]">
+                                            {{ v.sku || 'N/A' }}
+                                          </td>
+                                          <td class="py-3 px-3 font-bold">
+                                            @if (quickEditingVariantId() === v.id) {
+                                              <div class="relative w-24">
+                                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">₹</span>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.01"
+                                                  [value]="quickEditVariantForm().price"
+                                                  (input)="updateQuickEditVariantFormField('price', $any($event.target).value)"
+                                                  class="w-full pl-6 pr-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-blue-500 rounded-md text-xs font-mono font-bold outline-none text-zinc-900 dark:text-white"
+                                                />
+                                              </div>
+                                            } @else {
+                                              ₹{{ (v.price || v.salePrice || 0) | number }}
+                                            }
+                                          </td>
+                                          <td class="py-3 px-3">
+                                            @if (quickEditingVariantId() === v.id) {
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                [value]="quickEditVariantForm().stock"
+                                                (input)="updateQuickEditVariantFormField('stock', $any($event.target).value)"
+                                                class="w-20 px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-blue-500 rounded-md text-xs font-mono font-bold outline-none text-zinc-900 dark:text-white"
+                                              />
+                                            } @else {
+                                              <span>{{ v.stock || 0 }}</span>
+                                            }
+                                          </td>
+                                          <td class="py-3 px-3">
+                                            @if (v.stock === 0) {
+                                              <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">OUT OF STOCK</span>
+                                            } @else if (v.stock <= 5) {
+                                              <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">LOW STOCK ({{ v.stock }})</span>
+                                            } @else {
+                                              <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">IN STOCK ({{ v.stock }})</span>
+                                            }
+                                          </td>
+                                          <td class="py-3 px-3 text-right">
+                                            @if (quickEditingVariantId() === v.id) {
+                                              <div class="inline-flex items-center gap-1">
+                                                <button
+                                                  type="button"
+                                                  (click)="saveQuickEditVariant(p, v)"
+                                                  [disabled]="isQuickSavingVariant()"
+                                                  class="px-2.5 py-1 bg-emerald-600 text-white rounded-md text-[10px] font-black uppercase cursor-pointer border-none"
+                                                  title="Save Variant"
+                                                >
+                                                  {{ isQuickSavingVariant() ? '...' : '✓ Save' }}
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  (click)="cancelQuickEditVariant()"
+                                                  [disabled]="isQuickSavingVariant()"
+                                                  class="px-2 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-md text-[10px] font-black uppercase cursor-pointer border-none"
+                                                  title="Cancel"
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
+                                            } @else {
+                                              <button
+                                                type="button"
+                                                (click)="startQuickEditVariant(v)"
+                                                class="h-7 w-7 rounded-md text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950 inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
+                                                title="Edit Variant Price & Stock"
+                                              >
+                                                <mat-icon class="text-sm">edit</mat-icon>
+                                              </button>
+                                            }
+                                          </td>
+                                        </tr>
+                                      }
+                                    </tbody>
+                                  </table>
+                                </div>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
                     } @empty {
                       <tr>
                         <td
@@ -2054,7 +2279,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                               <div class="flex items-center gap-2.5">
                                 <mat-icon class="text-zinc-300 group-hover:text-orange-500 text-sm cursor-grab shrink-0 transition-colors" title="Drag & drop product onto a category in taxonomy tree">drag_indicator</mat-icon>
                                 <img
-                                  [src]="p.primaryImage || p.thumbnail || p.images?.[0] || 'https://picsum.photos/100/100'"
+                                  [src]="p.primaryImage || p.thumbnail || p.images[0] || 'https://picsum.photos/100/100'"
                                   [alt]="p.name"
                                   class="h-10 w-10 rounded-xl object-contain border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 shrink-0"
                                 />
@@ -2492,7 +2717,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                           class="rounded text-orange-500 h-4 w-4"
                         />
                         <img
-                          [src]="p.primaryImage || p.thumbnail || p.images?.[0] || 'https://picsum.photos/100/100'"
+                          [src]="p.primaryImage || p.thumbnail || p.images[0] || 'https://picsum.photos/100/100'"
                           [alt]="p.name"
                           class="h-9 w-9 rounded-xl object-contain border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 shrink-0"
                         />
@@ -2527,6 +2752,167 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                   </button>
                 </div>
 
+              </div>
+            </div>
+          }
+
+          <!-- ========================= VARIANT QUICK EDIT POPUP / MODAL ========================= -->
+          @if (isVariantEditModalOpen() && variantEditModalProduct()) {
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+              <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh] font-sans">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-700/50">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <img
+                      [src]="variantEditModalProduct().primaryImage || variantEditModalProduct().thumbnail || (variantEditModalProduct().images && variantEditModalProduct().images[0]) || 'https://picsum.photos/100/100'"
+                      [alt]="variantEditModalProduct().name"
+                      class="h-10 w-10 rounded-xl object-contain bg-white/10 p-1 border border-white/20 shrink-0"
+                    />
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-orange-500 text-white font-mono">VARIANTS POPUP</span>
+                        <h3 class="text-sm font-black uppercase tracking-wide truncate max-w-xs sm:max-w-md">
+                          {{ variantEditModalProduct().name }}
+                        </h3>
+                      </div>
+                      <p class="text-[10px] text-zinc-300 font-mono">
+                        SKU: {{ variantEditModalProduct().sku || 'N/A' }} &middot; {{ getProductVariantsList(variantEditModalProduct()).length }} Variant(s) Configured
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    (click)="isVariantEditModalOpen.set(false)"
+                    class="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer border-none transition-colors"
+                    title="Close"
+                  >
+                    <mat-icon class="text-base">close</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Modal Content Body -->
+                <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                  <!-- Info Box -->
+                  <div class="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center gap-3 text-xs text-blue-600 dark:text-blue-400">
+                    <mat-icon class="text-lg shrink-0">info</mat-icon>
+                    <span>Edit individual variant prices (₹), dealer pricing (₹), stock count, and active status below. Click <strong>Save All Changes</strong> when finished.</span>
+                  </div>
+
+                  @if (loadingVariantsProductIds().has(variantEditModalProduct().id)) {
+                    <div class="py-12 text-center text-xs text-zinc-400 font-mono animate-pulse">
+                      Loading variants details...
+                    </div>
+                  } @else if (getProductVariantsList(variantEditModalProduct()).length === 0) {
+                    <div class="py-12 text-center text-xs text-zinc-400 font-medium">
+                      No variants found for this product.
+                    </div>
+                  } @else {
+                    <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xs">
+                      <table class="w-full text-left text-xs whitespace-nowrap">
+                        <thead>
+                          <tr class="bg-zinc-50 dark:bg-zinc-950 text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+                            <th class="py-3 px-4">Variant Options</th>
+                            <th class="py-3 px-3">SKU Barcode</th>
+                            <th class="py-3 px-3">Retail Price (₹)</th>
+                            <th class="py-3 px-3">Dealer Price (₹)</th>
+                            <th class="py-3 px-3">Stock Units</th>
+                            <th class="py-3 px-3">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800 font-mono">
+                          @for (v of getProductVariantsList(variantEditModalProduct()); track (v.id || v.sku)) {
+                            <tr class="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40">
+                              <!-- Variant Name -->
+                              <td class="py-3 px-4 font-sans font-bold text-zinc-900 dark:text-white">
+                                {{ getVariantDisplayName(v) }}
+                              </td>
+
+                              <!-- Variant SKU -->
+                              <td class="py-3 px-3 text-zinc-500 text-[10px]">
+                                {{ v.sku || 'N/A' }}
+                              </td>
+
+                              <!-- Retail Price -->
+                              <td class="py-3 px-3">
+                                <div class="relative w-28">
+                                  <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">₹</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    [value]="variantEditFormMap()[v.id]?.price ?? 0"
+                                    (input)="updateVariantModalFormField(v.id, 'price', $any($event.target).value)"
+                                    class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </td>
+
+                              <!-- Dealer Price -->
+                              <td class="py-3 px-3">
+                                <div class="relative w-28">
+                                  <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400">₹</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    [value]="variantEditFormMap()[v.id]?.dealerPrice ?? 0"
+                                    (input)="updateVariantModalFormField(v.id, 'dealerPrice', $any($event.target).value)"
+                                    class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                              </td>
+
+                              <!-- Stock Units -->
+                              <td class="py-3 px-3">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  [value]="variantEditFormMap()[v.id]?.stock ?? 0"
+                                  (input)="updateVariantModalFormField(v.id, 'stock', $any($event.target).value)"
+                                  class="w-20 px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </td>
+
+                              <!-- Status -->
+                              <td class="py-3 px-3">
+                                @let st = variantEditFormMap()[v.id]?.stock ?? v.stock ?? 0;
+                                @if (st === 0) {
+                                  <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">OUT OF STOCK</span>
+                                } @else if (st <= 5) {
+                                  <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">LOW STOCK ({{ st }})</span>
+                                } @else {
+                                  <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">IN STOCK ({{ st }})</span>
+                                }
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+                  <button
+                    type="button"
+                    (click)="isVariantEditModalOpen.set(false)"
+                    [disabled]="isSavingVariantModal()"
+                    class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-bold uppercase transition-all border-none cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="saveAllModalVariants()"
+                    [disabled]="isSavingVariantModal() || loadingVariantsProductIds().has(variantEditModalProduct()?.id)"
+                    class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-emerald-600/20 border-none cursor-pointer flex items-center gap-2 active:scale-98 disabled:opacity-50"
+                  >
+                    <mat-icon class="text-sm">done_all</mat-icon>
+                    <span>{{ isSavingVariantModal() ? 'Saving Variants...' : 'Save All Changes' }}</span>
+                  </button>
+                </div>
               </div>
             </div>
           }
@@ -3068,6 +3454,377 @@ export class AdminCatalogTab {
   http = inject(HttpClient);
   api = inject(ApiService);
   @Input({ required: true }) admin!: AdminPanel;
+
+  // --- INLINE QUICK EDIT SIGNALS ---
+  quickEditingProductId = signal<string | null>(null);
+  quickEditForm = signal<{ salePrice: number | string; dealerPrice: number | string; stock: number | string; isActive: boolean }>({
+    salePrice: 0,
+    dealerPrice: 0,
+    stock: 0,
+    isActive: true,
+  });
+  isQuickSavingProduct = signal<boolean>(false);
+
+  // Variant Expansion & Quick Edit Signals
+  expandedProductIds = signal<Set<string>>(new Set());
+  productVariantsMap = signal<Record<string, any[]>>({});
+  loadingVariantsProductIds = signal<Set<string>>(new Set());
+  quickEditingVariantId = signal<string | null>(null);
+  quickEditVariantForm = signal<{ price: number | string; stock: number | string; isActive: boolean }>({
+    price: 0,
+    stock: 0,
+    isActive: true,
+  });
+  isQuickSavingVariant = signal<boolean>(false);
+
+  // Variant Edit Modal / Popup Signals
+  isVariantEditModalOpen = signal<boolean>(false);
+  variantEditModalProduct = signal<any | null>(null);
+  variantEditFormMap = signal<Record<string, { price: number | string; dealerPrice: number | string; stock: number | string; isActive: boolean }>>({});
+  isSavingVariantModal = signal<boolean>(false);
+
+  async openVariantEditModal(product: any) {
+    this.variantEditModalProduct.set(product);
+    this.isVariantEditModalOpen.set(true);
+
+    let vars = this.productVariantsMap()[product.id];
+    if (!vars || vars.length === 0) {
+      if (Array.isArray(product.variants) && product.variants.length > 0) {
+        vars = product.variants;
+        this.productVariantsMap.update(m => ({ ...m, [product.id]: vars }));
+      } else {
+        this.loadingVariantsProductIds.update(s => new Set(s).add(product.id));
+        try {
+          const res: any = await firstValueFrom(this.api.get(`/admin/products/${product.id}/variants`));
+          vars = res?.data || res || [];
+          this.productVariantsMap.update(m => ({ ...m, [product.id]: Array.isArray(vars) ? vars : [] }));
+        } catch (err) {
+          console.warn('Failed to load variants for modal:', err);
+          vars = [];
+          this.productVariantsMap.update(m => ({ ...m, [product.id]: [] }));
+        } finally {
+          this.loadingVariantsProductIds.update(s => {
+            const next = new Set(s);
+            next.delete(product.id);
+            return next;
+          });
+        }
+      }
+    }
+
+    const initialMap: Record<string, any> = {};
+    (vars || []).forEach((v: any) => {
+      initialMap[v.id] = {
+        price: v.price !== undefined ? v.price : (v.salePrice || 0),
+        dealerPrice: v.dealerPrice !== undefined ? v.dealerPrice : (v.dealer_price || 0),
+        stock: v.stock !== undefined ? v.stock : 0,
+        isActive: v.isActive !== false,
+      };
+    });
+    this.variantEditFormMap.set(initialMap);
+  }
+
+  updateVariantModalFormField(variantId: string, field: string, value: any) {
+    this.variantEditFormMap.update(m => ({
+      ...m,
+      [variantId]: {
+        ...(m[variantId] || {}),
+        [field]: value,
+      }
+    }));
+  }
+
+  async saveAllModalVariants() {
+    const product = this.variantEditModalProduct();
+    if (!product) return;
+
+    const vars = this.productVariantsMap()[product.id] || [];
+    const formMap = this.variantEditFormMap();
+
+    this.isSavingVariantModal.set(true);
+    let updatedCount = 0;
+
+    try {
+      for (const v of vars) {
+        const form = formMap[v.id];
+        if (!form) continue;
+
+        const price = parseFloat(String(form.price));
+        const dealerPrice = parseFloat(String(form.dealerPrice || 0));
+        const stock = parseInt(String(form.stock), 10);
+
+        if (isNaN(price) || price < 0 || isNaN(stock) || stock < 0) continue;
+
+        const payload = {
+          price,
+          salePrice: price,
+          dealerPrice,
+          stockQuantity: stock,
+          stock,
+          isActive: form.isActive !== false,
+        };
+
+        const res: any = await firstValueFrom(
+          this.api.patch(`/admin/products/${product.id}/variants/${v.id}/quick-update`, payload)
+        );
+
+        if (res && (res.success || res.data)) {
+          updatedCount++;
+          v.price = price;
+          v.salePrice = price;
+          v.dealerPrice = dealerPrice;
+          v.stock = stock;
+          v.isActive = form.isActive !== false;
+        }
+      }
+
+      const nextVars = [...vars];
+      this.productVariantsMap.update(m => ({ ...m, [product.id]: nextVars }));
+      const totalStock = nextVars.reduce((sum, v) => sum + (v.stock || 0), 0);
+      this.admin.ds.products.update(list =>
+        list.map(p => (p.id === product.id ? { ...p, stock: totalStock } : p))
+      );
+
+      this.toastService.success(`Updated ${updatedCount} variant(s) successfully.`);
+      this.isVariantEditModalOpen.set(false);
+    } catch (err: any) {
+      console.error('[SaveModalVariants] Error:', err);
+      this.toastService.error(err?.error?.message || 'Failed to update variants.');
+    } finally {
+      this.isSavingVariantModal.set(false);
+    }
+  }
+
+  startQuickEditProduct(product: any) {
+    if (this.getProductVariantsCount(product) > 0) {
+      this.openVariantEditModal(product);
+      return;
+    }
+    this.quickEditingProductId.set(product.id);
+    this.quickEditForm.set({
+      salePrice: product.sale_price !== undefined ? product.sale_price : (product.salePrice !== undefined ? product.salePrice : (product.price || 0)),
+      dealerPrice: product.dealer_price !== undefined ? product.dealer_price : (product.dealerPrice || 0),
+      stock: product.stock !== undefined ? product.stock : (product.stockQuantity || 0),
+      isActive: product.isActive !== false,
+    });
+  }
+
+  cancelQuickEditProduct() {
+    this.quickEditingProductId.set(null);
+  }
+
+  updateQuickEditFormField(field: string, value: any) {
+    this.quickEditForm.update(curr => ({ ...curr, [field]: value }));
+  }
+
+  async saveQuickEditProduct(product: any) {
+    const form = this.quickEditForm();
+    const salePrice = parseFloat(String(form.salePrice));
+    const dealerPrice = parseFloat(String(form.dealerPrice));
+    const stock = parseInt(String(form.stock), 10);
+
+    if (isNaN(salePrice) || salePrice < 0) {
+      this.toastService.warning('Please enter a valid retail price (>= 0).');
+      return;
+    }
+    if (isNaN(dealerPrice) || dealerPrice < 0) {
+      this.toastService.warning('Please enter a valid dealer price (>= 0).');
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      this.toastService.warning('Please enter a valid non-negative integer for stock.');
+      return;
+    }
+
+    this.isQuickSavingProduct.set(true);
+
+    try {
+      const payload = {
+        salePrice,
+        price: salePrice,
+        dealerPrice,
+        stockQuantity: stock,
+        stock,
+        isActive: form.isActive,
+      };
+
+      const res: any = await firstValueFrom(
+        this.api.patch(`/admin/products/${product.id}/quick-update`, payload)
+      );
+
+      if (res && (res.success || res.data)) {
+        // Update product locally in ds.products signal
+        this.admin.ds.products.update(list =>
+          list.map(p => {
+            if (p.id === product.id) {
+              return {
+                ...p,
+                sale_price: salePrice,
+                salePrice: salePrice,
+                price: salePrice,
+                dealer_price: dealerPrice,
+                dealerPrice: dealerPrice,
+                stock: stock,
+                isActive: form.isActive,
+              };
+            }
+            return p;
+          })
+        );
+        this.toastService.success('Product updated successfully.');
+        this.quickEditingProductId.set(null);
+      } else {
+        throw new Error(res?.error || 'Update failed');
+      }
+    } catch (err: any) {
+      console.error('[QuickEditProduct] Error:', err);
+      this.toastService.error(err?.error?.message || err?.message || 'Unable to update product. Please try again.');
+    } finally {
+      this.isQuickSavingProduct.set(false);
+    }
+  }
+
+  // Variant Helpers & Accordion
+  getProductVariantsCount(product: any): number {
+    if (this.productVariantsMap()[product.id]) {
+      return this.productVariantsMap()[product.id].length;
+    }
+    if (Array.isArray(product.variants)) {
+      return product.variants.length;
+    }
+    return 0;
+  }
+
+  getProductVariantsList(product: any): any[] {
+    if (this.productVariantsMap()[product.id]) {
+      return this.productVariantsMap()[product.id];
+    }
+    if (Array.isArray(product.variants)) {
+      return product.variants;
+    }
+    return [];
+  }
+
+  getVariantDisplayName(v: any): string {
+    if (v.name) return v.name;
+    if (v.optionValues && typeof v.optionValues === 'object') {
+      const parts = Object.entries(v.optionValues).map(([k, val]) => `${k}: ${val}`);
+      if (parts.length > 0) return parts.join(', ');
+    }
+    return v.sku || 'Variant';
+  }
+
+  async toggleExpandVariants(product: any) {
+    const current = new Set(this.expandedProductIds());
+    if (current.has(product.id)) {
+      current.delete(product.id);
+      this.expandedProductIds.set(current);
+    } else {
+      current.add(product.id);
+      this.expandedProductIds.set(current);
+
+      // Lazy load variants if not present
+      if (!this.productVariantsMap()[product.id]) {
+        if (Array.isArray(product.variants) && product.variants.length > 0) {
+          this.productVariantsMap.update(m => ({ ...m, [product.id]: product.variants }));
+        } else {
+          this.loadingVariantsProductIds.update(s => new Set(s).add(product.id));
+          try {
+            const res: any = await firstValueFrom(this.api.get(`/admin/products/${product.id}/variants`));
+            const vars = res?.data || res || [];
+            this.productVariantsMap.update(m => ({ ...m, [product.id]: Array.isArray(vars) ? vars : [] }));
+          } catch (err) {
+            console.warn('Failed to load variants:', err);
+            this.productVariantsMap.update(m => ({ ...m, [product.id]: [] }));
+          } finally {
+            this.loadingVariantsProductIds.update(s => {
+              const next = new Set(s);
+              next.delete(product.id);
+              return next;
+            });
+          }
+        }
+      }
+    }
+  }
+
+  startQuickEditVariant(variant: any) {
+    this.quickEditingVariantId.set(variant.id);
+    this.quickEditVariantForm.set({
+      price: variant.price !== undefined ? variant.price : (variant.salePrice || 0),
+      stock: variant.stock !== undefined ? variant.stock : 0,
+      isActive: variant.isActive !== false,
+    });
+  }
+
+  cancelQuickEditVariant() {
+    this.quickEditingVariantId.set(null);
+  }
+
+  updateQuickEditVariantFormField(field: string, value: any) {
+    this.quickEditVariantForm.update(curr => ({ ...curr, [field]: value }));
+  }
+
+  async saveQuickEditVariant(product: any, variant: any) {
+    const form = this.quickEditVariantForm();
+    const price = parseFloat(String(form.price));
+    const stock = parseInt(String(form.stock), 10);
+
+    if (isNaN(price) || price < 0) {
+      this.toastService.warning('Please enter a valid price (>= 0).');
+      return;
+    }
+    if (isNaN(stock) || stock < 0) {
+      this.toastService.warning('Please enter a valid non-negative integer for stock.');
+      return;
+    }
+
+    this.isQuickSavingVariant.set(true);
+
+    try {
+      const payload = {
+        price,
+        salePrice: price,
+        stockQuantity: stock,
+        stock,
+        isActive: form.isActive,
+      };
+
+      const res: any = await firstValueFrom(
+        this.api.patch(`/admin/products/${product.id}/variants/${variant.id}/quick-update`, payload)
+      );
+
+      if (res && (res.success || res.data)) {
+        // Update variant in productVariantsMap
+        const updatedVar = {
+          ...variant,
+          price,
+          salePrice: price,
+          stock,
+          isActive: form.isActive,
+        };
+        const currentVars = this.productVariantsMap()[product.id] || [];
+        const nextVars = currentVars.map(v => (v.id === variant.id ? updatedVar : v));
+        this.productVariantsMap.update(m => ({ ...m, [product.id]: nextVars }));
+
+        // Update total product stock in ds.products
+        const totalStock = nextVars.reduce((sum, v) => sum + (v.stock || 0), 0);
+        this.admin.ds.products.update(list =>
+          list.map(p => (p.id === product.id ? { ...p, stock: totalStock } : p))
+        );
+
+        this.toastService.success('Variant updated successfully.');
+        this.quickEditingVariantId.set(null);
+      } else {
+        throw new Error(res?.error || 'Variant update failed');
+      }
+    } catch (err: any) {
+      console.error('[QuickEditVariant] Error:', err);
+      this.toastService.error(err?.error?.message || err?.message || 'Unable to update variant. Please try again.');
+    } finally {
+      this.isQuickSavingVariant.set(false);
+    }
+  }
 
   // --- SHOPIFY COLLECTION MANAGEMENT SIGNALS & HELPERS ---
   draggedProduct = signal<any | null>(null);

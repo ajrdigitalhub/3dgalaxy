@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,9 +22,23 @@ export interface ShipmentDetailsPayload {
   standalone: true,
   imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host {
+      display: block;
+      position: fixed;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      pointer-events: auto;
+    }
+  `],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] font-sans">
+    <div class="fixed inset-0 top-0 left-0 w-screen h-screen z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+      <div class="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden m-auto z-[1000000]">
         
         <!-- Header -->
         <div class="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
@@ -45,7 +59,7 @@ export interface ShipmentDetailsPayload {
         </div>
 
         <!-- Body Form -->
-        <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+        <div #scrollContainer class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
           
           <!-- Courier Partner Dropdown -->
           <div class="space-y-1">
@@ -147,23 +161,6 @@ export interface ShipmentDetailsPayload {
             </div>
           </div>
 
-          <!-- Dispatch Location -->
-          <div class="space-y-1">
-            <label class="block text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
-              Dispatch Location (Optional)
-            </label>
-            <select
-              [(ngModel)]="dispatchLocation"
-              class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl font-semibold text-zinc-900 dark:text-white outline-none focus:border-blue-500 transition-all cursor-pointer"
-            >
-              <option value="Main Warehouse">Main Warehouse (Primary Hub)</option>
-              <option value="Central Store">Central Store Branch</option>
-              <option value="Bangalore Hub">Bangalore Dispatch Hub</option>
-              <option value="Delhi Warehouse">Delhi Warehouse</option>
-              <option value="Mumbai Fulfilment Center">Mumbai Fulfilment Center</option>
-            </select>
-          </div>
-
           <!-- Shipping Notes -->
           <div class="space-y-1">
             <label class="block text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
@@ -213,13 +210,15 @@ export interface ShipmentDetailsPayload {
     </div>
   `
 })
-export class ShipmentDialogComponent implements OnInit {
+export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input({ required: true }) orderNumber!: string;
   @Input() orderItems: any[] = [];
   @Input() customCourierSettings: any[] = [];
   
   @Output() saveShipment = new EventEmitter<ShipmentDetailsPayload>();
   @Output() cancel = new EventEmitter<void>();
+
+  @ViewChild('scrollContainer') scrollContainer?: ElementRef<HTMLDivElement>;
 
   private trackingService = inject(TrackingService);
 
@@ -231,13 +230,13 @@ export class ShipmentDialogComponent implements OnInit {
   trackingUrl = '';
   estimatedDelivery = '';
   shipmentDate = '';
-  dispatchLocation = 'Main Warehouse';
   shippingNotes = '';
 
   validationError = signal<string>('');
   isSubmitting = signal<boolean>(false);
 
   ngOnInit() {
+    document.body.classList.add('overflow-hidden');
     const list = this.trackingService.getCourierList(this.customCourierSettings);
     this.courierList.set(list);
 
@@ -249,6 +248,22 @@ export class ShipmentDialogComponent implements OnInit {
     // Auto-calculate estimated delivery from items
     const calc = this.trackingService.calculateEstimatedDelivery(this.orderItems, new Date());
     this.estimatedDelivery = calc.formattedRange;
+
+    // Auto-select Delhivery by default if present
+    const delhivery = list.find(c => c.id === 'delhivery');
+    if (delhivery) {
+      this.selectedCourierId.set('delhivery');
+    }
+  }
+
+  ngOnDestroy() {
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  ngAfterViewInit() {
+    if (this.scrollContainer?.nativeElement) {
+      this.scrollContainer.nativeElement.scrollTop = 0;
+    }
   }
 
   isOthersSelected(): boolean {
@@ -268,7 +283,7 @@ export class ShipmentDialogComponent implements OnInit {
 
   updateTrackingUrl() {
     const selected = this.courierList().find(c => c.id === this.selectedCourierId());
-    const partnerName = this.isOthersSelected() ? (this.customCourierName || 'Others') : (selected?.name || 'Delhivery');
+    const partnerName = this.isOthersSelected() ? (this.customCourierName || 'Others') : (selected?.name || 'Delhivery Courier');
     
     if (this.isOthersSelected()) {
       if (!this.trackingUrl || this.trackingUrl.includes('delhivery') || this.trackingUrl.includes('bluedart')) {
@@ -283,7 +298,7 @@ export class ShipmentDialogComponent implements OnInit {
     this.validationError.set('');
 
     const selected = this.courierList().find(c => c.id === this.selectedCourierId());
-    let partnerName = selected?.name || 'Delhivery';
+    let partnerName = selected?.name || 'Delhivery Courier';
     let displayName = partnerName;
 
     if (this.isOthersSelected()) {
@@ -320,7 +335,6 @@ export class ShipmentDialogComponent implements OnInit {
       trackingUrl: this.trackingUrl.trim(),
       estimatedDelivery: this.estimatedDelivery.trim(),
       shipmentDate: this.shipmentDate ? new Date(this.shipmentDate).toISOString() : new Date().toISOString(),
-      dispatchLocation: this.dispatchLocation,
       shippingNotes: this.shippingNotes.trim(),
       awbNumber: this.trackingNumber.trim()
     };

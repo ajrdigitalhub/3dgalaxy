@@ -15,7 +15,7 @@ import { PackagingSlipDialogComponent } from '../packaging-slip-dialog/packaging
 @Component({
   selector: 'app-admin-order-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, ShipmentDialogComponent, PackagingSlipDialogComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, ShipmentDialogComponent, PackagingSlipDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-details.html'
 })

@@ -29,6 +29,7 @@ import { VariantSlotComponent } from "../../shared/components/variant-slot/varia
 import { BundleSummaryComponent } from "../../shared/components/bundle-summary/bundle-summary.component";
 
 import { ShippingService } from "../../core/services/shipping.service";
+import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { formatWeight } from "../../shared/utils/weight.utils";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
@@ -44,7 +45,6 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
     ScrollRevealDirective,
     TiltDirective,
     FormsModule,
-    WeightPipe,
     VariantChipSelectorComponent,
     BundleSelectorComponent,
     VariantSlotComponent,
@@ -65,6 +65,7 @@ export class ProductDetail {
   toastService = inject(ToastService);
   router = inject(Router);
   shippingService = inject(ShippingService);
+  deliveryEstimateService = inject(DeliveryEstimateService);
 
   displayProductWeight = computed(() => {
     const p = this.product();
@@ -169,22 +170,77 @@ export class ProductDetail {
   /** Transforms product options into VariantOptionGroup[] for the chip selector */
   computedOptionGroups = computed<VariantOptionGroup[]>(() => {
     const p = this.product();
-    if (!p || !Array.isArray(p.options)) return [];
-    return p.options
-      .filter((opt: any) => {
-        const optName = String(opt?.name || '').trim().toLowerCase();
-        if (optName === 'title') {
-          const vals = Array.isArray(opt.values) ? opt.values : [];
-          if (vals.every((v: any) => this.isDefaultVariantName(this.getOptionValueStr(v)))) {
-            return false;
-          }
+    if (!p) return [];
+
+    const rawOptions = Array.isArray(p.options) ? p.options : [];
+    const groups: VariantOptionGroup[] = [];
+
+    rawOptions.forEach((opt: any) => {
+      const groupName = this.getOptionValueStr(opt?.name || opt);
+      if (!groupName) return;
+
+      const optNameLower = groupName.trim().toLowerCase();
+      if (optNameLower === 'title') {
+        const vals = Array.isArray(opt.values) ? opt.values : [];
+        if (vals.every((v: any) => this.isDefaultVariantName(this.getOptionValueStr(v)))) {
+          return;
         }
-        return true;
-      })
-      .map((opt: any) => ({
-        name: this.getOptionValueStr(opt.name),
-        values: (Array.isArray(opt.values) ? opt.values : []).map((v: any) => this.getOptionValueStr(v)),
-      }));
+      }
+
+      let values: string[] = (Array.isArray(opt.values) ? opt.values : [])
+        .map((v: any) => this.getOptionValueStr(v))
+        .filter((v: string) => v && !v.startsWith('{'));
+
+      // If values are empty or contain invalid JSON objects, collect distinct values for this option from variants
+      if (values.length === 0 && Array.isArray(p.variants) && p.variants.length > 0) {
+        const normGroup = this.normalizeOptionKey(groupName);
+        const fromVariants = new Set<string>();
+        p.variants.forEach((v: any) => {
+          const optVals = this.getVariantOptionValues(v);
+          Object.entries(optVals).forEach(([k, val]) => {
+            const normK = this.normalizeOptionKey(k);
+            if ((normK === normGroup || normK.includes(normGroup) || normGroup.includes(normK)) && val && !val.startsWith('{')) {
+              fromVariants.add(val);
+            }
+          });
+        });
+        values = Array.from(fromVariants);
+      }
+
+      if (values.length > 0) {
+        groups.push({
+          name: groupName,
+          values: Array.from(new Set(values))
+        });
+      }
+    });
+
+    // Fallback: If no options defined but product has variants with optionValues
+    if (groups.length === 0 && Array.isArray(p.variants) && p.variants.length > 0) {
+      const optionMap = new Map<string, Set<string>>();
+      p.variants.forEach((v: any) => {
+        const optVals = this.getVariantOptionValues(v);
+        Object.entries(optVals).forEach(([k, val]) => {
+          if (!k || !val || val.startsWith('{')) return;
+          const displayKey = k.charAt(0).toUpperCase() + k.slice(1);
+          if (!optionMap.has(displayKey)) {
+            optionMap.set(displayKey, new Set<string>());
+          }
+          optionMap.get(displayKey)!.add(val);
+        });
+      });
+
+      optionMap.forEach((vals, name) => {
+        if (vals.size > 0 && !this.isDefaultVariantName(name)) {
+          groups.push({
+            name,
+            values: Array.from(vals)
+          });
+        }
+      });
+    }
+
+    return groups;
   });
 
   /** Returns group names where no selection has been made */
@@ -678,27 +734,27 @@ export class ProductDetail {
   isOptionValueOutOfStock(optionName: string, val: string): boolean {
     const p = this.product();
     if (!p || !p.variants || p.variants.length === 0) return false;
-    const toStr = (v: any) =>
-      typeof v === "string" ? v : v?.label || v?.value || v?.name || String(v);
     const currentOpts = { ...this.selectedOptions(), [optionName]: val };
-    const matchingVariant = p.variants.find((v: any) => {
-      if (!v.optionValues) return false;
-      return Object.keys(currentOpts).every(
-        (k) => toStr(v.optionValues[k]) === toStr(currentOpts[k]),
-      );
-    });
-
+    
+    // Check if there is an exact matching variant with stock > 0
+    const matchingVariant = this.findBestVariantForOptions(p, currentOpts);
     if (matchingVariant) {
-      return matchingVariant.stock <= 0;
+      return (matchingVariant.stock ?? matchingVariant.quantity ?? 0) <= 0;
     }
 
+    const normOptName = this.normalizeOptionKey(optionName);
+    const normVal = this.normalizeOptionValue(val);
+
     const anyInStock = p.variants.some((v: any) => {
-      return (
-        v.optionValues &&
-        toStr(v.optionValues[optionName]) === toStr(val) &&
-        v.stock > 0
-      );
+      const vOpts = this.getVariantOptionValues(v);
+      const matchedKey = Object.keys(vOpts).find(k => {
+        const nk = this.normalizeOptionKey(k);
+        return nk === normOptName || nk.includes(normOptName) || normOptName.includes(nk);
+      });
+      if (!matchedKey) return false;
+      return this.normalizeOptionValue(vOpts[matchedKey]) === normVal && (v.stock ?? v.quantity ?? 0) > 0;
     });
+
     return !anyInStock;
   }
 
@@ -779,12 +835,22 @@ export class ProductDetail {
       });
     }
 
-    // 3. Fast Delivery (Only if shipping info or delivery time is set in Admin)
-    const deliveryTime = p.shipping?.deliveryTime || (p.estimatedDeliveryDays ? `${p.estimatedDeliveryDays} Days Delivery` : null);
-    if (deliveryTime && String(deliveryTime).trim().length > 0) {
+    // 3. Fast Delivery Badge
+    // Only show delivery badge if custom text is explicitly set in Admin (e.g. "EXPRESS SHIPPING")
+    // or if primary shipping info card is not active. If showing encoded days, decode via decodeDays(encoded) (e.g. "4-10 Days" or "4-19 Days" instead of raw "410" or "419").
+    const customDeliveryTime = p.shipping?.deliveryTime?.trim();
+    if (customDeliveryTime) {
       badges.push({
         icon: 'local_shipping',
-        title: String(deliveryTime).trim().toUpperCase(),
+        title: customDeliveryTime.toUpperCase(),
+        subtitle: 'Insured Logistics',
+        color: 'from-emerald-400 via-teal-500 to-cyan-600'
+      });
+    } else if (!this.productShippingInfo() && p.estimatedDeliveryDays) {
+      const decodedDays = this.deliveryEstimateService.decodeDays(p.estimatedDeliveryDays);
+      badges.push({
+        icon: 'local_shipping',
+        title: `${decodedDays} DAYS DELIVERY`.toUpperCase(),
         subtitle: 'Insured Logistics',
         color: 'from-emerald-400 via-teal-500 to-cyan-600'
       });
@@ -1277,13 +1343,27 @@ export class ProductDetail {
 
   /** Safely extract a plain string label from an option value that may be a string or object */
   getOptionValueStr(val: any): string {
-    if (!val) return "";
-    if (typeof val === "string") return val;
+    if (val === null || val === undefined) return "";
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (trimmed.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          return this.getOptionValueStr(parsed);
+        } catch (e) {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    }
     if (typeof val === "number") return String(val);
-    // Handle objects — prefer label > value > name > toString
-    return (
-      val.label || val.value || val.name || val.title || JSON.stringify(val)
-    );
+    if (typeof val === "object") {
+      const strVal = val.label || val.value || val.name || val.title || val.optionValue || val.val || val.text;
+      if (strVal && typeof strVal === 'string') return strVal.trim();
+      if (strVal && typeof strVal === 'number') return String(strVal);
+      return "";
+    }
+    return String(val).trim();
   }
 
   trackGalleryImage(index: number, img: any) {

@@ -4,6 +4,7 @@ export interface CourierPartnerConfig {
   id: string;
   name: string;
   urlPattern: string;
+  baseUrl?: string;
   enabled: boolean;
   isCustom?: boolean;
   logoUrl?: string;
@@ -11,27 +12,62 @@ export interface CourierPartnerConfig {
 }
 
 export const DEFAULT_COURIER_PARTNERS: CourierPartnerConfig[] = [
-  { id: 'delhivery', name: 'Delhivery', urlPattern: 'https://www.delhivery.com/track/package/{{trackingNumber}}', enabled: true, sortOrder: 1 },
-  { id: 'bluedart', name: 'Blue Dart', urlPattern: 'https://www.bluedart.com/tracking?trackingNumber={{trackingNumber}}', enabled: true, sortOrder: 2 },
-  { id: 'dtdc', name: 'DTDC', urlPattern: 'https://www.dtdc.in/tracking/tracking_results.asp?Ttype=awb_no&strCnno={{trackingNumber}}', enabled: true, sortOrder: 3 },
-  { id: 'professional', name: 'Professional Couriers', urlPattern: 'https://www.tpcindia.com/Tracking2014.aspx?id={{trackingNumber}}', enabled: true, sortOrder: 4 },
-  { id: 'indiapost', name: 'India Post', urlPattern: 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignmentnumber={{trackingNumber}}', enabled: true, sortOrder: 5 },
-  { id: 'xpressbees', name: 'XpressBees', urlPattern: 'https://www.xpressbees.com/track?awb={{trackingNumber}}', enabled: true, sortOrder: 6 },
-  { id: 'ekart', name: 'Ekart Logistics', urlPattern: 'https://ekartlogistics.com/shipmenttrack/{{trackingNumber}}', enabled: true, sortOrder: 7 },
-  { id: 'shadowfax', name: 'Shadowfax', urlPattern: 'https://www.shadowfax.in/track/{{trackingNumber}}', enabled: true, sortOrder: 8 },
-  { id: 'ecomexpress', name: 'Ecom Express', urlPattern: 'https://ecomexpress.in/tracking/?awb_field={{trackingNumber}}', enabled: true, sortOrder: 9 },
-  { id: 'dhl', name: 'DHL', urlPattern: 'https://www.dhl.com/in-en/home/tracking.html?tracking-id={{trackingNumber}}', enabled: true, sortOrder: 10 },
-  { id: 'fedex', name: 'FedEx', urlPattern: 'https://www.fedex.com/fedextrack/?trknbr={{trackingNumber}}', enabled: true, sortOrder: 11 },
-  { id: 'ups', name: 'UPS', urlPattern: 'https://www.ups.com/track?tracknum={{trackingNumber}}', enabled: true, sortOrder: 12 },
-  { id: 'aramex', name: 'Aramex', urlPattern: 'https://www.aramex.com/express/track-results?q={{trackingNumber}}', enabled: true, sortOrder: 13 },
-  { id: 'amazon', name: 'Amazon Shipping', urlPattern: 'https://track.amazon.in/tracking/{{trackingNumber}}', enabled: true, sortOrder: 14 },
-  { id: 'shiprocket', name: 'Shiprocket', urlPattern: 'https://shiprocket.co/tracking/{{trackingNumber}}', enabled: true, sortOrder: 15 },
-  { id: 'porter', name: 'Porter', urlPattern: 'https://porter.in/track/{{trackingNumber}}', enabled: true, sortOrder: 16 },
-  { id: 'trackon', name: 'Trackon', urlPattern: 'https://trackon.in/tracking/{{trackingNumber}}', enabled: true, sortOrder: 17 },
-  { id: 'stcourier', name: 'ST Courier', urlPattern: 'https://stcourier.com/track?tracking_id={{trackingNumber}}', enabled: true, sortOrder: 18 },
-  { id: 'vrllogistics', name: 'VRL Logistics', urlPattern: 'https://www.vrllogistics.in/vrl_track.aspx?cnt={{trackingNumber}}', enabled: true, sortOrder: 19 },
-  { id: 'gati', name: 'Gati', urlPattern: 'https://www.gati.com/track-docket/?docket_no={{trackingNumber}}', enabled: true, sortOrder: 20 },
-  { id: 'others', name: 'Others', urlPattern: '{{trackingNumber}}', enabled: true, sortOrder: 99 }
+  {
+    id: 'delhivery',
+    name: 'Delhivery Courier',
+    urlPattern: 'https://www.delhivery.com/tracking?trackingNumber={{trackingNumber}}',
+    baseUrl: 'https://www.delhivery.com/tracking',
+    enabled: true,
+    sortOrder: 1
+  },
+  {
+    id: 'anjani',
+    name: 'Anjani Courier',
+    urlPattern: 'https://shreeanjani.co.in/tracking?awb={{trackingNumber}}',
+    baseUrl: 'https://shreeanjani.co.in/tracking',
+    enabled: true,
+    sortOrder: 2
+  },
+  {
+    id: 'bluedart',
+    name: 'Bluedart',
+    urlPattern: 'https://www.bluedart.com/how-to-track?trackingNumber={{trackingNumber}}',
+    baseUrl: 'https://www.bluedart.com/how-to-track',
+    enabled: true,
+    sortOrder: 3
+  },
+  {
+    id: 'dtdc',
+    name: 'DTDC',
+    urlPattern: 'https://www.dtdc.com/track-your-shipment/?strCnno={{trackingNumber}}',
+    baseUrl: 'https://www.dtdc.com/track-your-shipment/',
+    enabled: true,
+    sortOrder: 4
+  },
+  {
+    id: 'maruti',
+    name: 'Maruti Courier',
+    urlPattern: 'https://shreemaruti.com/track-shipment/?awb={{trackingNumber}}',
+    baseUrl: 'https://shreemaruti.com/track-shipment/',
+    enabled: true,
+    sortOrder: 5
+  },
+  {
+    id: 'indiapost',
+    name: 'Indian Post',
+    urlPattern: 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignmentnumber={{trackingNumber}}',
+    baseUrl: 'https://www.indiapost.gov.in/',
+    enabled: true,
+    sortOrder: 6
+  },
+  {
+    id: 'others',
+    name: 'Others',
+    urlPattern: '{{trackingNumber}}',
+    baseUrl: '',
+    enabled: true,
+    sortOrder: 7
+  }
 ];
 
 export class TrackingService {
@@ -55,6 +91,7 @@ export class TrackingService {
           ...c,
           name: c.name || existing.name,
           urlPattern: c.urlPattern || existing.urlPattern,
+          baseUrl: c.baseUrl || existing.baseUrl,
           enabled: c.enabled !== undefined ? c.enabled : existing.enabled
         });
       } else {
@@ -62,6 +99,7 @@ export class TrackingService {
           id: key,
           name: c.name,
           urlPattern: c.urlPattern || '{{trackingNumber}}',
+          baseUrl: c.baseUrl || '',
           enabled: c.enabled !== undefined ? c.enabled : true,
           isCustom: true,
           logoUrl: c.logoUrl,
@@ -83,29 +121,41 @@ export class TrackingService {
     customCourierSettings?: any[]
   ): string {
     const cleanNum = (trackingNumber || '').trim();
-    if (!cleanNum) return '';
 
     if (customUrlPattern && customUrlPattern.trim()) {
       if (customUrlPattern.includes('{{trackingNumber}}')) {
-        return customUrlPattern.replace(/\{\{trackingNumber\}\}/g, encodeURIComponent(cleanNum));
+        return cleanNum ? customUrlPattern.replace(/\{\{trackingNumber\}\}/g, encodeURIComponent(cleanNum)) : customUrlPattern.replace(/(\?|\&).*$/, '');
       }
       return customUrlPattern;
     }
 
     const couriers = this.getCourierList(customCourierSettings);
-    const found = couriers.find(
-      c => c.name.toLowerCase() === (courierPartner || '').toLowerCase() || c.id.toLowerCase() === (courierPartner || '').toLowerCase()
-    );
+    const normKey = (courierPartner || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
 
-    if (found && found.urlPattern && found.urlPattern.includes('{{trackingNumber}}')) {
-      return found.urlPattern.replace(/\{\{trackingNumber\}\}/g, encodeURIComponent(cleanNum));
+    const found = couriers.find(c => {
+      const cId = c.id.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+      const cName = c.name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+      return cId === normKey || cName === normKey || cId.includes(normKey) || normKey.includes(cId);
+    });
+
+    if (found) {
+      if (cleanNum) {
+        if (found.urlPattern && found.urlPattern.includes('{{trackingNumber}}')) {
+          return found.urlPattern.replace(/\{\{trackingNumber\}\}/g, encodeURIComponent(cleanNum));
+        }
+      }
+      if (found.baseUrl) {
+        return found.baseUrl;
+      }
     }
 
     if (cleanNum.startsWith('http://') || cleanNum.startsWith('https://')) {
       return cleanNum;
     }
 
-    return found?.urlPattern ? found.urlPattern.replace(/\{\{trackingNumber\}\}/g, encodeURIComponent(cleanNum)) : `https://www.google.com/search?q=${encodeURIComponent((courierPartner || '') + ' tracking ' + cleanNum)}`;
+    return cleanNum
+      ? `https://www.google.com/search?q=${encodeURIComponent((courierPartner || '') + ' tracking ' + cleanNum)}`
+      : 'https://3dgalaxy.co.in/order-tracking';
   }
 
   /**

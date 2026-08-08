@@ -51,21 +51,21 @@ export const generateAndSaveSupportRequest = async (req: Request, res: Response)
     if (order.customer) {
       if (order.customer.user) {
         const u = order.customer.user;
-        customerName = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.name || 'Customer';
+        customerName = [u.firstName, u.lastName].filter(Boolean).join(' ') || (u as any).name || 'Customer';
         customerEmail = u.email || 'Not provided';
       }
       customerMobile = order.customer.phone || 'Not provided';
     }
 
     // Fallback to guest details if guest order
-    if (customerName === 'Customer' && order.guestName) {
-      customerName = order.guestName;
+    if (customerName === 'Customer' && (order as any).guestName) {
+      customerName = (order as any).guestName;
     }
-    if (customerEmail === 'Not provided' && order.guestEmail) {
-      customerEmail = order.guestEmail;
+    if (customerEmail === 'Not provided' && (order as any).guestEmail) {
+      customerEmail = (order as any).guestEmail;
     }
-    if (customerMobile === 'Not provided' && order.guestPhone) {
-      customerMobile = order.guestPhone;
+    if (customerMobile === 'Not provided' && (order as any).guestPhone) {
+      customerMobile = (order as any).guestPhone;
     }
 
     const orderDateFormatted = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB', {

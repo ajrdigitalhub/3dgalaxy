@@ -793,11 +793,15 @@ export const updateOrderStatus = async (req: any, res: Response) => {
       });
     }
 
-    const isShippedStatus = String(status).toUpperCase() === 'SHIPPED';
+    const previousStatus = String(existing.status).toUpperCase();
+    const newStatus = String(status).toUpperCase();
+    const isShippedStatus = newStatus === 'SHIPPED';
+    const isTransitioningToShipped = previousStatus !== 'SHIPPED' && isShippedStatus;
+
     let shipmentDataToSave: any = (existing as any).shipment || null;
 
     if (isShippedStatus || req.body.courierPartner || req.body.trackingNumber) {
-      const courierPartner = req.body.courierPartner || req.body.shipmentCarrier || req.body.shipment?.courierPartner || 'Delhivery';
+      const courierPartner = req.body.courierPartner || req.body.shipmentCarrier || req.body.shipment?.courierPartner || 'Delhivery Courier';
       const courierDisplayName = req.body.courierDisplayName || req.body.courierName || req.body.shipment?.courierDisplayName || (courierPartner === 'Others' ? (req.body.courierName || 'Custom Courier') : courierPartner);
       const trackingNumber = req.body.trackingNumber || req.body.shipment?.trackingNumber || '';
       const trackingUrl = req.body.trackingUrl || req.body.shipment?.trackingUrl || TrackingService.generateTrackingUrl(courierPartner, trackingNumber, req.body.customUrlPattern);
@@ -880,15 +884,28 @@ export const updateOrderStatus = async (req: any, res: Response) => {
 
     const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
     if (phone) {
-      const statusKey = String(status).toLowerCase();
-      triggerWhatsAppNotification(statusKey, phone, updated, updated.customer, shipmentDataToSave ? {
-        courierName: shipmentDataToSave.courierDisplayName,
-        trackingNumber: shipmentDataToSave.trackingNumber,
-        trackingUrl: shipmentDataToSave.trackingUrl,
-        estimatedDeliveryDate: shipmentDataToSave.estimatedDelivery
-      } : undefined).catch((err) => {
-        console.error(`[updateOrderStatus] WhatsApp trigger error for order ${updated.orderNumber}:`, err);
-      });
+      if (isTransitioningToShipped) {
+        triggerWhatsAppNotification('order_shipped', phone, updated, updated.customer, {
+          shipment: shipmentDataToSave,
+          courierName: shipmentDataToSave?.courierDisplayName,
+          courierPartner: shipmentDataToSave?.courierPartner,
+          trackingNumber: shipmentDataToSave?.trackingNumber,
+          trackingUrl: shipmentDataToSave?.trackingUrl,
+          estimatedDeliveryDate: shipmentDataToSave?.estimatedDelivery
+        }).catch((err) => {
+          console.error(`[updateOrderStatus] WhatsApp shipped notification error for order ${updated.orderNumber}:`, err);
+        });
+      } else if (!isShippedStatus) {
+        const statusKey = String(status).toLowerCase();
+        triggerWhatsAppNotification(statusKey, phone, updated, updated.customer, shipmentDataToSave ? {
+          courierName: shipmentDataToSave?.courierDisplayName,
+          trackingNumber: shipmentDataToSave?.trackingNumber,
+          trackingUrl: shipmentDataToSave?.trackingUrl,
+          estimatedDeliveryDate: shipmentDataToSave?.estimatedDelivery
+        } : undefined).catch((err) => {
+          console.error(`[updateOrderStatus] WhatsApp trigger error for order ${updated.orderNumber}:`, err);
+        });
+      }
     }
 
     return res.status(200).json(updated);
@@ -969,7 +986,10 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
     });
     if (!order) return res.status(404).json({ error: 'Not found' });
 
-    const partner = courierPartner || shipmentCarrier || 'Delhivery';
+    const previousStatus = String(order.status).toUpperCase();
+    const isTransitioningToShipped = previousStatus !== 'SHIPPED';
+
+    const partner = courierPartner || shipmentCarrier || 'Delhivery Courier';
     const displayName = courierDisplayName || courierName || (partner === 'Others' ? (courierName || 'Custom Courier') : partner);
     const trackNum = trackingNumber || '';
     const trackUrl = trackingUrl || TrackingService.generateTrackingUrl(partner, trackNum);
@@ -1042,14 +1062,16 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
     (updated as any).shipment = shipmentObj;
 
     const phone = WhatsAppNotificationService.extractCustomerPhone(updated);
-    if (phone) {
-      triggerWhatsAppNotification('shipped', phone, updated, updated.customer, {
+    if (phone && isTransitioningToShipped) {
+      triggerWhatsAppNotification('order_shipped', phone, updated, updated.customer, {
+        shipment: shipmentObj,
         courierName: displayName,
+        courierPartner: partner,
         trackingNumber: trackNum,
         trackingUrl: trackUrl,
         estimatedDeliveryDate: estDelivery
       }).catch((err) => {
-        console.error(`[updateShipmentTracking] WhatsApp trigger error:`, err);
+        console.error(`[updateShipmentTracking] WhatsApp shipped trigger error:`, err);
       });
     }
 

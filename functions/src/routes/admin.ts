@@ -972,12 +972,12 @@ router.get('/omni-search', adminGuard, async (req: Request, res: Response) => {
           sku: true,
           basePrice: true,
           salePrice: true,
-          image: true,
+          images: true,
           slug: true
         },
         take: 8
       }),
-      prisma.order.findMany({
+      (prisma.order as any).findMany({
         where: {
           OR: [
             { id: { contains: q, mode: 'insensitive' } },

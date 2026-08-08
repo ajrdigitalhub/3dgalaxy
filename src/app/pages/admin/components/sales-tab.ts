@@ -143,10 +143,10 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
             </div>
           </div>
 
-          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-x-auto no-scrollbar font-sans relative">
+          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl font-sans relative overflow-visible">
             <!-- Loading Indicator Spinner Overlay -->
             @if (admin.ds.ordersLoading()) {
-              <div class="absolute inset-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs z-10 flex items-center justify-center animate-fadeIn">
+              <div class="absolute inset-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs z-10 flex items-center justify-center animate-fadeIn rounded-2xl">
                 <div class="flex flex-col items-center gap-3">
                   <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   <span class="text-[10px] font-black uppercase text-blue-500 tracking-wider">Syncing Fulfillment logs...</span>
@@ -157,121 +157,173 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
             <table class="w-full text-left text-xs whitespace-nowrap">
               <thead>
                 <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
-                  <th class="py-3">Order Code</th>
-                  <th class="py-3">Customer</th>
-                  <th class="py-3">Financial Status</th>
-                  <th class="py-3">Courier</th>
-                  <th class="py-3">Tracking Number</th>
-                  <th class="py-3">Shipment Date</th>
-                  <th class="py-3">Estimated Delivery</th>
-                  <th class="py-3">Total Amount</th>
-                  <th class="py-3 text-right">Logistics Action</th>
+                  <th class="py-3.5 px-3">Order Code</th>
+                  <th class="py-3.5 px-3">Customer</th>
+                  <th class="py-3.5 px-3">Order Status</th>
+                  <th class="py-3.5 px-3">Total Amount</th>
+                  <th class="py-3.5 px-3 text-right">Logistics & Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                 @for (o of filteredOrders(); track o.id) {
                   <tr class="transition-colors" [ngClass]="getOrderRowBgClass(o.status)">
-                    <td class="py-4">
-                      <span class="px-2 py-0.5 bg-zinc-50 dark:bg-zinc-950 font-mono text-[9px] font-black rounded-md text-zinc-500 border dark:border-zinc-800 uppercase">{{ o.orderNumber }}</span>
+                    <!-- Order Code -->
+                    <td class="py-3.5 px-3">
+                      <span 
+                        class="px-3 py-1.5 font-mono text-xs sm:text-sm font-black rounded-lg tracking-wider shadow-2xs inline-block"
+                        [ngClass]="isCancelled(o.status) ? 
+                          'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 line-through decoration-red-600 decoration-2' : 
+                          'bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700'"
+                      >
+                        {{ o.orderNumber }}
+                      </span>
                     </td>
-                    <td class="py-4">
-                      <p class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2">
+
+                    <!-- Customer -->
+                    <td class="py-3.5 px-3">
+                      <p 
+                        class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2"
+                        [class.line-through]="isCancelled(o.status)"
+                        [class.decoration-red-600]="isCancelled(o.status)"
+                        [class.decoration-2]="isCancelled(o.status)"
+                      >
                         {{ o.guestName || o.customerName }}
                         @if (o.customerType?.toUpperCase() === 'GUEST') {
-                          <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none">GUEST</span>
+                          <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">GUEST</span>
                         } @else {
-                          <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none">REG</span>
+                          <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">REG</span>
                         }
                       </p>
                       <span class="text-[10px] text-zinc-400 font-mono">{{ o.guestPhone || o.customerPhone }}</span>
                     </td>
-                    <td class="py-4">
-                      <span [class]="admin.getStatusStyle(o.status)" class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md tracking-wider border">
-                        {{ o.status }}
-                      </span>
-                    </td>
 
-                    <!-- Courier Partner Column -->
-                    <td class="py-4">
-                      @if (o.shipment?.courierDisplayName || o.shipment?.courierPartner) {
-                        <span class="px-2 py-1 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-black uppercase border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 w-max">
-                          <mat-icon class="text-xs scale-75">local_shipping</mat-icon>
-                          {{ o.shipment.courierDisplayName || o.shipment.courierPartner }}
+                    <!-- Order Status -->
+                    <td class="py-3.5 px-3">
+                      @if (isCancelled(o.status)) {
+                        <span class="px-2.5 py-1 bg-red-600 text-white text-[10px] font-black uppercase rounded-md tracking-wider border border-red-700 shadow-xs inline-flex items-center gap-1">
+                          <mat-icon class="text-xs scale-75">cancel</mat-icon>
+                          CANCELLED
                         </span>
                       } @else {
-                        <span class="text-zinc-400 text-[10px] italic">Not Assigned</span>
+                        <span [class]="admin.getStatusStyle(o.status)" class="px-2.5 py-1 text-[10px] font-black uppercase rounded-md tracking-wider border">
+                          {{ o.status }}
+                        </span>
                       }
                     </td>
 
-                    <!-- Tracking Number Column & Quick Actions -->
-                    <td class="py-4">
-                      @if (o.shipment?.trackingNumber) {
-                        <div class="flex items-center gap-1.5 font-mono">
-                          <span class="font-bold text-zinc-900 dark:text-white text-[11px]">{{ o.shipment.trackingNumber }}</span>
-                          <button
-                            (click)="copyTrackingId(o.shipment.trackingNumber)"
-                            class="h-6 w-6 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors"
-                            title="Copy Tracking ID"
-                          >
-                            <mat-icon class="text-xs scale-75">content_copy</mat-icon>
-                          </button>
-                          @if (o.shipment?.trackingUrl) {
-                            <button
-                              (click)="trackShipment(o.shipment.trackingUrl)"
-                              class="h-6 px-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center gap-1 border-none cursor-pointer transition-colors text-[9px] font-black uppercase"
-                              title="Track Shipment"
-                            >
-                              <mat-icon class="text-xs scale-75">open_in_new</mat-icon>
-                              Track
-                            </button>
-                          }
-                        </div>
-                      } @else {
-                        <span class="text-zinc-400 text-[10px] italic">—</span>
-                      }
+                    <!-- Total Amount -->
+                    <td 
+                      class="py-3.5 px-3 font-mono font-black text-zinc-800 dark:text-white text-sm"
+                      [class.line-through]="isCancelled(o.status)"
+                      [class.decoration-red-600]="isCancelled(o.status)"
+                      [class.decoration-2]="isCancelled(o.status)"
+                    >
+                      ₹{{ o.grandTotal | number }}
                     </td>
 
-                    <!-- Shipment Date Column -->
-                    <td class="py-4 font-mono text-[10px] text-zinc-600 dark:text-zinc-400">
-                      @if (o.shipment?.shipmentDate) {
-                        {{ o.shipment.shipmentDate | date:'dd MMM yyyy' }}
-                      } @else {
-                        <span class="text-zinc-400 italic">—</span>
-                      }
-                    </td>
-
-                    <!-- Estimated Delivery Column -->
-                    <td class="py-4 font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      @if (o.shipment?.estimatedDelivery || o.estimatedDelivery) {
-                        {{ o.shipment?.estimatedDelivery || o.estimatedDelivery }}
-                      } @else {
-                        <span class="text-zinc-400 italic">—</span>
-                      }
-                    </td>
-
-                    <td class="py-4 font-mono font-black text-zinc-800 dark:text-white">₹{{ o.grandTotal | number }}</td>
-
-                    <!-- Actions & Status Selector -->
-                    <td class="py-4 text-right">
-                      <div class="inline-flex gap-1.5 align-middle items-center">
-                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors mr-1">
+                    <!-- Logistics & Actions -->
+                    <td class="py-3.5 px-3 text-right">
+                      <div class="inline-flex gap-2 align-middle items-center justify-end">
+                        
+                        <!-- DETAILS BUTTON -->
+                        <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors">
                           <mat-icon class="text-[14px] leading-none">visibility</mat-icon> Details
                         </a>
+
+                        <!-- PACKAGING SLIP BUTTON -->
                         <button
                           (click)="openPackagingSlipModal(o)"
-                          class="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 rounded-lg text-[9px] font-black uppercase transition-colors mr-1 cursor-pointer"
+                          class="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 rounded-lg text-[9px] font-black uppercase transition-colors cursor-pointer"
                           title="Preview & Edit Packaging Slip"
                         >
                           <mat-icon class="text-[14px] leading-none">assignment</mat-icon>
                           <span>Packaging Slip</span>
                         </button>
-                        <button
-                          (click)="openShipmentModalForOrder(o)"
-                          class="flex items-center justify-center h-7 w-7 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors mr-1 cursor-pointer"
-                          title="Configure Shipment"
-                        >
-                          <mat-icon class="scale-75">local_shipping</mat-icon>
-                        </button>
+
+                        <!-- SHIPPING ICON BUTTON WITH UN-CROPPED HOVER POPOVER -->
+                        <div class="relative group/ship inline-block">
+                          <button
+                            (click)="openShipmentModalForOrder(o)"
+                            class="relative flex items-center justify-center h-7.5 w-7.5 rounded-lg transition-all border cursor-pointer"
+                            [ngClass]="(o.shipment?.trackingNumber || o.shipment?.courierPartner) ? 
+                              'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 shadow-sm' : 
+                              'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'"
+                            title="Shipping Logistics Details"
+                          >
+                            <mat-icon class="text-sm scale-85">local_shipping</mat-icon>
+                            @if (o.shipment?.trackingNumber || o.shipment?.courierPartner) {
+                              <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-900"></span>
+                            }
+                          </button>
+
+                          <!-- Left Floating Shipping Popover (never cropped by top/bottom container) -->
+                          <div class="group-hover/ship:opacity-100 group-hover/ship:visible opacity-0 invisible transition-all duration-200 pointer-events-none group-hover/ship:pointer-events-auto absolute right-full top-1/2 -translate-y-1/2 mr-3 w-72 bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl border border-zinc-700 z-50 text-left space-y-3 font-sans">
+                            <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+                              <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1.5">
+                                <mat-icon class="text-xs">local_shipping</mat-icon>
+                                Shipment Details
+                              </span>
+                              @if (o.shipment?.courierPartner || o.shipment?.courierDisplayName) {
+                                <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[9px] font-black rounded uppercase">
+                                  {{ o.shipment.courierDisplayName || o.shipment.courierPartner }}
+                                </span>
+                              }
+                            </div>
+
+                            @if (o.shipment?.trackingNumber || o.shipment?.courierPartner) {
+                              <div class="space-y-2 text-xs">
+                                @if (o.shipment?.trackingNumber) {
+                                  <div class="flex items-center justify-between bg-zinc-950 p-2.5 rounded-xl border border-zinc-800">
+                                    <div>
+                                      <span class="block text-[8px] font-black text-zinc-400 uppercase">Tracking AWB</span>
+                                      <span class="font-mono font-bold text-white text-xs">{{ o.shipment.trackingNumber }}</span>
+                                    </div>
+                                    <button
+                                      (click)="copyTrackingId(o.shipment.trackingNumber)"
+                                      class="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer border-none bg-transparent"
+                                      title="Copy Tracking ID"
+                                    >
+                                      <mat-icon class="text-xs">content_copy</mat-icon>
+                                    </button>
+                                  </div>
+                                }
+
+                                @if (o.shipment?.shipmentDate) {
+                                  <div class="flex justify-between text-[11px]">
+                                    <span class="text-zinc-400">Shipped Date:</span>
+                                    <span class="font-mono font-semibold text-zinc-200">{{ o.shipment.shipmentDate | date:'dd MMM yyyy' }}</span>
+                                  </div>
+                                }
+
+                                @if (o.shipment?.estimatedDelivery || o.estimatedDelivery) {
+                                  <div class="flex justify-between text-[11px]">
+                                    <span class="text-zinc-400">Est. Delivery:</span>
+                                    <span class="font-mono font-bold text-emerald-400">{{ o.shipment?.estimatedDelivery || o.estimatedDelivery }}</span>
+                                  </div>
+                                }
+
+                                @if (o.shipment?.trackingUrl) {
+                                  <div class="pt-1">
+                                    <button
+                                      (click)="trackShipment(o.shipment.trackingUrl)"
+                                      class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md border-none"
+                                    >
+                                      <mat-icon class="text-xs">open_in_new</mat-icon>
+                                      Track Live Shipment
+                                    </button>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <div class="py-1 text-center space-y-1">
+                                <p class="text-xs font-medium text-zinc-400">No dispatch details configured yet.</p>
+                                <p class="text-[9px] text-zinc-500">Click icon to assign courier & tracking AWB.</p>
+                              </div>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- STATUS SELECTOR -->
                         <select
                           #statusSelect
                           [value]="o.status"
@@ -780,6 +832,11 @@ export class AdminSalesTab {
     window.open(url, '_blank');
   }
 
+  isCancelled(status?: string): boolean {
+    if (!status) return false;
+    return status.toLowerCase().trim() === 'cancelled';
+  }
+
   getOrderRowBgClass(status: string): string {
     if (!status) return '';
     const s = status.toLowerCase().trim();
@@ -802,7 +859,7 @@ export class AdminSalesTab {
       return 'bg-amber-500/10 dark:bg-amber-950/30 hover:bg-amber-500/15 border-l-4 border-l-amber-500';
     }
     if (s === 'cancelled') {
-      return 'bg-rose-500/10 dark:bg-rose-950/30 hover:bg-rose-500/15 border-l-4 border-l-rose-500 line-through opacity-75';
+      return 'bg-red-50/70 dark:bg-red-950/30 border-l-4 border-l-red-500 opacity-60 grayscale-[30%] hover:opacity-85 transition-all';
     }
     return '';
   }

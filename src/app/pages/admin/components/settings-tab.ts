@@ -2747,17 +2747,20 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                       </div>
 
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                        <!-- Customer Service Request Template Name -->
+                        <!-- Customer 3D Print Service Request Template Name -->
                         <div class="space-y-1.5">
-                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Customer Service Request Template Name</span>
+                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Customer 3D Print Request Template Name</span>
                           <input
                             type="text"
-                            [value]="draft().whatsappSettings?.serviceRequestCustomerTemplateName || 'service_request_customer'"
-                            (input)="setNested('whatsappSettings', 'serviceRequestCustomerTemplateName', $any($event.target).value)"
+                            [value]="draft().whatsappSettings?.order3dprintClientTemplateName || draft().whatsappSettings?.serviceRequestCustomerTemplateName || 'order_3dprint_client'"
+                            (input)="
+                              setNested('whatsappSettings', 'order3dprintClientTemplateName', $any($event.target).value);
+                              setNested('whatsappSettings', 'serviceRequestCustomerTemplateName', $any($event.target).value)
+                            "
                             class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
                           />
                           <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
-                            Template name triggered to notify the customer upon quoting request.
+                            Meta WhatsApp template name for 3D Print service request client confirmation (Default: <code class="text-blue-500 font-mono">order_3dprint_client</code>).
                           </p>
                           <div class="flex items-center gap-2 mt-1">
                             <input
@@ -2770,17 +2773,20 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                           </div>
                         </div>
 
-                        <!-- Admin Service Request Template Name -->
+                        <!-- Admin 3D Print Service Request Template Name -->
                         <div class="space-y-1.5">
-                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Admin Service Request Template Name</span>
+                          <span class="block text-[9px] font-black text-zinc-450 uppercase">Admin 3D Print Request Template Name</span>
                           <input
                             type="text"
-                            [value]="draft().whatsappSettings?.serviceRequestAdminTemplateName || 'service_request_admin'"
-                            (input)="setNested('whatsappSettings', 'serviceRequestAdminTemplateName', $any($event.target).value)"
+                            [value]="draft().whatsappSettings?.order3dprintAdminTemplateName || draft().whatsappSettings?.serviceRequestAdminTemplateName || 'order_3dprint_admin'"
+                            (input)="
+                              setNested('whatsappSettings', 'order3dprintAdminTemplateName', $any($event.target).value);
+                              setNested('whatsappSettings', 'serviceRequestAdminTemplateName', $any($event.target).value)
+                            "
                             class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
                           />
                           <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
-                            Template name triggered to alert admins of a new quoting request.
+                            Meta WhatsApp template name for Admin 3D Print request notification (Default: <code class="text-blue-500 font-mono">order_3dprint_admin</code>).
                           </p>
                           <div class="flex items-center gap-2 mt-1">
                             <input
@@ -3111,6 +3117,12 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                           <option value="cancelled">Cancelled</option>
                           <option value="refund_completed">
                             Refund Dispatched
+                          </option>
+                          <option value="order_3dprint_client">
+                            3D Print Request (Client Confirmation)
+                          </option>
+                          <option value="order_3dprint_admin">
+                            3D Print Request (Admin Notification)
                           </option>
                           <option value="admin_new_order">
                             Admin Alert: New Order
@@ -4565,234 +4577,214 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
 
             <!-- 3D PRINTING SERVICE -->
             @if (activeSubTab() === "3D Printing Service") {
-              <div class="space-y-6">
-                <p class="text-xs text-zinc-500">
-                  Configure global parameters for the volumetric 3D Printing
-                  estimator page (base prices, materials, filament colors,
-                  infill standards, qualities).
-                </p>
+              <div class="space-y-8">
+                <div class="flex items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                  <div>
+                    <h2 class="text-base font-black text-zinc-900 dark:text-white flex items-center gap-2">
+                      <mat-icon class="text-red-500">print</mat-icon>
+                      3D Printing Service Engine Configuration
+                    </h2>
+                    <p class="text-xs text-zinc-500 mt-0.5">
+                      Configure base pricing rates, custom filament materials, colorways, printer quality profiles, and infill density standards.
+                    </p>
+                  </div>
+                  <button
+                    (click)="saveAllSettings()"
+                    [disabled]="isSaving()"
+                    class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-black uppercase shadow-md hover:shadow-red-500/20 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <mat-icon class="text-sm">{{ isSaving() ? 'sync' : 'save' }}</mat-icon>
+                    {{ isSaving() ? 'Saving...' : 'Save Service Settings' }}
+                  </button>
+                </div>
 
                 <!-- Pricing Core -->
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <h3
-                    class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                  >
-                    Base Rates & Tax Calculations
-                  </h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >Machine Run Fee Per Hour (₹)</span
-                      >
-                      <input
-                        type="number"
-                        [value]="
-                          draft().printServiceSettings?.machineFeePerHour || 150
-                        "
-                        (input)="
-                          setPrintServiceSettingsField(
-                            'machineFeePerHour',
-                            +$any($event.target).value
-                          )
-                        "
-                        class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none"
-                      />
+                <div class="p-5 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-sm space-y-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center font-bold text-sm">
+                      <mat-icon class="text-base">payments</mat-icon>
                     </div>
-
+                    <div>
+                      <h3 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                        Base Rates & Machine Operating Fee
+                      </h3>
+                      <p class="text-[11px] text-zinc-400">Hourly operating rate charged for 3D printer runtime during volumetric estimation</p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-1.5">
+                      <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                        Machine Run Fee Per Hour (₹)
+                      </label>
+                      <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-xs">₹</span>
+                        <input
+                          type="number"
+                          [value]="draft().printServiceSettings?.machineFeePerHour || 150"
+                          (input)="setPrintServiceSettingsField('machineFeePerHour', +$any($event.target).value)"
+                          class="w-full pl-8 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-red-500 rounded-xl text-xs font-bold text-zinc-900 dark:text-white outline-none transition-colors"
+                          placeholder="150"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Filament Materials Table -->
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <div class="flex justify-between items-center">
-                    <h3
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                    >
-                      Filament Materials & Colorways
-                    </h3>
+                <div class="p-5 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-sm space-y-5">
+                  <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold text-sm">
+                        <mat-icon class="text-base">category</mat-icon>
+                      </div>
+                      <div>
+                        <h3 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                          Filament Materials & Colorways
+                        </h3>
+                        <p class="text-[11px] text-zinc-400">Configure polymer materials, density values, gram prices, and available colors</p>
+                      </div>
+                    </div>
                     <button
                       (click)="addPrintMaterial()"
-                      class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"
+                      class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                     >
-                      <mat-icon class="text-xs">add</mat-icon> Add Material
+                      <mat-icon class="text-sm">add</mat-icon> Add Material
                     </button>
                   </div>
-                  <div class="space-y-4">
+
+                  <div class="space-y-5">
                     @for (
                       mat of draft().printServiceSettings?.materials || [];
-                      track mat.name;
+                      track parentIndex;
                       let parentIndex = $index
                     ) {
-                      <div
-                        class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 space-y-3.5 relative"
-                      >
-                        <!-- Material Fields -->
-                        <div
-                          class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center pr-8"
-                        >
-                          <div>
-                            <span
-                              class="block text-[8px] font-black text-zinc-400 uppercase"
-                              >Material Name</span
+                      <div class="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 relative group">
+                        <!-- Header & Actions bar -->
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-black uppercase tracking-wider">
+                              Material #{{ parentIndex + 1 }}
+                            </span>
+                            <span class="text-xs font-bold text-zinc-900 dark:text-white">
+                              {{ mat.name || 'Unnamed Material' }}
+                            </span>
+                          </div>
+                          <div class="flex items-center gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                [checked]="mat.active"
+                                (change)="updatePrintMaterialField(parentIndex, 'active', $any($event.target).checked)"
+                                class="w-4 h-4 text-blue-600 rounded border-zinc-300 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase">Active</span>
+                            </label>
+                            <button
+                              (click)="removePrintMaterial(parentIndex)"
+                              class="text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Material"
                             >
+                              <mat-icon class="text-base">delete</mat-icon>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Material Fields Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
+                          <div>
+                            <label class="block text-[10px] font-black text-zinc-400 uppercase mb-1">
+                              Material Name
+                            </label>
                             <input
                               type="text"
                               [value]="mat.name"
-                              (input)="
-                                updatePrintMaterialField(
-                                  parentIndex,
-                                  'name',
-                                  $any($event.target).value
-                                )
-                              "
-                              class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs outline-none"
+                              (input)="updatePrintMaterialField(parentIndex, 'name', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none"
+                              placeholder="e.g. PLA, PETG, ABS"
                             />
                           </div>
                           <div>
-                            <span
-                              class="block text-[8px] font-black text-zinc-400 uppercase"
-                              >Price per Gram (₹)</span
-                            >
+                            <label class="block text-[10px] font-black text-zinc-400 uppercase mb-1">
+                              Price per Gram (₹)
+                            </label>
                             <input
                               type="number"
                               step="0.1"
                               [value]="mat.pricePerGram"
-                              (input)="
-                                updatePrintMaterialField(
-                                  parentIndex,
-                                  'pricePerGram',
-                                  +$any($event.target).value
-                                )
-                              "
-                              class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono outline-none"
+                              (input)="updatePrintMaterialField(parentIndex, 'pricePerGram', +$any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                              placeholder="2.5"
                             />
                           </div>
                           <div>
-                            <span
-                              class="block text-[8px] font-black text-zinc-400 uppercase"
-                              >Density (g/cm³)</span
-                            >
+                            <label class="block text-[10px] font-black text-zinc-400 uppercase mb-1">
+                              Density (g/cm³)
+                            </label>
                             <input
                               type="number"
                               step="0.01"
                               [value]="mat.density"
-                              (input)="
-                                updatePrintMaterialField(
-                                  parentIndex,
-                                  'density',
-                                  +$any($event.target).value
-                                )
-                              "
-                              class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono outline-none"
+                              (input)="updatePrintMaterialField(parentIndex, 'density', +$any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:border-blue-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                              placeholder="1.25"
                             />
-                          </div>
-                          <div class="flex items-center gap-2 pt-3">
-                            <input
-                              type="checkbox"
-                              [checked]="mat.active"
-                              (change)="
-                                updatePrintMaterialField(
-                                  parentIndex,
-                                  'active',
-                                  $any($event.target).checked
-                                )
-                              "
-                              class="w-3.5 h-3.5 text-blue-600 rounded cursor-pointer animate-none"
-                            />
-                            <span
-                              class="text-[10px] font-bold text-zinc-500 uppercase"
-                              >Active</span
-                            >
                           </div>
                         </div>
 
-                        <!-- Delete Material Button -->
-                        <button
-                          (click)="removePrintMaterial(parentIndex)"
-                          class="absolute right-2 top-2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"
-                        >
-                          <mat-icon class="text-sm">delete</mat-icon>
-                        </button>
-
-                        <!-- Material Colors -->
-                        <div
-                          class="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2"
-                        >
+                        <!-- Material Colors Section -->
+                        <div class="pt-2 space-y-3">
                           <div class="flex justify-between items-center">
-                            <span
-                              class="text-[9px] font-black text-zinc-400 uppercase"
-                              >Colors configured for {{ mat.name }}</span
-                            >
+                            <span class="text-[10px] font-black text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <mat-icon class="text-xs text-purple-400">palette</mat-icon>
+                              Colors configured for {{ mat.name || 'this material' }} ({{ mat.colors?.length || 0 }})
+                            </span>
                             <button
                               (click)="addPrintMaterialColor(parentIndex)"
-                              class="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-750 rounded text-[9px] font-black uppercase flex items-center gap-0.5 cursor-pointer"
+                              class="px-2.5 py-1 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors"
                             >
-                              <mat-icon class="text-xs scale-75">add</mat-icon>
+                              <mat-icon class="text-xs">add</mat-icon>
                               Add Color
                             </button>
                           </div>
 
-                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                             @for (
                               col of mat.colors || [];
-                              track col.name;
+                              track childIndex;
                               let childIndex = $index
                             ) {
-                              <div
-                                class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 p-1.5 rounded-lg border border-zinc-100 dark:border-zinc-800 relative pr-7"
-                              >
-                                <input
-                                  type="color"
-                                  [value]="col.hex"
-                                  (input)="
-                                    updatePrintMaterialColorField(
-                                      parentIndex,
-                                      childIndex,
-                                      'hex',
-                                      $any($event.target).value
-                                    )
-                                  "
-                                  class="w-5 h-5 rounded cursor-pointer border-none bg-transparent"
-                                />
-                                <div class="flex-1">
+                              <div class="flex items-center gap-2 bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 relative pr-8 shadow-2xs">
+                                <div class="relative flex items-center justify-center shrink-0">
+                                  <input
+                                    type="color"
+                                    [value]="col.hex || '#000000'"
+                                    (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'hex', $any($event.target).value)"
+                                    class="w-6 h-6 rounded-lg cursor-pointer border-0 bg-transparent p-0 overflow-hidden"
+                                  />
+                                </div>
+                                <div class="flex-1 min-w-0">
                                   <input
                                     type="text"
                                     [value]="col.name"
-                                    placeholder="Name"
-                                    (input)="
-                                      updatePrintMaterialColorField(
-                                        parentIndex,
-                                        childIndex,
-                                        'name',
-                                        $any($event.target).value
-                                      )
-                                    "
-                                    class="w-full px-1.5 py-0.5 border border-zinc-200 dark:border-zinc-800 rounded text-[10px]"
+                                    placeholder="Color Name"
+                                    (input)="updatePrintMaterialColorField(parentIndex, childIndex, 'name', $any($event.target).value)"
+                                    class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-xs font-semibold text-zinc-900 dark:text-white outline-none focus:border-purple-500"
                                   />
                                 </div>
                                 <button
-                                  (click)="
-                                    removePrintMaterialColor(
-                                      parentIndex,
-                                      childIndex
-                                    )
-                                  "
-                                  class="absolute right-1 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1 rounded"
+                                  (click)="removePrintMaterialColor(parentIndex, childIndex)"
+                                  class="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-red-500 p-1 rounded-md transition-colors cursor-pointer"
+                                  title="Delete Color"
                                 >
-                                  <mat-icon class="text-xs">delete</mat-icon>
+                                  <mat-icon class="text-sm">close</mat-icon>
                                 </button>
                               </div>
                             }
                           </div>
                           @if (!mat.colors?.length) {
-                            <div class="text-[9px] text-yellow-600 font-bold">
-                              ⚠️ No colorways configured for this material.
-                              Users won't be able to print in this polymer.
+                            <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 text-xs font-medium flex items-center gap-2">
+                              <mat-icon class="text-sm">warning</mat-icon>
+                              No colorways configured for this material. Users won't be able to select a color for {{ mat.name }}.
                             </div>
                           }
                         </div>
@@ -4802,72 +4794,63 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                 </div>
 
                 <!-- Printer Qualities Profile -->
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <div class="flex justify-between items-center">
-                    <h3
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                    >
-                      Printer Quality Profiles
-                    </h3>
+                <div class="p-5 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-sm space-y-4">
+                  <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-sm">
+                        <mat-icon class="text-base">layers</mat-icon>
+                      </div>
+                      <div>
+                        <h3 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                          Printer Quality Profiles
+                        </h3>
+                        <p class="text-[11px] text-zinc-400">Set layer heights (mm) for print resolution presets (Fine, Standard, Draft)</p>
+                      </div>
+                    </div>
                     <button
                       (click)="addPrintQuality()"
-                      class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"
+                      class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                     >
-                      <mat-icon class="text-xs">add</mat-icon> Add Profile
+                      <mat-icon class="text-sm">add</mat-icon> Add Profile
                     </button>
                   </div>
-                  <div class="space-y-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     @for (
                       q of draft().printServiceSettings?.qualities || [];
                       track $index
                     ) {
-                      <div
-                        class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 relative pr-10"
-                      >
+                      <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 relative pr-9 space-y-2">
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Profile Name</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Profile Name
+                          </label>
                           <input
                             type="text"
                             [value]="q.name"
-                            (input)="
-                              updatePrintQualityField(
-                                $index,
-                                'name',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs"
+                            (input)="updatePrintQualityField($index, 'name', $any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="e.g. Standard (0.2mm)"
                           />
                         </div>
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Layer Thickness (mm)</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Layer Thickness (mm)
+                          </label>
                           <input
                             type="number"
                             step="0.01"
                             [value]="q.height"
-                            (input)="
-                              updatePrintQualityField(
-                                $index,
-                                'height',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono"
+                            (input)="updatePrintQualityField($index, 'height', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="0.2"
                           />
                         </div>
                         <button
                           (click)="removePrintQuality($index)"
-                          class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"
+                          class="absolute right-2 top-2 text-zinc-400 hover:text-red-500 p-1 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Profile"
                         >
-                          <mat-icon class="text-sm">delete</mat-icon>
+                          <mat-icon class="text-base">delete</mat-icon>
                         </button>
                       </div>
                     }
@@ -4875,126 +4858,98 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                 </div>
 
                 <!-- Infill Density Standards -->
-                <div
-                  class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
-                >
-                  <div class="flex justify-between items-center">
-                    <h3
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                    >
-                      Infill Density Standards
-                    </h3>
+                <div class="p-5 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl shadow-sm space-y-4">
+                  <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800/60">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold text-sm">
+                        <mat-icon class="text-base">grid_on</mat-icon>
+                      </div>
+                      <div>
+                        <h3 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                          Infill Density Standards
+                        </h3>
+                        <p class="text-[11px] text-zinc-400">Configure infill percentage ranges and defaults for customer orders</p>
+                      </div>
+                    </div>
                     <button
                       (click)="addPrintInfill()"
-                      class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer"
+                      class="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                     >
-                      <mat-icon class="text-xs">add</mat-icon> Add Infill
+                      <mat-icon class="text-sm">add</mat-icon> Add Infill
                     </button>
                   </div>
                   <div class="space-y-3">
                     @for (
-                      inf of draft().printServiceSettings?.infillStandards ||
-                        [];
+                      inf of draft().printServiceSettings?.infillStandards || [];
                       track $index
                     ) {
-                      <div
-                        class="grid grid-cols-1 sm:grid-cols-5 gap-2 bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800 relative pr-10"
-                      >
+                      <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 relative pr-10">
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Name (e.g. 10 - 30%)</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Infill Name
+                          </label>
                           <input
                             type="text"
                             [value]="inf.name"
-                            (input)="
-                              updatePrintInfillField(
-                                $index,
-                                'name',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs"
+                            (input)="updatePrintInfillField($index, 'name', $any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-orange-500 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="Standard (20%)"
                           />
                         </div>
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Description (e.g. Standard)</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Description
+                          </label>
                           <input
                             type="text"
                             [value]="inf.desc"
-                            (input)="
-                              updatePrintInfillField(
-                                $index,
-                                'desc',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs"
+                            (input)="updatePrintInfillField($index, 'desc', $any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-orange-500 rounded-lg text-xs font-semibold text-zinc-900 dark:text-white outline-none"
+                            placeholder="Light weight"
                           />
                         </div>
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Min %</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Min %
+                          </label>
                           <input
                             type="number"
                             [value]="inf.min"
-                            (input)="
-                              updatePrintInfillField(
-                                $index,
-                                'min',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono"
+                            (input)="updatePrintInfillField($index, 'min', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-orange-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="10"
                           />
                         </div>
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Max %</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Max %
+                          </label>
                           <input
                             type="number"
                             [value]="inf.max"
-                            (input)="
-                              updatePrintInfillField(
-                                $index,
-                                'max',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono"
+                            (input)="updatePrintInfillField($index, 'max', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-orange-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="30"
                           />
                         </div>
                         <div>
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Default %</span
-                          >
+                          <label class="block text-[9px] font-black text-zinc-400 uppercase mb-1">
+                            Default %
+                          </label>
                           <input
                             type="number"
                             [value]="inf.defaultVal"
-                            (input)="
-                              updatePrintInfillField(
-                                $index,
-                                'defaultVal',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-2 py-1 border border-zinc-200 dark:border-zinc-800 rounded text-xs font-mono"
+                            (input)="updatePrintInfillField($index, 'defaultVal', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:border-orange-500 rounded-lg text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none"
+                            placeholder="20"
                           />
                         </div>
                         <button
                           (click)="removePrintInfill($index)"
-                          class="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg"
+                          class="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-red-500 p-1 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Infill"
                         >
-                          <mat-icon class="text-sm">delete</mat-icon>
+                          <mat-icon class="text-base">delete</mat-icon>
                         </button>
                       </div>
                     }

@@ -1,5 +1,7 @@
 import { Response } from 'express';
 import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
 import prisma from '../config/database';
 import { AuthenticatedRequest } from '../middleware/auth';
 
@@ -156,13 +158,29 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     doc.fillColor('#000000').fontSize(24).font('Helvetica-Bold').text(easyId, startX, y);
 
     // Right: Logo
-    const logoX = startX + pageWidth - 90;
-    doc.save();
-    doc.fillColor('#F59E0B');
-    doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
-    doc.fill();
-    doc.restore();
-    doc.fillColor('#1E293B').fontSize(14).font('Helvetica-Bold').text('3D Galaxy', logoX - 10, y + 42, { width: 70, align: 'center' });
+    const logoX = startX + pageWidth - 140;
+    const logoCandidates = [
+      path.resolve(__dirname, '../../../public/3d-logo.png'),
+      path.resolve(process.cwd(), '../public/3d-logo.png'),
+      path.resolve(process.cwd(), 'public/3d-logo.png')
+    ];
+    const logoPathToUse = logoCandidates.find(p => fs.existsSync(p));
+
+    if (logoPathToUse) {
+      try {
+        doc.image(logoPathToUse, logoX, y - 5, { height: 36 });
+        doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 42, y + 8);
+      } catch (e) {
+        doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 40, y + 8);
+      }
+    } else {
+      doc.save();
+      doc.fillColor('#F59E0B');
+      doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
+      doc.fill();
+      doc.restore();
+      doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 40, y + 8);
+    }
 
     y += 55;
 

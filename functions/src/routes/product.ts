@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProducts, getProductById, getProductBySlug, createProduct, updateProduct, deleteProduct } from '../controllers/product';
+import { getProducts, getProductById, getProductBySlug, createProduct, updateProduct, deleteProduct, quickUpdateProduct, quickUpdateVariant, getProductVariants } from '../controllers/product';
 import { getProductImages, uploadProductImages, uploadProductImagesBySlug, deleteProductImage, setPrimaryImage, reorderImages } from '../controllers/productImage';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import prisma from '../config/database';
@@ -9,10 +9,13 @@ const router = Router();
 router.get('/', getProducts);
 router.get('/slug/:slug', getProductBySlug);
 router.get('/:id', getProductById);
+router.get('/:id/variants', getProductVariants);
 
-router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createProduct);
-router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateProduct);
-router.put('/:id/stock', authenticateToken, requireRole(['Admin', 'Manager']), async (req, res) => {
+router.post('/', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), createProduct);
+router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), updateProduct);
+router.patch('/:id/quick-update', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), quickUpdateProduct);
+router.patch('/:productId/variants/:variantId/quick-update', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), quickUpdateVariant);
+router.put('/:id/stock', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), async (req, res) => {
   const { id } = req.params;
   const { stock } = req.body;
   try {
@@ -25,7 +28,7 @@ router.put('/:id/stock', authenticateToken, requireRole(['Admin', 'Manager']), a
     return res.status(500).json({ success: false, error: err.message });
   }
 });
-router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager']), deleteProduct);
+router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), deleteProduct);
 
 // Image routes
 router.get('/:productId/images', getProductImages);

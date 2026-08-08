@@ -7,76 +7,132 @@
   <!-- COLLAPSED/FLYOUT SHOPIFY-STYLE LEFT SIDEBAR -->
   <!-- Desktop Sidebar -->
   <aside
-    class="hidden lg:flex w-64 bg-zinc-900 text-zinc-400 border-r border-white/5 flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40">
-    <div class="p-6 border-b border-white/5 flex items-center justify-between">
+    [class]="isSidebarCollapsed() ? 'w-20' : 'w-64'"
+    class="hidden lg:flex bg-zinc-900 text-zinc-400 border-r border-white/5 flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen shadow-2xl z-40 transition-all duration-300">
+    
+    <!-- Sidebar Header -->
+    <div class="p-4 border-b border-white/5 flex items-center justify-between transition-all" [class.justify-center]="isSidebarCollapsed()">
       <div class="flex items-center gap-3">
         <div
-          class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 relative logo-glow-wrapper">
+          class="h-9 w-9 bg-linear-to-tr from-fuchsia-500 via-purple-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 relative logo-glow-wrapper shrink-0"
+          [title]="isSidebarCollapsed() ? 'Admin Portal - 3D GALAXY' : ''"
+        >
           <div class="logo-glow-backdrop"></div>
           <img src="/3d-logo.png" alt="logo" class="w-8 h-8 relative z-10 logo-img">
         </div>
-        <div>
-          <h2 class="text-sm font-black tracking-tight text-white uppercase leading-none">
-            Admin Portal
-          </h2>
-          <span class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest">3D GALAXY</span>
-        </div>
+        @if (!isSidebarCollapsed()) {
+          <div class="animate-fadeIn">
+            <h2 class="text-sm font-black tracking-tight text-white uppercase leading-none">
+              Admin Portal
+            </h2>
+            <span class="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-widest">3D GALAXY</span>
+          </div>
+        }
       </div>
-      <div class="h-2 w-2 bg-emerald-400 rounded-full animate-ping"></div>
+
+      <!-- Sidebar Collapse Toggle Button -->
+      <button 
+        (click)="toggleSidebarCollapse()"
+        class="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center"
+        [title]="isSidebarCollapsed() ? 'Expand Sidebar' : 'Collapse Sidebar'"
+      >
+        <mat-icon class="text-base">{{ isSidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
     </div>
 
     <!-- COLLAPSIBLE GROUPS -->
     <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto no-scrollbar scroll-smooth">
       @for (grp of sidebarMenu; track grp.group) {
-      <div class="space-y-0.5">
-        <button (click)="toggleGroup(grp.group)"
-          class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
-          <span>{{ grp.group }}</span>
-          <mat-icon class="text-xs transition-transform duration-200"
-            [class.rotate-180]="!collapsedGroups()[grp.group]">expand_more</mat-icon>
-        </button>
+        <div class="space-y-0.5">
+          @if (!isSidebarCollapsed()) {
+            <button (click)="toggleGroup(grp.group)"
+              class="w-full flex items-center justify-between px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer">
+              <span>{{ grp.group }}</span>
+              <mat-icon class="text-xs transition-transform duration-200"
+                [class.rotate-180]="!collapsedGroups()[grp.group]">expand_more</mat-icon>
+            </button>
+          } @else {
+            <div class="border-t border-white/5 my-2"></div>
+          }
 
-        @if (!collapsedGroups()[grp.group]) {
-        <div class="space-y-0.5 pl-1 transition-all">
-          @for (item of grp.items; track item.id) {
-          <button (click)="setActiveTab(item.id)"
-            [class]="activeTab() === item.id 
-                              ? 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15' 
-                              : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all'">
-            <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
-            <span class="truncate">{{ item.label }}</span>
-            @if (item.id === 'orders' && ds.orders().length > 0) {
-            <span class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md">{{
-              ds.orders().length }}</span>
-            } @if (item.id === 'quotes' && ds.quotes().length > 0) {
-            <span class="ml-auto h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-            }
-          </button>
+          @if (!collapsedGroups()[grp.group] || isSidebarCollapsed()) {
+            <div class="space-y-1 transition-all" [class.pl-1]="!isSidebarCollapsed()">
+              @for (item of grp.items; track item.id) {
+                <div class="relative group">
+                  <button (click)="setActiveTab(item.id)"
+                    [class]="activeTab() === item.id 
+                      ? (isSidebarCollapsed() ? 'w-full flex items-center justify-center p-2.5 bg-blue-600 text-white rounded-xl transition-all shadow-md shadow-blue-600/15' : 'w-full flex items-center gap-2.5 px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-blue-600/15')
+                      : (isSidebarCollapsed() ? 'w-full flex items-center justify-center p-2.5 hover:text-white hover:bg-white/5 rounded-xl transition-all' : 'w-full flex items-center gap-2.5 px-3 py-1.5 hover:text-white hover:bg-white/5 rounded-xl text-xs font-semibold transition-all')"
+                    [title]="isSidebarCollapsed() ? item.label : ''"
+                  >
+                    <mat-icon class="text-base shrink-0">{{ item.icon }}</mat-icon>
+
+                    @if (!isSidebarCollapsed()) {
+                      <span class="truncate">{{ item.label }}</span>
+                      @if (item.id === 'orders' && ds.orders().length > 0) {
+                        <span class="ml-auto px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-md">{{ ds.orders().length }}</span>
+                      }
+                      @if (item.id === 'quotes' && ds.quotes().length > 0) {
+                        <span class="ml-auto h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+                      }
+                    } @else {
+                      @if (item.id === 'orders' && ds.orders().length > 0) {
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-zinc-900"></span>
+                      }
+                      @if (item.id === 'quotes' && ds.quotes().length > 0) {
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse ring-2 ring-zinc-900"></span>
+                      }
+                    }
+                  </button>
+
+                  <!-- Floating Tooltip in Collapsed Mode -->
+                  @if (isSidebarCollapsed()) {
+                    <div class="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-zinc-950 text-white border border-zinc-800 rounded-xl text-xs font-bold shadow-2xl z-50 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200">
+                      {{ item.label }}
+                      @if (item.id === 'orders' && ds.orders().length > 0) {
+                        <span class="ml-1.5 px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-black rounded">{{ ds.orders().length }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
-        }
-      </div>
       }
     </nav>
 
-    <div class="p-4 border-t border-white/5 mt-auto bg-zinc-950/40 font-sans">
-      <div class="flex items-center gap-3">
+    <!-- Sidebar Profile Footer -->
+    <div class="p-3 border-t border-white/5 mt-auto bg-zinc-950/40 font-sans">
+      <div class="flex items-center gap-3" [class.justify-center]="isSidebarCollapsed()">
         <div
-          class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white shadow-md shadow-purple-600/20 uppercase">
+          class="h-8 w-8 rounded-xl bg-linear-to-br from-fuchsia-500 via-purple-600 to-cyan-500 flex items-center justify-center text-[10px] font-black text-white shadow-md shadow-purple-600/20 uppercase shrink-0"
+          [title]="isSidebarCollapsed() ? (ds.userProfile()?.name || 'Administrator') : ''"
+        >
           {{ ds.userProfile()?.name?.slice(0,2) || 'AD' }}
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs font-black text-white truncate">
-            {{ ds.userProfile()?.name || 'Administrator' }}
-          </p>
-          <p class="text-[9px] text-zinc-500 truncate uppercase tracking-widest">
-            {{ ds.userRole() }} Node
-          </p>
-        </div>
-        <button (click)="logout()"
-          class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer">
-          <mat-icon class="text-base">logout</mat-icon>
-        </button>
+
+        @if (!isSidebarCollapsed()) {
+          <div class="flex-1 min-w-0 animate-fadeIn">
+            <p class="text-xs font-black text-white truncate">
+              {{ ds.userProfile()?.name || 'Administrator' }}
+            </p>
+            <p class="text-[9px] text-zinc-500 truncate uppercase tracking-widest">
+              {{ ds.userRole() }} Node
+            </p>
+          </div>
+          <button (click)="logout()"
+            class="p-1.5 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+            title="Logout">
+            <mat-icon class="text-base">logout</mat-icon>
+          </button>
+        } @else {
+          <button (click)="logout()"
+            class="p-1.5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+            title="Logout">
+            <mat-icon class="text-base">logout</mat-icon>
+          </button>
+        }
       </div>
     </div>
   </aside>

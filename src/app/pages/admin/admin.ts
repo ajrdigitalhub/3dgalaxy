@@ -119,7 +119,6 @@ import { AdminExploreConfigTabComponent } from "./components/admin-explore-confi
     AdminAbandonedCheckoutsTab,
     AdminServiceEnquiriesTab,
     AdminNotificationCenterTabComponent,
-    PushSettingsTabComponent,
     OmniSearchComponent,
     AdminVariantGroupConfigComponent,
     AdminReviewsTabComponent,
@@ -147,6 +146,16 @@ export class AdminPanel {
   activeTab = signal<AdminTab>("dashboard");
   selectedCustomerId = signal<string | null>(null);
   isAdminSidebarOpen = signal(false);
+  isSidebarCollapsed = signal<boolean>(
+    typeof localStorage !== 'undefined' ? localStorage.getItem('admin_sidebar_collapsed') === 'true' : false
+  );
+
+  toggleSidebarCollapse() {
+    this.isSidebarCollapsed.set(!this.isSidebarCollapsed());
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('admin_sidebar_collapsed', String(this.isSidebarCollapsed()));
+    }
+  }
 
   openCustomerDetails(customerId: string) {
     this.selectedCustomerId.set(customerId);

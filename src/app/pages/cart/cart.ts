@@ -12,7 +12,7 @@ import { DeliveryEstimatePipe } from '../../shared/pipes/delivery-estimate.pipe'
 
 @Component({
   selector: 'app-cart-checkout',
-  imports: [CommonModule, RouterModule, MatIconModule, WeightPipe, DeliveryEstimatePipe],
+  imports: [CommonModule, RouterModule, MatIconModule, DeliveryEstimatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cart.html',
   styleUrl: './cart.scss'

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProductById } from "../controllers/product";
+import { getProductById, quickUpdateProduct, quickUpdateVariant, getProductVariants } from "../controllers/product";
 import {
   previewImportProducts,
   importProducts,
@@ -17,6 +17,27 @@ router.get(
   authenticateToken,
   requireRole(["Admin", "Manager", "Super Admin"]),
   getProductById,
+);
+
+router.patch(
+  "/:id/quick-update",
+  authenticateToken,
+  requireRole(["Admin", "Manager", "Super Admin"]),
+  quickUpdateProduct,
+);
+
+router.patch(
+  "/:productId/variants/:variantId/quick-update",
+  authenticateToken,
+  requireRole(["Admin", "Manager", "Super Admin"]),
+  quickUpdateVariant,
+);
+
+router.get(
+  "/:id/variants",
+  authenticateToken,
+  requireRole(["Admin", "Manager", "Super Admin"]),
+  getProductVariants,
 );
 
 router.get(

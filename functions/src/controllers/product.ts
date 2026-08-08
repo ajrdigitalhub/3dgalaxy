@@ -1633,3 +1633,194 @@ export const deleteProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'SKU deletion command failed', details: error.message });
   }
 };
+
+export const quickUpdateProduct = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const productId = id || req.params.productId;
+  const { price, salePrice, dealerPrice, basePrice, stockQuantity, stock, isActive } = req.body;
+
+  try {
+    const existing = await prisma.product.findUnique({ where: { id: productId } });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+
+    const updateData: any = {};
+
+    // Price updates
+    if (price !== undefined || salePrice !== undefined) {
+      const pVal = parseFloat(salePrice !== undefined ? salePrice : price);
+      if (isNaN(pVal) || pVal < 0) {
+        return res.status(400).json({ success: false, error: 'Invalid price value. Price must be a non-negative number.' });
+      }
+      updateData.salePrice = pVal;
+    }
+
+    if (dealerPrice !== undefined) {
+      const dVal = parseFloat(dealerPrice);
+      if (isNaN(dVal) || dVal < 0) {
+        return res.status(400).json({ success: false, error: 'Invalid dealer price value.' });
+      }
+      updateData.dealerPrice = dVal;
+    }
+
+    if (basePrice !== undefined) {
+      const bVal = parseFloat(basePrice);
+      if (!isNaN(bVal) && bVal >= 0) {
+        updateData.basePrice = bVal;
+      }
+    }
+
+    // Stock updates
+    if (stockQuantity !== undefined || stock !== undefined) {
+      const sVal = parseInt(stockQuantity !== undefined ? stockQuantity : stock, 10);
+      if (isNaN(sVal) || sVal < 0) {
+        return res.status(400).json({ success: false, error: 'Invalid stock quantity. Stock must be an integer >= 0.' });
+      }
+      updateData.stock = sVal;
+    }
+
+    // Active status
+    if (isActive !== undefined) {
+      updateData.isActive = Boolean(isActive);
+    }
+
+    updateData.updatedAt = new Date();
+
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: updateData,
+      include: {
+        category: true,
+        brand: true,
+        variants: true
+      }
+    });
+
+    clearProductCache();
+
+    // Audit Log
+    try {
+      const user = (req as any).user;
+      if (user) {
+        await prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            action: 'PRODUCT_QUICK_UPDATE',
+            entityType: 'Product',
+            entityId: productId,
+            newData: updateData
+          }
+        });
+      }
+    } catch (auditErr) {
+      // non-blocking
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product quick updated successfully',
+      data: updated
+    });
+  } catch (err: any) {
+    console.error('Failed to quick update product:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Server error updating product' });
+  }
+};
+
+export const quickUpdateVariant = async (req: Request, res: Response) => {
+  const { productId, variantId, id } = req.params;
+  const targetVariantId = variantId || id;
+
+  const { price, salePrice, stockQuantity, stock, isActive } = req.body;
+
+  try {
+    const existing = await prisma.productVariant.findUnique({ where: { id: targetVariantId } });
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Product variant not found' });
+    }
+
+    const updateData: any = {};
+
+    if (price !== undefined || salePrice !== undefined) {
+      const pVal = parseFloat(salePrice !== undefined ? salePrice : price);
+      if (isNaN(pVal) || pVal < 0) {
+        return res.status(400).json({ success: false, error: 'Invalid price value. Price must be a non-negative number.' });
+      }
+      updateData.price = pVal;
+      updateData.salePrice = pVal;
+    }
+
+    if (stockQuantity !== undefined || stock !== undefined) {
+      const sVal = parseInt(stockQuantity !== undefined ? stockQuantity : stock, 10);
+      if (isNaN(sVal) || sVal < 0) {
+        return res.status(400).json({ success: false, error: 'Invalid stock quantity. Stock must be an integer >= 0.' });
+      }
+      updateData.stock = sVal;
+    }
+
+    if (isActive !== undefined) {
+      updateData.isActive = Boolean(isActive);
+    }
+
+    updateData.updatedAt = new Date();
+
+    const updatedVariant = await prisma.productVariant.update({
+      where: { id: targetVariantId },
+      data: updateData
+    });
+
+    const parentProductId = productId || existing.productId;
+    if (parentProductId) {
+      const allVars = await prisma.productVariant.findMany({ where: { productId: parentProductId } });
+      const totalStock = allVars.reduce((sum, v) => sum + (v.stock || 0), 0);
+      await prisma.product.update({
+        where: { id: parentProductId },
+        data: { stock: totalStock, updatedAt: new Date() }
+      });
+    }
+
+    clearProductCache();
+
+    // Audit Log
+    try {
+      const user = (req as any).user;
+      if (user) {
+        await prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            action: 'VARIANT_QUICK_UPDATE',
+            entityType: 'ProductVariant',
+            entityId: targetVariantId,
+            newData: updateData
+          }
+        });
+      }
+    } catch (auditErr) {
+      // non-blocking
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Variant quick updated successfully',
+      data: updatedVariant
+    });
+  } catch (err: any) {
+    console.error('Failed to quick update variant:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Server error updating variant' });
+  }
+};
+
+export const getProductVariants = async (req: Request, res: Response) => {
+  const productId = req.params.productId || req.params.id;
+  try {
+    const variants = await prisma.productVariant.findMany({
+      where: { productId: productId },
+      orderBy: { createdAt: 'asc' }
+    });
+    return res.status(200).json({ success: true, data: variants });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+

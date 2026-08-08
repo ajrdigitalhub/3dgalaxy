@@ -2,6 +2,7 @@ import prisma from '../config/database';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 import { NotificationTemplateResolver } from './notificationTemplateResolver';
+import { TrackingService } from './tracking.service';
 
 export interface StatusContent {
   currentStatus: string;
@@ -21,6 +22,14 @@ export class WhatsAppNotificationService {
     }
     // Remove the leading '+' for Meta WhatsApp API payload recipient
     return clean.replace('+', '');
+  }
+
+  /**
+   * Helper to check if a string is a valid UUID
+   */
+  private static isValidUuid(uuid?: string | null): boolean {
+    if (!uuid || typeof uuid !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
   }
 
   /**
@@ -1019,6 +1028,244 @@ export class WhatsAppNotificationService {
     } catch (err: any) {
       console.error('[WhatsAppNotificationService] Error in sendOrderConfirmation:', err);
       return { success: false, error: err.message };
+    }
+  }
+
+  /**
+   * Centralized method to send Order Shipped WhatsApp Notification using template order_shipped (11 Variables)
+   */
+  public static async sendOrderShippedNotification(
+    order: any,
+    shipmentDataToSave?: any,
+    extraParams: any = {}
+  ): Promise<{ success: boolean; logId?: string; messageId?: string; error?: string }> {
+    try {
+      const settingsObj = await getSettingsService();
+      const whatsappSettings = settingsObj?.whatsappSettings || {};
+
+      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
+      const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || process.env.APP_URL || 'https://3dgalaxy.co.in';
+
+      // Recipient mobile number check
+      const rawPhone = this.extractCustomerPhone(order, extraParams);
+      if (!rawPhone) {
+        console.warn(`[WhatsAppNotificationService] Missing customer phone number for order_shipped notification (Order ID: ${order?.orderNumber || order?.id || 'N/A'})`);
+        return { success: false, error: 'Recipient phone number is missing' };
+      }
+
+      const formattedPhone = this.formatPhoneNumber(rawPhone, whatsappSettings?.defaultCountryCode || '+91');
+
+      // 1. {{1}} customerName
+      const customerName = this.extractCustomerName(order, extraParams);
+
+      // 2. {{2}} orderId (public display number)
+      const orderId = String(order?.orderNumber || order?.id || extraParams?.orderId || 'N/A');
+
+      // 3. {{3}} orderAmount
+      const orderAmountStr = Number(order?.totalAmount || extraParams?.orderAmount || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+      // 4. {{4}} paymentMethod
+      const rawMethod = String(order?.paymentMethod || extraParams?.paymentMethod || '').toLowerCase();
+      const isCOD = rawMethod === 'cod' || rawMethod === 'cash_on_delivery';
+      let paymentMethod = 'Online Payment';
+      if (isCOD) paymentMethod = 'Cash on Delivery (COD)';
+      else if (rawMethod.includes('razorpay')) paymentMethod = 'Online Payment (Razorpay)';
+      else if (rawMethod.includes('stripe')) paymentMethod = 'Online Payment (Stripe)';
+      else if (rawMethod.includes('upi')) paymentMethod = 'UPI Payment';
+      else if (rawMethod.includes('prepaid')) paymentMethod = 'Prepaid Online Payment';
+      else if (order?.paymentMethod) paymentMethod = String(order.paymentMethod);
+
+      // 5. {{5}} paymentStatus
+      const isPaid = !!order?.paymentId || order?.paymentStatus === 'PAID' || order?.paymentStatus === 'Paid' || order?.payment?.status === 'PAID';
+      const paymentStatus = isPaid ? 'PAID' : (isCOD ? 'PENDING (COD)' : 'PENDING');
+
+      // 6. {{6}} orderStatus
+      const orderStatus = 'SHIPPED';
+
+      // 7. {{7}} courierPartner
+      const courierPartner = shipmentDataToSave?.courierDisplayName ||
+        shipmentDataToSave?.courierPartner ||
+        order?.courier ||
+        order?.shipmentCarrier ||
+        extraParams?.courierName ||
+        extraParams?.courierPartner ||
+        'Standard Delivery';
+
+      // 8. {{8}} trackingNumber
+      const trackingNumber = shipmentDataToSave?.trackingNumber ||
+        shipmentDataToSave?.awbNumber ||
+        order?.trackingNumber ||
+        extraParams?.trackingNumber ||
+        extraParams?.awbNumber ||
+        'N/A';
+
+      // 9. {{9}} estimatedDate
+      let estimatedDate = shipmentDataToSave?.estimatedDelivery ||
+        extraParams?.estimatedDeliveryDate ||
+        extraParams?.estimatedDelivery ||
+        order?.estimatedDelivery ||
+        '3-5 Business Days';
+
+      if (estimatedDate instanceof Date) {
+        estimatedDate = estimatedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      // 10. {{10}} trackingUrl
+      let trackingUrl = shipmentDataToSave?.trackingUrl ||
+        extraParams?.trackingUrl ||
+        order?.trackingUrl ||
+        '';
+
+      if (!trackingUrl && courierPartner && trackingNumber && trackingNumber !== 'N/A') {
+        trackingUrl = TrackingService.generateTrackingUrl(courierPartner, trackingNumber);
+      }
+      if (!trackingUrl || trackingUrl === 'N/A') {
+        trackingUrl = `${siteUrl}/order-tracking?id=${orderId}`;
+      }
+
+      // 11. {{11}} orderLink
+      const orderLink = `https://3dgalaxy.co.in/account/orders/${orderId}`;
+
+      // Configurable template name (default: order_shipped)
+      const templateName = whatsappSettings.orderShippedTemplateName || 'order_shipped';
+      const languageCode = whatsappSettings.languageCode || whatsappSettings.templateLanguage || 'en';
+
+      const validOrderId = this.isValidUuid(order?.id) ? order.id : null;
+      const validCustomerId = this.isValidUuid(order?.customerId) ? order.customerId : null;
+
+      // Deduplication check: prevent duplicate order_shipped notifications within 5 minutes for same order
+      if (validOrderId) {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const existingLog = await prisma.whatsappLog.findFirst({
+          where: {
+            orderId: validOrderId,
+            templateName: templateName,
+            status: 'Sent',
+            createdAt: { gte: fiveMinutesAgo }
+          }
+        });
+
+        if (existingLog) {
+          console.log(`[WhatsAppNotificationService] Duplicate order_shipped notification suppressed for order ${order.id} to ${formattedPhone}`);
+          return { success: true, logId: existingLog.id, messageId: existingLog.messageId || 'duplicate_suppressed' };
+        }
+      }
+
+      // Build 11 Component Parameters for order_shipped template
+      const components = sanitizeComponents([
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: sanitizeTemplateParam(customerName, 'Valued Customer') },
+            { type: 'text', text: sanitizeTemplateParam(orderId, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(orderAmountStr, '0.00') },
+            { type: 'text', text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
+            { type: 'text', text: sanitizeTemplateParam(paymentStatus, 'PAID') },
+            { type: 'text', text: sanitizeTemplateParam(orderStatus, 'SHIPPED') },
+            { type: 'text', text: sanitizeTemplateParam(courierPartner, 'Standard Delivery') },
+            { type: 'text', text: sanitizeTemplateParam(trackingNumber, 'N/A') },
+            { type: 'text', text: sanitizeTemplateParam(estimatedDate, '3-5 Business Days') },
+            { type: 'text', text: sanitizeTemplateParam(trackingUrl, `${siteUrl}/order-tracking`) },
+            { type: 'text', text: sanitizeTemplateParam(orderLink, `https://3dgalaxy.co.in/account/orders/${orderId}`) }
+          ]
+        }
+      ]);
+
+      const requestPayload = {
+        messaging_product: 'whatsapp',
+        to: formattedPhone,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components: components
+        },
+        orderId: order?.id,
+        statusKey: 'shipped'
+      };
+
+      // Create WhatsApp Log in Database
+      const log = await prisma.whatsappLog.create({
+        data: {
+          customerId: validCustomerId,
+          orderId: validOrderId,
+          phone: formattedPhone,
+          templateName: templateName,
+          templateLanguage: languageCode,
+          messageType: 'order_shipped',
+          provider: 'meta',
+          status: 'Pending',
+          requestPayload: requestPayload as any,
+          retryCount: 0
+        }
+      });
+
+      // API details
+      const apiUrl = whatsappSettings.apiUrl || `https://graph.facebook.com/v19.0/${whatsappSettings.phoneNumberId}/messages`;
+      const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
+
+      if (!whatsappSettings.enabled || !whatsappSettings.apiEnabled || !accessToken) {
+        console.log(`[WhatsAppNotificationService] Sandbox/Simulated dispatch for order_shipped notification (Order: ${orderId}, Phone: ${formattedPhone})`);
+        await prisma.whatsappLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'Sent',
+            responsePayload: { simulated: true, note: 'Sandbox order_shipped notification dispatch. Configure Meta WhatsApp Cloud API credentials for live dispatch.' },
+            messageId: 'sim_shipped_' + Math.random().toString(36).substring(7)
+          }
+        });
+        return { success: true, logId: log.id, messageId: 'simulated' };
+      }
+
+      // Live Dispatch to Meta Cloud API
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      const resData = (await response.json()) as any;
+
+      if (response.ok) {
+        const messageId = resData?.messages?.[0]?.id || null;
+        await prisma.whatsappLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'Sent',
+            responsePayload: resData,
+            messageId: messageId
+          }
+        });
+        console.log(`[WhatsAppNotificationService] WhatsApp order_shipped notification sent successfully for order ${orderId} (Message ID: ${messageId})`);
+        return { success: true, logId: log.id, messageId: messageId || undefined };
+      } else {
+        const errMsg = resData?.error?.message || 'Meta WhatsApp Cloud API request failed for order_shipped';
+        console.error(`[WhatsAppNotificationService] Meta WhatsApp Cloud API error for order ${orderId}: ${errMsg}`, resData);
+        await prisma.whatsappLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'Failed',
+            errorMessage: errMsg,
+            responsePayload: resData
+          }
+        });
+
+        if (resData?.error?.code === 132001) {
+          console.warn(`[WhatsAppNotificationService] Template ${templateName} not found in Meta (${errMsg}). Falling back to sendOrderStatusNotification...`);
+          return this.sendOrderStatusNotification(order, { ...extraParams, recipientNumber: formattedPhone, statusKey: 'shipped' });
+        }
+
+        return { success: false, logId: log.id, error: errMsg };
+      }
+    } catch (err: any) {
+      console.error('[WhatsAppNotificationService] Error sending order_shipped notification:', err);
+      return { success: false, error: err.message || 'Internal notification error' };
     }
   }
 }

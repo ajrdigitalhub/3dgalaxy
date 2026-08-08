@@ -47,7 +47,7 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
 @Component({
   selector: "app-checkout",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, WeightPipe, DeliveryEstimatePipe],
+  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, DeliveryEstimatePipe],
   templateUrl: "./checkout.html",
 })
 export class CheckoutComponent implements OnInit {

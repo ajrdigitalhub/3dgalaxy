@@ -46,7 +46,7 @@ export const setDynamicFirebaseConfig = async (serviceAccount: any, storageBucke
   if (admin.apps.length > 0) {
     await Promise.all(admin.apps.map(async (app) => {
       try {
-        await app.delete();
+        if (app) await app.delete();
       } catch (e) {
         console.error("Error deleting firebase app during re-init:", e);
       }

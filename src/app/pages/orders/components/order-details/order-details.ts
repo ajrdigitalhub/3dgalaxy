@@ -16,6 +16,7 @@ import { of, firstValueFrom } from "rxjs";
 import { SettingsService } from "../../../../core/services/settings.service";
 import { environment } from "../../../../../environments/environment";
 import { SupportRequestDialogComponent } from "../support-request-dialog/support-request-dialog.component";
+import { OrderSupportMessageService } from "../../../../services/order-support-message.service";
 
 @Component({
   selector: "app-customer-order-details",
@@ -31,13 +32,84 @@ export class CustomerOrderDetailsComponent implements OnInit {
   private router = inject(Router);
   private toastService = inject(ToastService);
   private settingsService = inject(SettingsService);
+  public supportService = inject(OrderSupportMessageService);
 
   order = signal<any>(null);
   loading = signal(true);
   error = signal("");
 
+  // Support Center Reactive State Signals
+  selectedSupportTopic = signal<string>('');
+  supportAnswers = signal<Record<string, string>>({});
+  supportAdditionalDetails = signal<string>('');
+
   showSupportDialog = signal(false);
   selectedSupportType = signal('Return');
+
+  availableSupportTopics = computed(() => {
+    const status = this.order()?.status;
+    return this.supportService.getSupportTopics(status);
+  });
+
+  currentTopicQuestions = computed(() => {
+    const topic = this.selectedSupportTopic();
+    return topic ? this.supportService.getQuestionsForTopic(topic) : [];
+  });
+
+  generatedSupportMessage = computed(() => {
+    const ord = this.order();
+    const topic = this.selectedSupportTopic();
+    const answers = this.supportAnswers();
+    const details = this.supportAdditionalDetails();
+    const custName = this.customerName();
+    return this.supportService.generateSupportMessage(ord, topic, answers, details, custName);
+  });
+
+  generatedWhatsAppUrl = computed(() => {
+    const msg = this.generatedSupportMessage();
+    const adminPhone = this.supportService.getAdminWhatsAppNumber();
+    return this.supportService.generateWhatsAppUrl(adminPhone, msg);
+  });
+
+  generatedEmailUrl = computed(() => {
+    const ord = this.order();
+    const orderId = ord?.orderNumber || ord?.id || '';
+    const msg = this.generatedSupportMessage();
+    return this.supportService.generateEmailUrl('3dgalaxy@hotmail.com', orderId, msg);
+  });
+
+  onSupportTopicChange(topic: string) {
+    this.selectedSupportTopic.set(topic);
+    this.supportAnswers.set({});
+  }
+
+  onQuestionAnswerChange(questionId: string, value: string) {
+    this.supportAnswers.update(curr => ({ ...curr, [questionId]: value }));
+  }
+
+  onAdditionalDetailsChange(value: string) {
+    this.supportAdditionalDetails.set(value.slice(0, 1000));
+  }
+
+  openWhatsAppSupport() {
+    const topic = this.selectedSupportTopic();
+    if (!topic) {
+      this.toastService.warning('Please select a support topic first.');
+      return;
+    }
+    const url = this.generatedWhatsAppUrl();
+    window.open(url, '_blank');
+  }
+
+  openEmailSupport() {
+    const topic = this.selectedSupportTopic();
+    if (!topic) {
+      this.toastService.warning('Please select a support topic first.');
+      return;
+    }
+    const url = this.generatedEmailUrl();
+    window.open(url, '_blank');
+  }
 
   deliveredDate = computed(() => {
     const ord = this.order();
@@ -239,73 +311,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
     return dbTotal > 0 ? dbTotal : calculated;
   });
 
-  // Support ticket inputs
-  ticketCat = signal<string>("Logistics inquiry");
-  ticketSub = signal<string>("");
-  ticketDesc = signal<string>("");
-  ticketSubmitting = signal(false);
 
-  async openWhatsAppSupport(event: MouseEvent) {
-    event.preventDefault();
-    const ord = this.order();
-    if (!ord) return;
-    
-    const sub = this.ticketSub().trim();
-    const desc = this.ticketDesc().trim();
-    if (!sub || !desc) {
-      this.toastService.warning("Kindly input both subject and description parameters to prepare your WhatsApp message.");
-      return;
-    }
-    
-    this.ticketSubmitting.set(true);
-    
-    try {
-      const payload = {
-        orderId: ord.id || ord.orderNumber,
-        issueType: this.ticketCat(),
-        subject: sub,
-        description: desc
-      };
-      
-      const res: any = await firstValueFrom(
-        this.http.post<any>("/api/support/generate", payload)
-      );
-      
-      if (res && res.success && res.data?.whatsappUrl) {
-        window.open(res.data.whatsappUrl, "_blank");
-      } else {
-        throw new Error("Invalid response format");
-      }
-    } catch (err) {
-      console.warn("Backend WhatsApp message generator failed, using client fallback", err);
-      const name = this.customerName();
-      const orderNo = ord.orderNumber;
-      const itemsText = ord.items
-        ?.map((i: any) => `${i.product?.name} (Qty: ${i.quantity})`)
-        .join(", ") || "";
-      const text = `Hi 3D Galaxy Team! I need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\nIssue category: ${this.ticketCat()}\nSubject: ${sub}\nDetails: ${desc}`;
-      const supportPhone = this.settingsService.settingsData()?.support_phone || this.settingsService.whatsappSettings()?.adminPhoneNumber || "919999999999";
-      const formattedPhone = supportPhone.replace(/[\s\+\-]/g, '');
-      const fallbackUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
-      window.open(fallbackUrl, "_blank");
-    } finally {
-      this.ticketSubmitting.set(false);
-    }
-  }
-
-  supportEmailUrl = computed(() => {
-    const ord = this.order();
-    if (!ord) return "";
-    const name = this.customerName();
-    const orderNo = ord.orderNumber;
-    const itemsText =
-      ord.items
-        ?.map((i: any) => `${i.product?.name} (Qty: ${i.quantity})`)
-        .join(", ") || "";
-    const subject = `Support Inquiry for Order: ${orderNo} - ${this.ticketCat()}`;
-    const body = `Hi 3D Galaxy Team,\n\nI need support with my Order ID: ${orderNo}.\nCustomer: ${name}\nItems: ${itemsText}\n\nSubject: ${this.ticketSub()}\nDetails: ${this.ticketDesc()}\n\nPlease advise. Thanks!`;
-    return `mailto:support@3dgalaxy.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  });
 
   trackingSteps = [
     {
@@ -553,28 +559,5 @@ export class CustomerOrderDetailsComponent implements OnInit {
     });
   }
 
-  submitSupportTicket() {
-    const sub = this.ticketSub().trim();
-    const desc = this.ticketDesc().trim();
-    const currentOrder = this.order();
 
-    if (!sub || !desc) {
-      this.toastService.warning(
-        "Kindly input both subject and description parameters to alert our systems.",
-      );
-      return;
-    }
-
-    this.ticketSubmitting.set(true);
-
-    // Simulate submission with 1s latency
-    setTimeout(() => {
-      this.toastService.success(
-        `SUPPORT DISPATCH SUCCESS!\n\nReference Ticket Code: #TICK-ORD-${currentOrder?.orderNumber?.replace("ORD-", "") || "HELP"}\n\nOur specialized 3D workshop and logistics crew will troubleshoot this and update you at your account email inside 4-6 hours.`,
-      );
-      this.ticketSub.set("");
-      this.ticketDesc.set("");
-      this.ticketSubmitting.set(false);
-    }, 1000);
-  }
 }

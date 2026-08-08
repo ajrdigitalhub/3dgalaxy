@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, Input, Output, EventEmitter, OnInit, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, Input, Output, EventEmitter, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,9 +17,23 @@ export interface SlipLineItem {
   standalone: true,
   imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host {
+      display: block;
+      position: fixed;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      pointer-events: auto;
+    }
+  `],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 md:p-6 animate-fadeIn font-sans">
-      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
+    <div class="fixed inset-0 top-0 left-0 w-screen h-screen z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-y-auto font-sans">
+      <div class="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl w-full max-w-6xl max-h-[88vh] flex flex-col overflow-hidden m-auto z-[1000000]">
         
         <!-- MODAL HEADER BAR -->
         <div class="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
@@ -349,9 +363,7 @@ export interface SlipLineItem {
 
                 <!-- Right Brand Logo -->
                 <div class="flex items-center gap-2">
-                  <div class="w-9 h-9 bg-amber-400 rotate-12 rounded-lg flex items-center justify-center shadow-xs">
-                    <span class="text-white font-black text-lg -rotate-12">3D</span>
-                  </div>
+                  <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-9 w-auto object-contain" />
                   <span class="text-lg font-black text-amber-500 tracking-tighter">3D Galaxy</span>
                 </div>
               </div>
@@ -497,7 +509,7 @@ export interface SlipLineItem {
     </div>
   `
 })
-export class PackagingSlipDialogComponent implements OnInit {
+export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) order: any;
   @Output() cancel = new EventEmitter<void>();
 
@@ -543,8 +555,14 @@ export class PackagingSlipDialogComponent implements OnInit {
     return this.subTotal() + (Number(this.shippingCost()) || 0);
   });
 
+
   ngOnInit() {
+    document.body.classList.add('overflow-hidden');
     this.resetToDefaults();
+  }
+
+  ngOnDestroy() {
+    document.body.classList.remove('overflow-hidden');
   }
 
   onCurrencyChange(symbol: string) {

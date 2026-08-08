@@ -88,6 +88,11 @@
             <mat-icon class="text-neutral-400">home</mat-icon>
             <span>Home</span>
           </a>
+          <a [routerLink]="['/explore']" routerLinkActive="bg-orange-500/10 text-orange-600 dark:text-orange-400 font-extrabold" (click)="closeMobileMenu()"
+            class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
+            <mat-icon class="text-orange-500">explore</mat-icon>
+            <span>Explore</span>
+          </a>
           <a [routerLink]="['/products']" (click)="closeMobileMenu()"
             class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
             <mat-icon class="text-neutral-400">storefront</mat-icon>
@@ -168,6 +173,21 @@
             Account & Activity
           </h4>
           <div class="space-y-1">
+            @if (ds.currentUser()) {
+            <!-- ADMIN TERMINAL (Only for Logged-In Admin / Super-Admin Users) -->
+            @if (ds.userRole() === 'admin' || ds.userRole() === 'super-admin') {
+            <a [routerLink]="['/admin']" (click)="closeMobileMenu()"
+              class="flex items-center gap-3.5 text-sm font-bold text-amber-600 dark:text-amber-400 py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-all min-h-[44px]">
+              <mat-icon class="text-amber-500">terminal</mat-icon>
+              <span>Admin Terminal</span>
+            </a>
+            }
+
+            <a [routerLink]="['/account']" (click)="closeMobileMenu()"
+              class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
+              <mat-icon class="text-neutral-400">person</mat-icon>
+              <span>My Profile</span>
+            </a>
             <a [routerLink]="['/orders']" (click)="closeMobileMenu()"
               class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
               <mat-icon class="text-neutral-400">local_shipping</mat-icon>
@@ -183,11 +203,6 @@
               <mat-icon class="text-neutral-400">favorite_border</mat-icon>
               <span>Wishlist</span>
             </a>
-            <a [routerLink]="['/cart']" (click)="closeMobileMenu()"
-              class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
-              <mat-icon class="text-neutral-400">shopping_bag</mat-icon>
-              <span>Shopping Cart ({{ cartCount() }})</span>
-            </a>
             <a [routerLink]="['/account/addresses']" (click)="closeMobileMenu()"
               class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
               <mat-icon class="text-neutral-400">location_on</mat-icon>
@@ -198,8 +213,14 @@
               <mat-icon class="text-neutral-400">rate_review</mat-icon>
               <span>My Reviews</span>
             </a>
+            }
 
-
+            <!-- PUBLIC UTILITY LINKS FOR ALL USERS -->
+            <a [routerLink]="['/cart']" (click)="closeMobileMenu()"
+              class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
+              <mat-icon class="text-neutral-400">shopping_bag</mat-icon>
+              <span>Shopping Cart ({{ cartCount() }})</span>
+            </a>
             <a [routerLink]="['/order-tracking']" (click)="closeMobileMenu()"
               class="flex items-center gap-3.5 text-sm font-bold text-neutral-800 dark:text-neutral-200 py-2.5 px-3 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-900 hover:text-orange-500 transition-all min-h-[44px]">
               <mat-icon class="text-neutral-400">track_changes</mat-icon>

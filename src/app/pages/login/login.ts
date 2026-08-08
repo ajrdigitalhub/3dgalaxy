@@ -4,6 +4,7 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService } from '../../services/datastore';
+import { SettingsService } from '../../core/services/settings.service';
 import { AppButton } from '../../shared/components/app-button/app-button';
 
 import { ToastService } from '../../shared/components/toast/toast.service';
@@ -17,6 +18,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 })
 export class Login implements OnInit {
   public ds = inject(DatastoreService);
+  public settingsService = inject(SettingsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
@@ -152,5 +154,28 @@ export class Login implements OnInit {
     setTimeout(() => {
       this.router.navigateByUrl(returnUrl);
     }, 1000);
+  }
+
+  get rawWhatsAppNumber(): string {
+    return this.settingsService.whatsappSettings()?.adminPhoneNumber ||
+           this.settingsService.contact()?.phone ||
+           this.settingsService.settingsData()?.support_phone ||
+           '919876543210';
+  }
+
+  get cleanWhatsAppNumber(): string {
+    return this.rawWhatsAppNumber.replace(/[^0-9]/g, '');
+  }
+
+  get displayWhatsAppNumber(): string {
+    const raw = String(this.rawWhatsAppNumber).trim();
+    if (!raw) return '+91 9876543210';
+    return raw.startsWith('+') ? raw : `+${raw}`;
+  }
+
+  openWhatsAppLoginQuery() {
+    const cleanPhone = this.cleanWhatsAppNumber || '919876543210';
+    const text = encodeURIComponent("Hi 3D Galaxy team, I am facing a login issue. Please help me to login.");
+    window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
   }
 }

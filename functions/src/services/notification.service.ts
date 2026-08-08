@@ -716,7 +716,7 @@ export class NotificationService {
       // A. WhatsApp
       const enableCustWhatsapp = whatsappSettings.enableServiceRequestCustomerNotifications !== false;
       if (enableCustWhatsapp && customerPhone) {
-        const custTemplate = whatsappSettings.serviceRequestCustomerTemplateName || 'service_request_customer';
+        const custTemplate = whatsappSettings.order3dprintClientTemplateName || whatsappSettings.serviceRequestCustomerTemplateName || 'order_3dprint_client';
         let clean = (customerPhone || '').replace(/[^\d+]/g, '');
         if (!clean.startsWith('+')) {
           const code = (whatsappSettings.defaultCountryCode || '+91').replace(/[^\d+]/g, '') || '91';
@@ -724,17 +724,45 @@ export class NotificationService {
         }
         const recipient = clean.replace('+', '');
 
+        const fileName = enquiry.modelName || enquiry.fileName || extraParams.fileName || '3D_Model.stl';
+        const quantity = String(enquiry.quantity || 1);
+        const material = enquiry.material || 'PLA';
+        const color = enquiry.color || 'Default';
+        const printQuality = enquiry.layerHeight || 'Standard (0.20mm)';
+        const infill = `${enquiry.infillPercent ?? 20}%`;
+        const additionalRequirements = (enquiry.notes && enquiry.notes.trim()) ? enquiry.notes.trim() : 'None';
+        const rawStatus = enquiry.status || 'submitted';
+        const formattedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+
+        // 12 Parameters:
+        // {{1}} customerName
+        // {{2}} requestId
+        // {{3}} requestDate
+        // {{4}} FileName
+        // {{5}} quantity
+        // {{6}} material
+        // {{7}} color
+        // {{8}} printQuality
+        // {{9}} Infill
+        // {{10}} additionalRequirements
+        // {{11}} viewRequesturl
+        // {{12}} status
         const components = sanitizeComponents([
           {
             type: 'body',
             parameters: [
-              { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
+              { type: 'text', text: sanitizeTemplateParam(customerName, 'Valued Customer') },
               { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
               { type: 'text', text: sanitizeTemplateParam(requestDate, 'N/A') },
-              { type: 'text', text: sanitizeTemplateParam(estResponseTime, 'N/A') },
-              { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
-              { type: 'text', text: sanitizeTemplateParam(websiteName, '3D Galaxy') },
-              { type: 'text', text: sanitizeTemplateParam(trackUrl, 'N/A') }
+              { type: 'text', text: sanitizeTemplateParam(fileName, '3D_Model.stl') },
+              { type: 'text', text: sanitizeTemplateParam(quantity, '1') },
+              { type: 'text', text: sanitizeTemplateParam(material, 'PLA') },
+              { type: 'text', text: sanitizeTemplateParam(color, 'Default') },
+              { type: 'text', text: sanitizeTemplateParam(printQuality, 'Standard') },
+              { type: 'text', text: sanitizeTemplateParam(infill, '20%') },
+              { type: 'text', text: sanitizeTemplateParam(additionalRequirements, 'None') },
+              { type: 'text', text: sanitizeTemplateParam(trackUrl, 'N/A') },
+              { type: 'text', text: sanitizeTemplateParam(formattedStatus, 'Submitted') }
             ]
           }
         ]);
@@ -885,11 +913,20 @@ export class NotificationService {
         .filter(Boolean);
 
       if (enableAdminWhatsapp && adminPhones.length > 0) {
-        const adminTemplate = whatsappSettings.serviceRequestAdminTemplateName || 'service_request_admin';
-        const fileCount = String(extraParams.fileCount || 1);
+        const adminTemplate = whatsappSettings.order3dprintAdminTemplateName || whatsappSettings.serviceRequestAdminTemplateName || 'order_3dprint_admin';
+        const reqDateObj = enquiry.createdAt ? new Date(enquiry.createdAt) : new Date();
+        const requestDate = extraParams.requestDate || reqDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const customerEmail = enquiry.customerEmail || extraParams.customerEmail || 'Not provided';
+        const customerMobile = enquiry.customerPhone || extraParams.customerPhone || 'Not provided';
+        const fileName = enquiry.modelName || enquiry.fileName || extraParams.fileName || '3D_Model.stl';
+        const quantity = String(enquiry.quantity || 1);
         const material = enquiry.material || 'PLA';
-        const color = enquiry.color || 'White';
-        const remarks = enquiry.notes || 'None';
+        const color = enquiry.color || 'Default';
+        const printQuality = enquiry.layerHeight || 'Standard (0.20mm)';
+        const infill = `${enquiry.infillPercent ?? 20}%`;
+        const additionalRequirements = (enquiry.notes && enquiry.notes.trim()) ? enquiry.notes.trim() : 'None';
+        const rawStatus = enquiry.status || 'submitted';
+        const formattedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
 
         const apiUrl = whatsappSettings.apiUrl || `https://graph.facebook.com/v19.0/${whatsappSettings.phoneNumberId}/messages`;
         const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
@@ -902,21 +939,39 @@ export class NotificationService {
           }
           const recipient = clean.replace('+', '');
 
+          // 14 Body Parameters:
+          // {{1}} requestId
+          // {{2}} requestDate
+          // {{3}} customerName
+          // {{4}} customerEmail
+          // {{5}} customerMobile
+          // {{6}} fileName
+          // {{7}} QTY
+          // {{8}} material
+          // {{9}} color
+          // {{10}} printQuality
+          // {{11}} infill
+          // {{12}} additioanalRequirements
+          // {{13}} adminorderUrlLink
+          // {{14}} status
           const components = sanitizeComponents([
             {
               type: 'body',
               parameters: [
                 { type: 'text', text: sanitizeTemplateParam(trackingId, 'N/A') },
-                { type: 'text', text: sanitizeTemplateParam(customerName, 'Customer') },
-                { type: 'text', text: sanitizeTemplateParam(enquiry.customerPhone || 'N/A', 'N/A') },
-                { type: 'text', text: sanitizeTemplateParam(enquiry.customerEmail || 'N/A', 'N/A') },
-                { type: 'text', text: sanitizeTemplateParam(extraParams.city || 'N/A', 'N/A') },
-                { type: 'text', text: sanitizeTemplateParam(serviceType, 'N/A') },
-                { type: 'text', text: sanitizeTemplateParam(fileCount, '1') },
+                { type: 'text', text: sanitizeTemplateParam(requestDate, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(customerName, 'Valued Customer') },
+                { type: 'text', text: sanitizeTemplateParam(customerEmail, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(customerMobile, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(fileName, '3D_Model.stl') },
+                { type: 'text', text: sanitizeTemplateParam(quantity, '1') },
                 { type: 'text', text: sanitizeTemplateParam(material, 'PLA') },
-                { type: 'text', text: sanitizeTemplateParam(color, 'White') },
-                { type: 'text', text: sanitizeTemplateParam(remarks, 'None') },
-                { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'N/A') }
+                { type: 'text', text: sanitizeTemplateParam(color, 'Default') },
+                { type: 'text', text: sanitizeTemplateParam(printQuality, 'Standard') },
+                { type: 'text', text: sanitizeTemplateParam(infill, '20%') },
+                { type: 'text', text: sanitizeTemplateParam(additionalRequirements, 'None') },
+                { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'N/A') },
+                { type: 'text', text: sanitizeTemplateParam(formattedStatus, 'Submitted') }
               ]
             }
           ]);
