@@ -28,11 +28,16 @@ import { IdlePreloadStrategy } from "./core/strategies/idle-preload.strategy";
 import { provideAnalytics } from "./core/analytics";
 import { TrackingService } from "./core/services/tracking/tracking.service";
 
+import { ErrorHandler } from "@angular/core";
+import { loggingInterceptor } from "./interceptors/logging.interceptor";
+import { GlobalErrorHandler } from "./services/global-error-handler";
+
 import { routes } from "./app.routes";
 import { SettingsService } from "./core/services/settings.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideExperimentalZonelessChangeDetection(),
     provideAppInitializer(() => {
       const settingsService = inject(SettingsService);
@@ -81,6 +86,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withInterceptors([
+        loggingInterceptor,
         apiUrlInterceptor,
         errorInterceptor,
         authInterceptor,

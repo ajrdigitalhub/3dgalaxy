@@ -42,16 +42,22 @@ import { VariantChipSelectorComponent } from '../../../../shared/components/vari
   styleUrl: './admin-variant-group-config.component.scss'
 })
 export class AdminVariantGroupConfigComponent {
+  private _availableVariants = signal<any[]>([]);
+
   @Input() set variantGroups(val: any[]) {
     this.groups.set(val && val.length > 0 ? JSON.parse(JSON.stringify(val)) : [this.createDefaultGroup()]);
   }
-  @Input() availableVariants: any[] = [];
+  @Input() set availableVariants(val: any[]) {
+    this._availableVariants.set(val || []);
+  }
   @Input() basePrice: number = 756;
 
   @Output() groupsChanged = new EventEmitter<any[]>();
 
   groups = signal<VariantGroupConfig[]>([]);
   activeGroupIndex = signal<number>(0);
+  selectedPreviewVariantId = signal<string>('');
+  previewQuantities = signal<Record<string, number>>({});
 
   displayTypes: { value: VariantDisplayType; label: string }[] = [
     { value: 'bundle-builder', label: 'Bundle Builder (Radio Cards + Slots)' },
@@ -88,16 +94,50 @@ export class AdminVariantGroupConfigComponent {
     return list[idx] || list[0] || null;
   });
 
-  // Mock variants for live preview if no real variants passed
+  // Dynamic variants preview computed from availableVariants or currentGroup option values
   previewVariants = computed(() => {
-    if (this.availableVariants && this.availableVariants.length > 0) return this.availableVariants;
+    const real = this._availableVariants();
+    if (real && real.length > 0) {
+      return real.map((v, i) => ({
+        id: v.id || `v-real-${i}`,
+        name: v.name || 'Default Variant',
+        sku: v.sku || '',
+        price: Number(v.price) || this.basePrice,
+        stock: v.stock !== undefined ? Number(v.stock) : 10,
+        weight: v.weight || 0,
+        image: Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : (v.image || null)
+      }));
+    }
+
+    const grp = this.currentGroup();
+    if (grp) {
+      const vals: string[] = (grp as any).values || [];
+      if (vals && vals.length > 0) {
+        return vals.map((val: string, idx: number) => ({
+          id: `v-opt-${idx}`,
+          name: val,
+          sku: `SKU-${val.toUpperCase().replace(/\s+/g, '-')}`,
+          price: this.basePrice,
+          stock: idx === 3 ? 0 : 25 - idx * 5,
+          weight: 0,
+          image: null
+        }));
+      }
+    }
+
     return [
-      { id: 'v-1', name: 'Black', sku: 'PLA-BLK', stock: 100, optionValues: { color: 'Black' }, variantImages: ['https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'] },
-      { id: 'v-2', name: 'White', sku: 'PLA-WHT', stock: 50, optionValues: { color: 'White' }, variantImages: ['https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'] },
-      { id: 'v-3', name: 'Grey', sku: 'PLA-GRY', stock: 25, optionValues: { color: 'Grey' }, variantImages: ['https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'] },
-      { id: 'v-4', name: 'Blue', sku: 'PLA-BLU', stock: 15, optionValues: { color: 'Blue' }, variantImages: ['https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'] },
-      { id: 'v-5', name: 'Green', sku: 'PLA-GRN', stock: 0, optionValues: { color: 'Green' }, variantImages: ['https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png'] }
+      { id: 'v-1', name: 'Black', sku: 'PLA-BLK', price: this.basePrice, stock: 100, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
+      { id: 'v-2', name: 'White', sku: 'PLA-WHT', price: this.basePrice, stock: 50, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
+      { id: 'v-3', name: 'Grey', sku: 'PLA-GRY', price: this.basePrice, stock: 25, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
+      { id: 'v-4', name: 'Blue', sku: 'PLA-BLU', price: this.basePrice, stock: 15, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
+      { id: 'v-5', name: 'Green', sku: 'PLA-GRN', price: this.basePrice, stock: 0, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' }
     ];
+  });
+
+  selectedPreviewVariant = computed(() => {
+    const list = this.previewVariants();
+    const id = this.selectedPreviewVariantId();
+    return list.find(v => v.id === id) || list[0] || null;
   });
 
   // Live preview selected bundle tier
@@ -105,11 +145,19 @@ export class AdminVariantGroupConfigComponent {
 
   constructor() {
     effect(() => {
+      const list = this.previewVariants();
+      if (list.length > 0 && !list.some(v => v.id === this.selectedPreviewVariantId())) {
+        const firstInStock = list.find(v => v.stock > 0) || list[0];
+        this.selectedPreviewVariantId.set(firstInStock.id);
+      }
+    }, { allowSignalWrites: true });
+
+    effect(() => {
       const grp = this.currentGroup();
       if (grp && grp.bundleTiers && grp.bundleTiers.length > 0) {
         this.previewSelectedTier.set(grp.bundleTiers[0]);
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   getSlotsArray(count: number): number[] {
@@ -132,10 +180,10 @@ export class AdminVariantGroupConfigComponent {
       selectionMode: 'bundle',
       allowDuplicates: true,
       bundleTiers: [
-        { id: 't-1', name: 'Buy 1', count: 1, priceType: 'fixed', priceValue: 756 },
-        { id: 't-3', name: 'Buy 3', count: 3, priceType: 'per_variant', priceValue: 720, isPopular: true, savingsText: 'Rs. 720.00 / each' },
-        { id: 't-5', name: 'Buy 5', count: 5, priceType: 'per_variant', priceValue: 693, badgeText: 'Best Value', savingsText: 'Rs. 693.00 / each' },
-        { id: 't-10', name: 'Buy 10', count: 10, priceType: 'per_variant', priceValue: 648, savingsText: 'Rs. 648.00 / each' }
+        { id: 't-1', name: 'Buy 1', count: 1, priceType: 'fixed', priceValue: this.basePrice },
+        { id: 't-3', name: 'Buy 3', count: 3, priceType: 'per_variant', priceValue: Math.round(this.basePrice * 0.95), isPopular: true, savingsText: `Rs. ${Math.round(this.basePrice * 0.95)}.00 / each` },
+        { id: 't-5', name: 'Buy 5', count: 5, priceType: 'per_variant', priceValue: Math.round(this.basePrice * 0.9), badgeText: 'Best Value', savingsText: `Rs. ${Math.round(this.basePrice * 0.9)}.00 / each` },
+        { id: 't-10', name: 'Buy 10', count: 10, priceType: 'per_variant', priceValue: Math.round(this.basePrice * 0.85), savingsText: `Rs. ${Math.round(this.basePrice * 0.85)}.00 / each` }
       ]
     };
   }
@@ -206,12 +254,47 @@ export class AdminVariantGroupConfigComponent {
 
   getColorCode(color: string): string {
     const c = (color || '').toLowerCase();
-    if (c.includes('black')) return '#000000';
+    if (c.includes('black') || c.includes('dark')) return '#09090b';
     if (c.includes('white')) return '#ffffff';
-    if (c.includes('grey') || c.includes('gray')) return '#808080';
-    if (c.includes('blue')) return '#3b82f6';
-    if (c.includes('green')) return '#22c55e';
-    if (c.includes('red')) return '#ef4444';
+    if (c.includes('grey') || c.includes('gray') || c.includes('silver')) return '#94a3b8';
+    if (c.includes('blue') || c.includes('navy')) return '#3b82f6';
+    if (c.includes('green') || c.includes('emerald') || c.includes('mint')) return '#22c55e';
+    if (c.includes('red') || c.includes('crimson') || c.includes('ruby')) return '#ef4444';
+    if (c.includes('yellow') || c.includes('gold')) return '#eab308';
+    if (c.includes('orange') || c.includes('copper')) return '#f97316';
+    if (c.includes('purple') || c.includes('violet')) return '#a855f7';
+    if (c.includes('pink') || c.includes('rose')) return '#ec4899';
+    if (c.includes('cyan') || c.includes('teal')) return '#14b8a6';
+    if (c.includes('brown') || c.includes('chocolate')) return '#854d0e';
     return '#cbd5e1';
+  }
+
+  getVariantImage(v: any): string {
+    if (v.image) return v.image;
+    return 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png';
+  }
+
+  getPreviewQty(id: string): number {
+    return this.previewQuantities()[id] || 0;
+  }
+
+  adjustPreviewQty(id: string, delta: number) {
+    const current = this.getPreviewQty(id);
+    const updated = Math.max(0, current + delta);
+    this.previewQuantities.set({
+      ...this.previewQuantities(),
+      [id]: updated
+    });
+  }
+
+  getTotalPreviewQtyPrice(): number {
+    const qMap = this.previewQuantities();
+    const list = this.previewVariants();
+    let total = 0;
+    list.forEach(v => {
+      const q = qMap[v.id] || 0;
+      total += q * (v.price || this.basePrice);
+    });
+    return total;
   }
 }

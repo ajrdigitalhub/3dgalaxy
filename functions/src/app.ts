@@ -47,6 +47,13 @@ import {
 } from "./controllers/instagram";
 import { cacheMiddleware } from "./middleware/cache";
 
+import { requestCorrelationMiddleware } from "./middleware/requestCorrelation";
+import { httpLoggerMiddleware } from "./middleware/httpLogger";
+import { globalErrorHandler } from "./middleware/globalErrorHandler";
+import logRoutes from "./routes/log";
+
+import { apiLimiter, authLimiter, checkoutLimiter, uploadLimiter } from "./middleware/rateLimiter";
+
 const app = express();
 
 const isMultipartRequest = (req: Request) => {
@@ -54,23 +61,68 @@ const isMultipartRequest = (req: Request) => {
   return contentType.toLowerCase().includes("multipart/form-data");
 };
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    console.log(
-      `[API_LOG] ${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`,
-    );
-  });
+// Application Observability Middlewares
+app.use(requestCorrelationMiddleware);
+app.use(httpLoggerMiddleware);
+
+// Security Response Headers Middleware
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
+
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://api.razorpay.com https://*.razorpay.com https://*.firebaseio.com https://*.googleapis.com http://localhost:*; font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'self';"
+  );
   next();
 });
 
+// Strict Environment-Based CORS Configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:4200', 'http://localhost:3000', 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS policy rejection: Origin not allowed'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'Accept', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400, // 24 hours preflight cache
+  })
+);
+
+// Rate Limiter Middlewares
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/send-otp', authLimiter);
+app.use('/api/auth/verify-otp', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/payment/create-order', checkoutLimiter);
+app.use('/api/payment/verify-payment', checkoutLimiter);
+app.use('/api/checkout', checkoutLimiter);
+app.use('/api/support', uploadLimiter);
+app.use('/api', apiLimiter);
+
 // Middleware
 app.use(compression());
-app.use(cors());
 app.use(
   express.json({
-    limit: "50mb",
+    limit: "2mb",
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {
         req.rawBody = buf;
@@ -80,7 +132,7 @@ app.use(
 );
 app.use(
   express.urlencoded({
-    limit: "50mb",
+    limit: "2mb",
     extended: true,
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {
@@ -158,9 +210,9 @@ app.use("/api", adminNotificationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);
-app.use("/api/admin/services", serviceEnquiryRoutes);
 app.use("/api/admin/fcm", adminFcmRoutes);
 app.use("/api/notifications/admin", adminFcmRoutes);
+app.use("/api", logRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {
@@ -177,109 +229,12 @@ const swaggerDocument = {
       description: "Primary Base API Context",
     },
   ],
-  paths: {
-    "/auth/login": {
-      post: {
-        summary: "Authenticate User Session",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  email: { type: "string" },
-                  password: { type: "string" },
-                },
-                required: ["email", "password"],
-              },
-            },
-          },
-        },
-        responses: {
-          200: { description: "Logged in successfully, token generated" },
-          401: { description: "Incorrect credentials error" },
-        },
-      },
-    },
-    "/products": {
-      get: {
-        summary: "Paginate and filter catalog products",
-        parameters: [
-          { name: "search", in: "query", schema: { type: "string" } },
-          { name: "categoryId", in: "query", schema: { type: "string" } },
-          { name: "brandId", in: "query", schema: { type: "string" } },
-          { name: "sortBy", in: "query", schema: { type: "string" } },
-          {
-            name: "sortOrder",
-            in: "query",
-            schema: { type: "string", enum: ["asc", "desc"] },
-          },
-          {
-            name: "page",
-            in: "query",
-            schema: { type: "integer", default: 1 },
-          },
-          {
-            name: "limit",
-            in: "query",
-            schema: { type: "integer", default: 12 },
-          },
-        ],
-        responses: {
-          200: { description: "Products array returned success" },
-        },
-      },
-    },
-    "/categories/tree": {
-      get: {
-        summary:
-          "Compile unlimited multi-layer parent child category nodes tree",
-        responses: {
-          200: {
-            description:
-              "Nested array representation of catalog hierarchy tree",
-          },
-        },
-      },
-    },
-    "/menus/tree": {
-      get: {
-        summary: "Generate dynamic nested navigation megamenu",
-        responses: {
-          200: {
-            description: "Dynamic megamenu list mapped directly from database",
-          },
-        },
-      },
-    },
-    "/settings": {
-      get: {
-        summary: "Fetch visual theme options",
-        responses: {
-          200: {
-            description: "Active favicon, logos, colors, typography layouts",
-          },
-        },
-      },
-    },
-  },
+  paths: {}
 };
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Base health/routing check
-app.get("/api/health", (req: Request, res: Response) => {
-  res.json({ alive: true, time: new Date().toISOString() });
-});
-
-// Primary Central Error Handling Matrix
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error("SERVER PIELINE ERROR OCCURRED:", err);
-  res.status(err.status || 500).json({
-    error: err.message || "Severe server-side breakdown. Action halted.",
-    details: ENV.NODE_ENV === "development" ? err.stack : undefined,
-  });
-});
+// Centralized Global Error Handler
+app.use(globalErrorHandler);
 
 export default app;

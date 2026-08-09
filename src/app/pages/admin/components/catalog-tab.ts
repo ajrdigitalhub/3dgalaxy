@@ -672,7 +672,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                               <input
                                 type="text"
                                 [value]="admin.getOptionValuesString(opt)"
-                                (blur)="
+                                (input)="
                                   admin.setOptionValuesString(
                                     opt,
                                     $any($event.target).value
@@ -749,6 +749,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                   <input
                                     type="text"
                                     [(ngModel)]="variant.sku"
+                                    (ngModelChange)="admin.updateVariants()"
                                     class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
@@ -756,6 +757,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                   <input
                                     type="number"
                                     [(ngModel)]="variant.price"
+                                    (ngModelChange)="admin.updateVariants()"
                                     class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
@@ -763,6 +765,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                   <input
                                     type="number"
                                     [(ngModel)]="variant.stock"
+                                    (ngModelChange)="admin.updateVariants()"
                                     class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
@@ -770,6 +773,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                   <input
                                     type="number"
                                     [(ngModel)]="variant.weight"
+                                    (ngModelChange)="admin.updateVariants()"
                                     class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>

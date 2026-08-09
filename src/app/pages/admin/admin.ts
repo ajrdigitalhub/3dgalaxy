@@ -91,14 +91,15 @@ export type AdminTab =
   | "pwa-settings"
   | "marketing-settings"
   | "explore-config"
-  | "admin-devices"
   | "transactions"
   | "webhook-logs"
   | "whatsapp-logs"
-  | "whatsapp-campaign";
+  | "whatsapp-campaign"
+  | "system-logs";
 
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { AdminExploreConfigTabComponent } from "./components/admin-explore-config-tab";
+import { AdminLogsTab } from "./components/logs-tab";
 
 @Component({
   selector: "app-admin-panel",
@@ -123,6 +124,8 @@ import { AdminExploreConfigTabComponent } from "./components/admin-explore-confi
     AdminVariantGroupConfigComponent,
     AdminReviewsTabComponent,
     AdminExploreConfigTabComponent,
+    PushSettingsTabComponent,
+    AdminLogsTab,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -326,6 +329,11 @@ export class AdminPanel {
             id: "explore-config",
             label: "Explore Navigation",
             icon: "explore",
+          },
+          {
+            id: "system-logs",
+            label: "System Telemetry Logs",
+            icon: "monitor_heart",
           },
           // { id: 'user-management', label: 'User Management', icon: 'badge' },
           // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },
@@ -1852,6 +1860,9 @@ export class AdminPanel {
   }
   updateOption() {
     this.pOptions.set([...this.pOptions()]);
+  }
+  updateVariants() {
+    this.pVariants.set([...this.pVariants()]);
   }
   getOptionValuesString(opt: any): string {
     return opt.values ? opt.values.join(", ") : "";

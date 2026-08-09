@@ -8,6 +8,8 @@ import {
 } from "../middleware/auth";
 import { mapProductFields } from "../controllers/product";
 
+import { sanitizeHtml } from "../utils/sanitizer";
+
 const router = Router();
 
 // Helper: Check if a user has a delivered order containing a specific product
@@ -378,8 +380,8 @@ router.post("/reviews", authenticateToken, async (req, res) => {
     }
 
     const reviewData = {
-      title: title || "Verified Review",
-      comment: review || "",
+      title: sanitizeHtml(title || "Verified Review"),
+      comment: sanitizeHtml(review || ""),
       images: Array.isArray(images) ? images : [],
       recommended: Boolean(recommended),
       status: isAdmin ? "APPROVED" : "PENDING", // Customer reviews require admin moderation

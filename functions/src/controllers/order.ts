@@ -6,6 +6,7 @@ import { generateNextOrderNumber } from '../utils/orderNumber';
 import { ShippingService } from '../services/shipping.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { TrackingService } from '../services/tracking.service';
+import { logger } from '../utils/logger';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -316,6 +317,18 @@ export const getOrderById = async (req: any, res: Response) => {
 export const createOrder = async (req: any, res: Response) => {
   const { customerType, guestName, guestEmail, guestPhone, guestSessionId, items, shippingAddress, billingAddress, paymentMethod } = req.body;
   const userId = req.user?.id; // from auth middleware
+  const requestId = req.requestId;
+
+  logger.info('Order creation process initiated', {
+    paymentMethod,
+    itemCount: Array.isArray(items) ? items.length : 0,
+    customerType: customerType || (userId ? 'registered' : 'guest')
+  }, {
+    requestId,
+    userId,
+    module: 'ORDER',
+    errorCode: 'ORDER_CREATE_STARTED'
+  });
 
   let userRecord: any = null;
   if (userId) {
@@ -635,14 +648,39 @@ export const createOrder = async (req: any, res: Response) => {
       return orderEntity;
     });
 
+    logger.info(`Order ${transaction.orderNumber} created successfully`, {
+      orderId: transaction.id,
+      orderNumber: transaction.orderNumber,
+      totalAmount: transaction.totalAmount,
+      paymentMethod
+    }, {
+      requestId,
+      userId,
+      module: 'ORDER',
+      errorCode: 'ORDER_CREATE_SUCCESS'
+    });
+
     // Fire the centralized order notification pipeline (Customer WhatsApp + Admin WhatsApp + Admin FCM Push)
     // Run async, don't block the response
     dispatchOrderNotifications(transaction.id).catch((notifErr) => {
-      console.error('[CreateOrder] Notification pipeline error (non-blocking):', notifErr);
+      logger.error(`[CreateOrder] Notification pipeline error for order ${transaction.id}:`, notifErr, {
+        requestId,
+        orderId: transaction.id,
+        module: 'NOTIFICATION'
+      });
     });
 
     return res.status(201).json(transaction);
   } catch (error: any) {
+    logger.error('Order creation failed', error, {
+      paymentMethod,
+      customerType
+    }, {
+      requestId,
+      userId,
+      module: 'ORDER',
+      errorCode: 'ORDER_CREATE_FAILED'
+    });
     return res.status(500).json({ error: 'Checkout processing failed', details: error.message });
   }
 };

@@ -526,6 +526,8 @@
       <app-admin-analytics-tab [admin]="this" />
       } @if (activeTab() === 'explore-config') {
       <app-admin-explore-config-tab [admin]="this" />
+      } @if (activeTab() === 'push-settings') {
+      <app-admin-push-settings-tab />
       } @if (activeTab() !== 'push-settings' && activeTab() !== 'explore-config' && (activeTab().endsWith('-settings') || activeTab() ===
       'user-management' || activeTab() === 'active-sessions')) {
       <app-admin-settings-tab [admin]="this" />
@@ -536,6 +538,8 @@
       } @if (activeTab() === 'whatsapp-logs' || activeTab() ===
       'whatsapp-campaign') {
       <app-admin-communication-tab [admin]="this" />
+      } @if (activeTab() === 'system-logs') {
+      <app-admin-logs-tab [admin]="this" />
       } }
     </div>
   </main>

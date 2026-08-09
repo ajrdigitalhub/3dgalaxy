@@ -8,6 +8,7 @@ import {
 } from "../utils/token";
 import { triggerWhatsAppNotification } from "./whatsapp";
 import { NotificationService } from "../services/notification.service";
+import { logger } from "../utils/logger";
 
 // Simple in-memory blocklist for illustrative JWT logouts
 const tokenBlocklist = new Set<string>();
@@ -225,6 +226,11 @@ export const login = async (req: Request, res: Response) => {
 
     const matching = await bcrypt.compare(password, user.passwordHash);
     if (!matching) {
+      logger.warn('User login failed: Incorrect password', { email }, {
+        requestId: req.requestId,
+        module: 'AUTH',
+        errorCode: 'AUTH_LOGIN_FAILED'
+      });
       return res.status(401).json({ error: "Incorrect password" });
     }
 
@@ -265,10 +271,14 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    // Update last login timestamp
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
+    logger.info(`User ${user.email} authenticated successfully`, {
+      userId: user.id,
+      role: userRoleName
+    }, {
+      requestId: req.requestId,
+      userId: user.id,
+      module: 'AUTH',
+      errorCode: 'AUTH_LOGIN_SUCCESS'
     });
 
     return res.status(200).json({

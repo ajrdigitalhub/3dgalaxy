@@ -24,21 +24,28 @@ export interface ShipmentDetailsPayload {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
-      display: block;
-      position: fixed;
+      position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
       width: 100vw !important;
       height: 100vh !important;
-      z-index: 999999 !important;
-      pointer-events: auto;
+      margin: 0 !important;
+      padding: 0 !important;
+      z-index: 9999999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      pointer-events: auto !important;
     }
   `],
   template: `
-    <div class="fixed inset-0 top-0 left-0 w-screen h-screen z-[999999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
-      <div class="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden m-auto z-[1000000]">
+    <!-- Darkened Full-Screen Backdrop -->
+    <div class="fixed inset-0 top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md z-[9999998]" (click)="cancel.emit()"></div>
+
+    <!-- Centered Fixed Modal Box -->
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-lg w-[calc(100%-2rem)] sm:w-full max-h-[85vh] flex flex-col overflow-hidden z-[9999999] font-sans animate-fadeIn">
         
         <!-- Header -->
         <div class="px-6 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
@@ -207,7 +214,6 @@ export interface ShipmentDetailsPayload {
         </div>
 
       </div>
-    </div>
   `
 })
 export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -235,8 +241,16 @@ export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit
   validationError = signal<string>('');
   isSubmitting = signal<boolean>(false);
 
+  private elRef = inject(ElementRef);
+
   ngOnInit() {
-    document.body.classList.add('overflow-hidden');
+    if (typeof document !== 'undefined' && this.elRef?.nativeElement) {
+      if (this.elRef.nativeElement.parentNode !== document.body) {
+        document.body.appendChild(this.elRef.nativeElement);
+      }
+      document.body.classList.add('overflow-hidden');
+    }
+
     const list = this.trackingService.getCourierList(this.customCourierSettings);
     this.courierList.set(list);
 
@@ -257,7 +271,12 @@ export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   ngOnDestroy() {
-    document.body.classList.remove('overflow-hidden');
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('overflow-hidden');
+      if (this.elRef?.nativeElement && this.elRef.nativeElement.parentNode === document.body) {
+        document.body.removeChild(this.elRef.nativeElement);
+      }
+    }
   }
 
   ngAfterViewInit() {

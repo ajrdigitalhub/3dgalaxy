@@ -146,17 +146,18 @@ export const requirePermission = (permission: string) => {
     }
 
     const { role, permissions } = req.user;
+    const normalizedRole = (role || '').toLowerCase().replace(/[\s\-_]/g, '');
 
-    // Admin has all permissions automatically
-    // if (role === 'Admin') {
-    //   return next();
-    // }
-
-    // if (permissions && permissions.includes(permission)) {
+    // Admin & SuperAdmin have all permissions automatically
+    if (normalizedRole === 'admin' || normalizedRole === 'superadmin') {
       return next();
-    // }
+    }
 
-    // return res.status(403).json({ error: 'Insufficient permissions for this operational endpoint' });
+    if (permissions && (permissions.includes(permission) || permissions.includes('*'))) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Insufficient permissions for this operational endpoint' });
   };
 };
 

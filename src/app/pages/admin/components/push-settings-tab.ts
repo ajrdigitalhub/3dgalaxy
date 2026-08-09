@@ -458,21 +458,27 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
                 <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Active scheduled & drafts</h3>
                 <div class="space-y-3">
-                  @for (c of activeScheduledCampaigns(); track c.id) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250/60 dark:border-zinc-800/80 rounded-2xl flex justify-between items-center group">
-                      <div class="space-y-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                          <span class="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded text-[8px] font-black uppercase text-zinc-600 dark:text-zinc-400">{{ c.status }}</span>
-                        </div>
-                        <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ c.name }}</h4>
-                        <p class="text-[10px] text-zinc-400">Scheduled: {{ c.scheduledAt }} | Target: {{ c.reach }} recipients</p>
-                      </div>
-                      <div class="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-sm">content_copy</mat-icon></button>
-                        <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-sm">download</mat-icon></button>
-                      </div>
+                  @if (activeScheduledCampaigns().length === 0) {
+                    <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                      No active scheduled or draft push campaigns. Use Campaign Builder to schedule one.
                     </div>
+                  } @else {
+                    @for (c of activeScheduledCampaigns(); track c.id) {
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250/60 dark:border-zinc-800/80 rounded-2xl flex justify-between items-center group">
+                        <div class="space-y-1">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
+                            <span class="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded text-[8px] font-black uppercase text-zinc-600 dark:text-zinc-400">{{ c.status }}</span>
+                          </div>
+                          <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ c.name }}</h4>
+                          <p class="text-[10px] text-zinc-400">Scheduled: {{ c.scheduledAt }} | Target: {{ c.reach }} recipients</p>
+                        </div>
+                        <div class="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-sm">content_copy</mat-icon></button>
+                          <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-sm">download</mat-icon></button>
+                        </div>
+                      </div>
+                    }
                   }
                 </div>
               </div>
@@ -1006,36 +1012,42 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
               <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Campaign History Logs</h3>
               <div class="space-y-3">
-                @for (c of pastCampaigns(); track c.id) {
-                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="space-y-1 flex-1">
-                      <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                        <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
-                      </div>
-                      <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase">{{ c.name }}</h4>
-                      <p class="text-[10px] text-zinc-450 font-bold">Dispatched on: {{ c.date }}</p>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-4 text-center shrink-0 border-l border-zinc-200 dark:border-zinc-800 pl-4 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-                      <div>
-                        <span class="text-[8px] block text-zinc-450 font-black uppercase">Sent</span>
-                        <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
-                      </div>
-                      <div>
-                        <span class="text-[8px] block text-zinc-450 font-black uppercase">CTR</span>
-                        <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
-                      </div>
-                      <div>
-                        <span class="text-[8px] block text-zinc-450 font-black uppercase">Clicks</span>
-                        <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
-                      </div>
-                      <div>
-                        <span class="text-[8px] block text-zinc-450 font-black uppercase">Revenue</span>
-                        <span class="font-black text-emerald-500 text-xs">₹{{ c.revenue | number }}</span>
-                      </div>
-                    </div>
+                @if (pastCampaigns().length === 0) {
+                  <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                    No campaign history logs found in database. Dispatched campaigns will appear here.
                   </div>
+                } @else {
+                  @for (c of pastCampaigns(); track c.id) {
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div class="space-y-1 flex-1">
+                        <div class="flex items-center gap-2">
+                          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
+                          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
+                        </div>
+                        <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase">{{ c.name }}</h4>
+                        <p class="text-[10px] text-zinc-450 font-bold">Dispatched on: {{ c.date }}</p>
+                      </div>
+
+                      <div class="grid grid-cols-4 gap-4 text-center shrink-0 border-l border-zinc-200 dark:border-zinc-800 pl-4 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
+                        <div>
+                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Sent</span>
+                          <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
+                        </div>
+                        <div>
+                          <span class="text-[8px] block text-zinc-450 font-black uppercase">CTR</span>
+                          <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
+                        </div>
+                        <div>
+                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Clicks</span>
+                          <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
+                        </div>
+                        <div>
+                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Revenue</span>
+                          <span class="font-black text-emerald-500 text-xs">₹{{ c.revenue | number }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
                 }
               </div>
             </div>
@@ -1279,17 +1291,8 @@ export class PushSettingsTabComponent {
     analyticsTag: 'utm_camp_july'
   };
 
-  activeScheduledCampaigns = signal<any[]>([
-    { id: 'camp-1', name: 'Weekend PLA Clearance', type: 'Push Notification', scheduledAt: '2026-08-08 17:00:00', status: 'Scheduled', reach: 1240 },
-    { id: 'camp-2', name: 'VIP Cart Recovery Followup', type: 'Push + WhatsApp', scheduledAt: '2026-08-09 10:00:00', status: 'Draft', reach: 350 },
-    { id: 'camp-3', name: 'Creality K1 Max price drop alert', type: 'WhatsApp Only', scheduledAt: '2026-08-10 12:00:00', status: 'Approved', reach: 890 }
-  ]);
-
-  pastCampaigns = signal<any[]>([
-    { id: 'past-1', name: 'June Filament Sale Launch', type: 'Push Notification', sentCount: 1450, clickedCount: 182, ctr: 12.5, revenue: 45000, date: '2026-06-15 17:00:00', status: 'Completed' },
-    { id: 'past-2', name: 'Bambu Lab X1-Carbon discount notification', type: 'Push + WhatsApp', sentCount: 680, clickedCount: 112, ctr: 16.4, revenue: 185000, date: '2026-07-02 11:30:00', status: 'Completed' },
-    { id: 'past-3', name: 'OTP Verification test', type: 'WhatsApp Only', sentCount: 124, clickedCount: 98, ctr: 79.0, revenue: 0, date: '2026-07-28 14:22:00', status: 'Completed' }
-  ]);
+  activeScheduledCampaigns = signal<any[]>([]);
+  pastCampaigns = signal<any[]>([]);
 
   onWhatsAppTemplateSelect(name: string) {
     const tmpl = this.whatsappTemplates().find(t => t.name === name);
@@ -1510,9 +1513,54 @@ export class PushSettingsTabComponent {
     this.loadTemplates();
     this.estimateAudience();
     this.loadAuditLogs();
+    this.loadCampaigns();
   }
 
   // Loaders
+  loadCampaigns() {
+    this.api.get<any>('/admin/push/campaigns?limit=100').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data && Array.isArray(res.data.list)) {
+          const all: any[] = res.data.list;
+
+          const scheduled = all
+            .filter((c: any) => c.status !== 'Completed' && c.status !== 'Sent')
+            .map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              type: c.type || 'Push Notification',
+              scheduledAt: c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : 'Immediate',
+              status: c.status || 'Draft',
+              reach: c.analytics?.sentCount || 0
+            }));
+
+          const past = all
+            .filter((c: any) => c.status === 'Completed' || c.status === 'Sent')
+            .map((c: any) => {
+              const sent = c.analytics?.sentCount || 0;
+              const clicked = c.analytics?.clickedCount || 0;
+              const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
+              return {
+                id: c.id,
+                name: c.name,
+                type: c.type || 'Push Notification',
+                sentCount: sent,
+                clickedCount: clicked,
+                ctr: ctr,
+                revenue: c.analytics?.revenueGenerated || 0,
+                date: c.createdAt ? new Date(c.createdAt).toLocaleString() : 'N/A',
+                status: c.status || 'Completed'
+              };
+            });
+
+          this.activeScheduledCampaigns.set(scheduled);
+          this.pastCampaigns.set(past);
+        }
+      },
+      error: () => {}
+    });
+  }
+
   loadAnalytics() {
     this.api.get<any>('/admin/push/analytics').subscribe({
       next: (res) => {

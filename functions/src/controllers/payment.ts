@@ -7,6 +7,7 @@ import { ShippingService } from '../services/shipping.service';
 import { createOrder, restoreInventory } from './order';
 import { dispatchOrderNotifications } from '../services/orderNotification.service';
 import { generateNextOrderNumber } from '../utils/orderNumber';
+import { logger } from '../utils/logger';
 
 // Helper to validate UUID format
 const isValidUuid = (val: any): boolean => {
@@ -418,15 +419,36 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
 
     const isMock = razorpay_signature === 'mock_signature' || (razorpay_order_id && razorpay_order_id.startsWith('order_mock_'));
     
-    // Validate signature ONLY if keySecret is configured and signature provided
-    if (keySecret && razorpay_signature && !isMock && razorpay_order_id && razorpay_signature !== 'mock_signature') {
+    // Timing-Safe Signature Verification
+    if (keySecret && razorpay_signature && !isMock && razorpay_order_id) {
       const generated = crypto
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
         .digest('hex');
 
-      if (generated !== razorpay_signature) {
-        console.warn(`[RazorpayVerify Warning] Signature mismatch. Generated: ${generated}, Received: ${razorpay_signature}. Proceeding with payment verification.`);
+      const bufGen = Buffer.from(generated, 'utf8');
+      const bufRec = Buffer.from(String(razorpay_signature), 'utf8');
+
+      let isValidSig = false;
+      if (bufGen.length === bufRec.length) {
+        isValidSig = crypto.timingSafeEqual(bufGen, bufRec);
+      }
+
+      if (!isValidSig) {
+        logger.error('Razorpay Payment Signature Verification Failed', {
+          razorpay_order_id,
+          razorpay_payment_id,
+        }, {
+          requestId: (req as any).requestId,
+          module: 'PAYMENT',
+          errorCode: 'PAYMENT_SIGNATURE_FAILED',
+        });
+
+        return res.status(400).json({
+          success: false,
+          error: 'Payment verification failed: Invalid digital signature',
+          requestId: (req as any).requestId,
+        });
       }
     }
 
