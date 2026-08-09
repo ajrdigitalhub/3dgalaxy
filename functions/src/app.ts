@@ -72,7 +72,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  
+
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   }
@@ -87,7 +87,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 // Strict Environment-Based CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:4200', 'http://localhost:3000', 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in'];
+  : ['http://localhost:4200', 'http://localhost:3000', 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in', 'https://ajr3dgalaxy.web.app'];
 
 app.use(
   cors({
