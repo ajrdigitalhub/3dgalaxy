@@ -13,7 +13,8 @@ import {
   HostListener,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { FormsModule } from "@angular/forms";
+import { RouterModule, Router } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { HttpClient } from "@angular/common/http";
 import * as THREE from "three";
@@ -37,7 +38,7 @@ export interface PreviewColorSwatch {
 @Component({
   selector: "app-printing-service",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, FormsModule, RouterModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./printing-service.html",
   styleUrl: "./printing-service.scss",
@@ -49,6 +50,9 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
   http = inject(HttpClient);
   enquiryService = inject(ServiceEnquiryService);
   fbStorageService = inject(FirebaseStorageService);
+  private router = inject(Router);
+
+  quickTrackQuery = signal<string>("");
 
   @ViewChild("viewportCanvas") viewportCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild("viewportContainer") viewportContainer!: ElementRef<HTMLDivElement>;
@@ -1319,14 +1323,23 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.showSuccessModal.set(false);
   }
 
+  trackQuickService() {
+    const q = this.quickTrackQuery().trim();
+    if (!q) {
+      this.toastService.error("Please enter a Tracking Number or Enquiry ID.");
+      return;
+    }
+    this.router.navigate(["/track-service"], { queryParams: { query: q } });
+  }
+
   goToTracking(trackingNumber: string) {
     this.showSuccessModal.set(false);
-    window.location.href = `/track-service?query=${encodeURIComponent(trackingNumber)}`;
+    this.router.navigate(["/track-service"], { queryParams: { query: trackingNumber } });
   }
 
   goToAccountRequests() {
     this.showSuccessModal.set(false);
-    window.location.href = `/account?tab=service_requests`;
+    this.router.navigate(["/account"], { queryParams: { tab: "service_requests" } });
   }
 
   async approveQuote(quoteId: string) {

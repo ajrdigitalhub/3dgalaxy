@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from "@angular/core";
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { RouterModule, ActivatedRoute } from "@angular/router";
@@ -15,7 +15,7 @@ import { environment } from "../../../environments/environment";
   templateUrl: "./track-service.html",
   styleUrl: "./track-service.scss",
 })
-export class TrackServiceComponent {
+export class TrackServiceComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private enquiryService = inject(ServiceEnquiryService);
   private toastService = inject(ToastService);
@@ -41,12 +41,14 @@ export class TrackServiceComponent {
     { key: "completed", label: "Delivered" },
   ];
 
-  constructor() {
-    const trk = this.route.snapshot.queryParamMap.get("trk");
-    if (trk) {
-      this.trackingQuery.set(trk);
-      this.searchTracking();
-    }
+  ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      const trk = params["query"] || params["trk"] || params["tracking"] || params["enquiryId"] || params["id"];
+      if (trk) {
+        this.trackingQuery.set(trk);
+        this.searchTracking();
+      }
+    });
   }
 
   searchTracking() {

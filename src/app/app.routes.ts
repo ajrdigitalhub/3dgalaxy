@@ -47,7 +47,42 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "services",
+    loadComponent: () =>
+      import("./pages/printing-service/printing-service").then(
+        (m) => m.PrintingService,
+      ),
+  },
+  {
+    path: "printing-service",
+    loadComponent: () =>
+      import("./pages/printing-service/printing-service").then(
+        (m) => m.PrintingService,
+      ),
+  },
+  {
+    path: "3d-printing-service",
+    loadComponent: () =>
+      import("./pages/printing-service/printing-service").then(
+        (m) => m.PrintingService,
+      ),
+  },
+  {
     path: "track-service",
+    loadComponent: () =>
+      import("./pages/track-service/track-service").then(
+        (m) => m.TrackServiceComponent,
+      ),
+  },
+  {
+    path: "services-tracking",
+    loadComponent: () =>
+      import("./pages/track-service/track-service").then(
+        (m) => m.TrackServiceComponent,
+      ),
+  },
+  {
+    path: "services/track",
     loadComponent: () =>
       import("./pages/track-service/track-service").then(
         (m) => m.TrackServiceComponent,

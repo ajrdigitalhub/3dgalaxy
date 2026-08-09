@@ -507,11 +507,11 @@
         }
       </div>
 
-  </div>
+  </div> <!-- Close workspace stage grid-cols-12 -->
 
   <!-- SERVICE TRACKING BANNER — Services Page Exclusive -->
   <section
-    class="relative overflow-hidden border border-zinc-200/80 dark:border-zinc-800/80 bg-gradient-to-br from-neutral-50 via-white to-orange-50/30 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900/60 rounded-3xl my-8 shadow-lg">
+    class="w-full relative overflow-hidden border border-zinc-200/80 dark:border-zinc-800/80 bg-gradient-to-br from-neutral-50 via-white to-orange-50/30 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900/60 rounded-3xl my-8 shadow-lg">
     <!-- Ambient glow effects -->
     <div
       class="absolute -top-24 -right-24 w-[400px] h-[400px] bg-[radial-gradient(circle_at_center,_rgba(214,81,8,0.07),transparent_65%)] blur-[60px] pointer-events-none">
@@ -528,7 +528,7 @@
           class="absolute left-0 top-0 bottom-0 w-1.5 sm:w-2 bg-gradient-to-b from-[#d65108] via-amber-500 to-orange-400 rounded-l-[2rem]">
         </div>
 
-        <div class="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-10 pl-4 sm:pl-6">
+        <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 xl:gap-10 pl-2 sm:pl-4">
           <!-- Icon + Text -->
           <div class="flex items-start gap-4 sm:gap-5 flex-1 min-w-0">
             <!-- Animated icon container -->
@@ -565,17 +565,27 @@
             </div>
           </div>
 
-          <!-- CTA Button -->
-          <div class="shrink-0 w-full lg:w-auto pl-0 lg:pl-0">
-            <a routerLink="/track-service"
-              class="group/btn flex items-center justify-center gap-2.5 w-full lg:w-auto px-7 sm:px-9 py-3.5 sm:py-4 bg-gradient-to-r from-[#d65108] to-amber-600 hover:from-[#c04907] hover:to-amber-500 text-white font-black text-xs sm:text-sm uppercase tracking-[0.15em] rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.97] transition-all duration-300 no-underline whitespace-nowrap">
+          <!-- Quick Search & Track CTA Button -->
+          <div class="shrink-0 w-full xl:w-auto flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+            <div class="relative w-full sm:w-64">
+              <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+              <input
+                type="text"
+                [(ngModel)]="quickTrackQuery"
+                (keyup.enter)="trackQuickService()"
+                placeholder="TRK-XXXXXX or Enquiry ID"
+                class="w-full pl-10 pr-3 py-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:border-[#d65108] transition-colors uppercase shadow-xs"
+              />
+            </div>
+            <button (click)="trackQuickService()"
+              class="group/btn flex items-center justify-center gap-2.5 w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-[#d65108] to-amber-600 hover:from-[#c04907] hover:to-amber-500 text-white font-black text-xs uppercase tracking-[0.15em] rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 active:scale-[0.97] transition-all duration-300 border-none cursor-pointer whitespace-nowrap">
               <mat-icon class="text-lg group-hover/btn:translate-x-0.5 transition-transform duration-300">
                 travel_explore</mat-icon>
-              <span>Track Service Now</span>
+              <span>Track Now</span>
               <mat-icon
                 class="text-sm opacity-60 -ml-0.5 group-hover/btn:translate-x-1 transition-transform duration-300">
                 arrow_forward</mat-icon>
-            </a>
+            </button>
           </div>
         </div>
 
