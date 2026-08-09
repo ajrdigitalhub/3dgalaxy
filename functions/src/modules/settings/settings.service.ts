@@ -81,6 +81,7 @@ const defaultSettings = {
     order3dprintAdminTemplateName: "order_3dprint_admin",
     welcomeMessageTemplateName: "welcome_message",
     orderStatusUpdateTemplateName: "order_status_update",
+    orderShippedTemplateName: "order_shipped",
     enableCodNotifications: true,
     enablePaidNotifications: true,
     serviceRequestCustomerTemplateName: "order_3dprint_client",

@@ -2731,7 +2731,29 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                             class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
                           />
                           <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
-                            Template for when an order status changes (Shipped, Delivered, Cancelled, etc.).
+                            Template for general order status updates (Delivered, Cancelled, etc.).
+                          </p>
+                        </div>
+
+                        <div class="space-y-1">
+                          <span
+                            class="block text-[9px] font-black text-zinc-400 uppercase"
+                            >Order Shipped Template Name</span
+                          >
+                          <input
+                            type="text"
+                            [value]="draft().whatsappSettings?.orderShippedTemplateName || 'order_shipped'"
+                            (input)="
+                              setNested(
+                                'whatsappSettings',
+                                'orderShippedTemplateName',
+                                $any($event.target).value
+                              )
+                            "
+                            class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
+                          />
+                          <p class="text-[9px] text-zinc-400 dark:text-zinc-500">
+                            Dedicated 11-variable WhatsApp template for order shipped notifications (Default: <code class="text-blue-500 font-mono">order_shipped</code>).
                           </p>
                         </div>
                       </div>

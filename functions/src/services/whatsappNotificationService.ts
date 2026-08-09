@@ -351,6 +351,11 @@ export class WhatsAppNotificationService {
       // Status key
       const statusKey = extraParams?.statusKey || order?.status || 'Order Confirmed';
 
+      const normalizedStatusKey = String(statusKey).toLowerCase().replace(/[\s_-]+/g, '');
+      if (['shipped', 'dispatched', 'ordershipped'].includes(normalizedStatusKey) && !extraParams?._isShippedFallback) {
+        return this.sendOrderShippedNotification(order, extraParams?.shipment || extraParams, extraParams);
+      }
+
       // Dynamic content generator
       const content = this.generateStatusContent(statusKey, order, extraParams, siteName);
 
@@ -1127,7 +1132,7 @@ export class WhatsAppNotificationService {
       }
 
       // 11. {{11}} orderLink
-      const orderLink = `https://3dgalaxy.co.in/account/orders/${orderId}`;
+      const orderLink = extraParams?.orderLink || `https://3dgalaxy.co.in/account/orders/${orderId}`;
 
       // Configurable template name (default: order_shipped)
       const templateName = whatsappSettings.orderShippedTemplateName || 'order_shipped';
@@ -1258,7 +1263,7 @@ export class WhatsAppNotificationService {
 
         if (resData?.error?.code === 132001) {
           console.warn(`[WhatsAppNotificationService] Template ${templateName} not found in Meta (${errMsg}). Falling back to sendOrderStatusNotification...`);
-          return this.sendOrderStatusNotification(order, { ...extraParams, recipientNumber: formattedPhone, statusKey: 'shipped' });
+          return this.sendOrderStatusNotification(order, { ...extraParams, recipientNumber: formattedPhone, statusKey: 'shipped', _isShippedFallback: true });
         }
 
         return { success: false, logId: log.id, error: errMsg };

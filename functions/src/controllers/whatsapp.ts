@@ -635,6 +635,42 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
 
     const name = customerName || 'Alex Johnson';
     const ordId = orderId || 'B3D-10294';
+
+    if (['shipped', 'order_shipped', 'dispatched'].includes(String(status || '').toLowerCase().trim())) {
+      const templateName = settings.orderShippedTemplateName || 'order_shipped';
+      const custName = name;
+      const orderAmountStr = '1,499.00';
+      const paymentMethod = 'Online Payment';
+      const paymentStatus = 'PAID';
+      const orderStatus = 'SHIPPED';
+      const courierPartner = extraParams?.courierPartner || extraParams?.courierName || 'Delhivery Courier';
+      const trackingNumber = extraParams?.trackingNumber || 'DEL123456789';
+      const estimatedDate = extraParams?.estimatedDeliveryDate || '3-5 Business Days';
+      const trackingUrl = extraParams?.trackingUrl || `${siteUrl}/order-tracking?id=${ordId}`;
+      const ordLink = extraParams?.orderLink || `${siteUrl}/account/orders/${ordId}`;
+
+      const previewText = `Hello *${custName}* 👋,\nGreat news! Your order from ${siteName} has been dispatched and is now on its way to you. 🚚📦\n━━━━━━━━━━━━━━━━━━━\n📦 ORDER SUMMARY 📦\n\n🧾 Order ID:${ordId}\n💰 Order Value: ₹${orderAmountStr}\n💳 Payment Method: ${paymentMethod}\n✅ Payment Status: ${paymentStatus}\n📦 Order Status: ${orderStatus}\n━━━━━━━━━━━━━━━━━━━\n🚚 SHIPPING DETAILS 🚚\n\n📦 Courier Partner: ${courierPartner}\n🔢 Tracking Number: ${trackingNumber}\n📅 Estimated Delivery: ${estimatedDate}\n\n🔗 Track Your Shipment\n${trackingUrl}\n━━━━━━━━━━━━━━━━━━━\n🔗 View Order Details\n${ordLink}\n━━━━━━━━━━━━━━━━━━\n\n📍 Your package is on its way!\nYou can use the tracking link above to check the latest shipment status and delivery updates.\nPlease keep your phone available, as the courier partner may contact you regarding the delivery.\n\nThank you for choosing ${siteName}.\nWe appreciate your trust and look forward to serving you again.\nHave a Nice Day! 🌟\n\nBest Regards,\n*${siteName} Team*`;
+
+      return res.status(200).json({
+        success: true,
+        templateName: templateName,
+        variables: {
+          1: sanitizeTemplateParam(custName, 'Valued Customer'),
+          2: sanitizeTemplateParam(ordId, 'N/A'),
+          3: sanitizeTemplateParam(orderAmountStr, '0.00'),
+          4: sanitizeTemplateParam(paymentMethod, 'Online Payment'),
+          5: sanitizeTemplateParam(paymentStatus, 'PAID'),
+          6: sanitizeTemplateParam(orderStatus, 'SHIPPED'),
+          7: sanitizeTemplateParam(courierPartner, 'Standard Delivery'),
+          8: sanitizeTemplateParam(trackingNumber, 'N/A'),
+          9: sanitizeTemplateParam(estimatedDate, '3-5 Business Days'),
+          10: sanitizeTemplateParam(trackingUrl, `${siteUrl}/order-tracking`),
+          11: sanitizeTemplateParam(ordLink, `${siteUrl}/account/orders/${ordId}`)
+        },
+        previewText
+      });
+    }
+
     const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
 
     const previewText = `Hello ${name} 👋,\n\n📢 *Your Order Status Has Been Updated*\n\nWe're pleased to inform you that your order has reached a new stage.\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *ORDER DETAILS*\n\n🧾 Order ID: *${ordId}*\n\n📌 Current Status: *${content.currentStatus}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *Update*\n\n${content.statusDescription}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n${content.additionalInformation}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🔗 *View Order*\n\n${orderLink}\n\nNeed assistance?\n\nOur support team is always here to help.\n\nThank you for choosing *${siteName}*.\n\nWe appreciate your trust and look forward to serving you again.\n\nBest Regards,\n\n*${siteName} Team*`;
