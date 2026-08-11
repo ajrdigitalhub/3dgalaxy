@@ -1726,9 +1726,9 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                 <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">bolt</mat-icon>
                               </button>
                               <button
-                                (click)="getProductVariantsCount(p) > 0 ? openVariantEditModal(p) : admin.startProductEdit(p)"
+                                (click)="admin.startProductEdit(p)"
                                 class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
-                                [title]="getProductVariantsCount(p) > 0 ? 'Edit Product Variants in Popup' : 'Full Edit Asset'"
+                                title="Edit Product Details"
                               >
                                 <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">edit</mat-icon>
                               </button>

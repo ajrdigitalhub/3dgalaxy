@@ -1,5 +1,40 @@
 [
   {
+    "id": "41310616-0dc4-4bda-8b14-f5c2d000708b",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0013 for ₹1500.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "29ec8090-bcf8-419e-878e-13d51c939b68",
+      "orderNumber": "3DX0013",
+      "totalAmount": "1500",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-11T18:52:26.864Z",
+    "isRead": false
+  },
+  {
+    "id": "625692ee-c1cd-4343-bfdf-8dc0664277eb",
+    "title": "🖨️ New 3D Service Request",
+    "body": "admin123 R uploaded 3D model \"yamaha order (1).stl\" (Tracking: TRK-133498)",
+    "type": "service",
+    "eventKey": "NEW_SERVICE_REQUEST",
+    "deepLink": "/admin/services",
+    "data": {
+      "material": "PETG",
+      "quantity": 1,
+      "enquiryId": "ENQ-952288",
+      "customerName": "admin123 R",
+      "trackingNumber": "TRK-133498"
+    },
+    "sentAt": "2026-08-11T18:30:51.843Z",
+    "isRead": false
+  },
+  {
     "id": "485ef590-3ce8-46e3-a8c2-e9b5852f4eb1",
     "title": "🛒 Order Confirmed",
     "body": "admin123 R placed Order #ORD-2026-217234 for ₹2100.00. Payment Pending (COD)",

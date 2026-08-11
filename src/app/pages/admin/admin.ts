@@ -1963,17 +1963,39 @@ export class AdminPanel {
       imagesArr = this.editingProduct()!.images;
     }
 
-    // Parse variants from JSON block
+    // Parse variants & options safely
     let variantsArr = this.pVariants();
-    let optionsArr = this.pOptions().map((o: any, idx: number) => ({
-      name: o.name,
-      sortOrder: idx,
-      values: o.values.map((v: string, vidx: number) => ({
-        value: v,
-        displayValue: v,
-        sortOrder: vidx,
-      })),
-    }));
+    let optionsArr = this.pOptions().map((o: any, idx: number) => {
+      let rawVals: any[] = [];
+      if (Array.isArray(o.values)) {
+        rawVals = o.values;
+      } else if (Array.isArray(o.bundleTiers)) {
+        rawVals = o.bundleTiers.map((t: any) => t.name || `Tier ${t.count}`);
+      } else if (typeof o.values === 'string') {
+        rawVals = o.values.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+
+      return {
+        id: o.id,
+        name: o.displayName || o.variantName || o.name || 'Option',
+        variantName: o.variantName || o.name || 'Option',
+        displayName: o.displayName || o.name || 'Option',
+        displayType: o.displayType || 'chip',
+        selectionMode: o.selectionMode || 'single',
+        required: o.required !== false,
+        active: o.active !== false,
+        bundleTiers: o.bundleTiers || [],
+        sortOrder: idx,
+        values: rawVals.map((v: any, vidx: number) => {
+          const valStr = typeof v === 'string' ? v : (v?.value || v?.name || String(v));
+          return {
+            value: valStr,
+            displayValue: valStr,
+            sortOrder: vidx,
+          };
+        }),
+      };
+    });
 
     const pData: any = {
       name,

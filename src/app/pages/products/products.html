@@ -113,7 +113,7 @@
           </div>
         </div>
 
-        <!-- Right: Sort, View, Page Size -->
+        <!-- Right: Sort -->
         <div class="flex items-center gap-3">
 
           <!-- Outlined Sort Dropdown -->
@@ -129,35 +129,6 @@
             </select>
             <mat-icon
               class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
-          </div>
-
-          <!-- Items per page size -->
-          <div class="relative w-28">
-            <select (change)="updateUrlQueryParam('limit', $any($event.target).value)"
-              class="w-full h-10 pl-3 pr-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-855 hover:border-neutral-350 dark:hover:border-neutral-750 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-200 focus:border-orange-500 outline-none cursor-pointer appearance-none premium-select transition-all">
-              <option value="15" [selected]="itemsPerPage() === 15">15 Per Page</option>
-              <option value="25" [selected]="itemsPerPage() === 25">25 Per Page</option>
-              <option value="35" [selected]="itemsPerPage() === 35">35 Per Page</option>
-              <option value="45" [selected]="itemsPerPage() === 45">45 Per Page</option>
-              <option value="50" [selected]="itemsPerPage() === 50">50 Per Page</option>
-            </select>
-            <mat-icon
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none scale-75">expand_more</mat-icon>
-          </div>
-
-          <!-- Premium Square View Toggle Buttons -->
-          <div
-            class="flex items-center border border-neutral-200 dark:border-neutral-855 rounded-xl overflow-hidden bg-white dark:bg-neutral-900 shadow-2xs">
-            <button (click)="isListView.set(false)" [class.active]="!isListView()"
-              class="h-10 w-10 flex items-center justify-center text-neutral-450 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer transition-all duration-200 premium-view-btn"
-              title="Grid View">
-              <mat-icon class="scale-85">grid_view</mat-icon>
-            </button>
-            <button (click)="isListView.set(true)" [class.active]="isListView()"
-              class="h-10 w-10 flex items-center justify-center text-neutral-450 hover:text-neutral-700 dark:hover:text-white border-none bg-transparent cursor-pointer transition-all duration-200 premium-view-btn"
-              title="List View">
-              <mat-icon class="scale-85">view_headline</mat-icon>
-            </button>
           </div>
         </div>
 

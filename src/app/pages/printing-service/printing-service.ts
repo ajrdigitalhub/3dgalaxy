@@ -600,14 +600,14 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.controls.maxPolarAngle = Math.PI / 2 + 0.05; // Lock camera from going below build plate
 
     // 5. Physically Correct Studio Lighting (Hemisphere + Key + Fill + Ambient)
-    this.ambientLightNode = new THREE.AmbientLight(0xffffff, 0.35);
+    this.ambientLightNode = new THREE.AmbientLight(0xffffff, 0.75);
     this.scene.add(this.ambientLightNode);
 
-    this.hemiLightNode = new THREE.HemisphereLight(0xffffff, 0x333333, 0.65);
+    this.hemiLightNode = new THREE.HemisphereLight(0xffffff, 0x444444, 0.85);
     this.hemiLightNode.position.set(0, 200, 0);
     this.scene.add(this.hemiLightNode);
 
-    this.dirLightNode = new THREE.DirectionalLight(0xffffff, 1.2);
+    this.dirLightNode = new THREE.DirectionalLight(0xffffff, 1.6);
     this.dirLightNode.position.set(150, 250, 150);
     this.dirLightNode.castShadow = true;
     this.dirLightNode.shadow.mapSize.width = 2048;
@@ -617,7 +617,7 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.dirLightNode.shadow.bias = -0.0001;
     this.scene.add(this.dirLightNode);
 
-    this.fillLightNode = new THREE.DirectionalLight(0x90b0ff, 0.45);
+    this.fillLightNode = new THREE.DirectionalLight(0x90b0ff, 0.85);
     this.fillLightNode.position.set(-150, 100, -150);
     this.scene.add(this.fillLightNode);
 
@@ -749,11 +749,14 @@ export class PrintingService implements OnInit, AfterViewInit, OnDestroy {
     this.runMeshDiagnostics(dx, dy, dz, volCm3, triangleCount, vertexCount);
 
     // 6. Display in Three.js Studio Scene
-    if (!this.renderer && this.viewportCanvas) {
-      this.initThreeViewport(this.viewportCanvas.nativeElement);
-    } else if (this.loadedGeometry) {
-      this.displayGeometryInScene(this.loadedGeometry);
-    }
+    setTimeout(() => {
+      if (!this.renderer && this.viewportCanvas) {
+        this.initThreeViewport(this.viewportCanvas.nativeElement);
+      }
+      if (this.loadedGeometry) {
+        this.displayGeometryInScene(this.loadedGeometry);
+      }
+    }, 50);
 
     this.toastService.success(
       `Loaded STL model "${file.name}" (${triangleCount.toLocaleString()} triangles)`,

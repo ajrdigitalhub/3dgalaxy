@@ -595,15 +595,46 @@ export const mapProductFields = (p: any): any => {
         ? Boolean(p.is_cod_available)
         : true));
 
-  const weightInGrams = p.weightInGrams !== undefined && p.weightInGrams !== null
+    const weightInGrams = p.weightInGrams !== undefined && p.weightInGrams !== null
     ? Number(p.weightInGrams)
     : (p.weight !== undefined && p.weight !== null ? Number(p.weight) : 0);
   const weightUnit = p.weightUnit || 'g';
 
+  const rawPCS = (p as any).productCategories || [];
+  let categoriesList: any[] = (p as any).categories || [];
+  if ((!categoriesList || categoriesList.length === 0) && rawPCS.length > 0) {
+    categoriesList = rawPCS.map((pc: any) => ({
+      id: pc.category?.id || pc.categoryId,
+      parentId: pc.category?.parentId || null,
+      name: pc.category?.name || '',
+      slug: pc.category?.slug || '',
+      description: pc.category?.description || '',
+      icon: pc.category?.icon || null,
+      image: pc.category?.image || null,
+      banner: pc.category?.banner || null,
+      sortOrder: pc.sortOrder || 0,
+      isActive: pc.category?.isActive ?? true,
+      isFeatured: pc.category?.isFeatured ?? false,
+      seoTitle: pc.category?.seoTitle || null,
+      seoDescription: pc.category?.seoDescription || null,
+      isPrimary: !!pc.isPrimary
+    })).filter((c: any) => c.id);
+  }
+
+  if (categoriesList.length === 0 && p.category) {
+    categoriesList = [{ ...p.category, isPrimary: true }];
+  }
+
+  const primaryCategory = p.primaryCategory || categoriesList.find((c: any) => c.isPrimary) || categoriesList[0] || p.category || null;
+  const primaryCategoryId = primaryCategory?.id || p.categoryId || null;
+  const categoryIds = categoriesList.map((c: any) => c.id);
+
   return {
     ...p,
-    categories: p.categories || (p.category ? [{ ...p.category, isPrimary: true }] : []),
-    primaryCategory: p.primaryCategory || p.category || null,
+    categoryId: primaryCategoryId,
+    categoryIds,
+    categories: categoriesList,
+    primaryCategory,
     weightInGrams,
     weightUnit,
     reviews: approvedReviews,
@@ -1164,6 +1195,9 @@ export const getProductById = async (req: Request, res: Response) => {
       include: {
         variants: true,
         category: true,
+        productCategories: {
+          include: { category: true }
+        },
         brand: true,
         reviews: {
           include: { user: true },
@@ -1307,7 +1341,9 @@ export const createProduct = async (req: Request, res: Response) => {
     const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
 
     const resolvedBrandId = await resolveBrandId(rawBrand);
-    const resolvedCategoryId = await resolveCategoryId(rawCategory);
+    const resolvedCategoryList = await resolveCategoryIds(req.body);
+    const primaryCatItem = resolvedCategoryList.find(c => c.isPrimary) || resolvedCategoryList[0];
+    const resolvedCategoryId = primaryCatItem ? primaryCatItem.id : await resolveCategoryId(rawCategory);
 
     const created = await prisma.$transaction(async (tx) => {
       const p = await tx.product.create({
@@ -1354,6 +1390,20 @@ export const createProduct = async (req: Request, res: Response) => {
         }
       });
 
+      if (resolvedCategoryList.length > 0) {
+        for (let i = 0; i < resolvedCategoryList.length; i++) {
+          const catItem = resolvedCategoryList[i];
+          await tx.productCategory.create({
+            data: {
+              productId: p.id,
+              categoryId: catItem.id,
+              isPrimary: catItem.isPrimary,
+              sortOrder: i
+            }
+          });
+        }
+      }
+
       if (parsedVariants.length > 0) {
         for (const v of parsedVariants) {
           const optVals: Record<string, string> = {};
@@ -1399,6 +1449,9 @@ export const createProduct = async (req: Request, res: Response) => {
         include: {
           variants: true,
           category: true,
+          productCategories: {
+            include: { category: true }
+          },
           brand: true,
           reviews: {
             include: { user: true }
@@ -1499,12 +1552,31 @@ export const updateProduct = async (req: Request, res: Response) => {
     const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
 
     const resolvedBrandId = await resolveBrandId(rawBrand);
-    const resolvedCategoryId = await resolveCategoryId(rawCategory);
+    const hasCategoryPayload = req.body.categoryIds !== undefined || req.body.categories !== undefined || req.body.categoryId !== undefined || req.body.category_id !== undefined || req.body.category !== undefined;
+    const resolvedCategoryList = hasCategoryPayload ? await resolveCategoryIds(req.body) : [];
+    const primaryCatItem = resolvedCategoryList.find(c => c.isPrimary) || resolvedCategoryList[0];
+    const resolvedCategoryId = hasCategoryPayload ? (primaryCatItem ? primaryCatItem.id : await resolveCategoryId(rawCategory)) : undefined;
 
     const updated = await prisma.$transaction(async (tx) => {
       // Clear previously set variants ONLY if variants array was explicitly passed
       if (parsedVariants !== undefined) {
         await tx.productVariant.deleteMany({ where: { productId: id } });
+      }
+
+      // Sync multi-categories in ProductCategory table IF category payload was sent
+      if (hasCategoryPayload && resolvedCategoryList.length > 0) {
+        await tx.productCategory.deleteMany({ where: { productId: id } });
+        for (let i = 0; i < resolvedCategoryList.length; i++) {
+          const catItem = resolvedCategoryList[i];
+          await tx.productCategory.create({
+            data: {
+              productId: id,
+              categoryId: catItem.id,
+              isPrimary: catItem.isPrimary,
+              sortOrder: i
+            }
+          });
+        }
       }
 
       const p = await tx.product.update({
@@ -1597,6 +1669,9 @@ export const updateProduct = async (req: Request, res: Response) => {
         include: {
           variants: true,
           category: true,
+          productCategories: {
+            include: { category: true }
+          },
           brand: true,
           reviews: {
             include: { user: true }

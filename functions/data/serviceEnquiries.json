@@ -1,5 +1,61 @@
 [
   {
+    "id": "ENQ-952288",
+    "trackingNumber": "TRK-133498",
+    "createdAt": "2026-08-11T18:30:40.712Z",
+    "updatedAt": "2026-08-11T18:30:40.712Z",
+    "userId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "customerName": "admin123 R",
+    "customerEmail": "admin123@gmail.com",
+    "customerPhone": "9597935647",
+    "isGuest": false,
+    "modelName": "yamaha order (1).stl",
+    "fileSize": "0.7 MB",
+    "fileUrl": "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/services/TRK-133498/original/yamaha%20order%20%281%29.stl?GoogleAccessId=firebase-adminsdk-fbsvc%40ajr3dgalaxy.iam.gserviceaccount.com&Expires=1787077847&Signature=iqL7K4RwK9DqjpEDjParqB0YybLKvYi%2BqANq6yajZBInAaE2w9Q8qYgwoVBytO8HGZl3%2Bcfi4cCoY6OY3OGrJyIsAT%2F%2FQQD8EoL%2BQeFTH6Wlr%2Bgrm6LDIEFwEt1iO8NiKyrWmXLF3qpffzOS8EahcYb0Dy3XXzrBWmxw4BuFRVgD7NR6qDhFn3cdNKQvKt4RCSlLtSJpqM1gjxYEi4B%2BEJqFfsN7bxzodkkkzpq5SxcAbSdWhB4pwRVIV7BPe2QcpiC2hpvKFUsfsLae0s04IvlYSCdjm5hv1TYMqS2ldc8otgcIKwL9qtAER4fPwCV1AgzQC0tDiYMuuXldcIl8HQ%3D%3D",
+    "thumbnailUrl": "",
+    "dimensions": {
+      "x": 61.71,
+      "y": 6.6,
+      "z": 32
+    },
+    "volumeCm3": 8.64,
+    "surfaceAreaCm2": 61.04,
+    "weightGrams": 4,
+    "triangleCount": 14654,
+    "estimatedHours": 1,
+    "material": "PETG",
+    "color": "Silver",
+    "infillPercent": 20,
+    "layerHeight": "0.15 mm",
+    "nozzleSize": "0.4 mm",
+    "supportType": "None",
+    "buildPlateAdhesion": "None",
+    "printSpeed": "Normal",
+    "surfaceFinish": "Matte",
+    "quantity": 1,
+    "notes": "",
+    "status": "submitted",
+    "estimatedCost": 350,
+    "timeline": [
+      {
+        "status": "submitted",
+        "label": "Enquiry Submitted",
+        "timestamp": "2026-08-11T18:30:40.712Z",
+        "remarks": "Customer uploaded STL file \"yamaha order (1).stl\" into Firebase Storage.",
+        "updatedBy": "admin123 R"
+      }
+    ],
+    "notifications": [
+      {
+        "id": "NOTIF-1786473047827",
+        "type": "push",
+        "sentAt": "2026-08-11T18:30:40.712Z",
+        "title": "Service Enquiry Received",
+        "body": "Your 3D print enquiry #ENQ-952288 (Tracking: TRK-133498) has been received successfully!"
+      }
+    ]
+  },
+  {
     "id": "ENQ-401374",
     "trackingNumber": "TRK-955291",
     "createdAt": "2026-08-01T10:36:33.474Z",

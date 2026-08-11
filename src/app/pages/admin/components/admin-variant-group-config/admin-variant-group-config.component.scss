@@ -858,3 +858,194 @@
   }
 }
 
+/* ==========================================
+   DARK THEME OVERRIDES
+   ========================================== */
+:host-context(.dark) {
+  .admin-variant-config-wrapper {
+    background: #18181b;
+    border-color: #27272a;
+
+    .config-header {
+      border-bottom-color: #27272a;
+
+      .header-left {
+        .title { color: #f4f4f5; }
+        .subtitle { color: #a1a1aa; }
+      }
+    }
+
+    .group-tabs-row .tab-btn {
+      background: #27272a;
+      border-color: #3f3f46;
+      color: #d4d4d8;
+
+      &.active {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: #ffffff;
+      }
+    }
+
+    .form-card {
+      background: #09090b;
+      border-color: #27272a;
+
+      .form-section-title {
+        color: #f4f4f5;
+      }
+    }
+
+    .form-grid {
+      .field-cell {
+        label { color: #a1a1aa; }
+        input, select {
+          background: #18181b;
+          border-color: #27272a;
+          color: #f4f4f5;
+
+          &:focus {
+            border-color: #6366f1;
+          }
+        }
+      }
+    }
+
+    .checkbox-row {
+      .cb-label { color: #d4d4d8; }
+    }
+
+    .bundle-config-section {
+      border-top-color: #27272a;
+      .section-sub-header .sub-title { color: #f4f4f5; }
+    }
+
+    .tier-card {
+      background: #18181b;
+      border-color: #27272a;
+
+      .t-input, .t-select {
+        background: #09090b;
+        border-color: #27272a;
+        color: #f4f4f5;
+      }
+
+      .t-pop { color: #d4d4d8; }
+    }
+
+    .preview-panel {
+      background: #09090b;
+      border: 1px solid #27272a;
+    }
+
+    .preview-body {
+      background: #18181b;
+      color: #f4f4f5;
+    }
+
+    .preview-slots-box {
+      background: #09090b;
+      border-color: #27272a;
+      .box-title { color: #a1a1aa; }
+      .prev-slot .prev-select {
+        background: #18181b;
+        border-color: #27272a;
+        color: #f4f4f5;
+      }
+    }
+
+    .standard-preview-card {
+      .prev-grp-label { color: #f4f4f5; }
+      .prev-chip {
+        background: #09090b;
+        border-color: #27272a;
+        color: #f4f4f5;
+
+        &.selected {
+          background: #312e81;
+          border-color: #6366f1;
+          color: #e0e7ff;
+        }
+      }
+    }
+
+    .dropdown-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .prev-dropdown-select {
+        background: #09090b;
+        color: #f4f4f5;
+        border-color: #6366f1;
+      }
+      .variant-detail-badge {
+        background: #09090b;
+        border-color: #27272a;
+        .v-detail-row .v-title { color: #f4f4f5; }
+        .v-meta { color: #a1a1aa; }
+      }
+    }
+
+    .color-chips-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .color-swatches-flex .color-swatch-btn .swatch-label { color: #d4d4d8; }
+    }
+
+    .image-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .image-tiles-grid .image-tile-btn {
+        background: #09090b;
+        border-color: #27272a;
+        .tile-name { color: #f4f4f5; }
+        &.selected {
+          background: #312e81;
+          border-color: #6366f1;
+        }
+      }
+    }
+
+    .card-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .cards-grid .variant-card-btn {
+        background: #09090b;
+        border-color: #27272a;
+        .card-top .card-title { color: #f4f4f5; }
+        &.selected {
+          background: #312e81;
+          border-color: #6366f1;
+        }
+      }
+    }
+
+    .radio-chips-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .radio-chips-list .radio-chip-item {
+        background: #09090b;
+        border-color: #27272a;
+        .radio-label { color: #f4f4f5; }
+        &.selected {
+          background: #312e81;
+          border-color: #6366f1;
+        }
+      }
+    }
+
+    .qty-selector-preview-box {
+      .prev-grp-label { color: #f4f4f5; }
+      .qty-rows .qty-row {
+        background: #09090b;
+        border-color: #27272a;
+        .qty-info .qty-vname { color: #f4f4f5; }
+        .qty-controls .qty-btn {
+          background: #18181b;
+          border-color: #27272a;
+          color: #f4f4f5;
+        }
+      }
+      .qty-total-bar {
+        background: #312e81;
+        color: #e0e7ff;
+        .total-val { color: #818cf8; }
+      }
+    }
+  }
+}
+

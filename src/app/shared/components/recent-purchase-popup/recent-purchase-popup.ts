@@ -63,13 +63,14 @@ export class RecentPurchasePopupComponent implements OnInit, OnDestroy {
 
   popupConfig = computed(() => {
     const s = this.ds.settings();
-    return s?.recentPurchasePopup ?? {
-      enabled: true,
-      interval: 8000,
-      displayDuration: 5000,
-      maxItems: 20,
-      showLocation: true,
-      showTime: true,
+    const cfg = s?.recentPurchasePopup;
+    return {
+      enabled: cfg?.enabled !== false,
+      interval: Number(cfg?.interval) || 8000,
+      displayDuration: Number(cfg?.displayDuration) || 5000,
+      maxItems: Number(cfg?.maxItems) || 20,
+      showLocation: cfg?.showLocation !== false,
+      showTime: cfg?.showTime !== false,
     };
   });
 
@@ -215,14 +216,24 @@ export class RecentPurchasePopupComponent implements OnInit, OnDestroy {
   }
 
   formatTime(minutesAgo: number): string {
-    if (minutesAgo < 60) return `${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''} ago`;
-    const h = Math.floor(minutesAgo / 60);
-    return `${h} hour${h !== 1 ? 's' : ''} ago`;
+    const m = Math.max(1, Math.round(Number(minutesAgo) || 1));
+    if (m < 60) return `${m} minute${m !== 1 ? 's' : ''} ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} hour${h !== 1 ? 's' : ''} ago`;
+    const d = Math.floor(h / 24);
+    return `${d} day${d !== 1 ? 's' : ''} ago`;
   }
 
   formatLocation(item: RecentPurchaseItem): string {
-    const parts = [item.city, item.state, item.country].filter(Boolean);
-    return parts.join(', ');
+    if (!item) return 'India';
+    const city = (item.city || '').trim();
+    const state = (item.state || '').trim();
+    const country = (item.country || 'India').trim();
+
+    if (city && state && city.toLowerCase() !== state.toLowerCase()) {
+      return `${city}, ${state}`;
+    }
+    return city || state || country || 'India';
   }
 
   ngOnDestroy() {

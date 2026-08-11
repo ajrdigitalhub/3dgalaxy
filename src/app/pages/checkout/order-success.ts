@@ -107,7 +107,7 @@ interface PaperParticle {
               </div>
               <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800">
                 <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Est. Delivery</p>
-                <p class="text-sm font-bold text-neutral-900 dark:text-white">{{ order.estimatedDelivery || '3-5 Business Days' }}</p>
+                <p class="text-sm font-bold text-neutral-900 dark:text-white">{{ estimatedDeliveryDateRange }}</p>
               </div>
             </div>
           </div>
@@ -121,7 +121,7 @@ interface PaperParticle {
               <div class="absolute top-4 left-4 h-0.5 bg-emerald-400 transition-all duration-1000" [style.width]="'15%'"></div>
 
               @for (step of timelineSteps; track step.label; let i = $index) {
-              <div class="relative z-10 flex flex-col items-center gap-2 w-20 text-center">
+              <div class="relative z-10 flex flex-col items-center gap-1.5 w-24 text-center">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm transition-all"
                   [class]="i === 0
                     ? 'bg-emerald-500 text-white shadow-emerald-400/30'
@@ -129,11 +129,12 @@ interface PaperParticle {
                   @if (i === 0) {
                     <mat-icon class="scale-75">check</mat-icon>
                   } @else {
-                    {{ i + 1 }}
+                    <mat-icon class="scale-75 text-neutral-400">{{ step.icon }}</mat-icon>
                   }
                 </div>
                 <span class="text-[9px] font-bold uppercase tracking-wider leading-tight"
                   [class]="i === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'">{{ step.label }}</span>
+                <span class="text-[9px] font-mono text-neutral-400 dark:text-neutral-500 font-semibold">{{ getStepDate(i) }}</span>
               </div>
               }
             </div>
@@ -227,6 +228,57 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
 
   get displayOrderId(): string {
     return this.order?.orderNumber || this.order?.id || '';
+  }
+
+  get estimatedDeliveryDateRange(): string {
+    const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
+    
+    let minDays = 3;
+    let maxDays = 5;
+    
+    const est = this.order?.estimatedDelivery || this.order?.estimatedDeliveryDays;
+    if (typeof est === 'number') {
+      minDays = Math.max(1, est - 1);
+      maxDays = est + 2;
+    } else if (typeof est === 'string') {
+      const match = est.match(/(\d+)\s*-\s*(\d+)/);
+      if (match) {
+        minDays = parseInt(match[1], 10);
+        maxDays = parseInt(match[2], 10);
+      } else {
+        const singleMatch = est.match(/(\d+)/);
+        if (singleMatch) {
+          const num = parseInt(singleMatch[1], 10);
+          minDays = Math.max(1, num - 1);
+          maxDays = num + 2;
+        }
+      }
+    }
+
+    const minDate = new Date(baseDate);
+    minDate.setDate(minDate.getDate() + minDays);
+
+    const maxDate = new Date(baseDate);
+    maxDate.setDate(maxDate.getDate() + maxDays);
+
+    const formatDayMonth = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    const formatFull = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    if (minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear()) {
+      return `${minDate.getDate()} - ${formatFull(maxDate)}`;
+    }
+    return `${formatDayMonth(minDate)} - ${formatFull(maxDate)}`;
+  }
+
+  getStepDate(stepIndex: number): string {
+    const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
+    const d = new Date(baseDate);
+
+    const dayOffsets = [0, 1, 2, 3, 5];
+    const offset = dayOffsets[stepIndex] !== undefined ? dayOffsets[stepIndex] : stepIndex;
+    d.setDate(d.getDate() + offset);
+
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   }
 
   constructor() {

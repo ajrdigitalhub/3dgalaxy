@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,13 +7,14 @@ import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { CategoryMultiSelectComponent } from '../../../shared/components/category-multi-select/category-multi-select.component';
 import { Product } from '../../../services/datastore';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-product-edit',
-  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, PageHeaderComponent],
+  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, PageHeaderComponent, CategoryMultiSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-edit.component.html',
   styleUrl: './product-edit.component.scss'
@@ -28,11 +29,13 @@ export class ProductEditComponent implements OnInit {
 
   productId = signal<string | null>(null);
   currentProduct = signal<Product | null>(null);
+  rawProductData = signal<any>(null);
 
   // Form signals
   pName = signal<string>('');
   pSku = signal<string>('');
   pCatId = signal<string>('');
+  pCategoryIds = signal<string[]>([]);
   pBrand = signal<string>('3D Galaxy');
   pMrp = signal<number>(1499);
   pSale = signal<number>(1199);
@@ -44,7 +47,7 @@ export class ProductEditComponent implements OnInit {
   pLongDesc = signal<string>('');
   pSeoTitle = signal<string>('');
   pSeoDescription = signal<string>('');
-  
+
   pSpecifications = signal<any[]>([]);
   pDownloads = signal<any[]>([]);
   pFeatures = signal<any[]>([]);
@@ -58,6 +61,17 @@ export class ProductEditComponent implements OnInit {
   adminVariants = signal<any[]>([]);
 
   isLoading = signal<boolean>(false);
+
+  constructor() {
+    // Automatically re-resolve categories when CategoryService finishes loading categories list
+    effect(() => {
+      const data = this.rawProductData();
+      const cats = this.categoryService.categories();
+      if (data && cats && cats.length > 0) {
+        this.extractAndSetCategories(data);
+      }
+    });
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -87,11 +101,84 @@ export class ProductEditComponent implements OnInit {
     }
   }
 
+  extractAndSetCategories(data: any) {
+    if (!data) return;
+    const p = data.product || data;
+    const allCats = this.categoryService.categories();
+
+    const rawHints: any[] = [];
+    const pushHint = (val: any) => {
+      if (!val) return;
+      if (Array.isArray(val)) {
+        val.forEach(v => pushHint(v));
+      } else {
+        rawHints.push(val);
+      }
+    };
+
+    pushHint(p.categoryPath || data.categoryPath);
+    pushHint(p.category_path || data.category_path);
+    pushHint(p.categoryIds || data.categoryIds);
+    pushHint(p.category_ids || data.category_ids);
+    pushHint(p.categories || data.categories);
+    pushHint(p.category || data.category);
+    pushHint(p.categoryId || data.categoryId);
+    pushHint(p.category_id || data.category_id);
+    pushHint(p.categorySlug || data.categorySlug);
+    pushHint(p.category_slug || data.category_slug);
+
+    const resolvedIds = new Set<string>();
+
+    rawHints.forEach(hint => {
+      if (!hint) return;
+      const hintStr = typeof hint === 'string' ? hint.trim() : (hint.id || hint._id || hint.name || hint.slug || '');
+      if (!hintStr) return;
+
+      const lower = hintStr.toLowerCase();
+      const slugified = lower.replace(/[^a-z0-9]+/g, '-');
+
+      let matched = allCats.find(c => 
+        c.id === hintStr ||
+        (c.id && c.id.toLowerCase() === lower) ||
+        (c.name && c.name.toLowerCase() === lower) ||
+        (c.slug && c.slug.toLowerCase() === lower) ||
+        (c.slug && c.slug.toLowerCase() === slugified) ||
+        (c.name && c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugified)
+      );
+
+      if (matched) {
+        resolvedIds.add(matched.id);
+      } else {
+        resolvedIds.add(hintStr);
+      }
+    });
+
+    const finalIds = Array.from(resolvedIds);
+    if (finalIds.length > 0) {
+      this.pCategoryIds.set(finalIds);
+    }
+
+    const primaryHint = p.categoryId || p.category_id || p.category?.id || p.category?.slug || (finalIds.length > 0 ? finalIds[0] : '');
+    const primaryStr = typeof primaryHint === 'string' ? primaryHint.trim() : (primaryHint?.id || primaryHint?.slug || primaryHint?.name || '');
+    const primaryLower = primaryStr.toLowerCase();
+    const primaryMatched = allCats.find(c => 
+      c.id === primaryStr ||
+      (c.id && c.id.toLowerCase() === primaryLower) ||
+      (c.name && c.name.toLowerCase() === primaryLower) ||
+      (c.slug && c.slug.toLowerCase() === primaryLower)
+    );
+
+    const finalPrimaryId = primaryMatched ? primaryMatched.id : (finalIds.length > 0 ? finalIds[0] : '');
+    this.pCatId.set(finalPrimaryId);
+  }
+
   fillForm(data: any) {
     const p = data.product || data;
+    this.rawProductData.set(data);
     this.pName.set(p.name || '');
     this.pSku.set(p.sku || '');
-    this.pCatId.set(p.categoryId || p.category_id || p.category?.slug || '');
+    
+    this.extractAndSetCategories(data);
     this.pBrand.set(p.brandId || p.brand_id || p.brand?.id || '');
     this.pMrp.set(p.mrp || p.basePrice || 1499);
     this.pSale.set(p.salePrice || p.sale_price || 1199);
@@ -121,23 +208,43 @@ export class ProductEditComponent implements OnInit {
 
     // Map dynamic options
     const opts = data.options || p.options || [];
-    const mappedOptions = opts.map((opt: any) => ({
-      name: opt.name || '',
-      valuesString: Array.isArray(opt.values) ? opt.values.join(', ') : ''
-    }));
+    const mappedOptions = opts.map((opt: any) => {
+      let valsString = '';
+      if (Array.isArray(opt.values)) {
+        valsString = opt.values.map((v: any) => (typeof v === 'string' ? v : (v.value || v.name || ''))).filter(Boolean).join(', ');
+      } else if (typeof opt.values === 'string') {
+        valsString = opt.values;
+      }
+      return {
+        name: opt.name || '',
+        valuesString: valsString
+      };
+    });
     this.adminOptions.set(mappedOptions);
 
     // Map dynamic variants
     const vars = data.variants || p.variants || [];
-    const mappedVariants = vars.map((v: any) => ({
-      name: v.name || '',
-      sku: v.sku || '',
-      price: v.price || 0,
-      salePrice: v.salePrice || null,
-      stock: v.stock || 0,
-      variantImages: Array.isArray(v.variantImages) ? v.variantImages.join('\n') : (Array.isArray(v.images) ? v.images.join('\n') : ''),
-      optionValues: v.optionValues || {}
-    }));
+    const mappedVariants = vars.map((v: any) => {
+      let vImgs = '';
+      if (Array.isArray(v.variantImages)) {
+        vImgs = v.variantImages.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean).join('\n');
+      } else if (Array.isArray(v.images)) {
+        vImgs = v.images.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean).join('\n');
+      } else if (typeof v.variantImages === 'string') {
+        vImgs = v.variantImages;
+      } else if (typeof v.images === 'string') {
+        vImgs = v.images;
+      }
+      return {
+        name: v.name || '',
+        sku: v.sku || '',
+        price: v.price || v.salePrice || 0,
+        salePrice: v.salePrice || null,
+        stock: v.stock || 0,
+        variantImages: vImgs,
+        optionValues: v.optionValues || {}
+      };
+    });
     this.adminVariants.set(mappedVariants);
   }
 
@@ -202,6 +309,17 @@ export class ProductEditComponent implements OnInit {
     this.toastService.success(`Generated ${newVariants.length} variant combinations!`);
   }
 
+  onCategorySelectionChange(event: { categoryIds: string[]; primaryCategoryId: string | null }) {
+    this.pCategoryIds.set(event.categoryIds);
+    if (event.primaryCategoryId) {
+      this.pCatId.set(event.primaryCategoryId);
+    } else if (event.categoryIds.length > 0) {
+      this.pCatId.set(event.categoryIds[0]);
+    } else {
+      this.pCatId.set('');
+    }
+  }
+
   async saveProduct() {
     const id = this.productId();
     const name = this.pName().trim();
@@ -214,9 +332,9 @@ export class ProductEditComponent implements OnInit {
       this.toastService.error('SKU is required.');
       return;
     }
-    const catId = this.pCatId().trim();
-    if (!catId) {
-       this.toastService.error('Category is required.');
+    const catId = this.pCatId().trim() || (this.pCategoryIds().length > 0 ? this.pCategoryIds()[0] : '');
+    if (!catId && this.pCategoryIds().length === 0) {
+       this.toastService.error('At least one Category is required.');
        return;
     }
     const brandStr = this.pBrand().trim();
@@ -257,12 +375,21 @@ export class ProductEditComponent implements OnInit {
       optionValues: v.optionValues
     }));
 
+    const primaryId = this.pCatId() || (this.pCategoryIds().length > 0 ? this.pCategoryIds()[0] : '');
+    const selectedList = this.pCategoryIds().length > 0 ? this.pCategoryIds() : (primaryId ? [primaryId] : []);
+    const categoryIdsArr = selectedList.map((cId, idx) => ({
+      id: cId,
+      isPrimary: cId === primaryId || (idx === 0 && !primaryId)
+    }));
+
     const pData: Partial<Product> | any = {
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       sku,
       brandId: brandStr,
-      categoryId: catId,
+      categoryId: primaryId,
+      categoryIds: categoryIdsArr,
+      categories: categoryIdsArr,
       mrp: this.pMrp(),
       salePrice: this.pSale(),
       dealerPrice: this.pDealer(),

@@ -94,10 +94,10 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production' || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
         return callback(null, true);
       }
-      return callback(new Error('CORS policy rejection: Origin not allowed'));
+      return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'Accept', 'X-Requested-With'],
@@ -105,6 +105,22 @@ app.use(
     maxAge: 86400, // 24 hours preflight cache
   })
 );
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, Accept, X-Requested-With');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 // Rate Limiter Middlewares
 app.use('/api/auth/login', authLimiter);
@@ -181,6 +197,8 @@ app.use("/api/menus", menuRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/orderdetails", orderRoutes);
+app.use("/api/order-details", orderRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/customer", customerRoutes);
 app.use("/api/admin/customers", adminCustomerRoutes);

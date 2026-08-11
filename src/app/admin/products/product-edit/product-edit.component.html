@@ -3,17 +3,17 @@
     [title]="'Edit SKU: ' + pName()"
     description="Modify and configure manufacturer alliances, dealers pricing, and technical parameters."
   >
-    <button (click)="back()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer border-none">
+    <button (click)="back()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer border-none shadow-xs">
       Back to Registry
     </button>
   </app-admin-page-header>
 
-  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl overflow-hidden shadow-xs">
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-xs">
     <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex justify-between items-center">
-      <h3 class="text-xs font-black uppercase text-zinc-950 dark:text-white">Configure Catalog SKU: {{ pSku() }}</h3>
+      <h3 class="text-xs font-black uppercase text-zinc-900 dark:text-white">Configure Catalog SKU: {{ pSku() }}</h3>
       <div class="flex gap-2">
-        <button (click)="back()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 cursor-pointer font-sans font-bold border-none bg-none">Cancel</button>
-        <button (click)="saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none">Save Asset</button>
+        <button (click)="back()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 cursor-pointer font-sans border-none bg-transparent">Cancel</button>
+        <button (click)="saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none shadow-xs">Save Asset</button>
       </div>
     </div>
 
@@ -21,28 +21,25 @@
       <!-- Basic Group -->
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
-        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white">
+        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
       </div>
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
-        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white">
+        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
       </div>
 
       <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
-        <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Linked Category *</span>
-          <select [value]="pCatId()" (change)="pCatId.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
-            <option value="">Select segment...</option>
-            @for (c of categoryService.categories(); track c.id) {
-              <option [value]="c.id">
-                @if (c.parent_id) { ↳ } {{ c.name }}
-              </option>
-            }
-          </select>
+        <div class="space-y-1 col-span-1 md:col-span-2">
+          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Categories Architecture (Multi-Category Assignment & Primary Tag) *</span>
+          <app-category-multi-select
+            [categories]="categoryService.categories()"
+            [selectedCategoryIds]="pCategoryIds()"
+            [primaryCategoryId]="pCatId()"
+            (selectionChange)="onCategorySelectionChange($event)" />
         </div>
-        <div class="space-y-1">
+        <div class="space-y-1 col-span-1 md:col-span-2">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
-          <select [value]="pBrand()" (change)="pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white">
+          <select [value]="pBrand()" (change)="pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
             <option value="">Select Brand...</option>
             @for (br of brandService.brands(); track br.id) {
               <option [value]="br.id">{{ br.name }}</option>
@@ -55,15 +52,15 @@
       <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
-          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white">
+          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
-          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-500 font-bold outline-none">
+          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-600 dark:text-blue-400 font-bold outline-none focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
-          <input type="number" [value]="pDealer()" (input)="pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-mono text-emerald-500 font-bold outline-none">
+          <input type="number" [value]="pDealer()" (input)="pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold outline-none focus:border-emerald-500 transition-colors">
         </div>
       </div>
 
@@ -71,11 +68,11 @@
       <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
-          <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white">
+          <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
           <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
-          <select [value]="pStatus()" (change)="pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white font-bold">
+          <select [value]="pStatus()" (change)="pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
             <option value="active">Active Storefront</option>
             <option value="draft">Draft (Admin Only)</option>
             <option value="out_of_stock">Out of Stock</option>
@@ -86,27 +83,27 @@
       <!-- Image List Block -->
       <div class="space-y-1 md:col-span-2">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Media Images (One Absolute URL link per line)</span>
-        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"></textarea>
+        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
       </div>
 
       <!-- Specifications & Full Rich Description -->
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
-        <textarea rows="4" [value]="pDesc()" (input)="pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+        <textarea rows="4" [value]="pDesc()" (input)="pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
       </div>
       <div class="space-y-1">
         <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
-        <textarea rows="4" [value]="pLongDesc()" (input)="pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"></textarea>
+        <textarea rows="4" [value]="pLongDesc()" (input)="pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
       </div>
 
       <!-- Options Configurator -->
-      <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900">
-        <div class="flex justify-between items-center border-b dark:border-zinc-900 pb-3">
+      <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-3">
           <div>
-            <h4 class="text-xs font-black uppercase text-blue-500 tracking-wider">Product Options Builder</h4>
-            <p class="text-[10px] text-zinc-400 font-medium">Define variant options like Color, Size, Style, or Material.</p>
+            <h4 class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Product Options Builder</h4>
+            <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Define variant options like Color, Size, Style, or Material.</p>
           </div>
-          <button type="button" (click)="addOption()" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1.5">
+          <button type="button" (click)="addOption()" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1.5 transition-colors">
             <mat-icon class="scale-75">add</mat-icon> Add Option
           </button>
         </div>
@@ -117,43 +114,45 @@
               <div class="flex gap-4 items-end">
                 <div class="flex-1 max-w-[200px] space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Option Name</span>
-                  <input type="text" [(ngModel)]="opt.name" placeholder="e.g. Color" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                  <input type="text" [(ngModel)]="opt.name" placeholder="e.g. Color" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
                 </div>
                 <div class="flex-1 space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Option Values (Comma separated)</span>
-                  <input type="text" [(ngModel)]="opt.valuesString" placeholder="e.g. Red, Blue, Green" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+                  <input type="text" [(ngModel)]="opt.valuesString" placeholder="e.g. Red, Blue, Green" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
                 </div>
-                <button type="button" (click)="removeOption(idx)" class="px-2.5 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg cursor-pointer border-none flex items-center justify-center h-[34px]">
+                <button type="button" (click)="removeOption(idx)" class="px-2.5 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg cursor-pointer border-none flex items-center justify-center h-[34px] transition-colors">
                   <mat-icon class="scale-75">delete</mat-icon>
                 </button>
               </div>
             }
 
             <div class="pt-2 flex justify-end">
-              <button type="button" (click)="generateVariants()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-2">
+              <button type="button" (click)="generateVariants()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-2 shadow-xs transition-colors">
                 <mat-icon class="scale-75">loop</mat-icon> Generate Combinations
               </button>
             </div>
           </div>
         } @else {
-          <div class="py-6 text-center border border-dashed dark:border-zinc-800 rounded-xl">
-            <p class="text-[11px] font-bold text-zinc-400">No options defined yet. Click "Add Option" to get started.</p>
+          <div class="py-6 text-center border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl">
+            <p class="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">No options defined yet. Click "Add Option" to get started.</p>
           </div>
         }
       </div>
 
       <!-- Generated Variants Table -->
       @if (adminVariants().length > 0) {
-        <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900">
-          <div>
-            <h4 class="text-xs font-black uppercase text-emerald-500 tracking-wider">Configure Generated Variants ({{ adminVariants().length }})</h4>
-            <p class="text-[10px] text-zinc-400 font-medium">Configure SKU, prices, stock, and images for each unique variant.</p>
+        <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-zinc-800">
+            <div>
+              <h4 class="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">Configure Generated Variants ({{ adminVariants().length }})</h4>
+              <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Configure SKU, prices, stock, and images for each unique variant.</p>
+            </div>
           </div>
 
-          <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900">
+          <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 shadow-xs">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-855 text-zinc-400 uppercase text-[9px] font-black tracking-wider">
+                <tr class="bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-[9px] font-black tracking-wider">
                   <th class="py-3 px-4 font-black">Variant Name</th>
                   <th class="py-3 px-4 font-black w-[150px]">SKU</th>
                   <th class="py-3 px-4 font-black w-[100px]">MRP (₹)</th>
@@ -164,24 +163,24 @@
               </thead>
               <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @for (v of adminVariants(); track $index) {
-                  <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-950/20">
+                  <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
                     <td class="py-3 px-4 font-bold text-zinc-900 dark:text-white max-w-[200px] truncate">
                       {{ v.name }}
                     </td>
                     <td class="py-3 px-4">
-                      <input type="text" [(ngModel)]="v.sku" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="text" [(ngModel)]="v.sku" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.price" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.price" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.salePrice" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.salePrice" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white">
+                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
                     <td class="py-3 px-4">
-                      <textarea rows="1" [(ngModel)]="v.variantImages" placeholder="Image URLs..." class="w-full px-2 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-md text-[11px] font-mono outline-none text-zinc-900 dark:text-white resize-y"></textarea>
+                      <textarea rows="1" [(ngModel)]="v.variantImages" placeholder="Image URLs..." class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors resize-y"></textarea>
                     </td>
                   </tr>
                 }
@@ -192,17 +191,17 @@
       }
 
       <!-- Search Optimization Meta Data -->
-      <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="col-span-1 md:col-span-2 pb-1 border-b dark:border-zinc-900">
-          <span class="text-[9px] font-black uppercase text-blue-500 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
+      <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="col-span-1 md:col-span-2 pb-1 border-b border-zinc-200 dark:border-zinc-800">
+          <span class="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
         </div>
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Page Title</span>
-          <input type="text" [value]="pSeoTitle()" (input)="pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+          <input type="text" [value]="pSeoTitle()" (input)="pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Description keywords</span>
-          <input type="text" [value]="pSeoDescription()" (input)="pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white">
+          <input type="text" [value]="pSeoDescription()" (input)="pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
       </div>
     </div>

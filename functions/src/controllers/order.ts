@@ -168,13 +168,7 @@ export const getOrders = async (req: Request, res: Response) => {
           items: {
             include: { 
               product: true,
-              variant: {
-                include: {
-                  inventory: {
-                    include: { warehouse: true }
-                  }
-                }
-              }
+              variant: true
             },
           },
         },
@@ -209,13 +203,7 @@ export const getMyOrders = async (req: any, res: Response) => {
           items: {
             include: { 
               product: true,
-              variant: {
-                include: {
-                  inventory: {
-                    include: { warehouse: true }
-                  }
-                }
-              }
+              variant: true
             },
           },
         },
@@ -233,70 +221,60 @@ export const getOrderById = async (req: any, res: Response) => {
   const userId = req.user?.id;
   const userRole = req.user?.role;
   try {
-    let orderWhere: any;
-    if (id.startsWith('3DX') || id.startsWith('B3D-') || id.startsWith('ORD-')) {
-      orderWhere = { orderNumber: id };
-    } else {
-      orderWhere = { id };
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const standardIncludes = {
+      customer: {
+        include: { user: true }
+      },
+      shippingAddress: true,
+      billingAddress: true,
+      items: {
+        include: {
+          product: true,
+          variant: true
+        },
+      },
+      statusHistory: {
+        orderBy: { createdAt: 'desc' as const }
+      },
+      payments: true,
+      shipments: {
+        orderBy: { createdAt: 'desc' as const }
+      }
+    };
+
+    let order: any = null;
+
+    if (isUuid) {
+      order = await prisma.order.findUnique({
+        where: { id },
+        include: standardIncludes,
+      });
     }
 
-    const order = await prisma.order.findUnique({
-      where: orderWhere,
-      include: {
-        customer: {
-          include: { user: true }
-        },
-        shippingAddress: true,
-        billingAddress: true,
-        items: {
-          include: {
-            product: {
-              include: { 
-                inventory: {
-                  include: { warehouse: true }
-                }
-              }
-            },
-            variant: {
-              include: {
-                inventory: {
-                  include: { warehouse: true }
-                }
-              }
-            },
-          },
-        },
-        statusHistory: {
-          orderBy: { createdAt: 'desc' }
-        },
-        payments: true,
-        shipments: {
-          orderBy: { createdAt: 'desc' }
-        }
-      },
-    });
-
     if (!order) {
+      order = await prisma.order.findUnique({
+        where: { orderNumber: id },
+        include: standardIncludes,
+      });
+    }
+
+    if (!order && isUuid) {
       const checkout = await prisma.abandonedCheckout.findUnique({
         where: { id },
       });
       if (checkout && checkout.recoveredOrderId) {
         const recovered = await prisma.order.findUnique({
           where: { id: checkout.recoveredOrderId },
-          include: {
-            customer: { include: { user: true } },
-            shippingAddress: true,
-            billingAddress: true,
-            items: { include: { product: true, variant: true } },
-            statusHistory: { orderBy: { createdAt: 'desc' } },
-            payments: true,
-            shipments: { orderBy: { createdAt: 'desc' } }
-          }
+          include: standardIncludes,
         });
         if (recovered) {
           return res.status(200).json(mapOrderWithVariantDetails(recovered));
         }
       }
+    }
+
+    if (!order) {
       return res.status(404).json({ error: 'Order reference does not exist' });
     }
 
@@ -310,6 +288,7 @@ export const getOrderById = async (req: any, res: Response) => {
 
     return res.status(200).json(mapOrderWithVariantDetails(order));
   } catch (error: any) {
+    logger.error(`Error in getOrderById for ID ${id}:`, error);
     return res.status(500).json({ error: 'Order detail retrieval failed', details: error.message });
   }
 };

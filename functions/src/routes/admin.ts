@@ -810,11 +810,10 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
 
     const allowedStatuses = ['paid', 'PAID', 'confirmed', 'CONFIRMED', 'processing', 'PROCESSING', 'completed', 'COMPLETED', 'pending', 'PENDING'];
 
-    // 1. Fetch real orders in the window
+    // 1. Fetch real orders sorted by newest first
     const orders = await prisma.order.findMany({
       where: {
         status: { in: allowedStatuses },
-        createdAt: { gte: timeWindow }
       },
       orderBy: { createdAt: 'desc' },
       take: maxItems,
@@ -822,6 +821,7 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
         customer: {
           include: { user: true }
         },
+        shippingAddress: true,
         items: {
           take: 1,
           include: {
@@ -839,26 +839,27 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
       if (!firstItem) continue;
 
       const user = order.customer?.user;
+      const addrObj = order.shippingAddress;
+      
+      let rawAddress: any = null;
+      if ((order as any).shippingAddress) {
+        try {
+          rawAddress = typeof (order as any).shippingAddress === 'string'
+            ? JSON.parse((order as any).shippingAddress)
+            : (order as any).shippingAddress;
+        } catch (_) {}
+      }
+
+      const fullName = (addrObj as any)?.fullName || rawAddress?.fullName || rawAddress?.name || null;
       const customerName = maskCustomerName(
-        user?.firstName || null,
-        user?.lastName || null,
+        user?.firstName || (fullName ? fullName.split(' ')[0] : null),
+        user?.lastName || (fullName && fullName.split(' ').length > 1 ? fullName.split(' ').slice(1).join(' ') : null),
         user?.email || null
       );
 
-      let city = 'India';
-      let state = '';
-      let country = 'India';
-
-      if ((order as any).shippingAddress) {
-        try {
-          const addr = typeof (order as any).shippingAddress === 'string'
-            ? JSON.parse((order as any).shippingAddress)
-            : (order as any).shippingAddress;
-          city = addr.city || addr.town || city;
-          state = addr.state || addr.province || state;
-          country = addr.country || country;
-        } catch (_) {}
-      }
+      const city = addrObj?.city || rawAddress?.city || rawAddress?.town || 'India';
+      const state = addrObj?.state || rawAddress?.state || rawAddress?.province || '';
+      const country = addrObj?.country || rawAddress?.country || 'India';
 
       let productImage = 'https://picsum.photos/seed/product/80/80';
       if (firstItem.product) {
@@ -875,11 +876,11 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
 
       items.push({
         id: order.id,
-        customerName,
+        customerName: customerName || 'Verified Buyer',
         city,
         state,
         country,
-        productName: firstItem.product?.name || 'Unknown Product',
+        productName: firstItem.product?.name || '3D Printing Order',
         productImage,
         productSlug: firstItem.product?.slug || '',
         minutesAgo: getMinutesAgo(order.createdAt)

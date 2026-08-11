@@ -45,7 +45,17 @@ export class AdminVariantGroupConfigComponent {
   private _availableVariants = signal<any[]>([]);
 
   @Input() set variantGroups(val: any[]) {
-    this.groups.set(val && val.length > 0 ? JSON.parse(JSON.stringify(val)) : [this.createDefaultGroup()]);
+    if (!val || val.length === 0) {
+      if (this.groups().length === 0) {
+        this.groups.set([this.createDefaultGroup()]);
+      }
+      return;
+    }
+    const currentJson = JSON.stringify(this.groups());
+    const incomingJson = JSON.stringify(val);
+    if (currentJson !== incomingJson) {
+      this.groups.set(JSON.parse(incomingJson));
+    }
   }
   @Input() set availableVariants(val: any[]) {
     this._availableVariants.set(val || []);
