@@ -554,7 +554,7 @@ function extractReviewDetails(rawText: string | null | undefined, defaultTitle =
           if (Array.isArray(parsed.images)) {
             images = parsed.images.filter((img: any) => typeof img === 'string' && img.trim().length > 0);
           }
-          if (parsed.status && typeof parsed.status === 'string') {
+          if (parsed.status && typeof parsed.status === 'string' && !status) {
             status = parsed.status;
           }
           if (parsed.adminRemarks || parsed.sellerReply) {
@@ -632,7 +632,7 @@ router.get("/admin/reviews", authenticateToken, async (req, res) => {
           ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
           : "Customer";
 
-        const status = (details.status || (review as any).status || "APPROVED").toUpperCase();
+        const status = (details.status || (review as any).status || "PENDING").toUpperCase();
 
         return {
           id: review.id,
@@ -700,6 +700,16 @@ const handleApprove = async (req: any, res: any) => {
     }
     existingData.status = "APPROVED";
 
+    if (existingData.comment && typeof existingData.comment === 'string' && existingData.comment.trim().startsWith('{')) {
+      try {
+        const nested = JSON.parse(existingData.comment);
+        if (nested && typeof nested === 'object') {
+          nested.status = "APPROVED";
+          existingData.comment = JSON.stringify(nested);
+        }
+      } catch (e) {}
+    }
+
     const updatePayload: any = { reviewText: JSON.stringify(existingData) };
     if ('status' in review) {
       updatePayload.status = "APPROVED";
@@ -734,6 +744,16 @@ const handleReject = async (req: any, res: any) => {
       existingData = { comment: review.reviewText || "" };
     }
     existingData.status = "REJECTED";
+
+    if (existingData.comment && typeof existingData.comment === 'string' && existingData.comment.trim().startsWith('{')) {
+      try {
+        const nested = JSON.parse(existingData.comment);
+        if (nested && typeof nested === 'object') {
+          nested.status = "REJECTED";
+          existingData.comment = JSON.stringify(nested);
+        }
+      } catch (e) {}
+    }
 
     const updatePayload: any = { reviewText: JSON.stringify(existingData) };
     if ('status' in review) {

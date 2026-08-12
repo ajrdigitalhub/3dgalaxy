@@ -39,6 +39,7 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
   let title = item.title || 'Verified Review';
   let comment = item.comment || '';
   let images: string[] = Array.isArray(item.images) ? [...item.images] : [];
+  const finalStatus: 'APPROVED' | 'PENDING' | 'REJECTED' = ((item.status as string) || 'PENDING').toUpperCase() as any;
 
   const rawComment = (item.comment || '').trim();
   const rawTitle = (item.title || '').trim();
@@ -94,6 +95,7 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
     title: title || 'Verified Review',
     comment: comment || 'No comment text provided.',
     images: images.filter((img) => typeof img === 'string' && img.trim().length > 0),
+    status: finalStatus,
   };
 }
 
@@ -455,7 +457,7 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
 
               <!-- 4. ACTION BUTTONS: APPROVE, REJECT, DELETE -->
               <div class="flex items-center justify-end gap-2.5 pt-1">
-                @if (review.status !== 'APPROVED') {
+                @if (review.status === 'PENDING') {
                   <button
                     type="button"
                     (click)="approveReview(review)"
@@ -465,9 +467,7 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
                     <mat-icon class="text-sm">check_circle</mat-icon>
                     <span>Approve Review</span>
                   </button>
-                }
 
-                @if (review.status !== 'REJECTED') {
                   <button
                     type="button"
                     (click)="rejectReview(review)"
@@ -476,6 +476,28 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
                   >
                     <mat-icon class="text-sm">cancel</mat-icon>
                     <span>Reject Review</span>
+                  </button>
+                } @else if (review.status === 'APPROVED') {
+                  <button
+                    type="button"
+                    (click)="rejectReview(review)"
+                    [disabled]="processingId() === review.id"
+                    class="px-3 py-1.5 bg-zinc-100 hover:bg-rose-500/10 text-zinc-600 hover:text-rose-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-rose-400 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer border border-zinc-200 dark:border-zinc-700 active:scale-95 disabled:opacity-50"
+                    title="Change status to Rejected"
+                  >
+                    <mat-icon class="text-sm">block</mat-icon>
+                    <span>Reject</span>
+                  </button>
+                } @else if (review.status === 'REJECTED') {
+                  <button
+                    type="button"
+                    (click)="approveReview(review)"
+                    [disabled]="processingId() === review.id"
+                    class="px-3 py-1.5 bg-zinc-100 hover:bg-emerald-500/10 text-zinc-600 hover:text-emerald-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:text-emerald-400 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer border border-zinc-200 dark:border-zinc-700 active:scale-95 disabled:opacity-50"
+                    title="Change status to Approved"
+                  >
+                    <mat-icon class="text-sm">check_circle</mat-icon>
+                    <span>Approve</span>
                   </button>
                 }
 

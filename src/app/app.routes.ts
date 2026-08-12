@@ -176,6 +176,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: "admin/orders",
+    loadComponent: () =>
+      import("./pages/admin/admin").then((m) => m.AdminPanel),
+    canActivate: [roleGuard],
+    data: {
+      roles: ["Admin", "Manager", "Super Admin", "admin", "super-admin"],
+      defaultTab: "orders",
+    },
+  },
+  {
     path: "admin/orders/:orderNumber",
     loadComponent: () =>
       import("./pages/admin/components/order-details/order-details").then(

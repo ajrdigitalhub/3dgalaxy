@@ -5,10 +5,12 @@ import {
   signal,
   computed,
   effect,
+  OnInit,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { MatIconModule } from "@angular/material/icon";
+import { ActivatedRoute, Router } from "@angular/router";
 import { environment } from "../../../environments/environment";
 import {
   DatastoreService,
@@ -131,7 +133,7 @@ import { AdminLogsTab } from "./components/logs-tab";
   templateUrl: "./admin.html",
   styleUrl: "./admin.scss",
 })
-export class AdminPanel {
+export class AdminPanel implements OnInit {
   toastService = inject(ToastService);
   ds = inject(DatastoreService);
   loadingService = inject(LoadingService);
@@ -139,6 +141,8 @@ export class AdminPanel {
   settingsService = inject(SettingsService);
   pwa = inject(PwaService);
   deliveryService = inject(DeliveryEstimateService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   loading = computed(() => {
     if (this.ds.products().length === 0 && this.ds.productsLoading())
@@ -147,6 +151,21 @@ export class AdminPanel {
   });
 
   activeTab = signal<AdminTab>("dashboard");
+
+  ngOnInit() {
+    this.route.queryParams.subscribe((params) => {
+      if (params["tab"]) {
+        this.activeTab.set(params["tab"] as AdminTab);
+      }
+    });
+
+    const routeData = this.route.snapshot.data;
+    if (routeData && routeData["defaultTab"]) {
+      this.activeTab.set(routeData["defaultTab"] as AdminTab);
+    } else if (this.router.url.includes("/admin/orders")) {
+      this.activeTab.set("orders");
+    }
+  }
   selectedCustomerId = signal<string | null>(null);
   isAdminSidebarOpen = signal(false);
   isSidebarCollapsed = signal<boolean>(

@@ -309,43 +309,60 @@ export interface SlipLineItem {
                 >
                   <mat-icon class="text-xs">add</mat-icon> Add Line Item
                 </button>
-
                 @if (showPricing()) {
-                  <div class="flex items-center gap-2">
-                    <span class="text-[9px] font-bold text-zinc-500 uppercase">Shipping ({{ currencySymbol() }}):</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      [(ngModel)]="shippingCost"
-                      class="w-20 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-xs font-bold"
-                    />
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-zinc-500 uppercase">Ship:</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        [(ngModel)]="shippingCost"
+                        class="w-16 px-1.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-xs font-bold"
+                      />
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase">COD:</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        [(ngModel)]="codCharge"
+                        class="w-16 px-1.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-xs font-bold"
+                      />
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-emerald-600 uppercase">Disc:</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        [(ngModel)]="discountAmount"
+                        class="w-16 px-1.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-xs font-bold"
+                      />
+                    </div>
                   </div>
                 }
               </div>
             </div>
 
-            <!-- SECTION 4: NOTES FROM SENDER & WAREHOUSE -->
+            <!-- SECTION 4: NOTES -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
               <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
-                <mat-icon class="text-xs">notes</mat-icon> Dispatch Notes & Gift Message
+                <mat-icon class="text-xs">sticky_note_2</mat-icon> Notes & Remarks
               </h3>
 
               <div>
-                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from the Sender</label>
+                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from Sender</label>
                 <textarea
                   rows="2"
                   [(ngModel)]="notesFromSender"
-                  placeholder="e.g. Thank you for your order with 3D Galaxy!"
                   class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none"
                 ></textarea>
               </div>
 
               <div>
-                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from LisShipment / Warehouse</label>
+                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from LisShipment</label>
                 <textarea
                   rows="2"
                   [(ngModel)]="notesFromShipping"
-                  placeholder="e.g. Fragile 3D printed items. Handle with care."
                   class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none"
                 ></textarea>
               </div>
@@ -353,158 +370,177 @@ export interface SlipLineItem {
 
           </div>
 
-          <!-- RIGHT PANEL: LIVE SHEET PREVIEW (7 COLS) -->
-          <div class="lg:col-span-7 p-6 overflow-y-auto flex items-start justify-center bg-zinc-200/70 dark:bg-zinc-950/80">
+          <!-- RIGHT PANEL: LIVE HIGH-FIDELITY PREVIEW (7 COLS) -->
+          <div class="lg:col-span-7 bg-zinc-200 dark:bg-zinc-950 overflow-y-auto p-6 flex flex-col items-center justify-start">
             
-            <!-- LIVE SHEET PREVIEW CONTAINER (Matching reference design with zero text overlaps) -->
-            <div id="printable-packing-slip-sheet" class="bg-white text-black p-8 shadow-2xl rounded-sm w-full max-w-[650px] font-sans border border-zinc-300 min-h-[750px] space-y-5">
+            <!-- PRINTABLE A4 PACKING SLIP SHEET -->
+            <div id="printable-packing-slip-sheet" class="bg-white text-black p-8 rounded-none shadow-xl w-full max-w-[650px] font-sans border border-zinc-300 min-h-[920px] flex flex-col justify-between">
               
-              <!-- 1. TOP HEADER BANNER -->
-              <div class="flex items-start justify-between">
-                <div>
-                  <span class="block text-[11px] font-medium text-zinc-600 tracking-wide">EASYID</span>
-                  <h1 class="text-2xl font-black text-black tracking-tight leading-none mt-1 font-mono uppercase">
-                    {{ easyId() }}
-                  </h1>
-                </div>
-
-                <!-- Right Brand Logo -->
-                <div class="flex items-center gap-2">
-                  <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-9 w-auto object-contain" />
-                  <span class="text-lg font-black text-amber-500 tracking-tighter">3D Galaxy</span>
-                </div>
-              </div>
-
-              <!-- Top Divider -->
-              <div class="border-b border-black w-full"></div>
-
-              <!-- Centered Title -->
-              <div class="text-center">
-                <h2 class="text-xl font-bold text-black tracking-tight">Packing Slip</h2>
-              </div>
-
-              <!-- 2. METADATA GRID SECTION (Flexbox layout to prevent address/email overlap) -->
-              <div class="grid grid-cols-2 gap-x-6 text-xs text-black leading-snug">
-                <!-- Left Grid Block -->
-                <div class="flex flex-col gap-2.5">
-                  <div class="flex">
-                    <span class="font-bold w-16 shrink-0">Date:</span>
-                    <span>{{ dateStr() }}</span>
+              <div class="space-y-5">
+                <!-- 1. HEADER ROW -->
+                <div class="flex items-center justify-between pb-3 border-b-2 border-black">
+                  <div>
+                    <span class="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider">EASYID</span>
+                    <h1 class="text-2xl font-black text-black tracking-tight mt-0.5 font-mono uppercase leading-none">
+                      {{ easyId() }}
+                    </h1>
                   </div>
-                  <div class="flex items-start">
-                    <span class="font-bold w-16 shrink-0">Ship To:</span>
-                    <div class="flex-1 font-normal leading-normal text-zinc-900 whitespace-pre-line">
-                      <div class="font-bold">{{ shipToName() }}</div>
-                      @if (shipToPhone()) {
-                        <div class="text-zinc-700 font-medium">Contact: {{ shipToPhone() }}</div>
-                      }
-                      <div>{{ shipToStreet() }}</div>
-                      <div>{{ shipToCityStateZip() }}</div>
-                      <div>{{ shipToCountry() }}</div>
+                  <div class="flex items-center justify-end">
+                    <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-10 w-auto object-contain" />
+                  </div>
+                </div>
+
+                <div class="text-center py-1">
+                  <h2 class="text-xl font-bold text-black tracking-tight">Packing Slip</h2>
+                </div>
+
+                <!-- 2. ORDER META & ADDRESS GRID -->
+                <div class="grid grid-cols-2 gap-6 text-xs text-black leading-relaxed">
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <span class="font-bold w-20 shrink-0">Date:</span>
+                      <span>{{ dateStr() }}</span>
+                    </div>
+                    <div class="flex items-start">
+                      <span class="font-bold w-20 shrink-0">Ship To:</span>
+                      <div class="whitespace-pre-line text-zinc-900">
+                        <div class="font-bold">{{ shipToName() }}</div>
+                        @if (shipToPhone()) {
+                          <div class="text-zinc-700 font-medium">Contact: {{ shipToPhone() }}</div>
+                        }
+                        <div>{{ shipToStreet() }}</div>
+                        <div>{{ shipToCityStateZip() }}</div>
+                        <div>{{ shipToCountry() }}</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center">
+                      <span class="font-bold w-20 shrink-0">Email:</span>
+                      <span class="break-all font-medium text-zinc-800">{{ email() }}</span>
                     </div>
                   </div>
-                  <div class="flex items-center mt-1">
-                    <span class="font-bold w-16 shrink-0">Email:</span>
-                    <span class="break-all font-medium text-zinc-800">{{ email() }}</span>
-                  </div>
-                </div>
 
-                <!-- Right Grid Block -->
-                <div class="flex flex-col gap-2.5">
-                  <div class="flex">
-                    <span class="font-bold w-20 shrink-0">Tracking</span>
-                    <span class="font-mono">{{ trackingNumber() }}</span>
-                  </div>
-                  <div class="flex items-start">
-                    <span class="font-bold w-20 shrink-0 leading-tight">Return<br/>Address:</span>
-                    <div class="flex-1 whitespace-pre-line text-zinc-800">
-                      {{ returnAddress() }}
+                  <div class="space-y-2">
+                    <div class="flex items-center">
+                      <span class="font-bold w-24 shrink-0">Tracking:</span>
+                      <span class="font-mono">{{ trackingNumber() }}</span>
+                    </div>
+                    <div class="flex items-start">
+                      <span class="font-bold w-24 shrink-0 leading-tight">Return<br/>Address:</span>
+                      <div class="whitespace-pre-line text-zinc-800">
+                        {{ returnAddress() }}
+                      </div>
+                    </div>
+                    <div class="flex items-center">
+                      <span class="font-bold w-24 shrink-0">Order:</span>
+                      <span class="font-bold font-mono">{{ orderNumber() }}</span>
                     </div>
                   </div>
-                  <div class="flex items-center mt-1">
-                    <span class="font-bold w-20 shrink-0">Order:</span>
-                    <span class="font-bold font-mono">#{{ orderNumber().replace('#', '') }}</span>
-                  </div>
                 </div>
-              </div>
 
-              <!-- 3. LINE ITEMS TABLE (Dynamic heights preventing row/footer overlap) -->
-              <div class="pt-2">
-                <table class="w-full border-collapse border-y border-black text-xs text-black">
-                  <thead>
-                    <tr class="border-b border-black">
-                      <th class="py-1.5 px-2 text-center font-bold w-12 border-r border-black">Qty</th>
-                      <th class="py-1.5 px-2 text-left font-bold w-28 border-r border-black">SKU</th>
-                      <th class="py-1.5 px-2 text-left font-bold">Description</th>
-                      @if (showPricing()) {
-                        <th class="py-1.5 px-2 text-right font-bold w-24 border-l border-black">Price</th>
-                        <th class="py-1.5 px-2 text-right font-bold w-24 border-l border-black">Ext. Price</th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of items(); track $index) {
-                      <tr class="border-b border-dotted border-zinc-400">
-                        <td class="py-2.5 px-2 text-center border-r border-black align-top font-bold">{{ item.qty }}</td>
-                        <td class="py-2.5 px-2 text-left font-mono border-r border-black align-top break-all max-w-[110px] text-[11px]">{{ item.sku }}</td>
-                        <td class="py-2.5 px-2 text-left align-top leading-tight">{{ item.description }}</td>
+                <!-- 3. LINE ITEMS TABLE -->
+                <div class="pt-2">
+                  <table class="w-full border-collapse border border-black text-xs text-black">
+                    <thead>
+                      <tr class="border-b border-black bg-zinc-50">
+                        <th class="py-1.5 px-2 text-center font-bold w-12 border-r border-black">Qty</th>
+                        <th class="py-1.5 px-2 text-left font-bold w-28 border-r border-black">SKU</th>
+                        <th class="py-1.5 px-2 text-left font-bold border-r border-black">Description</th>
                         @if (showPricing()) {
-                          <td class="py-2.5 px-2 text-right border-l border-black align-top">{{ currencySymbol() }}{{ item.price | number:"1.2-2" }}</td>
-                          <td class="py-2.5 px-2 text-right border-l border-black align-top font-bold">{{ currencySymbol() }}{{ item.extPrice | number:"1.2-2" }}</td>
+                          <th class="py-1.5 px-2 text-right font-bold w-24 border-r border-black">Price</th>
+                          <th class="py-1.5 px-2 text-right font-bold w-24">Ext. Price</th>
                         }
                       </tr>
-                    }
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      @for (item of items(); track $index) {
+                        <tr class="border-b border-black">
+                          <td class="py-2.5 px-2 text-center border-r border-black align-top font-bold">{{ item.qty }}</td>
+                          <td class="py-2.5 px-2 text-left font-mono border-r border-black align-top break-all max-w-[110px] text-[11px]">{{ item.sku }}</td>
+                          <td class="py-2.5 px-2 text-left border-r border-black align-top leading-tight">{{ item.description }}</td>
+                          @if (showPricing()) {
+                            <td class="py-2.5 px-2 text-right border-r border-black align-top">{{ currencySymbol() }}{{ item.price | number:"1.2-2" }}</td>
+                            <td class="py-2.5 px-2 text-right align-top font-bold">{{ currencySymbol() }}{{ item.extPrice | number:"1.2-2" }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
 
-                <!-- Table Totals Row -->
-                <div class="pt-3 flex items-start justify-between text-xs text-black font-semibold">
-                  <div>
-                    <span class="font-bold">Qty Total: {{ qtyTotal() }}</span>
-                  </div>
-
-                  @if (showPricing()) {
-                    <div class="text-right space-y-1 w-64">
-                      <div class="flex justify-between">
-                        <span>Sub Total</span>
-                        <span class="font-bold">{{ currencyCode() }} {{ subTotal() | number:"1.2-2" }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span>Shipping Cost</span>
-                        <span class="font-bold">{{ currencyCode() }} {{ shippingCost() | number:"1.2-2" }}</span>
-                      </div>
-                      <div class="flex justify-between text-sm font-bold border-t border-black pt-1">
-                        <span>Total</span>
-                        <span>{{ currencyCode() }} {{ grandTotal() | number:"1.2-2" }}</span>
-                      </div>
+                  <!-- Table Totals Row -->
+                  <div class="pt-3 flex items-start justify-between text-xs text-black font-semibold">
+                    <div>
+                      <span class="font-bold">Qty Total: {{ qtyTotal() }}</span>
                     </div>
-                  }
+
+                    @if (showPricing()) {
+                      <div class="text-right space-y-1 w-64">
+                        <div class="flex justify-between">
+                          <span>Sub Total</span>
+                          <span class="font-bold">{{ currencyCode() }} {{ subTotal() | number:"1.2-2" }}</span>
+                        </div>
+                        @if (shippingCost() > 0 || (codCharge() === 0 && taxAmount() === 0 && discountAmount() === 0)) {
+                          <div class="flex justify-between">
+                            <span>Shipping Cost</span>
+                            <span class="font-bold">{{ currencyCode() }} {{ shippingCost() | number:"1.2-2" }}</span>
+                          </div>
+                        }
+                        @if (codCharge() > 0) {
+                          <div class="flex justify-between text-amber-800">
+                            <span>COD Handling Charge</span>
+                            <span class="font-bold">{{ currencyCode() }} {{ codCharge() | number:"1.2-2" }}</span>
+                          </div>
+                        }
+                        @if (taxAmount() > 0) {
+                          <div class="flex justify-between">
+                            <span>Tax</span>
+                            <span class="font-bold">{{ currencyCode() }} {{ taxAmount() | number:"1.2-2" }}</span>
+                          </div>
+                        }
+                        @if (discountAmount() > 0) {
+                          <div class="flex justify-between text-emerald-800">
+                            <span>Discount</span>
+                            <span class="font-bold">-{{ currencyCode() }} {{ discountAmount() | number:"1.2-2" }}</span>
+                          </div>
+                        }
+                        <div class="flex justify-between text-sm font-bold border-t border-black pt-1">
+                          <span>Total</span>
+                          <span>{{ currencyCode() }} {{ grandTotal() | number:"1.2-2" }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
                 </div>
               </div>
 
-              <!-- Top Divider before Notes -->
-              <div class="border-b border-black w-full pt-3"></div>
+              <!-- FOOTER SECTION (PUSHED TO BOTTOM) -->
+              <div class="mt-auto pt-6 space-y-3">
+                <!-- Top Divider before Notes -->
+                <div class="border-b-2 border-black w-full"></div>
 
-              <!-- 4. NOTES FROM SENDER -->
-              @if (notesFromSender()) {
-                <div class="flex items-start gap-6 text-xs text-black">
-                  <span class="font-bold w-32 shrink-0 leading-tight">Notes from the<br/>Sender:</span>
-                  <div class="whitespace-pre-line flex-1 leading-normal">
-                    {{ notesFromSender() }}
+                <!-- 4. NOTES FROM SENDER -->
+                @if (notesFromSender()) {
+                  <div class="flex items-start gap-6 text-xs text-black">
+                    <span class="font-bold w-32 shrink-0 leading-tight">Notes from the<br/>Sender:</span>
+                    <div class="whitespace-pre-line flex-1 leading-normal">
+                      {{ notesFromSender() }}
+                    </div>
                   </div>
-                </div>
-                <div class="border-b border-zinc-400 border-dotted w-full"></div>
-              }
+                }
 
-              <!-- 5. NOTES FROM LISSHIPMENT -->
-              @if (notesFromShipping()) {
-                <div class="flex items-start gap-6 text-xs text-black">
-                  <span class="font-bold w-32 shrink-0 leading-tight">Notes from<br/>LisShipment:</span>
-                  <div class="whitespace-pre-line flex-1 leading-normal">
-                    {{ notesFromShipping() }}
+                @if (notesFromSender() && notesFromShipping()) {
+                  <div class="border-b border-zinc-400 border-dotted w-full"></div>
+                }
+
+                <!-- 5. NOTES FROM LISSHIPMENT -->
+                @if (notesFromShipping()) {
+                  <div class="flex items-start gap-6 text-xs text-black">
+                    <span class="font-bold w-32 shrink-0 leading-tight">Notes from<br/>LisShipment:</span>
+                    <div class="whitespace-pre-line flex-1 leading-normal">
+                      {{ notesFromShipping() }}
+                    </div>
                   </div>
-                </div>
-              }
+                }
+              </div>
 
             </div>
 
@@ -540,6 +576,9 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
 
   showPricing = signal(true);
   shippingCost = signal(1.00);
+  codCharge = signal(0);
+  taxAmount = signal(0);
+  discountAmount = signal(0);
 
   items = signal<SlipLineItem[]>([
     { qty: 1, sku: 'anycubic-water-wash-resin-2-0-1kg-clear', description: 'Anycubic Water-Wash Resin 2.0 1kg (clear)', price: 1999.00, extPrice: 1999.00 },
@@ -558,7 +597,12 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   });
 
   grandTotal = computed(() => {
-    return this.subTotal() + (Number(this.shippingCost()) || 0);
+    const sub = this.subTotal();
+    const ship = Number(this.shippingCost()) || 0;
+    const cod = Number(this.codCharge()) || 0;
+    const tax = Number(this.taxAmount()) || 0;
+    const disc = Number(this.discountAmount()) || 0;
+    return Math.max(0, sub + ship + cod + tax - disc);
   });
 
 
@@ -621,12 +665,25 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
 
     const shipmentObj = (ord.shipments && ord.shipments.length > 0) ? ord.shipments[0] : (typeof ord.shipment === 'object' ? ord.shipment : null);
     this.trackingNumber.set(shipmentObj?.trackingNumber || 'LZ92738101');
-    this.shippingCost.set(Number(ord.shippingAmount !== undefined ? ord.shippingAmount : 1.00));
+    
+    const shipAmt = ord.shippingAmount !== undefined && ord.shippingAmount !== null ? Number(ord.shippingAmount) : 0;
+    this.shippingCost.set(shipAmt);
+
+    let cod = 0;
+    if (ord.codCharge !== undefined && ord.codCharge !== null && Number(ord.codCharge) > 0) {
+      cod = Number(ord.codCharge);
+    } else if (ord.paymentMethod === 'COD' || ord.paymentMethod === 'cash_on_delivery') {
+      cod = 100;
+    }
+    this.codCharge.set(cod);
+
+    this.taxAmount.set(Number(ord.taxAmount || 0));
+    this.discountAmount.set(Number(ord.discountAmount || 0));
 
     if (ord.items && ord.items.length > 0) {
       const parsedItems: SlipLineItem[] = ord.items.map((i: any) => {
         const qty = Number(i.quantity || 1);
-        const price = Number(i.unitPrice || 1999.00);
+        const price = Number(i.unitPrice || i.price || 1999.00);
         let varText = i.variant?.name ? ` (${i.variant.name})` : '';
         return {
           qty,
@@ -680,15 +737,59 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
       currencyCode: this.currencyCode(),
       showPricing: this.showPricing(),
       shippingCost: this.shippingCost(),
+      codCharge: this.codCharge(),
+      taxAmount: this.taxAmount(),
+      discountAmount: this.discountAmount(),
+      grandTotal: this.grandTotal(),
       items: this.items(),
       notesFromSender: this.notesFromSender(),
       notesFromShipping: this.notesFromShipping(),
     };
   }
 
-  downloadPdf() {
+  async downloadPdf() {
     const payload = this.buildPayload();
-    this.packagingSlipService.downloadCustomPackagingSlip(this.order.id, payload, this.orderNumber().replace('#', ''));
+    const targetId = this.order?.id || this.orderNumber()?.replace('#', '') || 'slip';
+    const printElement = document.getElementById('printable-packing-slip-sheet');
+    
+    if (printElement) {
+      try {
+        if (typeof (window as any).html2pdf === 'undefined') {
+          await this.loadHtml2PdfScript();
+        }
+        if (typeof (window as any).html2pdf !== 'undefined') {
+          const filename = `PackingSlip-${this.orderNumber().replace('#', '')}.pdf`;
+          const opt = {
+            margin: [6, 6, 6, 6],
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          await (window as any).html2pdf().set(opt).from(printElement).save();
+          return;
+        }
+      } catch (err) {
+        console.warn('[PackagingSlip] Client HTML2PDF generation failed, falling back to server backend:', err);
+      }
+    }
+
+    // Fallback: Backend PDF generation service
+    this.packagingSlipService.downloadCustomPackagingSlip(targetId, payload, this.orderNumber()?.replace('#', ''));
+  }
+
+  private loadHtml2PdfScript(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if ((window as any).html2pdf) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = () => resolve();
+      script.onerror = (err) => reject(err);
+      document.head.appendChild(script);
+    });
   }
 
   printSlip() {

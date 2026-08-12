@@ -74,16 +74,7 @@ export class NotificationTemplateResolver {
     const orderUrl = extraParams?.orderLink || `${siteUrl}/account/orders/${order?.id || orderId}`;
 
     // Customer Name Resolution
-    let customerName = extraParams?.customerName || order?.customerName;
-    if (!customerName && order?.customer) {
-      customerName = [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ');
-    }
-    if (!customerName && order?.shippingAddress) {
-      let addr = order.shippingAddress;
-      if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch {} }
-      customerName = addr?.name || addr?.fullName;
-    }
-    customerName = customerName || 'Valued Customer';
+    const customerName = WhatsAppNotificationService.extractCustomerName(order, extraParams);
 
     // Amount Resolution (formatted as number without leading currency symbol, template contains ₹{{3}})
     const rawAmount = Number(order?.totalAmount || extraParams?.totalAmount || 0);

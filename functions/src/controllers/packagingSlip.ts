@@ -23,39 +23,54 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
   const customData = req.body || {};
 
   try {
-    let orderWhere: any;
-    if (id.startsWith('B3D-') || id.startsWith('ORD-')) {
-      orderWhere = { orderNumber: id };
-    } else {
-      orderWhere = { id };
-    }
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let order: any = null;
 
-    const order = await prisma.order.findUnique({
-      where: orderWhere,
-      include: {
-        customer: {
-          include: { user: true },
-        },
-        shippingAddress: true,
-        billingAddress: true,
-        items: {
-          include: {
-            product: {
-              include: {
-                brand: true,
-              },
+    const includeOptions = {
+      customer: {
+        include: { user: true },
+      },
+      shippingAddress: true,
+      billingAddress: true,
+      items: {
+        include: {
+          product: {
+            include: {
+              brand: true,
             },
-            variant: true,
           },
-        },
-        shipments: {
-          orderBy: { createdAt: 'desc' },
+          variant: true,
         },
       },
-    });
+      shipments: {
+        orderBy: { createdAt: 'desc' as const },
+      },
+    };
+
+    if (isUuid) {
+      order = await prisma.order.findUnique({
+        where: { id },
+        include: includeOptions,
+      });
+    }
+
+    if (!order) {
+      const formattedNum = id.startsWith('#') ? id : `#${id}`;
+      const rawNum = id.replace(/^#/, '');
+      order = await prisma.order.findFirst({
+        where: {
+          OR: [
+            { orderNumber: id },
+            { orderNumber: formattedNum },
+            { orderNumber: rawNum },
+          ],
+        },
+        include: includeOptions,
+      });
+    }
 
     if (!order && !customData.items) {
-      return res.status(404).json({ error: 'Order record not found for Packaging Slip generation' });
+      return res.status(404).json({ error: `Order record not found for ID or Order Number '${id}'` });
     }
 
     const orderCode = customData.orderNumber || order?.orderNumber || order?.id || id;
@@ -80,6 +95,29 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     // Currency Formatting
     const currencySymbol = customData.currencySymbol || '₹';
     const currencyCode = customData.currencyCode || 'INR';
+
+    // Helper to format currency for PDFKit without character encoding bugs
+    const formatPdfCurrency = (amount: number, symbol: string = '₹') => {
+      const formattedNum = Number(amount || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      let safeSymbol = String(symbol || 'INR').trim();
+      if (!safeSymbol || safeSymbol === '₹' || safeSymbol.includes('₹') || safeSymbol === 'Rs' || safeSymbol === 'Rs.') {
+        safeSymbol = 'INR';
+      }
+
+      return `${safeSymbol} ${formattedNum}`;
+    };
+
+    const formatPdfTotal = (amount: number, code: string = 'INR') => {
+      const formattedNum = Number(amount || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      return `${code} ${formattedNum}`;
+    };
 
     // Shipment details
     const shipmentObj: any = (order?.shipments && order.shipments.length > 0) ? order.shipments[0] : (typeof order?.shipment === 'object' ? order.shipment : null);
@@ -123,12 +161,16 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     const showPricing = customData.showPricing !== undefined ? Boolean(customData.showPricing) : true;
     const notesFromSender = customData.notesFromSender || (order?.notes ? `Note: "${order.notes}"` : 'Thank you for your order with 3D Galaxy!');
     const notesFromShipping = customData.notesFromShipping || (shipmentObj?.shippingNotes ? shipmentObj.shippingNotes : 'Fragile 3D printed items. Handle with care.');
-    const shippingCost = Number(customData.shippingCost !== undefined ? customData.shippingCost : (order?.shippingAmount || 1.00));
+    const shippingCost = Number(customData.shippingCost !== undefined ? customData.shippingCost : (order?.shippingAmount !== undefined ? order.shippingAmount : 0));
+    const codCharge = Number(customData.codCharge !== undefined ? customData.codCharge : (order?.codCharge !== undefined && order?.codCharge !== null ? order.codCharge : (order?.paymentMethod === 'COD' || order?.paymentMethod === 'cash_on_delivery' ? 100 : 0)));
+    const taxAmount = Number(customData.taxAmount !== undefined ? customData.taxAmount : (order?.taxAmount || 0));
+    const discountAmount = Number(customData.discountAmount !== undefined ? customData.discountAmount : (order?.discountAmount || 0));
 
     // Calculate totals
     const qtyTotal = itemsList.reduce((sum, item) => sum + item.qty, 0);
     const subTotal = itemsList.reduce((sum, item) => sum + item.extPrice, 0);
-    const grandTotal = subTotal + shippingCost;
+    const calculatedGrand = Math.max(0, subTotal + shippingCost + codCharge + taxAmount - discountAmount);
+    const grandTotal = customData.grandTotal !== undefined ? Number(customData.grandTotal) : (order?.totalAmount && Number(order.totalAmount) > 0 ? Number(order.totalAmount) : calculatedGrand);
 
     // ----------------------------------------------------
     // Construct PDFKit Document (A4 Portrait, clean design)
@@ -168,10 +210,13 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
 
     if (logoPathToUse) {
       try {
-        doc.image(logoPathToUse, logoX, y - 5, { height: 36 });
-        doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 42, y + 8);
+        doc.image(logoPathToUse, logoX, y - 5, { height: 40 });
       } catch (e) {
-        doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 40, y + 8);
+        doc.save();
+        doc.fillColor('#F59E0B');
+        doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
+        doc.fill();
+        doc.restore();
       }
     } else {
       doc.save();
@@ -179,7 +224,6 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
       doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
       doc.fill();
       doc.restore();
-      doc.fillColor('#F59E0B').fontSize(16).font('Helvetica-Bold').text('3D Galaxy', logoX + 40, y + 8);
     }
 
     y += 55;
@@ -245,10 +289,10 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
 
     // ITEMS TABLE HEADER
     const colQtyW = 45;
-    const colSkuW = 120;
-    const colDescW = showPricing ? 190 : 350;
-    const colPriceW = showPricing ? 80 : 0;
-    const colExtPriceW = showPricing ? 80 : 0;
+    const colSkuW = 110;
+    const colDescW = showPricing ? 170 : 360;
+    const colPriceW = showPricing ? 95 : 0;
+    const colExtPriceW = showPricing ? 95 : 0;
 
     const xQty = startX;
     const xSku = startX + colQtyW;
@@ -256,12 +300,19 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     const xPrice = xDesc + colDescW;
     const xExtPrice = xPrice + colPriceW;
 
-    doc.rect(startX, y, pageWidth, 22).strokeColor('#000000').lineWidth(1.5).stroke();
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+    // Outer box and vertical lines for table header
+    doc.rect(startX, y, pageWidth, 22).strokeColor('#000000').lineWidth(1.2).stroke();
+    doc.moveTo(xSku, y).lineTo(xSku, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+    doc.moveTo(xDesc, y).lineTo(xDesc, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+    if (showPricing) {
+      doc.moveTo(xPrice, y).lineTo(xPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+      doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+    }
 
+    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
     doc.text('Qty', xQty, y + 6, { width: colQtyW, align: 'center' });
-    doc.text('SKU', xSku + 8, y + 6, { width: colSkuW - 10, align: 'left' });
-    doc.text('Description', xDesc + 8, y + 6, { width: colDescW - 10, align: 'left' });
+    doc.text('SKU', xSku + 6, y + 6, { width: colSkuW - 12, align: 'left' });
+    doc.text('Description', xDesc + 6, y + 6, { width: colDescW - 12, align: 'left' });
     if (showPricing) {
       doc.text('Price', xPrice, y + 6, { width: colPriceW - 8, align: 'right' });
       doc.text('Ext. Price', xExtPrice, y + 6, { width: colExtPriceW - 8, align: 'right' });
@@ -269,57 +320,91 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
 
     y += 22;
 
-    // TABLE ROWS WITH DYNAMIC ROW HEIGHT (Prevents SKU overlap)
+    // TABLE ROWS WITH FULL BORDER BOXES & VERTICAL DIVIDERS
     itemsList.forEach((item) => {
-      // Calculate wrapped text heights
-      const skuH = doc.heightOfString(item.sku, { width: colSkuW - 10 });
-      const descH = doc.heightOfString(item.description, { width: colDescW - 10 });
-      const rowHeight = Math.max(skuH, descH, 18) + 10;
+      const skuH = doc.heightOfString(item.sku, { width: colSkuW - 12 });
+      const descH = doc.heightOfString(item.description, { width: colDescW - 12 });
+      const rowHeight = Math.max(skuH, descH, 18) + 8;
+
+      // Draw row outer rectangle
+      doc.rect(startX, y, pageWidth, rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+
+      // Draw vertical column dividers
+      doc.moveTo(xSku, y).lineTo(xSku, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+      doc.moveTo(xDesc, y).lineTo(xDesc, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+      if (showPricing) {
+        doc.moveTo(xPrice, y).lineTo(xPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+        doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+      }
 
       doc.fillColor('#000000').fontSize(9.5).font('Helvetica');
       doc.text(String(item.qty), xQty, y + 5, { width: colQtyW, align: 'center' });
-      doc.text(item.sku, xSku + 8, y + 5, { width: colSkuW - 10 });
-      doc.text(item.description, xDesc + 8, y + 5, { width: colDescW - 10 });
+      doc.text(item.sku, xSku + 6, y + 5, { width: colSkuW - 12 });
+      doc.text(item.description, xDesc + 6, y + 5, { width: colDescW - 12 });
       if (showPricing) {
-        doc.text(`${currencySymbol}${item.price.toFixed(2)}`, xPrice, y + 5, { width: colPriceW - 8, align: 'right' });
-        doc.text(`${currencySymbol}${item.extPrice.toFixed(2)}`, xExtPrice, y + 5, { width: colExtPriceW - 8, align: 'right' });
+        doc.text(formatPdfCurrency(item.price, currencySymbol), xPrice, y + 5, { width: colPriceW - 8, align: 'right' });
+        doc.text(formatPdfCurrency(item.extPrice, currencySymbol), xExtPrice, y + 5, { width: colExtPriceW - 8, align: 'right' });
       }
 
       y += rowHeight;
-
-      // Dotted horizontal line under row
-      doc.save();
-      doc.moveTo(startX, y).lineTo(startX + pageWidth, y).dash(2, { space: 2 }).strokeColor('#888888').lineWidth(0.75).stroke();
-      doc.restore();
-
-      y += 4;
     });
 
     y += 8;
 
     // TOTALS SECTION BELOW TABLE
-    doc.fillColor('#000000').fontSize(10).font('Helvetica');
+    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
     doc.text(`Qty Total: ${qtyTotal}`, startX + 5, y);
 
     if (showPricing) {
-      const totalsX = startX + pageWidth - 210;
-      doc.font('Helvetica').text('Sub Total', totalsX, y, { width: 95, align: 'right' });
-      doc.font('Helvetica-Bold').text(`${currencyCode} ${subTotal.toFixed(2)}`, totalsX + 105, y, { width: 105, align: 'right' });
-      y += 18;
+      const labelX = startX + pageWidth - 280;
+      const valueX = startX + pageWidth - 130;
+      const colW = 125;
 
-      doc.font('Helvetica').text('Shipping Cost', totalsX, y, { width: 95, align: 'right' });
-      doc.font('Helvetica-Bold').text(`${currencyCode} ${shippingCost.toFixed(2)}`, totalsX + 105, y, { width: 105, align: 'right' });
-      y += 18;
+      doc.fontSize(9.5);
+      doc.font('Helvetica').text('Sub Total', labelX, y, { width: 140, align: 'right' });
+      doc.font('Helvetica-Bold').text(formatPdfTotal(subTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
+      y += 16;
 
-      doc.font('Helvetica').text('Total', totalsX, y, { width: 95, align: 'right' });
-      doc.font('Helvetica-Bold').text(`${currencyCode} ${grandTotal.toFixed(2)}`, totalsX + 105, y, { width: 105, align: 'right' });
-      y += 25;
+      if (shippingCost > 0 || (codCharge === 0 && taxAmount === 0 && discountAmount === 0)) {
+        doc.font('Helvetica').text('Shipping Cost', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(formatPdfTotal(shippingCost, currencyCode), valueX, y, { width: colW, align: 'right' });
+        y += 16;
+      }
+
+      if (codCharge > 0) {
+        doc.font('Helvetica').text('COD Handling Charge', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(formatPdfTotal(codCharge, currencyCode), valueX, y, { width: colW, align: 'right' });
+        y += 16;
+      }
+
+      if (taxAmount > 0) {
+        doc.font('Helvetica').text('Tax', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(formatPdfTotal(taxAmount, currencyCode), valueX, y, { width: colW, align: 'right' });
+        y += 16;
+      }
+
+      if (discountAmount > 0) {
+        doc.font('Helvetica').text('Discount', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(`-${formatPdfTotal(discountAmount, currencyCode)}`, valueX, y, { width: colW, align: 'right' });
+        y += 16;
+      }
+
+      doc.fontSize(10.5);
+      doc.font('Helvetica-Bold').text('Total', labelX, y, { width: 140, align: 'right' });
+      doc.font('Helvetica-Bold').text(formatPdfTotal(grandTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
+      y += 24;
     } else {
-      y += 25;
+      y += 24;
+    }
+
+    // ANCHOR FOOTER NOTES TO BOTTOM OF PAGE (A4 height = 842pt)
+    const minFooterY = 690;
+    if (y < minFooterY) {
+      y = minFooterY;
     }
 
     // Divider Line above Notes
-    doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#333333').lineWidth(1.5).stroke();
+    doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#000000').lineWidth(1.5).stroke();
     y += 15;
 
     // NOTES FROM SENDER
@@ -330,8 +415,10 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
       const senderH = doc.heightOfString(notesFromSender, { width: pageWidth - 120 });
       y += Math.max(senderH, 24) + 12;
 
-      doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#888888').lineWidth(0.75).stroke();
-      y += 15;
+      if (notesFromShipping) {
+        doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#888888').lineWidth(0.75).stroke();
+        y += 15;
+      }
     }
 
     // NOTES FROM LISSHIPMENT / WAREHOUSE

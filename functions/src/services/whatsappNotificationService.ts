@@ -36,43 +36,88 @@ export class WhatsAppNotificationService {
    * Helper to extract valid customer mobile phone from order object, relations, or extraParams
    */
   public static extractCustomerPhone(order: any, extraParams: any = {}): string {
-    if (extraParams?.recipientNumber && String(extraParams.recipientNumber).trim().length >= 8) {
+    const isCleanPhone = (val: any): boolean => {
+      if (!val) return false;
+      const str = String(val).trim();
+      const cleanDigits = str.replace(/[^\d]/g, '');
+      return cleanDigits.length >= 8 && cleanDigits.length <= 15;
+    };
+
+    if (extraParams?.recipientNumber && isCleanPhone(extraParams.recipientNumber)) {
       return String(extraParams.recipientNumber).trim();
+    }
+    if (extraParams?.phone && isCleanPhone(extraParams.phone)) {
+      return String(extraParams.phone).trim();
+    }
+    if (extraParams?.mobile && isCleanPhone(extraParams.mobile)) {
+      return String(extraParams.mobile).trim();
     }
 
     const orderAny = (order as any) || {};
-    let phone =
-      order?.customer?.phone ||
-      order?.customer?.user?.mobile ||
-      order?.customerUserPhone ||
-      orderAny?.customerPhone ||
-      orderAny?.mobile ||
-      orderAny?.phone ||
-      '';
 
-    if (!phone && order?.shippingAddress) {
+    // 1. Check direct fields on order
+    if (isCleanPhone(orderAny.guestPhone)) return String(orderAny.guestPhone).trim();
+    if (isCleanPhone(orderAny.guestMobile)) return String(orderAny.guestMobile).trim();
+    if (isCleanPhone(orderAny.phone)) return String(orderAny.phone).trim();
+    if (isCleanPhone(orderAny.mobile)) return String(orderAny.mobile).trim();
+    if (isCleanPhone(orderAny.customerPhone)) return String(orderAny.customerPhone).trim();
+    if (isCleanPhone(orderAny.customerUserPhone)) return String(orderAny.customerUserPhone).trim();
+
+    // 2. Check Customer relation and nested user
+    if (order?.customer) {
+      if (isCleanPhone(order.customer.user?.mobile)) return String(order.customer.user.mobile).trim();
+      if (isCleanPhone(order.customer.user?.phone)) return String(order.customer.user.phone).trim();
+      if (isCleanPhone(order.customer.mobile)) return String(order.customer.mobile).trim();
+      if (isCleanPhone(order.customer.phone)) return String(order.customer.phone).trim();
+    }
+
+    // 3. Check direct User relation
+    if (order?.user) {
+      if (isCleanPhone(order.user.mobile)) return String(order.user.mobile).trim();
+      if (isCleanPhone(order.user.phone)) return String(order.user.phone).trim();
+    }
+
+    // 4. Check Shipping Address
+    if (order?.shippingAddress) {
       let addr: any = order.shippingAddress;
-      if (typeof addr === 'string' && addr.trim().startsWith('{')) {
+      if (typeof addr === 'string') {
         try { addr = JSON.parse(addr); } catch { }
       }
 
       if (addr && typeof addr === 'object') {
-        phone = addr.phone || addr.mobile || addr.contactNumber || addr.phoneNumber || '';
+        if (isCleanPhone(addr.phone)) return String(addr.phone).trim();
+        if (isCleanPhone(addr.mobile)) return String(addr.mobile).trim();
+        if (isCleanPhone(addr.contactNumber)) return String(addr.contactNumber).trim();
+        if (isCleanPhone(addr.phoneNumber)) return String(addr.phoneNumber).trim();
 
-        if (!phone && addr.addressLine1 && typeof addr.addressLine1 === 'string' && addr.addressLine1.includes('|')) {
+        if (addr.addressLine1 && typeof addr.addressLine1 === 'string' && addr.addressLine1.includes('|')) {
           const parts = addr.addressLine1.split('|').map((p: string) => p.trim());
           for (const part of parts) {
-            const cleanPart = part.replace(/[^\d+]/g, '');
-            if (cleanPart.length >= 8 && cleanPart.length <= 15) {
-              phone = part;
-              break;
+            const cleanDigits = part.replace(/[^\d]/g, '');
+            if (cleanDigits.length >= 8 && cleanDigits.length <= 15) {
+              return part.trim();
             }
           }
         }
       }
     }
 
-    return phone ? String(phone).trim() : '';
+    // 5. Check Billing Address
+    if (order?.billingAddress) {
+      let addr: any = order.billingAddress;
+      if (typeof addr === 'string') {
+        try { addr = JSON.parse(addr); } catch { }
+      }
+
+      if (addr && typeof addr === 'object') {
+        if (isCleanPhone(addr.phone)) return String(addr.phone).trim();
+        if (isCleanPhone(addr.mobile)) return String(addr.mobile).trim();
+        if (isCleanPhone(addr.contactNumber)) return String(addr.contactNumber).trim();
+        if (isCleanPhone(addr.phoneNumber)) return String(addr.phoneNumber).trim();
+      }
+    }
+
+    return '';
   }
 
   /**
@@ -84,11 +129,14 @@ export class WhatsAppNotificationService {
       const str = val.trim();
       if (!str) return false;
       const lower = str.toLowerCase();
-      return lower !== 'undefined' && lower !== 'null' && lower !== 'undefined undefined' && lower !== 'null null' && lower !== '[object object]';
+      return lower !== 'undefined' && lower !== 'null' && lower !== 'valued customer' && lower !== 'customer' && lower !== 'undefined undefined' && lower !== 'null null' && lower !== '[object object]';
     };
 
     if (extraParams && isCleanName(extraParams.customerName)) {
       return extraParams.customerName.trim();
+    }
+    if (extraParams && isCleanName(extraParams.name)) {
+      return extraParams.name.trim();
     }
 
     if (order) {
@@ -98,12 +146,13 @@ export class WhatsAppNotificationService {
       // Shipping Address fullName / name / combined
       if (order.shippingAddress) {
         let addr: any = order.shippingAddress;
-        if (typeof addr === 'string' && addr.trim().startsWith('{')) {
+        if (typeof addr === 'string') {
           try { addr = JSON.parse(addr); } catch { }
         }
         if (addr && typeof addr === 'object') {
           if (isCleanName(addr.fullName)) return addr.fullName.trim();
           if (isCleanName(addr.name)) return addr.name.trim();
+          if (isCleanName(addr.recipientName)) return addr.recipientName.trim();
           const combined = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
           if (isCleanName(combined)) return combined;
         }
@@ -112,34 +161,37 @@ export class WhatsAppNotificationService {
       // Billing Address fullName / name / combined
       if (order.billingAddress) {
         let addr: any = order.billingAddress;
-        if (typeof addr === 'string' && addr.trim().startsWith('{')) {
+        if (typeof addr === 'string') {
           try { addr = JSON.parse(addr); } catch { }
         }
         if (addr && typeof addr === 'object') {
           if (isCleanName(addr.fullName)) return addr.fullName.trim();
           if (isCleanName(addr.name)) return addr.name.trim();
+          if (isCleanName(addr.recipientName)) return addr.recipientName.trim();
           const combined = `${addr.firstName || ''} ${addr.lastName || ''}`.trim();
           if (isCleanName(combined)) return combined;
         }
       }
 
-      // Order User
-      if (order.user) {
-        const combined = `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim();
-        if (isCleanName(combined)) return combined;
-        if (isCleanName(order.user.name)) return order.user.name.trim();
-      }
-
-      // Customer relation
+      // Customer relation (with user relation check)
       if (order.customer) {
         if (order.customer.user) {
           const combined = `${order.customer.user.firstName || ''} ${order.customer.user.lastName || ''}`.trim();
           if (isCleanName(combined)) return combined;
           if (isCleanName(order.customer.user.name)) return order.customer.user.name.trim();
+          if (isCleanName(order.customer.user.fullName)) return order.customer.user.fullName.trim();
         }
         const combinedCust = `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim();
         if (isCleanName(combinedCust)) return combinedCust;
         if (isCleanName(order.customer.name)) return order.customer.name.trim();
+        if (isCleanName(order.customer.fullName)) return order.customer.fullName.trim();
+      }
+
+      // Direct Order User
+      if (order.user) {
+        const combined = `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim();
+        if (isCleanName(combined)) return combined;
+        if (isCleanName(order.user.name)) return order.user.name.trim();
       }
     }
 
@@ -370,18 +422,7 @@ export class WhatsAppNotificationService {
       const formattedPhone = this.formatPhoneNumber(rawPhone, whatsappSettings?.defaultCountryCode || '+91');
 
       // Extract Customer Name
-      let customerName = extraParams?.customerName || order?.customerName;
-      if (!customerName && order?.customer) {
-        customerName = [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ');
-      }
-      if (!customerName && order?.shippingAddress) {
-        let addr = order.shippingAddress;
-        if (typeof addr === 'string') {
-          try { addr = JSON.parse(addr); } catch { }
-        }
-        customerName = addr?.name;
-      }
-      customerName = customerName || 'Customer';
+      const customerName = this.extractCustomerName(order, extraParams);
 
       const orderId = order?.orderNumber || order?.id || extraParams?.orderId || 'N/A';
       const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
@@ -646,23 +687,8 @@ export class WhatsAppNotificationService {
       const orderUrl = `${adminBaseUrl}/orders/${order?.id || orderId}`;
 
       // Customer Details
-      let customerName = extraParams?.customerName || order?.customerName;
-      if (!customerName && order?.customer) {
-        customerName = [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ');
-      }
-      if (!customerName && order?.shippingAddress) {
-        let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
-        customerName = addr?.name;
-      }
-      customerName = customerName || 'Valued Customer';
-
-      let rawMobile = order?.customer?.phone || order?.customer?.mobile;
-      if (!rawMobile && order?.shippingAddress) {
-        let addr = order.shippingAddress;
-        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { } }
-        rawMobile = addr?.phone;
-      }
+      const customerName = this.extractCustomerName(order, extraParams);
+      const rawMobile = this.extractCustomerPhone(order, extraParams);
       const mobileNumber = rawMobile ? this.formatPhoneNumber(rawMobile, whatsappSettings?.defaultCountryCode || '+91') : 'N/A';
       const emailId = order?.customer?.email || order?.customer?.user?.email || order?.shippingAddress?.email || 'N/A';
 
