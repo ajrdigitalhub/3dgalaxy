@@ -344,7 +344,7 @@ export interface CustomerDetailProfile {
 
                         <!-- Total Orders Count -->
                         <td class="py-3.5 px-2 text-center font-bold font-mono">
-                          {{ c.totalOrders ?? 0 }}
+                          {{ c.totalOrders || 0 }}
                         </td>
 
                         <!-- Total Spend -->
@@ -513,7 +513,7 @@ export interface CustomerDetailProfile {
 
                       <div class="pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
                         <span class="text-[9px] text-zinc-400 font-bold uppercase block">Total Orders</span>
-                        <p class="font-mono font-black text-zinc-900 dark:text-white text-xs">{{ c.totalOrders ?? 0 }} orders</p>
+                        <p class="font-mono font-black text-zinc-900 dark:text-white text-xs">{{ c.totalOrders || 0 }} orders</p>
                       </div>
 
                       <div class="pt-1.5 border-t border-zinc-100 dark:border-zinc-800 text-right">

@@ -1464,166 +1464,189 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                 <!-- Shipping Tab -->
                 <div
                   [class.hidden]="activeEditTab() !== 'shipping'"
-                  class="space-y-4 animate-fadeIn"
+                  class="space-y-5 animate-fadeIn"
                 >
-                  <div
-                    class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-100 dark:border-zinc-900 grid grid-cols-1 gap-4"
-                  >
+                  <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-5">
                     <!-- Product Weight (g) -->
-                    <div class="space-y-1 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
+                    <div class="space-y-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-amber-200/80 dark:border-amber-900/50 shadow-xs">
                       <div class="flex items-center justify-between">
-                        <span class="block text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <mat-icon class="scale-75 text-amber-500">scale</mat-icon> Product Weight (grams)
+                        <span class="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <mat-icon class="text-sm text-amber-500">scale</mat-icon> Product Weight
                         </span>
-                        <span class="text-[9px] font-mono text-zinc-400 uppercase font-bold">Unit: Grams (g)</span>
+                        <span class="text-[10px] font-mono text-zinc-400 uppercase font-bold">Internal Unit: Grams (g)</span>
                       </div>
-                      <div class="relative mt-2">
+                      <div class="relative">
                         <input
                           type="number"
-                          step="0.1"
+                          step="1"
                           min="0"
                           [value]="admin.pWeightInGrams()"
                           (input)="admin.pWeightInGrams.set(+$any($event.target).value)"
-                          placeholder="Enter product weight in grams"
-                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black text-zinc-900 dark:text-white outline-none focus:border-amber-500 pr-10"
+                          placeholder="Enter weight in grams (e.g. 750)"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm font-mono font-black text-zinc-900 dark:text-white outline-none focus:border-amber-500 pr-12"
                         />
                         <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-amber-500">g</span>
                       </div>
-                      <p class="text-[10px] text-zinc-400 mt-1 font-medium">Weight is used for shipping calculations and checkout summary.</p>
-                    </div>
-
-                    <div class="space-y-1">
-                      <span
-                        class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >Delivery Time Estimation</span
-                      >
-                      <input
-                        type="text"
-                        [value]="admin.pShipping().deliveryTime"
-                        (input)="
-                          admin.updateShippingTime($any($event.target).value)
-                        "
-                        placeholder="e.g. Dispatch in 24 hrs, 3-5 transit days"
-                        class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                      />
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                      <div class="space-y-1">
-                        <span
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                          >Shipping Charges (₹)</span
-                        >
-                        <input
-                          type="number"
-                          [value]="admin.pShipping().shippingCharges"
-                          (input)="
-                            admin.updateShippingCharges(
-                              $any($event.target).value
-                            )
-                          "
-                          placeholder="e.g. 499"
-                          class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                        />
-                      </div>
-                      <div class="space-y-1">
-                        <span
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                          >Shipping Regions</span
-                        >
-                        <input
-                          type="text"
-                          [value]="admin.pShipping().shippingRegions"
-                          (input)="
-                            admin.updateShippingRegions(
-                              $any($event.target).value
-                            )
-                          "
-                          placeholder="e.g. Pan India / Selected Zones"
-                          class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                        />
+                      <div class="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
+                        <span>Weight is used for dynamic category/default weight-range shipping calculations.</span>
+                        <span class="font-bold text-zinc-600 dark:text-zinc-300">
+                          Display: {{ admin.pWeightInGrams() >= 1000 ? (admin.pWeightInGrams() / 1000).toFixed(2) + ' kg' : admin.pWeightInGrams() + ' g' }}
+                        </span>
                       </div>
                     </div>
 
-                    <!-- New Product-Level Shipping Configuration -->
-                    <div
-                      class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn"
-                    >
-                      <div class="space-y-1 flex items-center gap-3 pt-4">
+                    <!-- Shipping Mode Hierarchy Selector -->
+                    <div class="space-y-2">
+                      <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider block">Shipping Configuration Mode</label>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          (click)="admin.pShippingMode.set('product_specific')"
+                          [class]="admin.pShippingMode() === 'product_specific' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                          class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1"
+                        >
+                          <span class="text-xs font-black flex items-center gap-1">
+                            <mat-icon class="text-sm">local_shipping</mat-icon> Product Specific
+                          </span>
+                          <span class="text-[9px] opacity-80">Priority 1: Explicit fee or Free for this item</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="admin.pShippingMode.set('category_based')"
+                          [class]="admin.pShippingMode() === 'category_based' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                          class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1"
+                        >
+                          <span class="text-xs font-black flex items-center gap-1">
+                            <mat-icon class="text-sm">category</mat-icon> Category Based
+                          </span>
+                          <span class="text-[9px] opacity-80">Priority 2: Apply category weight/flat rules</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          (click)="admin.pShippingMode.set('default')"
+                          [class]="admin.pShippingMode() === 'default' ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                          class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1"
+                        >
+                          <span class="text-xs font-black flex items-center gap-1">
+                            <mat-icon class="text-sm">settings</mat-icon> Default Shipping
+                          </span>
+                          <span class="text-[9px] opacity-80">Priority 3: Fallback to global settings</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Product-Specific Fields -->
+                    @if (admin.pShippingMode() === 'product_specific') {
+                      <div class="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-blue-200 dark:border-blue-900/40 space-y-4 animate-fadeIn">
+                        <div class="flex items-center justify-between">
+                          <span class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                            <mat-icon class="text-sm">tune</mat-icon> Product-Specific Shipping Settings
+                          </span>
+                          <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              [checked]="admin.pFreeShippingEligible()"
+                              (change)="admin.pFreeShippingEligible.set($any($event.target).checked)"
+                              class="rounded text-blue-500 h-4 w-4"
+                            />
+                            <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Free Shipping Eligible</span>
+                          </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Product Shipping Charge (₹)</span>
+                            <input
+                              type="number"
+                              [value]="admin.pBaseShippingCharge()"
+                              (input)="admin.pBaseShippingCharge.set(+$any($event.target).value)"
+                              placeholder="e.g. 200"
+                              class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Estimated Delivery Days</span>
+                            <input
+                              type="text"
+                              [value]="admin.pEstimatedDeliveryDaysInput()"
+                              (input)="admin.pEstimatedDeliveryDaysInput.set($any($event.target).value)"
+                              placeholder="Default: 3"
+                              class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Dynamic Live Shipping Engine Preview Box -->
+                    <div class="p-4 bg-linear-to-r from-blue-50/60 to-purple-50/60 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl border border-blue-200/80 dark:border-blue-900/40 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+                          <mat-icon class="text-sm text-blue-500 animate-pulse">visibility</mat-icon> Live Shipping Engine Preview
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                          {{ admin.productShippingPreview().source }}
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
+                        <div class="p-2.5 bg-white/80 dark:bg-zinc-900/80 rounded-lg border border-zinc-200/60 dark:border-zinc-800">
+                          <span class="block text-[9px] text-zinc-400 font-bold uppercase">Weight</span>
+                          <span class="font-mono font-black text-zinc-900 dark:text-white">
+                            {{ admin.pWeightInGrams() >= 1000 ? (admin.pWeightInGrams() / 1000).toFixed(2) + ' kg' : admin.pWeightInGrams() + ' g' }}
+                          </span>
+                        </div>
+
+                        <div class="p-2.5 bg-white/80 dark:bg-zinc-900/80 rounded-lg border border-zinc-200/60 dark:border-zinc-800">
+                          <span class="block text-[9px] text-zinc-400 font-bold uppercase">Applied Rule</span>
+                          <span class="font-bold text-zinc-900 dark:text-white truncate block" [title]="admin.productShippingPreview().appliedRule.name || ''">
+                            {{ admin.productShippingPreview().appliedRule.name || 'Default' }}
+                          </span>
+                        </div>
+
+                        <div class="p-2.5 bg-white/80 dark:bg-zinc-900/80 rounded-lg border border-zinc-200/60 dark:border-zinc-800">
+                          <span class="block text-[9px] text-zinc-400 font-bold uppercase">Effective Charge</span>
+                          <span class="font-black" [class.text-emerald-500]="admin.productShippingPreview().charge === 0" [class.text-zinc-900]="admin.productShippingPreview().charge > 0" [class.dark:text-white]="admin.productShippingPreview().charge > 0">
+                            {{ admin.productShippingPreview().charge === 0 ? 'FREE' : '₹' + admin.productShippingPreview().charge }}
+                          </span>
+                        </div>
+
+                        <div class="p-2.5 bg-white/80 dark:bg-zinc-900/80 rounded-lg border border-zinc-200/60 dark:border-zinc-800">
+                          <span class="block text-[9px] text-zinc-400 font-bold uppercase">Estimated Delivery</span>
+                          <span class="font-bold text-zinc-900 dark:text-white">
+                            {{ admin.productShippingPreview().estimatedDays }} Days
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- General Delivery & COD Settings -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      <div class="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer">
                         <input
                           type="checkbox"
                           id="codAvailable"
                           [checked]="admin.pCodAvailable()"
-                          (change)="
-                            admin.pCodAvailable.set($any($event.target).checked)
-                          "
-                          class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800"
+                          (change)="admin.pCodAvailable.set($any($event.target).checked)"
+                          class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800 cursor-pointer"
                         />
-                        <label
-                          for="codAvailable"
-                          class="text-[10px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer select-none"
-                          >COD Available</label
-                        >
-                      </div>
-
-                      <div class="space-y-1 flex items-center gap-3 pt-4">
-                        <input
-                          type="checkbox"
-                          id="freeShippingEligible"
-                          [checked]="admin.pFreeShippingEligible()"
-                          (change)="
-                            admin.pFreeShippingEligible.set(
-                              $any($event.target).checked
-                            )
-                          "
-                          class="w-4 h-4 text-blue-500 rounded border-zinc-300 dark:border-zinc-800"
-                        />
-                        <label
-                          for="freeShippingEligible"
-                          class="text-[10px] font-black text-zinc-400 uppercase tracking-widest cursor-pointer select-none"
-                          >Free Shipping Eligible</label
-                        >
+                        <label for="codAvailable" class="text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                          Cash on Delivery (COD) Available
+                        </label>
                       </div>
 
                       <div class="space-y-1">
-                        <span
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                          >Base Shipping Charge (₹)</span
-                        >
-                        <input
-                          type="number"
-                          [value]="admin.pBaseShippingCharge()"
-                          (input)="
-                            admin.pBaseShippingCharge.set(
-                              +$any($event.target).value
-                            )
-                          "
-                          placeholder="Default: 0"
-                          class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
-                        />
-                      </div>
-
-                      <div class="space-y-1">
-                        <span
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                          >Estimated Delivery Days</span
-                        >
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Shipping Regions</span>
                         <input
                           type="text"
-                          [value]="admin.pEstimatedDeliveryDaysInput()"
-                          (input)="admin.pEstimatedDeliveryDaysInput.set($any($event.target).value)"
-                          placeholder="Default: 3"
-                          class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white"
+                          [value]="admin.pShipping().shippingRegions || 'Pan India'"
+                          (input)="admin.updateShippingRegions($any($event.target).value)"
+                          placeholder="e.g. Pan India / Selected Zones"
+                          class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
                         />
-                        @if (admin.pEstimatedDeliveryDaysPreview()) {
-                          <span class="block text-[10px] text-emerald-500 font-bold mt-1">
-                            Preview: {{ admin.pEstimatedDeliveryDaysPreview() }}
-                          </span>
-                        }
-                        @if (admin.pEstimatedDeliveryDaysError()) {
-                          <span class="block text-[10px] text-red-500 font-semibold mt-1">
-                            {{ admin.pEstimatedDeliveryDaysError() }}
-                          </span>
-                        }
                       </div>
                     </div>
                   </div>
@@ -2911,43 +2934,188 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                     </div>
                   }
 
-                  <!-- TAB 6: ADVANCED -->
+                  <!-- TAB 6: ADVANCED / SHIPPING -->
                   @if (categoryModalTab() === 'advanced') {
-                    <div class="space-y-4">
-                      <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                          <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Shipping Charge (₹)</label>
-                          <input
-                            type="number"
-                            [value]="admin.catShippingCharge() ?? ''"
-                            (input)="admin.catShippingCharge.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
-                            placeholder="e.g. 100"
-                            class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                          />
-                        </div>
-
-                        <div class="space-y-1">
-                          <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Shipping Region</label>
-                          <input
-                            type="text"
-                            [value]="admin.catShippingRegion()"
-                            (input)="admin.catShippingRegion.set($any($event.target).value)"
-                            placeholder="e.g. All India"
-                            class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                          />
+                    <div class="space-y-5">
+                      <!-- Category Shipping Mode Selector -->
+                      <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider block">Category Shipping Mode</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <button
+                            type="button"
+                            (click)="admin.catShippingMode.set('default')"
+                            [class]="admin.catShippingMode() === 'default' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                            class="p-2.5 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer"
+                          >
+                            Default
+                          </button>
+                          <button
+                            type="button"
+                            (click)="admin.catShippingMode.set('flat')"
+                            [class]="admin.catShippingMode() === 'flat' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                            class="p-2.5 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer"
+                          >
+                            Flat Rate
+                          </button>
+                          <button
+                            type="button"
+                            (click)="admin.catShippingMode.set('weight_based')"
+                            [class]="admin.catShippingMode() === 'weight_based' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                            class="p-2.5 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer"
+                          >
+                            Weight Based
+                          </button>
+                          <button
+                            type="button"
+                            (click)="admin.catShippingMode.set('free')"
+                            [class]="admin.catShippingMode() === 'free' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800'"
+                            class="p-2.5 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer"
+                          >
+                            Free Shipping
+                          </button>
                         </div>
                       </div>
 
-                      <div class="pt-2">
+                      <!-- Flat Rate Configuration -->
+                      @if (admin.catShippingMode() === 'flat') {
+                        <div class="grid grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 animate-fadeIn">
+                          <div class="space-y-1">
+                            <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Flat Shipping Charge (₹)</label>
+                            <input
+                              type="number"
+                              [value]="admin.catShippingCharge() ?? ''"
+                              (input)="admin.catShippingCharge.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
+                              placeholder="e.g. 100"
+                              class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Shipping Region</label>
+                            <input
+                              type="text"
+                              [value]="admin.catShippingRegion()"
+                              (input)="admin.catShippingRegion.set($any($event.target).value)"
+                              placeholder="e.g. All India"
+                              class="w-full px-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Weight-Based Configuration -->
+                      @if (admin.catShippingMode() === 'weight_based') {
+                        <div class="space-y-3 p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 animate-fadeIn">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                              <mat-icon class="text-emerald-500 text-sm">scale</mat-icon> Category Weight Range Rules
+                            </span>
+                            <span class="text-[9px] text-zinc-400 font-bold">Stored in grams (g)</span>
+                          </div>
+
+                          <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                              <thead>
+                                <tr class="border-b border-zinc-200 dark:border-zinc-800 text-[10px] uppercase font-black tracking-wider text-zinc-400">
+                                  <th class="pb-2">From (g)</th>
+                                  <th class="pb-2">To (g)</th>
+                                  <th class="pb-2">Charge (₹)</th>
+                                  <th class="pb-2 text-right">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                                @for (rule of admin.catShippingRules(); track $index) {
+                                  <tr>
+                                    <td class="py-2 pr-2">
+                                      <div class="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          [value]="rule.fromGrams"
+                                          (input)="admin.updateCatWeightRule($index, 'fromGrams', +$any($event.target).value)"
+                                          placeholder="0"
+                                          class="w-20 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono"
+                                        />
+                                        <span class="text-[10px] text-zinc-400 font-bold">g</span>
+                                      </div>
+                                    </td>
+                                    <td class="py-2 pr-2">
+                                      <div class="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          [value]="rule.toGrams"
+                                          (input)="admin.updateCatWeightRule($index, 'toGrams', +$any($event.target).value)"
+                                          placeholder="500"
+                                          class="w-20 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono"
+                                        />
+                                        <span class="text-[10px] text-zinc-400 font-bold">g</span>
+                                      </div>
+                                    </td>
+                                    <td class="py-2 pr-2">
+                                      <div class="flex items-center gap-1">
+                                        <span class="text-xs font-bold text-zinc-400">₹</span>
+                                        <input
+                                          type="number"
+                                          [value]="rule.charge"
+                                          (input)="admin.updateCatWeightRule($index, 'charge', +$any($event.target).value)"
+                                          placeholder="50"
+                                          class="w-20 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono font-bold"
+                                        />
+                                      </div>
+                                    </td>
+                                    <td class="py-2 text-right">
+                                      <button
+                                        type="button"
+                                        (click)="admin.removeCatWeightRule($index)"
+                                        class="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded transition-colors"
+                                      >
+                                        <mat-icon class="text-sm">delete</mat-icon>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                } @empty {
+                                  <tr>
+                                    <td colspan="4" class="py-3 text-center text-xs text-zinc-400 italic">
+                                      No weight rules added. Click below to add tier (e.g. 0-500g → ₹50).
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <button
+                            type="button"
+                            (click)="admin.addCatWeightRule()"
+                            class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+                          >
+                            <mat-icon class="text-sm">add</mat-icon>
+                            <span>Add Weight Tier</span>
+                          </button>
+                        </div>
+                      }
+
+                      <!-- Free Shipping & Threshold Options -->
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-3">
                         <label class="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             [checked]="admin.catFreeShippingEligible()"
                             (change)="admin.catFreeShippingEligible.set($any($event.target).checked)"
-                            class="rounded text-orange-500 h-4 w-4"
+                            class="rounded text-blue-500 h-4 w-4"
                           />
-                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Free Shipping Eligible</span>
+                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Free Shipping Eligible for this Category</span>
                         </label>
+
+                        <div class="space-y-1 pt-1">
+                          <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Free Shipping Min Order Threshold (₹)</label>
+                          <input
+                            type="number"
+                            [value]="admin.catFreeShippingThreshold() ?? ''"
+                            (input)="admin.catFreeShippingThreshold.set($any($event.target).value !== '' ? Number($any($event.target).value) : null)"
+                            placeholder="e.g. 999 (Leave empty for unconditional free shipping)"
+                            class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                          />
+                        </div>
                       </div>
                     </div>
                   }

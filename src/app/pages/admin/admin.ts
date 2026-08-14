@@ -26,6 +26,7 @@ import { PwaService } from "../../core/services/pwa.service";
 
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonPageComponent } from "../../shared/components/skeleton/skeleton-page/skeleton-page.component";
+import { ShippingService, WeightRule } from "../../core/services/shipping.service";
 
 // Subcomponents
 import { AdminDashboardTab } from "./components/dashboard-tab";
@@ -483,6 +484,33 @@ export class AdminPanel implements OnInit {
   catEstimatedDeliveryDaysInput = signal<string>("3");
   catFreeShippingEligible = signal<boolean>(false);
   catShippingRegion = signal<string>("");
+  catShippingMode = signal<string>("default"); // 'default' | 'flat' | 'weight_based' | 'free'
+  catShippingRules = signal<WeightRule[]>([]);
+  catFreeShippingThreshold = signal<number | null>(null);
+
+  addCatWeightRule() {
+    const rules = [...this.catShippingRules()];
+    const lastRule = rules[rules.length - 1];
+    const nextFrom = lastRule ? (Number(lastRule.toGrams) || 0) + 1 : 0;
+    const nextTo = nextFrom + 500;
+    const nextCharge = lastRule ? (Number(lastRule.charge) || 0) + 30 : 50;
+    rules.push({ fromGrams: nextFrom, toGrams: nextTo, charge: nextCharge });
+    this.catShippingRules.set(rules);
+  }
+
+  updateCatWeightRule(index: number, field: 'fromGrams' | 'toGrams' | 'charge', value: number) {
+    const rules = [...this.catShippingRules()];
+    if (rules[index]) {
+      rules[index] = { ...rules[index], [field]: value };
+      this.catShippingRules.set(rules);
+    }
+  }
+
+  removeCatWeightRule(index: number) {
+    const rules = [...this.catShippingRules()];
+    rules.splice(index, 1);
+    this.catShippingRules.set(rules);
+  }
 
   // Branding states
   editingBrand = signal<any | null>(null);
@@ -563,12 +591,35 @@ export class AdminPanel implements OnInit {
     return this.deliveryService.isValidFormat(val) ? '' : 'Enter values like 3, 5-6 or 7-10.';
   });
 
+  shippingService = inject(ShippingService);
+  pShippingMode = signal<string>("default"); // 'product_specific' | 'category_based' | 'default'
   pFreeShippingEligible = signal<boolean>(true);
   pWeightInGrams = signal<number>(0);
   pBundleProducts = signal<any[]>([]);
   pRecommendedFilaments = signal<string[]>([]);
   pRelatedIds = signal<string[]>([]);
   pStatus = signal<"active" | "draft" | "out_of_stock">("active");
+
+  productShippingPreview = computed(() => {
+    const mode = this.pShippingMode();
+    const weight = this.pWeightInGrams() || 0;
+    const catId = this.pCatId();
+    const cat = this.ds.categories().find((c: any) => c.id === catId);
+
+    const mockProduct = {
+      id: "preview",
+      name: this.pName() || "Sample Product",
+      baseShippingCharge: this.pBaseShippingCharge(),
+      freeShippingEligible: this.pFreeShippingEligible(),
+      estimatedDeliveryDays: this.deliveryService.parseEstimateDays(this.pEstimatedDeliveryDaysInput()) || 3,
+      weightInGrams: weight,
+      categoryId: catId,
+      category: cat,
+      shipping: { mode },
+    };
+
+    return this.shippingService.getProductShippingInfo(mockProduct);
+  });
 
   // Marketing campaign drafts
   newCampTitle = signal<string>("");
@@ -1252,7 +1303,7 @@ export class AdminPanel implements OnInit {
   }
 
   // --- HIERARCHY TREE LOGICS ---
-  startCategoryEdit(cat: Category) {
+  startCategoryEdit(cat: any) {
     this.editingCategory.set(cat);
     this.newCatName.set(cat.name);
     this.newCatParentId.set(cat.parent_id || "");
@@ -1269,6 +1320,10 @@ export class AdminPanel implements OnInit {
     this.catEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(cat.estimatedDeliveryDays));
     this.catFreeShippingEligible.set(cat.freeShippingEligible || false);
     this.catShippingRegion.set(cat.shippingRegion || "");
+    this.catShippingMode.set(cat.shippingMode || (cat.shippingRules?.length > 0 ? "weight_based" : (cat.shippingCharge > 0 ? "flat" : "default")));
+    const rules = Array.isArray(cat.shippingRules) ? cat.shippingRules : typeof cat.shippingRules === 'string' ? JSON.parse(cat.shippingRules) : [];
+    this.catShippingRules.set(rules);
+    this.catFreeShippingThreshold.set(cat.freeShippingThreshold !== undefined && cat.freeShippingThreshold !== null ? Number(cat.freeShippingThreshold) : null);
   }
 
   cancelCategoryEdit() {
@@ -1288,6 +1343,9 @@ export class AdminPanel implements OnInit {
     this.catEstimatedDeliveryDaysInput.set("3");
     this.catFreeShippingEligible.set(false);
     this.catShippingRegion.set("");
+    this.catShippingMode.set("default");
+    this.catShippingRules.set([]);
+    this.catFreeShippingThreshold.set(null);
   }
 
   async saveCategory() {
@@ -1326,6 +1384,9 @@ export class AdminPanel implements OnInit {
       estimatedDeliveryDays: this.deliveryService.parseEstimateDays(this.catEstimatedDeliveryDaysInput()),
       freeShippingEligible: this.catFreeShippingEligible(),
       shippingRegion: this.catShippingRegion().trim() || null,
+      shippingMode: this.catShippingMode(),
+      shippingRules: this.catShippingRules(),
+      freeShippingThreshold: this.catFreeShippingThreshold() !== null && this.catFreeShippingThreshold() !== undefined ? Number(this.catFreeShippingThreshold()) : null,
     };
 
     this.isSavingCategory.set(true);
@@ -1750,6 +1811,7 @@ export class AdminPanel implements OnInit {
           this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
           this.pEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(detail.estimatedDeliveryDays));
           this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
+          this.pShippingMode.set(detail.shipping?.mode || (Number(detail.baseShippingCharge) > 0 ? "product_specific" : "default"));
           this.pWeightInGrams.set(
             detail.weightInGrams ? Number(detail.weightInGrams) : (detail.weight ? Number(detail.weight) : 0)
           );
@@ -1810,6 +1872,7 @@ export class AdminPanel implements OnInit {
     this.pEstimatedDeliveryDays.set(3);
     this.pEstimatedDeliveryDaysInput.set("3");
     this.pFreeShippingEligible.set(true);
+    this.pShippingMode.set("default");
     this.pWeightInGrams.set(0);
     this.pBundleProducts.set([]);
     this.pRecommendedFilaments.set([]);
@@ -2151,7 +2214,12 @@ export class AdminPanel implements OnInit {
       features: this.pFeatures(),
       faqs: this.pFaqs(),
       warranty: this.pWarranty(),
-      shipping: this.pShipping(),
+      shipping: {
+        ...this.pShipping(),
+        mode: this.pShippingMode(),
+        shippingCharges: this.pBaseShippingCharge(),
+        freeShippingEligible: this.pFreeShippingEligible(),
+      },
       relatedProducts: this.pRelatedIds(),
       reviews: isEdit ? this.editingProduct()?.reviews || [] : [],
       qnas: isEdit ? this.editingProduct()?.qnas || [] : [],

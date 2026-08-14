@@ -3801,6 +3801,115 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
                     />
                   </div>
                 </div>
+
+                <!-- Default Weight-Based Shipping Rules -->
+                <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                        <mat-icon class="text-emerald-500 text-sm">scale</mat-icon>
+                        Default Weight-Based Pricing Rules
+                      </h3>
+                      <p class="text-[10px] text-zinc-400 mt-0.5 font-medium">
+                        Used when a product and its category have no explicit shipping rate configured.
+                      </p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        [checked]="draft().shippingSettings?.enableWeightBasedShipping === true"
+                        (change)="setNested('shippingSettings', 'enableWeightBasedShipping', $any($event.target).checked)"
+                        class="sr-only peer"
+                      />
+                      <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      <span class="ml-2 text-xs font-bold text-zinc-700 dark:text-zinc-300">Enable</span>
+                    </label>
+                  </div>
+
+                  @if (draft().shippingSettings?.enableWeightBasedShipping === true) {
+                    <div class="space-y-3 pt-2">
+                      <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                          <thead>
+                            <tr class="border-b border-zinc-200 dark:border-zinc-800 text-[10px] uppercase font-black tracking-wider text-zinc-400">
+                              <th class="pb-2">Weight From (g)</th>
+                              <th class="pb-2">Weight To (g)</th>
+                              <th class="pb-2">Shipping Charge (₹)</th>
+                              <th class="pb-2 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                            @for (rule of (draft().shippingSettings?.weightRules || []); track $index) {
+                              <tr>
+                                <td class="py-2 pr-2">
+                                  <div class="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      [value]="rule.fromGrams"
+                                      (input)="updateDefaultWeightRule($index, 'fromGrams', +$any($event.target).value)"
+                                      placeholder="0"
+                                      class="w-24 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono"
+                                    />
+                                    <span class="text-[10px] text-zinc-400 font-bold">g</span>
+                                  </div>
+                                </td>
+                                <td class="py-2 pr-2">
+                                  <div class="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      [value]="rule.toGrams"
+                                      (input)="updateDefaultWeightRule($index, 'toGrams', +$any($event.target).value)"
+                                      placeholder="500"
+                                      class="w-24 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono"
+                                    />
+                                    <span class="text-[10px] text-zinc-400 font-bold">g</span>
+                                  </div>
+                                </td>
+                                <td class="py-2 pr-2">
+                                  <div class="flex items-center gap-1">
+                                    <span class="text-xs font-bold text-zinc-400">₹</span>
+                                    <input
+                                      type="number"
+                                      [value]="rule.charge"
+                                      (input)="updateDefaultWeightRule($index, 'charge', +$any($event.target).value)"
+                                      placeholder="40"
+                                      class="w-24 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono font-bold"
+                                    />
+                                  </div>
+                                </td>
+                                <td class="py-2 text-right">
+                                  <button
+                                    type="button"
+                                    (click)="removeDefaultWeightRule($index)"
+                                    class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                                    title="Delete rule"
+                                  >
+                                    <mat-icon class="text-sm">delete</mat-icon>
+                                  </button>
+                                </td>
+                              </tr>
+                            } @empty {
+                              <tr>
+                                <td colspan="4" class="py-4 text-center text-xs text-zinc-400 italic">
+                                  No weight rules configured. Click "Add Weight Rule" to create one.
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <button
+                        type="button"
+                        (click)="addDefaultWeightRule()"
+                        class="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+                      >
+                        <mat-icon class="text-sm">add</mat-icon>
+                        <span>Add Weight Range Rule</span>
+                      </button>
+                    </div>
+                  }
+                </div>
               </div>
             }
 
@@ -5853,9 +5962,44 @@ export class AdminSettingsTab {
       const currentList = this.getCourierSettingsList();
       const targetCourier = currentList[index];
       if (!targetCourier) return d;
-
       const list = (d.courierPartners || []).filter((c: any) => c.id !== targetCourier.id && c.name !== targetCourier.name);
       return { ...d, courierPartners: list };
+    });
+  }
+
+  addDefaultWeightRule() {
+    this.draft.update((d) => {
+      const ship = d.shippingSettings ? { ...d.shippingSettings } : {};
+      const rules = Array.isArray(ship.weightRules) ? [...ship.weightRules] : [];
+      const lastRule = rules[rules.length - 1];
+      const nextFrom = lastRule ? (Number(lastRule.toGrams) || 0) + 1 : 0;
+      const nextTo = nextFrom + 500;
+      const nextCharge = lastRule ? (Number(lastRule.charge) || 0) + 30 : 40;
+      rules.push({ fromGrams: nextFrom, toGrams: nextTo, charge: nextCharge });
+      ship.weightRules = rules;
+      return { ...d, shippingSettings: ship };
+    });
+  }
+
+  updateDefaultWeightRule(index: number, field: 'fromGrams' | 'toGrams' | 'charge', value: number) {
+    this.draft.update((d) => {
+      const ship = d.shippingSettings ? { ...d.shippingSettings } : {};
+      const rules = Array.isArray(ship.weightRules) ? [...ship.weightRules] : [];
+      if (rules[index]) {
+        rules[index] = { ...rules[index], [field]: value };
+      }
+      ship.weightRules = rules;
+      return { ...d, shippingSettings: ship };
+    });
+  }
+
+  removeDefaultWeightRule(index: number) {
+    this.draft.update((d) => {
+      const ship = d.shippingSettings ? { ...d.shippingSettings } : {};
+      const rules = Array.isArray(ship.weightRules) ? [...ship.weightRules] : [];
+      rules.splice(index, 1);
+      ship.weightRules = rules;
+      return { ...d, shippingSettings: ship };
     });
   }
 

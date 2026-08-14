@@ -701,6 +701,16 @@
                 Expected by {{ shippingDetails().estimatedDays | deliveryEstimate:'desktop' }}
               </strong>
             </div>
+
+            <!-- Applied Shipping Rule -->
+            @if (shippingDetails().appliedRule.name) {
+            <div class="pt-1.5 flex items-center justify-between text-xs">
+              <span class="font-bold text-neutral-550 dark:text-neutral-400">Shipping Rule</span>
+              <span class="text-amber-700 dark:text-amber-300 font-extrabold text-[11px] truncate max-w-[200px]" [title]="shippingDetails().appliedRule.name">
+                {{ shippingDetails().appliedRule.name }}
+              </span>
+            </div>
+            }
           </div>
 
           <!-- Calculations -->

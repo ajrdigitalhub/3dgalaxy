@@ -25,6 +25,9 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: 'paid' | 'unpaid' | 'refunded';
   trackingNumber?: string;
+  shippingSource?: string;
+  shippingAmount?: number;
+  shippingMethod?: string;
   shipment?: any;
   estimatedDelivery?: string;
 }

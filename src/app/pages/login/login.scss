@@ -311,13 +311,42 @@ $stars-shadow-l: generate-stars(40);
 .input-container {
   position: relative;
   width: 100%;
+  border-radius: 16px;
+  background: rgba(15, 11, 30, 0.72);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(20, 14, 40, 0.85);
+  }
+
+  &:focus-within {
+    border-color: #00f2fe;
+    background: rgba(22, 16, 44, 0.95);
+    box-shadow: 
+      0 0 28px rgba(0, 242, 254, 0.28),
+      inset 0 0 14px rgba(0, 242, 254, 0.06);
+    transform: translateY(-1px);
+
+    .input-icon {
+      color: #00f2fe !important;
+      filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.7));
+    }
+  }
 
   .input-icon {
     position: absolute;
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
     transition: all 0.3s ease;
     pointer-events: none;
     z-index: 10;
@@ -326,54 +355,59 @@ $stars-shadow-l: generate-stars(40);
 
 // Custom Premium Inputs
 .custom-input {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: transparent !important;
+  border: none !important;
   color: #ffffff !important;
   padding-left: 48px !important;
   padding-right: 48px !important;
   padding-top: 18px !important;
   padding-bottom: 4px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.02em !important;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 
-  &:hover {
-    border-color: rgba(255, 255, 255, 0.18) !important;
-    background: rgba(255, 255, 255, 0.04) !important;
+  // Webkit Autofill fix (prevents browser from turning input white)
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #120e26 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+    border-radius: 14px !important;
   }
-
-  &:focus {
-    border-color: rgba(0, 242, 254, 0.8) !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    box-shadow: 
-      0 0 25px rgba(0, 242, 254, 0.22),
-      inset 0 0 0 1px rgba(0, 242, 254, 0.1) !important;
-    transform: translate3d(0, -1px, 0);
-  }
-}
-
-// When input is focused or values exist, change styling of label and left icon
-.custom-input:focus ~ .input-icon {
-  color: #00f2fe !important;
-  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.6));
 }
 
 // Floating input labels
 .custom-label {
-  left: 48px !important;
-  top: 18px !important;
-  color: rgba(255, 255, 255, 0.4);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: absolute;
+  left: 48px;
+  top: 17px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
 }
 
 .custom-input:focus ~ .custom-label,
 .custom-input:not(:placeholder-shown) ~ .custom-label {
   color: #00f2fe !important;
   left: 48px !important;
-  top: 6px !important;
+  top: 7px !important;
   font-size: 10px !important;
   font-weight: 900 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  text-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+  letter-spacing: 0.08em !important;
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.35);
+}
+
+.custom-input:not(:placeholder-shown) ~ .input-icon {
+  color: rgba(0, 242, 254, 0.85);
 }
 
 .password-toggle-btn {
@@ -381,12 +415,14 @@ $stars-shadow-l: generate-stars(40);
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.4);
-  transition: color 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  transition: all 0.2s ease;
   z-index: 10;
   
   &:hover {
     color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 

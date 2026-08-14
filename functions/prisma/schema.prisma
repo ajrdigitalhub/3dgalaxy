@@ -71,7 +71,6 @@ model User {
   notificationDevices NotificationDevice[]
   productImportHistories ProductImportHistory[]
   customerNotes   CustomerNote[]
-  adminFcmTokens  AdminFcmToken[]
 
   @@index([mobile])
   @@index([isActive])
@@ -162,6 +161,9 @@ model Category {
   estimatedDeliveryDays Int?              @default(3) @map("estimated_delivery_days")
   freeShippingEligible  Boolean           @default(false) @map("free_shipping_eligible")
   shippingRegion        String?           @map("shipping_region") @db.VarChar(100)
+  shippingRules         Json?             @map("shipping_rules") @default("[]")
+  shippingMode          String?           @default("default") @map("shipping_mode") @db.VarChar(50)
+  freeShippingThreshold Decimal?          @map("free_shipping_threshold") @db.Decimal(10, 2)
   deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -1302,8 +1304,6 @@ model AdminFcmToken {
   lastUsedAt             DateTime          @default(now()) @map("last_used_at") @db.Timestamptz
   createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt              DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  user                   User?             @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@unique([adminId, fcmToken])
   @@index([adminId])

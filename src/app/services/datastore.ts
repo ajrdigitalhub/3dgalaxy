@@ -247,6 +247,9 @@ export interface Order {
   codCharge?: number;
   totalWeightInGrams?: number;
   displayWeight?: string;
+  shippingSource?: string;
+  shippingAmount?: number;
+  shippingMethod?: string;
   shipment?: any;
   estimatedDelivery?: string;
   totalQuantity?: number;

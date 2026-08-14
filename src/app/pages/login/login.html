@@ -94,25 +94,26 @@
 
       <!-- SIGN IN FORM -->
       @if (!isSignUp()) {
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
 
         <div class="input-container group">
-          <mat-icon class="input-icon">email</mat-icon>
           <input id="signin-email" type="email" formControlName="email" placeholder=" "
-            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signin-email"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email
-            Address</label>
+            autocomplete="email"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">email</mat-icon>
+          <label for="signin-email" class="custom-label">Email Address</label>
         </div>
 
         <div class="input-container group">
-          <mat-icon class="input-icon">lock</mat-icon>
           <input id="signin-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
-            placeholder=" " class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signin-password"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password</label>
+            placeholder=" "
+            autocomplete="current-password"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">lock</mat-icon>
+          <label for="signin-password" class="custom-label">Password</label>
           <button type="button" (click)="toggleShowPassword()"
-            class="password-toggle-btn h-8 w-8 flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none">
+            class="password-toggle-btn h-9 w-9 rounded-xl flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none"
+            aria-label="Toggle password visibility">
             <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>
@@ -130,43 +131,41 @@
 
       <!-- SIGN UP FORM -->
       @else {
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-5">
         <div class="input-container group">
-          <mat-icon class="input-icon">person</mat-icon>
           <input id="signup-name" type="text" formControlName="name" placeholder=" "
-            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signup-name"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Full
-            Name</label>
+            autocomplete="name"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">person</mat-icon>
+          <label for="signup-name" class="custom-label">Full Name</label>
         </div>
 
         <div class="input-container group">
-          <mat-icon class="input-icon">email</mat-icon>
           <input id="signup-email" type="email" formControlName="email" placeholder=" "
-            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signup-email"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Email
-            Address</label>
+            autocomplete="email"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">email</mat-icon>
+          <label for="signup-email" class="custom-label">Email Address</label>
         </div>
 
         <div class="input-container group">
-          <mat-icon class="input-icon">phone</mat-icon>
           <input id="signup-mobile" type="tel" formControlName="mobile" placeholder=" "
-            class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signup-mobile"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Mobile
-            Number (for WhatsApp)</label>
+            autocomplete="tel"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">phone</mat-icon>
+          <label for="signup-mobile" class="custom-label">Mobile Number (for WhatsApp)</label>
         </div>
 
         <div class="input-container group">
-          <mat-icon class="input-icon">lock</mat-icon>
           <input id="signup-password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
-            placeholder=" " class="custom-input peer w-full h-14 rounded-xl text-sm font-bold text-white outline-none">
-          <label for="signup-password"
-            class="custom-label absolute top-4 pointer-events-none transition-all duration-300 peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:font-black peer-focus:uppercase peer-focus:tracking-widest peer-[:not(:placeholder-shown)]:text-[10px] peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:font-black peer-[:not(:placeholder-shown)]:uppercase peer-[:not(:placeholder-shown)]:tracking-widest text-sm">Password
-            (6+ Char)</label>
+            placeholder=" "
+            autocomplete="new-password"
+            class="custom-input peer w-full h-14 rounded-2xl text-sm font-semibold text-white outline-none">
+          <mat-icon class="input-icon">lock</mat-icon>
+          <label for="signup-password" class="custom-label">Password (6+ Characters)</label>
           <button type="button" (click)="toggleShowPassword()"
-            class="password-toggle-btn h-8 w-8 flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none">
+            class="password-toggle-btn h-9 w-9 rounded-xl flex items-center justify-center bg-transparent border-none cursor-pointer focus:outline-none"
+            aria-label="Toggle password visibility">
             <mat-icon class="scale-90">{{ showPassword() ? 'visibility' : 'visibility_off' }}</mat-icon>
           </button>
         </div>

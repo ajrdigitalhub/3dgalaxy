@@ -259,16 +259,38 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                           </button>
 
                           <!-- Left Floating Shipping Popover (never cropped by top/bottom container) -->
-                          <div class="group-hover/ship:opacity-100 group-hover/ship:visible opacity-0 invisible transition-all duration-200 pointer-events-none group-hover/ship:pointer-events-auto absolute right-full top-1/2 -translate-y-1/2 mr-3 w-72 bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl border border-zinc-700 z-50 text-left space-y-3 font-sans">
+                          <div class="group-hover/ship:opacity-100 group-hover/ship:visible opacity-0 invisible transition-all duration-200 pointer-events-none group-hover/ship:pointer-events-auto absolute right-full top-1/2 -translate-y-1/2 mr-3 w-80 bg-zinc-900 text-white rounded-2xl p-4 shadow-2xl border border-zinc-700 z-50 text-left space-y-3 font-sans">
                             <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
                               <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider flex items-center gap-1.5">
                                 <mat-icon class="text-xs">local_shipping</mat-icon>
-                                Shipment Details
+                                Shipment & Pricing Engine
                               </span>
-                              @if (o.shipment?.courierPartner || o.shipment?.courierDisplayName) {
-                                <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[9px] font-black rounded uppercase">
-                                  {{ o.shipment.courierDisplayName || o.shipment.courierPartner }}
+                              <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[9px] font-black rounded uppercase">
+                                {{ o.shippingSource || 'DEFAULT' }}
+                              </span>
+                            </div>
+
+                            <!-- Pricing Engine Metadata -->
+                            <div class="p-2.5 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1.5 text-xs">
+                              <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-zinc-400 font-bold uppercase">Shipping Charge:</span>
+                                <span class="font-mono font-bold" [class.text-emerald-400]="!o.shippingAmount && !o.shippingFee" [class.text-white]="!!(o.shippingAmount || o.shippingFee)">
+                                  {{ (!o.shippingAmount && !o.shippingFee) ? 'FREE' : ('₹' + (o.shippingAmount || o.shippingFee)) }}
                                 </span>
+                              </div>
+                              @if (o.shipment?.shippingWeightDisplay) {
+                                <div class="flex justify-between items-center text-[11px]">
+                                  <span class="text-zinc-400">Total Weight:</span>
+                                  <span class="font-mono font-semibold text-zinc-200">{{ o.shipment.shippingWeightDisplay }}</span>
+                                </div>
+                              }
+                              @if (o.shipment?.shippingRule?.name || o.shippingMethod) {
+                                <div class="flex justify-between items-center text-[11px]">
+                                  <span class="text-zinc-400">Rule Applied:</span>
+                                  <span class="font-bold text-amber-400 truncate max-w-[140px]" [title]="o.shipment?.shippingRule?.name || o.shippingMethod">
+                                    {{ o.shipment?.shippingRule?.name || o.shippingMethod }}
+                                  </span>
+                                </div>
                               }
                             </div>
 

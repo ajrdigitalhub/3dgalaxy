@@ -240,6 +240,8 @@ app.use("/api", paymentRoutes);
 app.use("/api", notificationRoutes);
 app.use("/api", pwaRoutes);
 app.use("/api", headerMenuRoutes);
+import shippingRoutes from "./routes/shipping";
+app.use("/api/shipping", shippingRoutes);
 import exploreConfigRoutes from "./routes/exploreConfig";
 app.use("/api", exploreConfigRoutes);
 app.use("/api", marketingRoutes);

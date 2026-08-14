@@ -646,7 +646,10 @@ export const createOrder = async (req: any, res: Response) => {
           shippingAddressId,
           billingAddressId,
           shipment: {
-            itemConfigurations: itemConfigs
+            itemConfigurations: itemConfigs,
+            shippingRule: shippingCalc.appliedRule,
+            shippingWeightGrams: shippingCalc.totalWeightGrams,
+            shippingWeightDisplay: shippingCalc.formattedWeight,
           },
           items: { create: parsedItems },
           statusHistory: { 
