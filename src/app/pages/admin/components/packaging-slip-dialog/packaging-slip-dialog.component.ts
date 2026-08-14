@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { PackagingSlipService } from '../../../../services/packaging-slip.service';
+import { LOGO_DATA_URL } from '../../../../shared/constants/logo.constant';
 
 export interface SlipLineItem {
   qty: number;
@@ -386,7 +387,7 @@ export interface SlipLineItem {
                     </h1>
                   </div>
                   <div class="flex items-center justify-end">
-                    <img src="/3d-logo.png" alt="3D Galaxy Logo" class="h-10 w-auto object-contain" />
+                    <img [src]="logoUrl" alt="3D Galaxy Logo" class="h-10 w-auto object-contain" />
                   </div>
                 </div>
 
@@ -555,6 +556,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) order: any;
   @Output() cancel = new EventEmitter<void>();
 
+  logoUrl = LOGO_DATA_URL;
   private packagingSlipService = inject(PackagingSlipService);
 
   // Form State Signals

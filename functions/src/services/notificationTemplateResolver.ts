@@ -1,4 +1,5 @@
 import { DeliveryEstimateService } from './deliveryEstimate.service';
+import { WhatsAppNotificationService } from './whatsappNotificationService';
 
 export interface ResolvedTemplateResult {
   shouldSend: boolean;

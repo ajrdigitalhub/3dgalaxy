@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { ToastService } from '../shared/components/toast/toast.service';
+import { LOGO_DATA_URL } from '../shared/constants/logo.constant';
 
 @Injectable({
   providedIn: 'root',
@@ -297,7 +298,7 @@ export class PackagingSlipService {
               </h1>
             </div>
             <div style="display: flex; align-items: center; justify-content: flex-end;">
-              <img src="/3d-logo.png" alt="3D Galaxy Logo" style="height: 40px; width: auto; object-fit: contain;" />
+              <img src="${LOGO_DATA_URL}" alt="3D Galaxy Logo" style="height: 40px; width: auto; object-fit: contain;" />
             </div>
           </div>
 

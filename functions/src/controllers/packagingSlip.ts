@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import prisma from '../config/database';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { LOGO_BUFFER } from '../utils/logo';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -200,31 +201,37 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     doc.fillColor('#000000').fontSize(24).font('Helvetica-Bold').text(easyId, startX, y);
 
     // Right: Logo
-    const logoX = startX + pageWidth - 140;
+    const logoHeight = 40;
+    const logoWidth = 40;
+    const logoX = startX + pageWidth - logoWidth;
     const logoCandidates = [
       path.resolve(__dirname, '../../../public/3d-logo.png'),
+      path.resolve(__dirname, '../../public/3d-logo.png'),
+      path.resolve(__dirname, '../public/3d-logo.png'),
+      path.resolve(__dirname, './public/3d-logo.png'),
+      path.resolve(__dirname, './3d-logo.png'),
+      path.resolve(process.cwd(), 'public/3d-logo.png'),
       path.resolve(process.cwd(), '../public/3d-logo.png'),
-      path.resolve(process.cwd(), 'public/3d-logo.png')
+      path.resolve(process.cwd(), '../../public/3d-logo.png'),
+      path.resolve(process.cwd(), 'dist/public/3d-logo.png')
     ];
     const logoPathToUse = logoCandidates.find(p => fs.existsSync(p));
+    const logoSource = logoPathToUse ? logoPathToUse : LOGO_BUFFER;
 
-    if (logoPathToUse) {
+    try {
+      doc.image(logoSource, logoX, y - 5, { width: logoWidth, height: logoHeight });
+    } catch (e) {
       try {
-        doc.image(logoPathToUse, logoX, y - 5, { height: 40 });
-      } catch (e) {
+        doc.image(LOGO_BUFFER, logoX, y - 5, { width: logoWidth, height: logoHeight });
+      } catch (err) {
         doc.save();
         doc.fillColor('#F59E0B');
-        doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
+        doc.polygon([logoX + 20, y], [logoX + 40, y + 10], [logoX + 40, y + 30], [logoX + 20, y + 40], [logoX, y + 30], [logoX, y + 10]);
         doc.fill();
         doc.restore();
       }
-    } else {
-      doc.save();
-      doc.fillColor('#F59E0B');
-      doc.polygon([logoX + 25, y], [logoX + 45, y + 10], [logoX + 45, y + 30], [logoX + 25, y + 40], [logoX + 5, y + 30], [logoX + 5, y + 10]);
-      doc.fill();
-      doc.restore();
     }
+
 
     y += 55;
 

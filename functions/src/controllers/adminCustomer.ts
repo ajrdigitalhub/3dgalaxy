@@ -70,7 +70,7 @@ export const getCustomers = async (req: Request, res: Response) => {
     }
 
     // Execute queries in parallel
-    const [total, list] = await Promise.all([
+    const [total, list, totalActive, totalBlocked, totalDirectorySpendAgg] = await Promise.all([
       prisma.customer.count({ where }),
       prisma.customer.findMany({
         where,
@@ -87,11 +87,22 @@ export const getCustomers = async (req: Request, res: Response) => {
         skip,
         take: limit,
       }),
+      prisma.customer.count({ where: { ...where, user: { ...where.user, isActive: true } } }),
+      prisma.customer.count({ where: { ...where, user: { ...where.user, isActive: false } } }),
+      prisma.order.aggregate({
+        _sum: {
+          totalAmount: true
+        }
+      })
     ]);
+
+    let repeatBuyersCount = 0;
 
     // Map list for client response
     const data = list.map((c) => {
       const ordersCount = c.orders.length;
+      if (ordersCount >= 2) repeatBuyersCount++;
+
       const spend = c.orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
       const lastOrder = c.orders.length > 0
         ? c.orders.reduce((max, o) => (o.createdAt > max ? o.createdAt : max), c.orders[0].createdAt)
@@ -113,9 +124,17 @@ export const getCustomers = async (req: Request, res: Response) => {
       };
     });
 
+    const totalDirectorySpend = Number(totalDirectorySpendAgg._sum.totalAmount || 0);
+
     return res.status(200).json({
       success: true,
       data,
+      stats: {
+        totalActive,
+        totalBlocked,
+        repeatBuyers: repeatBuyersCount,
+        totalDirectorySpend,
+      },
       meta: {
         total,
         page,

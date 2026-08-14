@@ -1262,11 +1262,14 @@ export class AdminCustomersTab implements OnInit {
   sortField = signal<string>('createdAt');
   sortOrder = signal<'asc' | 'desc'>('desc');
   selectedCustomerIds = signal<Set<string>>(new Set());
+  directoryStats = signal<any | null>(null);
 
   // Metrics
-  activeCount = computed(() => this.customers().filter(c => c.status === 'Active').length);
-  blockedCount = computed(() => this.customers().filter(c => c.status === 'Blocked').length);
-  repeatBuyersCount = computed(() => this.customers().filter(c => c.totalOrders >= 2).length);
+  activeCount = computed(() => this.directoryStats()?.totalActive ?? this.customers().filter(c => c.status === 'Active').length);
+  blockedCount = computed(() => this.directoryStats()?.totalBlocked ?? this.customers().filter(c => c.status === 'Blocked').length);
+  repeatBuyersCount = computed(() => this.directoryStats()?.repeatBuyers ?? this.customers().filter(c => c.totalOrders >= 2).length);
+  totalDirectorySpend = computed(() => this.directoryStats()?.totalDirectorySpend ?? this.customers().reduce((sum, c) => sum + (c.totalSpend || 0), 0));
+
 
   // Detail signals
   activeCustomer = signal<CustomerDetailProfile | null>(null);
@@ -1374,6 +1377,9 @@ export class AdminCustomersTab implements OnInit {
           this.customers.set(res.data);
           this.totalCustomers.set(res.meta?.total || res.data.length);
           this.totalPages.set(res.meta?.totalPages || 1);
+          if (res.stats) {
+            this.directoryStats.set(res.stats);
+          }
         } else {
           this.customers.set([]);
           this.totalCustomers.set(0);

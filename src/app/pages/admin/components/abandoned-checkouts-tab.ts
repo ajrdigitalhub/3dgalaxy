@@ -34,6 +34,7 @@ interface AbandonedCheckout {
   device: string | null;
   createdAt: string;
   updatedAt: string;
+  lastActivity?: string;
   cartItems?: any[];
   activityLogs?: ActivityLog[];
   recoveryNotifications?: RecoveryNotification[];
@@ -259,7 +260,7 @@ interface AbandonedCheckout {
                   </td>
 
                   <td class="py-4 px-6 text-zinc-400 font-mono text-[10px]">
-                    {{ c.createdAt | date:'medium' }}
+                    {{ formatDate(c.createdAt || c.lastActivity, 'full') }}
                   </td>
 
                   <td class="py-4 px-6">
@@ -385,7 +386,7 @@ interface AbandonedCheckout {
                       <div class="absolute -left-[26px] top-0.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white dark:border-zinc-950"></div>
                       
                       <div class="text-xs">
-                        <span class="text-[9px] font-mono text-zinc-400 block mb-0.5">{{ log.createdAt | date:'mediumTime' }} &middot; {{ log.createdAt | date:'mediumDate' }}</span>
+                        <span class="text-[9px] font-mono text-zinc-400 block mb-0.5">{{ formatDate(log.createdAt, 'full') }}</span>
                         <p class="font-black text-zinc-900 dark:text-white uppercase tracking-wide">{{ log.activity }}</p>
                         @if (log.details) {
                           <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed bg-zinc-50 dark:bg-zinc-900/50 p-2 rounded-lg border dark:border-zinc-800/80">{{ log.details }}</p>
@@ -420,7 +421,7 @@ interface AbandonedCheckout {
                     @for (note of drawerCheckoutDetails()?.recoveryNotifications || []; track note.id) {
                       <div class="flex justify-between items-center text-[10px] bg-white dark:bg-zinc-950 border dark:border-zinc-800 p-2 rounded-xl">
                         <span class="font-bold text-zinc-650 dark:text-zinc-350 uppercase">Channel: {{ note.channel }}</span>
-                        <span class="font-mono text-zinc-400">{{ note.sentAt | date:'short' }}</span>
+                        <span class="font-mono text-zinc-400">{{ formatDate(note.sentAt, 'short') }}</span>
                         <span class="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded font-black text-[8px] uppercase">{{ note.status }}</span>
                       </div>
                     } @empty {
@@ -659,4 +660,31 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
     document.body.removeChild(link);
     this.toast.success('Log Report CSV successfully downloaded!');
   }
+
+  formatDate(dateVal: any, format: 'full' | 'time' | 'short' = 'full'): string {
+    if (!dateVal) return 'N/A';
+    try {
+      let dStr = String(dateVal).trim();
+      if (!dStr) return 'N/A';
+      if (!dStr.includes('T') && dStr.includes(' ')) {
+        dStr = dStr.replace(' ', 'T');
+      }
+      if (dStr.includes('T') && !dStr.endsWith('Z') && !dStr.includes('+') && !dStr.slice(10).includes('-')) {
+        dStr += 'Z';
+      }
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) return String(dateVal);
+
+      if (format === 'time') {
+        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      } else if (format === 'short') {
+        return d.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+      } else {
+        return d.toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+      }
+    } catch {
+      return String(dateVal);
+    }
+  }
 }
+

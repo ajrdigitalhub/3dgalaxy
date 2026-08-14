@@ -228,6 +228,7 @@ app.use("/api", adminNotificationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);
+app.use("/api/admin/services", serviceEnquiryRoutes);
 app.use("/api/admin/fcm", adminFcmRoutes);
 app.use("/api/notifications/admin", adminFcmRoutes);
 app.use("/api", logRoutes);

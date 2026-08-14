@@ -19,14 +19,116 @@ export class DashboardComponent {
   selectedTimeRange = signal<string>('all_time');
   isSyncing = signal<boolean>(false);
 
+  // Interactive Chart Signals
+  chartViewMode = signal<'revenue' | 'channels' | 'orders'>('revenue');
+  chartVisualType = signal<'bar' | 'area'>('bar');
+  selectedMonthIndex = signal<number | null>(5); // Default selected to latest month (Jun)
+  hoveredMonthIndex = signal<number | null>(null);
+
   monthlySalesChart = [
-    { month: 'Jan', val: 120000, height: 40 },
-    { month: 'Feb', val: 185000, height: 60 },
-    { month: 'Mar', val: 240000, height: 80 },
-    { month: 'Apr', val: 195000, height: 65 },
-    { month: 'May', val: 320000, height: 110 },
-    { month: 'Jun', val: 410000, height: 140 }
+    { month: 'Jan', fullMonth: 'January 2026', onlineVal: 82000, offlineVal: 38000, val: 120000, ordersCount: 54, avgOrderValue: 2222, growthRate: 8.5, topCategory: 'FDM 3D Printers', statusTag: 'Baseline' },
+    { month: 'Feb', fullMonth: 'February 2026', onlineVal: 125000, offlineVal: 60000, val: 185000, ordersCount: 78, avgOrderValue: 2371, growthRate: 54.1, topCategory: 'Resin & Filaments', statusTag: 'Ramping' },
+    { month: 'Mar', fullMonth: 'March 2026', onlineVal: 160000, offlineVal: 80000, val: 240000, ordersCount: 96, avgOrderValue: 2500, growthRate: 29.7, topCategory: 'Industrial ABS Material', statusTag: 'High Velocity' },
+    { month: 'Apr', fullMonth: 'April 2026', onlineVal: 130000, offlineVal: 65000, val: 195000, ordersCount: 82, avgOrderValue: 2378, growthRate: -18.75, topCategory: '3D Scanners', statusTag: 'Stabilized' },
+    { month: 'May', fullMonth: 'May 2026', onlineVal: 215000, offlineVal: 105000, val: 320000, ordersCount: 135, avgOrderValue: 2370, growthRate: 64.1, topCategory: 'Apex High-Precision Resin', statusTag: 'Expansion' },
+    { month: 'Jun', fullMonth: 'June 2026', onlineVal: 275000, offlineVal: 135000, val: 410000, ordersCount: 184, avgOrderValue: 2228, growthRate: 28.12, topCategory: 'Brahma-3 Industrial FDM', statusTag: 'Peak Record' }
   ];
+
+  // Chart Y-Axis ceiling limit (₹450K)
+  chartMaxVal = 450000;
+  chartMaxOrders = 200;
+
+  // Computed Chart Statistics
+  chartTotalRevenue = computed(() => this.monthlySalesChart.reduce((acc, m) => acc + m.val, 0));
+  chartTotalOnline = computed(() => this.monthlySalesChart.reduce((acc, m) => acc + m.onlineVal, 0));
+  chartTotalOffline = computed(() => this.monthlySalesChart.reduce((acc, m) => acc + m.offlineVal, 0));
+  chartTotalOrders = computed(() => this.monthlySalesChart.reduce((acc, m) => acc + m.ordersCount, 0));
+  
+  chartAvgMonthly = computed(() => Math.round(this.chartTotalRevenue() / this.monthlySalesChart.length));
+  
+  chartOnlineRatio = computed(() => Math.round((this.chartTotalOnline() / this.chartTotalRevenue()) * 100));
+  chartOfflineRatio = computed(() => 100 - this.chartOnlineRatio());
+
+  chartPeakMonth = computed(() => {
+    return [...this.monthlySalesChart].sort((a, b) => b.val - a.val)[0];
+  });
+
+  selectedMonthData = computed(() => {
+    const idx = this.selectedMonthIndex();
+    if (idx === null || idx < 0 || idx >= this.monthlySalesChart.length) return null;
+    return this.monthlySalesChart[idx];
+  });
+
+  // SVG Area Curve coordinate generator (viewBox 0 0 600 180)
+  svgPoints = computed(() => {
+    const data = this.monthlySalesChart;
+    const mode = this.chartViewMode();
+    const width = 600;
+    const height = 180;
+    const paddingX = 40;
+    const availableWidth = width - (paddingX * 2);
+    const step = availableWidth / (data.length - 1);
+
+    return data.map((d, i) => {
+      const x = paddingX + i * step;
+      let rawVal = d.val;
+      let maxVal = this.chartMaxVal;
+
+      if (mode === 'channels') {
+        rawVal = d.onlineVal;
+      } else if (mode === 'orders') {
+        rawVal = d.ordersCount;
+        maxVal = this.chartMaxMaxOrders || 200;
+      }
+
+      // Invert Y for SVG coordinates (top 15px to bottom 165px)
+      const y = (height - 20) - (rawVal / maxVal) * (height - 40);
+      return { x, y, data: d, index: i };
+    });
+  });
+
+  chartMaxMaxOrders = 200;
+
+  svgLinePath = computed(() => {
+    const pts = this.svgPoints();
+    if (pts.length === 0) return '';
+    
+    // Cubic bezier curve path construction
+    let path = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const current = pts[i];
+      const next = pts[i + 1];
+      const controlX = (current.x + next.x) / 2;
+      path += ` C ${controlX},${current.y} ${controlX},${next.y} ${next.x},${next.y}`;
+    }
+    return path;
+  });
+
+  svgAreaPath = computed(() => {
+    const linePath = this.svgLinePath();
+    if (!linePath) return '';
+    const pts = this.svgPoints();
+    const lastPt = pts[pts.length - 1];
+    const firstPt = pts[0];
+    const bottomY = 165;
+    return `${linePath} L ${lastPt.x},${bottomY} L ${firstPt.x},${bottomY} Z`;
+  });
+
+  selectMonth(idx: number) {
+    if (this.selectedMonthIndex() === idx) {
+      this.selectedMonthIndex.set(null); // Toggle off if already selected
+    } else {
+      this.selectedMonthIndex.set(idx);
+    }
+  }
+
+  setChartViewMode(mode: 'revenue' | 'channels' | 'orders') {
+    this.chartViewMode.set(mode);
+  }
+
+  setChartVisualType(type: 'bar' | 'area') {
+    this.chartVisualType.set(type);
+  }
 
   printerTelemetry = [
     { id: 'P01', model: 'Bambu Lab A1 Mini', material: 'PLA Crimson Red', nozzleTemp: 220, bedTemp: 60, progress: 42, status: 'Printing' },
