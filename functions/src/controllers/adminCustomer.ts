@@ -100,22 +100,30 @@ export const getCustomers = async (req: Request, res: Response) => {
 
     // Map list for client response
     const data = list.map((c) => {
+      const validOrders = c.orders.filter((o: any) => {
+        const s = (o.status || '').toUpperCase();
+        return s !== 'CANCELLED' && s !== 'REJECTED' && s !== 'FAILED';
+      });
+
       const ordersCount = c.orders.length;
       if (ordersCount >= 2) repeatBuyersCount++;
 
-      const spend = c.orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
+      const spend = validOrders.reduce((sum: number, o: any) => sum + Number(o.totalAmount || 0), 0);
       const lastOrder = c.orders.length > 0
-        ? c.orders.reduce((max, o) => (o.createdAt > max ? o.createdAt : max), c.orders[0].createdAt)
+        ? c.orders.reduce((max: Date, o: any) => (o.createdAt > max ? o.createdAt : max), c.orders[0].createdAt)
         : null;
+
+      const rawName = c.user ? `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() : '';
+      const name = rawName || (c.user?.email ? c.user.email.split('@')[0] : 'Customer');
 
       return {
         id: c.id,
         userId: c.userId,
-        name: c.user ? `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() : 'Customer',
+        name: name.toUpperCase(),
         email: c.user?.email || '',
-        phone: c.phone || '',
-        customerType: c.customerType,
-        registrationDate: c.createdAt,
+        phone: c.phone || c.user?.mobile || '',
+        customerType: c.customerType || 'retail',
+        registrationDate: c.createdAt || c.user?.createdAt || new Date(),
         totalOrders: ordersCount,
         totalSpend: spend,
         lastOrderDate: lastOrder,

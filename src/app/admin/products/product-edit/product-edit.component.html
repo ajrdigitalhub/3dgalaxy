@@ -1,44 +1,101 @@
-<div class="space-y-8 animate-fadeIn">
+<div class="space-y-8 animate-fadeIn max-w-7xl mx-auto pb-12">
+  <!-- Header -->
   <app-admin-page-header 
-    [title]="'Edit SKU: ' + pName()"
-    description="Modify and configure manufacturer alliances, dealers pricing, and technical parameters."
+    [title]="'Edit Product: ' + (pName() || 'SKU Asset')"
+    description="Manage SKU parameters, category mappings, inventory levels, variant pricing, and live customer previews."
   >
-    <button (click)="back()" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase rounded-xl transition-colors cursor-pointer border-none shadow-xs">
-      Back to Registry
-    </button>
+    <div class="flex items-center gap-3">
+      <button (click)="back()" type="button" class="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-xs font-bold rounded-xl transition-all cursor-pointer border-none flex items-center gap-1.5">
+        <mat-icon class="scale-75">arrow_back</mat-icon> Back to Catalog
+      </button>
+      <button (click)="saveProduct()" data-tour="variant-save" type="button" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-md flex items-center gap-1.5">
+        <mat-icon class="scale-75">save</mat-icon> Save Changes
+      </button>
+    </div>
   </app-admin-page-header>
 
+  <!-- Main Card -->
   <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-xs">
-    <div class="p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex justify-between items-center">
-      <h3 class="text-xs font-black uppercase text-zinc-900 dark:text-white">Configure Catalog SKU: {{ pSku() }}</h3>
-      <div class="flex gap-2">
-        <button (click)="back()" class="px-3 py-1.5 text-[10px] font-black uppercase text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 cursor-pointer font-sans border-none bg-transparent">Cancel</button>
-        <button (click)="saveProduct()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none shadow-xs">Save Asset</button>
+    <!-- Top Action Bar -->
+    <div class="p-5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 flex justify-between items-center flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+          <mat-icon>edit_note</mat-icon>
+        </div>
+        <div>
+          <h3 class="text-sm font-black uppercase tracking-wide text-zinc-900 dark:text-white flex items-center gap-2">
+            Configure Asset: <span class="font-mono text-blue-600 dark:text-blue-400">{{ pSku() || 'NO-SKU' }}</span>
+          </h3>
+          <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Update master settings, attributes, and variant configurations below.</p>
+        </div>
+      </div>
+      <div class="flex gap-2.5">
+        <button (click)="back()" type="button" class="px-3.5 py-2 text-xs font-bold text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer border-none bg-transparent">Cancel</button>
+        <button (click)="saveProduct()" data-tour="variant-save" type="button" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none shadow-sm flex items-center gap-1.5 transition-all">
+          <mat-icon class="scale-75">check_circle</mat-icon> Save Product
+        </button>
       </div>
     </div>
 
+    <!-- Form Content -->
     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-      <!-- Basic Group -->
+
+      <!-- Section: Core Details -->
       <div class="space-y-1">
-        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
-        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
-      </div>
-      <div class="space-y-1">
-        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
-        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. GLX-PLA-BLU" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+        <div class="flex items-center gap-1.5 mb-1">
+          <span class="block text-[11px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Product Title *</span>
+          <div class="group relative flex items-center cursor-help">
+            <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+            <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+              Main product name displayed in store catalog, search results, and checkout invoices.
+            </div>
+          </div>
+        </div>
+        <input type="text" [value]="pName()" (input)="pName.set($any($event.target).value)" placeholder="e.g. Bambu Lab P1S 3D Printer" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
       </div>
 
-      <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
+      <div class="space-y-1">
+        <div class="flex items-center gap-1.5 mb-1">
+          <span class="block text-[11px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Master SKU Barcode *</span>
+          <div class="group relative flex items-center cursor-help">
+            <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+            <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+              Unique Stock Keeping Unit barcode code used for inventory management and order fulfillment.
+            </div>
+          </div>
+        </div>
+        <input type="text" [value]="pSku()" (input)="pSku.set($any($event.target).value)" placeholder="e.g. BL-P1S-3D-PRT" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono uppercase font-black outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+      </div>
+
+      <!-- Categories & Brand -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 col-span-1 md:col-span-2">
         <div class="space-y-1 col-span-1 md:col-span-2">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Categories Architecture (Multi-Category Assignment & Primary Tag) *</span>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="block text-[11px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Categories Architecture (Multi-Category Tagging) *</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                Select all applicable categories for storefront navigation filters. Assign one Primary category for breadcrumbs.
+              </div>
+            </div>
+          </div>
           <app-category-multi-select
             [categories]="categoryService.categories()"
             [selectedCategoryIds]="pCategoryIds()"
             [primaryCategoryId]="pCatId()"
             (selectionChange)="onCategorySelectionChange($event)" />
         </div>
+
         <div class="space-y-1 col-span-1 md:col-span-2">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer alliance</span>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="block text-[11px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Brand / Manufacturer *</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                Associates product with brand pages, manufacturer warranty badges, and brand filter lists.
+              </div>
+            </div>
+          </div>
           <select [value]="pBrand()" (change)="pBrand.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
             <option value="">Select Brand...</option>
             @for (br of brandService.brands(); track br.id) {
@@ -48,139 +105,449 @@
         </div>
       </div>
 
-      <!-- Prices -->
-      <div class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+      <!-- Pricing Tier Group -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 col-span-1 md:col-span-2 p-4 bg-zinc-50 dark:bg-zinc-950/60 rounded-xl border border-zinc-200 dark:border-zinc-800/80">
         <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
-          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Base MRP (₹)</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-52 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                Strikethrough reference retail price.
+              </div>
+            </div>
+          </div>
+          <input type="number" [value]="pMrp()" (input)="pMrp.set(+$any($event.target).value)" class="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
-          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-600 dark:text-blue-400 font-bold outline-none focus:border-blue-500 transition-colors">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Retail Sale (₹)</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-52 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                Actual price charged to standard customer orders.
+              </div>
+            </div>
+          </div>
+          <input type="number" [value]="pSale()" (input)="pSale.set(+$any($event.target).value)" class="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-blue-600 dark:text-blue-400 font-bold outline-none focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
-          <input type="number" [value]="pDealer()" (input)="pDealer.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold outline-none focus:border-emerald-500 transition-colors">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Dealer Pricing (₹)</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-52 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                Exclusive wholesale rate for verified dealer accounts.
+              </div>
+            </div>
+          </div>
+          <input type="number" [value]="pDealer()" (input)="pDealer.set(+$any($event.target).value)" class="w-full px-3.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold outline-none focus:border-emerald-500 transition-colors">
         </div>
       </div>
 
-      <!-- Stock, Status -->
-      <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white">
+      <!-- Stock & Status Policy -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 col-span-1 md:col-span-2">
         <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
+          <div class="flex items-center gap-1 mb-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Master Stock Inventory</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                Total stock quantity if product has no variant breakdown.
+              </div>
+            </div>
+          </div>
           <input type="number" [value]="pStock()" (input)="pStock.set(+$any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-black outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
-          <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
+          <div class="flex items-center gap-1 mb-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Visibility Status</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                Controls whether product is visible to public website visitors.
+              </div>
+            </div>
+          </div>
           <select [value]="pStatus()" (change)="pStatus.set($any($event.target).value)" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
-            <option value="active">Active Storefront</option>
-            <option value="draft">Draft (Admin Only)</option>
-            <option value="out_of_stock">Out of Stock</option>
+            <option value="active">Active Storefront (Public)</option>
+            <option value="draft">Draft (Admin Hidden)</option>
+            <option value="out_of_stock">Out of Stock Badge</option>
           </select>
         </div>
       </div>
 
-      <!-- Image List Block -->
+      <!-- Media Image Links -->
       <div class="space-y-1 md:col-span-2">
-        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Media Images (One Absolute URL link per line)</span>
-        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://store.bambulab.com/image1.png&#15;https://store.bambulab.com/image2.png" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
-      </div>
-
-      <!-- Specifications & Full Rich Description -->
-      <div class="space-y-1">
-        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Quick Bullet Highlight Specs</span>
-        <textarea rows="4" [value]="pDesc()" (input)="pDesc.set($any($event.target).value)" placeholder="Enter technical bullet highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
-      </div>
-      <div class="space-y-1">
-        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Long description / Overview page</span>
-        <textarea rows="4" [value]="pLongDesc()" (input)="pLongDesc.set($any($event.target).value)" placeholder="Enter detailed comprehensive description paragraph..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
-      </div>
-
-      <!-- Options Configurator -->
-      <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
-        <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-3">
-          <div>
-            <h4 class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Product Options Builder</h4>
-            <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Define variant options like Color, Size, Style, or Material.</p>
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-1">
+            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">Media Image Gallery URLs (One absolute HTTP URL link per line)</span>
+            <div class="group relative flex items-center cursor-help">
+              <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+              <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none">
+                First URL will be set as the Primary Product Image on storefront cards.
+              </div>
+            </div>
           </div>
-          <button type="button" (click)="addOption()" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1.5 transition-colors">
-            <mat-icon class="scale-75">add</mat-icon> Add Option
-          </button>
+        </div>
+        <textarea rows="3" [value]="pImages()" (input)="pImages.set($any($event.target).value)" placeholder="https://domain.com/image1.jpg&#15;https://domain.com/image2.jpg" class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
+      </div>
+
+      <!-- Specs & Overview Description -->
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Technical Highlight Bullets</span>
+        <textarea rows="3" [value]="pDesc()" (input)="pDesc.set($any($event.target).value)" placeholder="Enter technical specifications & highlights..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
+      </div>
+      <div class="space-y-1">
+        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Full Long Description Paragraphs</span>
+        <textarea rows="3" [value]="pLongDesc()" (input)="pLongDesc.set($any($event.target).value)" placeholder="Enter comprehensive product overview..." class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors"></textarea>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- SECTION: VARIANTS & OPTIONS CONFIGURATOR  -->
+      <!-- ========================================== -->
+      <div class="space-y-5 md:col-span-2 p-6 bg-gradient-to-b from-zinc-50 to-zinc-100/50 dark:from-zinc-950 dark:to-zinc-900/60 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-4 flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-blue-600/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <mat-icon>tune</mat-icon>
+            </div>
+            <div>
+              <h4 class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider flex items-center gap-2">
+                Variant Options Builder
+                <span class="px-2 py-0.5 rounded-full text-[9px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold">
+                  {{ adminOptions().length }} Options Defined
+                </span>
+              </h4>
+              <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Define customer choice attributes like Color, Size, Filament Type, or Bundle Tier.</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" (click)="addOption()" class="px-3.5 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-[11px] font-black uppercase cursor-pointer border-none flex items-center gap-1.5 transition-colors">
+              <mat-icon class="scale-75">add</mat-icon> Add Option Dimension
+            </button>
+            <button type="button" (click)="addCustomVariant()" class="px-3.5 py-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-[11px] font-black uppercase cursor-pointer border border-emerald-500/30 flex items-center gap-1.5 transition-colors">
+              <mat-icon class="scale-75">post_add</mat-icon> Add Single Variant
+            </button>
+          </div>
         </div>
 
         @if (adminOptions().length > 0) {
           <div class="space-y-4">
             @for (opt of adminOptions(); track $index; let idx = $index) {
-              <div class="flex gap-4 items-end">
-                <div class="flex-1 max-w-[200px] space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Option Name</span>
-                  <input type="text" [(ngModel)]="opt.name" placeholder="e.g. Color" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+              <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+                <div class="w-full sm:w-64 space-y-1">
+                  <div class="flex items-center gap-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Option Name</span>
+                    <div class="group relative flex items-center cursor-help">
+                      <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                      <div class="absolute left-0 bottom-full mb-1 hidden group-hover:block w-48 p-2 bg-zinc-900 text-white text-[9px] rounded shadow-xl z-50 pointer-events-none">
+                        Option title shown on storefront (e.g. Color, Size, Voltage).
+                      </div>
+                    </div>
+                  </div>
+                  <input type="text" [(ngModel)]="opt.name" placeholder="e.g. Color" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
                 </div>
-                <div class="flex-1 space-y-1">
-                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Option Values (Comma separated)</span>
-                  <input type="text" [(ngModel)]="opt.valuesString" placeholder="e.g. Red, Blue, Green" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+
+                <div class="flex-1 w-full space-y-1">
+                  <div class="flex items-center gap-1">
+                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Values (Comma Separated)</span>
+                    <div class="group relative flex items-center cursor-help">
+                      <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                      <div class="absolute left-0 bottom-full mb-1 hidden group-hover:block w-64 p-2 bg-zinc-900 text-white text-[9px] rounded shadow-xl z-50 pointer-events-none">
+                        Available options separated by commas (e.g. Matte Black, Arctic White, Ruby Red).
+                      </div>
+                    </div>
+                  </div>
+                  <input type="text" [(ngModel)]="opt.valuesString" placeholder="e.g. Black, White, Silver" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
                 </div>
-                <button type="button" (click)="removeOption(idx)" class="px-2.5 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg cursor-pointer border-none flex items-center justify-center h-[34px] transition-colors">
+
+                <button type="button" (click)="removeOption(idx)" title="Remove Option" class="self-end sm:self-center px-3 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg cursor-pointer border-none flex items-center justify-center transition-colors">
                   <mat-icon class="scale-75">delete</mat-icon>
                 </button>
               </div>
             }
 
             <div class="pt-2 flex justify-end">
-              <button type="button" (click)="generateVariants()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-2 shadow-xs transition-colors">
-                <mat-icon class="scale-75">loop</mat-icon> Generate Combinations
+              <button type="button" (click)="generateVariants()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-2 shadow-md transition-all">
+                <mat-icon class="scale-75">auto_awesome</mat-icon> Generate Combination Matrix
               </button>
             </div>
           </div>
         } @else {
-          <div class="py-6 text-center border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl">
-            <p class="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">No options defined yet. Click "Add Option" to get started.</p>
+          <div class="py-8 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-white/50 dark:bg-zinc-900/50">
+            <p class="text-xs font-bold text-zinc-500 dark:text-zinc-400">No option dimensions configured yet.</p>
+            <p class="text-[11px] text-zinc-400 mt-1">Click "Add Option Dimension" above to create Color, Size, or Style variations.</p>
           </div>
         }
       </div>
 
-      <!-- Generated Variants Table -->
+      <!-- ========================================== -->
+      <!-- SECTION: STOREFRONT LIVE CUSTOMER PREVIEW  -->
+      <!-- ========================================== -->
       @if (adminVariants().length > 0) {
-        <div class="space-y-4 md:col-span-2 p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-zinc-800">
-            <div>
-              <h4 class="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">Configure Generated Variants ({{ adminVariants().length }})</h4>
-              <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Configure SKU, prices, stock, and images for each unique variant.</p>
+        <div class="space-y-4 md:col-span-2 p-6 bg-gradient-to-br from-blue-900/10 via-zinc-900/5 to-purple-900/10 dark:from-blue-950/40 dark:to-zinc-900/80 rounded-2xl border border-blue-500/20 dark:border-blue-500/30 shadow-md">
+          <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+                <mat-icon class="scale-75">preview</mat-icon>
+              </div>
+              <div>
+                <h4 class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Live Storefront Customer Variant Switcher Preview</h4>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Verify live customer selection experience, pricing changes, and stock badges before saving.</p>
+              </div>
             </div>
+            <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-full border border-emerald-500/20">
+              Interactive Simulation
+            </span>
+          </div>
+
+          @let currentPreview = getMatchedPreviewVariant();
+          <div class="space-y-4 bg-white dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <!-- Direct Variant Selector Dropdown -->
+            <div class="flex items-center gap-2 p-2.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200/50 dark:border-blue-800/30 flex-wrap">
+              <label class="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <mat-icon class="scale-75">touch_app</mat-icon> Direct Variant Select Dropdown:
+              </label>
+              <select 
+                [value]="currentPreview?.id || currentPreview?.sku || ''"
+                (change)="selectPreviewVariantById($any($event.target).value)"
+                class="flex-1 min-w-[200px] px-3 py-1.5 bg-white dark:bg-zinc-950 border border-blue-300 dark:border-blue-700 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer">
+                @for (v of adminVariants(); track v.id || v.sku || $index) {
+                  <option [value]="v.id || v.sku">
+                    {{ v.name || ('Variant ' + ($index + 1)) }} (SKU: {{ v.sku || 'N/A' }}) - ₹{{ v.salePrice || v.price }} {{ v.stock <= 0 ? '[OUT OF STOCK]' : '[In Stock: ' + v.stock + ']' }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              <!-- Thumbnail Image Preview -->
+              <div class="col-span-1 flex flex-col items-center justify-center p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <div class="w-36 h-36 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center relative">
+                  @if (getFirstVariantImageUrl(currentPreview)) {
+                    <img [src]="getFirstVariantImageUrl(currentPreview)" alt="Variant Thumbnail" class="w-full h-full object-contain">
+                  } @else {
+                    <div class="text-center p-2">
+                      <mat-icon class="text-zinc-400 scale-125">image</mat-icon>
+                      <span class="block text-[9px] text-zinc-400 font-mono mt-1">No Image URL</span>
+                    </div>
+                  }
+                  @if (currentPreview?.isDefault) {
+                    <span class="absolute top-1 left-1 px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase rounded">Default</span>
+                  }
+                </div>
+                <span class="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 mt-2 truncate max-w-[180px]">
+                  SKU: {{ currentPreview?.sku || pSku() }}
+                </span>
+              </div>
+
+              <!-- Customer Pickers & Pricing -->
+              <div class="col-span-1 md:col-span-2 space-y-4">
+                <div>
+                  <h5 class="text-sm font-black text-zinc-900 dark:text-white">{{ pName() || 'Product Name' }}</h5>
+                  <div class="flex items-center gap-3 mt-1 flex-wrap">
+                    <span class="text-lg font-black font-mono text-blue-600 dark:text-blue-400">
+                      ₹{{ currentPreview?.salePrice || currentPreview?.price || pSale() || pMrp() }}
+                    </span>
+                    @if (currentPreview?.price && currentPreview?.salePrice && currentPreview?.price > currentPreview?.salePrice) {
+                      <span class="text-xs font-mono line-through text-zinc-400">
+                        ₹{{ currentPreview?.price }}
+                      </span>
+                      <span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-bold rounded">
+                        SAVE ₹{{ currentPreview.price - currentPreview.salePrice }}
+                      </span>
+                    }
+
+                    <!-- Stock Status Badge -->
+                    @if (currentPreview?.isActive === false) {
+                      <span class="px-2.5 py-0.5 bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 text-[10px] font-black uppercase rounded-md">
+                        Disabled / Draft
+                      </span>
+                    } @else if ((currentPreview?.stock || 0) > 0) {
+                      <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase rounded-md flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        In Stock ({{ currentPreview.stock }} available)
+                      </span>
+                    } @else {
+                      <span class="px-2.5 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black uppercase rounded-md">
+                        Out of Stock
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Interactive Option Buttons & Dropdowns -->
+                @if (adminOptions().length > 0) {
+                  <div class="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    @for (opt of adminOptions(); track opt.name || $index; let idx = $index) {
+                      @let optLabel = opt.name || ('Option #' + (idx + 1));
+                      @if (opt.valuesString) {
+                        <div class="space-y-1.5">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                              Select {{ optLabel }}: 
+                              <span class="text-zinc-900 dark:text-white font-bold">{{ selectedPreviewOptionValues()[optLabel] || selectedPreviewOptionValues()[opt.name] || 'None' }}</span>
+                            </span>
+                            <select
+                              [value]="selectedPreviewOptionValues()[optLabel] || selectedPreviewOptionValues()[opt.name] || ''"
+                              (change)="selectPreviewOption(optLabel, $any($event.target).value)"
+                              class="px-2.5 py-1 text-xs font-bold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-zinc-800 dark:text-zinc-200 focus:border-blue-500 cursor-pointer">
+                              <option value="">Choose {{ optLabel }}...</option>
+                              @for (val of opt.valuesString.split(','); track val) {
+                                @let cleanVal = val.trim();
+                                @if (cleanVal) {
+                                  <option [value]="cleanVal">{{ cleanVal }}</option>
+                                }
+                              }
+                            </select>
+                          </div>
+
+                          <div class="flex flex-wrap gap-2">
+                            @for (val of opt.valuesString.split(','); track val) {
+                              @let cleanVal = val.trim();
+                              @if (cleanVal) {
+                                <button 
+                                  type="button"
+                                  (click)="selectPreviewOption(optLabel, cleanVal)"
+                                  [class.bg-blue-600]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                  [class.text-white]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                  [class.border-blue-600]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                  [class.bg-zinc-100]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                  [class.dark:bg-zinc-800]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                  [class.text-zinc-800]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                  [class.dark:text-zinc-200]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                  class="px-3 py-1.5 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 cursor-pointer transition-all">
+                                  {{ cleanVal }}
+                                </button>
+                              }
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================== -->
+      <!-- SECTION: CONFIGURED VARIANTS LIST TABLE    -->
+      <!-- ========================================== -->
+      @if (adminVariants().length > 0) {
+        <div class="space-y-4 md:col-span-2 p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-3 flex-wrap gap-3">
+            <div>
+              <h4 class="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider flex items-center gap-2">
+                Configured Variants Matrix ({{ adminVariants().length }})
+                <span class="px-2 py-0.5 rounded-full text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20">
+                  Preloaded & Editable
+                </span>
+              </h4>
+              <p class="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Fine-tune individual SKU part codes, prices, stock levels, image galleries, and default selection.</p>
+            </div>
+            <button type="button" (click)="addCustomVariant()" class="px-3.5 py-1.5 bg-emerald-600 text-white hover:bg-emerald-500 rounded-xl text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-sm transition-colors">
+              <mat-icon class="scale-75">add</mat-icon> Add Variant Row
+            </button>
           </div>
 
           <div class="overflow-x-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 shadow-xs">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
-                <tr class="bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-[9px] font-black tracking-wider">
-                  <th class="py-3 px-4 font-black">Variant Name</th>
-                  <th class="py-3 px-4 font-black w-[150px]">SKU</th>
-                  <th class="py-3 px-4 font-black w-[100px]">MRP (₹)</th>
+                <tr class="bg-zinc-100/80 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase text-[9px] font-black tracking-wider">
+                  <th class="py-3 px-4 font-black">Status / Default</th>
+                  <th class="py-3 px-4 font-black">Variant Name & Attributes</th>
+                  <th class="py-3 px-4 font-black w-[150px]">Variant SKU</th>
+                  <th class="py-3 px-4 font-black w-[100px]" data-tour="variant-pricing">
+                    <span class="flex items-center gap-1">MRP (₹) <span class="cursor-help text-indigo-500 text-[9px]" title="Set a different price for this specific variant when required.">ⓘ</span></span>
+                  </th>
                   <th class="py-3 px-4 font-black w-[100px]">Sale (₹)</th>
-                  <th class="py-3 px-4 font-black w-[80px]">Stock</th>
-                  <th class="py-3 px-4 font-black">Images (URL per line)</th>
+                  <th class="py-3 px-4 font-black w-[80px]" data-tour="variant-stock">
+                    <span class="flex items-center gap-1">Stock <span class="cursor-help text-indigo-500 text-[9px]" title="Manage inventory independently for this variant.">ⓘ</span></span>
+                  </th>
+                  <th class="py-3 px-4 font-black" data-tour="variant-images">
+                    <span class="flex items-center gap-1">Image URLs <span class="cursor-help text-indigo-500 text-[9px]" title="Link an image to this variant so selecting the image can automatically select the variant.">ⓘ</span></span>
+                  </th>
+                  <th class="py-3 px-4 font-black text-center w-[80px]">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                @for (v of adminVariants(); track $index) {
-                  <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                    <td class="py-3 px-4 font-bold text-zinc-900 dark:text-white max-w-[200px] truncate">
-                      {{ v.name }}
+                @for (v of adminVariants(); track $index; let idx = $index) {
+                  <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors" [class.opacity-60]="v.isActive === false">
+                    <!-- Status / Default -->
+                    <td class="py-3 px-4 whitespace-nowrap">
+                      <div class="flex items-center gap-2">
+                        <button 
+                          type="button" 
+                          (click)="setDefaultVariant(idx)" 
+                          [title]="v.isDefault ? 'Default Variant' : 'Click to set as default variant'"
+                          class="p-1 rounded-lg border cursor-pointer transition-colors"
+                          [class.bg-blue-600]="v.isDefault"
+                          [class.text-white]="v.isDefault"
+                          [class.border-blue-600]="v.isDefault"
+                          [class.bg-zinc-100]="!v.isDefault"
+                          [class.dark:bg-zinc-800]="!v.isDefault"
+                          [class.text-zinc-400]="!v.isDefault"
+                          [class.border-zinc-300]="!v.isDefault"
+                          [class.dark:border-zinc-700]="!v.isDefault">
+                          <mat-icon class="scale-75">star</mat-icon>
+                        </button>
+                        <button 
+                          type="button" 
+                          (click)="toggleVariantStatus(idx)" 
+                          [title]="v.isActive !== false ? 'Active (Click to Disable)' : 'Inactive (Click to Enable)'"
+                          class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border cursor-pointer transition-colors"
+                          [class.bg-emerald-600]="v.isActive !== false"
+                          [class.text-white]="v.isActive !== false"
+                          [class.border-emerald-600]="v.isActive !== false"
+                          [class.bg-zinc-200]="v.isActive === false"
+                          [class.text-zinc-600]="v.isActive === false"
+                          [class.dark:bg-zinc-800]="v.isActive === false"
+                          [class.dark:text-zinc-400]="v.isActive === false"
+                          [class.border-zinc-300]="v.isActive === false">
+                          {{ v.isActive !== false ? 'Active' : 'Off' }}
+                        </button>
+                      </div>
                     </td>
+
+                    <!-- Variant Name -->
+                    <td class="py-3 px-4 font-bold text-zinc-900 dark:text-white max-w-[200px]">
+                      <input type="text" [(ngModel)]="v.name" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+                    </td>
+
+                    <!-- SKU -->
                     <td class="py-3 px-4">
                       <input type="text" [(ngModel)]="v.sku" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
+
+                    <!-- MRP -->
                     <td class="py-3 px-4">
                       <input type="number" [(ngModel)]="v.price" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
+
+                    <!-- Sale -->
                     <td class="py-3 px-4">
                       <input type="number" [(ngModel)]="v.salePrice" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
                     </td>
+
+                    <!-- Stock -->
                     <td class="py-3 px-4">
-                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors">
+                      <input type="number" [(ngModel)]="v.stock" class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono font-bold outline-none focus:border-emerald-500 transition-colors" [class.text-red-500]="(v.stock || 0) <= 0">
                     </td>
+
+                    <!-- Variant Images -->
                     <td class="py-3 px-4">
                       <textarea rows="1" [(ngModel)]="v.variantImages" placeholder="Image URLs..." class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[11px] font-mono outline-none text-zinc-900 dark:text-white focus:border-emerald-500 transition-colors resize-y"></textarea>
+                    </td>
+
+                    <!-- Delete Button -->
+                    <td class="py-3 px-4 text-center">
+                      <button type="button" (click)="removeVariant(idx)" title="Remove Variant" class="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg cursor-pointer border-none inline-flex items-center justify-center transition-colors">
+                        <mat-icon class="scale-75">delete</mat-icon>
+                      </button>
                     </td>
                   </tr>
                 }
@@ -190,20 +557,29 @@
         </div>
       }
 
-      <!-- Search Optimization Meta Data -->
+      <!-- Search & Meta Data -->
       <div class="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="col-span-1 md:col-span-2 pb-1 border-b border-zinc-200 dark:border-zinc-800">
-          <span class="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Storefront Meta SEO tags (Shopify standard)</span>
+        <div class="col-span-1 md:col-span-2 pb-1 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <span class="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Storefront Meta SEO Tags (Google Search Engine Optimization)</span>
+          <div class="group relative flex items-center cursor-help">
+            <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+            <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+              Controls titles and descriptions shown on Google search engine result pages.
+            </div>
+          </div>
         </div>
         <div class="space-y-1">
           <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Page Title</span>
-          <input type="text" [value]="pSeoTitle()" (input)="pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use title page name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
+          <input type="text" [value]="pSeoTitle()" (input)="pSeoTitle.set($any($event.target).value)" placeholder="Leave blank to use default product title" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
         <div class="space-y-1">
-          <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Description keywords</span>
+          <span class="block text-[9px] font-black text-zinc-400 uppercase">SEO Meta Description</span>
           <input type="text" [value]="pSeoDescription()" (input)="pSeoDescription.set($any($event.target).value)" placeholder="Describe target search terms..." class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none text-zinc-900 dark:text-white focus:border-blue-500 transition-colors">
         </div>
       </div>
     </div>
   </div>
+
+  <app-variant-tour-guide></app-variant-tour-guide>
 </div>
+

@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { AdminPanel } from '../admin';
 import { AdminFcmTokenCard } from './fcm-token-management-card';
+import { SalesAnalyticsComponent } from './sales-analytics/sales-analytics.component';
 
 @Component({
   selector: 'app-admin-dashboard-tab',
-  imports: [CommonModule, MatIconModule, AdminFcmTokenCard],
+  imports: [CommonModule, MatIconModule, AdminFcmTokenCard, SalesAnalyticsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6 animate-fadeIn pb-12 font-sans">
@@ -152,66 +153,8 @@ import { AdminFcmTokenCard } from './fcm-token-management-card';
         </div>
       </div>
 
-      <!-- CHART SECTION -->
-      <div class="w-full">
-        <!-- Commercial Sales Curve Chart -->
-        <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs relative flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 pb-4">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">Commercial Sales Curve (INR)</span>
-                <h4 class="text-sm font-black text-zinc-800 dark:text-zinc-300 mt-0.5">Monthly Revenue Yield</h4>
-              </div>
-              <div class="flex items-center gap-4 text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
-                <span class="flex items-center gap-1.5">
-                  <span class="h-2 w-2 rounded-full bg-blue-600"></span> Online
-                </span>
-                <span class="flex items-center gap-1.5">
-                  <span class="h-2 w-2 rounded-full bg-indigo-400"></span> Offline
-                </span>
-              </div>
-            </div>
-
-            <!-- Chart Graphic -->
-            <div class="relative h-56 pt-6 flex items-end justify-between font-sans">
-              
-              <!-- Background Grid lines -->
-              <div class="absolute inset-0 flex flex-col justify-between pointer-events-none py-1">
-                <div class="border-t border-dashed border-zinc-100 dark:border-zinc-800/40 w-full h-px"></div>
-                <div class="border-t border-dashed border-zinc-100 dark:border-zinc-800/40 w-full h-px"></div>
-                <div class="border-t border-dashed border-zinc-100 dark:border-zinc-800/40 w-full h-px"></div>
-                <div class="border-t border-dashed border-zinc-100 dark:border-zinc-800/40 w-full h-px"></div>
-                <div class="border-t border-zinc-100 dark:border-zinc-800/80 w-full h-px"></div>
-              </div>
-
-              <!-- Y-axis labels -->
-              <div class="absolute left-0 -top-2 flex flex-col justify-between h-56 text-[8px] font-mono font-bold text-zinc-400 select-none">
-                <span>₹400K</span>
-                <span>₹300K</span>
-                <span>₹200K</span>
-                <span>₹100K</span>
-                <span>₹0</span>
-              </div>
-
-              <!-- Chart Bars -->
-              <div class="w-full flex items-end pl-10 h-full relative z-10">
-                @for (data of admin.monthlySalesChart; track data.month) {
-                  <div class="flex-1 flex flex-col items-center gap-2.5 h-full justify-end">
-                    <div class="w-10 hover:w-11 bg-gradient-to-t from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 rounded-t-xl transition-all relative group cursor-pointer shadow-md shadow-blue-500/5 hover:shadow-indigo-500/20" [style.height.%]="(data.val / 420000) * 100">
-                      <!-- Custom Tooltip -->
-                      <div class="absolute -top-10 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 bg-zinc-950 dark:bg-zinc-800 border dark:border-zinc-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-lg transition-all shadow-xl z-20 pointer-events-none whitespace-nowrap">
-                        ₹{{ (data.val | number) }}
-                      </div>
-                    </div>
-                    <span class="text-[9px] font-mono font-bold text-zinc-400 dark:text-zinc-555 tracking-wide">{{ data.month }}</span>
-                  </div>
-                }
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- REAL-TIME SALES & PRODUCT ANALYTICS COMPONENT -->
+      <app-sales-analytics></app-sales-analytics>
       
       <!-- DYNAMIC DATA ACTIVITY ROW -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

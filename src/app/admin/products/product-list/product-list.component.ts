@@ -121,15 +121,10 @@ export class ProductListComponent {
     "Actions",
   ];
 
+  private searchDebounceTimer: any = null;
+
   filteredProducts = computed(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    const list = this.productService.products();
-    if (!query) return list;
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.sku.toLowerCase().includes(query),
-    );
+    return this.productService.products();
   });
 
   paginatedProducts = computed(() => {
@@ -142,6 +137,12 @@ export class ProductListComponent {
   onSearch(query: string) {
     this.searchQuery.set(query);
     this.currentPage.set(1);
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      this.productService.loadProducts(query);
+    }, 300);
   }
 
   editProduct(productId: string) {

@@ -41,46 +41,46 @@ export interface SlipLineItem {
     <div class="fixed inset-0 top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md z-[9999998]" (click)="cancel.emit()"></div>
 
     <!-- Centered Fixed Modal Box -->
-    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl w-[calc(100%-2rem)] max-w-6xl max-h-[88vh] flex flex-col overflow-hidden z-[9999999] font-sans animate-fadeIn">
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl shadow-2xl w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-6xl max-h-[92vh] sm:max-h-[88vh] flex flex-col overflow-hidden z-[9999999] font-sans animate-fadeIn">
         
         <!-- MODAL HEADER BAR -->
-        <div class="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-              <mat-icon class="text-lg">assignment</mat-icon>
+        <div class="px-3 sm:px-6 py-3 sm:py-4 bg-zinc-900 text-white flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div class="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0">
+              <mat-icon class="text-base sm:text-lg">assignment</mat-icon>
             </div>
-            <div>
-              <h2 class="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <h2 class="text-xs sm:text-sm font-black uppercase tracking-tight flex items-center gap-1.5 truncate">
                 Packing Slip Live Editor & Preview
               </h2>
-              <p class="text-[10px] text-zinc-400 font-mono">Order #{{ orderNumber() }} &middot; Real-time Customization & Dispatch Document</p>
+              <p class="text-[9px] sm:text-[10px] text-zinc-400 font-mono truncate">Order #{{ orderNumber() }} &middot; Dispatch Document</p>
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
             <button
               (click)="resetToDefaults()"
-              class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-[10px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer border border-zinc-700"
+              class="px-2.5 sm:px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-[10px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer border border-zinc-700"
               title="Reset fields to original order data"
             >
-              <mat-icon class="text-xs">refresh</mat-icon> Reset
+              <mat-icon class="text-xs">refresh</mat-icon> <span class="hidden sm:inline">Reset</span>
             </button>
             <button
               (click)="printSlip()"
-              class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-bold uppercase transition-colors flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
+              class="px-2.5 sm:px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer border-none shadow-sm"
               title="Print thermal or A4 document"
             >
-              <mat-icon class="text-xs">print</mat-icon> Print
+              <mat-icon class="text-xs">print</mat-icon> <span class="hidden sm:inline">Print</span>
             </button>
             <button
               (click)="downloadPdf()"
-              class="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
+              class="px-2.5 sm:px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase transition-colors flex items-center gap-1 cursor-pointer border-none shadow-sm"
             >
-              <mat-icon class="text-xs">file_download</mat-icon> Download PDF
+              <mat-icon class="text-xs">file_download</mat-icon> <span class="hidden sm:inline">Download PDF</span><span class="sm:hidden">PDF</span>
             </button>
             <button
               (click)="cancel.emit()"
-              class="w-8 h-8 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors ml-2"
+              class="w-7 sm:w-8 h-7 sm:h-8 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors ml-1 sm:ml-2"
             >
               <mat-icon class="text-base">close</mat-icon>
             </button>
@@ -88,10 +88,10 @@ export interface SlipLineItem {
         </div>
 
         <!-- MAIN SPLIT CONTENT -->
-        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden bg-zinc-100 dark:bg-zinc-950">
           
           <!-- LEFT PANEL: EDITABLE CONTROLS (5 COLS) -->
-          <div class="lg:col-span-5 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto p-5 space-y-5 text-xs">
+          <div class="lg:col-span-5 bg-white dark:bg-zinc-900 border-b lg:border-b-0 lg:border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto p-3.5 sm:p-5 space-y-4 sm:space-y-5 text-xs">
             
             <!-- SECTION 1: HEADER & IDENTIFIERS -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
@@ -372,38 +372,38 @@ export interface SlipLineItem {
           </div>
 
           <!-- RIGHT PANEL: LIVE HIGH-FIDELITY PREVIEW (7 COLS) -->
-          <div class="lg:col-span-7 bg-zinc-200 dark:bg-zinc-950 overflow-y-auto p-6 flex flex-col items-center justify-start">
+          <div class="lg:col-span-7 bg-zinc-200 dark:bg-zinc-950 overflow-y-auto p-2.5 sm:p-6 flex flex-col items-center justify-start max-w-full">
             
             <!-- PRINTABLE A4 PACKING SLIP SHEET -->
-            <div id="printable-packing-slip-sheet" class="bg-white text-black p-8 rounded-none shadow-xl w-full max-w-[650px] font-sans border border-zinc-300 min-h-[920px] flex flex-col justify-between">
+            <div id="printable-packing-slip-sheet" class="bg-white text-black p-4 sm:p-8 rounded-none shadow-xl w-full max-w-[650px] font-sans border border-zinc-300 min-h-[auto] sm:min-h-[920px] flex flex-col justify-between overflow-hidden">
               
-              <div class="space-y-5">
+              <div class="space-y-4 sm:space-y-5">
                 <!-- 1. HEADER ROW -->
                 <div class="flex items-center justify-between pb-3 border-b-2 border-black">
                   <div>
-                    <span class="block text-[11px] font-bold text-zinc-600 uppercase tracking-wider">EASYID</span>
-                    <h1 class="text-2xl font-black text-black tracking-tight mt-0.5 font-mono uppercase leading-none">
+                    <span class="block text-[10px] sm:text-[11px] font-bold text-zinc-600 uppercase tracking-wider">EASYID</span>
+                    <h1 class="text-xl sm:text-2xl font-black text-black tracking-tight mt-0.5 font-mono uppercase leading-none">
                       {{ easyId() }}
                     </h1>
                   </div>
                   <div class="flex items-center justify-end">
-                    <img [src]="logoUrl" alt="3D Galaxy Logo" class="h-10 w-auto object-contain" />
+                    <img [src]="logoUrl" alt="3D Galaxy Logo" class="h-8 sm:h-10 w-auto object-contain" />
                   </div>
                 </div>
 
                 <div class="text-center py-1">
-                  <h2 class="text-xl font-bold text-black tracking-tight">Packing Slip</h2>
+                  <h2 class="text-lg sm:text-xl font-bold text-black tracking-tight">Packing Slip</h2>
                 </div>
 
                 <!-- 2. ORDER META & ADDRESS GRID -->
-                <div class="grid grid-cols-2 gap-6 text-xs text-black leading-relaxed">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 text-xs text-black leading-relaxed">
                   <div class="space-y-2">
                     <div class="flex items-center">
-                      <span class="font-bold w-20 shrink-0">Date:</span>
+                      <span class="font-bold w-16 sm:w-20 shrink-0">Date:</span>
                       <span>{{ dateStr() }}</span>
                     </div>
                     <div class="flex items-start">
-                      <span class="font-bold w-20 shrink-0">Ship To:</span>
+                      <span class="font-bold w-16 sm:w-20 shrink-0">Ship To:</span>
                       <div class="whitespace-pre-line text-zinc-900">
                         <div class="font-bold">{{ shipToName() }}</div>
                         @if (shipToPhone()) {
@@ -415,24 +415,24 @@ export interface SlipLineItem {
                       </div>
                     </div>
                     <div class="flex items-center">
-                      <span class="font-bold w-20 shrink-0">Email:</span>
+                      <span class="font-bold w-16 sm:w-20 shrink-0">Email:</span>
                       <span class="break-all font-medium text-zinc-800">{{ email() }}</span>
                     </div>
                   </div>
 
                   <div class="space-y-2">
                     <div class="flex items-center">
-                      <span class="font-bold w-24 shrink-0">Tracking:</span>
-                      <span class="font-mono">{{ trackingNumber() }}</span>
+                      <span class="font-bold w-16 sm:w-24 shrink-0">Tracking:</span>
+                      <span class="font-mono break-all">{{ trackingNumber() }}</span>
                     </div>
                     <div class="flex items-start">
-                      <span class="font-bold w-24 shrink-0 leading-tight">Return<br/>Address:</span>
+                      <span class="font-bold w-16 sm:w-24 shrink-0 leading-tight">Return<br class="hidden sm:inline"/> Address:</span>
                       <div class="whitespace-pre-line text-zinc-800">
                         {{ returnAddress() }}
                       </div>
                     </div>
                     <div class="flex items-center">
-                      <span class="font-bold w-24 shrink-0">Order:</span>
+                      <span class="font-bold w-16 sm:w-24 shrink-0">Order:</span>
                       <span class="font-bold font-mono">{{ orderNumber() }}</span>
                     </div>
                   </div>
@@ -440,7 +440,8 @@ export interface SlipLineItem {
 
                 <!-- 3. LINE ITEMS TABLE -->
                 <div class="pt-2">
-                  <table class="w-full border-collapse border border-black text-xs text-black">
+                  <div class="w-full max-w-full overflow-x-auto pb-1 no-scrollbar">
+                    <table class="w-full border-collapse border border-black text-xs text-black">
                     <thead>
                       <tr class="border-b border-black bg-zinc-50">
                         <th class="py-1.5 px-2 text-center font-bold w-12 border-r border-black">Qty</th>
@@ -466,6 +467,7 @@ export interface SlipLineItem {
                       }
                     </tbody>
                   </table>
+                  </div>
 
                   <!-- Table Totals Row -->
                   <div class="pt-3 flex items-start justify-between text-xs text-black font-semibold">

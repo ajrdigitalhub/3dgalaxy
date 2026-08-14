@@ -9,16 +9,37 @@ export class ProductService {
   private api = inject(ApiService);
   
   products = signal<Product[]>([]);
+  isLoading = signal<boolean>(false);
 
   constructor() {
     this.loadProducts();
   }
 
-  loadProducts() {
-    this.api.get<any>('/products', { limit: 1000 }).subscribe({
+  loadProducts(searchQuery?: string) {
+    this.isLoading.set(true);
+    const params: any = { limit: 500 };
+    if (searchQuery && searchQuery.trim().length > 0) {
+      params.search = searchQuery.trim();
+    }
+
+    this.api.get<any>('/admin/products', params).subscribe({
       next: (res) => {
         const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
         this.products.set(list);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        // Fallback if token or admin scope differs
+        this.api.get<any>('/products', params).subscribe({
+          next: (res) => {
+            const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
+            this.products.set(list);
+            this.isLoading.set(false);
+          },
+          error: () => {
+            this.isLoading.set(false);
+          }
+        });
       }
     });
   }

@@ -246,8 +246,8 @@ export interface CustomerDetailProfile {
             }
           </div>
 
-          <!-- Customer Data Table -->
-          <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl overflow-x-auto no-scrollbar">
+          <!-- Customer Data Table & Mobile Cards -->
+          <div class="p-3 sm:p-4 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl max-w-full overflow-hidden shadow-xs">
             @if (isLoading()) {
               <!-- Skeleton Loading Grid -->
               <div class="space-y-3 py-4">
@@ -256,190 +256,305 @@ export interface CustomerDetailProfile {
                 }
               </div>
             } @else {
-              <table class="w-full text-left text-xs whitespace-nowrap">
-                <thead>
-                  <tr class="text-[10px] font-black text-zinc-400 uppercase border-b border-zinc-100 dark:border-zinc-800 pb-3">
-                    <th class="py-3 px-2 w-8">
-                      <input
-                        type="checkbox"
-                        [checked]="isAllSelected()"
-                        (change)="toggleSelectAll()"
-                        class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
-                    </th>
-                    <th class="py-3 px-2">Customer Profile</th>
-                    <th class="py-3 px-2">Contact Details</th>
-                    <th class="py-3 px-2">Type</th>
-                    <th class="py-3 px-2">Reg. Date</th>
-                    <th class="py-3 px-2 text-center">Orders</th>
-                    <th class="py-3 px-2 text-right">Total Spend</th>
-                    <th class="py-3 px-2">Last Order</th>
-                    <th class="py-3 px-2">Status</th>
-                    <th class="py-3 px-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                  @for (c of customers(); track c.id) {
-                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                      <!-- Selection Checkbox -->
-                      <td class="py-3.5 px-2">
+              <!-- DESKTOP TABLE VIEW (hidden on mobile, visible on md and up) -->
+              <div class="hidden md:block w-full max-w-full overflow-x-auto no-scrollbar">
+                <table class="w-full text-left text-xs whitespace-nowrap min-w-[850px]">
+                  <thead>
+                    <tr class="text-[10px] font-black text-zinc-400 uppercase border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                      <th class="py-3 px-2 w-8">
+                        <input
+                          type="checkbox"
+                          [checked]="isAllSelected()"
+                          (change)="toggleSelectAll()"
+                          class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
+                      <th class="py-3 px-2">Customer Profile</th>
+                      <th class="py-3 px-2">Contact Details</th>
+                      <th class="py-3 px-2">Type</th>
+                      <th class="py-3 px-2">Reg. Date</th>
+                      <th class="py-3 px-2 text-center">Orders</th>
+                      <th class="py-3 px-2 text-right">Total Spend</th>
+                      <th class="py-3 px-2">Last Order</th>
+                      <th class="py-3 px-2">Status</th>
+                      <th class="py-3 px-2 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    @for (c of customers(); track c.id) {
+                      <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
+                        <!-- Selection Checkbox -->
+                        <td class="py-3.5 px-2">
+                          <input
+                            type="checkbox"
+                            [checked]="selectedCustomerIds().has(c.id)"
+                            (change)="toggleSelectCustomer(c.id)"
+                            class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </td>
+
+                        <!-- Customer Profile Cell -->
+                        <td class="py-3.5 px-2">
+                          <div class="flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-xl bg-linear-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase overflow-hidden shrink-0">
+                              @if (c.profileImage) {
+                                <img [src]="c.profileImage" class="w-full h-full object-cover" alt="avatar" />
+                              } @else {
+                                {{ getInitials(c.name) }}
+                              }
+                            </div>
+                            <div>
+                              <button
+                                (click)="viewCustomerProfile(c.id)"
+                                class="font-black text-zinc-900 dark:text-white uppercase hover:text-blue-600 dark:hover:text-blue-400 transition-colors border-none bg-transparent cursor-pointer text-left text-xs p-0"
+                              >
+                                {{ c.name }}
+                              </button>
+                              <span class="text-[10px] text-zinc-400 font-mono block">ID: {{ c.id.slice(0, 8) }}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Contact Details -->
+                        <td class="py-3.5 px-2 font-mono text-[11px]">
+                          <div class="space-y-0.5">
+                            <p class="text-zinc-700 dark:text-zinc-300 font-medium">{{ c.email || 'N/A' }}</p>
+                            <p class="text-zinc-400 text-[10px]">{{ c.phone || 'No Phone' }}</p>
+                          </div>
+                        </td>
+
+                        <!-- Customer Type -->
+                        <td class="py-3.5 px-2">
+                          <span
+                            [class]="c.customerType === 'dealer' 
+                              ? 'px-2.5 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20' 
+                              : c.customerType === 'guest' 
+                              ? 'px-2.5 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' 
+                              : 'px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'"
+                            class="text-[10px] font-black uppercase rounded-md tracking-wider inline-block"
+                          >
+                            {{ c.customerType || 'RETAIL' }}
+                          </span>
+                        </td>
+
+                        <!-- Registration Date -->
+                        <td class="py-3.5 px-2 text-zinc-500 font-mono text-[10px]">
+                          {{ c.registrationDate ? (c.registrationDate | date:'mediumDate') : 'N/A' }}
+                        </td>
+
+                        <!-- Total Orders Count -->
+                        <td class="py-3.5 px-2 text-center font-bold font-mono">
+                          {{ c.totalOrders ?? 0 }}
+                        </td>
+
+                        <!-- Total Spend -->
+                        <td class="py-3.5 px-2 text-right font-black font-mono text-zinc-900 dark:text-white">
+                          ₹{{ (c.totalSpend || 0) | number }}
+                        </td>
+
+                        <!-- Last Order Date -->
+                        <td class="py-3.5 px-2 text-zinc-400 font-mono text-[10px]">
+                          {{ c.lastOrderDate ? (c.lastOrderDate | date:'shortDate') : 'Never' }}
+                        </td>
+
+                        <!-- Account Status -->
+                        <td class="py-3.5 px-2">
+                          <span
+                            [class]="c.status === 'Active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'"
+                            class="px-2.5 py-1 text-[10px] font-black uppercase rounded-md border tracking-wider inline-flex items-center gap-1"
+                          >
+                            <span class="h-1.5 w-1.5 rounded-full" [class]="c.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                            {{ c.status }}
+                          </span>
+                        </td>
+
+                        <!-- Actions Column -->
+                        <td class="py-3.5 px-2 text-right">
+                          <div class="flex items-center justify-end gap-1">
+                            <!-- Quick Profile View -->
+                            <button
+                              (click)="viewCustomerProfile(c.id)"
+                              class="p-1.5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                              title="View Customer Profile"
+                            >
+                              <mat-icon class="text-sm">visibility</mat-icon>
+                            </button>
+
+                            <!-- Edit Profile -->
+                            <button
+                              (click)="openEditModal(c)"
+                              class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                              title="Edit Details"
+                            >
+                              <mat-icon class="text-sm">edit</mat-icon>
+                            </button>
+
+                            <!-- WhatsApp Link -->
+                            @if (c.phone) {
+                              <button
+                                (click)="openWhatsApp(c.phone, c.name)"
+                                class="p-1.5 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                                title="Chat on WhatsApp"
+                              >
+                                <mat-icon class="text-sm">chat</mat-icon>
+                              </button>
+                            }
+
+                            <!-- Block / Unblock -->
+                            <button
+                              (click)="toggleBlockStatus(c)"
+                              [class]="c.status === 'Active' ? 'text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'"
+                              class="p-1.5 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                              [title]="c.status === 'Active' ? 'Block Account' : 'Unblock Account'"
+                            >
+                              <mat-icon class="text-sm">{{ c.status === 'Active' ? 'block' : 'check_circle' }}</mat-icon>
+                            </button>
+
+                            <!-- Soft Delete -->
+                            <button
+                              (click)="confirmDeleteCustomer(c)"
+                              class="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
+                              title="Delete Customer Profile"
+                            >
+                              <mat-icon class="text-sm">delete_outline</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="10" class="py-16 text-center">
+                          <div class="flex flex-col items-center justify-center space-y-3">
+                            <div class="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center">
+                              <mat-icon class="text-xl">people_outline</mat-icon>
+                            </div>
+                            <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Customers Found</h4>
+                            <p class="text-xs text-zinc-500 max-w-sm">
+                              No customer records match your current search query or filter parameters.
+                            </p>
+                            <button (click)="resetFilters()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold cursor-pointer border-none shadow-sm">
+                              Clear Filters
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- MOBILE CARD VIEW (visible on mobile < md, hidden on md and up) -->
+              <div class="block md:hidden space-y-3">
+                @for (c of customers(); track c.id) {
+                  <div class="p-3.5 bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-3 shadow-2xs">
+                    <!-- Top Row: Checkbox, Avatar, Name & Type/Status Badges -->
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2.5 min-w-0">
                         <input
                           type="checkbox"
                           [checked]="selectedCustomerIds().has(c.id)"
                           (change)="toggleSelectCustomer(c.id)"
-                          class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
                         />
-                      </td>
-
-                      <!-- Customer Profile Cell -->
-                      <td class="py-3.5 px-2">
-                        <div class="flex items-center gap-3">
-                          <div class="h-9 w-9 rounded-xl bg-linear-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase overflow-hidden shrink-0">
-                            @if (c.profileImage) {
-                              <img [src]="c.profileImage" class="w-full h-full object-cover" alt="avatar" />
-                            } @else {
-                              {{ getInitials(c.name) }}
-                            }
-                          </div>
-                          <div>
-                            <button
-                              (click)="viewCustomerProfile(c.id)"
-                              class="font-black text-zinc-900 dark:text-white uppercase hover:text-blue-600 dark:hover:text-blue-400 transition-colors border-none bg-transparent cursor-pointer text-left text-xs p-0"
-                            >
-                              {{ c.name }}
-                            </button>
-                            <span class="text-[10px] text-zinc-400 font-mono block">ID: {{ c.id.slice(0, 8) }}</span>
-                          </div>
+                        <div class="h-8.5 w-8.5 rounded-xl bg-linear-to-tr from-blue-600 to-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs uppercase overflow-hidden shrink-0">
+                          @if (c.profileImage) {
+                            <img [src]="c.profileImage" class="w-full h-full object-cover" alt="avatar" />
+                          } @else {
+                            {{ getInitials(c.name) }}
+                          }
                         </div>
-                      </td>
-
-                      <!-- Contact Details -->
-                      <td class="py-3.5 px-2 font-mono text-[11px]">
-                        <div class="space-y-0.5">
-                          <p class="text-zinc-700 dark:text-zinc-300 font-medium">{{ c.email || 'N/A' }}</p>
-                          <p class="text-zinc-400 text-[10px]">{{ c.phone || 'No Phone' }}</p>
+                        <div class="min-w-0 flex-1">
+                          <button
+                            (click)="viewCustomerProfile(c.id)"
+                            class="font-black text-zinc-900 dark:text-white uppercase truncate border-none bg-transparent cursor-pointer text-left text-xs p-0 block max-w-[130px]"
+                          >
+                            {{ c.name }}
+                          </button>
+                          <span class="text-[9px] text-zinc-400 font-mono block">ID: {{ c.id.slice(0, 8) }}</span>
                         </div>
-                      </td>
+                      </div>
 
-                      <!-- Customer Type -->
-                      <td class="py-3.5 px-2">
+                      <div class="flex items-center gap-1 shrink-0">
                         <span
                           [class]="c.customerType === 'dealer' 
-                            ? 'px-2.5 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20' 
+                            ? 'px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20' 
                             : c.customerType === 'guest' 
-                            ? 'px-2.5 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' 
-                            : 'px-2.5 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'"
-                          class="text-[10px] font-black uppercase rounded-md tracking-wider inline-block"
+                            ? 'px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400' 
+                            : 'px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'"
+                          class="text-[8px] font-black uppercase rounded tracking-wider"
                         >
                           {{ c.customerType || 'RETAIL' }}
                         </span>
-                      </td>
 
-                      <!-- Registration Date -->
-                      <td class="py-3.5 px-2 text-zinc-500 font-mono text-[10px]">
-                        {{ c.registrationDate | date:'mediumDate' }}
-                      </td>
-
-                      <!-- Total Orders Count -->
-                      <td class="py-3.5 px-2 text-center font-bold font-mono">
-                        {{ c.totalOrders }}
-                      </td>
-
-                      <!-- Total Spend -->
-                      <td class="py-3.5 px-2 text-right font-black font-mono text-zinc-900 dark:text-white">
-                        ₹{{ c.totalSpend | number }}
-                      </td>
-
-                      <!-- Last Order Date -->
-                      <td class="py-3.5 px-2 text-zinc-400 font-mono text-[10px]">
-                        {{ c.lastOrderDate ? (c.lastOrderDate | date:'shortDate') : 'Never' }}
-                      </td>
-
-                      <!-- Account Status -->
-                      <td class="py-3.5 px-2">
                         <span
                           [class]="c.status === 'Active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'"
-                          class="px-2.5 py-1 text-[10px] font-black uppercase rounded-md border tracking-wider inline-flex items-center gap-1"
+                          class="px-2 py-0.5 text-[8px] font-black uppercase rounded border tracking-wider flex items-center gap-1"
                         >
                           <span class="h-1.5 w-1.5 rounded-full" [class]="c.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
                           {{ c.status }}
                         </span>
-                      </td>
+                      </div>
+                    </div>
 
-                      <!-- Actions Column -->
-                      <td class="py-3.5 px-2 text-right">
-                        <div class="flex items-center justify-end gap-1">
-                          <!-- Quick Profile View -->
-                          <button
-                            (click)="viewCustomerProfile(c.id)"
-                            class="p-1.5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                            title="View Customer Profile"
-                          >
-                            <mat-icon class="text-sm">visibility</mat-icon>
-                          </button>
+                    <!-- Contact Details & Metrics Grid -->
+                    <div class="grid grid-cols-2 gap-2 p-2.5 bg-white dark:bg-zinc-900 rounded-xl text-xs border border-zinc-100 dark:border-zinc-800/80">
+                      <div>
+                        <span class="text-[9px] text-zinc-400 font-bold uppercase block">Contact Info</span>
+                        <p class="font-mono font-medium text-zinc-700 dark:text-zinc-300 text-[11px] truncate">{{ c.email || 'N/A' }}</p>
+                        <p class="font-mono text-zinc-400 text-[10px]">{{ c.phone || 'No Phone' }}</p>
+                      </div>
 
-                          <!-- Edit Profile -->
-                          <button
-                            (click)="openEditModal(c)"
-                            class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                            title="Edit Details"
-                          >
-                            <mat-icon class="text-sm">edit</mat-icon>
-                          </button>
+                      <div class="text-right">
+                        <span class="text-[9px] text-zinc-400 font-bold uppercase block">Reg. Date</span>
+                        <p class="font-mono font-bold text-zinc-700 dark:text-zinc-300 text-[11px]">
+                          {{ c.registrationDate ? (c.registrationDate | date:'mediumDate') : 'N/A' }}
+                        </p>
+                      </div>
 
-                          <!-- WhatsApp Link -->
-                          @if (c.phone) {
-                            <button
-                              (click)="openWhatsApp(c.phone, c.name)"
-                              class="p-1.5 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                              title="Chat on WhatsApp"
-                            >
-                              <mat-icon class="text-sm">chat</mat-icon>
-                            </button>
-                          }
+                      <div class="pt-1.5 border-t border-zinc-100 dark:border-zinc-800">
+                        <span class="text-[9px] text-zinc-400 font-bold uppercase block">Total Orders</span>
+                        <p class="font-mono font-black text-zinc-900 dark:text-white text-xs">{{ c.totalOrders ?? 0 }} orders</p>
+                      </div>
 
-                          <!-- Block / Unblock -->
-                          <button
-                            (click)="toggleBlockStatus(c)"
-                            [class]="c.status === 'Active' ? 'text-amber-500 hover:bg-amber-500/10' : 'text-emerald-500 hover:bg-emerald-500/10'"
-                            class="p-1.5 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                            [title]="c.status === 'Active' ? 'Block Account' : 'Unblock Account'"
-                          >
-                            <mat-icon class="text-sm">{{ c.status === 'Active' ? 'block' : 'check_circle' }}</mat-icon>
-                          </button>
+                      <div class="pt-1.5 border-t border-zinc-100 dark:border-zinc-800 text-right">
+                        <span class="text-[9px] text-zinc-400 font-bold uppercase block">Total Spend</span>
+                        <p class="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs">₹{{ (c.totalSpend || 0) | number }}</p>
+                      </div>
+                    </div>
 
-                          <!-- Soft Delete -->
-                          <button
-                            (click)="confirmDeleteCustomer(c)"
-                            class="p-1.5 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors cursor-pointer border-none bg-transparent"
-                            title="Delete Customer Profile"
-                          >
-                            <mat-icon class="text-sm">delete_outline</mat-icon>
+                    <!-- Bottom Actions Bar -->
+                    <div class="flex items-center justify-between pt-1 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                      <span class="text-[9px] text-zinc-400 font-mono">Last Order: {{ c.lastOrderDate ? (c.lastOrderDate | date:'shortDate') : 'Never' }}</span>
+                      
+                      <div class="flex items-center gap-1">
+                        <button (click)="viewCustomerProfile(c.id)" class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition-colors border-none cursor-pointer" title="View Profile">
+                          <mat-icon class="text-sm">visibility</mat-icon>
+                        </button>
+                        <button (click)="openEditModal(c)" class="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 transition-colors border-none cursor-pointer" title="Edit Customer">
+                          <mat-icon class="text-sm">edit</mat-icon>
+                        </button>
+                        @if (c.phone) {
+                          <button (click)="openWhatsApp(c.phone, c.name)" class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 transition-colors border-none cursor-pointer" title="WhatsApp">
+                            <mat-icon class="text-sm">chat</mat-icon>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="10" class="py-16 text-center">
-                        <div class="flex flex-col items-center justify-center space-y-3">
-                          <div class="h-12 w-12 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center">
-                            <mat-icon class="text-xl">people_outline</mat-icon>
-                          </div>
-                          <h4 class="text-sm font-bold text-zinc-800 dark:text-zinc-200">No Customers Found</h4>
-                          <p class="text-xs text-zinc-500 max-w-sm">
-                            No customer records match your current search query or filter parameters.
-                          </p>
-                          <button (click)="resetFilters()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold cursor-pointer border-none shadow-sm">
-                            Clear Filters
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+                        }
+                        <button (click)="toggleBlockStatus(c)" class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors border-none cursor-pointer" [title]="c.status === 'Active' ? 'Block' : 'Unblock'">
+                          <mat-icon class="text-sm">{{ c.status === 'Active' ? 'block' : 'check_circle' }}</mat-icon>
+                        </button>
+                        <button (click)="confirmDeleteCustomer(c)" class="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition-colors border-none cursor-pointer" title="Delete">
+                          <mat-icon class="text-sm">delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="p-8 text-center text-zinc-400 text-xs">
+                    No customers found matching filters.
+                  </div>
+                }
+              </div>
             }
+          </div>
 
             <!-- Server-Side Pagination Bar -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
@@ -472,8 +587,7 @@ export interface CustomerDetailProfile {
               </div>
             </div>
           </div>
-        </div>
-      }
+        }
 
       <!-- ========================================================================= -->
       <!-- VIEW 2: CUSTOMER DETAIL PROFILE PAGE                                     -->
@@ -1060,8 +1174,6 @@ export interface CustomerDetailProfile {
         </div>
       }
 
-    </div>
-
     <!-- ========================================================================= -->
     <!-- MODALS SECTION                                                             -->
     <!-- ========================================================================= -->
@@ -1241,6 +1353,7 @@ export interface CustomerDetailProfile {
       </div>
     }
 
+  </div>
   `
 })
 export class AdminCustomersTab implements OnInit {

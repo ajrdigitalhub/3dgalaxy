@@ -66,10 +66,6 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
-
-  @media (min-width: 1024px) {
-    grid-template-columns: 1.3fr 1fr;
-  }
 }
 
 .form-panel {

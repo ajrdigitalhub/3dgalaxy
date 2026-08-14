@@ -359,6 +359,7 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     notes: notes || null,
     gstNumber: gstNumber || null,
     companyName: companyName || null,
+    shipment: payload.shipment || null,
     ...(customerId && isValidUuid(customerId) ? { customer: { connect: { id: customerId } } } : {}),
     ...(shippingAddressId && isValidUuid(shippingAddressId) ? { shippingAddress: { connect: { id: shippingAddressId } } } : {}),
     ...(billingAddressId && isValidUuid(billingAddressId) ? { billingAddress: { connect: { id: billingAddressId } } } : {}),
@@ -1239,6 +1240,80 @@ export const handleAdminRefund = async (req: Request, res: Response) => {
   }
 };
 
+export const calculateEffectiveItemPrice = (prod: any, item: any, customerType?: string): number => {
+  const basePrice = Number(prod.salePrice || prod.basePrice || 0);
+  const dealerPrice = prod.dealerPrice ? Number(prod.dealerPrice) : basePrice;
+  const defaultPrice = customerType === 'DEALER' ? dealerPrice : basePrice;
+
+  // 1. If bundle or bundle tier selected
+  if (item.bundleDetails || item.configurationType === 'bundle' || item.bundleTier) {
+    const bundleTier = item.bundleDetails || item.bundleTier;
+    const tierName = bundleTier.bundleName || bundleTier.name;
+    const tierCount = Number(bundleTier.bundleCount || bundleTier.count || 1);
+
+    // Check if product has variantGroups in DB
+    let vGroups: any[] = [];
+    if (Array.isArray(prod.variantGroups)) {
+      vGroups = prod.variantGroups;
+    } else if (typeof prod.variantGroups === 'string') {
+      try { vGroups = JSON.parse(prod.variantGroups); } catch (e) {}
+    }
+
+    if (vGroups.length > 0) {
+      for (const grp of vGroups) {
+        if (Array.isArray(grp.bundleTiers)) {
+          const matchedTier = grp.bundleTiers.find((t: any) => 
+            (tierName && t.name && t.name.trim().toLowerCase() === String(tierName).trim().toLowerCase()) ||
+            (t.count && Number(t.count) === tierCount)
+          );
+          if (matchedTier) {
+            const count = Number(matchedTier.count) || 1;
+            if (matchedTier.priceType === 'per_variant' || matchedTier.customPricePerItem) {
+              const perVal = Number(matchedTier.priceValue || matchedTier.customPricePerItem || defaultPrice);
+              return perVal * count;
+            } else if (matchedTier.priceType === 'fixed') {
+              return Number(matchedTier.priceValue);
+            } else if (matchedTier.priceType === 'percentage') {
+              const pct = Number(matchedTier.priceValue) || 0;
+              return defaultPrice * count * (1 - (pct / 100));
+            } else {
+              return Number(matchedTier.priceValue) || (defaultPrice * count);
+            }
+          }
+        }
+      }
+    }
+
+    // Direct bundle price from payload if valid
+    if (bundleTier.effectivePrice !== undefined && Number(bundleTier.effectivePrice) > 0) {
+      return Number(bundleTier.effectivePrice);
+    }
+    if (bundleTier.bundlePrice !== undefined && Number(bundleTier.bundlePrice) > 0) {
+      return Number(bundleTier.bundlePrice);
+    }
+    if (bundleTier.unitPrice !== undefined && Number(bundleTier.unitPrice) > 0 && tierCount > 0) {
+      return Number(bundleTier.unitPrice) * tierCount;
+    }
+    if (item.effectivePrice !== undefined && Number(item.effectivePrice) > 0) {
+      return Number(item.effectivePrice);
+    }
+    if (item.price !== undefined && Number(item.price) > 0) {
+      return Number(item.price);
+    }
+  }
+
+  // 2. If variant selected
+  if (item.variantId && prod.variants && Array.isArray(prod.variants)) {
+    const v = prod.variants.find((vr: any) => vr.id === item.variantId);
+    if (v) {
+      return Number(v.salePrice || v.price || defaultPrice);
+    }
+  }
+
+  // 3. Fallback to product sale/base price
+  return defaultPrice;
+};
+
 export const createOrderAndPayment = async (req: any, res: Response) => {
   const {
     items,
@@ -1268,12 +1343,15 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
   try {
     // 1. Resolve customer
     let customerIdToUse: string | null = null;
+    let customerType = 'retail';
+
     if (userId) {
       let customer = await prisma.customer.findFirst({ where: { userId } });
       if (!customer) {
         customer = await prisma.customer.create({ data: { userId, customerType: 'retail' } });
       }
       customerIdToUse = customer.id;
+      customerType = customer.customerType || 'retail';
     } else {
       const email = resolvedEmail || `guest-${Date.now()}@3dgalaxy.com`;
       const name = resolvedName || 'Guest Customer';
@@ -1304,16 +1382,29 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         });
       }
       customerIdToUse = guestCust.id;
+      customerType = 'guest';
     }
 
-    // 2. Validate products and calculate server-side pricing
+    // 2. Validate products and calculate authoritative server-side effective pricing
     let subtotal = 0;
     const parsedItems = [];
+    const itemConfigs: any[] = [];
 
     for (const it of items) {
       const prod = await prisma.product.findUnique({
         where: { id: it.productId },
-        select: { id: true, name: true, basePrice: true, salePrice: true, dealerPrice: true, codAvailable: true, isActive: true, stock: true, deletedAt: true }
+        select: {
+          id: true,
+          name: true,
+          basePrice: true,
+          salePrice: true,
+          dealerPrice: true,
+          codAvailable: true,
+          isActive: true,
+          stock: true,
+          deletedAt: true,
+          variants: true
+        }
       });
 
       if (!prod || !prod.isActive || prod.deletedAt) {
@@ -1326,26 +1417,31 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         });
       }
 
-      let price = prod.salePrice ? Number(prod.salePrice) : Number(prod.basePrice);
-      if (userId && customerIdToUse) {
-        const customerDb = await prisma.customer.findUnique({ where: { id: customerIdToUse } });
-        if (customerDb && customerDb.customerType === 'DEALER') {
-          price = prod.dealerPrice ? Number(prod.dealerPrice) : Number(prod.basePrice);
-        }
-      }
+      const effectiveUnitPrice = calculateEffectiveItemPrice(prod, it, customerType);
+      const qty = Math.max(1, Number(it.quantity) || 1);
+      const lineTotal = effectiveUnitPrice * qty;
 
-      if (it.variantId) {
-        const variant = await prisma.productVariant.findUnique({ where: { id: it.variantId } });
-        if (variant) price = Number(variant.price);
-      }
-
-      subtotal += price * it.quantity;
+      subtotal += lineTotal;
       parsedItems.push({
         productId: it.productId,
         variantId: it.variantId || null,
-        quantity: it.quantity,
-        unitPrice: price,
-        totalPrice: price * it.quantity
+        quantity: qty,
+        unitPrice: effectiveUnitPrice,
+        totalPrice: lineTotal,
+        weightInGrams: Number(it.weightInGrams ?? it.weight ?? 0)
+      });
+
+      itemConfigs.push({
+        productId: it.productId,
+        variantId: it.variantId || null,
+        basePrice: Number(prod.salePrice || prod.basePrice || effectiveUnitPrice),
+        effectivePrice: effectiveUnitPrice,
+        quantity: qty,
+        lineTotal,
+        configurationType: it.configurationType || it.bundleDetails?.configurationType || (it.bundleDetails ? 'bundle' : 'standard'),
+        configurationName: it.configurationName || it.bundleDetails?.bundleName || null,
+        bundleDetails: it.bundleDetails || null,
+        selectedOptions: it.selectedOptions || it.bundleDetails?.selectedOptions || it.bundleDetails?.selectedVariants || []
       });
     }
 
@@ -1376,6 +1472,11 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     let codCharge = 0;
     if (paymentMethod === 'COD') {
       if (subtotal > 2500) {
+        logger.warn('[COD Eligibility Failed]: Effective subtotal exceeds 2500 limit', {
+          subtotal,
+          limit: 2500,
+          itemCount: items.length
+        });
         return res.status(400).json({
           error: 'Cash on Delivery is available only for eligible products with a cart total of ₹2,500 or below.'
         });
@@ -1413,7 +1514,10 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       isGuest,
       resolvedName,
       resolvedEmail,
-      resolvedPhone
+      resolvedPhone,
+      shipment: {
+        itemConfigurations: itemConfigs
+      }
     };
 
     // 3. Handle COD vs Online Payment

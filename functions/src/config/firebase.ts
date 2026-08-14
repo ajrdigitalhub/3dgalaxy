@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import prisma from './database';
+import prisma, { isPoolHealthy } from './database';
 
 let storageInstance: any = null;
 let bucketInstance: any = null;
@@ -7,6 +7,12 @@ let initialized = false;
 
 export const loadFirebaseConfigFromDb = async () => {
   try {
+    const healthy = await isPoolHealthy();
+    if (!healthy) {
+      console.warn("⚠️ Could not load Firebase config from DB (Database unavailable, using default environment config)");
+      return;
+    }
+
     const record = await prisma.setting.findUnique({
       where: { settingKey: 'firebase-settings' }
     });
@@ -29,8 +35,13 @@ export const loadFirebaseConfigFromDb = async () => {
         console.log("Loaded Firebase settings dynamically from database.");
       }
     }
-  } catch (error) {
-    console.error("Failed to load Firebase config from database:", error);
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    if (/ENOTFOUND|ECONNREFUSED|Can't reach database server|getaddrinfo/i.test(msg) || error?.code === 'ENOTFOUND') {
+      console.warn("⚠️ Could not load Firebase config from DB (Database unavailable, using default environment config)");
+    } else {
+      console.error("Failed to load Firebase config from database:", error);
+    }
   }
 };
 

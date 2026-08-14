@@ -214,7 +214,7 @@
             </div>
 
             <!-- Product Text parameters -->
-            <div class="space-y-1 flex-1">
+            <div class="space-y-1.5 flex-1 min-w-0">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h4 class="text-sm font-bold text-neutral-900 dark:text-white hover:text-blue-500 transition-colors">
                   <a [routerLink]="['/product', item.product?.slug]">{{ item.product?.name }}</a>
@@ -226,29 +226,71 @@
                 </button>
                 }
               </div>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-450 font-medium">
-                @if (item.variant) {
-                <span
-                  class="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-[10px] font-bold text-neutral-600 dark:text-neutral-400">
-                  {{ item.variant.name }}
+
+              <!-- BUNDLE / CONFIGURATION BADGE & SLOTS -->
+              @if (item.bundleDetails) {
+              <div class="p-3 bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/80 dark:border-emerald-900/50 rounded-2xl space-y-2 my-1.5 shadow-2xs">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <span class="text-xs font-black uppercase text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 font-mono">
+                    <mat-icon class="scale-85 text-emerald-600 dark:text-emerald-400">inventory_2</mat-icon>
+                    Bundle: {{ item.bundleDetails.bundleName }} ({{ item.bundleDetails.bundleCount }} Items)
+                  </span>
+                  @if (item.bundleDetails.bundleDiscount > 0) {
+                  <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+                    Saved ₹{{ item.bundleDetails.bundleDiscount }}
+                  </span>
+                  }
+                </div>
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                  @for (slot of item.bundleDetails.selectedVariants; track slot.slotIndex || $index) {
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-neutral-800 dark:text-neutral-200 shadow-2xs">
+                    <span class="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0 shadow-2xs" [style.background-color]="getColorCode(slot.color || slot.name)"></span>
+                    <span class="text-neutral-400 font-medium text-[11px]">{{ slot.slotLabel }}:</span>
+                    <span class="font-bold text-neutral-900 dark:text-white">{{ slot.color || slot.name }}</span>
+                  </span>
+                  }
+                </div>
+              </div>
+              } @else if (item.selectedOptions && item.selectedOptions.length > 0) {
+              <div class="flex flex-wrap gap-1.5 my-1">
+                @for (opt of item.selectedOptions; track opt.attribute || $index) {
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                  @if (opt.color || opt.value) {
+                  <span class="w-2 h-2 rounded-full border border-black/10" [style.background-color]="getColorCode(opt.color || opt.value)"></span>
+                  }
+                  <span class="text-neutral-400 text-[11px]">{{ opt.attribute || 'Option' }}:</span>
+                  <span class="font-bold text-neutral-800 dark:text-neutral-200">{{ opt.value || opt.name }}</span>
                 </span>
                 }
-                <span>SKU:
-                  <strong>{{ item.variant?.sku || item.product?.sku }}</strong></span>
+              </div>
+              } @else if (item.variant) {
+              <div class="flex items-center gap-2 my-1">
+                <span class="px-2.5 py-0.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                  {{ item.variant.name }}
+                </span>
+              </div>
+              }
+
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-neutral-450 font-medium">
+                <span>SKU: <strong class="font-mono text-neutral-700 dark:text-neutral-300">{{ item.variant?.sku || item.product?.sku }}</strong></span>
                 <span>•</span>
-                <span>Qty: <strong>{{ item.quantity }}</strong></span>
+                <span>Qty: <strong class="text-neutral-800 dark:text-neutral-200">{{ item.quantity }} units</strong></span>
               </div>
             </div>
 
             <!-- Line calculations -->
-            <div class="text-right whitespace-nowrap shrink-0">
-              <p class="text-sm font-bold font-mono text-neutral-900 dark:text-white">
-                {{ item.unitPrice * item.quantity |
-                currency:'INR':'symbol':'1.0-0' }}
+            <div class="text-right whitespace-nowrap shrink-0 space-y-0.5">
+              <p class="text-sm font-extrabold font-mono text-neutral-900 dark:text-white">
+                {{ item.unitPrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
               </p>
-              <p class="text-[10px] font-mono text-neutral-455">
+              <p class="text-[10px] font-mono text-neutral-450">
                 {{ item.unitPrice | currency:'INR':'symbol':'1.0-0' }} each
               </p>
+              @if (item.basePrice && item.basePrice > item.unitPrice) {
+              <p class="text-[9px] font-mono text-neutral-400 line-through">
+                Base: {{ item.basePrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
+              </p>
+              }
             </div>
           </div>
           }

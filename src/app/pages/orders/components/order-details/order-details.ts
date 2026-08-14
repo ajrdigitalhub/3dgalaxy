@@ -390,8 +390,10 @@ export class CustomerOrderDetailsComponent implements OnInit {
 
   fetchOrder(id: string) {
     this.loading.set(true);
+    const cleanId = String(id || '').trim();
+    const url = cleanId.startsWith('http') ? cleanId : `${environment.apiUrl}/orders/${encodeURIComponent(cleanId)}`;
     this.http
-      .get<any>(`/api/orders/${id}`, this.getHeaders())
+      .get<any>(url, this.getHeaders())
       .pipe(
         catchError((err) => {
           this.error.set(
@@ -559,5 +561,21 @@ export class CustomerOrderDetailsComponent implements OnInit {
     });
   }
 
-
+  getColorCode(colorName: string): string {
+    if (!colorName || typeof colorName !== 'string') return '#cbd5e1';
+    const c = colorName.toLowerCase().trim();
+    if (c.includes('black') || c.includes('dark')) return '#09090b';
+    if (c.includes('white')) return '#ffffff';
+    if (c.includes('grey') || c.includes('gray') || c.includes('silver')) return '#94a3b8';
+    if (c.includes('blue') || c.includes('navy')) return '#3b82f6';
+    if (c.includes('green') || c.includes('emerald') || c.includes('mint')) return '#22c55e';
+    if (c.includes('red') || c.includes('crimson') || c.includes('ruby')) return '#ef4444';
+    if (c.includes('yellow') || c.includes('gold')) return '#eab308';
+    if (c.includes('orange') || c.includes('copper')) return '#f97316';
+    if (c.includes('purple') || c.includes('violet')) return '#a855f7';
+    if (c.includes('pink') || c.includes('rose')) return '#ec4899';
+    if (c.includes('cyan') || c.includes('teal')) return '#14b8a6';
+    if (c.includes('brown') || c.includes('chocolate')) return '#854d0e';
+    return '#cbd5e1';
+  }
 }

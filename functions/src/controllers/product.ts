@@ -1899,3 +1899,99 @@ export const getProductVariants = async (req: Request, res: Response) => {
   }
 };
 
+export const getAdminProducts = async (req: Request, res: Response) => {
+  try {
+    const {
+      page = '1',
+      limit = '50',
+      search = '',
+      q = '',
+      category = '',
+      brand = '',
+      sort = 'createdAt',
+      order = 'desc',
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.max(1, Math.min(500, parseInt(limit as string, 10) || 50));
+    const skip = (pageNum - 1) * limitNum;
+    const searchTerm = String(search || q || '').trim();
+
+    const whereCondition: any = {
+      deletedAt: null,
+    };
+
+    if (searchTerm) {
+      whereCondition.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { sku: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { shortDescription: { contains: searchTerm, mode: 'insensitive' } },
+        { brand: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        { category: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        {
+          variants: {
+            some: {
+              OR: [
+                { sku: { contains: searchTerm, mode: 'insensitive' } },
+                { name: { contains: searchTerm, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+      ];
+    }
+
+    if (category) {
+      whereCondition.OR = [
+        ...(whereCondition.OR || []),
+        { categoryId: String(category) },
+        { category: { slug: String(category) } },
+      ];
+    }
+
+    if (brand) {
+      whereCondition.brandId = String(brand);
+    }
+
+    const [total, products] = await Promise.all([
+      prisma.product.count({ where: whereCondition }),
+      prisma.product.findMany({
+        where: whereCondition,
+        skip,
+        take: limitNum,
+        orderBy: {
+          [sort === 'name' ? 'name' : sort === 'sku' ? 'sku' : sort === 'stock' ? 'stock' : 'createdAt']: order === 'asc' ? 'asc' : 'desc',
+        },
+        include: {
+          brand: true,
+          category: true,
+          productCategories: {
+            include: { category: true }
+          },
+          variants: true,
+          reviews: true
+        }
+      })
+    ]);
+
+    const mapped = products.map(p => mapProductFields(p));
+
+    return res.status(200).json({
+      success: true,
+      products: mapped,
+      data: mapped,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (err: any) {
+    console.error('Error fetching admin products:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+

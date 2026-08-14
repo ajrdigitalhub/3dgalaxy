@@ -51,12 +51,46 @@ export class AdminVariantGroupConfigComponent {
       }
       return;
     }
+
+    const normalized = val.map((g: any, i: number) => {
+      const vName = g.variantName || g.name || g.displayName || `Group #${i + 1}`;
+      const dName = g.displayName || g.name || g.variantName || `Select ${vName}`;
+      const dType = g.displayType || g.display_type || 'chip';
+      const sMode = g.selectionMode || g.selection_mode || 'single';
+
+      let vals: string[] = [];
+      if (Array.isArray(g.values)) {
+        vals = g.values.map((v: any) => typeof v === 'string' ? v : (v.name || v.value || ''));
+      } else if (typeof g.values === 'string') {
+        vals = g.values.split(',').map((s: string) => s.trim()).filter(Boolean);
+      } else if (typeof g.valuesString === 'string') {
+        vals = g.valuesString.split(',').map((s: string) => s.trim()).filter(Boolean);
+      }
+
+      return {
+        id: g.id || `grp-${i + 1}`,
+        variantName: vName,
+        displayName: dName,
+        displayOrder: g.displayOrder !== undefined ? g.displayOrder : i,
+        required: g.required !== false,
+        active: g.active !== false,
+        displayType: dType,
+        selectionMode: sMode,
+        allowDuplicates: !!g.allowDuplicates,
+        values: vals,
+        bundleTiers: Array.isArray(g.bundleTiers) && g.bundleTiers.length > 0 
+          ? g.bundleTiers 
+          : (dType === 'bundle-builder' ? this.createDefaultGroup().bundleTiers : [])
+      };
+    });
+
     const currentJson = JSON.stringify(this.groups());
-    const incomingJson = JSON.stringify(val);
+    const incomingJson = JSON.stringify(normalized);
     if (currentJson !== incomingJson) {
-      this.groups.set(JSON.parse(incomingJson));
+      this.groups.set(normalized);
     }
   }
+
   @Input() set availableVariants(val: any[]) {
     this._availableVariants.set(val || []);
   }
@@ -106,20 +140,34 @@ export class AdminVariantGroupConfigComponent {
 
   // Dynamic variants preview computed from availableVariants or currentGroup option values
   previewVariants = computed(() => {
+    const grp = this.currentGroup();
     const real = this._availableVariants();
+
     if (real && real.length > 0) {
-      return real.map((v, i) => ({
-        id: v.id || `v-real-${i}`,
-        name: v.name || 'Default Variant',
-        sku: v.sku || '',
-        price: Number(v.price) || this.basePrice,
-        stock: v.stock !== undefined ? Number(v.stock) : 10,
-        weight: v.weight || 0,
-        image: Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : (v.image || null)
-      }));
+      return real.map((v, i) => {
+        let displayName = v.name;
+        if (!displayName || displayName === 'Variant' || displayName === 'Default Variant') {
+          if (v.optionValues) {
+            const vals = Object.values(v.optionValues).filter(Boolean);
+            if (vals.length > 0) displayName = vals.join(' / ');
+          }
+        }
+        if (!displayName) displayName = `Variant #${i + 1}`;
+
+        return {
+          id: v.id || `v-real-${i}`,
+          name: displayName,
+          sku: v.sku || '',
+          price: Number(v.price) || this.basePrice,
+          stock: v.stock !== undefined ? Number(v.stock) : 10,
+          weight: v.weight || 0,
+          image: Array.isArray(v.variantImages) && v.variantImages.length > 0 
+            ? v.variantImages[0] 
+            : (Array.isArray(v.images) && v.images.length > 0 ? v.images[0] : (v.image || null))
+        };
+      });
     }
 
-    const grp = this.currentGroup();
     if (grp) {
       const vals: string[] = (grp as any).values || [];
       if (vals && vals.length > 0) {
@@ -136,11 +184,9 @@ export class AdminVariantGroupConfigComponent {
     }
 
     return [
-      { id: 'v-1', name: 'Black', sku: 'PLA-BLK', price: this.basePrice, stock: 100, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
-      { id: 'v-2', name: 'White', sku: 'PLA-WHT', price: this.basePrice, stock: 50, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
-      { id: 'v-3', name: 'Grey', sku: 'PLA-GRY', price: this.basePrice, stock: 25, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
-      { id: 'v-4', name: 'Blue', sku: 'PLA-BLU', price: this.basePrice, stock: 15, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' },
-      { id: 'v-5', name: 'Green', sku: 'PLA-GRN', price: this.basePrice, stock: 0, weight: 0, image: 'https://store.bambulab.com/cdn/shop/files/A1_Combo_600x600.png' }
+      { id: 'v-1', name: 'Standard Pack', sku: 'SKU-STD', price: this.basePrice, stock: 100, weight: 0, image: null },
+      { id: 'v-2', name: 'Large Pack', sku: 'SKU-LRG', price: this.basePrice, stock: 50, weight: 0, image: null },
+      { id: 'v-3', name: 'Combo Pack', sku: 'SKU-CMB', price: this.basePrice, stock: 25, weight: 0, image: null }
     ];
   });
 
@@ -181,13 +227,13 @@ export class AdminVariantGroupConfigComponent {
   createDefaultGroup(): VariantGroupConfig {
     return {
       id: `grp-${Date.now()}`,
-      variantName: 'Bundle Options',
-      displayName: 'Bundle & Save',
+      variantName: 'Variant Options',
+      displayName: 'Choose Options',
       displayOrder: 0,
       required: true,
       active: true,
-      displayType: 'bundle-builder',
-      selectionMode: 'bundle',
+      displayType: 'chip',
+      selectionMode: 'single',
       allowDuplicates: true,
       bundleTiers: [
         { id: 't-1', name: 'Buy 1', count: 1, priceType: 'fixed', priceValue: this.basePrice },
@@ -306,5 +352,48 @@ export class AdminVariantGroupConfigComponent {
       total += q * (v.price || this.basePrice);
     });
     return total;
+  }
+
+  activeConfigName(): string {
+    const grp = this.currentGroup();
+    if (grp?.displayType === 'bundle-builder' || grp?.selectionMode === 'bundle') {
+      return this.previewSelectedTier()?.name || 'Selected Bundle';
+    }
+    return this.selectedPreviewVariant()?.name || 'Single Option';
+  }
+
+  activeUnitPrice(): number {
+    const grp = this.currentGroup();
+    if (grp?.displayType === 'bundle-builder' || grp?.selectionMode === 'bundle') {
+      const tier = this.previewSelectedTier();
+      if (!tier) return this.basePrice;
+      if (tier.priceType === 'per_variant') return Number(tier.priceValue || this.basePrice);
+      if (tier.priceType === 'fixed') return Math.round(Number(tier.priceValue) / (tier.count || 1));
+      if (tier.priceType === 'percentage') return Math.round(this.basePrice * (1 - (Number(tier.priceValue) || 0) / 100));
+      return Number(tier.priceValue) || this.basePrice;
+    }
+    return Number(this.selectedPreviewVariant()?.price || this.basePrice);
+  }
+
+  activeEffectivePrice(): number {
+    const grp = this.currentGroup();
+    if (grp?.displayType === 'bundle-builder' || grp?.selectionMode === 'bundle') {
+      const tier = this.previewSelectedTier();
+      if (!tier) return this.basePrice;
+      const count = Number(tier.count) || 1;
+      if (tier.priceType === 'per_variant') return (Number(tier.priceValue) || this.basePrice) * count;
+      if (tier.priceType === 'fixed') return Number(tier.priceValue);
+      if (tier.priceType === 'percentage') return Math.round(this.basePrice * count * (1 - (Number(tier.priceValue) || 0) / 100));
+      return Number(tier.priceValue) || (this.basePrice * count);
+    }
+    if (grp?.displayType === 'quantity-selector') {
+      const total = this.getTotalPreviewQtyPrice();
+      return total > 0 ? total : this.basePrice;
+    }
+    return Number(this.selectedPreviewVariant()?.price || this.basePrice);
+  }
+
+  isCodEligible(): boolean {
+    return this.activeEffectivePrice() <= 2500;
   }
 }

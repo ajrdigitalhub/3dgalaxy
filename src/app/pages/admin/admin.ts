@@ -1490,6 +1490,102 @@ export class AdminPanel implements OnInit {
     }
   }
 
+  normalizeOptionsAndVariants(rawOptions: any, rawVariants: any) {
+    let variantsList: any[] = [];
+    if (Array.isArray(rawVariants)) {
+      variantsList = rawVariants;
+    } else if (typeof rawVariants === 'string') {
+      try { variantsList = JSON.parse(rawVariants); } catch { variantsList = []; }
+    }
+
+    const mappedVariants = variantsList.map((v: any) => {
+      let optVals = v.optionValues || v.option_values || {};
+      if (typeof optVals === 'string') {
+        try { optVals = JSON.parse(optVals); } catch { optVals = {}; }
+      }
+      let imgs = v.variantImages || v.variant_images || v.images || [];
+      if (typeof imgs === 'string') {
+        try { imgs = JSON.parse(imgs); } catch { imgs = [imgs]; }
+      }
+      if (!Array.isArray(imgs)) imgs = [imgs];
+      const cleanImgs = imgs.map((img: any) => typeof img === 'string' ? img : (img?.url || '')).filter((url: string) => typeof url === 'string' && url.trim().length > 0);
+
+      return {
+        id: v.id || v.sku || Date.now().toString(),
+        name: v.name || 'Variant',
+        sku: v.sku || '',
+        price: typeof v.price === 'number' ? v.price : (parseFloat(v.price) || 0),
+        salePrice: typeof v.salePrice === 'number' ? v.salePrice : (v.salePrice ? parseFloat(v.salePrice) : (v.price ? parseFloat(v.price) : 0)),
+        stock: typeof v.stock === 'number' ? v.stock : (parseInt(v.stock, 10) || 0),
+        weight: typeof v.weight === 'number' ? v.weight : (parseFloat(v.weight) || 0),
+        variantImages: cleanImgs,
+        optionValues: optVals,
+        isActive: v.isActive !== false,
+        isDefault: !!v.isDefault
+      };
+    });
+
+    let optionsList: any[] = [];
+    if (Array.isArray(rawOptions)) {
+      optionsList = rawOptions.map((o: any, idx: number) => ({
+        id: o.id || o.name || `opt-${idx}`,
+        name: o.name || o.variantName || o.displayName || (idx === 0 ? 'Color / Style' : (idx === 1 ? 'Size / Quantity' : `Option #${idx + 1}`)),
+        variantName: o.variantName || o.name || o.displayName || `Option #${idx + 1}`,
+        displayName: o.displayName || o.name || o.variantName || `Select Option #${idx + 1}`,
+        displayType: o.displayType || o.display_type || 'chip',
+        selectionMode: o.selectionMode || o.selection_mode || 'single',
+        bundleTiers: o.bundleTiers || [],
+        values: Array.isArray(o.values)
+          ? o.values.map((val: any) => typeof val === 'string' ? val : (val.value || val.name || ''))
+          : (typeof o.values === 'string' ? o.values.split(',').map((s: string) => s.trim()) : [])
+      }));
+    } else if (typeof rawOptions === 'string') {
+      try {
+        const parsed = JSON.parse(rawOptions);
+        if (Array.isArray(parsed)) {
+          optionsList = parsed.map((o: any, idx: number) => ({
+            id: o.id || o.name || `opt-${idx}`,
+            name: o.name || o.variantName || o.displayName || (idx === 0 ? 'Color / Style' : (idx === 1 ? 'Size / Quantity' : `Option #${idx + 1}`)),
+            variantName: o.variantName || o.name || o.displayName || `Option #${idx + 1}`,
+            displayName: o.displayName || o.name || o.variantName || `Select Option #${idx + 1}`,
+            displayType: o.displayType || o.display_type || 'chip',
+            selectionMode: o.selectionMode || o.selection_mode || 'single',
+            bundleTiers: o.bundleTiers || [],
+            values: Array.isArray(o.values)
+              ? o.values.map((val: any) => typeof val === 'string' ? val : (val.value || val.name || ''))
+              : (typeof o.values === 'string' ? o.values.split(',').map((s: string) => s.trim()) : [])
+          }));
+        }
+      } catch {}
+    }
+
+    // Fallback: If options array is empty, reconstruct options from variant optionValues!
+    if (optionsList.length === 0 && mappedVariants.length > 0) {
+      const optionMap: Record<string, Set<string>> = {};
+      mappedVariants.forEach((v: any) => {
+        const optVals = v.optionValues || {};
+        Object.keys(optVals).forEach((optKey) => {
+          const cleanKey = optKey || 'Style';
+          if (!optionMap[cleanKey]) optionMap[cleanKey] = new Set();
+          const valStr = String(optVals[cleanKey]).trim();
+          if (valStr) optionMap[cleanKey].add(valStr);
+        });
+      });
+
+      optionsList = Object.keys(optionMap).map((optName, idx) => ({
+        id: optName,
+        name: optName,
+        variantName: optName,
+        displayName: `Select ${optName}`,
+        displayType: 'chip',
+        selectionMode: 'single',
+        values: Array.from(optionMap[optName])
+      }));
+    }
+
+    return { options: optionsList, variants: mappedVariants };
+  }
+
   // --- PRODUCT MANAGEMENT LOGICS ---
   startProductEdit(p: Product) {
     this.editingProduct.set(p);
@@ -1537,17 +1633,11 @@ export class AdminPanel implements OnInit {
         : [],
     );
 
-    // Parse options for the UI (basic default)
-    const restoredOptions =
-      p.options?.map((o: any) => ({
-        id: o.id,
-        name: o.name,
-        values: o.values ? o.values.map((v: any) => v.value) : [],
-      })) || [];
-    this.pOptions.set(restoredOptions);
-    this.pVariants.set(
-      p.variants ? JSON.parse(JSON.stringify(p.variants)) : [],
-    );
+    // Parse options and variants for the UI with robust fallback reconstruction
+    const rawOpts = p.options || (p as any).variantGroups || (p as any).variant_groups;
+    const initialNormalized = this.normalizeOptionsAndVariants(rawOpts, p.variants);
+    this.pOptions.set(initialNormalized.options);
+    this.pVariants.set(initialNormalized.variants);
 
     this.pSeoTitle.set(p.seo?.seoTitle || p.seoTitle || "");
     this.pSeoDescription.set(p.seo?.seoDescription || p.seoDescription || "");
@@ -1607,17 +1697,16 @@ export class AdminPanel implements OnInit {
             }),
           );
 
-          const opts = detail.options || [];
-          const detailOptions =
-            opts.map((o: any) => ({
-              id: o.id,
-              name: o.name,
-              values: o.values ? o.values.map((v: any) => v.value) : [],
-            })) || [];
-          if (detailOptions.length > 0) {
-            this.pOptions.set(detailOptions);
+          const detailNormalized = this.normalizeOptionsAndVariants(
+            detail.options || found.options || p.options,
+            found.variants || detail.variants || p.variants
+          );
+          if (detailNormalized.options.length > 0) {
+            this.pOptions.set(detailNormalized.options);
           }
-          this.pVariants.set(found.variants || detail.variants || []);
+          if (detailNormalized.variants.length > 0) {
+            this.pVariants.set(detailNormalized.variants);
+          }
 
           this.pSeoTitle.set(
             master.seo?.title || master.seo?.seoTitle || detail.seoTitle || "",

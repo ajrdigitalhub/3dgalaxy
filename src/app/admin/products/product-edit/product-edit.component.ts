@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { BrandService } from '../../shared/services/brand.service';
@@ -11,16 +12,19 @@ import { CategoryMultiSelectComponent } from '../../../shared/components/categor
 import { Product } from '../../../services/datastore';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { environment } from '../../../../environments/environment';
+import { VariantTourGuideComponent } from '../../../shared/components/variant-tour-guide/variant-tour-guide.component';
+import { VariantTourService } from '../../../core/services/variant-tour.service';
 
 @Component({
   selector: 'app-admin-product-edit',
-  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, PageHeaderComponent, CategoryMultiSelectComponent],
+  imports: [CommonModule, RouterModule, FormsModule, MatIconModule, MatTooltipModule, PageHeaderComponent, CategoryMultiSelectComponent, VariantTourGuideComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './product-edit.component.html',
   styleUrl: './product-edit.component.scss'
 })
 export class ProductEditComponent implements OnInit {
   toastService = inject(ToastService);
+  tourService = inject(VariantTourService);
   productService = inject(ProductService);
   categoryService = inject(CategoryService);
   brandService = inject(BrandService);
@@ -59,6 +63,9 @@ export class ProductEditComponent implements OnInit {
   // Variant & Option Signals
   adminOptions = signal<{ name: string; valuesString: string }[]>([]);
   adminVariants = signal<any[]>([]);
+  
+  // Storefront Live Preview Signal
+  selectedPreviewOptionValues = signal<Record<string, string>>({});
 
   isLoading = signal<boolean>(false);
 
@@ -71,6 +78,18 @@ export class ProductEditComponent implements OnInit {
         this.extractAndSetCategories(data);
       }
     });
+
+    // Auto-update preview selection when variants change
+    effect(() => {
+      const vars = this.adminVariants();
+      if (vars.length > 0) {
+        const currentSel = this.selectedPreviewOptionValues();
+        const hasKeys = Object.keys(currentSel).length > 0;
+        if (!hasKeys && vars[0].optionValues) {
+          this.selectedPreviewOptionValues.set({ ...vars[0].optionValues });
+        }
+      }
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit() {
@@ -188,11 +207,11 @@ export class ProductEditComponent implements OnInit {
     
     // Map objects to strings for textarea
     const imgs = data.images || p.images || [];
-    const urls = imgs.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean);
+    const urls = imgs.map((img: any) => typeof img === 'string' ? img : (img?.url || img?.imageUrl || '')).filter(Boolean);
     this.pImages.set(urls.join('\n'));
     
     this.pDesc.set(p.description || '');
-    this.pLongDesc.set(p.long_description || '');
+    this.pLongDesc.set(p.long_description || p.longDescription || '');
     
     const seoData = data.seo || p.seo || {};
     this.pSeoTitle.set(p.seoTitle || seoData.title || seoData.seoTitle || '');
@@ -206,46 +225,94 @@ export class ProductEditComponent implements OnInit {
     this.pShipping.set(data.shipping || p.shipping || null);
     this.pRelatedProducts.set(data.relatedProducts || p.relatedProducts || []);
 
-    // Map dynamic options
-    const opts = data.options || p.options || [];
-    const mappedOptions = opts.map((opt: any) => {
-      let valsString = '';
-      if (Array.isArray(opt.values)) {
-        valsString = opt.values.map((v: any) => (typeof v === 'string' ? v : (v.value || v.name || ''))).filter(Boolean).join(', ');
-      } else if (typeof opt.values === 'string') {
-        valsString = opt.values;
-      }
-      return {
-        name: opt.name || '',
-        valuesString: valsString
-      };
-    });
-    this.adminOptions.set(mappedOptions);
+    // 1. Robust Map Options
+    let rawOptions = data.options || p.options || data.variantGroups || p.variantGroups || data.variant_groups || p.variant_groups || [];
+    if (typeof rawOptions === 'string') {
+      try { rawOptions = JSON.parse(rawOptions); } catch (e) { rawOptions = []; }
+    }
 
-    // Map dynamic variants
-    const vars = data.variants || p.variants || [];
-    const mappedVariants = vars.map((v: any) => {
+    let mappedOptions: { name: string; valuesString: string }[] = [];
+    if (Array.isArray(rawOptions) && rawOptions.length > 0) {
+      mappedOptions = rawOptions.map((opt: any) => {
+        let vals: string[] = [];
+        if (Array.isArray(opt.values)) {
+          vals = opt.values.map((v: any) => (typeof v === 'string' ? v.trim() : (v.value || v.name || ''))).filter(Boolean);
+        } else if (typeof opt.values === 'string') {
+          vals = opt.values.split(',').map((v: string) => v.trim()).filter(Boolean);
+        }
+        return {
+          name: opt.name || '',
+          valuesString: vals.join(', ')
+        };
+      }).filter(o => o.name);
+    }
+
+    // 2. Robust Map Variants
+    let rawVars = data.variants || p.variants || [];
+    if (typeof rawVars === 'string') {
+      try { rawVars = JSON.parse(rawVars); } catch (e) { rawVars = []; }
+    }
+
+    const mappedVariants = (Array.isArray(rawVars) ? rawVars : []).map((v: any) => {
       let vImgs = '';
       if (Array.isArray(v.variantImages)) {
-        vImgs = v.variantImages.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean).join('\n');
+        vImgs = v.variantImages.map((img: any) => typeof img === 'string' ? img : (img?.url || '')).filter(Boolean).join('\n');
       } else if (Array.isArray(v.images)) {
-        vImgs = v.images.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean).join('\n');
+        vImgs = v.images.map((img: any) => typeof img === 'string' ? img : (img?.url || '')).filter(Boolean).join('\n');
       } else if (typeof v.variantImages === 'string') {
         vImgs = v.variantImages;
       } else if (typeof v.images === 'string') {
         vImgs = v.images;
       }
+
+      let parsedOptVals: Record<string, string> = {};
+      if (v.optionValues) {
+        if (typeof v.optionValues === 'object' && !Array.isArray(v.optionValues)) {
+          parsedOptVals = { ...v.optionValues };
+        } else if (typeof v.optionValues === 'string') {
+          try { parsedOptVals = JSON.parse(v.optionValues); } catch (e) {}
+        }
+      }
+
       return {
+        id: v.id || null,
         name: v.name || '',
         sku: v.sku || '',
-        price: v.price || v.salePrice || 0,
-        salePrice: v.salePrice || null,
-        stock: v.stock || 0,
+        price: Number(v.price || v.mrp || p.mrp || p.basePrice || 0),
+        salePrice: v.salePrice !== undefined && v.salePrice !== null ? Number(v.salePrice) : (v.sale_price !== undefined && v.sale_price !== null ? Number(v.sale_price) : null),
+        stock: v.stock !== undefined && v.stock !== null ? Number(v.stock) : 0,
         variantImages: vImgs,
-        optionValues: v.optionValues || {}
+        optionValues: parsedOptVals,
+        isActive: v.isActive !== false,
+        isDefault: !!v.isDefault
       };
     });
+
+    // 3. Fallback: Reconstruct Options from Variant OptionValues if Options were empty
+    if (mappedOptions.length === 0 && mappedVariants.length > 0) {
+      const optionMap: Record<string, Set<string>> = {};
+      mappedVariants.forEach((v: any) => {
+        if (v.optionValues && typeof v.optionValues === 'object') {
+          Object.entries(v.optionValues).forEach(([optName, optVal]) => {
+            if (optName && optVal) {
+              if (!optionMap[optName]) optionMap[optName] = new Set();
+              optionMap[optName].add(String(optVal));
+            }
+          });
+        }
+      });
+      mappedOptions = Object.entries(optionMap).map(([name, set]) => ({
+        name,
+        valuesString: Array.from(set).join(', ')
+      }));
+    }
+
+    this.adminOptions.set(mappedOptions);
     this.adminVariants.set(mappedVariants);
+
+    if (mappedVariants.length > 0 && mappedVariants[0].optionValues) {
+      this.selectedPreviewOptionValues.set({ ...mappedVariants[0].optionValues });
+    }
   }
 
   addOption() {
@@ -254,6 +321,45 @@ export class ProductEditComponent implements OnInit {
 
   removeOption(index: number) {
     this.adminOptions.update(opts => opts.filter((_, i) => i !== index));
+  }
+
+  addCustomVariant() {
+    const baseName = this.pName().trim() || 'New Variant';
+    const baseSku = (this.pSku().trim() || 'SKU') + `-VAR-${Date.now().toString().slice(-4)}`;
+    const newVar = {
+      id: null,
+      name: baseName,
+      sku: baseSku,
+      price: this.pSale() || this.pMrp() || 0,
+      salePrice: this.pSale() || null,
+      stock: this.pStock() || 0,
+      variantImages: '',
+      optionValues: {},
+      isActive: true,
+      isDefault: this.adminVariants().length === 0
+    };
+    this.adminVariants.update(vars => [...vars, newVar]);
+  }
+
+  removeVariant(index: number) {
+    this.adminVariants.update(vars => vars.filter((_, i) => i !== index));
+  }
+
+  toggleVariantStatus(index: number) {
+    this.adminVariants.update(vars => {
+      const copy = [...vars];
+      copy[index] = { ...copy[index], isActive: !copy[index].isActive };
+      return copy;
+    });
+  }
+
+  setDefaultVariant(index: number) {
+    this.adminVariants.update(vars => {
+      return vars.map((v, i) => ({
+        ...v,
+        isDefault: i === index
+      }));
+    });
   }
 
   generateVariants() {
@@ -282,6 +388,7 @@ export class ProductEditComponent implements OnInit {
     };
 
     const combinations = cartesian(options.map(o => o.values));
+    const existingVars = this.adminVariants();
     
     const newVariants = combinations.map(comb => {
       const optValues: Record<string, string> = {};
@@ -294,16 +401,37 @@ export class ProductEditComponent implements OnInit {
       const skuSuffix = comb.map(c => c.toLowerCase().replace(/[^a-z0-9]+/g, '')).join('-');
       const sku = `${baseSku}-${skuSuffix}`.toUpperCase();
 
+      // Check if a variant with matching optionValues or SKU already exists to preserve custom price/stock/images!
+      const matchedExisting = existingVars.find(ev => {
+        if (!ev.optionValues) return false;
+        return Object.entries(optValues).every(([k, val]) => ev.optionValues[k] === val);
+      });
+
+      if (matchedExisting) {
+        return {
+          ...matchedExisting,
+          name,
+          optionValues: optValues
+        };
+      }
+
       return {
+        id: null,
         name,
         sku,
         price: this.pSale() || this.pMrp() || 0,
         salePrice: this.pSale() || null,
         stock: this.pStock() || 0,
         variantImages: '',
-        optionValues: optValues
+        optionValues: optValues,
+        isActive: true,
+        isDefault: false
       };
     });
+
+    if (newVariants.length > 0 && !newVariants.some(v => v.isDefault)) {
+      newVariants[0].isDefault = true;
+    }
 
     this.adminVariants.set(newVariants);
     this.toastService.success(`Generated ${newVariants.length} variant combinations!`);
@@ -318,6 +446,74 @@ export class ProductEditComponent implements OnInit {
     } else {
       this.pCatId.set('');
     }
+  }
+
+  selectedPreviewVariantId = signal<string>('');
+
+  selectPreviewOption(optName: string, value: string) {
+    this.selectedPreviewVariantId.set('');
+    this.selectedPreviewOptionValues.update((current) => ({
+      ...current,
+      [optName]: value,
+    }));
+  }
+
+  selectPreviewVariantById(idOrSku: string) {
+    this.selectedPreviewVariantId.set(idOrSku);
+    const variants = this.adminVariants();
+    const matched = variants.find((v: any) => (v.id && String(v.id) === String(idOrSku)) || (v.sku && String(v.sku) === String(idOrSku)));
+    if (matched && matched.optionValues) {
+      this.selectedPreviewOptionValues.set({ ...matched.optionValues });
+    }
+  }
+
+  getMatchedPreviewVariant(): any {
+    const variants = this.adminVariants();
+    if (!variants || variants.length === 0) return null;
+
+    const selId = this.selectedPreviewVariantId();
+    if (selId) {
+      const explicit = variants.find((v: any) => String(v.id) === String(selId) || String(v.sku) === String(selId));
+      if (explicit) return explicit;
+    }
+
+    const selected = this.selectedPreviewOptionValues();
+    const activeKeys = Object.keys(selected);
+
+    if (activeKeys.length > 0) {
+      const match = variants.find((v: any) => {
+        const optVals = v.optionValues || {};
+        const optKeys = Object.keys(optVals);
+        return activeKeys.every((k) => {
+          const targetVal = String(selected[k]).trim().toLowerCase();
+          if (!targetVal) return true;
+          if (optVals[k] !== undefined) {
+            return String(optVals[k]).trim().toLowerCase() === targetVal;
+          }
+          return optKeys.some(ok => String(optVals[ok]).trim().toLowerCase() === targetVal);
+        });
+      });
+      if (match) return match;
+    }
+
+    return variants.find((v: any) => v.isDefault) || variants[0];
+  }
+
+  getFirstVariantImageUrl(variant: any): string {
+    if (variant) {
+      const imgs = variant.variantImages || variant.images || [];
+      if (Array.isArray(imgs) && imgs.length > 0) {
+        const first = imgs[0];
+        const url = typeof first === 'string' ? first : (first?.url || '');
+        if (url && url.trim().length > 0) return url;
+      }
+    }
+    const rawImgs = this.pImages();
+    if (rawImgs) {
+      const lines = typeof rawImgs === 'string' ? rawImgs.split('\n').map(s => s.trim()).filter(Boolean) : [];
+      if (lines.length > 0) return lines[0];
+    }
+    return '';
   }
 
   async saveProduct() {
@@ -350,7 +546,7 @@ export class ProductEditComponent implements OnInit {
       imagesArr = textImgs.split('\n').map(x => x.trim()).filter(Boolean);
     } else if (this.currentProduct()?.images) {
       const origImgs = this.currentProduct()!.images;
-      imagesArr = origImgs.map((img: any) => typeof img === 'string' ? img : img?.url).filter(Boolean);
+      imagesArr = origImgs.map((img: any) => typeof img === 'string' ? img : (img?.url || '')).filter(Boolean);
     }
 
     if (imagesArr.length === 0) {
@@ -366,13 +562,16 @@ export class ProductEditComponent implements OnInit {
 
     // Map dynamic variants
     const variantsArr = this.adminVariants().map(v => ({
+      id: v.id || undefined,
       name: v.name,
       sku: v.sku,
       price: parseFloat(v.price) || 0,
-      salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
+      salePrice: v.salePrice !== undefined && v.salePrice !== null && String(v.salePrice).trim() !== '' ? parseFloat(v.salePrice) : null,
       stock: parseInt(v.stock, 10) || 0,
-      variantImages: v.variantImages ? v.variantImages.split('\n').map((url: string) => url.trim()).filter(Boolean) : [],
-      optionValues: v.optionValues
+      variantImages: v.variantImages ? (typeof v.variantImages === 'string' ? v.variantImages.split('\n').map((url: string) => url.trim()).filter(Boolean) : v.variantImages) : [],
+      optionValues: v.optionValues,
+      isActive: v.isActive !== false,
+      isDefault: !!v.isDefault
     }));
 
     const primaryId = this.pCatId() || (this.pCategoryIds().length > 0 ? this.pCategoryIds()[0] : '');

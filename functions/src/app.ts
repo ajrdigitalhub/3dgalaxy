@@ -100,7 +100,20 @@ app.use(
       return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'Accept', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Request-ID',
+      'Accept',
+      'X-Requested-With',
+      'x-guest-session-id',
+      'X-Guest-Session-ID',
+      'Cache-Control',
+      'Pragma',
+      'Origin',
+      'Accept-Language',
+      'X-Client-Platform'
+    ],
     credentials: true,
     maxAge: 86400, // 24 hours preflight cache
   })
@@ -115,7 +128,12 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, Accept, X-Requested-With');
+  const reqHeaders = req.headers['access-control-request-headers'];
+  if (reqHeaders) {
+    res.setHeader('Access-Control-Allow-Headers', reqHeaders);
+  } else {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, Accept, X-Requested-With, x-guest-session-id, X-Guest-Session-ID, Cache-Control, Pragma, Origin, Accept-Language, X-Client-Platform, *');
+  }
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -133,6 +151,20 @@ app.use('/api/payment/verify-payment', checkoutLimiter);
 app.use('/api/checkout', checkoutLimiter);
 app.use('/api/support', uploadLimiter);
 app.use('/api', apiLimiter);
+
+// Response time benchmark header
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function (this: Response, statusCode: any, ...args: any[]) {
+    if (!res.headersSent) {
+      const duration = Date.now() - start;
+      res.setHeader('X-Response-Time', `${duration}ms`);
+    }
+    return originalWriteHead.apply(this, [statusCode, ...args] as any);
+  };
+  next();
+});
 
 // Middleware
 app.use(compression());
@@ -157,10 +189,6 @@ app.use(
     },
   }),
 );
-
-// Serve Static Uploads
-// const uploadsPath = path.resolve(__dirname, '../../uploads');
-// app.use('/uploads', express.static(uploadsPath)); f gdfg dfg dfg d fdsf  d gdf
 
 // API Routing Configurations
 app.use("/", sitemapRoutes);

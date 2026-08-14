@@ -1717,24 +1717,29 @@ export class DatastoreService {
     });
   }
 
-  reloadProducts(showLoader = true, force = false) {
+  reloadProducts(showLoader = true, force = false, limit = 500, search?: string) {
     if (showLoader) {
       this.productsLoading.set(true);
     }
-    if (force || !this.productsCache$) {
-      this.productsCache$ = this.api?.get<any>('/products', { limit: 1000 }).pipe(
-        shareReplay(1),
-        catchError((err) => {
-          console.error('Error loading products:', err);
-          this.productsCache$ = undefined;
-          return of({ products: [] });
-        }),
-        finalize(() => {
-          this.productsLoading.set(false);
-        })
-      );
+    const params: any = { limit };
+    if (search && search.trim()) {
+      params.search = search.trim();
     }
-    this.productsCache$.subscribe({
+
+    const role = this.userRole();
+    const endpoint = (role === 'admin' || role === 'super-admin') ? '/admin/products' : '/products';
+
+    this.api?.get<any>(endpoint, params).pipe(
+      catchError((err) => {
+        console.warn('Fallback to public products search:', err?.message || err);
+        return this.api?.get<any>('/products', params).pipe(
+          catchError(() => of({ products: [] }))
+        ) || of({ products: [] });
+      }),
+      finalize(() => {
+        this.productsLoading.set(false);
+      })
+    ).subscribe({
       next: (res) => { 
         const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
         if (list) {
@@ -2163,9 +2168,20 @@ export class DatastoreService {
 
   getItemPrice(item: any): number {
     if (item.isFree) return 0;
-    if (item.bundleDetails && item.bundleDetails.selectedVariants) {
-      const totalBundleSlotsPrice = item.bundleDetails.selectedVariants.reduce((sum: number, v: any) => sum + Number(v.price || 0), 0);
-      return Math.max(0, totalBundleSlotsPrice);
+    if (item.bundleDetails) {
+      if (item.bundleDetails.effectivePrice !== undefined && item.bundleDetails.effectivePrice > 0) {
+        return Number(item.bundleDetails.effectivePrice);
+      }
+      if (item.bundleDetails.bundlePrice !== undefined && item.bundleDetails.bundlePrice > 0) {
+        return Number(item.bundleDetails.bundlePrice);
+      }
+      if (item.bundleDetails.selectedVariants && item.bundleDetails.selectedVariants.length > 0) {
+        const totalBundleSlotsPrice = item.bundleDetails.selectedVariants.reduce((sum: number, v: any) => sum + Number(v.price || 0), 0);
+        if (totalBundleSlotsPrice > 0) return totalBundleSlotsPrice;
+      }
+    }
+    if (item.effectivePrice !== undefined && item.effectivePrice > 0) {
+      return Number(item.effectivePrice);
     }
     const p = item.product || item;
     const variant = item.variant;

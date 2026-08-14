@@ -227,12 +227,19 @@ const defaultSettings = {
 
 const isDatabaseUnavailableError = (error: any) => {
   const message = error?.message || "";
+  const code = error?.code || "";
   return (
-    error?.code === "P1001" ||
-    error?.code === "P2024" ||
-    error?.code === "ECONNREFUSED" ||
-    /Can't reach database server|database server is running|ECONNREFUSED|connect/i.test(
-      message,
+    code === "P1001" ||
+    code === "P1002" ||
+    code === "P1008" ||
+    code === "P1017" ||
+    code === "P2024" ||
+    code === "ENOTFOUND" ||
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "EHOSTUNREACH" ||
+    /Can't reach database server|database server is running|ECONNREFUSED|ENOTFOUND|getaddrinfo|ETIMEDOUT|EHOSTUNREACH|connect/i.test(
+      message
     )
   );
 };

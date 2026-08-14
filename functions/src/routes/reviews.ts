@@ -606,57 +606,101 @@ function extractReviewDetails(rawText: string | null | undefined, defaultTitle =
 
 router.get("/admin/reviews", authenticateToken, async (req, res) => {
   try {
-    const reviews = await prisma.customerReview.findMany({
-      include: { product: true, customer: { include: { user: true } } },
-      orderBy: { createdAt: "desc" },
+    const page = parseInt(String(req.query.page || '1'), 10);
+    const limit = parseInt(String(req.query.limit || '50'), 10);
+    const skip = (page - 1) * limit;
+
+    const [reviews, totalCount] = await Promise.all([
+      prisma.customerReview.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          productId: true,
+          rating: true,
+          reviewText: true,
+          createdAt: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              images: true,
+            }
+          },
+          customer: {
+            select: {
+              phone: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  mobile: true,
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.customerReview.count()
+    ]);
+
+    const mapped = reviews.map((review: any) => {
+      const details = extractReviewDetails(review.reviewText);
+      const prod = review.product;
+      
+      let productImage = null;
+      if (prod && prod.images) {
+        try {
+          const parsed = typeof prod.images === 'string' ? JSON.parse(prod.images) : prod.images;
+          const firstImg = Array.isArray(parsed) ? parsed[0] : null;
+          productImage = typeof firstImg === 'string' ? firstImg : (firstImg?.url || firstImg?.imageUrl || null);
+        } catch (e) {}
+      }
+      if (!productImage || typeof productImage !== "string" || productImage.includes("undefined")) {
+        productImage = `https://picsum.photos/seed/${prod?.slug || review.productId || '3dgalaxy'}/300/300`;
+      }
+
+      const user = review.customer?.user;
+      const userName = user
+        ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+        : "Customer";
+
+      const status = (details.status || (review as any).status || "PENDING").toUpperCase();
+
+      return {
+        id: review.id,
+        productId: review.productId,
+        productName: prod?.name || "3D Printing Product",
+        productSlug: prod?.slug || review.productId,
+        productImage,
+        rating: Number(review.rating) || 5,
+        title: details.title,
+        comment: details.comment,
+        images: details.images,
+        status,
+        userName: userName || "Verified Customer",
+        userEmail: user?.email || "",
+        userMobile: user?.mobile || review.customer?.phone || "",
+        adminRemarks: details.adminRemarks,
+        createdAt: review.createdAt.toISOString(),
+        updatedAt: review.updatedAt ? review.updatedAt.toISOString() : review.createdAt.toISOString(),
+        helpfulCount: details.helpfulCount || 0,
+      };
     });
 
-    const mapped = await Promise.all(
-      reviews.map(async (review: any) => {
-        const details = extractReviewDetails(review.reviewText);
-
-        const prod = review.product;
-        let productImage = null;
-        if (prod) {
-          try {
-            const mappedProd = mapProductFields(prod);
-            productImage = mappedProd?.primaryImage || mappedProd?.thumbnail || null;
-          } catch (e) {}
-        }
-        if (!productImage || typeof productImage !== "string" || productImage.includes("undefined")) {
-          productImage = `https://picsum.photos/seed/${prod?.slug || review.productId || '3dgalaxy'}/300/300`;
-        }
-
-        const user = review.customer?.user;
-        const userName = user
-          ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-          : "Customer";
-
-        const status = (details.status || (review as any).status || "PENDING").toUpperCase();
-
-        return {
-          id: review.id,
-          productId: review.productId,
-          productName: prod?.name || "3D Printing Product",
-          productSlug: prod?.slug || review.productId,
-          productImage,
-          rating: Number(review.rating) || 5,
-          title: details.title,
-          comment: details.comment,
-          images: details.images,
-          status,
-          userName: userName || "Verified Customer",
-          userEmail: user?.email || "",
-          userMobile: user?.mobile || review.customer?.phone || "",
-          adminRemarks: details.adminRemarks,
-          createdAt: review.createdAt.toISOString(),
-          updatedAt: review.updatedAt ? review.updatedAt.toISOString() : review.createdAt.toISOString(),
-          helpfulCount: details.helpfulCount || 0,
-        };
-      })
-    );
-
-    return res.status(200).json({ success: true, data: mapped });
+    return res.status(200).json({
+      success: true,
+      data: mapped,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }

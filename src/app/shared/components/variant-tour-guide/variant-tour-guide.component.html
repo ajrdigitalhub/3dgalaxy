@@ -1,0 +1,80 @@
+<!-- ONBOARDING TOUR OVERLAY -->
+<div *ngIf="tourService.isActive()" class="tour-backdrop-overlay">
+  <!-- Spotlight Highlight Cutout Box -->
+  <div 
+    class="tour-spotlight-cutout"
+    [ngStyle]="getSpotlightStyle()">
+    <div class="spotlight-glowing-ring"></div>
+  </div>
+
+  <!-- Compact Tour Popover Card -->
+  <div 
+    class="tour-popover-card animate-fadeIn"
+    [ngStyle]="getPopoverPositionStyle()">
+    
+    <div class="popover-header">
+      <h4 class="step-title">{{ tourService.currentStep().title }}</h4>
+      <span class="step-counter">{{ tourService.currentStepIndex() + 1 }}/{{ tourService.totalSteps() }}</span>
+    </div>
+
+    <div class="popover-body">
+      <p class="step-text">{{ tourService.currentStep().content }}</p>
+    </div>
+
+    <div class="popover-footer">
+      <button type="button" class="skip-btn" (click)="tourService.skipTour()">
+        Skip
+      </button>
+
+      <div class="nav-buttons">
+        <button 
+          type="button" 
+          class="nav-btn prev"
+          [disabled]="tourService.isFirstStep()"
+          (click)="tourService.prevStep()">
+          <mat-icon>chevron_left</mat-icon> Back
+        </button>
+
+        <button 
+          type="button" 
+          class="nav-btn next"
+          (click)="tourService.nextStep()">
+          <span>{{ tourService.isLastStep() ? 'Finish 🎉' : 'Next' }}</span>
+          <mat-icon *ngIf="!tourService.isLastStep()">chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOUR COMPLETION MODAL -->
+<div *ngIf="tourService.isCompletedModalOpen()" class="tour-completion-overlay flex items-center justify-center p-4">
+  <div class="completion-card bg-white dark:bg-zinc-900 border border-purple-500/30 rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center space-y-4 animate-scaleUp">
+    <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto text-2xl border border-emerald-500/20">
+      <mat-icon>task_alt</mat-icon>
+    </div>
+
+    <div>
+      <h3 class="text-sm font-black text-zinc-900 dark:text-white">Variant configuration tour completed.</h3>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+        You can now easily manage options, pricing, stock, images, and storefront previews.
+      </p>
+    </div>
+
+    <div class="flex items-center justify-center gap-2 pt-1">
+      <button 
+        type="button"
+        (click)="tourService.closeCompletedModal()"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer shadow-md">
+        Start Configuring
+      </button>
+
+      <button 
+        type="button"
+        (click)="tourService.restartTour()"
+        class="px-3.5 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition-all border border-zinc-200 dark:border-zinc-700 cursor-pointer">
+        Take Tour Again
+      </button>
+    </div>
+  </div>
+</div>

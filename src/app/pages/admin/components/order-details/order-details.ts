@@ -229,7 +229,9 @@ export class OrderDetailsComponent implements OnInit {
 
   fetchOrder(id: string) {
     this.loading.set(true);
-    this.http.get<any>(`/api/orders/${id}`, this.getHeaders()).pipe(
+    const cleanId = String(id || '').trim();
+    const url = cleanId.startsWith('http') ? cleanId : `${environment.apiUrl}/orders/${encodeURIComponent(cleanId)}`;
+    this.http.get<any>(url, this.getHeaders()).pipe(
       catchError(err => {
         this.error.set(err.error?.error || 'Failed to load order detailed logic.');
         this.loading.set(false);
@@ -248,7 +250,7 @@ export class OrderDetailsComponent implements OnInit {
 
   fetchCustomerHistory(customerId: string, currentOrderId: string) {
     this.loadingHistory.set(true);
-    this.http.get<any[]>('/api/orders', this.getHeaders()).pipe(
+    this.http.get<any[]>(`${environment.apiUrl}/orders`, this.getHeaders()).pipe(
       catchError(() => of([]))
     ).subscribe(res => {
       if (res && res.length > 0) {
@@ -271,7 +273,7 @@ export class OrderDetailsComponent implements OnInit {
     }
 
     this.statusUpdating.set(true);
-    this.http.put(`/api/orders/${this.order().id}/status`, { status }, this.getHeaders()).subscribe({
+    this.http.put(`${environment.apiUrl}/orders/${this.order().id}/status`, { status }, this.getHeaders()).subscribe({
       next: () => {
         this.fetchOrder(this.order().orderNumber);
         this.statusUpdating.set(false);
@@ -288,7 +290,7 @@ export class OrderDetailsComponent implements OnInit {
     if (!ord) return;
 
     this.statusUpdating.set(true);
-    this.http.put(`/api/orders/${ord.id}/status`, {
+    this.http.put(`${environment.apiUrl}/orders/${ord.id}/status`, {
       status: 'Shipped',
       ...payload
     }, this.getHeaders()).subscribe({
@@ -320,7 +322,7 @@ export class OrderDetailsComponent implements OnInit {
   updatePaymentStatus(paymentStatus: string) {
     if (!paymentStatus) return;
     this.paymentUpdating.set(true);
-    this.http.put(`/api/orders/${this.order().id}/payment`, { paymentStatus }, this.getHeaders()).subscribe({
+    this.http.put(`${environment.apiUrl}/orders/${this.order().id}/payment`, { paymentStatus }, this.getHeaders()).subscribe({
       next: () => {
         this.fetchOrder(this.order().orderNumber);
         this.paymentUpdating.set(false);
@@ -335,7 +337,7 @@ export class OrderDetailsComponent implements OnInit {
   updateShipment(carrier: string, trackingNumber: string, trackingUrl: string, estimatedDeliveryDate: string) {
     if (!carrier) return alert('Carrier company name is required');
     this.shipmentUpdating.set(true);
-    this.http.put(`/api/orders/${this.order().id}/shipment`, { 
+    this.http.put(`${environment.apiUrl}/orders/${this.order().id}/shipment`, { 
       shipmentCarrier: carrier, 
       trackingNumber,
       trackingUrl,
@@ -355,7 +357,7 @@ export class OrderDetailsComponent implements OnInit {
   addNote(notes: string, noteInputEl: HTMLTextAreaElement) {
     if (!notes || !notes.trim()) return;
     this.noteAdding.set(true);
-    this.http.post(`/api/orders/${this.order().id}/notes`, { notes }, this.getHeaders()).subscribe({
+    this.http.post(`${environment.apiUrl}/orders/${this.order().id}/notes`, { notes }, this.getHeaders()).subscribe({
       next: () => {
         this.fetchOrder(this.order().orderNumber);
         noteInputEl.value = '';
@@ -370,7 +372,7 @@ export class OrderDetailsComponent implements OnInit {
 
   resendNotification() {
     this.notificationResending.set(true);
-    this.http.post(`/api/orders/${this.order().id}/resend-notification`, {}, this.getHeaders()).subscribe({
+    this.http.post(`${environment.apiUrl}/orders/${this.order().id}/resend-notification`, {}, this.getHeaders()).subscribe({
       next: (res: any) => {
         alert(res.message || 'Customer notification resent successfully');
         this.notificationResending.set(false);

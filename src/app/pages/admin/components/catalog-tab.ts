@@ -10,6 +10,7 @@ import {
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatIconModule } from "@angular/material/icon";
+import { MatTooltipModule } from "@angular/material/tooltip";
 import { HttpClient } from "@angular/common/http";
 import { ApiService } from "../../../services/api.service";
 import { firstValueFrom } from "rxjs";
@@ -22,6 +23,8 @@ import { ImagePickerComponent } from "../../../shared/components/image-picker/im
 import { AppButton } from "../../../shared/components/app-button/app-button";
 import { AdminVariantGroupConfigComponent } from "./admin-variant-group-config/admin-variant-group-config.component";
 import { CategoryMultiSelectComponent } from "../../../shared/components/category-multi-select/category-multi-select.component";
+import { VariantTourGuideComponent } from "../../../shared/components/variant-tour-guide/variant-tour-guide.component";
+import { VariantTourService } from "../../../core/services/variant-tour.service";
 
 @Component({
   selector: "app-admin-catalog-tab",
@@ -29,12 +32,14 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
     CommonModule,
     FormsModule,
     MatIconModule,
+    MatTooltipModule,
     RichTextEditorComponent,
     ImagePickerComponent,
     AppButton,
     ProductImportComponent,
     AdminVariantGroupConfigComponent,
     CategoryMultiSelectComponent,
+    VariantTourGuideComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -147,10 +152,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                 >
                   <!-- Basic Group -->
                   <div class="space-y-1">
-                    <span
-                      class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                      >Product Title *</span
-                    >
+                    <div class="flex items-center gap-1 mb-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Product Title *</span>
+                      <div class="group relative flex items-center cursor-help">
+                        <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                        <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                          Main product name displayed in store catalog, search results, and checkout invoices.
+                        </div>
+                      </div>
+                    </div>
                     <input
                       type="text"
                       [value]="admin.pName()"
@@ -162,10 +172,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                     />
                   </div>
                   <div class="space-y-1">
-                    <span
-                      class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                      >URL Slug Customization</span
-                    >
+                    <div class="flex items-center gap-1 mb-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">URL Slug Customization</span>
+                      <div class="group relative flex items-center cursor-help">
+                        <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                        <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                          Web URL path identifier (e.g. /product/bambu-lab-p1s).
+                        </div>
+                      </div>
+                    </div>
                     <input
                       type="text"
                       [value]="admin.pSlug()"
@@ -175,10 +190,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                     />
                   </div>
                   <div class="space-y-1">
-                    <span
-                      class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                      >SKU Barcode / Part Number</span
-                    >
+                    <div class="flex items-center gap-1 mb-1">
+                      <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">SKU Barcode / Part Number</span>
+                      <div class="group relative flex items-center cursor-help">
+                        <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                        <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                          Unique Stock Keeping Unit barcode code used for inventory management.
+                        </div>
+                      </div>
+                    </div>
                     <input
                       type="text"
                       [value]="admin.pSku()"
@@ -190,10 +210,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
 
                   <div class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2">
                     <div class="space-y-1 col-span-1 md:col-span-2">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1"
-                        >Categories Architecture (Multi-Category Assignment & Primary Tag) *</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest pl-1">Categories Architecture (Multi-Category Tagging) *</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                            Select all applicable categories for storefront navigation. Assign one Primary tag for breadcrumbs.
+                          </div>
+                        </div>
+                      </div>
                       <app-category-multi-select
                         [categories]="admin.ds.categories()"
                         [selectedCategoryIds]="admin.pCategoryIds()"
@@ -202,10 +227,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                     </div>
 
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Brand Manufacturer alliance</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Brand Manufacturer Alliance</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-60 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                            Associates product with brand pages and warranty badges.
+                          </div>
+                        </div>
+                      </div>
                       <select
                         [value]="admin.pBrand()"
                         (change)="admin.pBrand.set($any($event.target).value)"
@@ -224,10 +254,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                     class="grid grid-cols-3 gap-3 col-span-1 md:col-span-2 text-zinc-900 dark:text-white"
                   >
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >MRP Price (INR)</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">MRP Price (INR)</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-48 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                            Strikethrough reference retail price.
+                          </div>
+                        </div>
+                      </div>
                       <input
                         type="number"
                         [value]="admin.pMrp()"
@@ -236,10 +271,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                       />
                     </div>
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Retail Sale (INR)</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Retail Sale (INR)</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-48 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                            Actual price charged to standard customer orders.
+                          </div>
+                        </div>
+                      </div>
                       <input
                         type="number"
                         [value]="admin.pSale()"
@@ -248,10 +288,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                       />
                     </div>
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Authorized Dealer (INR)</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Authorized Dealer (INR)</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                          <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-48 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                            Exclusive wholesale rate for verified dealer accounts.
+                          </div>
+                        </div>
+                      </div>
                       <input
                         type="number"
                         [value]="admin.pDealer()"
@@ -266,10 +311,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                     class="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 text-zinc-900 dark:text-white"
                   >
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Physical Stock Inventory</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Physical Stock Inventory</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                            Total stock quantity if product has no variant breakdown.
+                          </div>
+                        </div>
+                      </div>
                       <input
                         type="number"
                         [value]="admin.pStock()"
@@ -278,10 +328,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                       />
                     </div>
                     <div class="space-y-1">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Status Policy</span
-                      >
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Status Policy</span>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400">info</mat-icon>
+                          <div class="absolute right-0 bottom-full mb-1.5 hidden group-hover:block w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-xl z-50 pointer-events-none">
+                            Controls whether product is visible to public website visitors.
+                          </div>
+                        </div>
+                      </div>
                       <select
                         [value]="admin.pStatus()"
                         (change)="admin.pStatus.set($any($event.target).value)"
@@ -602,6 +657,32 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                   [class.hidden]="activeEditTab() !== 'variants'"
                   class="space-y-6 animate-fadeIn"
                 >
+                  <!-- TOUR TRIGGER HEADER BAR -->
+                  <div class="flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/5 dark:from-blue-950/40 dark:to-purple-950/40 rounded-xl border border-blue-500/20 shadow-xs flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                      <mat-icon class="text-blue-600 dark:text-blue-400">school</mat-icon>
+                      <div>
+                        <span class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Variant Setup Guide & Onboarding</span>
+                        <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium m-0">Step-by-step interactive walkthrough for options, pricing, stock, images, and live previews.</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button 
+                        type="button" 
+                        (click)="tourService.startTour()"
+                        class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-black uppercase tracking-wider cursor-pointer border-none shadow-xs flex items-center gap-1.5 transition-all">
+                        <mat-icon class="scale-75">play_arrow</mat-icon> Take Variant Configuration Tour
+                      </button>
+                      <button
+                        type="button"
+                        (click)="tourService.startTour()"
+                        class="px-2.5 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-[11px] font-bold cursor-pointer border border-zinc-200 dark:border-zinc-700 flex items-center gap-1">
+                        <span>Help</span>
+                        <mat-icon class="scale-75">help_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
                   <!-- Options Management -->
                   <div class="space-y-4">
                     <!-- Advanced Variant Group & Bundle Architecture Editor with Live Preview -->
@@ -612,28 +693,43 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                       (groupsChanged)="admin.pOptions.set($event)" />
 
                     <div
+                      data-tour="variant-options"
                       class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2 mt-6"
                     >
-                      <h4
-                        class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider"
-                      >
-                        Option Keys & Values Mapping
-                      </h4>
-                      <button
-                        (click)="admin.addOption()"
-                        class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] uppercase font-black tracking-wider rounded border-none cursor-pointer flex items-center gap-1"
-                      >
-                        <mat-icon class="scale-75 text-sm">add</mat-icon> Add
-                        Option
-                      </button>
+                      <div class="flex items-center gap-1.5">
+                        <h4
+                          class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5"
+                        >
+                          <span>Option Keys & Values Mapping</span>
+                        </h4>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                            Define customer selection options (e.g. Color, Size, Filament Type). Comma-separated values generate variant combinations.
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          (click)="admin.addOption()"
+                          class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] uppercase font-black tracking-wider rounded border-none cursor-pointer flex items-center gap-1 shadow-sm"
+                        >
+                          <mat-icon class="scale-75 text-sm">add</mat-icon> Add Option
+                        </button>
+                        <button
+                          (click)="addCustomVariant()"
+                          class="px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 text-[10px] uppercase font-black tracking-wider rounded border border-emerald-500/30 cursor-pointer flex items-center gap-1"
+                        >
+                          <mat-icon class="scale-75 text-sm">post_add</mat-icon> Add Single Variant
+                        </button>
+                      </div>
                     </div>
 
                     @if (admin.pOptions().length === 0) {
                       <div
                         class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl"
                       >
-                        No options configured. Add options like Size, Color, or
-                        Material to generate variants.
+                        No options configured. Click "Add Option" above to create Color, Size, or Style variations.
                       </div>
                     } @else {
                       <div class="space-y-4">
@@ -684,28 +780,192 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                             </div>
                           </div>
                         }
-                        <div class="pt-4 flex justify-end gap-3">
+                        <div class="pt-2 flex justify-end">
                           <button
                             (click)="admin.generateVariants()"
-                            class="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 font-black uppercase text-xs tracking-wider rounded-lg border-none cursor-pointer"
+                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-2 shadow-md transition-all"
                           >
-                            Generate Variant Combinations
+                            <mat-icon class="scale-75">auto_awesome</mat-icon> Generate Combination Matrix
                           </button>
                         </div>
                       </div>
                     }
                   </div>
 
-                  <!-- Variants Grid -->
+                  <!-- ========================================== -->
+                  <!-- LIVE STOREFRONT CUSTOMER PREVIEW WIDGET    -->
+                  <!-- ========================================== -->
+                  @if (admin.pVariants().length > 0) {
+                    <div data-tour="variant-preview" class="space-y-4 p-5 bg-gradient-to-br from-blue-900/10 via-zinc-900/5 to-purple-900/10 dark:from-blue-950/40 dark:to-zinc-900/80 rounded-2xl border border-blue-500/20 dark:border-blue-500/30 shadow-xs">
+                      <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3 flex-wrap gap-2">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+                            <mat-icon class="scale-75">preview</mat-icon>
+                          </div>
+                          <div>
+                            <h5 class="text-xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Live Storefront Customer Variant Switcher Preview</h5>
+                            <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">Verify customer selection experience, pricing changes, and stock badges before saving.</p>
+                          </div>
+                        </div>
+                        <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase rounded-full border border-emerald-500/20">
+                          Interactive Simulation
+                        </span>
+                      </div>
+
+                      @let currentPreview = getMatchedPreviewVariant();
+                      <div class="space-y-3 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                        <!-- Direct Variant Selector Dropdown -->
+                        <div class="flex items-center gap-2 p-2 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200/50 dark:border-blue-800/30 flex-wrap">
+                          <label class="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                            <mat-icon class="scale-75">touch_app</mat-icon> Direct Variant Select Dropdown:
+                          </label>
+                          <select 
+                            [value]="currentPreview?.id || currentPreview?.sku || ''"
+                            (change)="selectPreviewVariantById($any($event.target).value)"
+                            class="flex-1 min-w-[200px] px-3 py-1.5 bg-white dark:bg-zinc-950 border border-blue-300 dark:border-blue-700 rounded-lg text-xs font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer">
+                            @for (v of admin.pVariants(); track v.id || v.sku || $index) {
+                              <option [value]="v.id || v.sku">
+                                {{ v.name || ('Variant ' + ($index + 1)) }} (SKU: {{ v.sku || 'N/A' }}) - ₹{{ v.salePrice || v.price }} {{ v.stock <= 0 ? '[OUT OF STOCK]' : '[In Stock: ' + v.stock + ']' }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                          <!-- Thumbnail Image Preview -->
+                          <div class="col-span-1 flex flex-col items-center justify-center p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                            <div class="w-28 h-28 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center relative">
+                              @if (getFirstVariantImageUrl(currentPreview)) {
+                                <img [src]="getFirstVariantImageUrl(currentPreview)" alt="Variant Thumbnail" class="w-full h-full object-contain">
+                              } @else {
+                                <div class="text-center p-2">
+                                  <mat-icon class="text-zinc-400 scale-110">image</mat-icon>
+                                  <span class="block text-[8px] text-zinc-400 font-mono mt-0.5">No Image URL</span>
+                                </div>
+                              }
+                              @if (currentPreview?.isDefault) {
+                                <span class="absolute top-1 left-1 px-1 py-0.5 bg-blue-600 text-white text-[7px] font-black uppercase rounded">Default</span>
+                              }
+                            </div>
+                            <span class="text-[9px] font-mono text-zinc-500 dark:text-zinc-400 mt-1.5 truncate max-w-[160px]">
+                              SKU: {{ currentPreview?.sku || admin.pSku() }}
+                            </span>
+                          </div>
+
+                          <!-- Customer Pickers & Pricing -->
+                          <div class="col-span-1 md:col-span-2 space-y-3">
+                            <div>
+                              <h6 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ admin.pName() || 'Product Name' }}</h6>
+                              <div class="flex items-center gap-2.5 mt-0.5 flex-wrap">
+                                <span class="text-base font-black font-mono text-blue-600 dark:text-blue-400">
+                                  ₹{{ currentPreview?.salePrice || currentPreview?.price || admin.pSale() || admin.pMrp() }}
+                                </span>
+                                @if (currentPreview?.price && currentPreview?.salePrice && currentPreview?.price > currentPreview?.salePrice) {
+                                  <span class="text-xs font-mono line-through text-zinc-400">
+                                    ₹{{ currentPreview.price }}
+                                  </span>
+                                  <span class="px-1.5 py-0.5 bg-red-500/10 text-red-500 text-[9px] font-bold rounded">
+                                    SAVE ₹{{ currentPreview.price - currentPreview.salePrice }}
+                                  </span>
+                                }
+
+                                <!-- Stock Status Badge -->
+                                @if (currentPreview?.isActive === false) {
+                                  <span class="px-2 py-0.5 bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 text-[9px] font-black uppercase rounded-md">
+                                    Disabled / Draft
+                                  </span>
+                                } @else if ((currentPreview?.stock || 0) > 0) {
+                                  <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase rounded-md flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    In Stock ({{ currentPreview.stock }} available)
+                                  </span>
+                                } @else {
+                                  <span class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[9px] font-black uppercase rounded-md">
+                                    Out of Stock
+                                  </span>
+                                }
+                              </div>
+                            </div>
+
+                            <!-- Interactive Option Pickers & Dropdowns -->
+                            @if (admin.pOptions().length > 0) {
+                              <div class="space-y-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                                @for (opt of admin.pOptions(); track opt.name || $index; let idx = $index) {
+                                  @let optLabel = opt.name || ('Option #' + (idx + 1));
+                                  @let valList = admin.getOptionValuesString(opt);
+                                  @if (valList) {
+                                    <div class="space-y-1">
+                                      <div class="flex items-center justify-between gap-2">
+                                        <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-wider">
+                                          Select {{ optLabel }}: 
+                                          <span class="text-zinc-900 dark:text-white font-bold">{{ selectedPreviewOptionValues()[optLabel] || selectedPreviewOptionValues()[opt.name] || 'None' }}</span>
+                                        </span>
+                                        <select
+                                          [value]="selectedPreviewOptionValues()[optLabel] || selectedPreviewOptionValues()[opt.name] || ''"
+                                          (change)="selectPreviewOption(optLabel, $any($event.target).value)"
+                                          class="px-2 py-0.5 text-[10px] font-bold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-zinc-800 dark:text-zinc-200 focus:border-blue-500 cursor-pointer">
+                                          <option value="">Choose {{ optLabel }}...</option>
+                                          @for (val of valList.split(','); track val) {
+                                            @let cleanVal = val.trim();
+                                            @if (cleanVal) {
+                                              <option [value]="cleanVal">{{ cleanVal }}</option>
+                                            }
+                                          }
+                                        </select>
+                                      </div>
+
+                                      <div class="flex flex-wrap gap-1.5">
+                                        @for (val of valList.split(','); track val) {
+                                          @let cleanVal = val.trim();
+                                          @if (cleanVal) {
+                                            <button 
+                                              type="button"
+                                              (click)="selectPreviewOption(optLabel, cleanVal)"
+                                              [class.bg-blue-600]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                              [class.text-white]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                              [class.border-blue-600]="selectedPreviewOptionValues()[optLabel] === cleanVal || selectedPreviewOptionValues()[opt.name] === cleanVal"
+                                              [class.bg-zinc-100]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                              [class.dark:bg-zinc-800]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                              [class.text-zinc-800]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                              [class.dark:text-zinc-200]="selectedPreviewOptionValues()[optLabel] !== cleanVal && selectedPreviewOptionValues()[opt.name] !== cleanVal"
+                                              class="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 cursor-pointer transition-all">
+                                              {{ cleanVal }}
+                                            </button>
+                                          }
+                                        }
+                                      </div>
+                                    </div>
+                                  }
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Variants Matrix Grid -->
                   <div
                     class="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800"
                   >
                     <div class="flex items-center justify-between">
-                      <h4
-                        class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider"
-                      >
-                        Combinations ({{ admin.pVariants().length }})
-                      </h4>
+                      <div class="flex items-center gap-1.5">
+                        <h4
+                          class="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-wider"
+                        >
+                          Combinations Matrix ({{ admin.pVariants().length }})
+                        </h4>
+                        <div class="group relative flex items-center cursor-help">
+                          <mat-icon class="scale-75 text-zinc-400 group-hover:text-blue-500 transition-colors">info</mat-icon>
+                          <div class="absolute left-0 bottom-full mb-1.5 hidden group-hover:block w-64 p-2.5 bg-zinc-900 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none border border-zinc-700">
+                            Preloaded SKU variant table. Click star to set default storefront variant. Toggle active status or edit prices directly.
+                          </div>
+                        </div>
+                      </div>
+                      <button type="button" (click)="addCustomVariant()" class="px-3 py-1 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-xs">
+                        <mat-icon class="scale-75">add</mat-icon> Add Variant Row
+                      </button>
                     </div>
 
                     @if (admin.pVariants().length === 0) {
@@ -715,20 +975,21 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                         No variants generated yet.
                       </div>
                     } @else {
-                      <div class="overflow-x-auto max-h-[500px]">
+                      <div class="overflow-x-auto max-h-[500px] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs">
                         <table
                           class="w-full text-left border-collapse text-xs whitespace-nowrap"
                         >
                           <thead
-                            class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-black tracking-widest uppercase sticky top-0 z-10"
+                            class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-black tracking-widest uppercase sticky top-0 z-10 text-[9px]"
                           >
                             <tr>
-                              <th class="p-3">Variant</th>
-                              <th class="p-3 w-32">SKU</th>
-                              <th class="p-3 w-24">Price</th>
-                              <th class="p-3 w-24">Stock</th>
-                              <th class="p-3 w-24">Weight</th>
-                              <th class="p-3 w-16">Action</th>
+                              <th class="p-3 w-28">Status / Default</th>
+                              <th class="p-3">Variant Name</th>
+                              <th class="p-3 w-32">SKU Barcode</th>
+                              <th class="p-3 w-24" data-tour="variant-pricing">MRP (₹)</th>
+                              <th class="p-3 w-24">Sale (₹)</th>
+                              <th class="p-3 w-20" data-tour="variant-stock">Stock</th>
+                              <th class="p-3 w-16 text-center">Action</th>
                             </tr>
                           </thead>
                           <tbody
@@ -739,7 +1000,41 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                               track variant.id || $index;
                               let vIdx = $index
                             ) {
-                              <tr>
+                              <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors" [class.opacity-60]="variant.isActive === false">
+                                <td class="p-3">
+                                  <div class="flex items-center gap-1.5">
+                                    <button 
+                                      type="button" 
+                                      (click)="setDefaultVariant(vIdx)" 
+                                      [title]="variant.isDefault ? 'Default Variant' : 'Click to set as default variant'"
+                                      class="p-1 rounded-lg border cursor-pointer transition-colors"
+                                      [class.bg-blue-600]="variant.isDefault"
+                                      [class.text-white]="variant.isDefault"
+                                      [class.border-blue-600]="variant.isDefault"
+                                      [class.bg-zinc-100]="!variant.isDefault"
+                                      [class.dark:bg-zinc-800]="!variant.isDefault"
+                                      [class.text-zinc-400]="!variant.isDefault"
+                                      [class.border-zinc-300]="!variant.isDefault"
+                                      [class.dark:border-zinc-700]="!variant.isDefault">
+                                      <mat-icon class="scale-75">star</mat-icon>
+                                    </button>
+                                    <button 
+                                      type="button" 
+                                      (click)="toggleVariantStatus(vIdx)" 
+                                      [title]="variant.isActive !== false ? 'Active (Click to Disable)' : 'Inactive (Click to Enable)'"
+                                      class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border cursor-pointer transition-colors"
+                                      [class.bg-emerald-600]="variant.isActive !== false"
+                                      [class.text-white]="variant.isActive !== false"
+                                      [class.border-emerald-600]="variant.isActive !== false"
+                                      [class.bg-zinc-200]="variant.isActive === false"
+                                      [class.text-zinc-600]="variant.isActive === false"
+                                      [class.dark:bg-zinc-800]="variant.isActive === false"
+                                      [class.dark:text-zinc-400]="variant.isActive === false"
+                                      [class.border-zinc-300]="variant.isActive === false">
+                                      {{ variant.isActive !== false ? 'Active' : 'Off' }}
+                                    </button>
+                                  </div>
+                                </td>
                                 <td
                                   class="p-3 font-bold text-zinc-900 dark:text-white"
                                 >
@@ -750,7 +1045,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                     type="text"
                                     [(ngModel)]="variant.sku"
                                     (ngModelChange)="admin.updateVariants()"
-                                    class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
+                                    class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
                                 <td class="p-2">
@@ -758,7 +1053,15 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                     type="number"
                                     [(ngModel)]="variant.price"
                                     (ngModelChange)="admin.updateVariants()"
-                                    class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
+                                    class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
+                                  />
+                                </td>
+                                <td class="p-2">
+                                  <input
+                                    type="number"
+                                    [(ngModel)]="variant.salePrice"
+                                    (ngModelChange)="admin.updateVariants()"
+                                    class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
                                 <td class="p-2">
@@ -766,15 +1069,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                     type="number"
                                     [(ngModel)]="variant.stock"
                                     (ngModelChange)="admin.updateVariants()"
-                                    class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
-                                  />
-                                </td>
-                                <td class="p-2">
-                                  <input
-                                    type="number"
-                                    [(ngModel)]="variant.weight"
-                                    (ngModelChange)="admin.updateVariants()"
-                                    class="w-full px-2 py-1 text-xs border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
+                                    class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
                                 </td>
                                 <td class="p-2 text-center">
@@ -791,7 +1086,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
                                       Manage
                                     </button>
                                     <button
-                                      (click)="admin.removeVariant(vIdx)"
+                                      (click)="removeVariant(vIdx)"
                                       class="text-red-400 hover:text-red-600 bg-transparent border-none cursor-pointer"
                                     >
                                       <mat-icon class="scale-75"
@@ -3450,6 +3745,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
           </div>
         </div>
       }
+      <app-variant-tour-guide></app-variant-tour-guide>
     </div>
   `,
 })
@@ -3457,6 +3753,7 @@ export class AdminCatalogTab {
   toastService = inject(ToastService);
   http = inject(HttpClient);
   api = inject(ApiService);
+  tourService = inject(VariantTourService);
   @Input({ required: true }) admin!: AdminPanel;
 
   // --- INLINE QUICK EDIT SIGNALS ---
@@ -4255,6 +4552,116 @@ export class AdminCatalogTab {
     input.value = ""; // Reset input
   }
 
+  selectedPreviewOptionValues = signal<Record<string, string>>({});
+  selectedPreviewVariantId = signal<string>('');
+
+  selectPreviewOption(optName: string, value: string) {
+    this.selectedPreviewVariantId.set('');
+    this.selectedPreviewOptionValues.update((current) => ({
+      ...current,
+      [optName]: value,
+    }));
+  }
+
+  selectPreviewVariantById(idOrSku: string) {
+    this.selectedPreviewVariantId.set(idOrSku);
+    const variants = this.admin.pVariants();
+    const matched = variants.find((v: any) => (v.id && String(v.id) === String(idOrSku)) || (v.sku && String(v.sku) === String(idOrSku)));
+    if (matched && matched.optionValues) {
+      this.selectedPreviewOptionValues.set({ ...matched.optionValues });
+    }
+  }
+
+  getMatchedPreviewVariant(): any {
+    const variants = this.admin.pVariants();
+    if (!variants || variants.length === 0) return null;
+
+    const selId = this.selectedPreviewVariantId();
+    if (selId) {
+      const explicit = variants.find((v: any) => String(v.id) === String(selId) || String(v.sku) === String(selId));
+      if (explicit) return explicit;
+    }
+
+    const selected = this.selectedPreviewOptionValues();
+    const activeKeys = Object.keys(selected);
+
+    if (activeKeys.length > 0) {
+      const match = variants.find((v: any) => {
+        const optVals = v.optionValues || {};
+        const optKeys = Object.keys(optVals);
+        return activeKeys.every((k) => {
+          const targetVal = String(selected[k]).trim().toLowerCase();
+          if (!targetVal) return true;
+          if (optVals[k] !== undefined) {
+            return String(optVals[k]).trim().toLowerCase() === targetVal;
+          }
+          return optKeys.some(ok => String(optVals[ok]).trim().toLowerCase() === targetVal);
+        });
+      });
+      if (match) return match;
+    }
+
+    return variants.find((v: any) => v.isDefault) || variants[0];
+  }
+
+  getFirstVariantImageUrl(variant: any): string {
+    if (variant) {
+      const imgs = variant.variantImages || variant.images || [];
+      if (Array.isArray(imgs) && imgs.length > 0) {
+        const first = imgs[0];
+        const url = typeof first === 'string' ? first : (first?.url || '');
+        if (url && url.trim().length > 0) return url;
+      }
+    }
+    const productImgs = this.admin.pImages() || [];
+    if (productImgs.length > 0) {
+      const pFirst = productImgs[0];
+      return typeof pFirst === 'string' ? pFirst : (pFirst?.url || '');
+    }
+    return '';
+  }
+
+  toggleVariantStatus(index: number) {
+    const list = [...this.admin.pVariants()];
+    if (list[index]) {
+      list[index].isActive = list[index].isActive === false ? true : false;
+      this.admin.pVariants.set(list);
+    }
+  }
+
+  setDefaultVariant(index: number) {
+    const list = this.admin.pVariants().map((v: any, i: number) => ({
+      ...v,
+      isDefault: i === index,
+    }));
+    this.admin.pVariants.set(list);
+  }
+
+  addCustomVariant() {
+    const list = [...this.admin.pVariants()];
+    const defaultSku = (this.admin.pSku() || 'SKU') + '-VAR-' + (list.length + 1);
+    list.push({
+      id: Date.now().toString(),
+      name: 'Custom Variant ' + (list.length + 1),
+      sku: defaultSku,
+      price: this.admin.pMrp() || 0,
+      salePrice: this.admin.pSale() || 0,
+      stock: this.admin.pStock() || 10,
+      weight: 0,
+      variantImages: [],
+      optionValues: {},
+      isActive: true,
+      isDefault: list.length === 0,
+    });
+    this.admin.pVariants.set(list);
+  }
+
+  removeVariant(index: number) {
+    const list = [...this.admin.pVariants()];
+    list.splice(index, 1);
+    this.admin.pVariants.set(list);
+  }
+
   currentPage = signal<number>(1);
   itemsPerPage = signal<number>(10);
   itemsPerPageOptions = [10, 20, 50, 100];
@@ -4277,15 +4684,10 @@ export class AdminCatalogTab {
     return Math.round(mrp - sale);
   }
 
+  private searchDebounceTimer: any = null;
+
   filteredProducts = computed(() => {
-    const query = this.admin.searchQueryProducts().toLowerCase().trim();
-    const list = this.admin.ds.products() || [];
-    if (!query) return list;
-    return list.filter(
-      (p) =>
-        (p.name && p.name.toLowerCase().includes(query)) ||
-        (p.sku && p.sku.toLowerCase().includes(query))
-    );
+    return this.admin.ds.products() || [];
   });
 
   paginatedProducts = computed(() => {
@@ -4346,8 +4748,14 @@ export class AdminCatalogTab {
 
   constructor() {
     effect(() => {
-      this.admin.searchQueryProducts();
+      const query = this.admin.searchQueryProducts();
       this.currentPage.set(1);
+      if (this.searchDebounceTimer) {
+        clearTimeout(this.searchDebounceTimer);
+      }
+      this.searchDebounceTimer = setTimeout(() => {
+        this.admin.ds.reloadProducts(false, true, 500, query);
+      }, 300);
     }, { allowSignalWrites: true });
   }
 

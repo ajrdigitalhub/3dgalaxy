@@ -528,38 +528,45 @@ export class CheckoutComponent implements OnInit {
     this.isSubmitting.set(true);
     this.loading.startLoading();
 
-    // If new address entered and user checked "Save this address to My Account"
+    // Auto-save new address to account if checkbox was selected
     if (this.isLoggedIn() && this.addressMode() === 'new' && this.saveAddressToAccount()) {
       try {
-        await firstValueFrom(
-          this.api.post("/customer/address", {
-            fullName: this.name(),
-            phone: this.phone(),
-            addressType: this.addressType(),
-            houseNo: this.houseNo(),
-            street: this.street() || this.accAddr1(),
-            addressLine1: `${this.name()} | ${this.phone()} | ${this.addressType()} | ${this.accAddr1()}`,
-            addressLine2: this.accAddr2(),
-            city: this.accCity(),
-            state: this.accState(),
-            pincode: this.accPin(),
-            country: this.accCountry(),
-            isDefault: this.savedAddresses().length === 0,
-          })
-        );
+        await firstValueFrom(this.api.post('/customer/addresses', {
+          addressType: this.addressType(),
+          houseNo: this.houseNo(),
+          street: this.street(),
+          addressLine1: this.accAddr1(),
+          addressLine2: this.accAddr2(),
+          city: this.accCity(),
+          state: this.accState(),
+          pincode: this.accPin(),
+          country: this.accCountry(),
+          isDefault: this.savedAddresses().length === 0
+        }));
       } catch (err) {
         // Continue even if background save fails
       }
     }
 
     const payload = {
-      items: this.groupedCheckoutItems().map((item: any) => ({
-        productId: item.product.id,
-        variantId: item.variant?.id || null,
-        quantity: item.quantity,
-        price: this.getPrice(item),
-        weightInGrams: getItemWeightGrams(item),
-      })),
+      items: this.groupedCheckoutItems().map((item: any) => {
+        const effectivePrice = this.getPrice(item);
+        const basePrice = Number(item.product?.salePrice || item.product?.sale_price || item.product?.basePrice || effectivePrice);
+        return {
+          productId: item.product.id,
+          variantId: item.variant?.id || null,
+          quantity: item.quantity,
+          price: effectivePrice,
+          unitPrice: effectivePrice,
+          basePrice: basePrice,
+          effectivePrice: effectivePrice,
+          configurationType: item.bundleDetails ? 'bundle' : (item.variant ? 'variant' : 'standard'),
+          configurationName: item.bundleDetails?.bundleName || item.variant?.name || null,
+          bundleDetails: item.bundleDetails || null,
+          selectedOptions: item.bundleDetails?.selectedOptions || item.bundleDetails?.selectedVariants || (item.variant?.optionValues ? [item.variant.optionValues] : []),
+          weightInGrams: getItemWeightGrams(item),
+        };
+      }),
       shippingAddress: `${this.accAddr1()} ${this.accAddr2()}, ${this.accCity()}, ${this.accState()} - ${this.accPin()}`,
       shippingAddressSnapshot: {
         fullName: this.name(),

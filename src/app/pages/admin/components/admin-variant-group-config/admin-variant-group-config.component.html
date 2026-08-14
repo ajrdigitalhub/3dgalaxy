@@ -1,9 +1,12 @@
-<div class="admin-variant-config-wrapper">
+<div class="admin-variant-config-wrapper" data-tour="variant-configuration">
   <div class="config-header">
     <div class="header-left">
       <mat-icon class="header-icon">tune</mat-icon>
       <div>
-        <h3 class="title">Product Variant & Bundle Group Architecture</h3>
+        <h3 class="title flex items-center gap-2">
+          <span>Product Variant & Bundle Group Architecture</span>
+          <span class="cursor-help text-indigo-500 hover:text-indigo-600" title="Configure variant choices (Color, Size, Weight, Pack) and storefront display styles.">ⓘ</span>
+        </h3>
         <p class="subtitle">Configure display types, selection modes, bundle pricing, duplicate rules, and test live rendering.</p>
       </div>
     </div>
@@ -38,17 +41,26 @@
 
           <div class="form-grid">
             <div class="field-cell">
-              <label>Variant Name (Internal)</label>
+              <label class="flex items-center gap-1">
+                <span>Variant Name (Internal)</span>
+                <span class="cursor-help text-indigo-500 text-[10px]" title="Internal reference name, e.g. Color Variants, Pack Sizes.">ⓘ</span>
+              </label>
               <input type="text" [(ngModel)]="grp.variantName" (ngModelChange)="updateCurrentGroup(grp)" placeholder="e.g. Color Variants" />
             </div>
 
             <div class="field-cell">
-              <label>Display Name (Frontend Label)</label>
+              <label class="flex items-center gap-1">
+                <span>Display Name (Frontend Label)</span>
+                <span class="cursor-help text-indigo-500 text-[10px]" title="Label shown to customers, e.g. Select Color, Choose Pack Size.">ⓘ</span>
+              </label>
               <input type="text" [(ngModel)]="grp.displayName" (ngModelChange)="updateCurrentGroup(grp)" placeholder="e.g. Select Color" />
             </div>
 
-            <div class="field-cell">
-              <label>Display Type</label>
+            <div class="field-cell" data-tour="variant-type">
+              <label class="flex items-center gap-1">
+                <span>Variant Type & Display Mode</span>
+                <span class="cursor-help text-indigo-500 text-xs" title="Choose how customers will select this product, such as Color, Size, Weight or Pack.">ⓘ</span>
+              </label>
               <select [ngModel]="grp.displayType" (ngModelChange)="onDisplayTypeChange($event)">
                 <option *ngFor="let t of displayTypes" [value]="t.value">{{ t.label }}</option>
               </select>
@@ -113,211 +125,240 @@
               </div>
             </div>
           }
-        </div>
-      }
-    </div>
+          <!-- LIVE INTERACTIVE PREVIEW FOR CURRENT GROUP DISPLAY TYPE -->
+          <div class="preview-panel mt-4">
+            <div class="preview-header">
+              <mat-icon class="prev-icon">visibility</mat-icon>
+              <span>Live Group Preview ({{ grp.displayName || grp.variantName }})</span>
+              <span class="preview-badge">Display Type: {{ grp.displayType || 'chip' }}</span>
+            </div>
 
-    <!-- RIGHT SIDEBAR: LIVE INTERACTIVE PREVIEW PANEL -->
-    <div class="preview-panel">
-      <div class="preview-header">
-        <mat-icon class="prev-icon">visibility</mat-icon>
-        <span>Live Interactive Preview</span>
-        <span class="preview-badge">Renders as customer sees</span>
-      </div>
+            <div class="preview-body">
+              <!-- 1. BUNDLE BUILDER MODE -->
+              @if (grp.displayType === 'bundle-builder' || grp.selectionMode === 'bundle') {
+                <app-bundle-selector
+                  [bundleTiers]="grp.bundleTiers || []"
+                  [selectedTier]="previewSelectedTier()"
+                  [basePrice]="basePrice"
+                  [availableVariants]="previewVariants()"
+                  (tierSelected)="previewSelectedTier.set($event)" />
+              }
 
-      @if (currentGroup(); as grp) {
-        <div class="preview-body">
-          <!-- 1. BUNDLE BUILDER MODE -->
-          @if (grp.displayType === 'bundle-builder' || grp.selectionMode === 'bundle') {
-            <app-bundle-selector
-              [bundleTiers]="grp.bundleTiers || []"
-              [selectedTier]="previewSelectedTier()"
-              [basePrice]="basePrice"
-              (tierSelected)="previewSelectedTier.set($event)" />
+              <!-- 2. DROPDOWN MENU MODE -->
+              @if (grp.displayType === 'dropdown' && grp.selectionMode !== 'bundle') {
+                <div class="dropdown-preview-box">
+                  <label class="prev-grp-label text-xs font-bold text-slate-900 block mb-1.5">{{ grp.displayName || grp.variantName }}:</label>
+                  <select class="prev-dropdown-select w-full p-2.5 border-2 border-indigo-600 rounded-xl font-bold text-slate-900 bg-white shadow-sm outline-none" [ngModel]="selectedPreviewVariantId()" (ngModelChange)="selectedPreviewVariantId.set($event)">
+                    <option *ngFor="let v of previewVariants()" [value]="v.id" [disabled]="v.stock <= 0">
+                      {{ v.name }} - ₹{{ v.price || basePrice }} {{ v.stock <= 0 ? '(Out of Stock)' : '' }}
+                    </option>
+                  </select>
+                  @if (selectedPreviewVariant(); as sv) {
+                    <div class="variant-detail-badge mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                      <div class="v-detail-row flex justify-between items-center">
+                        <span class="v-title font-bold text-slate-900 text-xs">{{ sv.name }}</span>
+                        <span class="v-price font-extrabold text-indigo-600 text-sm">₹{{ sv.price || basePrice }}</span>
+                      </div>
+                      <div class="v-meta flex justify-between text-[11px] font-semibold text-slate-500">
+                        <span *ngIf="sv.sku">SKU: {{ sv.sku }}</span>
+                        <span [class.text-emerald-600]="sv.stock > 0" [class.text-red-600]="sv.stock <= 0">
+                          {{ sv.stock > 0 ? ('In Stock: ' + sv.stock) : 'Out of Stock' }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
 
-            @if (previewSelectedTier(); as tier) {
-              <div class="preview-slots-box">
-                <div class="box-title">Slot Configurator Preview ({{ tier.count }} Slots):</div>
-                <div class="slots-col">
-                  <div *ngFor="let slotNum of getSlotsArray(tier.count); let sIdx = index; trackBy: trackByIndex" class="prev-slot">
-                    <span class="s-num">#{{ sIdx + 1 }}</span>
-                    <select class="prev-select">
-                      <option *ngFor="let v of previewVariants()" [value]="v.id" [disabled]="v.stock <= 0">
-                        {{ v.name }} {{ v.stock <= 0 ? '(Out of Stock)' : '' }}
-                      </option>
-                    </select>
+              <!-- 3. CHIP SELECTOR (PILLS) / BUTTON GROUP MODE -->
+              @if ((grp.displayType === 'chip' || grp.displayType === 'button-group') && grp.selectionMode !== 'bundle') {
+                <div class="standard-preview-card">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="chips-flex flex flex-wrap gap-2">
+                    <button 
+                      type="button" 
+                      *ngFor="let v of previewVariants()" 
+                      class="prev-chip flex items-center gap-1.5 px-3 py-1.5 border-2 border-slate-300 rounded-full text-xs font-bold bg-white transition-all"
+                      [class.selected]="selectedPreviewVariantId() === v.id"
+                      [class.disabled]="v.stock <= 0"
+                      (click)="selectedPreviewVariantId.set(v.id)">
+                      <span class="dot w-2.5 h-2.5 rounded-full border border-black/10" [style.background-color]="getColorCode(v.name)"></span>
+                      <span>{{ v.name }}</span>
+                      <span class="price-tag text-indigo-600 font-extrabold text-[11px] ml-1">₹{{ v.price || basePrice }}</span>
+                      <span class="oos text-red-500 text-[10px] font-bold" *ngIf="v.stock <= 0">Out of Stock</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-            }
-          }
+              }
 
-          <!-- 2. DROPDOWN MENU MODE -->
-          @if (grp.displayType === 'dropdown' && grp.selectionMode !== 'bundle') {
-            <div class="dropdown-preview-box">
-              <label class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</label>
-              <select class="prev-dropdown-select" [ngModel]="selectedPreviewVariantId()" (ngModelChange)="selectedPreviewVariantId.set($event)">
-                <option *ngFor="let v of previewVariants()" [value]="v.id" [disabled]="v.stock <= 0">
-                  {{ v.name }} - ₹{{ v.price || basePrice }} {{ v.stock <= 0 ? '(Out of Stock)' : '' }}
-                </option>
-              </select>
-              @if (selectedPreviewVariant(); as sv) {
-                <div class="variant-detail-badge">
-                  <div class="v-detail-row">
-                    <span class="v-title">{{ sv.name }}</span>
-                    <span class="v-price">₹{{ sv.price || basePrice }}</span>
+              <!-- 4. COLOR CHIPS / SWATCHES MODE -->
+              @if (grp.displayType === 'color-chips' && grp.selectionMode !== 'bundle') {
+                <div class="color-chips-preview-box">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="color-swatches-flex flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      *ngFor="let v of previewVariants()"
+                      class="color-swatch-btn flex flex-col items-center gap-1 bg-none border-none cursor-pointer p-1"
+                      [class.selected]="selectedPreviewVariantId() === v.id"
+                      [class.disabled]="v.stock <= 0"
+                      [title]="v.name + ' - ₹' + (v.price || basePrice) + (v.stock <= 0 ? ' (Out of Stock)' : '')"
+                      (click)="selectedPreviewVariantId.set(v.id)">
+                      <span class="color-circle w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center transition-all shadow-xs" [style.background-color]="getColorCode(v.name)">
+                        <mat-icon *ngIf="selectedPreviewVariantId() === v.id" class="check-icon text-white scale-75">check</mat-icon>
+                      </span>
+                      <span class="swatch-label text-[11px] font-semibold text-slate-700">{{ v.name }}</span>
+                      <span class="swatch-oos-badge text-[9px] text-red-500 font-bold" *ngIf="v.stock <= 0">Out of Stock</span>
+                    </button>
                   </div>
-                  <div class="v-meta">
-                    <span *ngIf="sv.sku">SKU: {{ sv.sku }}</span>
-                    <span [class.text-emerald-500]="sv.stock > 0" [class.text-red-500]="sv.stock <= 0">
-                      {{ sv.stock > 0 ? ('In Stock: ' + sv.stock) : 'Out of Stock' }}
-                    </span>
+                </div>
+              }
+
+              <!-- 5. IMAGE SELECTOR MODE -->
+              @if (grp.displayType === 'image' && grp.selectionMode !== 'bundle') {
+                <div class="image-preview-box">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="image-tiles-grid grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <button
+                      type="button"
+                      *ngFor="let v of previewVariants()"
+                      class="image-tile-btn flex flex-col items-center gap-1.5 p-2 bg-white border-2 border-slate-200 rounded-xl cursor-pointer transition-all"
+                      [class.selected]="selectedPreviewVariantId() === v.id"
+                      [class.disabled]="v.stock <= 0"
+                      (click)="selectedPreviewVariantId.set(v.id)">
+                      <img [src]="getVariantImage(v)" [alt]="v.name" class="tile-img w-14 h-14 object-contain rounded-lg" />
+                      <span class="tile-name text-xs font-bold text-slate-900 text-center">{{ v.name }}</span>
+                      <span class="tile-price text-xs font-extrabold text-indigo-600">₹{{ v.price || basePrice }}</span>
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- 6. CARD / GRID CARDS SELECTOR MODE -->
+              @if ((grp.displayType === 'card' || grp.displayType === 'grid-cards') && grp.selectionMode !== 'bundle') {
+                <div class="card-preview-box">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="cards-grid grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      *ngFor="let v of previewVariants()"
+                      class="variant-card-btn flex flex-col justify-between p-3 bg-white border-2 border-slate-200 rounded-xl cursor-pointer text-left transition-all"
+                      [class.selected]="selectedPreviewVariantId() === v.id"
+                      [class.disabled]="v.stock <= 0"
+                      (click)="selectedPreviewVariantId.set(v.id)">
+                      <div class="card-top font-bold flex items-center gap-1.5">
+                        <span class="dot w-2.5 h-2.5 rounded-full" [style.background-color]="getColorCode(v.name)"></span>
+                        <span class="card-title text-xs text-slate-900 font-bold">{{ v.name }}</span>
+                      </div>
+                      <div class="card-body mt-2 flex flex-col gap-1">
+                        <span class="card-price text-sm font-extrabold text-indigo-600">₹{{ v.price || basePrice }}</span>
+                        <span class="card-badge text-[10px] font-bold" [class.text-emerald-600]="v.stock > 0" [class.text-red-600]="v.stock <= 0">
+                          {{ v.stock > 0 ? ('Stock: ' + v.stock) : 'Out of Stock' }}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- 7. RADIO CHIPS MODE -->
+              @if (grp.displayType === 'radio-chips' && grp.selectionMode !== 'bundle') {
+                <div class="radio-chips-preview-box">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="radio-chips-list flex flex-col gap-2">
+                    <label
+                      *ngFor="let v of previewVariants()"
+                      class="radio-chip-item flex items-center gap-2.5 p-2.5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer transition-all"
+                      [class.selected]="selectedPreviewVariantId() === v.id"
+                      [class.disabled]="v.stock <= 0">
+                      <input
+                        type="radio"
+                        name="prev_variant_radio"
+                        [value]="v.id"
+                        [checked]="selectedPreviewVariantId() === v.id"
+                        [disabled]="v.stock <= 0"
+                        (change)="selectedPreviewVariantId.set(v.id)" />
+                      <span class="radio-label text-xs font-bold text-slate-900 flex-1">{{ v.name }}</span>
+                      <span class="radio-price text-xs font-extrabold text-indigo-600">₹{{ v.price || basePrice }}</span>
+                      <span class="radio-oos text-[10px] text-red-500 font-bold" *ngIf="v.stock <= 0">(Out of Stock)</span>
+                    </label>
+                  </div>
+                </div>
+              }
+
+              <!-- 8. QUANTITY SELECTOR MODE -->
+              @if (grp.displayType === 'quantity-selector' && grp.selectionMode !== 'bundle') {
+                <div class="qty-selector-preview-box">
+                  <h4 class="prev-grp-label text-xs font-bold text-slate-900 mb-2">{{ grp.displayName || grp.variantName }}:</h4>
+                  <div class="qty-rows flex flex-col gap-2">
+                    <div *ngFor="let v of previewVariants()" class="qty-row flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl">
+                      <div class="qty-info flex items-center gap-2">
+                        <span class="dot w-2.5 h-2.5 rounded-full" [style.background-color]="getColorCode(v.name)"></span>
+                        <span class="qty-vname text-xs font-bold text-slate-900">{{ v.name }}</span>
+                        <span class="qty-vprice text-xs font-extrabold text-indigo-600">₹{{ v.price || basePrice }}</span>
+                      </div>
+                      <div class="qty-controls flex items-center gap-2">
+                        <button type="button" class="qty-btn px-2.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-bold text-xs cursor-pointer" [disabled]="v.stock <= 0 || getPreviewQty(v.id) <= 0" (click)="adjustPreviewQty(v.id, -1)">-</button>
+                        <span class="qty-num text-xs font-extrabold w-6 text-center">{{ getPreviewQty(v.id) }}</span>
+                        <button type="button" class="qty-btn px-2.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-bold text-xs cursor-pointer" [disabled]="v.stock <= 0" (click)="adjustPreviewQty(v.id, 1)">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="qty-total-bar mt-3 p-3 bg-slate-900 text-white rounded-xl flex justify-between items-center text-xs font-bold">
+                    <span>Total Quantity Preview Price:</span>
+                    <span class="total-val text-sm font-extrabold text-sky-400">₹{{ getTotalPreviewQtyPrice() | number }}</span>
                   </div>
                 </div>
               }
             </div>
-          }
 
-          <!-- 3. CHIP SELECTOR (PILLS) / BUTTON GROUP MODE -->
-          @if ((grp.displayType === 'chip' || grp.displayType === 'button-group') && grp.selectionMode !== 'bundle') {
-            <div class="standard-preview-card">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="chips-flex">
-                <button 
-                  type="button" 
-                  *ngFor="let v of previewVariants()" 
-                  class="prev-chip"
-                  [class.selected]="selectedPreviewVariantId() === v.id"
-                  [class.disabled]="v.stock <= 0"
-                  (click)="selectedPreviewVariantId.set(v.id)">
-                  <span class="dot" [style.background-color]="getColorCode(v.name)"></span>
-                  <span>{{ v.name }}</span>
-                  <span class="price-tag">₹{{ v.price || basePrice }}</span>
-                  <span class="oos" *ngIf="v.stock <= 0">Out of Stock</span>
-                </button>
+            <!-- CUSTOMER PRICE & COD PREVIEW BOX -->
+            <div class="mt-4 p-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 rounded-2xl text-white shadow-md space-y-3">
+              <div class="flex items-center justify-between border-b border-indigo-500/20 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <mat-icon class="text-indigo-400 scale-90">calculate</mat-icon>
+                  <span class="text-xs font-black uppercase tracking-wider text-indigo-200">Customer Price & Checkout Preview</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {{ activeConfigName() }}
+                </span>
               </div>
-            </div>
-          }
 
-          <!-- 4. COLOR CHIPS MODE -->
-          @if (grp.displayType === 'color-chips' && grp.selectionMode !== 'bundle') {
-            <div class="color-chips-preview-box">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="color-swatches-flex">
-                <button
-                  type="button"
-                  *ngFor="let v of previewVariants()"
-                  class="color-swatch-btn"
-                  [class.selected]="selectedPreviewVariantId() === v.id"
-                  [class.disabled]="v.stock <= 0"
-                  [matTooltip]="v.name + ' - ₹' + (v.price || basePrice) + (v.stock <= 0 ? ' (Out of Stock)' : '')"
-                  (click)="selectedPreviewVariantId.set(v.id)">
-                  <span class="color-circle" [style.background-color]="getColorCode(v.name)">
-                    <mat-icon *ngIf="selectedPreviewVariantId() === v.id" class="check-icon">check</mat-icon>
-                  </span>
-                  <span class="swatch-label">{{ v.name }}</span>
-                  <span class="swatch-oos-badge" *ngIf="v.stock <= 0">X</span>
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- 5. IMAGE SELECTOR MODE -->
-          @if (grp.displayType === 'image' && grp.selectionMode !== 'bundle') {
-            <div class="image-preview-box">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="image-tiles-grid">
-                <button
-                  type="button"
-                  *ngFor="let v of previewVariants()"
-                  class="image-tile-btn"
-                  [class.selected]="selectedPreviewVariantId() === v.id"
-                  [class.disabled]="v.stock <= 0"
-                  (click)="selectedPreviewVariantId.set(v.id)">
-                  <img [src]="getVariantImage(v)" [alt]="v.name" class="tile-img" />
-                  <span class="tile-name">{{ v.name }}</span>
-                  <span class="tile-price">₹{{ v.price || basePrice }}</span>
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- 6. CARD / GRID CARDS SELECTOR MODE -->
-          @if ((grp.displayType === 'card' || grp.displayType === 'grid-cards') && grp.selectionMode !== 'bundle') {
-            <div class="card-preview-box">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="cards-grid">
-                <button
-                  type="button"
-                  *ngFor="let v of previewVariants()"
-                  class="variant-card-btn"
-                  [class.selected]="selectedPreviewVariantId() === v.id"
-                  [class.disabled]="v.stock <= 0"
-                  (click)="selectedPreviewVariantId.set(v.id)">
-                  <div class="card-top font-bold">
-                    <span class="dot" [style.background-color]="getColorCode(v.name)"></span>
-                    <span class="card-title">{{ v.name }}</span>
-                  </div>
-                  <div class="card-body">
-                    <span class="card-price">₹{{ v.price || basePrice }}</span>
-                    <span class="card-badge" [class.in-stock]="v.stock > 0" [class.out-stock]="v.stock <= 0">
-                      {{ v.stock > 0 ? ('Stock: ' + v.stock) : 'Out of Stock' }}
-                    </span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          }
-
-          <!-- 7. RADIO CHIPS MODE -->
-          @if (grp.displayType === 'radio-chips' && grp.selectionMode !== 'bundle') {
-            <div class="radio-chips-preview-box">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="radio-chips-list">
-                <label
-                  *ngFor="let v of previewVariants()"
-                  class="radio-chip-item"
-                  [class.selected]="selectedPreviewVariantId() === v.id"
-                  [class.disabled]="v.stock <= 0">
-                  <input
-                    type="radio"
-                    name="prev_variant_radio"
-                    [value]="v.id"
-                    [checked]="selectedPreviewVariantId() === v.id"
-                    [disabled]="v.stock <= 0"
-                    (change)="selectedPreviewVariantId.set(v.id)" />
-                  <span class="radio-label">{{ v.name }}</span>
-                  <span class="radio-price">₹{{ v.price || basePrice }}</span>
-                  <span class="radio-oos" *ngIf="v.stock <= 0">(Out of Stock)</span>
-                </label>
-              </div>
-            </div>
-          }
-
-          <!-- 8. QUANTITY SELECTOR MODE -->
-          @if (grp.displayType === 'quantity-selector' && grp.selectionMode !== 'bundle') {
-            <div class="qty-selector-preview-box">
-              <h4 class="prev-grp-label">{{ grp.displayName || grp.variantName }}:</h4>
-              <div class="qty-rows">
-                <div *ngFor="let v of previewVariants()" class="qty-row">
-                  <div class="qty-info">
-                    <span class="dot" [style.background-color]="getColorCode(v.name)"></span>
-                    <span class="qty-vname">{{ v.name }}</span>
-                    <span class="qty-vprice">₹{{ v.price || basePrice }}</span>
-                  </div>
-                  <div class="qty-controls">
-                    <button type="button" class="qty-btn" [disabled]="v.stock <= 0 || getPreviewQty(v.id) <= 0" (click)="adjustPreviewQty(v.id, -1)">-</button>
-                    <span class="qty-num">{{ getPreviewQty(v.id) }}</span>
-                    <button type="button" class="qty-btn" [disabled]="v.stock <= 0" (click)="adjustPreviewQty(v.id, 1)">+</button>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                <div class="bg-white/5 border border-white/10 rounded-xl p-2.5">
+                  <span class="block text-[10px] font-bold text-slate-400 uppercase">Product Base Price</span>
+                  <span class="text-sm font-black text-slate-200 font-mono">₹{{ basePrice | number }}</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl p-2.5">
+                  <span class="block text-[10px] font-bold text-slate-400 uppercase">Unit Price / Item</span>
+                  <span class="text-sm font-black text-sky-400 font-mono">₹{{ activeUnitPrice() | number }}</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl p-2.5">
+                  <span class="block text-[10px] font-bold text-slate-400 uppercase">Effective Total</span>
+                  <span class="text-base font-black text-emerald-400 font-mono">₹{{ activeEffectivePrice() | number }}</span>
+                </div>
+                <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex flex-col justify-center">
+                  <span class="block text-[10px] font-bold text-slate-400 uppercase">COD Threshold</span>
+                  <div class="mt-0.5">
+                    @if (isCodEligible()) {
+                      <span class="inline-flex items-center gap-1 text-[10px] font-black text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                        <mat-icon class="scale-75">check_circle</mat-icon> COD Allowed
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center gap-1 text-[10px] font-black text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+                        <mat-icon class="scale-75">info</mat-icon> Online Only (> ₹2,500)
+                      </span>
+                    }
                   </div>
                 </div>
               </div>
-              <div class="qty-total-bar">
-                <span>Total Preview Price:</span>
-                <span class="total-val">₹{{ getTotalPreviewQtyPrice() | number }}</span>
+
+              <div class="text-[10px] text-slate-400 bg-white/5 p-2 rounded-lg flex items-center gap-2">
+                <mat-icon class="text-indigo-400 scale-75 shrink-0">info</mat-icon>
+                <span>The customer's checkout total and COD eligibility are calculated using the <strong>Effective Configuration Price (₹{{ activeEffectivePrice() | number }})</strong>, preserving the base product catalog price.</span>
               </div>
             </div>
-          }
+          </div>
         </div>
       }
     </div>

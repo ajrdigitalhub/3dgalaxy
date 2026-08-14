@@ -179,8 +179,44 @@ export class VariantSelectionEngineService {
    */
   selectBundleTier(tier: BundleTier, groupConfig?: VariantGroupConfig) {
     this.selectedBundleTier.set(tier);
-    const count = tier.count;
-    const variants = this.availableVariants();
+    const count = tier.count || 1;
+    let variants = this.availableVariants();
+    const product = this.product();
+
+    // If no variants in availableVariants, synthesize from product.options
+    if (!variants || variants.length === 0) {
+      const rawOpts = product?.options || [];
+      if (rawOpts.length > 0) {
+        const first = rawOpts[0];
+        let vals: string[] = [];
+        if (Array.isArray(first.values)) {
+          vals = first.values.map((v: any) => typeof v === 'string' ? v : (v.name || v.value || ''));
+        } else if (typeof first.values === 'string') {
+          vals = first.values.split(',').map((s: string) => s.trim()).filter(Boolean);
+        } else if (typeof first.valuesString === 'string') {
+          vals = first.valuesString.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+        if (vals.length > 0) {
+          variants = vals.map(val => ({
+            id: `opt-${val}`,
+            name: val,
+            sku: `SKU-${val.toUpperCase()}`,
+            stock: 999,
+            price: Number(product?.salePrice || product?.basePrice || 0)
+          }));
+        }
+      }
+    }
+
+    if (!variants || variants.length === 0) {
+      variants = [{
+        id: 'default-variant',
+        name: product?.name || 'Default Option',
+        stock: 999,
+        price: Number(product?.salePrice || product?.basePrice || 0)
+      }];
+    }
+
     const config = groupConfig || this.activeBundleGroup();
     const allowDuplicates = config?.allowDuplicates ?? true;
     const slotLabels = config?.slotLabels || [];
@@ -188,9 +224,8 @@ export class VariantSelectionEngineService {
     const existingSlots = this.bundleSlots();
     const newSlots: BundleSlotSelection[] = [];
 
-    // Filter in-stock variants
     const inStockVariants = variants.filter(v => (v.stock ?? v.quantity ?? 1) > 0);
-    const fallbackVariant = inStockVariants[0] || variants[0] || null;
+    const fallbackVariant = inStockVariants[0] || variants[0];
 
     for (let i = 0; i < count; i++) {
       let variantToAssign: any = null;
@@ -198,9 +233,8 @@ export class VariantSelectionEngineService {
       if (existingSlots[i] && existingSlots[i].selectedVariant) {
         variantToAssign = existingSlots[i].selectedVariant;
       } else {
-        // If duplicates allowed, default to fallback. If not allowed, pick next unselected in-stock variant
         if (allowDuplicates) {
-          variantToAssign = fallbackVariant;
+          variantToAssign = variants[i % variants.length] || fallbackVariant;
         } else {
           const usedIds = new Set(newSlots.map(s => s.selectedVariantId).filter(Boolean));
           const availableUnused = variants.find(v => !usedIds.has(v.id) && (v.stock ?? 1) > 0);
@@ -208,12 +242,12 @@ export class VariantSelectionEngineService {
         }
       }
 
-      const label = slotLabels[i] || `Filament #${i + 1}`;
+      const label = slotLabels[i] || `Slot #${i + 1}`;
 
       newSlots.push({
         slotIndex: i,
         slotLabel: label,
-        selectedVariantId: variantToAssign ? variantToAssign.id : null,
+        selectedVariantId: variantToAssign ? (variantToAssign.id || variantToAssign.name) : 'default',
         selectedVariant: variantToAssign,
         error: null
       });
@@ -226,15 +260,41 @@ export class VariantSelectionEngineService {
   /**
    * Update selection in a specific bundle slot
    */
-  updateSlotSelection(slotIndex: number, variantId: string) {
-    const variants = this.availableVariants();
-    const selectedVar = variants.find(v => v.id === variantId) || null;
-    const slots = [...this.bundleSlots()];
+  updateSlotSelection(slotIndex: number, val: any) {
+    let variants = this.availableVariants();
+    const product = this.product();
 
+    // If variants list is empty, synthesize
+    if (!variants || variants.length === 0) {
+      const rawOpts = product?.options || [];
+      if (rawOpts.length > 0) {
+        const first = rawOpts[0];
+        let vals: string[] = [];
+        if (Array.isArray(first.values)) vals = first.values.map((v: any) => typeof v === 'string' ? v : (v.name || v.value || ''));
+        else if (typeof first.values === 'string') vals = first.values.split(',').map((s: string) => s.trim()).filter(Boolean);
+        else if (typeof first.valuesString === 'string') vals = first.valuesString.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (vals.length > 0) {
+          variants = vals.map(vName => ({ id: `opt-${vName}`, name: vName, stock: 999, price: Number(product?.salePrice || product?.basePrice || 0) }));
+        }
+      }
+    }
+
+    let selectedVar = (variants || []).find(v => v.id === val || v.name === val || v.sku === val || v.displayName === val);
+    if (!selectedVar && typeof val === 'string' && val.trim()) {
+      selectedVar = {
+        id: `opt-${val}`,
+        name: val,
+        sku: `SKU-${val.toUpperCase()}`,
+        stock: 999,
+        price: Number(product?.salePrice || product?.basePrice || 0)
+      };
+    }
+
+    const slots = [...this.bundleSlots()];
     if (slots[slotIndex]) {
       slots[slotIndex] = {
         ...slots[slotIndex],
-        selectedVariantId: variantId,
+        selectedVariantId: selectedVar ? (selectedVar.id || selectedVar.name) : String(val),
         selectedVariant: selectedVar,
         error: null
       };
@@ -258,10 +318,10 @@ export class VariantSelectionEngineService {
       let error: string | null = null;
       const v = slot.selectedVariant;
 
-      if (!v) {
+      if (!v && !slot.selectedVariantId) {
         error = 'Please select a variant';
         isValid = false;
-      } else if ((v.stock ?? v.quantity ?? 0) <= 0) {
+      } else if (v && (v.stock ?? v.quantity ?? 1) <= 0) {
         error = 'Selected variant is Out of Stock';
         isValid = false;
       }
@@ -422,25 +482,46 @@ export class VariantSelectionEngineService {
   buildCartBundleDetails(): CartBundleDetails | null {
     const result = this.bundleResult();
     const group = this.activeBundleGroup();
+    const product = this.product();
     if (!result.isComplete || !result.selectedTier) return null;
+
+    const baseProductPrice = Number(product?.salePrice || product?.sale_price || product?.basePrice || 0);
+    const effectiveBundlePrice = result.pricing.subtotal || (result.pricing.pricePerItem * result.selectedTier.count);
 
     return {
       bundleGroupId: group?.id,
       bundleName: result.selectedTier.name,
       bundleCount: result.selectedTier.count,
       bundleDiscount: result.pricing.savings,
+      basePrice: baseProductPrice,
+      unitPrice: result.pricing.pricePerItem,
+      effectivePrice: effectiveBundlePrice,
+      bundlePrice: effectiveBundlePrice,
+      configurationType: 'bundle',
+      selectedOptions: result.slots.map(s => {
+        const v = s.selectedVariant;
+        return {
+          slot: s.slotIndex + 1,
+          attribute: group?.displayName || group?.variantName || 'Option',
+          value: v?.name || s.selectedVariantId || 'Default',
+          variantId: v?.id || s.selectedVariantId,
+          name: v?.name || s.selectedVariantId,
+          color: v?.optionValues?.color || v?.optionValues?.Color || v?.name,
+          sku: v?.sku
+        };
+      }),
       selectedVariants: result.slots.map(s => {
         const v = s.selectedVariant;
         return {
           slotIndex: s.slotIndex,
           slotLabel: s.slotLabel,
-          variantId: v.id,
-          sku: v.sku || `SKU-${v.id}`,
-          name: v.name || v.variantSlug || `Variant ${v.id}`,
-          color: v.optionValues?.color || v.optionValues?.Color || v.name,
+          variantId: v?.id || s.selectedVariantId || 'default',
+          sku: v?.sku || `SKU-${v?.id || s.slotIndex}`,
+          name: v?.name || v?.variantSlug || `Variant ${s.slotIndex + 1}`,
+          color: v?.optionValues?.color || v?.optionValues?.Color || v?.name,
           price: result.pricing.pricePerItem,
-          image: Array.isArray(v.variantImages) && v.variantImages[0] ? v.variantImages[0] : (Array.isArray(v.images) ? v.images[0] : null),
-          optionValues: v.optionValues || {}
+          image: Array.isArray(v?.variantImages) && v?.variantImages[0] ? v?.variantImages[0] : (Array.isArray(v?.images) ? v?.images[0] : null),
+          optionValues: v?.optionValues || {}
         };
       })
     };

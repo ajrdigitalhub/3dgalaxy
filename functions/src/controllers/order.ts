@@ -7,6 +7,7 @@ import { ShippingService } from '../services/shipping.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { TrackingService } from '../services/tracking.service';
 import { logger } from '../utils/logger';
+import { calculateEffectiveItemPrice } from './payment';
 
 const safeParseArray = (val: any): any[] => {
   if (!val) return [];
@@ -24,41 +25,72 @@ const safeParseArray = (val: any): any[] => {
 const mapOrderWithVariantDetails = (order: any) => {
   if (!order) return order;
 
-  order.totalAmount = order.totalAmount !== undefined ? Number(order.totalAmount) : 0;
-  order.shippingAmount = order.shippingAmount !== undefined ? Number(order.shippingAmount) : 0;
-  order.taxAmount = order.taxAmount !== undefined ? Number(order.taxAmount) : 0;
-  order.discountAmount = order.discountAmount !== undefined ? Number(order.discountAmount) : 0;
-  order.codCharge = order.codCharge !== undefined ? Number(order.codCharge) : 0;
-  order.paidAmount = order.paidAmount !== undefined ? Number(order.paidAmount) : 0;
+  try {
+    order.totalAmount = order.totalAmount !== undefined ? Number(order.totalAmount) : 0;
+    order.shippingAmount = order.shippingAmount !== undefined ? Number(order.shippingAmount) : 0;
+    order.taxAmount = order.taxAmount !== undefined ? Number(order.taxAmount) : 0;
+    order.discountAmount = order.discountAmount !== undefined ? Number(order.discountAmount) : 0;
+    order.codCharge = order.codCharge !== undefined ? Number(order.codCharge) : 0;
+    order.paidAmount = order.paidAmount !== undefined ? Number(order.paidAmount) : 0;
 
-  if (order.items && Array.isArray(order.items)) {
-    order.items = order.items.map((item: any) => {
-      const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
-      const qty = Number(item.quantity || 1);
-      const totalPrice = item.totalPrice ? Number(item.totalPrice) : unitPrice * qty;
-
-      if (item.variant) {
-        const variantImages = safeParseArray(item.variant.variantImages || item.variant.images);
-        let firstImg = '';
-        if (variantImages && variantImages.length > 0) {
-          firstImg = typeof variantImages[0] === 'string' ? variantImages[0] : (variantImages[0].url || '');
-        }
-        
-        item.variant = {
-          ...item.variant,
-          imageUrl: firstImg || (item.product?.images && safeParseArray(item.product.images).length > 0 ? (typeof safeParseArray(item.product.images)[0] === 'string' ? safeParseArray(item.product.images)[0] : safeParseArray(item.product.images)[0].url) : '')
-        };
+    let shipmentObj: any = null;
+    if (order.shipment) {
+      if (typeof order.shipment === 'string') {
+        try { shipmentObj = JSON.parse(order.shipment); } catch (e) {}
+      } else if (typeof order.shipment === 'object') {
+        shipmentObj = order.shipment;
       }
-      return {
-        ...item,
-        unitPrice,
-        quantity: qty,
-        totalPrice
-      };
-    });
+    }
+    const itemConfigs = Array.isArray(shipmentObj?.itemConfigurations) ? shipmentObj.itemConfigurations : [];
 
-    const itemsSubtotal = order.items.reduce((sum: number, i: any) => sum + i.totalPrice, 0);
-    order.subtotal = itemsSubtotal;
+    if (order.items && Array.isArray(order.items)) {
+      order.items = order.items.map((item: any, idx: number) => {
+        const unitPrice = Number(item.unitPrice ?? item.price ?? 0);
+        const qty = Number(item.quantity || 1);
+        const totalPrice = item.totalPrice ? Number(item.totalPrice) : unitPrice * qty;
+
+        const matchedConfig = itemConfigs.find((c: any) => 
+          (c.productId && c.productId === item.productId && (!c.variantId || c.variantId === item.variantId)) ||
+          (c.variantId && c.variantId === item.variantId)
+        ) || itemConfigs[idx];
+
+        const bundleDetails = item.bundleDetails || matchedConfig?.bundleDetails || null;
+        const selectedOptions = item.selectedOptions || matchedConfig?.selectedOptions || [];
+        const configurationType = item.configurationType || matchedConfig?.configurationType || (bundleDetails ? 'bundle' : 'standard');
+        const configurationName = item.configurationName || matchedConfig?.configurationName || bundleDetails?.bundleName || null;
+        const basePrice = matchedConfig?.basePrice || Number(item.product?.basePrice || item.product?.salePrice || unitPrice);
+
+        if (item.variant) {
+          const variantImages = safeParseArray(item.variant.variantImages || item.variant.images);
+          let firstImg = '';
+          if (variantImages && variantImages.length > 0) {
+            firstImg = typeof variantImages[0] === 'string' ? variantImages[0] : (variantImages[0]?.url || '');
+          }
+          
+          item.variant = {
+            ...item.variant,
+            imageUrl: firstImg || (item.product?.images && safeParseArray(item.product.images).length > 0 ? (typeof safeParseArray(item.product.images)[0] === 'string' ? safeParseArray(item.product.images)[0] : safeParseArray(item.product.images)[0]?.url) : '')
+          };
+        }
+        return {
+          ...item,
+          unitPrice,
+          quantity: qty,
+          totalPrice,
+          basePrice,
+          effectivePrice: unitPrice,
+          bundleDetails,
+          selectedOptions,
+          configurationType,
+          configurationName
+        };
+      });
+
+      const itemsSubtotal = order.items.reduce((sum: number, i: any) => sum + i.totalPrice, 0);
+      order.subtotal = itemsSubtotal;
+    }
+  } catch (err: any) {
+    logger.warn('[mapOrderWithVariantDetails Warning]:', err.message);
   }
   return order;
 };
@@ -100,57 +132,41 @@ export const getOrders = async (req: Request, res: Response) => {
               }
             ]
           }
+        },
+        {
+          shippingAddress: {
+            OR: [
+              { addressLine1: { contains: search, mode: 'insensitive' } },
+              { city: { contains: search, mode: 'insensitive' } },
+              { state: { contains: search, mode: 'insensitive' } },
+              { postalCode: { contains: search, mode: 'insensitive' } }
+            ]
+          }
         }
       ];
     }
 
-    if (status) {
-      where.status = { equals: status, mode: 'insensitive' };
+    if (status && status !== 'ALL') {
+      where.status = status;
     }
 
-    if (customerType) {
-      if (customerType.toUpperCase() === 'REG') {
-        where.customer = {
-          customerType: { not: 'guest' }
-        };
-        where.customerId = { not: null };
-      } else if (customerType.toUpperCase() === 'GUEST') {
-        const guestCondition = {
-          OR: [
-            { customer: { customerType: 'guest' } },
-            { customerId: null }
-          ]
-        };
-        if (where.OR) {
-          const searchCondition = { OR: where.OR };
-          delete where.OR;
-          where.AND = [searchCondition, guestCondition];
-        } else {
-          where.OR = guestCondition.OR;
-        }
-      }
+    if (customerType && customerType !== 'ALL') {
+      where.customer = {
+        ...where.customer,
+        customerType: { equals: customerType, mode: 'insensitive' }
+      };
     }
 
     if (minAmount !== undefined || maxAmount !== undefined) {
       where.totalAmount = {};
-      if (minAmount !== undefined) {
-        where.totalAmount.gte = minAmount;
-      }
-      if (maxAmount !== undefined) {
-        where.totalAmount.lte = maxAmount;
-      }
+      if (minAmount !== undefined) where.totalAmount.gte = minAmount;
+      if (maxAmount !== undefined) where.totalAmount.lte = maxAmount;
     }
 
     if (dateFrom || dateTo) {
       where.createdAt = {};
-      if (dateFrom) {
-        where.createdAt.gte = new Date(dateFrom);
-      }
-      if (dateTo) {
-        const toD = new Date(dateTo);
-        toD.setHours(23, 59, 59, 999);
-        where.createdAt.lte = toD;
-      }
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
 
     const [total, list] = await Promise.all([
@@ -159,55 +175,69 @@ export const getOrders = async (req: Request, res: Response) => {
         where,
         skip,
         take: limitNum,
+        orderBy: { createdAt: 'desc' },
         include: {
           customer: {
             include: { user: true }
           },
           shippingAddress: true,
-          statusHistory: true,
+          billingAddress: true,
           items: {
-            include: { 
+            include: {
               product: true,
               variant: true
-            },
+            }
           },
-        },
-        orderBy: { createdAt: 'desc' },
+          payments: true
+        }
       })
     ]);
+
     return res.status(200).json({ total, page, limit: limitNum, data: list.map(mapOrderWithVariantDetails) });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to find orders index', details: error.message });
+    logger.error('Error in getOrders:', error);
+    return res.status(500).json({ error: 'Order retrieval failed', details: error.message });
   }
 };
 
 export const getMyOrders = async (req: any, res: Response) => {
   const userId = req.user?.id;
-  try {
-    const customer = await prisma.customer.findFirst({ where: { userId } });
-    if (!customer) {
-      return res.status(200).json({ total: 0, data: [] });
-    }
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+  }
 
+  try {
     const page = parseInt(req.query.page as string, 10) || 1;
     const limitNum = parseInt(req.query.limit as string, 10) || 20;
     const skip = (page - 1) * limitNum;
 
+    const customer = await prisma.customer.findFirst({ where: { userId } });
+    if (!customer) {
+      return res.status(200).json({ total: 0, page, limit: limitNum, data: [] });
+    }
+
+    const where = { customerId: customer.id };
     const [total, list] = await Promise.all([
-      prisma.order.count({ where: { customerId: customer.id } }),
+      prisma.order.count({ where }),
       prisma.order.findMany({
+        where,
         skip,
         take: limitNum,
-        where: { customerId: customer.id },
+        orderBy: { createdAt: 'desc' },
         include: {
+          customer: {
+            include: { user: true }
+          },
+          shippingAddress: true,
+          billingAddress: true,
           items: {
-            include: { 
+            include: {
               product: true,
               variant: true
-            },
+            }
           },
-        },
-        orderBy: { createdAt: 'desc' },
+          payments: true
+        }
       })
     ]);
     return res.status(200).json({ total, page, limit: limitNum, data: list.map(mapOrderWithVariantDetails) });
@@ -220,8 +250,14 @@ export const getOrderById = async (req: any, res: Response) => {
   const { id } = req.params;
   const userId = req.user?.id;
   const userRole = req.user?.role;
+  const rawId = String(id || '').trim();
+
+  if (!rawId) {
+    return res.status(400).json({ error: 'Order ID or Order Number is required' });
+  }
+
   try {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
     const standardIncludes = {
       customer: {
         include: { user: true }
@@ -247,21 +283,27 @@ export const getOrderById = async (req: any, res: Response) => {
 
     if (isUuid) {
       order = await prisma.order.findUnique({
-        where: { id },
+        where: { id: rawId },
         include: standardIncludes,
       });
     }
 
     if (!order) {
-      order = await prisma.order.findUnique({
-        where: { orderNumber: id },
+      order = await prisma.order.findFirst({
+        where: {
+          OR: [
+            { orderNumber: rawId },
+            { orderNumber: { equals: rawId, mode: 'insensitive' } },
+            ...(isUuid ? [{ id: rawId }] : [])
+          ]
+        },
         include: standardIncludes,
       });
     }
 
     if (!order && isUuid) {
       const checkout = await prisma.abandonedCheckout.findUnique({
-        where: { id },
+        where: { id: rawId },
       });
       if (checkout && checkout.recoveredOrderId) {
         const recovered = await prisma.order.findUnique({
@@ -275,14 +317,15 @@ export const getOrderById = async (req: any, res: Response) => {
     }
 
     if (!order) {
-      return res.status(404).json({ error: 'Order reference does not exist' });
+      return res.status(404).json({ error: `Order "${rawId}" not found.` });
     }
 
     const normalizedRole = userRole ? userRole.toLowerCase().replace(/[\s\-_]/g, '') : '';
-    if (normalizedRole !== 'admin' && normalizedRole !== 'superadmin' && normalizedRole !== 'manager') {
+    const isAdminOrStaff = ['admin', 'superadmin', 'manager', 'staff', 'employee', 'storeowner', 'owner'].includes(normalizedRole);
+    if (!isAdminOrStaff) {
       const isGuestCustomer = order.customer?.customerType === 'guest' || !order.customer?.userId;
       if (!isGuestCustomer && userId && order.customer?.userId && order.customer.userId !== userId) {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({ error: 'Forbidden. You do not have access to this order.' });
       }
     }
 
@@ -377,7 +420,7 @@ export const createOrder = async (req: any, res: Response) => {
       if (item.productId) {
         const prod = await prisma.product.findUnique({
           where: { id: item.productId },
-          select: { name: true, basePrice: true, salePrice: true, codAvailable: true, isActive: true, deletedAt: true }
+          select: { name: true, basePrice: true, salePrice: true, dealerPrice: true, codAvailable: true, isActive: true, deletedAt: true, variants: true }
         });
         if (!prod || !prod.isActive || prod.deletedAt) {
           return res.status(400).json({ error: `Product "${item.productId}" is no longer available.` });
@@ -387,11 +430,15 @@ export const createOrder = async (req: any, res: Response) => {
             error: `Cash on Delivery (COD) is unavailable for "${prod.name}". Please choose online payment.`
           });
         }
-        const itemPrice = prod.salePrice ? Number(prod.salePrice) : Number(prod.basePrice);
-        orderSubtotal += itemPrice * (item.quantity || 1);
+        const effectivePrice = calculateEffectiveItemPrice(prod, item, customerType);
+        orderSubtotal += effectivePrice * (item.quantity || 1);
       }
     }
     if (orderSubtotal > 2500) {
+      logger.warn('[COD Validation Failed in order.ts]: Effective subtotal exceeds 2500 limit', {
+        orderSubtotal,
+        limit: 2500
+      });
       return res.status(400).json({
         error: 'Cash on Delivery is available only for eligible products with a cart total of ₹2,500 or below.'
       });
@@ -410,31 +457,14 @@ export const createOrder = async (req: any, res: Response) => {
         customer = await prisma.customer.create({
           data: {
             userId,
-            phone: resolvedPhone || null,
-            customerType: 'retail'
+            customerType: customerType || 'retail'
           }
         });
-      } else if (!customer.phone && resolvedPhone) {
-        await prisma.customer.update({
-          where: { id: customer.id },
-          data: { phone: resolvedPhone }
-        });
       }
-
-      if (userRecord && !userRecord.mobile && resolvedPhone) {
-        await prisma.user.update({
-          where: { id: userRecord.id },
-          data: { mobile: resolvedPhone }
-        });
-      }
-
       customerIdToUse = customer.id;
     } else {
-      const email = resolvedEmail || `guest-${Date.now()}@3dgalaxy.com`;
-      const name = resolvedName || 'Guest Customer';
-      const phone = resolvedPhone || '';
-
-      let guestUser = await prisma.user.findFirst({ where: { email } });
+      // Find or create guest user
+      let guestUser = await prisma.user.findFirst({ where: { email: resolvedEmail } });
       if (!guestUser) {
         let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
         if (!guestRole) {
@@ -442,62 +472,60 @@ export const createOrder = async (req: any, res: Response) => {
             data: { name: 'Guest', description: 'Guest customer role' }
           });
         }
+
         guestUser = await prisma.user.create({
           data: {
-            email,
-            firstName: name.split(' ')[0] || 'Guest',
-            lastName: name.split(' ').slice(1).join(' ') || 'Customer',
-            mobile: phone || null,
+            email: resolvedEmail,
+            firstName: resolvedName.split(' ')[0] || 'Guest',
+            lastName: resolvedName.split(' ').slice(1).join(' ') || 'Customer',
             passwordHash: '',
             isActive: true,
             roles: {
-              create: {
-                roleId: guestRole.id
-              }
+              create: { roleId: guestRole.id }
             }
           }
         });
       }
 
-      let guestCust = await prisma.customer.findFirst({ where: { userId: guestUser.id } });
-      if (!guestCust) {
-        guestCust = await prisma.customer.create({
+      let guestCustomer = await prisma.customer.findFirst({ where: { userId: guestUser.id } });
+      if (!guestCustomer) {
+        guestCustomer = await prisma.customer.create({
           data: {
             userId: guestUser.id,
-            phone,
+            phone: resolvedPhone,
             customerType: 'guest'
           }
         });
       }
-      customerIdToUse = guestCust.id;
+      customerIdToUse = guestCustomer.id;
     }
 
-    const transaction = await prisma.$transaction(async (tx) => {
+    // Execute order creation in a managed transaction
+    const newOrder = await prisma.$transaction(async (tx) => {
+      // 1. Process Addresses
       let shippingAddressId: string | null = null;
       let billingAddressId: string | null = null;
 
       if (resolvedAddress) {
-        const isObj = typeof resolvedAddress === 'object' && resolvedAddress !== null;
-        const name = isObj ? (resolvedAddress.fullName || resolvedAddress.name || shippingAddressSnapshot.fullName || resolvedName) : resolvedName;
-        const phone = isObj ? (resolvedAddress.phone || resolvedAddress.mobile || shippingAddressSnapshot.phone || resolvedPhone) : resolvedPhone;
-        const addressType = isObj ? (resolvedAddress.addressType || 'home') : 'home';
-
-        const rawLine1 = isObj ? (resolvedAddress.street || (resolvedAddress.houseNo ? `${resolvedAddress.houseNo || ''} ${resolvedAddress.street || ''}`.trim() : (resolvedAddress.addressLine1 || resolvedAddress.address || 'N/A'))) : resolvedAddress;
-        const addrLine2 = isObj ? (resolvedAddress.addressLine2 || resolvedAddress.landmark || '') : '';
-        const city = isObj ? (resolvedAddress.city || 'N/A') : 'City';
-        const state = isObj ? (resolvedAddress.state || 'N/A') : 'State';
-        const postalCode = isObj ? (resolvedAddress.postalCode || resolvedAddress.pincode || 'N/A') : '100001';
-        const country = isObj ? (resolvedAddress.country || 'India') : 'India';
+        const addressObj = typeof resolvedAddress === 'object' ? resolvedAddress : shippingAddressSnapshot;
+        const name = addressObj.fullName || addressObj.name || resolvedName;
+        const phone = addressObj.phone || addressObj.mobile || resolvedPhone;
+        const addressType = addressObj.addressType || 'home';
+        const rawLine1 = addressObj.addressLine1 || (addressObj.houseNo ? `${addressObj.houseNo} ${addressObj.street || ''}`.trim() : (addressObj.street || addressObj.address || 'N/A'));
+        const addrLine2 = addressObj.addressLine2 || addressObj.landmark || '';
+        const city = addressObj.city || 'N/A';
+        const state = addressObj.state || 'N/A';
+        const postalCode = addressObj.postalCode || addressObj.pincode || '100001';
+        const country = addressObj.country || 'India';
 
         let formattedLine1 = rawLine1;
         if (!rawLine1.includes('|')) {
-          formattedLine1 = `${name} | ${phone} | ${addressType} | ${rawLine1}`.trim();
+          formattedLine1 = `${name || 'Customer'} | ${phone || ''} | ${addressType} | ${rawLine1}`.trim();
         }
 
-        // Deduplication check: re-use existing address if already saved
         let shipAddr = await tx.customerAddress.findFirst({
           where: {
-            customerId: customerIdToUse!,
+            customerId: customerIdToUse,
             OR: [
               { addressLine1: formattedLine1 },
               { addressLine1: rawLine1 },
@@ -509,7 +537,7 @@ export const createOrder = async (req: any, res: Response) => {
         if (!shipAddr) {
           shipAddr = await tx.customerAddress.create({
             data: {
-              customerId: customerIdToUse!,
+              customerId: customerIdToUse,
               addressLine1: formattedLine1,
               addressLine2: addrLine2,
               city,
@@ -521,10 +549,10 @@ export const createOrder = async (req: any, res: Response) => {
           });
         }
         shippingAddressId = shipAddr.id;
-
         billingAddressId = shipAddr.id;
+
         if (billingAddress) {
-          const isBillObj = typeof billingAddress === 'object' && billingAddress !== null;
+          const isBillObj = typeof billingAddress === 'object';
           const billAddrLine1 = isBillObj ? (billingAddress.addressLine1 || billingAddress.address || 'N/A') : billingAddress;
           const billAddrLine2 = isBillObj ? (billingAddress.addressLine2 || '') : '';
           const billCity = isBillObj ? (billingAddress.city || 'N/A') : 'City';
@@ -535,7 +563,7 @@ export const createOrder = async (req: any, res: Response) => {
           if (billAddrLine1 !== rawLine1) {
             const billAddr = await tx.customerAddress.create({
               data: {
-                customerId: customerIdToUse!,
+                customerId: customerIdToUse,
                 addressLine1: billAddrLine1,
                 addressLine2: billAddrLine2,
                 city: billCity,
@@ -553,36 +581,40 @@ export const createOrder = async (req: any, res: Response) => {
       // 2. Process Items and calculate totals
       let subtotal = 0;
       const parsedItems = [];
+      const itemConfigs: any[] = [];
 
       for (const it of items) {
-        const prod = await tx.product.findUnique({ where: { id: it.productId } });
+        const prod = await tx.product.findUnique({
+          where: { id: it.productId },
+          include: { variants: true }
+        });
         if (!prod) throw new Error(`Product not found: ${it.productId}`);
 
-        let price = prod.salePrice ? Number(prod.salePrice) : Number(prod.basePrice);
-        
-        // Check dealer price if registered user has user type DEALER
-        if (!isGuest && customerIdToUse) {
-          const customerDb = await tx.customer.findUnique({ where: { id: customerIdToUse } });
-          if (customerDb && customerDb.customerType === 'DEALER') {
-            price = prod.dealerPrice ? Number(prod.dealerPrice) : Number(prod.basePrice);
-          }
-        }
+        const effectiveUnitPrice = calculateEffectiveItemPrice(prod, it, customerType);
+        const qty = Math.max(1, Number(it.quantity) || 1);
+        const lineTotal = effectiveUnitPrice * qty;
 
-        if (it.bundleDetails && Array.isArray(it.bundleDetails.selectedVariants)) {
-          const totalSlotPrice = it.bundleDetails.selectedVariants.reduce((sum: number, v: any) => sum + Number(v.price || 0), 0);
-          if (totalSlotPrice > 0) price = totalSlotPrice;
-        } else if (it.variantId) {
-          const variant = await tx.productVariant.findUnique({ where: { id: it.variantId } });
-          if (variant) price = Number(variant.price);
-        }
-
-        subtotal += price * it.quantity;
+        subtotal += lineTotal;
         parsedItems.push({
           productId: it.productId,
           variantId: it.variantId || null,
-          quantity: it.quantity,
-          unitPrice: price,
-          totalPrice: price * it.quantity
+          quantity: qty,
+          unitPrice: effectiveUnitPrice,
+          totalPrice: lineTotal,
+          weightInGrams: Number(it.weightInGrams ?? it.weight ?? 0)
+        });
+
+        itemConfigs.push({
+          productId: it.productId,
+          variantId: it.variantId || null,
+          basePrice: Number(prod.salePrice || prod.basePrice || effectiveUnitPrice),
+          effectivePrice: effectiveUnitPrice,
+          quantity: qty,
+          lineTotal,
+          configurationType: it.configurationType || it.bundleDetails?.configurationType || (it.bundleDetails ? 'bundle' : 'standard'),
+          configurationName: it.configurationName || it.bundleDetails?.bundleName || null,
+          bundleDetails: it.bundleDetails || null,
+          selectedOptions: it.selectedOptions || it.bundleDetails?.selectedOptions || it.bundleDetails?.selectedVariants || []
         });
       }
 
@@ -613,6 +645,9 @@ export const createOrder = async (req: any, res: Response) => {
           status: 'Pending',
           shippingAddressId,
           billingAddressId,
+          shipment: {
+            itemConfigurations: itemConfigs
+          },
           items: { create: parsedItems },
           statusHistory: { 
             create: [{ status: 'Pending', comments: isGuest ? 'Guest Order created' : 'Order created', createdBy: userId || null }] 
@@ -627,10 +662,10 @@ export const createOrder = async (req: any, res: Response) => {
       return orderEntity;
     });
 
-    logger.info(`Order ${transaction.orderNumber} created successfully`, {
-      orderId: transaction.id,
-      orderNumber: transaction.orderNumber,
-      totalAmount: transaction.totalAmount,
+    logger.info(`Order ${newOrder.orderNumber} created successfully`, {
+      orderId: newOrder.id,
+      orderNumber: newOrder.orderNumber,
+      totalAmount: newOrder.totalAmount,
       paymentMethod
     }, {
       requestId,
@@ -641,15 +676,15 @@ export const createOrder = async (req: any, res: Response) => {
 
     // Fire the centralized order notification pipeline (Customer WhatsApp + Admin WhatsApp + Admin FCM Push)
     // Run async, don't block the response
-    dispatchOrderNotifications(transaction.id).catch((notifErr) => {
-      logger.error(`[CreateOrder] Notification pipeline error for order ${transaction.id}:`, notifErr, {
+    dispatchOrderNotifications(newOrder.id).catch((notifErr) => {
+      logger.error(`[CreateOrder] Notification pipeline error for order ${newOrder.id}:`, notifErr, {
         requestId,
-        orderId: transaction.id,
+        orderId: newOrder.id,
         module: 'NOTIFICATION'
       });
     });
 
-    return res.status(201).json(transaction);
+    return res.status(201).json(newOrder);
   } catch (error: any) {
     logger.error('Order creation failed', error, {
       paymentMethod,

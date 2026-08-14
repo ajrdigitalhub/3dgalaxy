@@ -49,17 +49,54 @@ export const getInstagramFeed = async (req: Request, res: Response) => {
     const token = encodeURIComponent(cfg.accessToken);
     const url = `https://graph.instagram.com/${profileId}/media?fields=id,caption,media_url,thumbnail_url,permalink,media_type,timestamp&access_token=${token}&limit=${limit}`;
 
-    const response = await fetch(url);
-    const data = (await response.json()) as any;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3-second non-blocking timeout
+
+    let response: any;
+    let data: any = {};
+    try {
+      response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      data = (await response.json()) as any;
+    } catch (fetchErr: any) {
+      clearTimeout(timeoutId);
+      console.warn('[INSTAGRAM_TIMEOUT_WARN] Instagram API fetch timed out or failed:', fetchErr.message);
+      
+      const fallbackPayload = {
+        enabled: true,
+        profile: {
+          name: cfg.profileName || "Instagram",
+          profileUrl: cfg.profileUrl || "",
+          profileImageUrl: cfg.profileImageUrl || "",
+          bio: cfg.profileBio || "",
+        },
+        posts: [],
+        fetchedAt: new Date().toISOString(),
+      };
+      // Cache empty fallback briefly (2 mins) to avoid hammering broken external API
+      sysCache.set(INSTAGRAM_CACHE_KEY, fallbackPayload, 120);
+      return res.status(200).json({ success: true, data: fallbackPayload });
+    }
 
     if (!response.ok || data.error) {
       const message =
         data.error?.message ||
-        response.statusText ||
+        response?.statusText ||
         "Instagram Graph API fetch failed";
-      return res
-        .status(500)
-        .json({ success: false, error: message, details: data });
+      
+      const fallbackPayload = {
+        enabled: true,
+        profile: {
+          name: cfg.profileName || "Instagram",
+          profileUrl: cfg.profileUrl || "",
+          profileImageUrl: cfg.profileImageUrl || "",
+          bio: cfg.profileBio || "",
+        },
+        posts: [],
+        fetchedAt: new Date().toISOString(),
+      };
+      sysCache.set(INSTAGRAM_CACHE_KEY, fallbackPayload, 120);
+      return res.status(200).json({ success: true, data: fallbackPayload });
     }
 
     const items = Array.isArray(data.data)

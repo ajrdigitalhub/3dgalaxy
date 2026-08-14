@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProductById, quickUpdateProduct, quickUpdateVariant, getProductVariants } from "../controllers/product";
+import { getAdminProducts, getProductById, quickUpdateProduct, quickUpdateVariant, getProductVariants } from "../controllers/product";
 import {
   previewImportProducts,
   importProducts,
@@ -12,6 +12,14 @@ import { authenticateToken, requireRole } from "../middleware/auth";
 import { upload } from "../middleware/upload";
 
 const router = Router();
+
+router.get(
+  "/",
+  authenticateToken,
+  requireRole(["Admin", "Manager", "Super Admin"]),
+  getAdminProducts,
+);
+
 router.get(
   "/:id/details",
   authenticateToken,

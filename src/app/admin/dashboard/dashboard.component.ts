@@ -2,10 +2,11 @@ import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService } from '../../services/datastore';
+import { SalesAnalyticsComponent } from '../../pages/admin/components/sales-analytics/sales-analytics.component';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, SalesAnalyticsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

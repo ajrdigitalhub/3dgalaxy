@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/database';
+import { sysCache } from '../config/cache';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bbrahma_3d_galaxy_labs_secret_jwt_key_2026';
 
@@ -35,17 +36,30 @@ export const authenticateToken = async (
       role: string;
     };
 
+    const cacheKey = `auth_user_${decoded.id}`;
+    let cachedUser = sysCache.get(cacheKey);
+
+    if (cachedUser) {
+      req.user = cachedUser;
+      return next();
+    }
+
     let user: any = null;
     try {
       user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          isActive: true,
           roles: {
-            include: {
-              role: true
+            select: {
+              role: {
+                select: { name: true }
+              }
             }
           }
-        },
+        }
       });
     } catch (dbErr) {
       console.warn('[AUTH] DB user lookup warning:', dbErr);
@@ -53,23 +67,26 @@ export const authenticateToken = async (
 
     if (user && user.isActive !== false) {
       const primaryRole = user.roles[0]?.role;
-      req.user = {
+      const userPayload = {
         id: user.id,
         email: user.email,
         role: primaryRole?.name || decoded.role || 'Admin',
         permissions: [],
       };
+      sysCache.set(cacheKey, userPayload, 300); // 5 minute TTL
+      req.user = userPayload;
       return next();
     }
 
     // Fallback: Validly signed token from server (e.g. demo admin or DB offline)
     if (decoded && (decoded.id || decoded.email)) {
-      req.user = {
+      const fallbackPayload = {
         id: decoded.id || 'admin-user-id',
         email: decoded.email || 'admin@3dgalaxy.com',
         role: decoded.role || 'Admin',
         permissions: [],
       };
+      req.user = fallbackPayload;
       return next();
     }
 

@@ -3,14 +3,20 @@ import prisma from '../config/database';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import fs from 'fs';
 import { FirebaseStorageService } from '../modules/storage/firebase-storage.service';
+import { sysCache } from '../config/cache';
 
 import { upload } from '../middleware/upload';
+import { getSalesAnalytics, getAnalyticsFilterOptions, salesAnalyticsStream } from '../controllers/analytics';
 
 const router = Router();
 
-
 // Ensure roles: Admin, Super Admin and Manager have full access
 const adminGuard = [authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager'])];
+
+// Real-Time Sales & Product Analytics Endpoints
+router.get('/analytics/sales', adminGuard, getSalesAnalytics);
+router.get('/analytics/filters', adminGuard, getAnalyticsFilterOptions);
+router.get('/analytics/sales/stream', adminGuard, salesAnalyticsStream);
 
 router.post('/upload-image', adminGuard, upload.single('image'), async (req: Request, res: Response) => {
   try {
@@ -530,6 +536,12 @@ router.post('/sessions/:id/terminate', adminGuard, async (req: Request, res: Res
 // 1. Overview Dashboard Stats
 router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
   try {
+    const cacheKey = 'admin_dashboard_overview';
+    const cached = sysCache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({ success: true, data: cached });
+    }
+
     const [
       totalProducts,
       totalOrders,
@@ -563,50 +575,78 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
     ]);
 
     const totalRevenue = revenueAgg._sum.totalAmount || 0;
+    const payload = {
+      totalProducts,
+      totalOrders,
+      totalCustomers,
+      totalRevenue,
+      abandonedCarts,
+      pendingOrders
+    };
 
+    sysCache.set(cacheKey, payload, 60); // 60s TTL
     return res.status(200).json({
       success: true,
-      data: {
-        totalProducts,
-        totalOrders,
-        totalCustomers,
-        totalRevenue,
-        abandonedCarts,
-        pendingOrders
-      }
+      data: payload
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 2. Customers List
+// 2. Customers List (Paginated & Lightweight)
 router.get('/customers', adminGuard, async (req: Request, res: Response) => {
   try {
-    const customers = await prisma.customer.findMany({
-      include: {
-        user: true,
-        orders: true
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
+    const page = parseInt(String(req.query.page || '1'), 10);
+    const limit = parseInt(String(req.query.limit || '50'), 10);
+    const skip = (page - 1) * limit;
+
+    const [customers, totalCount] = await Promise.all([
+      prisma.customer.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          phone: true,
+          createdAt: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              mobile: true,
+              isActive: true,
+            }
+          },
+          _count: {
+            select: { orders: true }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.customer.count()
+    ]);
 
     const formatted = customers.map(c => {
-      const name = c.user.firstName ? `${c.user.firstName} ${c.user.lastName || ''}`.trim() : (c.user.email || 'N/A');
+      const name = c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}`.trim() : (c.user?.email || 'N/A');
       return {
         id: c.id,
         name,
-        email: c.user.email,
-        mobile: c.phone || c.user.mobile || 'N/A',
-        ordersCount: c.orders.length,
-        status: c.user.isActive ? 'Active' : 'Inactive',
-        createdDate: c.createdAt.toISOString().split('T')[0]
+        email: c.user?.email || 'N/A',
+        mobile: c.phone || c.user?.mobile || 'N/A',
+        ordersCount: c._count?.orders || 0,
+        status: c.user?.isActive ? 'Active' : 'Inactive',
+        createdDate: c.createdAt ? c.createdAt.toISOString().split('T')[0] : ''
       };
     });
 
-    return res.status(200).json({ success: true, data: formatted });
+    return res.status(200).json({
+      success: true,
+      data: formatted,
+      pagination: { page, limit, total: totalCount, totalPages: Math.ceil(totalCount / limit) }
+    });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -615,28 +655,38 @@ router.get('/customers', adminGuard, async (req: Request, res: Response) => {
 // 3. Abandoned Carts List
 router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) => {
   try {
-    const carts = await prisma.cart.findMany({
-      where: {
-        status: 'ACTIVE',
-        items: { some: {} }
-      },
-      include: {
-        customer: {
-          include: {
-            user: true
+    const page = parseInt(String(req.query.page || '1'), 10);
+    const limit = parseInt(String(req.query.limit || '50'), 10);
+    const skip = (page - 1) * limit;
+
+    const [carts, totalCount] = await Promise.all([
+      prisma.cart.findMany({
+        skip,
+        take: limit,
+        where: {
+          status: 'ACTIVE',
+          items: { some: {} }
+        },
+        include: {
+          customer: {
+            include: {
+              user: true
+            }
+          },
+          items: {
+            take: 5,
+            include: {
+              product: { select: { name: true, basePrice: true, salePrice: true } },
+              variant: { select: { name: true, price: true } }
+            }
           }
         },
-        items: {
-          include: {
-            product: true,
-            variant: true
-          }
+        orderBy: {
+          updatedAt: 'desc'
         }
-      },
-      orderBy: {
-        updatedAt: 'desc'
-      }
-    });
+      }),
+      prisma.cart.count({ where: { status: 'ACTIVE', items: { some: {} } } })
+    ]);
 
     const formatted = carts.map(cart => {
       const customerName = cart.customer?.user?.firstName ? `${cart.customer.user.firstName} ${cart.customer.user.lastName || ''}`.trim() : (cart.customer?.user?.email || 'Guest Customer');

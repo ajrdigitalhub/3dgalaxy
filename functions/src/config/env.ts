@@ -6,23 +6,17 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), 'functions/.env') });
 
-// Sanitize/Fix broken direct Supabase host to use working pooler host
-if (!process.env.PG_HOST || process.env.PG_HOST.includes('db.glaljifokncxzjvajzrg.supabase.co')) {
-  process.env.PG_HOST = 'aws-1-ap-northeast-1.pooler.supabase.com';
+// Default fallbacks if environment variables are not set
+if (!process.env.PG_HOST) {
+  process.env.PG_HOST = 'db.glaljifokncxzjvajzrg.supabase.co';
 }
-if (!process.env.PG_USER || process.env.PG_USER === 'postgres') {
-  process.env.PG_USER = 'postgres.glaljifokncxzjvajzrg';
-}
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('db.glaljifokncxzjvajzrg.supabase.co')) {
-  process.env.DATABASE_URL = process.env.DATABASE_URL.replace(
-    'db.glaljifokncxzjvajzrg.supabase.co',
-    'aws-1-ap-northeast-1.pooler.supabase.com'
-  ).replace('postgres:', 'postgres.glaljifokncxzjvajzrg:');
+if (!process.env.PG_USER) {
+  process.env.PG_USER = 'postgres';
 }
 
 export const ENV = {
-  PG_USER: process.env.PG_USER || 'postgres.glaljifokncxzjvajzrg',
-  PG_HOST: process.env.PG_HOST || 'aws-1-ap-northeast-1.pooler.supabase.com',
+  PG_USER: process.env.PG_USER || 'postgres',
+  PG_HOST: process.env.PG_HOST || 'db.glaljifokncxzjvajzrg.supabase.co',
   PG_DATABASE: process.env.PG_DATABASE || 'postgres',
   PG_PASSWORD: process.env.PG_PASSWORD || 'Mec170761$1',
   PG_PORT: Number(process.env.PG_PORT || 5432),
@@ -38,9 +32,7 @@ export const getDatabaseUrl = () => {
   const user = encodeURIComponent(ENV.PG_USER);
   const password = encodeURIComponent(ENV.PG_PASSWORD);
   const sslMode = ENV.PG_SSL ? 'require' : 'disable';
-  // Disable the pg prepared statement cache and enable PgBouncer compatibility
-  // for Supabase / PgBouncer connection pools.
-  return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}&statement_cache_size=0&pgbouncer=true`;
+  return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}`;
 };
 
 if (!process.env.DATABASE_URL) {

@@ -38,15 +38,15 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
           <div class="space-y-4">
             <div class="flex flex-col sm:flex-row gap-3">
               <!-- Search Input Bar -->
-              <div class="flex-1 flex items-center gap-3 bg-white dark:bg-zinc-900 px-4 py-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                <mat-icon class="text-zinc-400">search</mat-icon>
+              <div class="flex-1 flex items-center gap-2 sm:gap-3 bg-white dark:bg-zinc-900 px-3 sm:px-4 py-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+                <mat-icon class="text-zinc-400 shrink-0">search</mat-icon>
                 <input type="text"
                        [value]="searchQuery()"
                        (input)="onSearchChange($any($event.target).value)"
-                       placeholder="Search by Order ID, Customer Name, Email, Phone, Tracking Number..."
+                       placeholder="Search Order ID, Name, Email, Phone, AWB..."
                        class="flex-1 bg-transparent border-none outline-none text-xs text-zinc-900 dark:text-white placeholder-zinc-400 font-medium">
                 @if (searchQuery()) {
-                  <button (click)="resetSearch()" class="h-5 w-5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center border-none bg-transparent cursor-pointer text-zinc-400">
+                  <button (click)="resetSearch()" class="h-5 w-5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center border-none bg-transparent cursor-pointer text-zinc-400 shrink-0">
                     <mat-icon class="text-xs">close</mat-icon>
                   </button>
                 }
@@ -55,15 +55,15 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
               <!-- Action buttons -->
               <div class="flex items-center gap-2">
                 <button (click)="showFilters.set(!showFilters())"
-                        [class]="showFilters() ? 'bg-blue-650 text-blue-100 bg-blue-600' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'"
-                        class="h-9 px-4 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none">
+                        [class]="showFilters() ? 'bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800'"
+                        class="h-9 px-3.5 sm:px-4 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none shrink-0">
                   <mat-icon class="text-sm">tune</mat-icon>
                   <span>Advanced Filters</span>
                 </button>
 
                 @if (hasActiveFilters()) {
                   <button (click)="resetFilters()"
-                          class="h-9 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none">
+                          class="h-9 px-3.5 sm:px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border-none shrink-0">
                     <mat-icon class="text-sm">filter_alt_off</mat-icon>
                     <span>Clear</span>
                   </button>
@@ -73,7 +73,7 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
 
             <!-- Collapsible Filters Drawer -->
             @if (showFilters()) {
-              <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-fadeIn">
+              <div class="p-4 sm:p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 animate-fadeIn">
                 <!-- Status Filter -->
                 <div class="space-y-1">
                   <span class="block text-[9px] font-black text-zinc-400 uppercase">Fulfillment Status</span>
@@ -143,10 +143,10 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
             </div>
           </div>
 
-          <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl font-sans relative overflow-visible">
+          <div class="p-3 sm:p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-900 rounded-2xl sm:rounded-3xl font-sans relative shadow-xs max-w-full overflow-hidden">
             <!-- Loading Indicator Spinner Overlay -->
             @if (admin.ds.ordersLoading()) {
-              <div class="absolute inset-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs z-10 flex items-center justify-center animate-fadeIn rounded-2xl">
+              <div class="absolute inset-0 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs z-10 flex items-center justify-center animate-fadeIn rounded-2xl sm:rounded-3xl">
                 <div class="flex flex-col items-center gap-3">
                   <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                   <span class="text-[10px] font-black uppercase text-blue-500 tracking-wider">Syncing Fulfillment logs...</span>
@@ -154,48 +154,50 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
               </div>
             }
 
-            <table class="w-full text-left text-xs whitespace-nowrap">
-              <thead>
-                <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
-                  <th class="py-3.5 px-3">Order Code</th>
-                  <th class="py-3.5 px-3">Customer</th>
-                  <th class="py-3.5 px-3">Order Status</th>
-                  <th class="py-3.5 px-3">Total Amount</th>
-                  <th class="py-3.5 px-3 text-right">Logistics & Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                @for (o of filteredOrders(); track o.id) {
-                  <tr class="transition-colors" [ngClass]="getOrderRowBgClass(o.status)">
-                    <!-- Order Code -->
-                    <td class="py-3.5 px-3">
-                      <span 
-                        class="px-3 py-1.5 font-mono text-xs sm:text-sm font-black rounded-lg tracking-wider shadow-2xs inline-block"
-                        [ngClass]="isCancelled(o.status) ? 
-                          'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 line-through decoration-red-600 decoration-2' : 
-                          'bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700'"
-                      >
-                        {{ o.orderNumber }}
-                      </span>
-                    </td>
+            <!-- DESKTOP / TABLET TABLE VIEW (hidden on mobile, visible on sm and up) -->
+            <div class="hidden sm:block w-full max-w-full overflow-x-auto pb-2 no-scrollbar">
+              <table class="w-full text-left text-xs whitespace-nowrap min-w-[700px]">
+                <thead>
+                  <tr class="text-[10px] font-black text-zinc-400 uppercase border-b dark:border-zinc-800">
+                    <th class="py-3.5 px-3">Order Code</th>
+                    <th class="py-3.5 px-3">Customer</th>
+                    <th class="py-3.5 px-3">Order Status</th>
+                    <th class="py-3.5 px-3">Total Amount</th>
+                    <th class="py-3.5 px-3 text-right">Logistics & Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  @for (o of filteredOrders(); track o.id) {
+                    <tr class="transition-colors" [ngClass]="getOrderRowBgClass(o.status)">
+                      <!-- Order Code -->
+                      <td class="py-3.5 px-3">
+                        <span 
+                          class="px-3 py-1.5 font-mono text-xs sm:text-sm font-black rounded-lg tracking-wider shadow-2xs inline-block"
+                          [ngClass]="isCancelled(o.status) ? 
+                            'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 line-through decoration-red-600 decoration-2' : 
+                            'bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700'"
+                        >
+                          {{ o.orderNumber }}
+                        </span>
+                      </td>
 
-                    <!-- Customer -->
-                    <td class="py-3.5 px-3">
-                      <p 
-                        class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2"
-                        [class.line-through]="isCancelled(o.status)"
-                        [class.decoration-red-600]="isCancelled(o.status)"
-                        [class.decoration-2]="isCancelled(o.status)"
-                      >
-                        {{ o.guestName || o.customerName }}
-                        @if (o.customerType?.toUpperCase() === 'GUEST') {
-                          <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">GUEST</span>
-                        } @else {
-                          <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">REG</span>
-                        }
-                      </p>
-                      <span class="text-[10px] text-zinc-400 font-mono">{{ o.guestPhone || o.customerPhone }}</span>
-                    </td>
+                      <!-- Customer -->
+                      <td class="py-3.5 px-3">
+                        <p 
+                          class="font-black text-zinc-900 dark:text-white uppercase flex items-center gap-2"
+                          [class.line-through]="isCancelled(o.status)"
+                          [class.decoration-red-600]="isCancelled(o.status)"
+                          [class.decoration-2]="isCancelled(o.status)"
+                        >
+                          {{ o.guestName || o.customerName }}
+                          @if (o.customerType?.toUpperCase() === 'GUEST') {
+                            <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">GUEST</span>
+                          } @else {
+                            <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[7px] font-black rounded tracking-wider leading-none no-underline">REG</span>
+                          }
+                        </p>
+                        <span class="text-[10px] text-zinc-400 font-mono block truncate max-w-[180px]">{{ o.guestPhone || o.customerPhone || o.guestEmail || o.customerEmail || 'No contact info' }}</span>
+                      </td>
 
                     <!-- Order Status -->
                     <td class="py-3.5 px-3">
@@ -339,11 +341,133 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                           <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
                         </select>
                       </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- MOBILE CARD VIEW (visible on mobile < sm, hidden on sm and up) -->
+            <div class="block sm:hidden space-y-3">
+              @for (o of filteredOrders(); track o.id) {
+                <div 
+                  class="p-4 rounded-2xl border transition-all space-y-3"
+                  [ngClass]="getOrderRowBgClass(o.status)"
+                >
+                  <!-- Top Row: Order Code, Type & Status -->
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                      <span 
+                        class="px-2.5 py-1 font-mono text-xs font-black rounded-lg tracking-wider shadow-2xs"
+                        [ngClass]="isCancelled(o.status) ? 
+                          'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 line-through decoration-red-600 decoration-2' : 
+                          'bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700'"
+                      >
+                        {{ o.orderNumber }}
+                      </span>
+                      @if (o.customerType?.toUpperCase() === 'GUEST') {
+                        <span class="px-1.5 py-0.5 bg-orange-500 text-white text-[8px] font-black rounded tracking-wider uppercase">GUEST</span>
+                      } @else {
+                        <span class="px-1.5 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded tracking-wider uppercase">REG</span>
+                      }
+                    </div>
+
+                    <div>
+                      @if (isCancelled(o.status)) {
+                        <span class="px-2.5 py-1 bg-red-600 text-white text-[9px] font-black uppercase rounded-md tracking-wider border border-red-700 shadow-xs inline-flex items-center gap-1">
+                          <mat-icon class="text-xs scale-75">cancel</mat-icon>
+                          CANCELLED
+                        </span>
+                      } @else {
+                        <span [class]="admin.getStatusStyle(o.status)" class="px-2.5 py-1 text-[9px] font-black uppercase rounded-md tracking-wider border">
+                          {{ o.status }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Customer Name, Phone & Amount -->
+                  <div class="flex items-start justify-between gap-3 pt-1 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                    <div class="min-w-0 flex-1">
+                      <p 
+                        class="font-black text-xs text-zinc-900 dark:text-white uppercase truncate"
+                        [class.line-through]="isCancelled(o.status)"
+                        [class.decoration-red-600]="isCancelled(o.status)"
+                      >
+                        {{ o.guestName || o.customerName }}
+                      </p>
+                      <p class="text-[10px] text-zinc-400 font-mono truncate mt-0.5">
+                        {{ o.guestPhone || o.customerPhone || o.guestEmail || o.customerEmail || 'No contact info' }}
+                      </p>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                      <span class="text-[9px] font-bold text-zinc-400 uppercase block">Grand Total</span>
+                      <span 
+                        class="font-mono font-black text-sm text-zinc-900 dark:text-white"
+                        [class.line-through]="isCancelled(o.status)"
+                        [class.decoration-red-600]="isCancelled(o.status)"
+                      >
+                        ₹{{ o.grandTotal | number }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Actions Bar: Details, Slip, Logistics, Status Select -->
+                  <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                    <div class="flex items-center gap-1.5">
+                      <!-- DETAILS BUTTON -->
+                      <a [routerLink]="['/admin/orders', o.orderNumber]" class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase transition-colors">
+                        <mat-icon class="text-[13px] leading-none">visibility</mat-icon> Details
+                      </a>
+
+                      <!-- PACKAGING SLIP BUTTON -->
+                      <button
+                        (click)="openPackagingSlipModal(o)"
+                        class="flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 rounded-lg text-[9px] font-black uppercase transition-colors cursor-pointer"
+                        title="Preview & Edit Packaging Slip"
+                      >
+                        <mat-icon class="text-[13px] leading-none">assignment</mat-icon>
+                        <span>Slip</span>
+                      </button>
+
+                      <!-- SHIPPING LOGISTICS BUTTON -->
+                      <button
+                        (click)="openShipmentModalForOrder(o)"
+                        class="relative flex items-center justify-center h-7 w-7 rounded-lg transition-all border cursor-pointer"
+                        [ngClass]="(o.shipment?.trackingNumber || o.shipment?.courierPartner) ? 
+                          'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 shadow-sm' : 
+                          'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'"
+                        title="Shipping Logistics Details"
+                      >
+                        <mat-icon class="text-xs">local_shipping</mat-icon>
+                        @if (o.shipment?.trackingNumber || o.shipment?.courierPartner) {
+                          <span class="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-zinc-900"></span>
+                        }
+                      </button>
+                    </div>
+
+                    <!-- STATUS SELECTOR -->
+                    <select
+                      #mStatusSelect
+                      [value]="o.status"
+                      (change)="handleStatusSelect(o, $any($event.target).value, mStatusSelect)"
+                      class="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-[9px] font-black uppercase outline-none cursor-pointer"
+                    >
+                      <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending</option>
+                      <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
+                      <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing</option>
+                      <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
+                      <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
+                      <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
+                      <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              }
+            </div>
+
           </div>
 
           <!-- Server-side Pagination Panel -->

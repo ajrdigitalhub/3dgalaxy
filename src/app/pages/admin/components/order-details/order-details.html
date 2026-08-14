@@ -358,6 +358,9 @@
                 {{ item.unitPrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
               </p>
               <p class="text-[10px] text-neutral-450">{{ item.unitPrice | currency:'INR':'symbol':'1.0-0' }} each</p>
+              <p *ngIf="item.basePrice && item.basePrice > item.unitPrice" class="text-[9px] text-neutral-400 line-through">
+                Base: {{ item.basePrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
+              </p>
             </div>
           </div>
           }

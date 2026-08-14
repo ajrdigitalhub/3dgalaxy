@@ -22,22 +22,71 @@
         {{ tier.badgeText }}
       </div>
 
-      <div class="card-radio-cell">
-        <div class="custom-radio" [class.checked]="isTierSelected(tier)">
-          <div class="radio-inner" *ngIf="isTierSelected(tier)"></div>
+      <div class="card-main-row">
+        <div class="card-radio-cell">
+          <div class="custom-radio" [class.checked]="isTierSelected(tier)">
+            <div class="radio-inner" *ngIf="isTierSelected(tier)"></div>
+          </div>
+        </div>
+
+        <div class="card-info-cell">
+          <div class="tier-name">{{ tier.name }}</div>
+        </div>
+
+        <div class="card-price-cell">
+          <div class="current-price">{{ getDisplayPrice(tier) }}</div>
+          <div class="original-price" *ngIf="getOriginalPrice(tier) && isTierSelected(tier) && tier.count > 1">
+            <s>{{ getOriginalPrice(tier) }}</s>
+          </div>
         </div>
       </div>
 
-      <div class="card-info-cell">
-        <div class="tier-name">{{ tier.name }}</div>
-      </div>
-
-      <div class="card-price-cell">
-        <div class="current-price">{{ getDisplayPrice(tier) }}</div>
-        <div class="original-price" *ngIf="getOriginalPrice(tier) && isTierSelected(tier) && tier.count > 1">
-          <s>{{ getOriginalPrice(tier) }}</s>
+      <!-- INNER SLOT OPTION SELECTORS WHEN ACTIVE (Including Single Pack Buy 1) -->
+      <div class="inner-slots-box" *ngIf="isTierSelected(tier) && tier.count >= 1" (click)="$event.stopPropagation()">
+        <div 
+          *ngFor="let slotIdx of getSlotsArray(tier.count)" 
+          class="slot-row">
+          <span class="slot-number">#{{ slotIdx + 1 }}</span>
+          <div class="slot-thumb-wrap">
+            <ng-container *ngIf="getSlotImage(slotIdx); else colorDotBlock">
+              <img 
+                [src]="getSlotImage(slotIdx)!" 
+                alt="Thumbnail" 
+                class="slot-thumb" 
+                (error)="onImgError($event, slotIdx)" />
+            </ng-container>
+            <ng-template #colorDotBlock>
+              <div class="slot-color-dot" [style.background-color]="getSlotColor(slotIdx)"></div>
+            </ng-template>
+          </div>
+          <select 
+            [ngModel]="getSlotSelectedValue(slotIdx)" 
+            (ngModelChange)="onSlotChange(slotIdx, $event)"
+            class="slot-select">
+            <option *ngFor="let opt of getOptionChoices()" [value]="opt.name">
+              {{ opt.name }}
+            </option>
+          </select>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SUB-TOTAL & ADD TO CART BAR (Only when standalone) -->
+  <div class="subtotal-action-bar" *ngIf="isStandalone">
+    <div class="subtotal-label">
+      Subtotal: <span class="subtotal-amount">Rs. {{ calculateSubtotal() | number }}.00</span>
+    </div>
+    <div class="cart-btn-row">
+      <button type="button" class="add-to-cart-btn" (click)="onAddToCartClick()">
+        ADD TO CART
+      </button>
+      <button type="button" class="icon-circle-btn" title="Wishlist">
+        <mat-icon>favorite_border</mat-icon>
+      </button>
+      <button type="button" class="icon-circle-btn" title="Share">
+        <mat-icon>share</mat-icon>
+      </button>
     </div>
   </div>
 </div>

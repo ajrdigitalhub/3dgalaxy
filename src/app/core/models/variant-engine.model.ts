@@ -82,6 +82,21 @@ export interface CartBundleDetails {
   bundleName: string;
   bundleCount: number;
   bundleDiscount: number;
+  basePrice?: number;
+  unitPrice?: number;
+  effectivePrice?: number;
+  bundlePrice?: number;
+  configurationType?: string;
+  selectedOptions?: Array<{
+    slot: number;
+    attribute: string;
+    value: string;
+    variantId?: string;
+    name?: string;
+    color?: string;
+    image?: string;
+    sku?: string;
+  }>;
   selectedVariants: Array<{
     slotIndex: number;
     slotLabel: string;
