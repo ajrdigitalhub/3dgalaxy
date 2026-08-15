@@ -3342,7 +3342,7 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
 
                               <!-- Status -->
                               <td class="py-3 px-3">
-                                @let st = variantEditFormMap()[v.id]?.stock ?? v.stock ?? 0;
+                                @let st = (variantEditFormMap()[v.id] ? variantEditFormMap()[v.id].stock : undefined) ?? v.stock ?? 0;
                                 @if (st === 0) {
                                   <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">OUT OF STOCK</span>
                                 } @else if (st <= 5) {
