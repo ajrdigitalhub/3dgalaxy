@@ -296,13 +296,13 @@ import { firstValueFrom } from "rxjs";
 
                   <!-- CTAs -->
                   <div class="pt-2">
-                    @if (p.variants && p.variants.length > 0) {
+                    @if (hasVariants(p)) {
                       <a
                         [routerLink]="['/product', p.slug]"
                         class="w-full h-9 bg-neutral-900 dark:bg-neutral-800 hover:bg-[#d65108] text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md no-underline"
                       >
                         <mat-icon class="scale-75">tune</mat-icon>
-                        <span>Select Variant</span>
+                        <span>Select Option</span>
                       </a>
                     } @else {
                       <div class="grid grid-cols-2 gap-2">
@@ -557,6 +557,16 @@ export class HomeFeaturedProductsComponent implements OnInit {
         this.toastService.error("Failed to add to wishlist");
       }
     }
+  }
+
+  hasVariants(p: any): boolean {
+    if (!p) return false;
+    if (p.hasVariants === true || p.has_variants === true) return true;
+    if (Array.isArray(p.variants) && p.variants.length > 0) return true;
+    if (typeof p.variants === 'string' && p.variants.trim().length > 2 && p.variants.trim() !== '[]') return true;
+    if (p.isBundle === true || p.is_bundle === true || p.bundleProducts || p.bundle_products) return true;
+    if (Array.isArray(p.options) && p.options.length > 0) return true;
+    return false;
   }
 
   getDiscountPercent(p: any): number {

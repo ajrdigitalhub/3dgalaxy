@@ -835,11 +835,11 @@
                 <mat-icon class="scale-75">block</mat-icon>
                 <span>Out of Stock</span>
               </button>
-              } @else if (rp.variants && rp.variants.length > 0) {
+              } @else if (hasVariants(rp)) {
               <a [routerLink]="['/product', rp.slug]"
                 class="w-full h-10 rounded-xl bg-neutral-900 dark:bg-neutral-800 hover:bg-[#d65108] dark:hover:bg-[#d65108] text-white font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer no-underline">
                 <mat-icon class="scale-75">tune</mat-icon>
-                <span>Select Variant</span>
+                <span>Select Option</span>
               </a>
               } @else {
               <div class="grid grid-cols-2 gap-2">

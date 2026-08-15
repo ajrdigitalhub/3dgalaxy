@@ -20,6 +20,7 @@ import { Subject } from "rxjs";
 import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+import { hasProductVariants } from "../../shared/utils/product.utils";
 
 @Component({
   selector: "app-products",
@@ -456,8 +457,12 @@ export class Products implements OnInit {
     return Math.round(((mrp - sale) / mrp) * 100);
   }
 
+  hasVariants(p: any): boolean {
+    return hasProductVariants(p);
+  }
+
   addToCart(p: any) {
-    if (p.hasVariants || (p.variants && p.variants.length > 0)) {
+    if (this.hasVariants(p)) {
       this.router.navigate(['/product', p.slug || p.id]);
       return;
     }

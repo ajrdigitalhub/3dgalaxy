@@ -40,9 +40,19 @@ export interface Category {
   seoTitle?: string;
   seoDescription?: string;
   shippingCharge?: number | null;
+  shipping_charge?: number | null;
   estimatedDeliveryDays?: number | null;
+  estimated_delivery_days?: number | null;
   freeShippingEligible?: boolean;
+  free_shipping_eligible?: boolean;
   shippingRegion?: string | null;
+  shipping_region?: string | null;
+  shippingMode?: string;
+  shipping_mode?: string;
+  shippingRules?: any[];
+  shipping_rules?: any[];
+  freeShippingThreshold?: number | null;
+  free_shipping_threshold?: number | null;
 }
 
 export interface Brand {
@@ -1433,6 +1443,10 @@ export class DatastoreService {
   private categoriesCache$?: Observable<Category[]>;
 
   reloadCategories(force = false) {
+    if (force) {
+      this.api.clearCache();
+      this.categoriesCache$ = undefined;
+    }
     if (force || !this.categoriesCache$) {
       this.categoriesCache$ = this.api.get<Category[]>('/categories').pipe(
         shareReplay(1),
@@ -1445,7 +1459,34 @@ export class DatastoreService {
     this.categoriesCache$.subscribe(data => {
       if (data) {
         const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
-        this.categories.set(list);
+        const mappedList = list.map((c: any) => {
+          const rawRules = c.shippingRules || c.shipping_rules;
+          const rules = Array.isArray(rawRules) ? rawRules : typeof rawRules === 'string' ? JSON.parse(rawRules) : [];
+          const charge = c.shippingCharge !== undefined && c.shippingCharge !== null ? Number(c.shippingCharge) : c.shipping_charge !== undefined && c.shipping_charge !== null ? Number(c.shipping_charge) : null;
+          const rawMode = c.shippingMode || c.shipping_mode;
+          const mode = rawMode || (rules.length > 0 ? "weight_based" : (charge && charge > 0 ? "flat" : "default"));
+
+          return {
+            ...c,
+            parent_id: c.parent_id || c.parentId || null,
+            parentId: c.parentId || c.parent_id || null,
+            display_order: c.display_order || c.sortOrder || 0,
+            sortOrder: c.sortOrder || c.display_order || 0,
+            shippingMode: mode,
+            shipping_mode: mode,
+            shippingRules: rules,
+            shipping_rules: rules,
+            shippingCharge: charge,
+            shipping_charge: charge,
+            freeShippingEligible: c.freeShippingEligible !== undefined ? !!c.freeShippingEligible : c.free_shipping_eligible !== undefined ? !!c.free_shipping_eligible : false,
+            free_shipping_eligible: c.free_shipping_eligible !== undefined ? !!c.free_shipping_eligible : c.freeShippingEligible !== undefined ? !!c.freeShippingEligible : false,
+            shippingRegion: c.shippingRegion || c.shipping_region || null,
+            shipping_region: c.shipping_region || c.shippingRegion || null,
+            freeShippingThreshold: c.freeShippingThreshold !== undefined && c.freeShippingThreshold !== null ? Number(c.freeShippingThreshold) : c.free_shipping_threshold !== undefined && c.free_shipping_threshold !== null ? Number(c.free_shipping_threshold) : null,
+            free_shipping_threshold: c.free_shipping_threshold !== undefined && c.free_shipping_threshold !== null ? Number(c.free_shipping_threshold) : c.freeShippingThreshold !== undefined && c.freeShippingThreshold !== null ? Number(c.freeShippingThreshold) : null,
+          };
+        });
+        this.categories.set(mappedList);
       }
     });
   }
@@ -1500,7 +1541,10 @@ export class DatastoreService {
   async editCategory(id: string, updated: Partial<Category>) {
     return new Promise((resolve, reject) => {
       this.api.put(`/categories/${id}`, updated).subscribe({
-        next: (res) => { this.reloadCategories(true); resolve(res); },
+        next: (res: any) => {
+          this.reloadCategories(true);
+          resolve(res);
+        },
         error: (err) => reject(err)
       });
     });

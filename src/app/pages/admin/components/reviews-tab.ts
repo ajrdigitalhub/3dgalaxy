@@ -519,11 +519,11 @@ function cleanReviewPayload(item: AdminReviewItem): AdminReviewItem {
       <!-- LIGHTBOX MODAL FOR ATTACHED REVIEW IMAGES -->
       @if (lightboxImage()) {
         <div
-          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
           (click)="lightboxImage.set(null)"
         >
           <div
-            class="relative max-w-3xl max-h-[90vh] bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden p-2 shadow-2xl space-y-2"
+            class="relative max-w-3xl max-h-[90vh] bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden p-2 shadow-2xl space-y-2 animate-fadeIn my-auto"
             (click)="$event.stopPropagation()"
           >
             <div class="flex items-center justify-between px-3 py-2 border-b border-zinc-800">

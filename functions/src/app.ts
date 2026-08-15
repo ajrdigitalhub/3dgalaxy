@@ -170,7 +170,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use(compression());
 app.use(
   express.json({
-    limit: "2mb",
+    limit: "50mb",
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {
         req.rawBody = buf;
@@ -180,7 +180,7 @@ app.use(
 );
 app.use(
   express.urlencoded({
-    limit: "2mb",
+    limit: "50mb",
     extended: true,
     verify: (req: any, _res, buf) => {
       if (!isMultipartRequest(req)) {

@@ -27,6 +27,7 @@ import { VariantSelectionEngineService } from "../../services/variant-selection-
 import { BundleSelectorComponent } from "../../shared/components/bundle-selector/bundle-selector.component";
 import { VariantSlotComponent } from "../../shared/components/variant-slot/variant-slot.component";
 import { BundleSummaryComponent } from "../../shared/components/bundle-summary/bundle-summary.component";
+import { hasProductVariants } from "../../shared/utils/product.utils";
 
 import { ShippingService } from "../../core/services/shipping.service";
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
@@ -1204,7 +1205,15 @@ export class ProductDetail {
     });
   }
 
+  hasVariants(p: any): boolean {
+    return hasProductVariants(p);
+  }
+
   addRelatedToCart(product: Product) {
+    if (this.hasVariants(product)) {
+      this.router.navigate(["/product", product.slug || product.id]);
+      return;
+    }
     if (product.stock <= 0) {
       this.toastService.error(`${product.name} is out of stock.`);
       return;

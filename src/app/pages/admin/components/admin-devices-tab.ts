@@ -659,8 +659,8 @@ export interface DeliveryLog {
 
       <!-- DEVICE DETAILS DIALOG MODAL -->
       @if (selectedDeviceForDetails()) {
-        <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl">
+        <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl animate-fadeIn my-auto">
             
             <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <div class="flex items-center gap-3">
@@ -800,8 +800,8 @@ export interface DeliveryLog {
 
       <!-- MULTICAST BROADCAST MODAL -->
       @if (showBroadcastModal()) {
-        <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+        <div class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-fadeIn my-auto">
             
             <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <div class="flex items-center gap-2.5">

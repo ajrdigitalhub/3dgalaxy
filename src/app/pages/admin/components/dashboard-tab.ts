@@ -54,10 +54,6 @@ import { SalesAnalyticsComponent } from './sales-analytics/sales-analytics.compo
           <div class="space-y-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">Gross Sales</span>
             <h3 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">₹{{ (admin.dashboardStats()?.totalRevenue || admin.kpi().totalSales) | number }}</h3>
-            <span class="inline-flex items-center text-[10px] font-bold text-emerald-500 gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
-              <mat-icon class="text-[12px] w-3 h-3 flex items-center justify-center">arrow_upward</mat-icon>
-              <span>+18.4%</span>
-            </span>
           </div>
           <div class="h-12 w-12 rounded-2xl bg-blue-500/10 dark:bg-blue-500/5 text-blue-500 flex items-center justify-center transition-transform group-hover:scale-110">
             <mat-icon class="text-2xl">payments</mat-icon>

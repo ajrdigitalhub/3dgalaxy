@@ -2694,8 +2694,8 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
 
           <!-- CATEGORY EDIT MODAL POPUP -->
           @if (isCategoryModalOpen()) {
-            <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-              <div class="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+              <div class="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fadeIn my-auto">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
@@ -3142,8 +3142,8 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
 
           <!-- PRODUCT ASSIGNMENT PICKER MODAL -->
           @if (isAssignProductsModalOpen()) {
-            <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-              <div class="relative w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+              <div class="relative w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fadeIn my-auto">
                 
                 <div class="flex items-center justify-between px-6 py-4 border-b dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
                   <div>
@@ -3225,8 +3225,8 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
 
           <!-- ========================= VARIANT QUICK EDIT POPUP / MODAL ========================= -->
           @if (isVariantEditModalOpen() && variantEditModalProduct()) {
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
-              <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh] font-sans">
+            <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+              <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh] font-sans animate-fadeIn my-auto">
                 <!-- Modal Header -->
                 <div class="px-6 py-4 bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-700/50">
                   <div class="flex items-center gap-3 min-w-0">

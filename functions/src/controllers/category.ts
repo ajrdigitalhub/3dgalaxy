@@ -232,28 +232,33 @@ export const createCategory = async (req: Request, res: Response) => {
   }
 
   try {
+    const createData: any = {
+      name,
+      slug,
+      description,
+      image,
+      banner,
+      icon,
+      sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
+      isActive: isActive !== undefined ? !!isActive : undefined,
+      isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
+      seoTitle,
+      seoDescription,
+      shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
+      estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
+      freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+      shippingRegion: shippingRegion || null,
+      shippingMode: shippingMode || 'default',
+      shippingRules: Array.isArray(shippingRules) ? shippingRules : typeof shippingRules === 'string' ? JSON.parse(shippingRules) : [],
+      freeShippingThreshold: freeShippingThreshold !== undefined && freeShippingThreshold !== null && freeShippingThreshold !== '' ? Number(freeShippingThreshold) : null,
+    };
+
+    if (parentId && parentId !== 'null') {
+      createData.parent = { connect: { id: parentId } };
+    }
+
     const created = await (prisma.category as any).create({
-      data: {
-        name,
-        slug,
-        parentId: parentId || null,
-        description,
-        image,
-        banner,
-        icon,
-        sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
-        isActive: isActive !== undefined ? !!isActive : undefined,
-        isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
-        seoTitle,
-        seoDescription,
-        shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
-        estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
-        freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
-        shippingRegion: shippingRegion || null,
-        shippingMode: shippingMode || 'default',
-        shippingRules: Array.isArray(shippingRules) ? shippingRules : typeof shippingRules === 'string' ? JSON.parse(shippingRules) : [],
-        freeShippingThreshold: freeShippingThreshold !== undefined && freeShippingThreshold !== null && freeShippingThreshold !== '' ? Number(freeShippingThreshold) : null,
-      },
+      data: createData,
     });
     clearCategoryCache();
     return res.status(201).json(created);
@@ -270,7 +275,6 @@ export const updateCategory = async (req: Request, res: Response) => {
     const updateData: any = {
       name,
       slug,
-      parentId: parentId || null,
       description,
       image,
       banner,
@@ -285,6 +289,14 @@ export const updateCategory = async (req: Request, res: Response) => {
       freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
       shippingRegion: shippingRegion || null,
     };
+
+    if (parentId !== undefined) {
+      if (parentId && parentId !== 'null') {
+        updateData.parent = { connect: { id: parentId } };
+      } else {
+        updateData.parent = { disconnect: true };
+      }
+    }
 
     if (shippingMode !== undefined) {
       updateData.shippingMode = shippingMode;

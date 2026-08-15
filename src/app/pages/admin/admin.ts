@@ -1305,8 +1305,8 @@ export class AdminPanel implements OnInit {
   // --- HIERARCHY TREE LOGICS ---
   startCategoryEdit(cat: any) {
     this.editingCategory.set(cat);
-    this.newCatName.set(cat.name);
-    this.newCatParentId.set(cat.parent_id || "");
+    this.newCatName.set(cat.name || "");
+    this.newCatParentId.set(cat.parent_id || cat.parentId || "");
     this.newCatDesc.set(cat.description || "");
     this.catImage.set(cat.image || "");
     this.catBanner.set(cat.banner || "");
@@ -1315,15 +1315,30 @@ export class AdminPanel implements OnInit {
     this.catIsFeatured.set(cat.isFeatured || false);
     this.catSeoTitle.set(cat.seoTitle || "");
     this.catSeoDescription.set(cat.seoDescription || "");
-    this.catShippingCharge.set(cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : null);
-    this.catEstimatedDeliveryDays.set(cat.estimatedDeliveryDays !== undefined && cat.estimatedDeliveryDays !== null ? Number(cat.estimatedDeliveryDays) : 3);
-    this.catEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(cat.estimatedDeliveryDays));
-    this.catFreeShippingEligible.set(cat.freeShippingEligible || false);
-    this.catShippingRegion.set(cat.shippingRegion || "");
-    this.catShippingMode.set(cat.shippingMode || (cat.shippingRules?.length > 0 ? "weight_based" : (cat.shippingCharge > 0 ? "flat" : "default")));
-    const rules = Array.isArray(cat.shippingRules) ? cat.shippingRules : typeof cat.shippingRules === 'string' ? JSON.parse(cat.shippingRules) : [];
+    
+    const charge = cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : cat.shipping_charge !== undefined && cat.shipping_charge !== null ? Number(cat.shipping_charge) : null;
+    this.catShippingCharge.set(charge);
+
+    const deliveryDays = cat.estimatedDeliveryDays !== undefined && cat.estimatedDeliveryDays !== null ? Number(cat.estimatedDeliveryDays) : (cat.estimated_delivery_days !== undefined && cat.estimated_delivery_days !== null ? Number(cat.estimated_delivery_days) : 3);
+    this.catEstimatedDeliveryDays.set(deliveryDays);
+    this.catEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(deliveryDays));
+
+    const freeEligible = cat.freeShippingEligible !== undefined ? !!cat.freeShippingEligible : cat.free_shipping_eligible !== undefined ? !!cat.free_shipping_eligible : false;
+    this.catFreeShippingEligible.set(freeEligible);
+
+    const region = cat.shippingRegion || cat.shipping_region || "";
+    this.catShippingRegion.set(region);
+
+    const rawRules = cat.shippingRules || cat.shipping_rules;
+    const rules = Array.isArray(rawRules) ? rawRules : typeof rawRules === 'string' ? JSON.parse(rawRules) : [];
     this.catShippingRules.set(rules);
-    this.catFreeShippingThreshold.set(cat.freeShippingThreshold !== undefined && cat.freeShippingThreshold !== null ? Number(cat.freeShippingThreshold) : null);
+
+    const rawMode = cat.shippingMode || cat.shipping_mode;
+    const mode = rawMode || (rules.length > 0 ? "weight_based" : (charge && charge > 0 ? "flat" : "default"));
+    this.catShippingMode.set(mode);
+
+    const threshold = cat.freeShippingThreshold !== undefined && cat.freeShippingThreshold !== null ? Number(cat.freeShippingThreshold) : cat.free_shipping_threshold !== undefined && cat.free_shipping_threshold !== null ? Number(cat.free_shipping_threshold) : null;
+    this.catFreeShippingThreshold.set(threshold);
   }
 
   cancelCategoryEdit() {
