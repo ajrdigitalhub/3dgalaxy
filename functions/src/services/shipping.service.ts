@@ -98,7 +98,7 @@ export class ShippingService {
     const defaultShippingCharge =
       settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
         ? Number(settings.defaultShippingCharge)
-        : 80;
+        : 150;
     const freeShippingThreshold =
       settings.freeShippingThreshold !== undefined &&
       settings.freeShippingThreshold !== null &&
@@ -252,12 +252,15 @@ export class ShippingService {
         let selectedCategory: any = null;
 
         const getCategoryRulesBackend = (c: any): WeightRule[] => {
-          const rawRules = c?.shippingRules || c?.shipping_rules;
+          let rawRules = c?.shippingRules || c?.shipping_rules || c?.weightRules || c?.weight_rules;
+          if (typeof rawRules === 'string' && rawRules.trim()) {
+            try { rawRules = JSON.parse(rawRules); } catch (e) {}
+          }
           if (Array.isArray(rawRules) && rawRules.length > 0) {
             return rawRules.map((r: any) => ({
-              fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : r.from_grams) || 0,
-              toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : 999999,
-              charge: Number(r.charge) || 0,
+              fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : (r.from_grams !== undefined ? r.from_grams : r.from)) || 0,
+              toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : r.to !== undefined && r.to !== null ? Number(r.to) : 999999,
+              charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0,
             }));
           }
           return [];

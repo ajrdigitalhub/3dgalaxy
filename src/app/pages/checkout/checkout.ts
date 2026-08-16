@@ -62,8 +62,10 @@ export class CheckoutComponent implements OnInit {
   shippingService = inject(ShippingService);
   deliveryService = inject(DeliveryEstimateService);
 
+
+
   packageSummary = computed(() => {
-    return calculatePackageSummary(this.groupedCheckoutItems());
+    return this.ds.cartPricingSummary().packageSummary;
   });
 
   getItemWeight(item: any): string {
@@ -145,7 +147,7 @@ export class CheckoutComponent implements OnInit {
   companyName = signal("");
 
   // Coupon
-  discount = computed(() => this.ds.couponDiscountAmount());
+  discount = computed(() => this.ds.cartPricingSummary().totalDiscountAmount);
   couponCode = signal("");
   couponApplied = signal(false);
 
@@ -163,37 +165,25 @@ export class CheckoutComponent implements OnInit {
     );
   });
 
-  subtotal = computed(() => {
-    const items = this.groupedCheckoutItems();
-    return items.reduce((acc: number, item: any) => {
-      if (item.isFree) return acc;
-      const price = this.ds.getItemPrice(item);
-      return acc + (Number(price) * (item.quantity || 1));
-    }, 0);
-  });
+  subtotal = computed(() => this.ds.cartPricingSummary().subtotal);
 
-  shippingDetails = computed(() => {
-    const items = this.groupedCheckoutItems();
-    return this.shippingService.calculateCartShipping(items);
-  });
+  shippingDetails = computed(() => ({
+    shippingCharge: this.ds.cartPricingSummary().shippingCharge,
+    source: this.ds.cartPricingSummary().shippingSource,
+    freeShipping: this.ds.cartPricingSummary().isFreeShipping,
+    shippingLabel: this.ds.cartPricingSummary().shippingLabel,
+    appliedRule: this.ds.cartPricingSummary().appliedShippingRule,
+    estimatedDays: this.ds.cartPricingSummary().estimatedDeliveryDays
+  }));
 
-  shipping = computed(() => this.shippingDetails().shippingCharge);
+  shipping = computed(() => this.ds.cartPricingSummary().shippingCharge);
 
-  tax = computed(() => 0);
+  tax = computed(() => this.ds.cartPricingSummary().taxAmount);
 
   // COD checks
-  codError = computed(() => {
-    if (!this.ds.areAllProductsCodAvailable()) {
-      return "One or more products in your cart do not support Cash on Delivery.";
-    }
-    if (this.subtotal() > 2500) {
-      return "Cash on Delivery is available only for orders of ₹2,500 or below.";
-    }
+  codError = computed(() => this.ds.cartPricingSummary().codReason || null);
 
-    return null;
-  });
-
-  isCodAllowed = computed(() => this.codError() === null);
+  isCodAllowed = computed(() => this.ds.cartPricingSummary().isCodEligible);
 
   codBaseFee = computed(() => {
     const globalSettings = this.settingsService.shippingSettings() || {};
@@ -201,19 +191,9 @@ export class CheckoutComponent implements OnInit {
     return charge > 0 ? charge : 100;
   });
 
-  codSurcharge = computed(() => {
-    if (this.paymentMethod() !== "COD") return 0;
-    return this.codBaseFee();
-  });
+  codSurcharge = computed(() => this.ds.cartPricingSummary().codHandlingCharge);
 
-  grandTotal = computed(
-    () =>
-      this.subtotal() +
-      this.shipping() +
-      this.tax() +
-      this.codSurcharge() -
-      this.discount(),
-  );
+  grandTotal = computed(() => this.ds.cartPricingSummary().grandTotal);
 
   isValid = computed(() => {
     const gstVal = this.isGstValid();
@@ -242,6 +222,13 @@ export class CheckoutComponent implements OnInit {
   }
 
   constructor() {
+    effect(() => {
+      const pm = this.paymentMethod();
+      if (pm === 'COD' || pm === 'ONLINE' || pm === 'RAZORPAY' || pm === 'CASHFREE') {
+        this.ds.setSelectedPaymentMethod(pm as any);
+      }
+    });
+
     // If guest and not logged in, show auth modal
     effect(
       () => {
@@ -560,10 +547,15 @@ export class CheckoutComponent implements OnInit {
           unitPrice: effectivePrice,
           basePrice: basePrice,
           effectivePrice: effectivePrice,
-          configurationType: item.bundleDetails ? 'bundle' : (item.variant ? 'variant' : 'standard'),
-          configurationName: item.bundleDetails?.bundleName || item.variant?.name || null,
+          configurationType: item.bundleDetails ? 'bundle' : (item.selectedWeightValue ? 'weight' : (item.variant ? 'variant' : 'standard')),
+          configurationName: item.bundleDetails?.bundleName || (item.selectedWeightValue ? `${item.selectedWeightValue} ${item.selectedWeightUnit || 'kg'}` : (item.variant?.name || null)),
           bundleDetails: item.bundleDetails || null,
           selectedOptions: item.bundleDetails?.selectedOptions || item.bundleDetails?.selectedVariants || (item.variant?.optionValues ? [item.variant.optionValues] : []),
+          selectedWeightValue: item.selectedWeightValue || item.bundleDetails?.selectedWeightValue || null,
+          selectedWeightUnit: item.selectedWeightUnit || item.bundleDetails?.selectedWeightUnit || null,
+          isCustomWeight: item.isCustomWeight || false,
+          customWeightValue: item.customWeightValue || null,
+          unitPricePerWeight: item.unitPricePerWeight || null,
           weightInGrams: getItemWeightGrams(item),
         };
       }),

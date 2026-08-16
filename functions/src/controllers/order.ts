@@ -72,6 +72,13 @@ const mapOrderWithVariantDetails = (order: any) => {
             imageUrl: firstImg || (item.product?.images && safeParseArray(item.product.images).length > 0 ? (typeof safeParseArray(item.product.images)[0] === 'string' ? safeParseArray(item.product.images)[0] : safeParseArray(item.product.images)[0]?.url) : '')
           };
         }
+        const selectedWeightValue = item.selectedWeightValue || matchedConfig?.selectedWeightValue || null;
+        const selectedWeightUnit = item.selectedWeightUnit || matchedConfig?.selectedWeightUnit || 'kg';
+        const isCustomWeight = item.isCustomWeight !== undefined ? item.isCustomWeight : Boolean(matchedConfig?.isCustomWeight);
+        const customWeightValue = item.customWeightValue || matchedConfig?.customWeightValue || null;
+        const unitPricePerWeight = item.unitPricePerWeight || matchedConfig?.unitPricePerWeight || null;
+        const weightInGrams = item.weightInGrams !== undefined ? Number(item.weightInGrams) : (matchedConfig?.weightInGrams || 0);
+
         return {
           ...item,
           unitPrice,
@@ -81,8 +88,14 @@ const mapOrderWithVariantDetails = (order: any) => {
           effectivePrice: unitPrice,
           bundleDetails,
           selectedOptions,
-          configurationType,
-          configurationName
+          configurationType: configurationType || (selectedWeightValue ? 'weight' : (item.variant ? 'variant' : 'standard')),
+          configurationName,
+          selectedWeightValue,
+          selectedWeightUnit,
+          isCustomWeight,
+          customWeightValue,
+          unitPricePerWeight,
+          weightInGrams
         };
       });
 

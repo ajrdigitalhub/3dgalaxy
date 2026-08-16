@@ -27,12 +27,17 @@ export class CartCheckout implements OnInit {
   showOffers = signal(false);
 
   packageSummary = computed(() => {
-    return calculatePackageSummary(this.ds.cart());
+    return this.ds.cartPricingSummary().packageSummary;
   });
 
   getItemWeight(item: any): string {
     const res = calculateItemWeight(item);
     return res.totalGrams > 0 ? res.display : '';
+  }
+
+  calculateLineWeightDisplay(item: any): string {
+    const res = calculateItemWeight(item);
+    return res.display;
   }
 
   ngOnInit() {
@@ -41,21 +46,19 @@ export class CartCheckout implements OnInit {
   }
 
   accruedPoints = computed(() => {
-    return Math.floor(this.ds.cartGrandTotal() / 100);
+    return Math.floor(this.ds.cartPricingSummary().grandTotal / 100);
   });
 
   mrpSavings = computed(() => {
-    return this.ds.cartMRPtotal() - this.ds.cartSubtotal();
+    return this.ds.cartPricingSummary().mrpSavings;
   });
 
   cartTotalItems = computed(() => {
-    return this.ds.cart().reduce((sum, item) => sum + item.quantity, 0);
+    return this.ds.cartPricingSummary().totalItemUnits;
   });
 
   freeShippingProgress = computed(() => {
-    const threshold = this.ds.freeShippingThreshold();
-    const current = this.ds.cartSubtotal();
-    return Math.min(100, Math.round((current / threshold) * 100));
+    return this.ds.cartPricingSummary().freeShippingProgressPercent;
   });
 
   changeQty(id: string, qty: number, variantId?: string) {

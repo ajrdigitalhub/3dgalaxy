@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { LOGO_DATA_URL } from '../shared/constants/logo.constant';
+import { formatWeight, getItemWeightGrams, calculatePackageSummary } from '../shared/utils/weight.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -203,16 +204,19 @@ export class PackagingSlipService {
         const qty = Number(i.quantity || 1);
         const price = Number(i.unitPrice || i.price || 0);
         let varText = i.variant?.name ? ` (${i.variant.name})` : '';
+        let weightText = i.selectedWeightValue ? ` [${i.selectedWeightValue} ${i.selectedWeightUnit || 'kg'}]` : (i.weightInGrams ? ` [${formatWeight(i.weightInGrams)}]` : '');
         return {
           qty,
           sku: i.variant?.sku || i.product?.sku || i.sku || 'SKU-001',
-          description: `${i.product?.name || i.name || i.description || 'Item'}${varText}`,
+          description: `${i.product?.name || i.name || i.description || 'Item'}${varText}${weightText}`,
           price,
           extPrice: Number(i.totalPrice || (price * qty)),
+          weightInGrams: getItemWeightGrams(i)
         };
       });
     }
 
+    const packageSummary = calculatePackageSummary(ord.items || []);
     const shippingCost = Number(ord.shippingAmount !== undefined && ord.shippingAmount !== null ? ord.shippingAmount : 0);
     let codCharge = 0;
     if (ord.codCharge !== undefined && ord.codCharge !== null && Number(ord.codCharge) > 0) {

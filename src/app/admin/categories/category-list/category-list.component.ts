@@ -105,7 +105,14 @@ export class CategoryListComponent {
       isActive: this.catIsActive(),
       isFeatured: this.catIsFeatured(),
       seoTitle: this.catSeoTitle().trim(),
-      seoDescription: this.catSeoDescription().trim()
+      seoDescription: this.catSeoDescription().trim(),
+      shippingCharge: editing?.shippingCharge ?? (editing as any)?.shipping_charge ?? null,
+      shippingMode: editing?.shippingMode ?? (editing as any)?.shipping_mode ?? 'default',
+      shippingRules: editing?.shippingRules ?? (editing as any)?.shipping_rules ?? [],
+      freeShippingThreshold: editing?.freeShippingThreshold ?? (editing as any)?.free_shipping_threshold ?? null,
+      estimatedDeliveryDays: editing?.estimatedDeliveryDays ?? (editing as any)?.estimated_delivery_days ?? null,
+      freeShippingEligible: editing?.freeShippingEligible ?? (editing as any)?.free_shipping_eligible ?? false,
+      shippingRegion: editing?.shippingRegion ?? (editing as any)?.shipping_region ?? null,
     };
 
     try {

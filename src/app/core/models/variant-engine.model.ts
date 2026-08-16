@@ -8,6 +8,7 @@ export type VariantDisplayType =
   | 'button-group'
   | 'bundle-builder'
   | 'quantity-selector'
+  | 'weight-selector'
   | 'grid-cards';
 
 export type VariantSelectionMode =
@@ -15,6 +16,7 @@ export type VariantSelectionMode =
   | 'multiple'
   | 'bundle'
   | 'quantity'
+  | 'weight'
   | 'pack';
 
 export type BundlePricingType =
@@ -22,6 +24,33 @@ export type BundlePricingType =
   | 'percentage'
   | 'per_variant'
   | 'custom';
+
+export interface WeightVariantOption {
+  id: string;
+  label: string; // e.g. "Buy 1 (1 kg)", "Buy 3 (3 kg)", "Buy 5 (5 kg)", "1 kg", "2.5 kg"
+  weightValue: number; // e.g. 1, 3, 5, 2.5
+  weightUnit: 'kg' | 'g' | 'lb' | 'oz'; // e.g. 'kg'
+  weightInGrams: number; // e.g. 1000, 3000, 5000, 2500
+  pricePerUnit?: number; // e.g. 500 per kg
+  totalPrice?: number; // Calculated or fixed total price for this weight variant
+  discountPercentage?: number; // e.g. 10 for 10% bulk discount
+  badgeText?: string; // e.g. "Popular", "Best Value"
+  savingsText?: string; // e.g. "Save 15%"
+  isDefault?: boolean;
+  isPopular?: boolean;
+  allowCustom?: boolean;
+}
+
+export interface ProductWeightConfig {
+  enabled: boolean;
+  allowCustomWeight: boolean;
+  defaultUnit: 'kg' | 'g' | 'lb' | 'oz';
+  minWeight: number; // e.g. 0.1
+  maxWeight: number; // e.g. 50
+  step?: number; // e.g. 0.5
+  unitPrice: number; // Price per defaultUnit
+  weightVariants: WeightVariantOption[];
+}
 
 export interface BundleTier {
   id: string;
@@ -33,6 +62,8 @@ export interface BundleTier {
   badgeText?: string;
   savingsText?: string;
   isPopular?: boolean;
+  weightValue?: number;
+  weightUnit?: 'kg' | 'g' | 'lb' | 'oz';
 }
 
 export interface VariantGroupConfig {
@@ -50,6 +81,8 @@ export interface VariantGroupConfig {
   maxSelection?: number;
   allowDuplicates?: boolean;
   bundleTiers?: BundleTier[];
+  weightVariants?: WeightVariantOption[];
+  weightConfig?: ProductWeightConfig;
   slotLabels?: string[]; // Custom labels per slot e.g., ["Printer", "Filament", "Nozzle"] for Pack Builder
 }
 
@@ -87,6 +120,12 @@ export interface CartBundleDetails {
   effectivePrice?: number;
   bundlePrice?: number;
   configurationType?: string;
+  selectedTier?: BundleTier;
+  selectedWeightValue?: number;
+  selectedWeightUnit?: 'kg' | 'g' | 'lb' | 'oz';
+  isCustomWeight?: boolean;
+  customWeightValue?: number;
+  weightInGrams?: number;
   selectedOptions?: Array<{
     slot: number;
     attribute: string;
@@ -109,3 +148,4 @@ export interface CartBundleDetails {
     optionValues?: Record<string, any>;
   }>;
 }
+

@@ -15,13 +15,76 @@ import { initFirebase, auth } from '../firebase';
 import { ApiService } from './api.service';
 import { SettingsService, DEFAULT_FOOTER_GROUPS, DEFAULT_PAYMENT_ICONS } from '../core/services/settings.service';
 import { ShippingService } from '../core/services/shipping.service';
+import { DeliveryEstimateService } from '../core/services/delivery-estimate.service';
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
 import { catchError, finalize, shareReplay } from 'rxjs/operators';
 import { CartBundleDetails } from '../core/models/variant-engine.model';
+import { convertToGrams, formatWeight, getItemWeightGrams } from '../shared/utils/weight.utils';
 
 
+
+export interface CartPricingSummary {
+  items: Array<{
+    item: CartItem;
+    effectiveUnitPrice: number;
+    mrpUnitPrice: number;
+    quantity: number;
+    lineSubtotal: number;
+    lineMrpTotal: number;
+    lineDiscount: number;
+    unitWeightGrams: number;
+    lineWeightGrams: number;
+    formattedUnitWeight: string;
+    formattedLineWeight: string;
+  }>;
+  totalUniqueProducts: number;
+  totalItemUnits: number;
+
+  mrpSubtotal: number;
+  subtotal: number;
+  mrpSavings: number;
+  couponCode: string | null;
+  couponDiscountAmount: number;
+  totalDiscountAmount: number;
+
+  totalWeightGrams: number;
+  displayWeight: string;
+  packageSummary: {
+    itemCount: number;
+    totalItems: number;
+    totalQuantity: number;
+    totalWeightGrams: number;
+    displayWeight: string;
+  };
+
+  shippingCharge: number;
+  shippingSource: string;
+  isFreeShipping: boolean;
+  shippingLabel: string;
+  appliedShippingRule: any;
+  estimatedDeliveryDays: number | string;
+  formattedDeliveryRange: string;
+
+  freeShippingThreshold: number;
+  freeShippingProgressPercent: number;
+  freeShippingRemainingAmount: number;
+  isFreeShippingUnlocked: boolean;
+  freeShippingStatusMessage: string;
+
+  selectedPaymentMethod: 'COD' | 'ONLINE' | 'RAZORPAY' | 'CASHFREE';
+  areAllProductsCodAvailable: boolean;
+  isCodEligible: boolean;
+  codReason: string;
+  codHandlingCharge: number;
+
+  taxAmount: number;
+  taxLabel: string;
+  grandTotal: number;
+
+  lastCalculatedAt: number;
+}
 
 export interface Category {
   id: string;
@@ -215,6 +278,13 @@ export interface CartItem {
   selectedPriceType: 'sale' | 'dealer';
   isFree?: boolean;
   weightInGrams?: number;
+  selectedWeightValue?: number;
+  selectedWeightUnit?: 'kg' | 'g' | 'lb' | 'oz';
+  isCustomWeight?: boolean;
+  customWeightValue?: number;
+  unitPricePerWeight?: number;
+  calculatedPrice?: number;
+  effectivePrice?: number;
   bundleDetails?: CartBundleDetails;
 }
 
@@ -850,6 +920,7 @@ export class DatastoreService {
   api = inject(ApiService);
   settingsService = inject(SettingsService);
   shippingService = inject(ShippingService);
+  deliveryEstimateService = inject(DeliveryEstimateService);
   private injector = inject(Injector);
   private router = inject(Router);
   private toastService = inject(ToastService);
@@ -935,6 +1006,8 @@ export class DatastoreService {
 
     // Save cart to local storage (still useful for guest persistence)
     if (typeof window !== 'undefined') {
+      this.reloadCategories(false);
+      this.reloadProducts(false);
       const storedCart = localStorage.getItem('3d-galaxy-cart');
       if (storedCart) try { this.cart.set(JSON.parse(storedCart)); } catch { /* ignore */ }
       
@@ -1448,7 +1521,7 @@ export class DatastoreService {
       this.categoriesCache$ = undefined;
     }
     if (force || !this.categoriesCache$) {
-      this.categoriesCache$ = this.api.get<Category[]>('/categories').pipe(
+      this.categoriesCache$ = this.api.get<Category[]>('/categories', null, true).pipe(
         shareReplay(1),
         catchError(err => {
           this.categoriesCache$ = undefined;
@@ -1460,8 +1533,13 @@ export class DatastoreService {
       if (data) {
         const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
         const mappedList = list.map((c: any) => {
-          const rawRules = c.shippingRules || c.shipping_rules;
-          const rules = Array.isArray(rawRules) ? rawRules : typeof rawRules === 'string' ? JSON.parse(rawRules) : [];
+          const rawRules = c.shippingRules || c.shipping_rules || c.weightRules || c.weight_rules;
+          let rules: any[] = [];
+          if (Array.isArray(rawRules)) {
+            rules = rawRules;
+          } else if (typeof rawRules === 'string' && rawRules.trim()) {
+            try { rules = JSON.parse(rawRules); } catch (e) {}
+          }
           const charge = c.shippingCharge !== undefined && c.shippingCharge !== null ? Number(c.shippingCharge) : c.shipping_charge !== undefined && c.shipping_charge !== null ? Number(c.shipping_charge) : null;
           const rawMode = c.shippingMode || c.shipping_mode;
           const mode = rawMode || (rules.length > 0 ? "weight_based" : (charge && charge > 0 ? "flat" : "default"));
@@ -1765,6 +1843,7 @@ export class DatastoreService {
   }
 
   reloadProducts(showLoader = true, force = false, limit = 500, search?: string) {
+    this.reloadCategories(force);
     if (showLoader) {
       this.productsLoading.set(true);
     }
@@ -2156,22 +2235,52 @@ export class DatastoreService {
     }
   }
 
-  addToCart(product: Product, quantity = 1, variant?: ProductVariant) {
+  addToCart(product: Product, quantity = 1, variant?: ProductVariant, weightConfig?: {
+    selectedWeightValue?: number;
+    selectedWeightUnit?: 'kg' | 'g' | 'lb' | 'oz';
+    isCustomWeight?: boolean;
+    customWeightValue?: number;
+    weightInGrams?: number;
+    unitPricePerWeight?: number;
+    calculatedPrice?: number;
+  }) {
     this.clearBuyNowItem();
     this.cart.update(items => {
-      const isVariantMatch = (i: CartItem) => {
-         if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
-         if (!variant && !i.variant) return i.product.id === product.id;
-         return false;
+      const isWeightMatch = (i: CartItem) => {
+        if (weightConfig && weightConfig.selectedWeightValue !== undefined) {
+          return i.product.id === product.id &&
+                 (variant ? i.variant?.id === variant.id : !i.variant) &&
+                 i.selectedWeightValue === weightConfig.selectedWeightValue &&
+                 i.selectedWeightUnit === weightConfig.selectedWeightUnit;
+        }
+        if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
+        if (!variant && !i.variant) return i.product.id === product.id;
+        return false;
       };
-      
-      const existing = items.find(isVariantMatch);
+
+      const existing = items.find(isWeightMatch);
       if (existing) {
-        return items.map(i => isVariantMatch(i) ? { ...i, quantity: i.quantity + quantity } : i);
+        return items.map(i => isWeightMatch(i) ? { ...i, quantity: i.quantity + quantity } : i);
       }
       const role = this.userRole();
       const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
-      return [...items, { product, variant, quantity, selectedPriceType: priceType }];
+      
+      const newItem: CartItem = {
+        product,
+        variant,
+        quantity,
+        selectedPriceType: priceType,
+        weightInGrams: weightConfig?.weightInGrams,
+        selectedWeightValue: weightConfig?.selectedWeightValue,
+        selectedWeightUnit: weightConfig?.selectedWeightUnit,
+        isCustomWeight: weightConfig?.isCustomWeight,
+        customWeightValue: weightConfig?.customWeightValue,
+        unitPricePerWeight: weightConfig?.unitPricePerWeight,
+        calculatedPrice: weightConfig?.calculatedPrice,
+        effectivePrice: weightConfig?.calculatedPrice
+      };
+
+      return [...items, newItem];
     });
     this.recalcDiscount();
     this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name} to cart.`);
@@ -2182,10 +2291,14 @@ export class DatastoreService {
     this.cart.update(items => {
       const role = this.userRole();
       const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
+      const calculatedWeightGrams = bundleDetails.weightInGrams || (bundleDetails.selectedWeightValue ? convertToGrams(bundleDetails.selectedWeightValue, bundleDetails.selectedWeightUnit || 'kg') : undefined);
       return [...items, {
         product,
         quantity: 1,
         selectedPriceType: priceType,
+        weightInGrams: calculatedWeightGrams,
+        selectedWeightValue: bundleDetails.selectedWeightValue,
+        selectedWeightUnit: bundleDetails.selectedWeightUnit,
         bundleDetails
       }];
     });
@@ -2215,6 +2328,12 @@ export class DatastoreService {
 
   getItemPrice(item: any): number {
     if (item.isFree) return 0;
+    if (item.calculatedPrice !== undefined && item.calculatedPrice > 0) {
+      return Number(item.calculatedPrice);
+    }
+    if (item.effectivePrice !== undefined && item.effectivePrice > 0) {
+      return Number(item.effectivePrice);
+    }
     if (item.bundleDetails) {
       if (item.bundleDetails.effectivePrice !== undefined && item.bundleDetails.effectivePrice > 0) {
         return Number(item.bundleDetails.effectivePrice);
@@ -2227,8 +2346,8 @@ export class DatastoreService {
         if (totalBundleSlotsPrice > 0) return totalBundleSlotsPrice;
       }
     }
-    if (item.effectivePrice !== undefined && item.effectivePrice > 0) {
-      return Number(item.effectivePrice);
+    if (item.selectedWeightValue !== undefined && item.unitPricePerWeight !== undefined && item.unitPricePerWeight > 0) {
+      return Number(item.unitPricePerWeight) * Number(item.selectedWeightValue);
     }
     const p = item.product || item;
     const variant = item.variant;
@@ -2277,41 +2396,183 @@ export class DatastoreService {
     this.couponDiscountAmount.set(0);
   }
 
-  cartSubtotal = computed(() => {
-    return this.resolvedCartItems().reduce((sum, item) => {
-      if (item.isFree) return sum;
-      return sum + (this.getItemPrice(item) * item.quantity);
-    }, 0);
-  });
+  readonly selectedPaymentMethod = signal<'COD' | 'ONLINE' | 'RAZORPAY' | 'CASHFREE'>('ONLINE');
 
-  cartMRPtotal = computed(() => {
-    return this.resolvedCartItems().reduce((sum, item) => {
-      if (item.isFree) return sum;
-      const mrp = item.variant?.price || item.product.mrp || item.product.basePrice || 0;
-      return sum + (mrp * item.quantity);
-    }, 0);
-  });
+  setSelectedPaymentMethod(method: 'COD' | 'ONLINE' | 'RAZORPAY' | 'CASHFREE') {
+    this.selectedPaymentMethod.set(method);
+  }
 
-  freeShippingThreshold = computed(() => {
+  getItemMrp(item: any): number {
+    if (!item || item.isFree) return 0;
+    if (item.bundleDetails && item.bundleDetails.basePrice && Number(item.bundleDetails.basePrice) > 0) {
+      return Number(item.bundleDetails.basePrice);
+    }
+    if (item.variant && item.variant.mrp && Number(item.variant.mrp) > 0) {
+      return Number(item.variant.mrp);
+    }
+    if (item.variant && item.variant.price && Number(item.variant.price) > 0) {
+      return Number(item.variant.price);
+    }
+    const p = item.product || item;
+    return Number(p.mrp || p.basePrice || p.salePrice || p.sale_price || 0);
+  }
+
+  readonly cartPricingSummary = computed<CartPricingSummary>(() => {
+    const rawItems = this.activeCheckoutItems();
+    const activeCoupon = this.activeCouponCode();
+    const couponDiscount = this.couponDiscountAmount();
+    const paymentMethod = this.selectedPaymentMethod();
     const globalSettings = this.settingsService.shippingSettings() || {};
-    return globalSettings.freeShippingThreshold !== undefined 
+
+    const freeShippingThreshold = globalSettings.freeShippingThreshold !== undefined 
       ? Number(globalSettings.freeShippingThreshold) 
       : (globalSettings.freeShippingMinSpent !== undefined ? Number(globalSettings.freeShippingMinSpent) : 3500);
+
+    const codSurcharge = globalSettings.codSurcharge !== undefined
+      ? Number(globalSettings.codSurcharge)
+      : (globalSettings.codHandlingCharge !== undefined ? Number(globalSettings.codHandlingCharge) : 100);
+
+    const codMaxLimit = globalSettings.codMaxAmount !== undefined
+      ? Number(globalSettings.codMaxAmount)
+      : 2500;
+
+    let mrpSubtotal = 0;
+    let subtotal = 0;
+    let totalItemUnits = 0;
+    let totalWeightGrams = 0;
+
+    const analyzedItems = (rawItems || []).map(item => {
+      const qty = Math.max(1, Number(item.quantity) || 1);
+      const effectiveUnitPrice = this.getItemPrice(item);
+      const mrpUnitPrice = Math.max(effectiveUnitPrice, this.getItemMrp(item));
+      const lineSubtotal = effectiveUnitPrice * qty;
+      const lineMrpTotal = mrpUnitPrice * qty;
+      const lineDiscount = Math.max(0, lineMrpTotal - lineSubtotal);
+
+      const unitWeightGrams = getItemWeightGrams(item);
+      const lineWeightGrams = unitWeightGrams * qty;
+
+      if (!item.isFree) {
+        mrpSubtotal += lineMrpTotal;
+        subtotal += lineSubtotal;
+        totalItemUnits += qty;
+        totalWeightGrams += lineWeightGrams;
+      }
+
+      return {
+        item,
+        effectiveUnitPrice,
+        mrpUnitPrice,
+        quantity: qty,
+        lineSubtotal,
+        lineMrpTotal,
+        lineDiscount,
+        unitWeightGrams,
+        lineWeightGrams,
+        formattedUnitWeight: formatWeight(unitWeightGrams),
+        formattedLineWeight: formatWeight(lineWeightGrams)
+      };
+    });
+
+    const totalUniqueProducts = (rawItems || []).filter(i => !i.isFree).length;
+    const mrpSavings = Math.max(0, mrpSubtotal - subtotal);
+    const displayWeight = formatWeight(totalWeightGrams);
+
+    const shippingResult = rawItems && rawItems.length > 0
+      ? this.shippingService.calculateCartShipping(rawItems)
+      : {
+          shippingCharge: 0,
+          source: 'FREE_SHIPPING',
+          freeShipping: true,
+          shippingLabel: 'Free Shipping',
+          appliedRule: null,
+          estimatedDays: 3,
+        };
+
+    const shippingCharge = shippingResult.shippingCharge;
+    const isFreeShipping = shippingResult.freeShipping || shippingCharge === 0;
+
+    const freeShippingRemainingAmount = Math.max(0, freeShippingThreshold - subtotal);
+    const freeShippingProgressPercent = freeShippingThreshold > 0
+      ? Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100))
+      : 100;
+    const isFreeShippingUnlocked = isFreeShipping || subtotal >= freeShippingThreshold;
+    const freeShippingStatusMessage = isFreeShippingUnlocked
+      ? 'Free Shipping Unlocked!'
+      : `Add ₹${freeShippingRemainingAmount.toLocaleString('en-IN')} more for FREE shipping`;
+
+    const areAllProductsCodAvailable = rawItems && rawItems.length > 0 && rawItems.every((item: any) => {
+      const p = item.product;
+      const v = item.variant;
+      const pCod = this.isCodAvailable(p);
+      const vCod = !v || v?.codAvailable !== false;
+      return pCod && vCod;
+    });
+
+    let isCodEligible = areAllProductsCodAvailable;
+    let codReason = '';
+
+    if (!areAllProductsCodAvailable) {
+      isCodEligible = false;
+      codReason = 'One or more selected products are not eligible for Cash on Delivery.';
+    } else if (subtotal > codMaxLimit) {
+      isCodEligible = false;
+      codReason = `Your order total exceeds ₹${codMaxLimit.toLocaleString('en-IN')}.`;
+    }
+
+    const codHandlingCharge = (paymentMethod === 'COD' && isCodEligible) ? codSurcharge : 0;
+    const taxAmount = 0;
+    const grandTotal = Math.max(0, subtotal - couponDiscount + shippingCharge + codHandlingCharge + taxAmount);
+
+    return {
+      items: analyzedItems,
+      totalUniqueProducts,
+      totalItemUnits,
+      mrpSubtotal,
+      subtotal,
+      mrpSavings,
+      couponCode: activeCoupon || null,
+      couponDiscountAmount: couponDiscount,
+      totalDiscountAmount: mrpSavings + couponDiscount,
+      totalWeightGrams,
+      displayWeight,
+      packageSummary: {
+        itemCount: totalUniqueProducts,
+        totalItems: totalUniqueProducts,
+        totalQuantity: totalItemUnits,
+        totalWeightGrams,
+        displayWeight
+      },
+      shippingCharge,
+      shippingSource: shippingResult.source,
+      isFreeShipping,
+      shippingLabel: shippingResult.shippingLabel,
+      appliedShippingRule: shippingResult.appliedRule,
+      estimatedDeliveryDays: shippingResult.estimatedDays,
+      formattedDeliveryRange: this.deliveryEstimateService.formatDeliveryRange(shippingResult.estimatedDays),
+      freeShippingThreshold,
+      freeShippingProgressPercent,
+      freeShippingRemainingAmount,
+      isFreeShippingUnlocked,
+      freeShippingStatusMessage,
+      selectedPaymentMethod: paymentMethod,
+      areAllProductsCodAvailable,
+      isCodEligible,
+      codReason,
+      codHandlingCharge,
+      taxAmount,
+      taxLabel: 'Incl. 18% GST & taxes',
+      grandTotal,
+      lastCalculatedAt: Date.now()
+    };
   });
 
-  cartShipping = computed(() => {
-    const items = this.groupedCartItems();
-    if (!items || items.length === 0) return 0;
-    return this.shippingService.calculateCartShipping(items).shippingCharge;
-  });
-
-  cartTax = computed(() => {
-    return 0;
-  });
-
-  cartGrandTotal = computed(() => {
-    return Math.max(0, this.cartSubtotal() - this.couponDiscountAmount() + this.cartShipping() + this.cartTax());
-  });
+  cartSubtotal = computed(() => this.cartPricingSummary().subtotal);
+  cartMRPtotal = computed(() => this.cartPricingSummary().mrpSubtotal);
+  freeShippingThreshold = computed(() => this.cartPricingSummary().freeShippingThreshold);
+  cartShipping = computed(() => this.cartPricingSummary().shippingCharge);
+  cartTax = computed(() => this.cartPricingSummary().taxAmount);
+  cartGrandTotal = computed(() => this.cartPricingSummary().grandTotal);
 
   recalcDiscount() {
     const code = this.activeCouponCode();

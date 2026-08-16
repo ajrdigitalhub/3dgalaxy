@@ -23,6 +23,7 @@ import { environment } from "../../../environments/environment";
 import { ScrollRevealDirective } from "../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../shared/directives/tilt.directive";
 import { VariantChipSelectorComponent, VariantOptionGroup } from "../../shared/components/variant-selector/variant-chip-selector";
+import { VariantWeightSelectorComponent, WeightSelectionEvent } from "../../shared/components/variant-weight-selector/variant-weight-selector.component";
 import { VariantSelectionEngineService } from "../../services/variant-selection-engine.service";
 import { BundleSelectorComponent } from "../../shared/components/bundle-selector/bundle-selector.component";
 import { VariantSlotComponent } from "../../shared/components/variant-slot/variant-slot.component";
@@ -32,7 +33,7 @@ import { hasProductVariants } from "../../shared/utils/product.utils";
 import { ShippingService } from "../../core/services/shipping.service";
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
-import { formatWeight } from "../../shared/utils/weight.utils";
+import { formatWeight, resolveEffectiveWeight, convertToGrams } from "../../shared/utils/weight.utils";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 
 @Component({
@@ -47,6 +48,7 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
     TiltDirective,
     FormsModule,
     VariantChipSelectorComponent,
+    VariantWeightSelectorComponent,
     BundleSelectorComponent,
     DeliveryEstimatePipe,
   ],
@@ -69,16 +71,62 @@ export class ProductDetail {
   displayProductWeight = computed(() => {
     const p = this.product();
     if (!p) return null;
-    const v = this.selectedVariant();
-    const grams = Number(v?.weight || (v as any)?.weightInGrams || p.weightInGrams || (p as any).weight_in_grams || 0);
-    if (!grams || grams <= 0) return null;
-    return formatWeight(grams);
+
+    let targetContext: any = { product: p };
+
+    if (this.isWeightBasedProduct(p)) {
+      const wData = this.selectedWeightData();
+      if (wData && wData.isValid) {
+        targetContext.selectedWeightValue = wData.weightValue;
+        targetContext.selectedWeightUnit = wData.weightUnit;
+        targetContext.weightInGrams = wData.weightInGrams;
+      }
+    } else if (this.variantEngine.activeBundleGroup()) {
+      const tier = this.variantEngine.selectedBundleTier();
+      if (tier) {
+        targetContext.selectedTier = tier;
+      }
+    } else if (this.selectedVariant()) {
+      targetContext.variant = this.selectedVariant();
+    }
+
+    const resolved = resolveEffectiveWeight(targetContext);
+    if (!resolved.weightInGrams || resolved.weightInGrams <= 0) return null;
+    return resolved.displayWeight;
   });
 
   productShippingInfo = computed(() => {
     const p = this.product();
     if (!p) return null;
-    return this.shippingService.getProductShippingInfo(p);
+
+    let itemContext: any = {};
+    if (this.isWeightBasedProduct(p)) {
+      const wData = this.selectedWeightData();
+      if (wData && wData.isValid) {
+        itemContext = {
+          selectedWeightValue: wData.weightValue,
+          selectedWeightUnit: wData.weightUnit,
+          weightInGrams: wData.weightInGrams
+        };
+      }
+    } else if (this.variantEngine.activeBundleGroup()) {
+      const tier = this.variantEngine.selectedBundleTier();
+      if (tier) {
+        itemContext = {
+          selectedTier: tier,
+          bundleDetails: {
+            selectedTier: tier,
+            selectedWeightValue: tier.weightValue,
+            selectedWeightUnit: tier.weightUnit,
+            weightInGrams: tier.weightValue ? convertToGrams(tier.weightValue, tier.weightUnit || 'kg') : undefined
+          }
+        };
+      }
+    } else if (this.selectedVariant()) {
+      itemContext = { variant: this.selectedVariant() };
+    }
+
+    return this.shippingService.getProductShippingInfo(p, itemContext);
   });
 
   isAddingToCart = signal(false);
@@ -1254,7 +1302,34 @@ export class ProductDetail {
   metaService = inject(Meta);
   document = inject(DOCUMENT);
 
+  isWeightBasedProduct(p: any): boolean {
+    if (!p) return false;
+    if (p.weightConfig && (p.weightConfig.enabled || (p.weightConfig.weightVariants && p.weightConfig.weightVariants.length > 0))) {
+      return true;
+    }
+    if (p.weightVariants && Array.isArray(p.weightVariants) && p.weightVariants.length > 0) {
+      return true;
+    }
+    if (p.isWeightBased || p.is_weight_based || p.pricingType === 'weight' || p.pricing_type === 'weight') {
+      return true;
+    }
+    if (Array.isArray(p.options)) {
+      return p.options.some((opt: any) => {
+        const name = (typeof opt === 'string' ? opt : opt?.name || opt?.label || '').toLowerCase();
+        return name.includes('weight') || name.includes('quantity (kg)') || name.includes('spool weight') || name.includes('pack weight');
+      });
+    }
+    return false;
+  }
+
   activePrice(p: any): number {
+    if (this.isWeightBasedProduct(p)) {
+      const wData = this.selectedWeightData();
+      if (wData && wData.isValid && wData.totalPrice > 0) {
+        return wData.totalPrice;
+      }
+    }
+
     if (this.variantEngine.activeBundleGroup()) {
       const tier = this.variantEngine.selectedBundleTier();
       if (tier) {
@@ -1285,6 +1360,14 @@ export class ProductDetail {
   }
 
   getMrp(p: any): number {
+    if (this.isWeightBasedProduct(p)) {
+      const wData = this.selectedWeightData();
+      if (wData && wData.isValid && wData.weightValue > 0) {
+        const baseMrp = p?.mrp || p?.basePrice || p?.sale_price || 0;
+        return baseMrp * wData.weightValue;
+      }
+    }
+
     if (this.variantEngine.activeBundleGroup()) {
       const tier = this.variantEngine.selectedBundleTier();
       if (tier) {
@@ -1679,18 +1762,37 @@ export class ProductDetail {
     return "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=450";
   }
 
+  readonly selectedWeightData = signal<WeightSelectionEvent | null>(null);
+
+  onWeightChange(event: WeightSelectionEvent) {
+    this.selectedWeightData.set(event);
+  }
+
   addToCart(p: Product) {
-    if (this.isAddingToCart()) return;
+    if (!p) return;
 
+    const wData = this.selectedWeightData();
+    if (wData && !wData.isValid) {
+      this.toastService.error(wData.validationError || "Please fix weight validation errors.");
+      return;
+    }
+
+    const weightPayload = wData && wData.isValid ? {
+      selectedWeightValue: wData.weightValue,
+      selectedWeightUnit: wData.weightUnit,
+      isCustomWeight: wData.isCustom,
+      customWeightValue: wData.isCustom ? wData.weightValue : undefined,
+      weightInGrams: wData.weightInGrams,
+      unitPricePerWeight: wData.unitPrice,
+      calculatedPrice: wData.totalPrice
+    } : undefined;
+
+    // Check if variant build is active
     if (this.variantEngine.activeBundleGroup()) {
-      const bundleGrp = this.variantEngine.activeBundleGroup();
-      if (this.variantEngine.bundleSlots().length === 0 && this.variantEngine.selectedBundleTier()) {
-        this.variantEngine.selectBundleTier(this.variantEngine.selectedBundleTier()!, bundleGrp || undefined);
-      }
-
-      const result = this.variantEngine.bundleResult();
-      if (!result.isComplete) {
-        this.toastService.error(result.errorMessages[0] || "Please select all required slot choices for the bundle.");
+      const bundleResult = this.variantEngine.bundleResult();
+      if (!bundleResult.isComplete) {
+        const msg = bundleResult.errorMessages[0] || "Please select options for all slots in the bundle.";
+        this.toastService.error(msg);
         return;
       }
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
@@ -1724,14 +1826,14 @@ export class ProductDetail {
         return;
       }
       this.isAddingToCart.set(true);
-      this.ds.addToCart(p, this.quantity(), selected);
+      this.ds.addToCart(p, this.quantity(), selected, weightPayload);
     } else {
       if (p.stock <= 0) {
         this.toastService.error("Product is out of stock.");
         return;
       }
       this.isAddingToCart.set(true);
-      this.ds.addToCart(p, this.quantity());
+      this.ds.addToCart(p, this.quantity(), undefined, weightPayload);
     }
 
     // Automatically add complimentary bundle items to the cart

@@ -425,6 +425,16 @@ export class Account {
   reorder(order: any) {
     if (order.items && order.items.length > 0) {
       for (const item of order.items) {
+        const weightConfig = (item.selectedWeightValue || item.weightInGrams) ? {
+          selectedWeightValue: item.selectedWeightValue || (item.weightInGrams ? item.weightInGrams / 1000 : 1),
+          selectedWeightUnit: item.selectedWeightUnit || 'kg',
+          isCustomWeight: Boolean(item.isCustomWeight),
+          customWeightValue: item.customWeightValue || item.selectedWeightValue,
+          weightInGrams: item.weightInGrams,
+          unitPricePerWeight: item.unitPricePerWeight || item.price,
+          calculatedPrice: item.price
+        } : undefined;
+
         this.ds.addToCart({
           id: item.productId || 'prod-reorder',
           name: item.name,
@@ -446,9 +456,9 @@ export class Account {
           featured: false,
           is360Supported: false,
           tags: []
-        }, item.quantity || 1);
+        }, item.quantity || 1, item.variant || undefined, weightConfig);
       }
-      this.toastService.success(`Items from order #${order.orderNumber} added to cart!`);
+      this.toastService.success(`Items from order #${order.orderNumber || order.id} added to cart with preserved weight configurations!`);
       this.router.navigate(["/cart"]);
     }
   }

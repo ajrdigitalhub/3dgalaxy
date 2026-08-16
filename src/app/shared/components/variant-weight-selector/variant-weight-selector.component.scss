@@ -1,0 +1,45 @@
+.weight-selector-container {
+  width: 100%;
+
+  .variant-card {
+    background-color: var(--bg-surface, #ffffff);
+    border-color: var(--border-color, #e2e8f0);
+
+    &:hover {
+      border-color: #6366f1;
+      background-color: rgba(99, 102, 241, 0.03);
+    }
+
+    &.selected {
+      border-color: #6366f1;
+      background-color: rgba(99, 102, 241, 0.08);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+  }
+
+  &.compact {
+    .variant-card {
+      padding: 0.5rem;
+    }
+  }
+}
+
+:host-context(.dark) {
+  .weight-selector-container {
+    .variant-card {
+      background-color: rgba(15, 23, 42, 0.7);
+      border-color: rgba(51, 65, 85, 0.8);
+
+      &:hover {
+        border-color: #818cf8;
+        background-color: rgba(129, 140, 248, 0.08);
+      }
+
+      &.selected {
+        border-color: #818cf8;
+        background-color: rgba(129, 140, 248, 0.15);
+        box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
+      }
+    }
+  }
+}

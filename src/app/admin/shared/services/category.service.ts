@@ -15,7 +15,7 @@ export class CategoryService {
   }
 
   loadCategories() {
-    this.api.get<Category[]>('/categories').subscribe({
+    this.api.get<Category[]>('/categories', null, true).subscribe({
       next: (data) => {
         if (data) {
           const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];

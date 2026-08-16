@@ -17,12 +17,15 @@ import {
   VariantDisplayType,
   VariantSelectionMode,
   BundleTier,
-  BundlePricingType
+  BundlePricingType,
+  WeightVariantOption
 } from '../../../../core/models/variant-engine.model';
+import { convertToGrams } from '../../../../shared/utils/weight.utils';
 import { BundleSelectorComponent } from '../../../../shared/components/bundle-selector/bundle-selector.component';
 import { VariantSlotComponent } from '../../../../shared/components/variant-slot/variant-slot.component';
 import { BundleSummaryComponent } from '../../../../shared/components/bundle-summary/bundle-summary.component';
 import { VariantChipSelectorComponent } from '../../../../shared/components/variant-selector/variant-chip-selector';
+import { VariantWeightSelectorComponent } from '../../../../shared/components/variant-weight-selector/variant-weight-selector.component';
 
 @Component({
   selector: 'app-admin-variant-group-config',
@@ -35,7 +38,8 @@ import { VariantChipSelectorComponent } from '../../../../shared/components/vari
     BundleSelectorComponent,
     VariantSlotComponent,
     BundleSummaryComponent,
-    VariantChipSelectorComponent
+    VariantChipSelectorComponent,
+    VariantWeightSelectorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-variant-group-config.component.html',
@@ -79,7 +83,11 @@ export class AdminVariantGroupConfigComponent {
         allowDuplicates: !!g.allowDuplicates,
         values: vals,
         bundleTiers: Array.isArray(g.bundleTiers) && g.bundleTiers.length > 0 
-          ? g.bundleTiers 
+          ? g.bundleTiers.map((t: any) => ({
+              ...t,
+              weightValue: t.weightValue !== undefined ? t.weightValue : (t.count || null),
+              weightUnit: t.weightUnit || 'kg'
+            }))
           : (dType === 'bundle-builder' ? this.createDefaultGroup().bundleTiers : [])
       };
     });
@@ -105,6 +113,7 @@ export class AdminVariantGroupConfigComponent {
 
   displayTypes: { value: VariantDisplayType; label: string }[] = [
     { value: 'bundle-builder', label: 'Bundle Builder (Radio Cards + Slots)' },
+    { value: 'weight-selector', label: 'Weight Selector (Presets + Custom Weight)' },
     { value: 'chip', label: 'Chip Selector (Pills)' },
     { value: 'dropdown', label: 'Dropdown Menu' },
     { value: 'image', label: 'Image Selector' },
@@ -119,6 +128,7 @@ export class AdminVariantGroupConfigComponent {
   selectionModes: { value: VariantSelectionMode; label: string }[] = [
     { value: 'single', label: 'Single Selection (Choose 1)' },
     { value: 'bundle', label: 'Bundle Selection (Buy N -> Slots)' },
+    { value: 'weight', label: 'Weight Based (kg / g Variants)' },
     { value: 'multiple', label: 'Multiple Selection (Choose up to N)' },
     { value: 'quantity', label: 'Quantity Based Variant' },
     { value: 'pack', label: 'Package / Starter Kit Builder' }
@@ -214,6 +224,26 @@ export class AdminVariantGroupConfigComponent {
         this.previewSelectedTier.set(grp.bundleTiers[0]);
       }
     }, { allowSignalWrites: true });
+  }
+
+  getPreviewWeightOptions(bundleTiers?: BundleTier[]): WeightVariantOption[] {
+    if (!bundleTiers || !Array.isArray(bundleTiers)) return [];
+    return bundleTiers.map((t: any, i: number) => {
+      const val = Number(t.weightValue ?? t.count ?? 1);
+      const unit = (t.weightUnit || 'kg') as 'kg' | 'g' | 'lb' | 'oz';
+      const grams = convertToGrams(val, unit);
+      return {
+        id: t.id || `tier-${i}`,
+        label: t.name || `${val} ${unit}`,
+        weightValue: val,
+        weightUnit: unit,
+        weightInGrams: grams,
+        totalPrice: Number(t.priceValue) || (this.basePrice * val),
+        badgeText: t.badgeText || '',
+        savingsText: t.savingsText || '',
+        isPopular: !!t.isPopular
+      };
+    });
   }
 
   getSlotsArray(count: number): number[] {

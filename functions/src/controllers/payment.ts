@@ -319,17 +319,28 @@ export const processOrderCreation = async (tx: any, payload: any) => {
   const isConfirmed = String(paymentStatus).toUpperCase() === 'PAID' || String(paymentStatus).toUpperCase() === 'SUCCESS';
   const orderStatus = isConfirmed ? 'CONFIRMED' : 'PENDING';
 
+  let computedSubtotal = 0;
   let computedTotalQuantity = 0;
   let computedTotalWeightGrams = 0;
 
   if (Array.isArray(items)) {
     for (const it of items) {
       const qty = Math.max(1, Number(it.quantity) || 1);
+      const unitPrice = Number(it.unitPrice || it.price || it.effectivePrice || 0);
       const itemWeightGrams = Number(it.weightInGrams ?? it.weight ?? 0);
+      computedSubtotal += unitPrice * qty;
       computedTotalQuantity += qty;
       computedTotalWeightGrams += itemWeightGrams * qty;
     }
   }
+
+  const finalSubtotal = computedSubtotal > 0 ? computedSubtotal : Number(subtotal || 0);
+  const finalDiscount = Number(discountAmount || 0);
+  const finalShipping = Number(shippingAmount !== undefined ? shippingAmount : 0);
+  const finalCodCharge = paymentMethod === 'COD' ? Number(codCharge !== undefined ? codCharge : 100) : 0;
+  const finalTax = Number(taxAmount || 0);
+  const calculatedGrandTotal = Math.max(0, finalSubtotal - finalDiscount + finalShipping + finalCodCharge + finalTax);
+  const finalTotalAmount = calculatedGrandTotal > 0 ? calculatedGrandTotal : Number(totalAmount || 0);
 
   const formatWeightServer = (valInGrams: number): string => {
     const val = Number(valInGrams) || 0;
@@ -347,12 +358,13 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     paymentId: paymentId || null,
     transactionId: transactionId || null,
     gatewayResponse: typeof gatewayResponse === 'object' ? JSON.stringify(gatewayResponse) : (gatewayResponse || null),
-    totalAmount,
-    taxAmount: taxAmount || 0,
-    shippingAmount: shippingAmount || 0,
-    discountAmount: discountAmount || 0,
-    codCharge: codCharge || 0,
-    paidAmount: isConfirmed ? totalAmount : 0,
+    subtotal: finalSubtotal,
+    totalAmount: finalTotalAmount,
+    taxAmount: finalTax,
+    shippingAmount: finalShipping,
+    discountAmount: finalDiscount,
+    codCharge: finalCodCharge,
+    paidAmount: isConfirmed ? finalTotalAmount : 0,
     totalWeightInGrams: computedTotalWeightGrams,
     displayWeight: formatWeightServer(computedTotalWeightGrams),
     totalQuantity: computedTotalQuantity,

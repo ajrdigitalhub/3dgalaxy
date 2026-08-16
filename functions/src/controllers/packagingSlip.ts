@@ -143,10 +143,16 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
         if (item.variant?.name) {
           variantLabel = ` (${item.variant.name})`;
         }
+        let weightLabel = '';
+        if (item.selectedWeightValue) {
+          weightLabel = ` [${item.selectedWeightValue} ${item.selectedWeightUnit || 'kg'}]`;
+        } else if (item.weightInGrams) {
+          weightLabel = ` [${item.weightInGrams < 1000 ? item.weightInGrams + 'g' : (item.weightInGrams / 1000).toFixed(2) + 'kg'}]`;
+        }
         return {
           qty,
           sku: item.variant?.sku || item.product?.sku || 'SKU-001',
-          description: `${item.product?.name || item.name || 'Item'}${variantLabel}`,
+          description: `${item.product?.name || item.name || 'Item'}${variantLabel}${weightLabel}`,
           price,
           extPrice: Number(item.totalPrice || (price * qty)),
         };

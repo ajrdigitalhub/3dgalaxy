@@ -74,8 +74,9 @@ export class DeliveryEstimateService {
   }
 
   // Format dynamic delivery ranges
-  public formatDeliveryRange(encodedDays: number, desktopFormat: boolean = true, baseDate: Date = this.getISTDate()): string {
-    const { minDate, maxDate } = this.calculateDeliveryDates(encodedDays, baseDate);
+  public formatDeliveryRange(encodedDays: number | string, desktopFormat: boolean = true, baseDate: Date = this.getISTDate()): string {
+    const encoded = typeof encodedDays === 'string' ? this.parseEstimateDays(encodedDays) : (Number(encodedDays) || 3);
+    const { minDate, maxDate } = this.calculateDeliveryDates(encoded, baseDate);
     
     const minDayStr = minDate.getDate();
     const maxDayStr = maxDate.getDate();

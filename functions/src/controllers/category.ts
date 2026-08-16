@@ -298,11 +298,20 @@ export const updateCategory = async (req: Request, res: Response) => {
       }
     }
 
-    if (shippingMode !== undefined) {
-      updateData.shippingMode = shippingMode;
+    const rawMode = shippingMode || req.body.shipping_mode;
+    if (rawMode !== undefined) {
+      updateData.shippingMode = rawMode;
     }
-    if (shippingRules !== undefined) {
-      updateData.shippingRules = Array.isArray(shippingRules) ? shippingRules : typeof shippingRules === 'string' ? JSON.parse(shippingRules) : [];
+
+    const rawRules = shippingRules !== undefined ? shippingRules : (req.body.shipping_rules || req.body.weightRules || req.body.weight_rules);
+    if (rawRules !== undefined) {
+      let parsedRules = Array.isArray(rawRules) ? rawRules : (typeof rawRules === 'string' && rawRules.trim() ? JSON.parse(rawRules) : []);
+      if (!Array.isArray(parsedRules)) parsedRules = [];
+      updateData.shippingRules = parsedRules.map((r: any) => ({
+        fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : (r.from_grams !== undefined ? r.from_grams : r.from)) || 0,
+        toGrams: Number(r.toGrams !== undefined ? r.toGrams : (r.to_grams !== undefined ? r.to_grams : r.to)) || 0,
+        charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0
+      }));
     }
     if (freeShippingThreshold !== undefined) {
       updateData.freeShippingThreshold = freeShippingThreshold !== null && freeShippingThreshold !== '' ? Number(freeShippingThreshold) : null;

@@ -201,6 +201,18 @@
           [innerHTML]="safeHtml(p.description || '')"
         ></div> -->
 
+        <!-- WEIGHT VARIANT & BULK QUANTITY SELECTOR -->
+        @if (isWeightBasedProduct(p)) {
+        <div class="pt-4 border-t border-neutral-100 dark:border-neutral-800 animate-fadeIn">
+          <app-variant-weight-selector
+            [weightConfig]="p.weightConfig"
+            [weightVariants]="p.weightVariants || []"
+            [baseUnitPrice]="p.salePrice || p.basePrice || 0"
+            [quantity]="quantity()"
+            (weightChange)="onWeightChange($event)" />
+        </div>
+        }
+
         <!-- BUNDLE BUILDER OR STANDARD VARIANT SELECTOR -->
         @if (variantEngine.activeBundleGroup(); as bundleGrp) {
         <div class="space-y-4 pt-4 border-t border-neutral-100 dark:border-neutral-800 animate-fadeIn">

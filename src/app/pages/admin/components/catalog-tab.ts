@@ -25,6 +25,7 @@ import { AdminVariantGroupConfigComponent } from "./admin-variant-group-config/a
 import { CategoryMultiSelectComponent } from "../../../shared/components/category-multi-select/category-multi-select.component";
 import { VariantTourGuideComponent } from "../../../shared/components/variant-tour-guide/variant-tour-guide.component";
 import { VariantTourService } from "../../../core/services/variant-tour.service";
+import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
 
 @Component({
   selector: "app-admin-catalog-tab",
@@ -989,6 +990,7 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                               <th class="p-3 w-24" data-tour="variant-pricing">MRP (₹)</th>
                               <th class="p-3 w-24">Sale (₹)</th>
                               <th class="p-3 w-20" data-tour="variant-stock">Stock</th>
+                              <th class="p-3 w-36">Weight (g)</th>
                               <th class="p-3 w-16 text-center">Action</th>
                             </tr>
                           </thead>
@@ -1071,6 +1073,25 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                                     (ngModelChange)="admin.updateVariants()"
                                     class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
                                   />
+                                </td>
+                                <td class="p-2">
+                                  <div class="space-y-1">
+                                    <input
+                                      type="number"
+                                      [ngModel]="variant.weightInGrams || variant.weight || null"
+                                      (ngModelChange)="variant.weightInGrams = $event ? Number($event) : null; variant.weight = $event ? Number($event) : null; admin.updateVariants()"
+                                      placeholder="Default"
+                                      class="w-full px-2 py-1 text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-transparent rounded outline-none focus:ring-1 ring-blue-500"
+                                    />
+                                    @let wInfo = getVariantEffectiveWeightInfo(variant);
+                                    <span
+                                      [class]="wInfo.badgeClass"
+                                      [title]="wInfo.warningText || wInfo.sourceLabel"
+                                      class="px-1.5 py-0.5 rounded text-[8px] font-bold border truncate block max-w-[130px]"
+                                    >
+                                      {{ wInfo.displayWeight }} ({{ wInfo.badgeLabel }})
+                                    </span>
+                                  </div>
                                 </td>
                                 <td class="p-2 text-center">
                                   <div
@@ -2483,6 +2504,22 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                               ★ Featured
                             </span>
                           }
+                          @if (cat.shippingMode === 'weight_based' || (cat.shippingRules && cat.shippingRules.length > 0)) {
+                            <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[9px] font-black uppercase flex items-center gap-1">
+                              <mat-icon class="text-[11px]">scale</mat-icon>
+                              Weight Shipping ({{ cat.shippingRules?.length || 1 }} Rule)
+                            </span>
+                          } @else if (cat.shippingMode === 'flat' || (cat.shippingCharge && cat.shippingCharge > 0)) {
+                            <span class="px-2.5 py-0.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-[9px] font-black uppercase flex items-center gap-1">
+                              <mat-icon class="text-[11px]">local_shipping</mat-icon>
+                              Flat Rate ₹{{ cat.shippingCharge }}
+                            </span>
+                          } @else if (cat.shippingMode === 'free' || cat.freeShippingEligible) {
+                            <span class="px-2.5 py-0.5 bg-purple-500/10 text-purple-500 border border-purple-500/20 rounded-full text-[9px] font-black uppercase flex items-center gap-1">
+                              <mat-icon class="text-[11px]">local_offer</mat-icon>
+                              Free Shipping
+                            </span>
+                          }
                         </div>
                         <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
                           Slug: /category/{{ cat.slug }} &middot; Path: {{ getCategoryPath(cat.id) }}
@@ -3321,7 +3358,7 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="variantEditFormMap()[v.id]?.dealerPrice ?? 0"
+                                    [value]="variantEditFormMap()[v.id].dealerPrice ?? 0"
                                     (input)="updateVariantModalFormField(v.id, 'dealerPrice', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
@@ -3334,7 +3371,7 @@ import { VariantTourService } from "../../../core/services/variant-tour.service"
                                   type="number"
                                   min="0"
                                   step="1"
-                                  [value]="variantEditFormMap()[v.id]?.stock ?? 0"
+                                  [value]="variantEditFormMap()[v.id].stock"
                                   (input)="updateVariantModalFormField(v.id, 'stock', $any($event.target).value)"
                                   class="w-20 px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 />
@@ -4653,6 +4690,12 @@ export class AdminCatalogTab {
   // Search signals for product
   pCatSearchQuery = signal<string>("");
   pCatDropdownOpen = signal<boolean>(false);
+
+  getVariantEffectiveWeightInfo(variant: any) {
+    const prodWeight = this.admin.pWeightInGrams() || 0;
+    const mockProduct = { weightInGrams: prodWeight, weight: prodWeight };
+    return resolveEffectiveWeight({ product: mockProduct }, variant);
+  }
 
   openVariantImageModal(variantIdx: number) {
     this.activeVariantForImages.set(variantIdx);

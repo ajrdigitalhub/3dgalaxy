@@ -105,7 +105,7 @@ export class ShippingService {
     const defaultShippingCharge =
       settings.defaultShippingCharge !== undefined && !isNaN(Number(settings.defaultShippingCharge))
         ? Number(settings.defaultShippingCharge)
-        : 80;
+        : 150;
     const freeShippingThreshold =
       settings.freeShippingThreshold !== undefined &&
       settings.freeShippingThreshold !== null &&
@@ -241,22 +241,30 @@ export class ShippingService {
         const catName = product.categoryName || product.category_name || (typeof product.category === 'string' ? product.category : product.category?.name);
 
         let primaryCat = allCategories.find((c: any) =>
-          (catId && (c.id === catId || c.slug === catId)) ||
-          (catName && c.name && c.name.toLowerCase() === String(catName).toLowerCase()) ||
-          (catId && c.name && c.name.toLowerCase() === String(catId).toLowerCase())
+          (catId && (String(c.id) === String(catId) || c.slug === catId)) ||
+          (catName && c.name && c.name.toLowerCase().trim() === String(catName).toLowerCase().trim()) ||
+          (catId && c.name && c.name.toLowerCase().trim() === String(catId).toLowerCase().trim())
         );
 
         if (!primaryCat && typeof product.category === 'object' && product.category !== null) {
           primaryCat = product.category;
         }
 
+        if (!primaryCat && typeof product.category === 'string' && product.category.trim()) {
+          const searchName = product.category.trim().toLowerCase();
+          primaryCat = allCategories.find((c: any) => c.name && c.name.toLowerCase().trim() === searchName);
+        }
+
         const getCategoryRules = (c: any): WeightRule[] => {
-          const rawRules = c?.shippingRules || c?.shipping_rules;
+          let rawRules = c?.shippingRules || c?.shipping_rules || c?.weightRules || c?.weight_rules;
+          if (typeof rawRules === 'string' && rawRules.trim()) {
+            try { rawRules = JSON.parse(rawRules); } catch (e) {}
+          }
           if (Array.isArray(rawRules) && rawRules.length > 0) {
             return rawRules.map((r: any) => ({
-              fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : r.from_grams) || 0,
-              toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : 999999,
-              charge: Number(r.charge) || 0,
+              fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : (r.from_grams !== undefined ? r.from_grams : r.from)) || 0,
+              toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : r.to !== undefined && r.to !== null ? Number(r.to) : 999999,
+              charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0,
             }));
           }
           return [];
@@ -581,7 +589,7 @@ export class ShippingService {
   /**
    * Get single product shipping info for display on product page
    */
-  public getProductShippingInfo(product: any) {
+  public getProductShippingInfo(product: any, itemContext?: any) {
     if (!product) {
       return {
         charge: 0,
@@ -595,7 +603,8 @@ export class ShippingService {
         },
       };
     }
-    const result = this.calculateCartShipping([{ product, quantity: 1 }]);
+    const cartItem = itemContext ? { product, ...itemContext, quantity: 1 } : { product, quantity: 1 };
+    const result = this.calculateCartShipping([cartItem]);
     return {
       charge: result.shippingCharge,
       source: result.source,

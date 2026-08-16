@@ -498,10 +498,11 @@ export class AdminPanel implements OnInit {
     this.catShippingRules.set(rules);
   }
 
-  updateCatWeightRule(index: number, field: 'fromGrams' | 'toGrams' | 'charge', value: number) {
+  updateCatWeightRule(index: number, field: 'fromGrams' | 'toGrams' | 'charge', value: any) {
     const rules = [...this.catShippingRules()];
     if (rules[index]) {
-      rules[index] = { ...rules[index], [field]: value };
+      const numVal = isNaN(Number(value)) ? 0 : Number(value);
+      rules[index] = { ...rules[index], [field]: numVal };
       this.catShippingRules.set(rules);
     }
   }
@@ -1329,8 +1330,13 @@ export class AdminPanel implements OnInit {
     const region = cat.shippingRegion || cat.shipping_region || "";
     this.catShippingRegion.set(region);
 
-    const rawRules = cat.shippingRules || cat.shipping_rules;
-    const rules = Array.isArray(rawRules) ? rawRules : typeof rawRules === 'string' ? JSON.parse(rawRules) : [];
+    const rawRules = cat.shippingRules || cat.shipping_rules || cat.weightRules || cat.weight_rules;
+    let rules: any[] = [];
+    if (Array.isArray(rawRules)) {
+      rules = rawRules;
+    } else if (typeof rawRules === 'string' && rawRules.trim()) {
+      try { rules = JSON.parse(rawRules); } catch (e) {}
+    }
     this.catShippingRules.set(rules);
 
     const rawMode = cat.shippingMode || cat.shipping_mode;
@@ -1400,7 +1406,11 @@ export class AdminPanel implements OnInit {
       freeShippingEligible: this.catFreeShippingEligible(),
       shippingRegion: this.catShippingRegion().trim() || null,
       shippingMode: this.catShippingMode(),
-      shippingRules: this.catShippingRules(),
+      shippingRules: (this.catShippingRules() || []).map((r: any) => ({
+        fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : r.from_grams) || 0,
+        toGrams: Number(r.toGrams !== undefined ? r.toGrams : r.to_grams) || 0,
+        charge: Number(r.charge) || 0
+      })),
       freeShippingThreshold: this.catFreeShippingThreshold() !== null && this.catFreeShippingThreshold() !== undefined ? Number(this.catFreeShippingThreshold()) : null,
     };
 

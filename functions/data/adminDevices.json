@@ -1,9 +1,32 @@
 [
   {
+    "id": "5bb28b64-bc3f-4052-965f-0fc344883deb",
+    "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "adminName": "admin123@gmail.com",
+    "adminEmail": "admin123@gmail.com",
+    "adminRole": "Super Admin",
+    "deviceName": "Chrome Desktop",
+    "deviceType": "Desktop",
+    "platform": "Windows",
+    "browser": "Chrome",
+    "operatingSystem": "Windows",
+    "fcmToken": "c8dM_IhNjyeyS1PRP4tonO:APA91bGw_4-7rhsrP3fpSB1e6WJS66Z0vb9rE1xMYaAfD8Z8Y9AWhbAiwP2FuzjYG9-40l77XAqZa8YfYY86aMjzRa8EwxL_DEgkWK0yjXPYeNkoupKUaq4",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "isActive": true,
+    "isOnline": true,
+    "notificationEnabled": true,
+    "notificationPermission": "granted",
+    "notificationCount": 0,
+    "lastUsedAt": "2026-08-16T10:56:34.579Z",
+    "createdAt": "2026-08-16T08:21:34.344Z",
+    "updatedAt": "2026-08-16T10:56:34.579Z"
+  },
+  {
     "id": "c08c057f-e61d-486d-acf2-d41047ef7de1",
-    "adminId": "admin-main",
-    "adminName": "Super Admin",
-    "adminEmail": "admin@3dgalaxy.com",
+    "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "adminName": "admin123@gmail.com",
+    "adminEmail": "admin123@gmail.com",
     "adminRole": "Super Admin",
     "deviceName": "Chrome Desktop",
     "deviceType": "Desktop",
@@ -18,9 +41,9 @@
     "notificationEnabled": true,
     "notificationPermission": "granted",
     "notificationCount": 0,
-    "lastUsedAt": "2026-08-15T20:06:37.695Z",
+    "lastUsedAt": "2026-08-16T06:15:51.005Z",
     "createdAt": "2026-08-15T19:16:23.381Z",
-    "updatedAt": "2026-08-15T20:06:37.695Z"
+    "updatedAt": "2026-08-16T06:15:51.005Z"
   },
   {
     "id": "2f9fb439-d11d-4577-9826-2bebc3a6665c",

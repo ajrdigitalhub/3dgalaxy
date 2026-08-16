@@ -7,6 +7,7 @@ import {
   BundleSelectionResult,
   CartBundleDetails
 } from '../core/models/variant-engine.model';
+import { convertToGrams } from '../shared/utils/weight.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -488,6 +489,29 @@ export class VariantSelectionEngineService {
     const baseProductPrice = Number(product?.salePrice || product?.sale_price || product?.basePrice || 0);
     const effectiveBundlePrice = result.pricing.subtotal || (result.pricing.pricePerItem * result.selectedTier.count);
 
+    const tier = result.selectedTier;
+    const tierWeightVal = tier.weightValue !== undefined && tier.weightValue !== null ? Number(tier.weightValue) : undefined;
+    const tierWeightUnit = (tier.weightUnit || 'kg') as 'kg' | 'g' | 'lb' | 'oz';
+    let calculatedWeightGrams = tierWeightVal && tierWeightVal > 0 ? convertToGrams(tierWeightVal, tierWeightUnit) : 0;
+
+    if (calculatedWeightGrams <= 0 && result.slots.length > 0) {
+      let slotWeightsSum = 0;
+      for (const slot of result.slots) {
+        const v = slot.selectedVariant;
+        if (v) {
+          const vGrams = Number(v.weightInGrams ?? v.weight_in_grams ?? v.weight ?? 0);
+          if (vGrams > 0) {
+            slotWeightsSum += vGrams;
+          } else if (v.weightValue) {
+            slotWeightsSum += convertToGrams(v.weightValue, v.weightUnit || 'kg');
+          }
+        }
+      }
+      if (slotWeightsSum > 0) {
+        calculatedWeightGrams = slotWeightsSum;
+      }
+    }
+
     return {
       bundleGroupId: group?.id,
       bundleName: result.selectedTier.name,
@@ -498,6 +522,10 @@ export class VariantSelectionEngineService {
       effectivePrice: effectiveBundlePrice,
       bundlePrice: effectiveBundlePrice,
       configurationType: 'bundle',
+      selectedTier: tier,
+      selectedWeightValue: tierWeightVal,
+      selectedWeightUnit: tierWeightUnit,
+      weightInGrams: calculatedWeightGrams > 0 ? calculatedWeightGrams : undefined,
       selectedOptions: result.slots.map(s => {
         const v = s.selectedVariant;
         return {
