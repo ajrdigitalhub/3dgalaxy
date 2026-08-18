@@ -603,7 +603,8 @@ export class ShippingService {
         },
       };
     }
-    const cartItem = itemContext ? { product, ...itemContext, quantity: 1 } : { product, quantity: 1 };
+    const qty = Math.max(1, Number(itemContext?.quantity) || 1);
+    const cartItem = itemContext ? { product, ...itemContext, quantity: qty } : { product, quantity: 1 };
     const result = this.calculateCartShipping([cartItem]);
     return {
       charge: result.shippingCharge,

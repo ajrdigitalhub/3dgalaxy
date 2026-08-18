@@ -597,22 +597,27 @@ export class CheckoutComponent implements OnInit {
         this.api.post<any>("/payment/create-order", payload),
       );
 
+      const responseData = res?.data || res;
+      const orderData = responseData?.order || responseData;
+      const orderId = responseData?.id || responseData?.orderId || orderData?.id || orderData?.orderId || res?.id;
+
       if (this.paymentMethod() === "RAZORPAY") {
-        this.openRazorpay(res.data);
+        this.openRazorpay(orderData);
       } else if (this.paymentMethod() === "CASHFREE") {
-        this.openCashfree(res.data);
-      } else if (this.paymentMethod() === "COD") {
-        const orderData = res?.data?.order || res?.data;
-        const orderId = res?.data?.id || res?.data?.orderId || orderData?.id;
-        this.finishOrder(orderId, orderData);
+        this.openCashfree(orderData);
+      } else {
+        // COD or direct completion
+        this.finishOrder(orderId || ("ORD-" + Date.now()), orderData);
       }
     } catch (e: any) {
-      console.error(e);
-      this.toast.error(
+      console.error("[Checkout Error]:", e);
+      const errorMsg =
+        e?.error?.error ||
+        e?.error?.message ||
         e?.response?.data?.message ||
-          e?.error?.message ||
-          "Failed to create order. Please try again.",
-      );
+        e?.message ||
+        "Failed to create order. Please try again.";
+      this.toast.error(errorMsg);
       this.isSubmitting.set(false);
       this.loading.stopLoading();
     }
@@ -768,10 +773,14 @@ export class CheckoutComponent implements OnInit {
     sessionStorage.removeItem("checkout_active_step");
     localStorage.removeItem("checkout_restored_addr1");
     localStorage.removeItem("checkout_restored_pay");
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("3d-galaxy-cart");
+    }
 
+    const targetId = orderId || orderObj?.id || orderObj?.orderId || "ORD-SUCCESS";
     this.router.navigate(["/order-success"], {
-      queryParams: { orderId },
-      state: { order: orderObj || { id: orderId } }
+      queryParams: { orderId: targetId },
+      state: { order: orderObj || { id: targetId } }
     });
   }
 }

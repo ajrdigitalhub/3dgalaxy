@@ -52,7 +52,7 @@ export class OrderSupportMessageService {
         'Refund request',
         'Exchange request'
       ];
-      const rest = allTopics.filter(t => !priority.includes(t));
+      const rest = allTopics.filter(t => !priority.includes(t) && t !== 'Cancel my order');
       return [...priority, ...rest];
     } else if (['shipped', 'processing', 'packed', 'confirmed', 'pending'].includes(st)) {
       const priority = [

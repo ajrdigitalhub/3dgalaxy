@@ -82,14 +82,6 @@ interface PaperParticle {
           <div class="p-6 sm:p-8 space-y-5">
             <div class="flex items-center justify-between">
               <h2 class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em]">Order Details</h2>
-              
-              <!-- Quick Copy Button in Details -->
-              <button (click)="copyOrderId()" 
-                      type="button"
-                      class="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer">
-                <mat-icon class="scale-75">{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
-                <span>{{ copied() ? 'Copied' : 'Copy Order ID' }}</span>
-              </button>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

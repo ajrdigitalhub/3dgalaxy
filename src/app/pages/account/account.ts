@@ -92,6 +92,24 @@ export class Account {
     return items;
   });
 
+  getItemStock(item: any): number {
+    const prod = item.product || item;
+    if (prod.stock !== undefined && prod.stock !== null) {
+      return Number(prod.stock);
+    }
+    return 10;
+  }
+
+  isItemOutOfStock(item: any): boolean {
+    return this.getItemStock(item) <= 0;
+  }
+
+  isMoveAllWishlistDisabled = computed(() => {
+    const items = this.filteredWishlist();
+    if (items.length === 0) return true;
+    return items.some((item) => this.isItemOutOfStock(item));
+  });
+
   totalWishlistCount = computed(() => this.wishlist().length);
   totalOrdersCount = computed(() => this.myOrders().length);
   totalSpentAmount = computed(() => this.myOrders().reduce((sum, o) => sum + (o.grandTotal || 0), 0));
@@ -329,6 +347,10 @@ export class Account {
   }
 
   addToCartFromWishlist(item: any) {
+    if (this.isItemOutOfStock(item)) {
+      this.toastService.warning("This product is currently out of stock");
+      return;
+    }
     const prod = item.product || item;
     const productId = item.productId || prod.id;
     this.ds.addToCart(prod);
@@ -340,20 +362,22 @@ export class Account {
 
   async moveAllWishlistToCart() {
     const items = this.filteredWishlist();
-    if (items.length === 0) {
-      this.toastService.info("No items in wishlist to move");
+    const inStockItems = items.filter((item) => !this.isItemOutOfStock(item));
+
+    if (inStockItems.length === 0) {
+      this.toastService.warning("Cannot move items: Wishlist contains out of stock items");
       return;
     }
 
-    for (const item of items) {
-      if (item.product) {
-        this.ds.addToCart(item.product);
-        if (item.productId) {
-          await this.removeFromWishlist(item.productId);
-        }
+    for (const item of inStockItems) {
+      const prod = item.product || item;
+      const productId = item.productId || prod.id;
+      this.ds.addToCart(prod);
+      if (productId) {
+        await this.removeFromWishlist(productId);
       }
     }
-    this.toastService.success(`Moved ${items.length} item(s) to cart`);
+    this.toastService.success(`Moved ${inStockItems.length} item(s) to cart`);
     this.router.navigate(["/cart"]);
   }
 

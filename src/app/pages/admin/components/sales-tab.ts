@@ -360,7 +360,9 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                           <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
                           <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
                           <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
-                          <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
+                          @if (!isSameStatus(o.status, 'Delivered')) {
+                            <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
+                          }
                         </select>
                       </div>
                       </td>
@@ -483,7 +485,9 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                       <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
                       <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
                       <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
-                      <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
+                      @if (!isSameStatus(o.status, 'Delivered')) {
+                        <option value="Cancelled" [selected]="isSameStatus(o.status, 'Cancelled')">Cancelled</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -915,6 +919,11 @@ export class AdminSalesTab {
 
   handleStatusSelect(order: any, newStatus: string, selectEl: HTMLSelectElement) {
     if (!newStatus) return;
+    if (this.isSameStatus(order.status, 'Delivered') && this.isSameStatus(newStatus, 'Cancelled')) {
+      this.toastService.warning('Delivered orders cannot be cancelled.');
+      selectEl.value = order.status || 'Delivered';
+      return;
+    }
     if (newStatus.toLowerCase() === 'shipped') {
       // Intercept transition to Shipped -> Require Shipment Details Dialog first
       selectEl.value = order.status || 'Confirmed';

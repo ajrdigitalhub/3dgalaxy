@@ -660,7 +660,9 @@
                 @if (wishlist().length > 0) {
                 <div class="flex items-center gap-2 flex-wrap">
                   <button type="button" (click)="moveAllWishlistToCart()"
-                    class="h-9 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all border-none cursor-pointer">
+                    [disabled]="isMoveAllWishlistDisabled()"
+                    [title]="isMoveAllWishlistDisabled() ? 'Cannot move items: Wishlist contains out of stock item(s)' : 'Move All To Cart'"
+                    class="h-9 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-orange-500">
                     <mat-icon class="scale-75 text-[16px]">shopping_cart</mat-icon>
                     <span>Move All To Cart</span>
                   </button>

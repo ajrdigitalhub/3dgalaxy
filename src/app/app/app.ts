@@ -423,12 +423,40 @@ export class App {
     return links.split(',').filter((s: string) => s && s.includes('|'));
   });
 
+  isLoggedIn = computed(() => !!this.ds.userProfile() || !!this.ds.currentUser());
+
+  userInitials = computed(() => {
+    const profile = this.ds.userProfile();
+    const currentUser = this.ds.currentUser();
+    const name = (profile?.name || currentUser?.displayName || '').trim();
+
+    if (name) {
+      const parts = name.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    const email = (profile?.email || currentUser?.email || '').trim();
+    if (email) {
+      const prefix = email.split('@')[0];
+      const parts = prefix.split(/[._-]/).filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return prefix.substring(0, 2).toUpperCase();
+    }
+
+    return 'U';
+  });
+
   toggleTheme() {
     this.ds.toggleTheme();
   }
 
   toggleRoleDropdown() {
-    if (!this.ds.currentUser()) {
+    if (!this.isLoggedIn()) {
       this.router.navigate(['/login']);
       return;
     }

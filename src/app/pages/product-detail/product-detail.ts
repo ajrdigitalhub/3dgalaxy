@@ -125,6 +125,7 @@ export class ProductDetail {
     } else if (this.selectedVariant()) {
       itemContext = { variant: this.selectedVariant() };
     }
+    itemContext.quantity = this.quantity();
 
     return this.shippingService.getProductShippingInfo(p, itemContext);
   });

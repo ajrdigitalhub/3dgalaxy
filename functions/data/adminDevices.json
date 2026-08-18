@@ -1,5 +1,28 @@
 [
   {
+    "id": "473865e4-516c-4125-82d5-ef65ff9b66d3",
+    "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "adminName": "admin123 R",
+    "adminEmail": "admin123@gmail.com",
+    "adminRole": "Super Admin",
+    "deviceName": "Chrome Desktop",
+    "deviceType": "Desktop",
+    "platform": "Windows",
+    "browser": "Chrome",
+    "operatingSystem": "Windows",
+    "fcmToken": "fbJmO9XoOqwnyuVOfyQcYv:APA91bGfTyUnX9BiY1KQzJs_8ZgqadSwxt7-Y8QKXMYBBT7mtrCg7DoOBG3ZkkVIQeMzkp1LwQWUOwnVaom3UNdjNW865IXmzrg3RvrJ7Md7RUIL_p6XYWQ",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "isActive": true,
+    "isOnline": true,
+    "notificationEnabled": true,
+    "notificationPermission": "granted",
+    "notificationCount": 0,
+    "lastUsedAt": "2026-08-18T12:53:28.605Z",
+    "createdAt": "2026-08-18T12:53:28.605Z",
+    "updatedAt": "2026-08-18T12:53:28.605Z"
+  },
+  {
     "id": "5bb28b64-bc3f-4052-965f-0fc344883deb",
     "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
     "adminName": "admin123@gmail.com",

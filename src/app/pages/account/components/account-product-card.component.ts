@@ -234,7 +234,17 @@ export class AccountProductCardComponent {
     return 0;
   });
 
-  stock = computed(() => this.product().stock ?? 10);
+  stock = computed(() => {
+    const p = this.product();
+    if (p.stock !== undefined && p.stock !== null) {
+      return Number(p.stock);
+    }
+    const rawProd = (p as any).product;
+    if (rawProd?.stock !== undefined && rawProd?.stock !== null) {
+      return Number(rawProd.stock);
+    }
+    return 10;
+  });
 
   isOutOfStock = computed(() => this.stock() <= 0);
 

@@ -12,7 +12,7 @@ import { logger } from '../utils/logger';
 // Helper to validate UUID format
 const isValidUuid = (val: any): boolean => {
   if (!val || typeof val !== 'string') return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
 };
 
 // Helper to get payment settings
@@ -358,7 +358,6 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     paymentId: paymentId || null,
     transactionId: transactionId || null,
     gatewayResponse: typeof gatewayResponse === 'object' ? JSON.stringify(gatewayResponse) : (gatewayResponse || null),
-    subtotal: finalSubtotal,
     totalAmount: finalTotalAmount,
     taxAmount: finalTax,
     shippingAmount: finalShipping,
@@ -1342,7 +1341,8 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     totalAmount: frontendTotal
   } = req.body;
 
-  const userId = req.user?.id;
+  const rawUserId = req.user?.id || req.body?.userId;
+  const userId = isValidUuid(rawUserId) ? rawUserId : null;
   const resolvedName = contactDetails?.name || guestName || req.body.name || '';
   const resolvedEmail = contactDetails?.email || guestEmail || req.body.email || '';
   const resolvedPhone = contactDetails?.phone || guestPhone || req.body.phone || '';

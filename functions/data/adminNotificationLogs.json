@@ -1,5 +1,41 @@
 [
   {
+    "id": "a5d4c368-f5f4-465d-884e-c13b3139a454",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0020 for ₹1180.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "05cb0378-dbb8-4f90-be63-6c81dd29b27d",
+      "orderNumber": "3DX0020",
+      "totalAmount": "1180",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-16T15:21:37.768Z",
+    "isRead": false
+  },
+  {
+    "id": "d4b54fd2-0530-4234-83f5-4d5c33dc3981",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0019 for ₹1180.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "c9cbf136-ba9a-43c2-901a-04ecb80797e8",
+      "orderNumber": "3DX0019",
+      "totalAmount": "1180",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-16T13:35:53.011Z",
+    "isRead": false
+  },
+  {
     "id": "091bd2e4-e2c8-4f94-81ec-e95aedaef745",
     "title": "🛒 Order Confirmed",
     "body": "admin123 R placed Order #3DX0015 for ₹1001.00. Payment Pending (COD)",

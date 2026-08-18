@@ -349,9 +349,15 @@ export const getOrderById = async (req: any, res: Response) => {
   }
 };
 
+const isValidUuid = (val: any): boolean => {
+  if (!val || typeof val !== 'string') return false;
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+};
+
 export const createOrder = async (req: any, res: Response) => {
   const { customerType, guestName, guestEmail, guestPhone, guestSessionId, items, shippingAddress, billingAddress, paymentMethod } = req.body;
-  const userId = req.user?.id; // from auth middleware
+  const rawUserId = req.user?.id || req.body?.userId;
+  const userId = isValidUuid(rawUserId) ? rawUserId : null;
   const requestId = req.requestId;
 
   logger.info('Order creation process initiated', {
