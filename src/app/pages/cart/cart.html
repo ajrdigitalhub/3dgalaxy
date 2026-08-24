@@ -459,13 +459,19 @@
             }
 
             <div
-              class="flex justify-between text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              class="flex justify-between items-center text-sm font-medium text-neutral-700 dark:text-neutral-300"
             >
               <span>Delivery Charges</span>
-              @if (ds.cartShipping() === 0) {
-              <span class="text-emerald-600 dark:text-emerald-400">Free</span>
+              @if (ds.shippingLoading()) {
+                <app-shipping-charge-skeleton mode="inline" width="4rem" height="1.15rem"></app-shipping-charge-skeleton>
+              } @else if (ds.shippingError()) {
+                <span class="text-xs text-red-500 font-bold flex items-center gap-1">
+                  Calculation Failed
+                </span>
+              } @else if (ds.cartShipping() === 0 && ds.cartPricingSummary().isFreeShipping) {
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold">Free</span>
               } @else {
-              <span>{{ ds.cartShipping() | currency:'INR':'symbol':'1.0-0' }}</span>
+                <span class="font-bold">{{ ds.cartShipping() | currency:'INR':'symbol':'1.0-0' }}</span>
               }
             </div>
           </div>
@@ -481,10 +487,14 @@
               >
               <span class="text-[10px] text-neutral-400 font-normal">Incl. 18% GST & taxes</span>
             </div>
-            <span
-              class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight"
-              >{{ ds.cartGrandTotal() | currency:'INR':'symbol':'1.0-0' }}</span
-            >
+            @if (ds.shippingLoading()) {
+              <app-shipping-charge-skeleton mode="inline" width="6.5rem" height="1.75rem"></app-shipping-charge-skeleton>
+            } @else {
+              <span
+                class="text-2xl font-black text-neutral-900 dark:text-white tracking-tight"
+                >{{ ds.cartGrandTotal() | currency:'INR':'symbol':'1.0-0' }}</span
+              >
+            }
           </div>
 
           @if (mrpSavings() + ds.couponDiscountAmount() > 0) {

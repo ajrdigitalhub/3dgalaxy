@@ -1,7 +1,24 @@
-import { Injectable, inject, computed, Injector } from "@angular/core";
+import { Injectable, inject, computed, Injector, signal } from "@angular/core";
 import { DatastoreService } from "../../services/datastore";
 import { SettingsService } from "./settings.service";
 import { formatWeight, getItemWeightGrams } from "../../shared/utils/weight.utils";
+
+export type ShippingStatus = 'idle' | 'loading' | 'success' | 'free' | 'error';
+
+export interface CentralShippingState {
+  status: ShippingStatus;
+  shippingCharge: number | null;
+  isFreeShipping: boolean;
+  source: 'PRODUCT' | 'CATEGORY' | 'DEFAULT' | 'FREE_SHIPPING' | null;
+  loading: boolean;
+  calculated: boolean;
+  currency: string;
+  error?: string | null;
+  appliedRule?: AppliedShippingRule | null;
+  estimatedDays?: number;
+  formattedWeight?: string;
+  breakdown?: any[];
+}
 
 export interface WeightRule {
   fromGrams: number;
@@ -57,6 +74,57 @@ export function formatWeightRange(fromGrams: number, toGrams: number): string {
 export class ShippingService {
   private injector = inject(Injector);
   private settingsService = inject(SettingsService);
+
+  private calculationStateSignal = signal<CentralShippingState>({
+    status: 'idle',
+    shippingCharge: null,
+    isFreeShipping: false,
+    source: null,
+    loading: false,
+    calculated: false,
+    currency: 'INR',
+    error: null,
+    appliedRule: null,
+    estimatedDays: 3,
+    formattedWeight: '0 g',
+    breakdown: [],
+  });
+
+  public readonly calculationState = this.calculationStateSignal.asReadonly();
+
+  public setCalculationLoading() {
+    this.calculationStateSignal.set({
+      status: 'loading',
+      shippingCharge: null,
+      isFreeShipping: false,
+      source: null,
+      loading: true,
+      calculated: false,
+      currency: 'INR',
+      error: null,
+      appliedRule: null,
+      estimatedDays: 3,
+      formattedWeight: '0 g',
+      breakdown: [],
+    });
+  }
+
+  public setCalculationError(errorMessage: string) {
+    this.calculationStateSignal.set({
+      status: 'error',
+      shippingCharge: null,
+      isFreeShipping: false,
+      source: null,
+      loading: false,
+      calculated: false,
+      currency: 'INR',
+      error: errorMessage,
+      appliedRule: null,
+      estimatedDays: 3,
+      formattedWeight: '0 g',
+      breakdown: [],
+    });
+  }
 
   public globalSettings = computed(() => {
     return this.settingsService.shippingSettings() || {};
@@ -573,7 +641,7 @@ export class ShippingService {
       };
     }
 
-    return {
+    const result: ShippingCalculationResult = {
       shippingCharge: totalShippingCharge,
       source: mainSource,
       totalWeightGrams: totalCartWeightGrams,
@@ -584,6 +652,23 @@ export class ShippingService {
       appliedRule: primaryRule,
       breakdown,
     };
+
+    this.calculationStateSignal.set({
+      status: totalShippingCharge === 0 ? 'free' : 'success',
+      shippingCharge: totalShippingCharge,
+      isFreeShipping: totalShippingCharge === 0,
+      source: mainSource,
+      loading: false,
+      calculated: true,
+      currency: 'INR',
+      error: null,
+      appliedRule: primaryRule,
+      estimatedDays: maxEstimatedDays,
+      formattedWeight: formatWeight(totalCartWeightGrams),
+      breakdown,
+    });
+
+    return result;
   }
 
   /**

@@ -1457,11 +1457,9 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       });
     }
 
-    // Server-side calculation
-    const shippingResult = await ShippingService.calculateShipping(items);
-    const shippingAmount = (typeof req.body.shippingAmount === 'number' && !isNaN(req.body.shippingAmount) && req.body.shippingAmount >= 0)
-      ? req.body.shippingAmount
-      : shippingResult.shippingCharge;
+    // Server-side authoritative calculation
+    const shippingResult = await ShippingService.calculateShipping(parsedItems.length > 0 ? parsedItems : items);
+    const shippingAmount = shippingResult.shippingCharge;
     const taxAmount = 0;
     let discountAmount = 0;
 

@@ -345,37 +345,42 @@
       }
 
       <!-- DYNAMIC SHIPPING INFORMATION CARD -->
-      @if (productShippingInfo(); as shipInfo) {
-      <div
-        class="p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between gap-4 my-4">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-            <mat-icon class="text-xl">local_shipping</mat-icon>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white">Shipping &
-                Delivery</span>
-              <span
-                class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 uppercase">
-                Source: {{ shipInfo.source }}
-              </span>
+      @if (shippingService.calculationState().loading || isLoadingProduct()) {
+        <app-shipping-charge-skeleton mode="card"></app-shipping-charge-skeleton>
+      } @else {
+        @if (productShippingInfo(); as shipInfo) {
+        <div
+          class="p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 flex items-center justify-between gap-4 my-4">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <mat-icon class="text-xl">local_shipping</mat-icon>
             </div>
-            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 font-medium">
-              🚚 Estimated Delivery: <strong class="text-neutral-900 dark:text-white font-bold">{{
-                shipInfo.estimatedDays | deliveryEstimate }}</strong>
-            </p>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white">Shipping &
+                  Delivery</span>
+                <span
+                  class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 uppercase">
+                  Source: {{ shipInfo.source }}
+                </span>
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 font-medium">
+                🚚 Estimated Delivery: <strong class="text-neutral-900 dark:text-white font-bold">{{
+                  shipInfo.estimatedDays | deliveryEstimate }}</strong>
+              </p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-xs font-black uppercase text-neutral-400 block">Shipping Charge</span>
+            @if (shipInfo.isFree || shipInfo.charge === 0) {
+              <span class="text-sm font-black text-emerald-600 dark:text-emerald-400">FREE DELIVERY</span>
+            } @else {
+              <span class="text-sm font-black text-neutral-900 dark:text-white">₹{{ shipInfo.charge }}</span>
+            }
           </div>
         </div>
-        <div class="text-right shrink-0">
-          <span class="text-xs font-black uppercase text-neutral-400 block">Shipping Charge</span>
-          @if (shipInfo.isFree || shipInfo.charge === 0) {
-          } @else {
-          <span class="text-sm font-black text-neutral-900 dark:text-white">₹{{ shipInfo.charge }}</span>
-          }
-        </div>
-      </div>
+        }
       }
 
       <!-- PRODUCT WEIGHT BADGE -->

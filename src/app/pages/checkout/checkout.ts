@@ -43,11 +43,12 @@ export interface CustomerAddress {
 }
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
 
 @Component({
   selector: "app-checkout",
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, DeliveryEstimatePipe],
+  imports: [CommonModule, MatIconModule, FormsModule, AppButton, RouterModule, DeliveryEstimatePipe, ShippingChargeSkeletonComponent],
   templateUrl: "./checkout.html",
 })
 export class CheckoutComponent implements OnInit {
@@ -377,11 +378,13 @@ export class CheckoutComponent implements OnInit {
     this.accState.set(addr.state || '');
     this.accPin.set(addr.pincode || addr.postalCode || '');
     this.accCountry.set(addr.country || 'India');
+    this.recalculateShippingForAddress();
   }
 
   switchToNewAddress() {
     this.addressMode.set('new');
     this.selectedAddressId.set(null);
+    this.recalculateShippingForAddress();
   }
 
   onPincodeInput(pin: string) {
@@ -405,7 +408,15 @@ export class CheckoutComponent implements OnInit {
         this.accCity.set('Hyderabad');
         this.accState.set('Telangana');
       }
+      this.recalculateShippingForAddress();
     }
+  }
+
+  recalculateShippingForAddress() {
+    this.shippingService.setCalculationLoading();
+    setTimeout(() => {
+      this.shippingService.calculateCartShipping(this.ds.activeCheckoutItems() || []);
+    }, 150);
   }
 
   getAddressTypeIcon(type?: string) {

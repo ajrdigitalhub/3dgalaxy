@@ -66,6 +66,10 @@ export interface CartPricingSummary {
   appliedShippingRule: any;
   estimatedDeliveryDays: number | string;
   formattedDeliveryRange: string;
+  shippingStatus: 'idle' | 'loading' | 'success' | 'free' | 'error';
+  shippingLoading: boolean;
+  shippingCalculated: boolean;
+  shippingError?: string | null;
 
   freeShippingThreshold: number;
   freeShippingProgressPercent: number;
@@ -2478,11 +2482,12 @@ export class DatastoreService {
     const mrpSavings = Math.max(0, mrpSubtotal - subtotal);
     const displayWeight = formatWeight(totalWeightGrams);
 
+    const shippingState = this.shippingService.calculationState();
     const shippingResult = rawItems && rawItems.length > 0
       ? this.shippingService.calculateCartShipping(rawItems)
       : {
           shippingCharge: 0,
-          source: 'FREE_SHIPPING',
+          source: 'FREE_SHIPPING' as const,
           freeShipping: true,
           shippingLabel: 'Free Shipping',
           appliedRule: null,
@@ -2490,7 +2495,13 @@ export class DatastoreService {
         };
 
     const shippingCharge = shippingResult.shippingCharge;
-    const isFreeShipping = shippingResult.freeShipping || shippingCharge === 0;
+    const isFreeShipping = shippingResult.freeShipping;
+    const shippingStatus = rawItems && rawItems.length > 0
+      ? (shippingState.status !== 'idle' ? shippingState.status : (isFreeShipping ? 'free' : 'success'))
+      : 'free';
+    const shippingLoading = shippingState.loading;
+    const shippingCalculated = rawItems && rawItems.length > 0 ? (shippingState.calculated || true) : true;
+    const shippingError = shippingState.error || null;
 
     const freeShippingRemainingAmount = Math.max(0, freeShippingThreshold - subtotal);
     const freeShippingProgressPercent = freeShippingThreshold > 0
@@ -2550,6 +2561,10 @@ export class DatastoreService {
       appliedShippingRule: shippingResult.appliedRule,
       estimatedDeliveryDays: shippingResult.estimatedDays,
       formattedDeliveryRange: this.deliveryEstimateService.formatDeliveryRange(shippingResult.estimatedDays),
+      shippingStatus,
+      shippingLoading,
+      shippingCalculated,
+      shippingError,
       freeShippingThreshold,
       freeShippingProgressPercent,
       freeShippingRemainingAmount,
@@ -2573,6 +2588,10 @@ export class DatastoreService {
   cartShipping = computed(() => this.cartPricingSummary().shippingCharge);
   cartTax = computed(() => this.cartPricingSummary().taxAmount);
   cartGrandTotal = computed(() => this.cartPricingSummary().grandTotal);
+  shippingStatus = computed(() => this.cartPricingSummary().shippingStatus);
+  shippingLoading = computed(() => this.cartPricingSummary().shippingLoading);
+  shippingCalculated = computed(() => this.cartPricingSummary().shippingCalculated);
+  shippingError = computed(() => this.cartPricingSummary().shippingError);
 
   recalcDiscount() {
     const code = this.activeCouponCode();

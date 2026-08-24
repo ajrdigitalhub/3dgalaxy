@@ -35,6 +35,7 @@ import { DeliveryEstimateService } from "../../core/services/delivery-estimate.s
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { formatWeight, resolveEffectiveWeight, convertToGrams } from "../../shared/utils/weight.utils";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
+import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
 
 @Component({
   selector: "app-product-detail",
@@ -51,6 +52,7 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
     VariantWeightSelectorComponent,
     BundleSelectorComponent,
     DeliveryEstimatePipe,
+    ShippingChargeSkeletonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./product-detail.html",
