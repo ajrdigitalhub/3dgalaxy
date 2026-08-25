@@ -444,13 +444,13 @@ export const getSettingsService = async () => {
       console.error("Error loading homepage sections into config:", sectionError);
     }
 
-    // CENTRAL CACHE: 5 seconds (to keep it real-time across instances while avoiding DB spam)
-    sysCache.set("app_settings", settingsObj, 5);
+    // CENTRAL CACHE: 300 seconds (5 mins cache to prevent DB load while updating instantaneously on save)
+    sysCache.set("app_settings", settingsObj, 300);
     return settingsObj;
   } catch (error: any) {
     if (isDatabaseUnavailableError(error)) {
       const fallbackSettings = { ...defaultSettings };
-      sysCache.set("app_settings", fallbackSettings, 5);
+      sysCache.set("app_settings", fallbackSettings, 300);
       return fallbackSettings;
     }
     throw error;

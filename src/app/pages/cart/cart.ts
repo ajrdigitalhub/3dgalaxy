@@ -84,6 +84,44 @@ export class CartCheckout implements OnInit {
     this.couponInputText.set('');
   }
 
+  recommendedProducts = computed(() => {
+    const list = this.ds.products() || [];
+    const active = list.filter((p: any) => p && p.name && p.isActive !== false && p.status !== 'draft');
+    if (active.length === 0) return [];
+    
+    // Sort featured / best sellers first
+    const featured = active.filter((p: any) => p.featured || p.isFeatured);
+    const standard = active.filter((p: any) => !p.featured && !p.isFeatured);
+    const combined = [...featured, ...standard];
+    return combined.slice(0, 12);
+  });
+
+  getProductPrice(p: any): number {
+    return Number(p.salePrice || p.sale_price || p.basePrice || p.price || p.mrp || 0);
+  }
+
+  getProductMrp(p: any): number {
+    return Number(p.mrp || p.basePrice || p.salePrice || 0);
+  }
+
+  getProductDiscountPercent(p: any): number {
+    const price = this.getProductPrice(p);
+    const mrp = this.getProductMrp(p);
+    if (mrp > price && mrp > 0) {
+      return Math.round(((mrp - price) / mrp) * 100);
+    }
+    return 0;
+  }
+
+  quickAddToCart(product: any, event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    this.ds.addToCart(product, 1);
+    this.toastService.success(`Added "${product.name}" to cart!`);
+  }
+
   proceedToCheckout() {
     this.ds.clearBuyNowItem();
     this.router.navigate(['/checkout']);

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../config/database';
+import prisma, { withDbRetry } from '../config/database';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import fs from 'fs';
 import { FirebaseStorageService } from '../modules/storage/firebase-storage.service';
@@ -549,7 +549,7 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
       revenueAgg,
       abandonedCarts,
       pendingOrders
-    ] = await Promise.all([
+    ] = await withDbRetry(() => Promise.all([
       prisma.product.count(),
       prisma.order.count(),
       prisma.customer.count(),
@@ -572,7 +572,7 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
           status: { in: ['pending', 'PENDING'] }
         }
       })
-    ]);
+    ]));
 
     const totalRevenue = revenueAgg._sum.totalAmount || 0;
     const payload = {

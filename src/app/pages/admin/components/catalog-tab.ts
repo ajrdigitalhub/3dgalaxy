@@ -3358,7 +3358,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="variantEditFormMap()[v.id].dealerPrice ?? 0"
+                                    [value]="variantEditFormMap()[v.id].dealerPrice"
                                     (input)="updateVariantModalFormField(v.id, 'dealerPrice', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />

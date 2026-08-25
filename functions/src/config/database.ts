@@ -11,19 +11,53 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: ENV.PG_POOL_MAX, // Default 10 connection limit for active API requests
-  idleTimeoutMillis: 10000, // Release idle connections quickly (10s) — cloud poolers drop them anyway
-  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS, // Allow up to 30s to establish socket / get available client
+  max: ENV.PG_POOL_MAX || 15,
+  idleTimeoutMillis: 10000, // 10s idle timeout to cleanly recycle sockets before server drops them
+  connectionTimeoutMillis: 5000, // 5s timeout to prevent hanging on dropped connections
+  maxUses: 3000, // Recycle pooled sockets after 3000 queries to prevent stale TCP socket errors
   keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
-  keepAliveInitialDelayMillis: 10000,
-  allowExitOnIdle: true, // Let the pool shrink to 0 when idle — prevents stale sockets
+  keepAliveInitialDelayMillis: 2000,
+  allowExitOnIdle: false, // Keep pool active for server process
 });
 
 // Automatic reconnect handling and error logging
 pool.on('error', (err: Error) => {
-  console.error('⚠️ Unexpected database error on idle client:', err.message);
-  // Pool handles reconnection automatically for new queries — no process.exit needed
+  console.warn('⚠️ Idle database client connection closed/reset by server:', err.message);
 });
+
+/**
+ * Executes a database operation with automatic retry on transient connection drops or timeouts.
+ */
+export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 150): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const msg = (err?.message || '').toLowerCase();
+      const code = err?.code || '';
+      const isConnError =
+        msg.includes('connection terminated') ||
+        msg.includes('connection timeout') ||
+        msg.includes('econnreset') ||
+        msg.includes('epipe') ||
+        msg.includes('closed') ||
+        msg.includes('unexpectedly') ||
+        code === 'P1001' ||
+        code === 'P1017' ||
+        code === 'P2024';
+
+      if (isConnError && attempt <= retries) {
+        console.warn(`⚠️ DB connection drop/timeout detected (attempt ${attempt}/${retries + 1}). Retrying query...`);
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
 
 /**
  * Lightweight connection health check. Returns true if the pool can

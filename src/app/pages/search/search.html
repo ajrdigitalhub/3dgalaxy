@@ -173,9 +173,9 @@
               <!-- Delivery estimate -->
               <div
                 class="text-[10px] text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-1 mt-1 mb-2">
-                <span>Delivery by</span>
+                <span>Delivery by:</span>
                 <strong class="text-neutral-700 dark:text-neutral-300 font-bold">
-                  {{ p.estimatedDeliveryDays || 3 | deliveryEstimate:'mobile' }}
+                  {{ (p.shipping?.estimatedDays || p.estimatedDeliveryDays || 3) | deliveryEstimate:'desktop' }}
                 </strong>
               </div>
 

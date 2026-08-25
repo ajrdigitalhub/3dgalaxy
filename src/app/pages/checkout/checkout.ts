@@ -214,6 +214,7 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit() {
     this.restoreDraftState();
+    this.ds.reloadCategories(false);
     this.ds.reloadProducts(false);
     if (this.isLoggedIn()) {
       this.fetchSavedAddresses();
@@ -415,7 +416,7 @@ export class CheckoutComponent implements OnInit {
   recalculateShippingForAddress() {
     this.shippingService.setCalculationLoading();
     setTimeout(() => {
-      this.shippingService.calculateCartShipping(this.ds.activeCheckoutItems() || []);
+      this.shippingService.calculateCartShipping(this.ds.activeCheckoutItems() || [], true);
     }, 150);
   }
 

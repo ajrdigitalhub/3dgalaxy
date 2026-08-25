@@ -551,11 +551,19 @@ export class SettingsService {
       gradSettings.gradient ||
       `linear-gradient(${angle}, ${primaryColor}, ${gradColor})`;
 
-    // Theme active mode resolution: prioritize user preference in localStorage first
+    // Theme active mode resolution: check localStorage user preference first
     let isDarkMode = false;
-    if (typeof localStorage !== "undefined" && (localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme"))) {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
       const savedTheme = localStorage.getItem("3d_galaxy_theme") || localStorage.getItem("theme");
-      isDarkMode = savedTheme === "dark";
+      if (savedTheme === "dark") {
+        isDarkMode = true;
+      } else if (savedTheme === "light") {
+        isDarkMode = false;
+      } else if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
+        isDarkMode = Boolean(themeData.darkMode);
+      } else if (d && d.darkMode !== undefined && d.darkMode !== null) {
+        isDarkMode = Boolean(d.darkMode);
+      }
     } else if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
       isDarkMode = Boolean(themeData.darkMode);
     } else if (d && d.darkMode !== undefined && d.darkMode !== null) {

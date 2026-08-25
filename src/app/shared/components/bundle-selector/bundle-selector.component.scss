@@ -282,3 +282,139 @@
     }
   }
 }
+
+/* Dark Theme Overrides for Bundle Selection Area */
+:host-context(.dark),
+:host-context([data-theme="dark"]),
+:host-context(:where(.dark, [data-theme="dark"])) {
+  .bundle-header {
+    .header-divider {
+      background: #27272a;
+    }
+    .header-title {
+      color: #cbd5e1;
+    }
+  }
+
+  .bundle-card {
+    background: #121019;
+    border-color: #27272a;
+
+    &:hover {
+      border-color: #a855f7;
+      background: #1c142b;
+    }
+
+    &.active {
+      border-color: #9333ea;
+      background: #1e1233;
+      box-shadow: 0 4px 20px rgba(147, 51, 234, 0.25);
+
+      .tier-name,
+      .current-price {
+        color: #f3e8ff;
+      }
+    }
+  }
+
+  .tier-badge {
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.4);
+  }
+
+  .custom-radio {
+    border-color: #a855f7;
+
+    &.checked {
+      border-color: #c084fc;
+
+      .radio-inner {
+        background: #c084fc;
+      }
+    }
+  }
+
+  .card-info-cell {
+    .tier-name {
+      color: #f1f5f9;
+    }
+  }
+
+  .card-price-cell {
+    .current-price {
+      color: #f1f5f9;
+    }
+
+    .original-price {
+      color: #94a3b8;
+    }
+  }
+
+  .inner-slots-box {
+    border-top: 1px solid rgba(168, 85, 247, 0.2);
+  }
+
+  .slot-row {
+    .slot-number {
+      color: #a1a1aa;
+    }
+
+    .slot-thumb-wrap {
+      border-color: #3f3f46;
+      background: #09090b;
+
+      .slot-color-dot {
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+
+    .slot-select {
+      border-color: #581c87;
+      background: #09090b;
+      color: #f3e8ff;
+
+      &:focus {
+        border-color: #c084fc;
+        box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25);
+      }
+
+      option {
+        background-color: #18181b;
+        color: #f3e8ff;
+      }
+    }
+  }
+
+  .subtotal-action-bar {
+    .subtotal-label {
+      color: #cbd5e1;
+
+      .subtotal-amount {
+        color: #f8fafc;
+      }
+    }
+
+    .add-to-cart-btn {
+      background: #f4f4f5;
+      color: #18181b;
+
+      &:hover {
+        background: #ffffff;
+      }
+    }
+
+    .icon-circle-btn {
+      background: #27272a;
+      border-color: #3f3f46;
+      color: #e4e4e7;
+
+      &:hover {
+        border-color: #c084fc;
+        background: #3f3f46;
+        color: #c084fc;
+      }
+    }
+  }
+}
+

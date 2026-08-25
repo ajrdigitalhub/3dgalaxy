@@ -295,17 +295,80 @@ export class AdminVariantGroupConfigComponent {
     this.emitChange();
   }
 
-  addTier(group: VariantGroupConfig) {
-    if (!group.bundleTiers) group.bundleTiers = [];
-    const count = (group.bundleTiers.length + 1) * 2;
-    group.bundleTiers.push({
+  addTier(grp: VariantGroupConfig) {
+    if (!grp.bundleTiers) grp.bundleTiers = [];
+    const count = grp.bundleTiers.length === 0 ? 1 : (grp.bundleTiers.length === 1 ? 3 : 5);
+    grp.bundleTiers.push({
       id: `tier-${Date.now()}`,
       name: `Buy ${count}`,
       count,
       priceType: 'per_variant',
-      priceValue: Math.round(this.basePrice * 0.9)
+      priceValue: this.basePrice,
+      savingsText: count > 1 ? `Save ${count * 5}%` : '',
+      badgeText: count === 3 ? 'Popular' : (count === 5 ? 'Best Value' : ''),
+      weightValue: count,
+      weightUnit: 'kg',
+      isPopular: count === 3
     });
-    this.updateCurrentGroup(group);
+    this.updateCurrentGroup(grp);
+  }
+
+  addQuickPreset(grp: VariantGroupConfig, type: 'buy1' | 'buy3' | 'buy5' | 'weight_pack') {
+    if (!grp.bundleTiers) grp.bundleTiers = [];
+    if (type === 'buy1') {
+      grp.bundleTiers.push({
+        id: `tier-${Date.now()}`,
+        name: 'Buy 1',
+        count: 1,
+        priceType: 'per_variant',
+        priceValue: this.basePrice,
+        savingsText: '',
+        badgeText: '',
+        weightValue: 1,
+        weightUnit: 'kg',
+        isPopular: false
+      });
+    } else if (type === 'buy3') {
+      grp.bundleTiers.push({
+        id: `tier-${Date.now()}`,
+        name: 'Buy 3',
+        count: 3,
+        priceType: 'per_variant',
+        priceValue: Math.round(this.basePrice * 0.85),
+        savingsText: 'Save 15%',
+        badgeText: 'Most Popular',
+        weightValue: 3,
+        weightUnit: 'kg',
+        isPopular: true
+      });
+    } else if (type === 'buy5') {
+      grp.bundleTiers.push({
+        id: `tier-${Date.now()}`,
+        name: 'Buy 5',
+        count: 5,
+        priceType: 'fixed',
+        priceValue: Math.round(this.basePrice * 4),
+        savingsText: 'Save 20%',
+        badgeText: 'Best Value',
+        weightValue: 5,
+        weightUnit: 'kg',
+        isPopular: false
+      });
+    } else if (type === 'weight_pack') {
+      grp.bundleTiers.push({
+        id: `tier-${Date.now()}`,
+        name: '10 kg Mega Pack',
+        count: 10,
+        priceType: 'fixed',
+        priceValue: Math.round(this.basePrice * 7.5),
+        savingsText: 'Save 25%',
+        badgeText: 'Bulk Special',
+        weightValue: 10,
+        weightUnit: 'kg',
+        isPopular: false
+      });
+    }
+    this.updateCurrentGroup(grp);
   }
 
   removeTier(group: VariantGroupConfig, tierIndex: number) {

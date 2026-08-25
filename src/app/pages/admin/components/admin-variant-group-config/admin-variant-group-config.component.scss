@@ -920,9 +920,15 @@
       background: #18181b;
       border-color: #27272a;
 
-      .t-input, .t-select {
-        background: #09090b;
-        border-color: #27272a;
+      .t-input, .t-select, input, select {
+        background: #09090b !important;
+        border-color: #27272a !important;
+        color: #f4f4f5 !important;
+      }
+
+      .tier-weight-box {
+        background: #09090b !important;
+        border-color: #27272a !important;
         color: #f4f4f5;
       }
 

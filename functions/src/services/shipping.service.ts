@@ -198,19 +198,39 @@ export class ShippingService {
     let reliesOnDefaultShipping = false;
     let defaultShippingWeightGrams = 0;
 
+    const getCategoryRulesBackend = (c: any): WeightRule[] => {
+      let rawRules = c?.shippingRules || c?.shipping_rules || c?.weightRules || c?.weight_rules;
+      if (typeof rawRules === 'string' && rawRules.trim()) {
+        try { rawRules = JSON.parse(rawRules); } catch (e) {}
+      }
+      if (Array.isArray(rawRules) && rawRules.length > 0) {
+        return rawRules.map((r: any) => ({
+          fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : (r.from_grams !== undefined ? r.from_grams : r.from)) || 0,
+          toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : r.to !== undefined && r.to !== null ? Number(r.to) : 999999,
+          charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0,
+        }));
+      }
+      return [];
+    };
+
+    const categoryGroups = new Map<string, {
+      category: any;
+      items: typeof resolvedItems;
+      totalWeightGrams: number;
+      totalSubtotal: number;
+      maxDays: number;
+    }>();
+
     for (const entry of resolvedItems) {
       const { product, unitWeightGrams, totalWeightGrams, quantity } = entry;
-      let itemCharge = 0;
-      let itemSource: 'PRODUCT' | 'CATEGORY' | 'DEFAULT' | 'FREE_SHIPPING' = 'FREE_SHIPPING';
-      let ruleName = '';
       let itemDays = product.estimatedDeliveryDays ? Number(product.estimatedDeliveryDays) : 3;
+      if (itemDays > maxEstimatedDays) {
+        maxEstimatedDays = itemDays;
+      }
 
       const prodShipping = product.shipping || {};
       const prodShippingMode = prodShipping.mode || (product.baseShippingCharge > 0 ? 'product_specific' : 'default');
 
-      // =========================================================================
-      // PRIORITY 1: PRODUCT-SPECIFIC SHIPPING
-      // =========================================================================
       const hasProductCharge =
         enableProductShipping &&
         prodShippingMode === 'product_specific' &&
@@ -224,9 +244,7 @@ export class ShippingService {
         prodShippingMode === 'product_specific';
 
       if (isProductFree) {
-        itemCharge = 0;
-        itemSource = 'FREE_SHIPPING';
-        ruleName = 'Product: Free Shipping';
+        sourcesUsed.add('FREE_SHIPPING');
         if (!primaryRule) {
           primaryRule = {
             type: 'PRODUCT_SPECIFIC',
@@ -234,10 +252,21 @@ export class ShippingService {
             details: 'Product explicitly marked as eligible for free shipping',
           };
         }
+        breakdown.push({
+          productId: product.id,
+          productName: product.name,
+          quantity,
+          unitWeightGrams,
+          totalWeightGrams,
+          charge: 0,
+          source: 'FREE_SHIPPING',
+          ruleName: 'Product: Free Shipping',
+          estimatedDays: itemDays,
+        });
       } else if (hasProductCharge) {
-        itemCharge = Number(product.baseShippingCharge);
-        itemSource = 'PRODUCT';
-        ruleName = `Product Specific (₹${itemCharge})`;
+        const itemCharge = Number(product.baseShippingCharge);
+        totalShippingCharge += itemCharge;
+        sourcesUsed.add('PRODUCT');
         if (!primaryRule) {
           primaryRule = {
             type: 'PRODUCT_SPECIFIC',
@@ -245,28 +274,20 @@ export class ShippingService {
             details: 'Product-specific shipping charge applied',
           };
         }
+        breakdown.push({
+          productId: product.id,
+          productName: product.name,
+          quantity,
+          unitWeightGrams,
+          totalWeightGrams,
+          charge: itemCharge,
+          source: 'PRODUCT',
+          ruleName: `Product Specific (₹${itemCharge})`,
+          estimatedDays: itemDays,
+        });
       } else {
-        // =========================================================================
-        // PRIORITY 2: CATEGORY-BASED SHIPPING
-        // =========================================================================
         let selectedCategory: any = null;
 
-        const getCategoryRulesBackend = (c: any): WeightRule[] => {
-          let rawRules = c?.shippingRules || c?.shipping_rules || c?.weightRules || c?.weight_rules;
-          if (typeof rawRules === 'string' && rawRules.trim()) {
-            try { rawRules = JSON.parse(rawRules); } catch (e) {}
-          }
-          if (Array.isArray(rawRules) && rawRules.length > 0) {
-            return rawRules.map((r: any) => ({
-              fromGrams: Number(r.fromGrams !== undefined ? r.fromGrams : (r.from_grams !== undefined ? r.from_grams : r.from)) || 0,
-              toGrams: r.toGrams !== undefined && r.toGrams !== null ? Number(r.toGrams) : r.to_grams !== undefined && r.to_grams !== null ? Number(r.to_grams) : r.to !== undefined && r.to !== null ? Number(r.to) : 999999,
-              charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0,
-            }));
-          }
-          return [];
-        };
-
-        // 1. Evaluate primary category first
         if (enableCategoryShipping && product.category) {
           const cat = product.category;
           const catRules = getCategoryRulesBackend(cat);
@@ -290,7 +311,6 @@ export class ShippingService {
           }
         }
 
-        // 2. If no rule in primary, check secondary categories deterministically
         if (!selectedCategory && enableCategoryShipping && Array.isArray(product.productCategories)) {
           for (const pc of product.productCategories) {
             const cat = pc.category;
@@ -319,158 +339,184 @@ export class ShippingService {
         }
 
         if (selectedCategory) {
-          const cat = selectedCategory;
-          const catRules = getCategoryRulesBackend(cat);
-          const catMode = cat.shippingMode || cat.shipping_mode || (catRules.length > 0 ? 'weight_based' : 'default');
-          const catFreeEligible = cat.freeShippingEligible === true || cat.free_shipping_eligible === true;
-          const catFreeThreshold =
-            cat.freeShippingThreshold !== undefined && cat.freeShippingThreshold !== null
-              ? Number(cat.freeShippingThreshold)
-              : cat.free_shipping_threshold !== undefined && cat.free_shipping_threshold !== null
-              ? Number(cat.free_shipping_threshold)
-              : null;
-          const catCharge = cat.shippingCharge !== undefined && cat.shippingCharge !== null
-            ? Number(cat.shippingCharge)
-            : cat.shipping_charge !== undefined && cat.shipping_charge !== null
-            ? Number(cat.shipping_charge)
-            : null;
-
-          if (cat.estimatedDeliveryDays || cat.estimated_delivery_days) {
-            itemDays = Number(cat.estimatedDeliveryDays || cat.estimated_delivery_days);
+          const groupKey = selectedCategory.id || selectedCategory.slug || selectedCategory.name;
+          if (!categoryGroups.has(groupKey)) {
+            categoryGroups.set(groupKey, {
+              category: selectedCategory,
+              items: [],
+              totalWeightGrams: 0,
+              totalSubtotal: 0,
+              maxDays: 3,
+            });
           }
-
-          if (catMode === 'free' || catFreeEligible) {
-            if (catFreeThreshold && totalCartSubtotal < catFreeThreshold) {
-              // Threshold not met, fall back to flat or default
-              itemCharge = catCharge !== null ? catCharge : defaultShippingCharge;
-              itemSource = 'CATEGORY';
-              ruleName = `Category: ${cat.name} (Flat ₹${itemCharge})`;
-            } else {
-              itemCharge = 0;
-              itemSource = 'FREE_SHIPPING';
-              ruleName = `Category: ${cat.name} (Free Shipping)`;
-            }
-            if (!primaryRule) {
-              primaryRule = {
-                type: 'FREE_SHIPPING',
-                name: `Category: ${cat.name} (Free Shipping)`,
-                categoryId: cat.id,
-                categoryName: cat.name,
-              };
-            }
-          } else if (catMode === 'weight_based' || catRules.length > 0) {
-            // Find matching weight range
-            // Sort ascending by fromGrams
-            const sortedRules = [...catRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
-            let matchedTier: WeightRule | null = null;
-
-            for (const tier of sortedRules) {
-              const minW = Number(tier.fromGrams) || 0;
-              const maxW = tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
-                ? Number(tier.toGrams)
-                : Infinity;
-
-              if (totalWeightGrams >= minW && totalWeightGrams <= maxW) {
-                matchedTier = tier;
-                break;
-              }
-            }
-
-            // If weight exceeds highest tier, pick the highest tier
-            if (!matchedTier && sortedRules.length > 0) {
-              matchedTier = sortedRules[sortedRules.length - 1];
-            }
-
-            if (matchedTier) {
-              itemCharge = Number(matchedTier.charge);
-              itemSource = 'CATEGORY';
-              const rangeStr = formatWeightRange(matchedTier.fromGrams, matchedTier.toGrams);
-              ruleName = `Category: ${cat.name} (${rangeStr} → ₹${itemCharge})`;
-              if (!primaryRule) {
-                primaryRule = {
-                  type: 'CATEGORY_WEIGHT',
-                  name: `Category: ${cat.name}`,
-                  details: `Weight Range: ${rangeStr}`,
-                  categoryId: cat.id,
-                  categoryName: cat.name,
-                  weightGrams: totalWeightGrams,
-                  minWeight: matchedTier.fromGrams,
-                  maxWeight: matchedTier.toGrams,
-                };
-              }
-            } else {
-              // Fallback to flat charge if configured
-              itemCharge = catCharge !== null ? catCharge : defaultShippingCharge;
-              itemSource = 'CATEGORY';
-              ruleName = `Category: ${cat.name} (₹${itemCharge})`;
-              if (!primaryRule) {
-                primaryRule = {
-                  type: 'CATEGORY_FLAT',
-                  name: `Category: ${cat.name}`,
-                  details: `Flat Charge: ₹${itemCharge}`,
-                  categoryId: cat.id,
-                  categoryName: cat.name,
-                };
-              }
-            }
-          } else if (catCharge !== null && catCharge > 0) {
-            itemCharge = catCharge;
-            itemSource = 'CATEGORY';
-            ruleName = `Category: ${cat.name} (Flat ₹${itemCharge})`;
-            if (!primaryRule) {
-              primaryRule = {
-                type: 'CATEGORY_FLAT',
-                name: `Category: ${cat.name}`,
-                details: `Flat Charge: ₹${itemCharge}`,
-                categoryId: cat.id,
-                categoryName: cat.name,
-              };
-          }
+          const group = categoryGroups.get(groupKey)!;
+          group.items.push(entry);
+          group.totalWeightGrams += totalWeightGrams;
+          group.totalSubtotal += entry.lineSubtotal;
+          if (itemDays > group.maxDays) group.maxDays = itemDays;
         } else {
-            // Category has no shipping rules, fall through to Priority 3
-            reliesOnDefaultShipping = true;
-            defaultShippingWeightGrams += totalWeightGrams;
-            itemCharge = 0; // Calculated in aggregate below
-            itemSource = 'DEFAULT';
-            ruleName = 'Default Shipping';
-          }
-        } else {
-          // =========================================================================
-          // PRIORITY 3: DEFAULT / COMMON SHIPPING
-          // =========================================================================
           reliesOnDefaultShipping = true;
           defaultShippingWeightGrams += totalWeightGrams;
-          itemCharge = 0; // Calculated in aggregate below
-          itemSource = 'DEFAULT';
-          ruleName = 'Default Shipping';
+          breakdown.push({
+            productId: product.id,
+            productName: product.name,
+            quantity,
+            unitWeightGrams,
+            totalWeightGrams,
+            charge: 0,
+            source: 'DEFAULT',
+            ruleName: 'Default Shipping',
+            estimatedDays: itemDays,
+          });
         }
       }
+    }
 
-      // Check global free shipping waiver
-      if (isGlobalThresholdMet && product.freeShippingEligible !== false && itemCharge > 0) {
-        itemCharge = 0;
-        itemSource = 'FREE_SHIPPING';
-        ruleName = `Free Shipping (Order > ₹${freeShippingThreshold})`;
+    // Process Category Groups (evaluate category rule ONCE per category based on aggregate category weight)
+    for (const [, group] of categoryGroups) {
+      const cat = group.category;
+      const catRules = getCategoryRulesBackend(cat);
+      const catMode = cat.shippingMode || cat.shipping_mode || (catRules.length > 0 ? 'weight_based' : 'default');
+      const catFreeEligible = cat.freeShippingEligible === true || cat.free_shipping_eligible === true;
+      const catFreeThreshold =
+        cat.freeShippingThreshold !== undefined && cat.freeShippingThreshold !== null
+          ? Number(cat.freeShippingThreshold)
+          : cat.free_shipping_threshold !== undefined && cat.free_shipping_threshold !== null
+          ? Number(cat.free_shipping_threshold)
+          : null;
+      const catCharge = cat.shippingCharge !== undefined && cat.shippingCharge !== null
+        ? Number(cat.shippingCharge)
+        : cat.shipping_charge !== undefined && cat.shipping_charge !== null
+        ? Number(cat.shipping_charge)
+        : null;
+
+      let groupCharge = 0;
+      let groupSource: 'CATEGORY' | 'FREE_SHIPPING' = 'CATEGORY';
+      let groupRuleName = '';
+
+      if (catMode === 'free' || catFreeEligible) {
+        if (catFreeThreshold && totalCartSubtotal < catFreeThreshold) {
+          groupCharge = catCharge !== null ? catCharge : defaultShippingCharge;
+          groupSource = 'CATEGORY';
+          groupRuleName = `Category: ${cat.name} (Flat ₹${groupCharge})`;
+        } else {
+          groupCharge = 0;
+          groupSource = 'FREE_SHIPPING';
+          groupRuleName = `Category: ${cat.name} (Free Shipping)`;
+        }
+        if (!primaryRule) {
+          primaryRule = {
+            type: 'FREE_SHIPPING',
+            name: `Category: ${cat.name} (Free Shipping)`,
+            categoryId: cat.id,
+            categoryName: cat.name,
+          };
+        }
+      } else if (catMode === 'weight_based' || catRules.length > 0) {
+        const sortedRules = [...catRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
+        let matchedTier: WeightRule | null = null;
+
+        for (const tier of sortedRules) {
+          const minW = Number(tier.fromGrams) || 0;
+          const maxW = tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
+            ? Number(tier.toGrams)
+            : Infinity;
+
+          if (group.totalWeightGrams >= minW && group.totalWeightGrams <= maxW) {
+            matchedTier = tier;
+            break;
+          }
+        }
+
+        if (!matchedTier && sortedRules.length > 0) {
+          matchedTier = sortedRules[sortedRules.length - 1];
+        }
+
+        if (matchedTier) {
+          groupCharge = Number(matchedTier.charge);
+          groupSource = 'CATEGORY';
+          const rangeStr = formatWeightRange(matchedTier.fromGrams, matchedTier.toGrams);
+          groupRuleName = `Category: ${cat.name} (${rangeStr} → ₹${groupCharge})`;
+          if (!primaryRule) {
+            primaryRule = {
+              type: 'CATEGORY_WEIGHT',
+              name: `Category: ${cat.name}`,
+              details: `Weight Range: ${rangeStr}`,
+              categoryId: cat.id,
+              categoryName: cat.name,
+              weightGrams: group.totalWeightGrams,
+              minWeight: matchedTier.fromGrams,
+              maxWeight: matchedTier.toGrams,
+            };
+          }
+        } else {
+          groupCharge = catCharge !== null ? catCharge : defaultShippingCharge;
+          groupSource = 'CATEGORY';
+          groupRuleName = `Category: ${cat.name} (₹${groupCharge})`;
+          if (!primaryRule) {
+            primaryRule = {
+              type: 'CATEGORY_FLAT',
+              name: `Category: ${cat.name}`,
+              details: `Flat Charge: ₹${groupCharge}`,
+              categoryId: cat.id,
+              categoryName: cat.name,
+            };
+          }
+        }
+      } else if (catCharge !== null && catCharge > 0) {
+        groupCharge = catCharge;
+        groupSource = 'CATEGORY';
+        groupRuleName = `Category: ${cat.name} (Flat ₹${groupCharge})`;
+        if (!primaryRule) {
+          primaryRule = {
+            type: 'CATEGORY_FLAT',
+            name: `Category: ${cat.name}`,
+            details: `Flat Charge: ₹${groupCharge}`,
+            categoryId: cat.id,
+            categoryName: cat.name,
+          };
+        }
+      } else {
+        reliesOnDefaultShipping = true;
+        defaultShippingWeightGrams += group.totalWeightGrams;
+        for (const itemEntry of group.items) {
+          breakdown.push({
+            productId: itemEntry.product.id,
+            productName: itemEntry.product.name,
+            quantity: itemEntry.quantity,
+            unitWeightGrams: itemEntry.unitWeightGrams,
+            totalWeightGrams: itemEntry.totalWeightGrams,
+            charge: 0,
+            source: 'DEFAULT',
+            ruleName: 'Default Shipping',
+            estimatedDays: itemEntry.product.estimatedDeliveryDays ? Number(itemEntry.product.estimatedDeliveryDays) : 3,
+          });
+        }
+        continue;
       }
 
-      totalShippingCharge += itemCharge;
-      sourcesUsed.add(itemSource);
-
-      if (itemDays > maxEstimatedDays) {
-        maxEstimatedDays = itemDays;
+      if (isGlobalThresholdMet) {
+        groupCharge = 0;
+        groupSource = 'FREE_SHIPPING';
+        groupRuleName = `Free Shipping (Order > ₹${freeShippingThreshold})`;
       }
 
-      breakdown.push({
-        productId: product.id,
-        productName: product.name,
-        quantity,
-        unitWeightGrams,
-        totalWeightGrams,
-        charge: itemCharge,
-        source: itemSource,
-        ruleName,
-        estimatedDays: itemDays,
-      });
+      totalShippingCharge += groupCharge;
+      sourcesUsed.add(groupSource);
+
+      for (const itemEntry of group.items) {
+        breakdown.push({
+          productId: itemEntry.product.id,
+          productName: itemEntry.product.name,
+          quantity: itemEntry.quantity,
+          unitWeightGrams: itemEntry.unitWeightGrams,
+          totalWeightGrams: itemEntry.totalWeightGrams,
+          charge: groupCharge,
+          source: groupSource,
+          ruleName: groupRuleName,
+          estimatedDays: itemEntry.product.estimatedDeliveryDays ? Number(itemEntry.product.estimatedDeliveryDays) : 3,
+        });
+      }
     }
 
     // Apply default/common shipping charge once if any item relied on default shipping

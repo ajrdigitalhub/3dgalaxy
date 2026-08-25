@@ -1,4 +1,4 @@
-import {Injectable, signal, computed, effect, inject, PLATFORM_ID, Injector, runInInjectionContext} from '@angular/core';
+import {Injectable, signal, computed, effect, inject, PLATFORM_ID, Injector, runInInjectionContext, untracked} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { 
@@ -544,6 +544,15 @@ export interface Coupon {
   providedIn: 'root'
 })
 export class DatastoreService {
+  private platformId = inject(PLATFORM_ID);
+  api = inject(ApiService);
+  settingsService = inject(SettingsService);
+  shippingService = inject(ShippingService);
+  deliveryEstimateService = inject(DeliveryEstimateService);
+  private injector = inject(Injector);
+  private router = inject(Router);
+  private toastService = inject(ToastService);
+
   // Authentication State
   currentUser = signal<FirebaseUser | null>(null);
   userProfile = signal<UserProfile | null>(null);
@@ -570,8 +579,14 @@ export class DatastoreService {
 
   private getInitialTheme(): 'light' | 'dark' {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
-      if (saved === 'dark' || saved === 'light') return saved;
+      const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        return savedTheme;
+      }
+    }
+    const themeData = this.settingsService?.theme() || {};
+    if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
+      return themeData.darkMode ? 'dark' : 'light';
     }
     return 'light';
   }
@@ -696,10 +711,19 @@ export class DatastoreService {
   activeCheckoutItems = computed(() => {
     const buyNow = this.buyNowItem();
     if (buyNow && buyNow.product) {
+      const allProds = this.products();
+      const found = allProds.find(p => p.id === buyNow.product.id);
+      const prod = found || buyNow.product;
+      let refreshedVariant = buyNow.variant || null;
+      if (refreshedVariant && prod.variants) {
+        const vId = refreshedVariant.id;
+        const vFound = prod.variants.find((v: any) => v.id === vId);
+        if (vFound) refreshedVariant = vFound;
+      }
       return [
         {
-          product: buyNow.product,
-          variant: buyNow.variant || null,
+          product: prod,
+          variant: refreshedVariant,
           quantity: buyNow.quantity || 1,
           isFree: false,
           bundleProducts: [],
@@ -920,15 +944,6 @@ export class DatastoreService {
     return map;
   });
 
-  private platformId = inject(PLATFORM_ID);
-  api = inject(ApiService);
-  settingsService = inject(SettingsService);
-  shippingService = inject(ShippingService);
-  deliveryEstimateService = inject(DeliveryEstimateService);
-  private injector = inject(Injector);
-  private router = inject(Router);
-  private toastService = inject(ToastService);
-
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this.trySyncAuthFromToken();
@@ -992,18 +1007,12 @@ export class DatastoreService {
     effect(() => {
       const themeData = this.settingsService.theme();
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-        const saved = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
-        if (saved === 'dark' || saved === 'light') {
-          if (this.theme() !== saved) {
-            this.theme.set(saved);
+        const savedTheme = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+        if (!savedTheme && themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
+          const targetMode = themeData.darkMode ? 'dark' : 'light';
+          if (untracked(() => this.theme()) !== targetMode) {
+            this.theme.set(targetMode);
           }
-          return;
-        }
-      }
-      if (themeData && themeData.darkMode !== undefined && themeData.darkMode !== null) {
-        const targetMode = themeData.darkMode ? 'dark' : 'light';
-        if (this.theme() !== targetMode) {
-          this.theme.set(targetMode);
         }
       }
     });
@@ -1497,11 +1506,6 @@ export class DatastoreService {
         document.body?.classList.remove('dark');
         root.style.colorScheme = 'light';
       }
-      const currentThemeSettings = this.settingsService.theme() || {};
-      this.settingsService.applyTheme({
-        ...currentThemeSettings,
-        darkMode: activeTheme === 'dark',
-      });
     }
   }
 
@@ -1513,6 +1517,9 @@ export class DatastoreService {
       localStorage.setItem('theme', nextTheme);
     }
     this.syncThemeClass(nextTheme);
+    if (this.settingsService && typeof this.settingsService.applyTheme === 'function') {
+      this.settingsService.applyTheme(this.settingsService.theme() || {});
+    }
   }
 
   // --- CRUD OPERATIONS ---
@@ -2422,6 +2429,8 @@ export class DatastoreService {
   }
 
   readonly cartPricingSummary = computed<CartPricingSummary>(() => {
+    const categoriesList = this.categories(); // Ensures reactive recalculation when category rules load from API
+    const productsList = this.products();     // Ensures reactive recalculation when products load from API
     const rawItems = this.activeCheckoutItems();
     const activeCoupon = this.activeCouponCode();
     const couponDiscount = this.couponDiscountAmount();

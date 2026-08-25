@@ -553,28 +553,227 @@
   </div>
   } @else {
   <!-- EMPTY CART -->
-  <div
-    class="min-h-[50vh] flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 text-center shadow-sm"
-  >
+  <div class="space-y-10 animate-fadeIn">
+    <!-- Empty Cart Banner / Hero -->
     <div
-      class="w-24 h-24 mb-6 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center"
+      class="flex flex-col items-center justify-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 sm:p-12 text-center shadow-sm relative overflow-hidden"
     >
-      <mat-icon class="text-neutral-400 dark:text-neutral-500 scale-[2]"
-        >shopping_cart</mat-icon
+      <!-- Background subtle gradient glow -->
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-orange-500/10 dark:bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div
+        class="w-20 h-20 mb-5 rounded-3xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60 flex items-center justify-center text-neutral-400 dark:text-neutral-500 shadow-inner"
       >
+        <mat-icon class="scale-[1.7] text-[#d65108]">shopping_cart</mat-icon>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-white tracking-tight mb-2">
+        Your Shopping Cart is Empty
+      </h2>
+      <p class="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-6 max-w-md">
+        Looks like you haven't added anything yet. Discover our top-selling 3D printers, precision filaments, and workshop accessories below!
+      </p>
+      <div class="flex items-center gap-3">
+        <a
+          routerLink="/products"
+          class="bg-[#d65108] hover:bg-[#b04006] text-white text-xs font-black uppercase tracking-[0.15em] px-8 py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <span>Explore Catalog</span>
+          <mat-icon class="scale-75">arrow_forward</mat-icon>
+        </a>
+      </div>
     </div>
-    <h2 class="text-2xl font-black text-neutral-900 dark:text-white mb-2">
-      Your cart is empty!
-    </h2>
-    <p class="text-sm font-medium text-neutral-500 mb-8 max-w-sm">
-      Explore our wide selection of 3D printers, filaments, and accessories.
-    </p>
-    <a
-      routerLink="/products"
-      class="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-black uppercase tracking-widest px-8 py-4 rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-lg"
-    >
-      Shop Now
-    </a>
+
+    <!-- Marketing Auto-Scroll Carousel Section -->
+    @if (recommendedProducts().length > 0) {
+    <div class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 text-[#d65108] dark:text-orange-400 text-[10px] font-black uppercase tracking-wider mb-1">
+            <mat-icon class="scale-[0.6] -mx-1">local_fire_department</mat-icon>
+            Trending & Top Picks
+          </div>
+          <h3 class="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
+            Recommended For You
+          </h3>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+            Handpicked 3D printers, filaments, and maker essentials ready to ship. Hover over any product to pause.
+          </p>
+        </div>
+        <a
+          routerLink="/products"
+          class="text-xs font-bold text-[#d65108] hover:text-[#b04006] flex items-center gap-1 shrink-0 self-start sm:self-auto hover:underline"
+        >
+          <span>View all products</span>
+          <mat-icon class="scale-75">chevron_right</mat-icon>
+        </a>
+      </div>
+
+      <!-- Marquee Scroll Container -->
+      <div class="relative overflow-hidden py-3 marquee-container -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+        <!-- Left & Right gradient edge masks for seamless fading -->
+        <div class="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-neutral-50 dark:from-neutral-950 to-transparent z-10"></div>
+        <div class="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-neutral-50 dark:from-neutral-950 to-transparent z-10"></div>
+
+        <!-- Marquee Track (Repeated twice for continuous loop) -->
+        <div class="marquee-track flex gap-4 sm:gap-6 items-stretch">
+          <!-- First Loop -->
+          @for (prod of recommendedProducts(); track prod.id + '-1') {
+            <div class="w-64 sm:w-72 shrink-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-orange-500/50 dark:hover:border-orange-500/50 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <!-- Top Header: Badge & Free Shipping -->
+                <div class="flex items-center justify-between gap-1 mb-3">
+                  @if (getProductDiscountPercent(prod) > 0) {
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">
+                      {{ getProductDiscountPercent(prod) }}% OFF
+                    </span>
+                  } @else if (prod.featured || prod.isFeatured) {
+                    <span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/20">
+                      Featured
+                    </span>
+                  } @else {
+                    <span class="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[10px] font-black uppercase tracking-wider">
+                      Popular
+                    </span>
+                  }
+                  @if (prod.freeShippingEligible) {
+                    <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                      <mat-icon class="scale-[0.55] -mx-1">local_shipping</mat-icon> Free Shipping
+                    </span>
+                  }
+                </div>
+
+                <!-- Product Thumbnail -->
+                <a [routerLink]="['/product', prod.slug]" class="block relative w-full h-36 bg-neutral-50 dark:bg-neutral-950 rounded-xl overflow-hidden p-2 mb-3 group-hover:scale-[1.02] transition-transform">
+                  <img
+                    [src]="ds.getProductImage(prod)"
+                    [alt]="prod.name"
+                    class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                  />
+                </a>
+
+                <!-- Brand / Category -->
+                @if (prod.brand) {
+                  <span class="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-0.5">
+                    {{ prod.brand }}
+                  </span>
+                }
+
+                <!-- Product Title -->
+                <h4 class="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#d65108] transition-colors mb-2">
+                  <a [routerLink]="['/product', prod.slug]">{{ prod.name }}</a>
+                </h4>
+              </div>
+
+              <!-- Price & Quick Add Action -->
+              <div class="pt-3 border-t border-neutral-100 dark:border-neutral-800/80 mt-auto flex items-center justify-between gap-2">
+                <div>
+                  <div class="flex items-baseline gap-1.5">
+                    <span class="text-sm sm:text-base font-black text-neutral-900 dark:text-white font-mono">
+                      {{ getProductPrice(prod) | currency:'INR':'symbol':'1.0-0' }}
+                    </span>
+                    @if (getProductMrp(prod) > getProductPrice(prod)) {
+                      <span class="text-[10px] text-neutral-400 line-through font-medium font-mono">
+                        {{ getProductMrp(prod) | currency:'INR':'symbol':'1.0-0' }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <a
+                  [routerLink]="['/product', prod.slug]"
+                  title="View Product"
+                  class="px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#d65108] dark:text-orange-400 hover:bg-[#d65108] hover:text-white dark:hover:bg-[#d65108] dark:hover:text-white transition-all flex items-center gap-1 shrink-0 shadow-xs text-xs font-bold cursor-pointer active:scale-95"
+                >
+                  <span>View</span>
+                  <mat-icon class="scale-75 -mr-0.5">visibility</mat-icon>
+                </a>
+              </div>
+            </div>
+          }
+
+          <!-- Second Loop (Duplicate for seamless continuous scrolling) -->
+          @for (prod of recommendedProducts(); track prod.id + '-2') {
+            <div class="w-64 sm:w-72 shrink-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-orange-500/50 dark:hover:border-orange-500/50 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <!-- Top Header: Badge & Free Shipping -->
+                <div class="flex items-center justify-between gap-1 mb-3">
+                  @if (getProductDiscountPercent(prod) > 0) {
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider border border-emerald-500/20">
+                      {{ getProductDiscountPercent(prod) }}% OFF
+                    </span>
+                  } @else if (prod.featured || prod.isFeatured) {
+                    <span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/20">
+                      Featured
+                    </span>
+                  } @else {
+                    <span class="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 text-[10px] font-black uppercase tracking-wider">
+                      Popular
+                    </span>
+                  }
+                  @if (prod.freeShippingEligible) {
+                    <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                      <mat-icon class="scale-[0.55] -mx-1">local_shipping</mat-icon> Free Shipping
+                    </span>
+                  }
+                </div>
+
+                <!-- Product Thumbnail -->
+                <a [routerLink]="['/product', prod.slug]" class="block relative w-full h-36 bg-neutral-50 dark:bg-neutral-950 rounded-xl overflow-hidden p-2 mb-3 group-hover:scale-[1.02] transition-transform">
+                  <img
+                    [src]="ds.getProductImage(prod)"
+                    [alt]="prod.name"
+                    class="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                  />
+                </a>
+
+                <!-- Brand / Category -->
+                @if (prod.brand) {
+                  <span class="block text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-0.5">
+                    {{ prod.brand }}
+                  </span>
+                }
+
+                <!-- Product Title -->
+                <h4 class="text-xs sm:text-sm font-bold text-neutral-900 dark:text-white line-clamp-2 leading-snug group-hover:text-[#d65108] transition-colors mb-2">
+                  <a [routerLink]="['/product', prod.slug]">{{ prod.name }}</a>
+                </h4>
+              </div>
+
+              <!-- Price & Quick Add Action -->
+              <div class="pt-3 border-t border-neutral-100 dark:border-neutral-800/80 mt-auto flex items-center justify-between gap-2">
+                <div>
+                  <div class="flex items-baseline gap-1.5">
+                    <span class="text-sm sm:text-base font-black text-neutral-900 dark:text-white font-mono">
+                      {{ getProductPrice(prod) | currency:'INR':'symbol':'1.0-0' }}
+                    </span>
+                    @if (getProductMrp(prod) > getProductPrice(prod)) {
+                      <span class="text-[10px] text-neutral-400 line-through font-medium font-mono">
+                        {{ getProductMrp(prod) | currency:'INR':'symbol':'1.0-0' }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <a
+                  [routerLink]="['/product', prod.slug]"
+                  title="View Product"
+                  class="px-3 py-1.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#d65108] dark:text-orange-400 hover:bg-[#d65108] hover:text-white dark:hover:bg-[#d65108] dark:hover:text-white transition-all flex items-center gap-1 shrink-0 shadow-xs text-xs font-bold cursor-pointer active:scale-95"
+                >
+                  <span>View</span>
+                  <mat-icon class="scale-75 -mr-0.5">visibility</mat-icon>
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+    }
   </div>
   }
 </div>

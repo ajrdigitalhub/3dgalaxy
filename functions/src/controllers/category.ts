@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../config/database';
+import prisma, { withDbRetry } from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { sysCache } from '../config/cache';
 import { encodeDays } from '../utils/delivery';
@@ -49,9 +49,9 @@ export const getCategoriesTree = async (req: Request, res: Response) => {
   try {
     let tree = sysCache.get('categories_tree') as CategoryNode[];
     if (!tree) {
-      const all = await prisma.category.findMany({
+      const all = await withDbRetry(() => prisma.category.findMany({
         orderBy: { name: 'asc' },
-      });
+      }));
       tree = buildCategoryTree(all, null);
       sysCache.set('categories_tree', tree, 1800); // 30 minutes cache
     }
@@ -198,10 +198,10 @@ export const getDirectChildren = async (req: Request, res: Response) => {
   try {
     let list = sysCache.get(cacheKey);
     if (!list) {
-      list = await prisma.category.findMany({
+      list = await withDbRetry(() => prisma.category.findMany({
         where: { parentId: targetParentId },
         orderBy: { name: 'asc' },
-      });
+      }));
       sysCache.set(cacheKey, list, 1800);
     }
     return res.status(200).json(list);
@@ -214,9 +214,9 @@ export const getCategories = async (req: Request, res: Response) => {
   try {
     let list = sysCache.get('categories_flat');
     if (!list) {
-      list = await prisma.category.findMany({
+      list = await withDbRetry(() => prisma.category.findMany({
         orderBy: { createdAt: 'desc' },
-      });
+      }));
       sysCache.set('categories_flat', list, 1800);
     }
     return res.status(200).json(list);

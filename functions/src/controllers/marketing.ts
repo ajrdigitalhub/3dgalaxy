@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
-import prisma from '../config/database';
+import prisma, { withDbRetry } from '../config/database';
 
 const DEFAULT_MARKETING_CONFIG = {
   enabled: true,
@@ -299,27 +299,28 @@ export const generateMetaCatalogFeedXml = async (req: Request, res: Response) =>
  */
 export const getAdminMarketingDashboardStats = async (req: Request, res: Response) => {
   try {
-    const record = await prisma.setting.findUnique({
+    const record = await withDbRetry(() => prisma.setting.findUnique({
       where: { settingKey: 'marketing_tracking_config' }
-    });
+    }));
 
     const config = record ? (record.settingData as any) : DEFAULT_MARKETING_CONFIG;
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const totalEventsToday = await prisma.auditLog.count({
-      where: {
-        entityType: 'MARKETING_TRACKING',
-        createdAt: { gte: todayStart }
-      }
-    });
-
-    const recentLogs = await prisma.auditLog.findMany({
-      where: { entityType: 'MARKETING_TRACKING' },
-      take: 10,
-      orderBy: { createdAt: 'desc' }
-    });
+    const [totalEventsToday, recentLogs] = await withDbRetry(() => Promise.all([
+      prisma.auditLog.count({
+        where: {
+          entityType: 'MARKETING_TRACKING',
+          createdAt: { gte: todayStart }
+        }
+      }),
+      prisma.auditLog.findMany({
+        where: { entityType: 'MARKETING_TRACKING' },
+        take: 10,
+        orderBy: { createdAt: 'desc' }
+      })
+    ]));
 
     const stats = {
       metaPixelStatus: config.metaPixelId ? 'active' : 'inactive',
