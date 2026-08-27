@@ -1643,7 +1643,7 @@ export class ProductDetail {
           }
           link.setAttribute(
             "href",
-            `https://3dgalaxy.com/product/${matched.slug}`,
+            `${environment.siteUrl}/product/${matched.slug}`,
           );
         }
       }
@@ -1942,7 +1942,11 @@ export class ProductDetail {
       }
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
       if (bundleDetails) {
-        this.ds.addBundleToCart(p, bundleDetails);
+        this.ds.setBuyNowItem({
+          product: p,
+          quantity: 1,
+          bundleDetails
+        });
         this.toastService.success(`Proceeding to checkout with ${bundleDetails.bundleName}`);
         this.router.navigate(["/checkout"]);
         return;
@@ -1987,9 +1991,9 @@ export class ProductDetail {
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION
   async shareProduct(p: Product) {
-    const origin = this.document.location?.origin || "https://3dgalaxy.com";
+    const origin = this.document.location?.origin || environment.siteUrl;
     const shareUrl = `${origin}/product/${p.slug}`;
-    const shareText = `Check out ${p.name} on 3D Galaxy.`;
+    const shareText = `Check out ${p.name} on ${environment.siteName}.`;
 
     try {
       if (navigator.share) {

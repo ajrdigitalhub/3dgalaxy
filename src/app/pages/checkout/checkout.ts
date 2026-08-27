@@ -786,20 +786,28 @@ export class CheckoutComponent implements OnInit {
   }
 
   finishOrder(orderId: string, orderObj?: any) {
-    this.ds.clearBuyNowItem();
-    this.ds.cart.set([]);
+    const isBuyNow = !!this.ds.buyNowItem();
+
+    if (isBuyNow) {
+      // Preserve customer's existing cart, clear only the isolated Buy Now session
+      this.ds.clearBuyNowItem();
+    } else {
+      // Clear cart only on regular cart checkouts
+      this.ds.cart.set([]);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("3d-galaxy-cart");
+      }
+    }
+
     this.ds.activeCouponCode.set("");
     this.ds.couponDiscountAmount.set(0);
     this.loading.stopLoading();
     this.isSubmitting.set(false);
 
-    // Clear storage
+    // Clear transient step storage
     sessionStorage.removeItem("checkout_active_step");
     localStorage.removeItem("checkout_restored_addr1");
     localStorage.removeItem("checkout_restored_pay");
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("3d-galaxy-cart");
-    }
 
     const targetId = orderId || orderObj?.id || orderObj?.orderId || "ORD-SUCCESS";
     this.router.navigate(["/order-success"], {

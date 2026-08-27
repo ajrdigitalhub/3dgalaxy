@@ -230,6 +230,7 @@
                   (change)="updateOrderStatus($any($event.target).value, statusSelect)"
                   [disabled]="statusUpdating()"
                   class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-blue-500/30 dark:border-blue-500/30 hover:border-blue-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
+                  <option value="" disabled [selected]="!ord.status">Select status</option>
                   @for (st of statuses; track st) {
                   <option [value]="st" [selected]="isSameStatus(ord.status, st)">{{ st }}</option>
                   }
@@ -256,6 +257,7 @@
                 <select (change)="updatePaymentStatus($any($event.target).value)"
                   [disabled]="paymentUpdating()"
                   class="w-full p-2.5 pr-8 bg-white dark:bg-neutral-950 border-2 border-emerald-500/30 dark:border-emerald-500/30 hover:border-emerald-500 text-xs text-neutral-900 dark:text-white font-bold rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs cursor-pointer disabled:opacity-50">
+                  <option value="" disabled [selected]="!(ord.payments?.[0]?.status || ord.paymentStatus)">Select payment status</option>
                   @for (ps of paymentStatuses; track ps) {
                   <option [value]="ps" [selected]="isSameStatus(ord.payments?.[0]?.status || ord.paymentStatus, ps)">{{ ps }}</option>
                   }
@@ -619,5 +621,64 @@
       [order]="order()"
       (cancel)="showSlipModal.set(false)"
     ></app-packaging-slip-dialog>
+  }
+
+  <!-- CANCELLATION REASON DIALOG MODAL -->
+  @if (showCancelModal() && order()) {
+    <div class="fixed inset-0 top-0 left-0 w-full h-full bg-black/80 backdrop-blur-md z-[9999998]" (click)="closeCancelModal()"></div>
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl w-[calc(100%-2rem)] max-w-lg overflow-hidden z-[9999999] font-sans animate-fadeIn">
+      <div class="px-6 py-4 bg-rose-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-white">cancel</mat-icon>
+          <h3 class="text-sm font-black uppercase tracking-tight">Cancel Order #{{ order().orderNumber }}</h3>
+        </div>
+        <button (click)="closeCancelModal()" class="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors">
+          <mat-icon class="text-base">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-zinc-600 dark:text-zinc-300">
+          Cancelling this order will restore reserved product inventory, update the order audit log, and notify the customer.
+        </p>
+
+        <div>
+          <label class="block text-[10px] font-black uppercase text-zinc-500 mb-1.5">Cancellation Reason *</label>
+          <select
+            [(ngModel)]="selectedCancelReason"
+            class="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer">
+            <option value="" disabled selected>Select cancellation reason</option>
+            @for (reason of cancellationReasons; track reason) {
+              <option [value]="reason">{{ reason }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-black uppercase text-zinc-500 mb-1.5">Internal Cancellation Notes (Optional)</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="customCancelNotes"
+            placeholder="Add any additional context or reference notes..."
+            class="w-full p-2.5 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-500 resize-none"></textarea>
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
+          <button
+            type="button"
+            (click)="closeCancelModal()"
+            class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors cursor-pointer border-none">
+            Keep Order
+          </button>
+          <button
+            type="button"
+            (click)="confirmCancelOrder()"
+            [disabled]="!selectedCancelReason()"
+            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl transition-colors cursor-pointer border-none shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+            <mat-icon class="text-xs">check</mat-icon> Confirm Cancellation
+          </button>
+        </div>
+      </div>
+    </div>
   }
 </div>

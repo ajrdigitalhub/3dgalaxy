@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +16,7 @@ import { PackagingSlipDialogComponent } from '../packaging-slip-dialog/packaging
 @Component({
   selector: 'app-admin-order-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, ShipmentDialogComponent, PackagingSlipDialogComponent],
+  imports: [CommonModule, FormsModule, RouterModule, MatIconModule, ShipmentDialogComponent, PackagingSlipDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './order-details.html'
 })
@@ -45,8 +46,23 @@ export class OrderDetailsComponent implements OnInit {
 
   order = signal<any>(null);
   loading = signal(true);
-  error = signal('');
+  error = signal<string | null>(null);
   showShipmentModal = signal(false);
+
+  // Cancellation Modal State
+  showCancelModal = signal(false);
+  selectedCancelReason = signal('');
+  customCancelNotes = signal('');
+  cancellationReasons = [
+    'Customer Request',
+    'Out of Stock / Inventory Issue',
+    'Incorrect Shipping Address',
+    'Payment Issue / Fraud Alert',
+    'Duplicate Order Placed',
+    'Order Delayed',
+    'Pricing or Promotion Error',
+    'Other'
+  ];
 
   displayOrderWeight = computed(() => {
     const ord = this.order();
@@ -218,50 +234,68 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   private getHeaders() {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        return { headers: { 'Authorization': `Bearer ${token}` } };
+    const token = localStorage.getItem('token');
+    return {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    }
-    return {};
+    };
   }
 
-  fetchOrder(id: string) {
+  openCancelModal() {
+    this.selectedCancelReason.set('');
+    this.customCancelNotes.set('');
+    this.showCancelModal.set(true);
+  }
+
+  closeCancelModal() {
+    this.showCancelModal.set(false);
+  }
+
+  confirmCancelOrder() {
+    const reason = this.selectedCancelReason() || 'Customer Request';
+    const comments = this.customCancelNotes() ? `${reason} - ${this.customCancelNotes()}` : reason;
+    this.updateOrderStatus('Cancelled', undefined, {
+      reason,
+      cancellationReason: reason,
+      comments
+    });
+    this.showCancelModal.set(false);
+  }
+
+  fetchOrder(orderIdOrNumber: string) {
     this.loading.set(true);
-    const cleanId = String(id || '').trim();
-    const url = cleanId.startsWith('http') ? cleanId : `${environment.apiUrl}/orders/${encodeURIComponent(cleanId)}`;
-    this.http.get<any>(url, this.getHeaders()).pipe(
+    this.error.set(null);
+    this.http.get<any>(`${environment.apiUrl}/orders/${orderIdOrNumber}`, this.getHeaders()).pipe(
       catchError(err => {
-        this.error.set(err.error?.error || 'Failed to load order detailed logic.');
+        this.error.set(err.error?.error || 'Failed to load order details');
         this.loading.set(false);
         return of(null);
       })
     ).subscribe(res => {
       if (res) {
         this.order.set(res);
-        if (res.customerId) {
-          this.fetchCustomerHistory(res.customerId, res.id);
+        if (res.customer?.id) {
+          this.fetchCustomerHistory(res.customer.id);
         }
       }
       this.loading.set(false);
     });
   }
 
-  fetchCustomerHistory(customerId: string, currentOrderId: string) {
+  fetchCustomerHistory(customerId: string) {
     this.loadingHistory.set(true);
-    this.http.get<any[]>(`${environment.apiUrl}/orders`, this.getHeaders()).pipe(
+    this.http.get<any[]>(`${environment.apiUrl}/orders/customer/${customerId}`, this.getHeaders()).pipe(
       catchError(() => of([]))
     ).subscribe(res => {
-      if (res && res.length > 0) {
-        const filtered = res.filter(o => o.customerId === customerId && o.id !== currentOrderId);
-        this.previousOrders.set(filtered);
+      if (res) {
+        this.previousOrders.set(res.filter(o => o.id !== this.order()?.id));
       }
       this.loadingHistory.set(false);
     });
   }
 
-  updateOrderStatus(status: string, selectEl?: HTMLSelectElement) {
+  updateOrderStatus(status: string, selectEl?: HTMLSelectElement, extraData?: any) {
     if (!status || this.statusUpdating()) return;
 
     if (status.toLowerCase() === 'shipped') {
@@ -272,14 +306,22 @@ export class OrderDetailsComponent implements OnInit {
       return;
     }
 
+    if (status.toLowerCase() === 'cancelled' && !extraData) {
+      if (selectEl && this.order()) {
+        selectEl.value = this.order().status || 'Confirmed';
+      }
+      this.openCancelModal();
+      return;
+    }
+
     this.statusUpdating.set(true);
-    this.http.put(`${environment.apiUrl}/orders/${this.order().id}/status`, { status }, this.getHeaders()).subscribe({
+    this.http.put(`${environment.apiUrl}/orders/${this.order().id}/status`, { status, ...extraData }, this.getHeaders()).subscribe({
       next: () => {
         this.fetchOrder(this.order().orderNumber);
         this.statusUpdating.set(false);
       },
-      error: () => {
-        alert('Failed to update order status');
+      error: (err: any) => {
+        alert(err?.error?.error || 'Failed to update order status');
         this.statusUpdating.set(false);
       }
     });
@@ -387,9 +429,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   cancelOrder() {
-    if (confirm('Are you absolutely sure you want to Cancel this order? This will transition status to Cancelled and update records.')) {
-      this.updateOrderStatus('Cancelled');
-    }
+    this.openCancelModal();
   }
 
   markAsRefunded() {

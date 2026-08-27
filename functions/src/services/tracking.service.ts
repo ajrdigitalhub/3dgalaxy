@@ -1,3 +1,4 @@
+import { ENV } from '../config/env';
 import { decodeDays } from '../utils/delivery';
 
 export interface CourierPartnerConfig {
@@ -155,7 +156,7 @@ export class TrackingService {
 
     return cleanNum
       ? `https://www.google.com/search?q=${encodeURIComponent((courierPartner || '') + ' tracking ' + cleanNum)}`
-      : 'https://3dgalaxy.co.in/order-tracking';
+      : `${ENV.SITE_URL}/order-tracking`;
   }
 
   /**

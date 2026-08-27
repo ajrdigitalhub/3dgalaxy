@@ -122,7 +122,7 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
 
     // Shipment details
     const shipmentObj: any = (order?.shipments && order.shipments.length > 0) ? order.shipments[0] : (typeof order?.shipment === 'object' ? order.shipment : null);
-    const trackingStr = customData.trackingNumber || shipmentObj?.trackingNumber || 'LZ92738101';
+    const trackingStr = customData.trackingNumber || shipmentObj?.trackingNumber || order?.trackingNumber || (customData.isShipped ? 'N/A' : 'Not Assigned');
     const returnAddressStr = customData.returnAddress || '3D Galaxy Labs India\n123 Tech Park, Electronic City\nBangalore, KA 560100, India';
 
     // Items List

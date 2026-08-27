@@ -64,7 +64,7 @@ export class OrdersTracking {
     this.isLoading.set(true);
     this.error.set("");
     try {
-      const resp = await this.api.get<any>("/orders/my-orders").toPromise();
+      const resp = await this.api.get<any>("/orders/my-orders?limit=100").toPromise();
       const orders = Array.isArray(resp)
         ? resp
         : resp && Array.isArray(resp.data)

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
+import { ENV } from '../config/env';
 
 export const getSitemap = async (req: Request, res: Response) => {
   try {
@@ -8,8 +9,8 @@ export const getSitemap = async (req: Request, res: Response) => {
     const brands = await prisma.brand.findMany({ select: { slug: true, updatedAt: true } });
 
     const protocol = req.protocol || 'https';
-    const host = req.get('host') || '3dgalaxy.in';
-    const baseUrl = host.includes('localhost') ? `${protocol}://${host}` : 'https://3dgalaxy.in';
+    const host = req.get('host');
+    const baseUrl = (host && host.includes('localhost')) ? `${protocol}://${host}` : ENV.SITE_URL;
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;

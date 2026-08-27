@@ -21,6 +21,7 @@ import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { hasProductVariants } from "../../shared/utils/product.utils";
+import { environment } from "../../../environments/environment";
 
 @Component({
   selector: "app-products",
@@ -181,7 +182,7 @@ export class Products implements OnInit {
       link.setAttribute("rel", "canonical");
       this.document.head.appendChild(link);
     }
-    link.setAttribute("href", `https://3dgalaxy.com/${path}`);
+    link.setAttribute("href", `${environment.siteUrl}/${path}`);
   }
 
   syncParamsToSignals(params: any) {

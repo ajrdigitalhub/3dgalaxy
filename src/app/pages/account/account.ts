@@ -111,7 +111,8 @@ export class Account {
   });
 
   totalWishlistCount = computed(() => this.wishlist().length);
-  totalOrdersCount = computed(() => this.myOrders().length);
+  rawTotalOrders = signal<number | null>(null);
+  totalOrdersCount = computed(() => this.rawTotalOrders() !== null ? this.rawTotalOrders()! : this.myOrders().length);
   totalSpentAmount = computed(() => this.myOrders().reduce((sum, o) => sum + (o.grandTotal || 0), 0));
   formattedTotalSpent = computed(() => this.totalSpentAmount().toLocaleString('en-IN'));
   activeOrdersCount = computed(() => this.myOrders().filter(o => ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'out for delivery'].includes(o.status.toLowerCase())).length);
@@ -257,12 +258,19 @@ export class Account {
   async fetchMyOrders() {
     this.isOrdersLoading.set(true);
     try {
-      const resp = await this.api.get<any>("/orders/my-orders").toPromise();
+      const resp = await this.api.get<any>("/orders/my-orders?limit=100").toPromise();
       const orders = Array.isArray(resp)
         ? resp
         : resp && Array.isArray(resp.data)
           ? resp.data
           : [];
+
+      if (resp && typeof resp.total === 'number') {
+        this.rawTotalOrders.set(resp.total);
+      } else {
+        this.rawTotalOrders.set(orders.length);
+      }
+
       this.myOrders.set(
         orders.map((o: any) => ({
           id: o.id,
@@ -295,6 +303,7 @@ export class Account {
       );
     } catch (e) {
       this.myOrders.set([]);
+      this.rawTotalOrders.set(0);
       this.toastService.warning("We couldn’t load your orders right now.");
     } finally {
       this.isOrdersLoading.set(false);

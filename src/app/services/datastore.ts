@@ -673,6 +673,7 @@ export class DatastoreService {
     variant?: ProductVariant | null;
     quantity: number;
     options?: any;
+    bundleDetails?: CartBundleDetails | null;
     codAvailable: boolean;
   } | null>(null);
 
@@ -687,7 +688,7 @@ export class DatastoreService {
     return true;
   }
 
-  setBuyNowItem(item: { product: Product; variant?: ProductVariant | null; quantity: number; options?: any }) {
+  setBuyNowItem(item: { product: Product; variant?: ProductVariant | null; quantity: number; options?: any; bundleDetails?: CartBundleDetails | null }) {
     const codAvailable = this.isCodAvailable(item.product) && (!item.variant || item.variant.codAvailable !== false);
     const sessionData = { ...item, codAvailable };
     this.buyNowItem.set(sessionData);
@@ -727,6 +728,7 @@ export class DatastoreService {
           quantity: buyNow.quantity || 1,
           isFree: false,
           bundleProducts: [],
+          bundleDetails: buyNow.bundleDetails || undefined,
           isBuyNow: true
         }
       ];
@@ -2684,7 +2686,18 @@ export class DatastoreService {
       });
     }
 
-    this.cart.set([]);
+    const isBuyNow = !!this.buyNowItem();
+    if (isBuyNow) {
+      this.clearBuyNowItem();
+    } else {
+      this.cart.set([]);
+      if (isPlatformBrowser(this.platformId)) {
+        try {
+          localStorage.removeItem("3d-galaxy-cart");
+        } catch (e) {}
+      }
+    }
+
     this.activeCouponCode.set('');
     this.couponDiscountAmount.set(0);
 

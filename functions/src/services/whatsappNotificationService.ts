@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { ENV } from '../config/env';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 import { NotificationTemplateResolver } from './notificationTemplateResolver';
@@ -381,7 +382,7 @@ export class WhatsAppNotificationService {
     return {
       currentStatus: sanitizeTemplateParam(currentStatus, 'Order Status Updated'),
       statusDescription: sanitizeTemplateParam(statusDescription, 'Order status updated'),
-      additionalInformation: sanitizeTemplateParam(additionalInformation, 'Thank you for shopping with 3D Galaxy.')
+      additionalInformation: sanitizeTemplateParam(additionalInformation, `Thank you for shopping with ${siteName || ENV.SITE_NAME}.`)
     };
   }
 
@@ -397,8 +398,8 @@ export class WhatsAppNotificationService {
       const whatsappSettings = settingsObj?.whatsappSettings || {};
 
       // Site defaults
-      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
-      const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
+      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || ENV.SITE_NAME;
+      const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || ENV.SITE_URL;
 
       // Status key
       const statusKey = extraParams?.statusKey || order?.status || 'Order Confirmed';
@@ -475,10 +476,10 @@ export class WhatsAppNotificationService {
             { type: 'text', text: sanitizeTemplateParam(orderId, 'N/A') },
             { type: 'text', text: sanitizeTemplateParam(content.currentStatus, 'Order Update') },
             { type: 'text', text: sanitizeTemplateParam(content.statusDescription, 'Order status updated') },
-            { type: 'text', text: sanitizeTemplateParam(content.additionalInformation, 'Thank you for shopping with 3D Galaxy') },
-            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
-            { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
-            { type: 'text', text: sanitizeTemplateParam(orderLink, 'https://3dgalaxy.co.in') }
+            { type: 'text', text: sanitizeTemplateParam(content.additionalInformation, `Thank you for shopping with ${siteName}`) },
+            { type: 'text', text: sanitizeTemplateParam(siteName, ENV.SITE_NAME) },
+            { type: 'text', text: sanitizeTemplateParam(siteName, ENV.SITE_NAME) },
+            { type: 'text', text: sanitizeTemplateParam(orderLink, siteUrl) }
           ]
         },
         {
@@ -702,8 +703,8 @@ export class WhatsAppNotificationService {
       const settingsObj = await getSettingsService();
       const whatsappSettings = settingsObj?.whatsappSettings || {};
 
-      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
-      const adminBaseUrl = extraParams?.adminUrl || process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || ENV.SITE_NAME;
+      const adminBaseUrl = extraParams?.adminUrl || whatsappSettings?.adminUrl || ENV.ADMIN_APP_URL;
 
       const orderId = order?.orderNumber || order?.id || 'N/A';
       const orderUrl = `${adminBaseUrl}/orders/${order?.id || orderId}`;
@@ -776,7 +777,7 @@ export class WhatsAppNotificationService {
             { type: 'text', text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
             { type: 'text', text: sanitizeTemplateParam(paymentStatus, 'Pending') },
             { type: 'text', text: sanitizeTemplateParam(productList, '• Order Items') },
-            { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, 'https://admin.3dgalaxy.in') }
+            { type: 'text', text: sanitizeTemplateParam(adminPortalUrl, adminBaseUrl) }
           ]
         }
       ]);
@@ -971,8 +972,8 @@ export class WhatsAppNotificationService {
               { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
               { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
               { type: 'text', text: sanitizeTemplateParam(vars.estimatedDeliveryDate, '3-5 Business Days') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, 'https://3dgalaxy.co.in/account/orders') },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') }
+              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, `${ENV.SITE_URL}/account/orders`) },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) }
             ]
           }
         ]);
@@ -984,13 +985,13 @@ export class WhatsAppNotificationService {
             type: 'body',
             parameters: [
               { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) },
               { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') },
               { type: 'text', text: sanitizeTemplateParam(`₹${vars.orderAmount}`, '₹0.00') },
               { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
               { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, 'https://3dgalaxy.co.in/account/orders') },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, '3D Galaxy') }
+              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, `${ENV.SITE_URL}/account/orders`) },
+              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) }
             ]
           }
         ]);
@@ -1096,8 +1097,8 @@ export class WhatsAppNotificationService {
       const settingsObj = await getSettingsService();
       const whatsappSettings = settingsObj?.whatsappSettings || {};
 
-      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || '3D Galaxy';
-      const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || process.env.APP_URL || 'https://3dgalaxy.co.in';
+      const siteName = settingsObj?.storeName || whatsappSettings?.storeName || ENV.SITE_NAME;
+      const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || ENV.SITE_URL;
 
       // Recipient mobile number check
       const rawPhone = this.extractCustomerPhone(order, extraParams);
@@ -1180,7 +1181,7 @@ export class WhatsAppNotificationService {
       }
 
       // 11. {{11}} orderLink
-      const orderLink = extraParams?.orderLink || `https://3dgalaxy.co.in/account/orders/${orderId}`;
+      const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders/${orderId}`;
 
       // Configurable template name (default: order_shipped)
       const templateName = whatsappSettings.orderShippedTemplateName || 'order_shipped';
@@ -1222,7 +1223,7 @@ export class WhatsAppNotificationService {
             { type: 'text', text: sanitizeTemplateParam(trackingNumber, 'N/A') },
             { type: 'text', text: sanitizeTemplateParam(estimatedDate, '3-5 Business Days') },
             { type: 'text', text: sanitizeTemplateParam(trackingUrl, `${siteUrl}/order-tracking`) },
-            { type: 'text', text: sanitizeTemplateParam(orderLink, `https://3dgalaxy.co.in/account/orders/${orderId}`) }
+            { type: 'text', text: sanitizeTemplateParam(orderLink, `${siteUrl}/account/orders/${orderId}`) }
           ]
         }
       ]);

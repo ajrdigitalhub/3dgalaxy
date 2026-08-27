@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
 import prisma, { withDbRetry } from '../config/database';
+import { ENV } from '../config/env';
 
 const DEFAULT_MARKETING_CONFIG = {
   enabled: true,
@@ -139,7 +140,7 @@ export const sendMetaCapiEvent = async (req: Request, res: Response) => {
           event_name: eventName,
           event_time: eventTime || Math.floor(Date.now() / 1000),
           event_id: eventId,
-          event_source_url: eventSourceUrl || 'https://3dgalaxy.in',
+          event_source_url: eventSourceUrl || ENV.SITE_URL,
           action_source: 'website',
           user_data: hashedUserData,
           custom_data: customData || {}
@@ -198,24 +199,24 @@ export const generateGoogleMerchantFeedXml = async (req: Request, res: Response)
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
   <channel>
-    <title>3DGalaxy Official Product Catalog</title>
-    <link>https://3dgalaxy.in</link>
+    <title>${ENV.SITE_NAME} Official Product Catalog</title>
+    <link>${ENV.SITE_URL}</link>
     <description>3D Printers, Filaments, SLA Resins and Spare Parts in India</description>\n`;
 
     products.forEach(p => {
       const price = Number(p.basePrice).toFixed(2);
       const salePrice = p.salePrice ? Number(p.salePrice).toFixed(2) : null;
-      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : ['https://3dgalaxy.in/3d-logo.png'];
+      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : [`${ENV.SITE_URL}/3d-logo.png`];
       const mainImage = images[0];
       const availability = p.stock > 0 ? 'in_stock' : 'out_of_stock';
-      const brandName = p.brand?.name || '3DGalaxy';
+      const brandName = p.brand?.name || ENV.SITE_NAME;
       const categoryName = p.category?.name || '3D Printers & Accessories';
 
       xml += `    <item>
       <g:id>${p.id}</g:id>
       <g:title><![CDATA[${p.name}]]></g:title>
       <g:description><![CDATA[${p.description || p.name}]]></g:description>
-      <g:link>https://3dgalaxy.in/product/${p.slug}</g:link>
+      <g:link>${ENV.SITE_URL}/product/${p.slug}</g:link>
       <g:image_link>${mainImage}</g:image_link>
       <g:availability>${availability}</g:availability>
       <g:price>${price} INR</g:price>\n`;
@@ -258,26 +259,26 @@ export const generateGoogleMerchantFeedJson = async (req: Request, res: Response
     });
 
     const feedItems = products.map(p => {
-      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : ['https://3dgalaxy.in/3d-logo.png'];
+      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : [`${ENV.SITE_URL}/3d-logo.png`];
       return {
         id: p.id,
         title: p.name,
         description: p.description || p.name,
-        link: `https://3dgalaxy.in/product/${p.slug}`,
+        link: `${ENV.SITE_URL}/product/${p.slug}`,
         image_link: images[0],
         additional_image_links: images.slice(1),
         availability: p.stock > 0 ? 'in_stock' : 'out_of_stock',
         price: `${Number(p.basePrice).toFixed(2)} INR`,
         sale_price: p.salePrice ? `${Number(p.salePrice).toFixed(2)} INR` : undefined,
-        brand: p.brand?.name || '3DGalaxy',
+        brand: p.brand?.name || ENV.SITE_NAME,
         condition: 'new',
         google_product_category: p.category?.name || '3D Printers'
       };
     });
 
     return res.json({
-      title: '3DGalaxy Product Feed',
-      link: 'https://3dgalaxy.in',
+      title: `${ENV.SITE_NAME} Product Feed`,
+      link: ENV.SITE_URL,
       updatedAt: new Date().toISOString(),
       items: feedItems
     });
