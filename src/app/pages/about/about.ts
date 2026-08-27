@@ -9,6 +9,7 @@ import {
 import { CommonModule } from "@angular/common";
 import { MatIconModule } from "@angular/material/icon";
 import { RouterModule } from "@angular/router";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { SettingsService } from "../../core/services/settings.service";
 
 @Component({
@@ -21,6 +22,7 @@ import { SettingsService } from "../../core/services/settings.service";
 })
 export class AboutPage implements OnInit {
   private settingsService = inject(SettingsService);
+  private sanitizer = inject(DomSanitizer);
 
   isLoading = signal(true);
 
@@ -99,8 +101,9 @@ export class AboutPage implements OnInit {
     }
   }
 
-  getMapUrl(address: string): string {
-    return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+  getMapUrl(address: string): SafeResourceUrl {
+    const url = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   getSocialItems() {

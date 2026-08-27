@@ -127,6 +127,10 @@ export class CheckoutComponent implements OnInit {
   name = signal("");
   email = signal("");
   phone = signal("");
+  isPhoneLocked = computed(() => {
+    const userPhone = this.ds.activeUser()?.phone;
+    return Boolean(this.isLoggedIn() && userPhone && userPhone.trim().length >= 10);
+  });
 
   // Shipping Address Fields
   accAddr1 = signal("");
@@ -237,6 +241,12 @@ export class CheckoutComponent implements OnInit {
         if (!this.isLoggedIn() && !localStorage.getItem("guest_name")) {
           this.showAuthModal.set(true);
         } else if (this.isLoggedIn()) {
+          const u = this.ds.activeUser();
+          if (u) {
+            if (u.name && !this.name()) this.name.set(u.name);
+            if (u.email) this.email.set(u.email);
+            if (u.phone && (this.isPhoneLocked() || !this.phone())) this.phone.set(u.phone);
+          }
           this.fetchSavedAddresses();
         }
       },
@@ -519,6 +529,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   async placeOrder() {
+    if (this.isSubmitting()) return;
+
     if (!this.isValid()) {
       this.toast.error("Please fill in all required fields and accept terms.");
       return;

@@ -451,8 +451,22 @@ export class WhatsAppNotificationService {
         }
       }
 
-      // Build 8 Template Parameters for order_status_update_3dgal:
-      // {{1}} customerName, {{2}} orderId, {{3}} currentStatus, {{4}} statusDescription, {{5}} additionalInformation, {{6}} siteName, {{7}} siteName, {{8}} orderLink
+      // Dynamic button URL parameter for Call to Action button (e.g. {{1}} on https://3dgalaxy.com/{{1}})
+      let buttonUrlParam = 'account/orders';
+      if (extraParams?.buttonUrl) {
+        buttonUrlParam = String(extraParams.buttonUrl).replace(/^\//, '');
+      } else if (orderLink) {
+        try {
+          const parsed = new URL(orderLink);
+          buttonUrlParam = (parsed.pathname.replace(/^\//, '') + parsed.search) || 'account/orders';
+        } catch {
+          buttonUrlParam = String(orderLink).replace(/^https?:\/\/[^\/]+\/?/, '') || 'account/orders';
+        }
+      }
+
+      // Build Template Components for order_status_update:
+      // Body: {{1}} customerName, {{2}} orderId, {{3}} currentStatus, {{4}} statusDescription, {{5}} additionalInformation, {{6}} siteName, {{7}} siteName, {{8}} orderLink
+      // Button: index 0, sub_type url -> {{1}} buttonUrlParam
       const components = sanitizeComponents([
         {
           type: 'body',
@@ -465,6 +479,14 @@ export class WhatsAppNotificationService {
             { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
             { type: 'text', text: sanitizeTemplateParam(siteName, '3D Galaxy') },
             { type: 'text', text: sanitizeTemplateParam(orderLink, 'https://3dgalaxy.co.in') }
+          ]
+        },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: '0',
+          parameters: [
+            { type: 'text', text: sanitizeTemplateParam(buttonUrlParam, 'account/orders') }
           ]
         }
       ]);

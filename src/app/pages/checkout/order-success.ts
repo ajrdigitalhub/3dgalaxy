@@ -5,6 +5,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {DatastoreService} from '../../services/datastore';
 import {ApiService} from '../../services/api.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
+import {DeliveryEstimateService} from '../../core/services/delivery-estimate.service';
 import {firstValueFrom} from 'rxjs';
 
 interface PaperParticle {
@@ -151,23 +152,72 @@ interface PaperParticle {
         }
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <a [routerLink]="['/order-tracking', displayOrderId]"
+            class="flex items-center justify-center gap-2 py-3.5 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-wider uppercase rounded-xl transition-all shadow-md cursor-pointer no-underline">
+            <mat-icon class="text-sm">local_shipping</mat-icon> Track This Order
+          </a>
           @if (!isGuest) {
             <a routerLink="/orders"
-              class="flex items-center justify-center gap-2 py-4 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all shadow-lg cursor-pointer">
-              <mat-icon class="text-sm">local_shipping</mat-icon> Track Order
+              class="flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs tracking-wider uppercase rounded-xl transition-all shadow-md cursor-pointer no-underline">
+              <mat-icon class="text-sm">inventory_2</mat-icon> View All Orders
             </a>
           } @else {
             <a routerLink="/order-tracking"
-              class="flex items-center justify-center gap-2 py-4 bg-neutral-900 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all shadow-lg cursor-pointer">
-              <mat-icon class="text-sm">local_shipping</mat-icon> Track Guest Order
+              class="flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs tracking-wider uppercase rounded-xl transition-all shadow-md cursor-pointer no-underline">
+              <mat-icon class="text-sm">search</mat-icon> Track Orders Portal
             </a>
           }
           <a routerLink="/"
-            class="flex items-center justify-center gap-2 py-4 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black text-xs tracking-[0.2em] uppercase rounded-xl transition-all cursor-pointer">
-            <mat-icon class="text-sm">storefront</mat-icon> Continue Shopping
+            class="flex items-center justify-center gap-2 py-3.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-black text-xs tracking-wider uppercase rounded-xl transition-all cursor-pointer no-underline">
+            <mat-icon class="text-sm">storefront</mat-icon> Keep Shopping
           </a>
         </div>
+
+        <!-- OTHER EXISTING ORDERS SECTION (For logged in customers) -->
+        @if (otherExistingOrders().length > 0) {
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4 text-left">
+          <div class="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+            <div class="flex items-center gap-2">
+              <mat-icon class="text-blue-500 text-lg">history</mat-icon>
+              <h3 class="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-white">Your Other Existing Orders</h3>
+            </div>
+            <a routerLink="/orders" class="text-[11px] font-bold text-blue-600 hover:underline uppercase tracking-wider">
+              See All ({{ otherExistingOrders().length }}+) →
+            </a>
+          </div>
+
+          <div class="divide-y divide-neutral-100 dark:divide-neutral-800">
+            @for (other of otherExistingOrders(); track other.orderNumber || other.id) {
+            <div class="py-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-xs text-neutral-900 dark:text-white">#{{ other.orderNumber || other.id }}</span>
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
+                    [class]="other.status === 'delivered' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'">
+                    {{ other.status || 'Processing' }}
+                  </span>
+                </div>
+                <p class="text-[10px] text-neutral-400 font-medium">
+                  {{ other.createdAt | date:'dd MMM yyyy' }} &middot; {{ other.totalAmount | currency:'INR':'symbol':'1.0-2' }}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <a [routerLink]="['/order-tracking', other.orderNumber || other.id]"
+                  class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[10px] font-bold uppercase rounded-lg transition-colors flex items-center gap-1 no-underline">
+                  <mat-icon class="scale-75 text-[13px]">local_shipping</mat-icon> Track
+                </a>
+                <a [routerLink]="['/orders', other.orderNumber || other.id]"
+                  class="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-[10px] font-bold uppercase rounded-lg transition-colors no-underline">
+                  Details
+                </a>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
 
         <!-- Trust Footer -->
         <div class="flex flex-wrap gap-6 justify-center pb-8">
@@ -200,11 +250,14 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
   toast = inject(ToastService);
   cdr = inject(ChangeDetectorRef);
 
+  deliveryEstimateService = inject(DeliveryEstimateService);
+
   order: any;
   customerName = '';
   isGuest = false;
   isLoading = signal(false);
   copied = signal(false);
+  otherExistingOrders = signal<any[]>([]);
 
   private particles: PaperParticle[] = [];
   private animFrameId: number | null = null;
@@ -223,43 +276,20 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
   }
 
   get estimatedDeliveryDateRange(): string {
-    const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
-    
-    let minDays = 3;
-    let maxDays = 5;
-    
     const est = this.order?.estimatedDelivery || this.order?.estimatedDeliveryDays;
-    if (typeof est === 'number') {
-      minDays = Math.max(1, est - 1);
-      maxDays = est + 2;
-    } else if (typeof est === 'string') {
-      const match = est.match(/(\d+)\s*-\s*(\d+)/);
-      if (match) {
-        minDays = parseInt(match[1], 10);
-        maxDays = parseInt(match[2], 10);
-      } else {
-        const singleMatch = est.match(/(\d+)/);
-        if (singleMatch) {
-          const num = parseInt(singleMatch[1], 10);
-          minDays = Math.max(1, num - 1);
-          maxDays = num + 2;
-        }
-      }
+    if (!est) {
+      const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
+      return this.deliveryEstimateService.formatDeliveryRange(3, true, baseDate);
     }
 
-    const minDate = new Date(baseDate);
-    minDate.setDate(minDate.getDate() + minDays);
-
-    const maxDate = new Date(baseDate);
-    maxDate.setDate(maxDate.getDate() + maxDays);
-
-    const formatDayMonth = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    const formatFull = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-
-    if (minDate.getMonth() === maxDate.getMonth() && minDate.getFullYear() === maxDate.getFullYear()) {
-      return `${minDate.getDate()} - ${formatFull(maxDate)}`;
+    const str = String(est).trim();
+    // If it is already a formatted date range like "31 Aug 2026 – 03 Sep 2026" or "Expected by 31 Aug 2026 – 03 Sep 2026"
+    if (str.includes('–') || (str.includes('-') && /[a-zA-Z]/.test(str))) {
+      return str.replace(/^Expected by\s+/i, '').trim();
     }
-    return `${formatDayMonth(minDate)} - ${formatFull(maxDate)}`;
+
+    const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
+    return this.deliveryEstimateService.formatDeliveryRange(est, true, baseDate);
   }
 
   getStepDate(stepIndex: number): string {
@@ -287,6 +317,31 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
       this.loadOrderFromApi(orderId);
     } else {
       this.router.navigate(['/']);
+    }
+    this.fetchOtherOrders();
+  }
+
+  private async fetchOtherOrders() {
+    const role = this.ds.userRole();
+    if (role === 'guest') return;
+
+    try {
+      const resp: any = await firstValueFrom(this.api.get<any>('/orders/my-orders'));
+      const orders = Array.isArray(resp)
+        ? resp
+        : resp && Array.isArray(resp.data)
+          ? resp.data
+          : [];
+      
+      const currentNum = this.displayOrderId;
+      const filtered = orders.filter((o: any) => {
+        const id = o.orderNumber || o.id;
+        return id && id !== currentNum;
+      });
+      this.otherExistingOrders.set(filtered.slice(0, 4));
+      this.cdr.detectChanges();
+    } catch (e) {
+      // Non-blocking background fetch failure
     }
   }
 

@@ -128,11 +128,22 @@ export interface SlipLineItem {
                   />
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Tracking Number</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Tracking Number</label>
+                    @if (isShipped()) {
+                      <span class="text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                        <mat-icon class="scale-50 text-[12px] -mr-1">lock</mat-icon> Locked (Shipped)
+                      </span>
+                    }
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="trackingNumber"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600"
+                    [readonly]="isShipped()"
+                    [disabled]="isShipped()"
+                    [class.opacity-60]="isShipped()"
+                    [class.cursor-not-allowed]="isShipped()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-500"
                   />
                 </div>
               </div>
@@ -592,6 +603,13 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   notesFromShipping = signal('Thanks for ordering our famous boxes!');
 
   // Computed Totals
+  isShipped = computed(() => {
+    const status = (this.order?.status || '').toLowerCase();
+    const hasShipment = !!(this.order?.shipments && this.order.shipments.length > 0 && this.order.shipments[0]?.trackingNumber);
+    const hasShipmentObj = !!(this.order?.shipment && this.order.shipment?.trackingNumber);
+    return status === 'shipped' || status === 'delivered' || status === 'out for delivery' || hasShipment || hasShipmentObj;
+  });
+
   qtyTotal = computed(() => {
     return this.items().reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
   });
@@ -668,7 +686,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
     this.email.set(addr.email || ord.customer?.user?.email || ord.customerEmail || 'customer@example.com');
 
     const shipmentObj = (ord.shipments && ord.shipments.length > 0) ? ord.shipments[0] : (typeof ord.shipment === 'object' ? ord.shipment : null);
-    this.trackingNumber.set(shipmentObj?.trackingNumber || 'LZ92738101');
+    this.trackingNumber.set(shipmentObj?.trackingNumber || ord.trackingNumber || (this.isShipped() ? 'N/A' : ''));
     
     const shipAmt = ord.shippingAmount !== undefined && ord.shippingAmount !== null ? Number(ord.shippingAmount) : 0;
     this.shippingCost.set(shipAmt);

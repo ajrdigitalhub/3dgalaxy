@@ -17,6 +17,7 @@ import { SettingsService } from "../../../../core/services/settings.service";
 import { environment } from "../../../../../environments/environment";
 import { SupportRequestDialogComponent } from "../support-request-dialog/support-request-dialog.component";
 import { OrderSupportMessageService } from "../../../../services/order-support-message.service";
+import { DatastoreService } from "../../../../services/datastore";
 
 @Component({
   selector: "app-customer-order-details",
@@ -33,6 +34,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
   private toastService = inject(ToastService);
   private settingsService = inject(SettingsService);
   public supportService = inject(OrderSupportMessageService);
+  private ds = inject(DatastoreService);
 
   order = signal<any>(null);
   loading = signal(true);
@@ -577,5 +579,66 @@ export class CustomerOrderDetailsComponent implements OnInit {
     if (c.includes('cyan') || c.includes('teal')) return '#14b8a6';
     if (c.includes('brown') || c.includes('chocolate')) return '#854d0e';
     return '#cbd5e1';
+  }
+
+  reorder() {
+    const ord = this.order();
+    if (ord && ord.items && ord.items.length > 0) {
+      for (const item of ord.items) {
+        this.ds.addToCart({
+          id: item.productId || item.product?.id || 'prod-reorder',
+          name: item.product?.name || item.name || 'Product',
+          mrp: ((item.price || item.product?.basePrice || 0) * 1.2),
+          sale_price: item.price || item.product?.salePrice || 0,
+          stock: 50,
+          brand: item.product?.brand?.name || '3D GALAXY',
+          slug: item.product?.slug || 'product',
+          sku: item.variant?.sku || item.product?.sku || 'SKU-REORDER',
+          barcode: 'BC-REORDER',
+          category_id: item.product?.categoryId || 'reorder',
+          description: item.product?.name || item.name || '',
+          dealer_price: item.price || 0,
+          reserved: 0,
+          images: item.variant?.imageUrl ? [item.variant.imageUrl] : (item.product?.images ? item.product.images.map((img: any) => img.url || img) : []),
+          specs: [],
+          reviews: [],
+          qnas: [],
+          featured: false,
+          is360Supported: false,
+          tags: []
+        }, 1, item.variant || undefined);
+      }
+      this.toastService.success(`Items from order #${ord.orderNumber || ord.id} added to cart!`);
+      this.router.navigate(["/cart"]);
+    }
+  }
+
+  reorderItem(item: any) {
+    if (item) {
+      this.ds.addToCart({
+        id: item.productId || item.product?.id || 'prod-reorder',
+        name: item.product?.name || item.name || 'Product',
+        mrp: ((item.price || item.product?.basePrice || 0) * 1.2),
+        sale_price: item.price || item.product?.salePrice || 0,
+        stock: 50,
+        brand: item.product?.brand?.name || '3D GALAXY',
+        slug: item.product?.slug || 'product',
+        sku: item.variant?.sku || item.product?.sku || 'SKU-REORDER',
+        barcode: 'BC-REORDER',
+        category_id: item.product?.categoryId || 'reorder',
+        description: item.product?.name || item.name || '',
+        dealer_price: item.price || 0,
+        reserved: 0,
+        images: item.variant?.imageUrl ? [item.variant.imageUrl] : (item.product?.images ? item.product.images.map((img: any) => img.url || img) : []),
+        specs: [],
+        reviews: [],
+        qnas: [],
+        featured: false,
+        is360Supported: false,
+        tags: []
+      }, 1, item.variant || undefined);
+      this.toastService.success(`Item added to cart!`);
+      this.router.navigate(["/cart"]);
+    }
   }
 }

@@ -480,9 +480,9 @@ export class Account {
           featured: false,
           is360Supported: false,
           tags: []
-        }, item.quantity || 1, item.variant || undefined, weightConfig);
+        }, 1, item.variant || undefined, weightConfig);
       }
-      this.toastService.success(`Items from order #${order.orderNumber || order.id} added to cart with preserved weight configurations!`);
+      this.toastService.success(`Items from order #${order.orderNumber || order.id} added to cart!`);
       this.router.navigate(["/cart"]);
     }
   }

@@ -262,7 +262,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   updateOrderStatus(status: string, selectEl?: HTMLSelectElement) {
-    if (!status) return;
+    if (!status || this.statusUpdating()) return;
 
     if (status.toLowerCase() === 'shipped') {
       if (selectEl && this.order()) {
@@ -287,7 +287,7 @@ export class OrderDetailsComponent implements OnInit {
 
   onSaveShipmentPayload(payload: ShipmentDetailsPayload) {
     const ord = this.order();
-    if (!ord) return;
+    if (!ord || this.statusUpdating()) return;
 
     this.statusUpdating.set(true);
     this.http.put(`${environment.apiUrl}/orders/${ord.id}/status`, {
@@ -320,7 +320,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   updatePaymentStatus(paymentStatus: string) {
-    if (!paymentStatus) return;
+    if (!paymentStatus || this.paymentUpdating()) return;
     this.paymentUpdating.set(true);
     this.http.put(`${environment.apiUrl}/orders/${this.order().id}/payment`, { paymentStatus }, this.getHeaders()).subscribe({
       next: () => {
@@ -335,6 +335,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   updateShipment(carrier: string, trackingNumber: string, trackingUrl: string, estimatedDeliveryDate: string) {
+    if (this.shipmentUpdating()) return;
     if (!carrier) return alert('Carrier company name is required');
     this.shipmentUpdating.set(true);
     this.http.put(`${environment.apiUrl}/orders/${this.order().id}/shipment`, { 
@@ -355,7 +356,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   addNote(notes: string, noteInputEl: HTMLTextAreaElement) {
-    if (!notes || !notes.trim()) return;
+    if (!notes || !notes.trim() || this.noteAdding()) return;
     this.noteAdding.set(true);
     this.http.post(`${environment.apiUrl}/orders/${this.order().id}/notes`, { notes }, this.getHeaders()).subscribe({
       next: () => {
@@ -371,6 +372,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   resendNotification() {
+    if (this.notificationResending()) return;
     this.notificationResending.set(true);
     this.http.post(`${environment.apiUrl}/orders/${this.order().id}/resend-notification`, {}, this.getHeaders()).subscribe({
       next: (res: any) => {

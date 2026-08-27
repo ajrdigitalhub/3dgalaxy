@@ -606,6 +606,7 @@
   @if (showShipmentModal() && order()) {
     <app-shipment-dialog
       [orderNumber]="order().orderNumber"
+      [order]="order()"
       [orderItems]="order().items || []"
       (saveShipment)="onSaveShipmentPayload($event)"
       (cancel)="showShipmentModal.set(false)"
