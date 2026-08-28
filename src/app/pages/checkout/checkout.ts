@@ -74,6 +74,12 @@ export class CheckoutComponent implements OnInit {
     return res.totalGrams > 0 ? res.display : '';
   }
 
+  getItemDeliveryDays(item: any): number | string {
+    const p = item?.product || item;
+    const raw = p?.estimatedDeliveryDays ?? p?.estimated_delivery_days ?? p?.shipping?.estimatedDays ?? p?.shipping?.deliveryDays ?? this.shippingDetails().estimatedDays;
+    return this.deliveryService.parseEstimateDays(raw) || this.shippingDetails().estimatedDays || 305;
+  }
+
   isSubmitting = signal(false);
   showAuthModal = signal(false);
   showTermsModal = signal(false);

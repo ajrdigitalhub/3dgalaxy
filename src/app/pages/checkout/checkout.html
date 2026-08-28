@@ -631,7 +631,7 @@
                   }
                   <div class="text-[10px] text-neutral-550 dark:text-neutral-400 font-bold flex items-center gap-1.5 mt-0.5">
                     <span>Delivery:</span>
-                    <span class="text-neutral-800 dark:text-neutral-200">{{ item.product.estimatedDeliveryDays || 3 | deliveryEstimate:'desktop' }}</span>
+                    <span class="text-neutral-800 dark:text-neutral-200">{{ getItemDeliveryDays(item) | deliveryEstimate:'desktop' }}</span>
                   </div>
                   <p class="text-[10px] text-neutral-500 font-semibold mt-0.5 flex items-center gap-2">
                     <span>Qty: {{ item.quantity }}</span>

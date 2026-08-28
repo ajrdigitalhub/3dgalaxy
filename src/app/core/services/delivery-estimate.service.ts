@@ -18,20 +18,37 @@ export class DeliveryEstimateService {
     return false;
   }
 
-  // Parse string configuration (e.g. "5-6" or "5") into encoded number (e.g. 506 or 5)
-  public parseEstimateDays(estimateStr: string | null | undefined): number {
-    if (!estimateStr) return 3; // Default fallback
-    const clean = String(estimateStr).replace(/\s+/g, '');
+  // Parse string configuration (e.g. "5-6" or "5" or "5-7" or "507") into encoded number (e.g. 506 or 507)
+  public parseEstimateDays(estimateStr: string | number | null | undefined): number {
+    if (estimateStr === null || estimateStr === undefined || estimateStr === '') return 305; // Default 3-5 days
+    if (typeof estimateStr === 'number') {
+      if (isNaN(estimateStr) || estimateStr <= 0) return 305;
+      if (estimateStr >= 100) return estimateStr;
+      if (estimateStr < 10) return estimateStr * 100 + (estimateStr + 2);
+      return estimateStr;
+    }
+    const clean = String(estimateStr).trim();
     if (clean.includes('-')) {
       const parts = clean.split('-');
-      const min = parseInt(parts[0], 10);
-      const max = parseInt(parts[1], 10);
+      const min = parseInt(parts[0].trim(), 10);
+      const max = parseInt(parts[1].trim(), 10);
+      if (!isNaN(min) && !isNaN(max) && min < max) {
+        return min * 100 + max;
+      }
+    }
+    if (clean.toLowerCase().includes('to')) {
+      const parts = clean.toLowerCase().split('to');
+      const min = parseInt(parts[0].trim(), 10);
+      const max = parseInt(parts[1].trim(), 10);
       if (!isNaN(min) && !isNaN(max) && min < max) {
         return min * 100 + max;
       }
     }
     const val = parseInt(clean, 10);
-    return isNaN(val) ? 3 : val;
+    if (isNaN(val) || val <= 0) return 305;
+    if (val >= 100) return val;
+    if (val < 10) return val * 100 + (val + 2);
+    return val;
   }
 
   // Decodes an encoded number back to human-readable days string like "5-6" or "5"

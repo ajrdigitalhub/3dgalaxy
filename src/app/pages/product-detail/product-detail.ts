@@ -1801,7 +1801,7 @@ export class ProductDetail {
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
       if (bundleDetails) {
         this.isAddingToCart.set(true);
-        this.ds.addBundleToCart(p, bundleDetails);
+        this.ds.addBundleToCart(p, bundleDetails, this.quantity());
         setTimeout(() => {
           this.isAddingToCart.set(false);
           this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
@@ -1942,10 +1942,14 @@ export class ProductDetail {
       }
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
       if (bundleDetails) {
+        const qty = Math.max(1, this.quantity());
         this.ds.setBuyNowItem({
           product: p,
-          quantity: 1,
-          bundleDetails
+          quantity: qty,
+          bundleDetails,
+          weightInGrams: bundleDetails.weightInGrams,
+          selectedWeightValue: bundleDetails.selectedWeightValue,
+          selectedWeightUnit: bundleDetails.selectedWeightUnit
         });
         this.toastService.success(`Proceeding to checkout with ${bundleDetails.bundleName}`);
         this.router.navigate(["/checkout"]);
