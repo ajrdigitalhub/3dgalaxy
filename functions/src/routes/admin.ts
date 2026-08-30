@@ -594,63 +594,7 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
   }
 });
 
-// 2. Customers List (Paginated & Lightweight)
-router.get('/customers', adminGuard, async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(String(req.query.page || '1'), 10);
-    const limit = parseInt(String(req.query.limit || '50'), 10);
-    const skip = (page - 1) * limit;
 
-    const [customers, totalCount] = await Promise.all([
-      prisma.customer.findMany({
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          phone: true,
-          createdAt: true,
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-              email: true,
-              mobile: true,
-              isActive: true,
-            }
-          },
-          _count: {
-            select: { orders: true }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      }),
-      prisma.customer.count()
-    ]);
-
-    const formatted = customers.map(c => {
-      const name = c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}`.trim() : (c.user?.email || 'N/A');
-      return {
-        id: c.id,
-        name,
-        email: c.user?.email || 'N/A',
-        mobile: c.phone || c.user?.mobile || 'N/A',
-        ordersCount: c._count?.orders || 0,
-        status: c.user?.isActive ? 'Active' : 'Inactive',
-        createdDate: c.createdAt ? c.createdAt.toISOString().split('T')[0] : ''
-      };
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: formatted,
-      pagination: { page, limit, total: totalCount, totalPages: Math.ceil(totalCount / limit) }
-    });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // 3. Abandoned Carts List
 router.get('/abandoned-carts', adminGuard, async (req: Request, res: Response) => {

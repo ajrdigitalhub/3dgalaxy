@@ -1487,9 +1487,25 @@ export class AdminCustomersTab implements OnInit {
     this.api.get<any>('/admin/customers', params).subscribe({
       next: (res: any) => {
         if (res?.success && Array.isArray(res.data)) {
-          this.customers.set(res.data);
-          this.totalCustomers.set(res.meta?.total || res.data.length);
-          this.totalPages.set(res.meta?.totalPages || 1);
+          const mappedData: CustomerListItem[] = res.data.map((c: any) => ({
+            id: c.id || '',
+            userId: c.userId || '',
+            name: c.name || 'CUSTOMER',
+            email: c.email || '',
+            phone: c.phone || c.mobile || '',
+            customerType: c.customerType || 'retail',
+            registrationDate: c.registrationDate || c.createdAt || c.createdDate || '',
+            totalOrders: c.totalOrders ?? c.ordersCount ?? 0,
+            totalSpend: c.totalSpend ?? 0,
+            lastOrderDate: c.lastOrderDate || null,
+            status: (c.status === 'Active' || c.status === true) ? 'Active' : 'Blocked',
+            profileImage: c.profileImage || '',
+          }));
+          this.customers.set(mappedData);
+          const total = res.meta?.total ?? res.pagination?.total ?? res.data.length;
+          const totalPages = res.meta?.totalPages ?? res.pagination?.totalPages ?? 1;
+          this.totalCustomers.set(total);
+          this.totalPages.set(totalPages);
           if (res.stats) {
             this.directoryStats.set(res.stats);
           }

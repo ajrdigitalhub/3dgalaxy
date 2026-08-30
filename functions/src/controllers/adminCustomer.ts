@@ -34,6 +34,7 @@ export const getCustomers = async (req: Request, res: Response) => {
               { email: { contains: search, mode: 'insensitive' } },
               { firstName: { contains: search, mode: 'insensitive' } },
               { lastName: { contains: search, mode: 'insensitive' } },
+              { mobile: { contains: search, mode: 'insensitive' } },
             ]
           }
         }
@@ -70,7 +71,7 @@ export const getCustomers = async (req: Request, res: Response) => {
     }
 
     // Execute queries in parallel
-    const [total, list, totalActive, totalBlocked, totalDirectorySpendAgg] = await Promise.all([
+    const [total, list, totalActive, totalBlocked, totalDirectorySpendAgg, repeatBuyersGroup] = await Promise.all([
       prisma.customer.count({ where }),
       prisma.customer.findMany({
         where,
@@ -80,6 +81,7 @@ export const getCustomers = async (req: Request, res: Response) => {
             select: {
               totalAmount: true,
               createdAt: true,
+              status: true,
             }
           }
         },
@@ -92,11 +94,27 @@ export const getCustomers = async (req: Request, res: Response) => {
       prisma.order.aggregate({
         _sum: {
           totalAmount: true
+        },
+        where: {
+          status: {
+            notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
+          }
         }
+      }),
+      prisma.order.groupBy({
+        by: ['customerId'],
+        where: {
+          customerId: { not: null },
+          status: {
+            notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
+          }
+        },
+        _count: { customerId: true },
+        having: { customerId: { _count: { gte: 2 } } }
       })
     ]);
 
-    let repeatBuyersCount = 0;
+    const repeatBuyersCount = repeatBuyersGroup.length;
 
     // Map list for client response
     const data = list.map((c) => {
@@ -105,12 +123,10 @@ export const getCustomers = async (req: Request, res: Response) => {
         return s !== 'CANCELLED' && s !== 'REJECTED' && s !== 'FAILED';
       });
 
-      const ordersCount = c.orders.length;
-      if (ordersCount >= 2) repeatBuyersCount++;
-
+      const ordersCount = validOrders.length;
       const spend = validOrders.reduce((sum: number, o: any) => sum + Number(o.totalAmount || 0), 0);
-      const lastOrder = c.orders.length > 0
-        ? c.orders.reduce((max: Date, o: any) => (o.createdAt > max ? o.createdAt : max), c.orders[0].createdAt)
+      const lastOrder = validOrders.length > 0
+        ? validOrders.reduce((max: Date, o: any) => (o.createdAt > max ? o.createdAt : max), validOrders[0].createdAt)
         : null;
 
       const rawName = c.user ? `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() : '';
@@ -241,6 +257,7 @@ export const createCustomer = async (req: Request, res: Response) => {
           passwordHash: hashedPassword,
           firstName,
           lastName,
+          mobile: phone || null,
           isActive: status !== 'Blocked',
         },
       });
@@ -275,7 +292,7 @@ export const createCustomer = async (req: Request, res: Response) => {
         id: result.id,
         name: `${result.user.firstName || ''} ${result.user.lastName || ''}`.trim(),
         email: result.user.email,
-        phone: result.phone || '',
+        phone: result.phone || result.user.mobile || '',
       }
     });
   } catch (error: any) {
@@ -319,6 +336,7 @@ export const updateCustomer = async (req: Request, res: Response) => {
           email: email || undefined,
           firstName: firstName || undefined,
           lastName: lastName !== undefined ? lastName : undefined,
+          mobile: phone !== undefined ? phone : undefined,
           isActive: status !== undefined ? status === 'Active' : undefined,
           gender: gender !== undefined ? gender : undefined,
           dateOfBirth: dateOfBirth !== undefined ? (dateOfBirth ? new Date(dateOfBirth) : null) : undefined,
