@@ -3343,8 +3343,8 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="variantEditFormMap()[v.id]?.price ?? 0"
-                                    (input)="updateVariantModalFormField(v.id, 'price', $any($event.target).value)"
+                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.price) ?? v.price ?? (v.salePrice || 0)"
+                                    (input)="updateVariantModalFormField((v.id || v.sku), 'price', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </div>
@@ -3358,8 +3358,8 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="variantEditFormMap()[v.id].dealerPrice"
-                                    (input)="updateVariantModalFormField(v.id, 'dealerPrice', $any($event.target).value)"
+                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.dealerPrice) ?? v.dealerPrice ?? (v.dealer_price || 0)"
+                                    (input)="updateVariantModalFormField((v.id || v.sku), 'dealerPrice', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
                                 </div>
@@ -3371,15 +3371,15 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                   type="number"
                                   min="0"
                                   step="1"
-                                  [value]="variantEditFormMap()[v.id].stock"
-                                  (input)="updateVariantModalFormField(v.id, 'stock', $any($event.target).value)"
+                                  [value]="(variantEditFormMap()[(v.id || v.sku)]?.stock) ?? v.stock ?? 0"
+                                  (input)="updateVariantModalFormField((v.id || v.sku), 'stock', $any($event.target).value)"
                                   class="w-20 px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                               </td>
 
                               <!-- Status -->
                               <td class="py-3 px-3">
-                                @let st = (variantEditFormMap()[v.id] ? variantEditFormMap()[v.id].stock : undefined) ?? v.stock ?? 0;
+                                @let st = (variantEditFormMap()[(v.id || v.sku)]?.stock) ?? v.stock ?? 0;
                                 @if (st === 0) {
                                   <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">OUT OF STOCK</span>
                                 } @else if (st <= 5) {
@@ -4020,12 +4020,14 @@ export class AdminCatalogTab {
 
     const initialMap: Record<string, any> = {};
     (vars || []).forEach((v: any) => {
-      initialMap[v.id] = {
+      const formVal = {
         price: v.price !== undefined ? v.price : (v.salePrice || 0),
         dealerPrice: v.dealerPrice !== undefined ? v.dealerPrice : (v.dealer_price || 0),
         stock: v.stock !== undefined ? v.stock : 0,
         isActive: v.isActive !== false,
       };
+      if (v.id) initialMap[v.id] = formVal;
+      if (v.sku) initialMap[v.sku] = formVal;
     });
     this.variantEditFormMap.set(initialMap);
   }
@@ -4052,7 +4054,8 @@ export class AdminCatalogTab {
 
     try {
       for (const v of vars) {
-        const form = formMap[v.id];
+        const vKey = v.id || v.sku;
+        const form = formMap[vKey] || formMap[v.id] || formMap[v.sku];
         if (!form) continue;
 
         const price = parseFloat(String(form.price));
@@ -4071,7 +4074,7 @@ export class AdminCatalogTab {
         };
 
         const res: any = await firstValueFrom(
-          this.api.patch(`/admin/products/${product.id}/variants/${v.id}/quick-update`, payload)
+          this.api.patch(`/admin/products/${product.id}/variants/${vKey}/quick-update`, payload)
         );
 
         if (res && (res.success || res.data)) {
@@ -4088,7 +4091,7 @@ export class AdminCatalogTab {
       this.productVariantsMap.update(m => ({ ...m, [product.id]: nextVars }));
       const totalStock = nextVars.reduce((sum, v) => sum + (v.stock || 0), 0);
       this.admin.ds.products.update(list =>
-        list.map(p => (p.id === product.id ? { ...p, stock: totalStock } : p))
+        list.map(p => (p.id === product.id || (product.sku && p.sku === product.sku) ? { ...p, stock: totalStock } : p))
       );
 
       this.toastService.success(`Updated ${updatedCount} variant(s) successfully.`);
@@ -4255,7 +4258,7 @@ export class AdminCatalogTab {
   }
 
   startQuickEditVariant(variant: any) {
-    this.quickEditingVariantId.set(variant.id);
+    this.quickEditingVariantId.set(variant.id || variant.sku);
     this.quickEditVariantForm.set({
       price: variant.price !== undefined ? variant.price : (variant.salePrice || 0),
       stock: variant.stock !== undefined ? variant.stock : 0,
@@ -4286,6 +4289,7 @@ export class AdminCatalogTab {
     }
 
     this.isQuickSavingVariant.set(true);
+    const vKey = variant.id || variant.sku;
 
     try {
       const payload = {
@@ -4297,7 +4301,7 @@ export class AdminCatalogTab {
       };
 
       const res: any = await firstValueFrom(
-        this.api.patch(`/admin/products/${product.id}/variants/${variant.id}/quick-update`, payload)
+        this.api.patch(`/admin/products/${product.id}/variants/${vKey}/quick-update`, payload)
       );
 
       if (res && (res.success || res.data)) {
@@ -4310,13 +4314,13 @@ export class AdminCatalogTab {
           isActive: form.isActive,
         };
         const currentVars = this.productVariantsMap()[product.id] || [];
-        const nextVars = currentVars.map(v => (v.id === variant.id ? updatedVar : v));
+        const nextVars = currentVars.map(v => ((v.id && v.id === vKey) || (v.sku && v.sku === vKey) ? updatedVar : v));
         this.productVariantsMap.update(m => ({ ...m, [product.id]: nextVars }));
 
         // Update total product stock in ds.products
         const totalStock = nextVars.reduce((sum, v) => sum + (v.stock || 0), 0);
         this.admin.ds.products.update(list =>
-          list.map(p => (p.id === product.id ? { ...p, stock: totalStock } : p))
+          list.map(p => (p.id === product.id || (product.sku && p.sku === product.sku) ? { ...p, stock: totalStock } : p))
         );
 
         this.toastService.success('Variant updated successfully.');

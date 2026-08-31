@@ -1810,7 +1810,15 @@ export const quickUpdateVariant = async (req: Request, res: Response) => {
   const { price, salePrice, stockQuantity, stock, isActive } = req.body;
 
   try {
-    const existing = await prisma.productVariant.findUnique({ where: { id: targetVariantId } });
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetVariantId);
+    let existing = isUuid
+      ? await prisma.productVariant.findUnique({ where: { id: targetVariantId } })
+      : await prisma.productVariant.findFirst({ where: { sku: targetVariantId } });
+
+    if (!existing && !isUuid) {
+      existing = await prisma.productVariant.findFirst({ where: { sku: targetVariantId } });
+    }
+
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Product variant not found' });
     }
@@ -1818,12 +1826,23 @@ export const quickUpdateVariant = async (req: Request, res: Response) => {
     const updateData: any = {};
 
     if (price !== undefined || salePrice !== undefined) {
-      const pVal = parseFloat(salePrice !== undefined ? salePrice : price);
-      if (isNaN(pVal) || pVal < 0) {
-        return res.status(400).json({ success: false, error: 'Invalid price value. Price must be a non-negative number.' });
+      if (price !== undefined) {
+        const pVal = parseFloat(price);
+        if (!isNaN(pVal) && pVal >= 0) {
+          updateData.price = pVal;
+        }
       }
-      updateData.price = pVal;
-      updateData.salePrice = pVal;
+      if (salePrice !== undefined) {
+        const sVal = parseFloat(salePrice);
+        if (!isNaN(sVal) && sVal >= 0) {
+          updateData.salePrice = sVal;
+        }
+      }
+      if (updateData.price === undefined && updateData.salePrice !== undefined) {
+        updateData.price = updateData.salePrice;
+      } else if (updateData.salePrice === undefined && updateData.price !== undefined) {
+        updateData.salePrice = updateData.price;
+      }
     }
 
     if (stockQuantity !== undefined || stock !== undefined) {
@@ -1841,7 +1860,7 @@ export const quickUpdateVariant = async (req: Request, res: Response) => {
     updateData.updatedAt = new Date();
 
     const updatedVariant = await prisma.productVariant.update({
-      where: { id: targetVariantId },
+      where: { id: existing.id },
       data: updateData
     });
 
@@ -1866,7 +1885,7 @@ export const quickUpdateVariant = async (req: Request, res: Response) => {
             userId: user.id,
             action: 'VARIANT_QUICK_UPDATE',
             entityType: 'ProductVariant',
-            entityId: targetVariantId,
+            entityId: existing.id,
             newData: updateData
           }
         });
