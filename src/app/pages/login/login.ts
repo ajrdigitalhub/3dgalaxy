@@ -8,6 +8,7 @@ import { SettingsService } from '../../core/services/settings.service';
 import { AppButton } from '../../shared/components/app-button/app-button';
 
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { formatWhatsAppNumber, buildWhatsAppUrl } from '../../shared/utils/phone.utils';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -164,18 +165,20 @@ export class Login implements OnInit {
   }
 
   get cleanWhatsAppNumber(): string {
-    return this.rawWhatsAppNumber.replace(/[^0-9]/g, '');
+    return formatWhatsAppNumber(this.rawWhatsAppNumber, '919876543210');
   }
 
   get displayWhatsAppNumber(): string {
-    const raw = String(this.rawWhatsAppNumber).trim();
-    if (!raw) return '+91 9876543210';
-    return raw.startsWith('+') ? raw : `+${raw}`;
+    const clean = this.cleanWhatsAppNumber;
+    return clean ? `+${clean}` : '+91 9876543210';
   }
 
   openWhatsAppLoginQuery() {
-    const cleanPhone = this.cleanWhatsAppNumber || '919876543210';
-    const text = encodeURIComponent("Hi 3D Galaxy team, I am facing a login issue. Please help me to login.");
-    window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
+    const url = buildWhatsAppUrl(
+      this.cleanWhatsAppNumber,
+      "Hi 3D Galaxy team, I am facing a login issue. Please help me to login.",
+      '919876543210'
+    );
+    window.open(url, '_blank');
   }
 }

@@ -24,7 +24,6 @@ import { convertToGrams } from '../../../../shared/utils/weight.utils';
 import { BundleSelectorComponent } from '../../../../shared/components/bundle-selector/bundle-selector.component';
 import { VariantSlotComponent } from '../../../../shared/components/variant-slot/variant-slot.component';
 import { BundleSummaryComponent } from '../../../../shared/components/bundle-summary/bundle-summary.component';
-import { VariantChipSelectorComponent } from '../../../../shared/components/variant-selector/variant-chip-selector';
 import { VariantWeightSelectorComponent } from '../../../../shared/components/variant-weight-selector/variant-weight-selector.component';
 
 @Component({
@@ -38,7 +37,6 @@ import { VariantWeightSelectorComponent } from '../../../../shared/components/va
     BundleSelectorComponent,
     VariantSlotComponent,
     BundleSummaryComponent,
-    VariantChipSelectorComponent,
     VariantWeightSelectorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

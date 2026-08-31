@@ -235,6 +235,7 @@ export class Account {
           lastName: parts.slice(1).join(" ") || "",
           email: u.email || "",
           phone: u.phone || "",
+          gender: u.gender ? u.gender.toLowerCase() : "",
         });
         this.fetchMyOrders();
         this.fetchWishlist();
@@ -552,7 +553,7 @@ export class Account {
   async saveProfile() {
     if (this.profileForm.valid) {
       this.isProfileSaving.set(true);
-      const { firstName, lastName, phone } = this.profileForm.value;
+      const { firstName, lastName, phone, gender } = this.profileForm.value;
       const currentPic = this.profile()?.profileImage || "";
       try {
         await this.ds.updateProfileDetails(
@@ -560,6 +561,7 @@ export class Account {
           lastName,
           phone,
           currentPic,
+          gender,
         );
         this.toastService.success("Profile details updated successfully!");
       } catch (err: any) {

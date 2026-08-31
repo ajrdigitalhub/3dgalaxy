@@ -416,6 +416,31 @@
         </div>
         }
 
+        <!-- GST Details Card -->
+        @if (ord.gstNumber) {
+        <div class="p-6 bg-purple-500/5 dark:bg-purple-950/20 border border-purple-500/20 rounded-3xl text-left space-y-3 shadow-sm md:col-span-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <mat-icon class="text-purple-600 dark:text-purple-400 scale-90">receipt_long</mat-icon>
+              <h3 class="text-xs font-mono font-bold tracking-widest text-purple-700 dark:text-purple-300 uppercase">GST & BUSINESS DETAILS</h3>
+            </div>
+            <span class="px-2 py-0.5 bg-purple-600 text-white text-[8px] font-black rounded-md uppercase tracking-wider">GST PROVIDED</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 font-mono text-xs">
+            <div>
+              <span class="text-[9px] text-neutral-400 font-bold uppercase block">GSTIN Number</span>
+              <p class="font-extrabold text-neutral-900 dark:text-white text-sm mt-0.5">{{ ord.gstNumber }}</p>
+            </div>
+            @if (ord.companyName) {
+            <div>
+              <span class="text-[9px] text-neutral-400 font-bold uppercase block">Business / Company Name</span>
+              <p class="font-extrabold text-neutral-900 dark:text-white text-sm mt-0.5">{{ ord.companyName }}</p>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
       </div>
 
     </div>

@@ -16,7 +16,7 @@ import { DatastoreService, Product, Category } from "../../services/datastore";
 import { ApiService } from "../../services/api.service";
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonProductCardComponent } from "../../shared/components/skeleton/skeleton-product-card/skeleton-product-card.component";
-import { Subject } from "rxjs";
+import { Subject, combineLatest } from "rxjs";
 import { debounceTime, distinctUntilChanged } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
@@ -116,50 +116,84 @@ export class Products implements OnInit {
   // Debounced search subject
   private searchSubject = new Subject<string>();
 
-  ngOnInit() {
-    // Listen to query parameters to trigger API fetch
-    this.route.queryParams.subscribe((params) => {
-      this.queryParams.set((params || {}) as Record<string, any>);
-      this.syncParamsToSignals(params);
-      this.fetchFilteredProducts();
-    });
-
-    // Handle path parameters for categorySlug and brandSlug
-    this.route.params.subscribe((params) => {
-      if (params["categorySlug"]) {
-        const slug = params["categorySlug"];
-        const cat = this.ds
-          .categories()
-          .find((c) => c.slug === slug || c.id === slug);
-        const catValue = cat ? cat.id : slug;
-        this.updateUrlQueryParam("category", catValue);
-        const name = cat ? cat.name : slug.replace(/-/g, " ");
-        this.setSeoTags(
-          name,
-          `Shop premium ${name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
-          `category/${slug}`,
-        );
-      } else if (params["brandSlug"]) {
-        const bSlug = params["brandSlug"];
-        const b = this.ds
-          .brands()
-          .find((br) => br.slug === bSlug || br.name === bSlug);
-        const bValue = b ? b.name : bSlug;
-        this.updateUrlQueryParam("brand", bValue);
-        const name = b ? b.name : bSlug;
-        this.setSeoTags(
-          `Buy Original ${name} Products Online | 3D Galaxy India`,
-          `Get authorized ${name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`,
-          `brand/${bSlug}`,
-        );
-      } else {
-        this.setSeoTags(
-          "Buy 3D Printers, Filaments & Spare Parts Online | 3D Galaxy",
-          "Browse India's largest catalog of industrial 3D printers, SLA/FDM materials, filaments, and precision spare parts. OEM warranty & bulk dealer discounts available.",
-          "products",
-        );
+  constructor() {
+    // Automatically re-resolve categories/brands when datastore finishes loading asynchronously
+    effect(() => {
+      const cats = this.ds.categories();
+      const params = this.route.snapshot.params;
+      if (cats && cats.length > 0 && params && params['categorySlug']) {
+        const slug = params['categorySlug'];
+        const cat = cats.find((c) => c.slug === slug || c.id === slug);
+        if (cat) {
+          const currentCategory = this.activeCategory();
+          if (currentCategory !== cat.id) {
+            this.activeCategory.set(cat.id);
+            const updated = { ...this.queryParams() };
+            updated['category'] = cat.id;
+            this.queryParams.set(updated);
+            this.setSeoTags(
+              cat.name,
+              `Shop premium ${cat.name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
+              `category/${slug}`
+            );
+            this.fetchFilteredProducts();
+          }
+        }
       }
     });
+  }
+
+  ngOnInit() {
+    // Combine route path parameters and query parameters to run synchronously
+    combineLatest([this.route.params, this.route.queryParams]).subscribe(
+      ([params, queryParams]) => {
+        const mergedParams = { ...(queryParams || {}) };
+
+        if (params["categorySlug"]) {
+          const slug = params["categorySlug"];
+          const cat = this.ds
+            .categories()
+            .find((c) => c.slug === slug || c.id === slug);
+          const catValue = cat ? cat.id : slug;
+
+          // Force category query parameter to match the route path categorySlug
+          mergedParams["category"] = catValue;
+
+          const name = cat ? cat.name : slug.replace(/-/g, " ");
+          this.setSeoTags(
+            name,
+            `Shop premium ${name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
+            `category/${slug}`,
+          );
+        } else if (params["brandSlug"]) {
+          const bSlug = params["brandSlug"];
+          const b = this.ds
+            .brands()
+            .find((br) => br.slug === bSlug || br.name === bSlug);
+          const bValue = b ? b.name : bSlug;
+
+          // Force brand query parameter to match the route path brandSlug
+          mergedParams["brand"] = bValue;
+
+          const name = b ? b.name : bSlug;
+          this.setSeoTags(
+            `Buy Original ${name} Products Online | 3D Galaxy India`,
+            `Get authorized ${name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`,
+            `brand/${bSlug}`,
+          );
+        } else {
+          this.setSeoTags(
+            "Buy 3D Printers, Filaments & Spare Parts Online | 3D Galaxy",
+            "Browse India's largest catalog of industrial 3D printers, SLA/FDM materials, filaments, and precision spare parts. OEM warranty & bulk dealer discounts available.",
+            "products",
+          );
+        }
+
+        this.queryParams.set(mergedParams);
+        this.syncParamsToSignals(mergedParams);
+        this.fetchFilteredProducts();
+      }
+    );
 
     // Set up debounced search inside page input
     this.searchSubject
@@ -285,8 +319,23 @@ export class Products implements OnInit {
     const currentParams = { ...this.queryParams() };
     let values = currentParams[key] ? currentParams[key].split(",") : [];
 
-    if (values.includes(value)) {
-      values = values.filter((v: string) => v !== value);
+    let targetToRemove = value;
+    if (key === "category") {
+      const cat = this.ds.categories().find((c) => c.id === value || c.slug === value);
+      if (cat) {
+        const found = values.find((v: string) => v === cat.id || v === cat.slug);
+        if (found) targetToRemove = found;
+      }
+    } else if (key === "brand") {
+      const b = this.ds.brands().find((br) => br.id === value || br.slug === value || br.name.toLowerCase() === value.toLowerCase());
+      if (b) {
+        const found = values.find((v: string) => v.toLowerCase() === b.name.toLowerCase() || v.toLowerCase() === b.slug.toLowerCase());
+        if (found) targetToRemove = found;
+      }
+    }
+
+    if (values.includes(targetToRemove)) {
+      values = values.filter((v: string) => v !== targetToRemove);
     } else {
       values.push(value);
     }
@@ -308,7 +357,22 @@ export class Products implements OnInit {
   isFilterActive(key: string, value: string): boolean {
     const param = this.queryParams()[key];
     if (!param) return false;
-    return param.split(",").includes(value);
+    const values = param.split(",");
+    if (values.includes(value)) return true;
+
+    if (key === "category") {
+      const cat = this.ds.categories().find((c) => c.id === value || c.slug === value);
+      if (cat) {
+        return values.includes(cat.id) || values.includes(cat.slug);
+      }
+    }
+    if (key === "brand") {
+      const b = this.ds.brands().find((br) => br.id === value || br.slug === value || br.name.toLowerCase() === value.toLowerCase());
+      if (b) {
+        return values.some((v: string) => v.toLowerCase() === b.name.toLowerCase() || v.toLowerCase() === b.slug.toLowerCase());
+      }
+    }
+    return false;
   }
 
   setPriceRange(min: string, max: string) {

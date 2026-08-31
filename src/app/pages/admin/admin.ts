@@ -2072,7 +2072,7 @@ export class AdminPanel implements OnInit {
   }
   generateVariants() {
     // Cartesian product logic
-    const opts = this.pOptions().filter((o) => o.name && o.values.length > 0);
+    const opts = this.pOptions().filter((o: any) => (o.name || o.variantName || o.displayName) && (Array.isArray(o.values) ? o.values.length > 0 : false));
     if (opts.length === 0) return;
 
     const cartesian = (a: any[], b: any[]) =>
@@ -2086,37 +2086,96 @@ export class AdminPanel implements OnInit {
       return cartesianProduct(d, c[0], ...c.slice(1));
     };
 
-    const valuesArr = opts.map((o) => o.values);
+    const valuesArr = opts.map((o) =>
+      o.values.map((v: any) => (typeof v === "string" ? v : v?.value || v?.displayValue || v?.name || String(v)))
+    );
     const combinations: any[] = cartesianProduct(
       valuesArr[0],
       ...valuesArr.slice(1),
     );
 
     const existingVariants = this.pVariants();
-    const newVariants = combinations.map((combo) => {
-      const comboStr = Array.isArray(combo) ? combo.join(" - ") : combo;
+    let hasExplicitDefault = false;
+
+    const newVariants = combinations.map((combo, comboIdx) => {
       const comboArray = Array.isArray(combo) ? combo : [combo];
-      // Try to preserve existing variant properties
-      const existing = existingVariants.find((v) => v.name === comboStr);
-      return (
-        existing || {
-          id: "new-" + Math.random().toString(36).substring(2, 9),
-          name: comboStr,
-          sku: this.pSku()
-            ? `${this.pSku()}-${comboArray.join("-")}`
-              .toUpperCase()
-              .replace(/\s+/g, "-")
-            : "",
-          price: this.pSale(),
-          stock: this.pStock(),
-          weight: 0,
-          optionsData: opts.map((opt, idx) => ({
-            optionName: opt.name,
-            valueStr: comboArray[idx],
-          })), // Tracking mapping
+      const comboStr = comboArray.join(" - ");
+
+      const currentOptionsData = opts.map((opt: any, idx) => ({
+        optionName: opt.displayName || opt.variantName || opt.name,
+        valueStr: String(comboArray[idx] || '').trim(),
+      }));
+
+      const optHash = currentOptionsData
+        .map((od) => `${od.optionName.toLowerCase().trim()}:${od.valueStr.toLowerCase().trim()}`)
+        .sort()
+        .join("|");
+
+      const baseSku = (this.pSku() || "SKU").trim().toUpperCase();
+      const sanitizedComboSku = comboArray
+        .map((s) => String(s).trim().toUpperCase().replace(/[^A-Z0-9_-]+/g, "-"))
+        .join("-");
+      const generatedSku = `${baseSku}-${sanitizedComboSku}`;
+
+      // Match existing variant by option hash, SKU, or name
+      const existing = existingVariants.find((v) => {
+        if (v.sku && (v.sku === generatedSku || v.sku.toLowerCase() === generatedSku.toLowerCase())) {
+          return true;
         }
-      );
+        if (v.name === comboStr) {
+          return true;
+        }
+        if (v.optionValues && typeof v.optionValues === "object") {
+          const vHash = Object.entries(v.optionValues)
+            .map(([k, val]) => `${k.toLowerCase().trim()}:${String(val).toLowerCase().trim()}`)
+            .sort()
+            .join("|");
+          if (vHash === optHash) return true;
+        }
+        if (v.optionsData && Array.isArray(v.optionsData)) {
+          const vHash = v.optionsData
+            .map((od: any) => `${(od.optionName || '').toLowerCase().trim()}:${String(od.valueStr || '').toLowerCase().trim()}`)
+            .sort()
+            .join("|");
+          if (vHash === optHash) return true;
+        }
+        return false;
+      });
+
+      if (existing) {
+        if (existing.isDefault) hasExplicitDefault = true;
+        return {
+          ...existing,
+          name: comboStr,
+          sku: existing.sku || generatedSku,
+          optionsData: currentOptionsData,
+          optionValues: Object.fromEntries(currentOptionsData.map((od) => [od.optionName, od.valueStr])),
+        };
+      }
+
+      const isFirst = comboIdx === 0;
+      return {
+        id: "new-" + Math.random().toString(36).substring(2, 9),
+        name: comboStr,
+        sku: generatedSku,
+        price: this.pSale() || this.pMrp() || 0,
+        salePrice: this.pSale() || this.pMrp() || 0,
+        dealerPrice: this.pDealer() || 0,
+        stock: this.pStock() || 10,
+        weight: 0,
+        isDefault: isFirst,
+        isActive: true,
+        variantImages: [],
+        images: [],
+        optionsData: currentOptionsData,
+        optionValues: Object.fromEntries(currentOptionsData.map((od) => [od.optionName, od.valueStr])),
+      };
     });
+
+    if (!hasExplicitDefault && newVariants.length > 0) {
+      newVariants[0].isDefault = true;
+    }
+
     this.pVariants.set(newVariants);
   }
   removeVariant(index: number) {

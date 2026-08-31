@@ -3343,7 +3343,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.price) ?? v.price ?? (v.salePrice || 0)"
+                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.price) !== undefined ? variantEditFormMap()[(v.id || v.sku)].price : (v.price ?? v.salePrice ?? 0)"
                                     (input)="updateVariantModalFormField((v.id || v.sku), 'price', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
@@ -3358,7 +3358,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.dealerPrice) ?? v.dealerPrice ?? (v.dealer_price || 0)"
+                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.dealerPrice) !== undefined ? variantEditFormMap()[(v.id || v.sku)].dealerPrice : (v.dealerPrice ?? v.dealer_price ?? 0)"
                                     (input)="updateVariantModalFormField((v.id || v.sku), 'dealerPrice', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
@@ -3371,7 +3371,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                   type="number"
                                   min="0"
                                   step="1"
-                                  [value]="(variantEditFormMap()[(v.id || v.sku)]?.stock) ?? v.stock ?? 0"
+                                  [value]="(variantEditFormMap()[(v.id || v.sku)]?.stock) !== undefined ? variantEditFormMap()[(v.id || v.sku)].stock : (v.stock ?? 0)"
                                   (input)="updateVariantModalFormField((v.id || v.sku), 'stock', $any($event.target).value)"
                                   class="w-20 px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 />
@@ -3379,7 +3379,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
 
                               <!-- Status -->
                               <td class="py-3 px-3">
-                                @let st = (variantEditFormMap()[(v.id || v.sku)]?.stock) ?? v.stock ?? 0;
+                                @let st = getVariantStock(v);
                                 @if (st === 0) {
                                   <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20">OUT OF STOCK</span>
                                 } @else if (st <= 5) {
@@ -3993,32 +3993,13 @@ export class AdminCatalogTab {
     this.variantEditModalProduct.set(product);
     this.isVariantEditModalOpen.set(true);
 
-    let vars = this.productVariantsMap()[product.id];
-    if (!vars || vars.length === 0) {
-      if (Array.isArray(product.variants) && product.variants.length > 0) {
-        vars = product.variants;
-        this.productVariantsMap.update(m => ({ ...m, [product.id]: vars }));
-      } else {
-        this.loadingVariantsProductIds.update(s => new Set(s).add(product.id));
-        try {
-          const res: any = await firstValueFrom(this.api.get(`/admin/products/${product.id}/variants`));
-          vars = res?.data || res || [];
-          this.productVariantsMap.update(m => ({ ...m, [product.id]: Array.isArray(vars) ? vars : [] }));
-        } catch (err) {
-          console.warn('Failed to load variants for modal:', err);
-          vars = [];
-          this.productVariantsMap.update(m => ({ ...m, [product.id]: [] }));
-        } finally {
-          this.loadingVariantsProductIds.update(s => {
-            const next = new Set(s);
-            next.delete(product.id);
-            return next;
-          });
-        }
-      }
+    if (!this.productVariantsMap()[product.id]) {
+      await this.toggleExpandVariants(product);
     }
 
-    const initialMap: Record<string, any> = {};
+    const vars = this.productVariantsMap()[product.id] || [];
+
+    const initialMap: Record<string, { price: number | string; dealerPrice: number | string; stock: number | string; isActive: boolean }> = {};
     (vars || []).forEach((v: any) => {
       const formVal = {
         price: v.price !== undefined ? v.price : (v.salePrice || 0),
@@ -4033,13 +4014,19 @@ export class AdminCatalogTab {
   }
 
   updateVariantModalFormField(variantId: string, field: string, value: any) {
-    this.variantEditFormMap.update(m => ({
-      ...m,
-      [variantId]: {
-        ...(m[variantId] || {}),
-        [field]: value,
-      }
-    }));
+    this.variantEditFormMap.update(m => {
+      const prev = m[variantId] || { price: 0, dealerPrice: 0, stock: 0, isActive: true };
+      return {
+        ...m,
+        [variantId]: {
+          price: prev.price,
+          dealerPrice: prev.dealerPrice,
+          stock: prev.stock,
+          isActive: prev.isActive,
+          [field]: value,
+        }
+      };
+    });
   }
 
   async saveAllModalVariants() {
@@ -5261,5 +5248,15 @@ export class AdminCatalogTab {
     link.click();
     document.body.removeChild(link);
     this.toastService.success(`Exported ${dataToExport.length} brands.`);
+  }
+
+  getVariantStock(v: any): number {
+    if (!v) return 0;
+    const key = v.id || v.sku;
+    const formMap = (this as any).variantEditFormMap ? (this as any).variantEditFormMap() : null;
+    const formVal = (formMap && key) ? formMap[key]?.stock : undefined;
+    const raw = formVal !== undefined ? formVal : (v.stock ?? 0);
+    const num = Number(raw);
+    return isNaN(num) ? 0 : num;
   }
 }

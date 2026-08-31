@@ -165,7 +165,19 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
       ];
     }
 
+    const showEasyId = customData.showEasyId !== undefined ? Boolean(customData.showEasyId) : true;
+    const showOrderNumber = customData.showOrderNumber !== undefined ? Boolean(customData.showOrderNumber) : true;
+    const showDate = customData.showDate !== undefined ? Boolean(customData.showDate) : true;
+    const showTrackingNumber = customData.showTrackingNumber !== undefined ? Boolean(customData.showTrackingNumber) : false;
+    const showShipTo = customData.showShipTo !== undefined ? Boolean(customData.showShipTo) : true;
+    const showPhone = customData.showPhone !== undefined ? Boolean(customData.showPhone) : false;
+    const showEmail = customData.showEmail !== undefined ? Boolean(customData.showEmail) : false;
+    const showReturnAddress = customData.showReturnAddress !== undefined ? Boolean(customData.showReturnAddress) : false;
+    const showLineItems = customData.showLineItems !== undefined ? Boolean(customData.showLineItems) : true;
     const showPricing = customData.showPricing !== undefined ? Boolean(customData.showPricing) : true;
+    const showNotesFromSender = customData.showNotesFromSender !== undefined ? Boolean(customData.showNotesFromSender) : true;
+    const showNotesFromShipping = customData.showNotesFromShipping !== undefined ? Boolean(customData.showNotesFromShipping) : true;
+
     const notesFromSender = customData.notesFromSender || (order?.notes ? `Note: "${order.notes}"` : 'Thank you for your order with 3D Galaxy!');
     const notesFromShipping = customData.notesFromShipping || (shipmentObj?.shippingNotes ? shipmentObj.shippingNotes : 'Fragile 3D printed items. Handle with care.');
     const shippingCost = Number(customData.shippingCost !== undefined ? customData.shippingCost : (order?.shippingAmount !== undefined ? order.shippingAmount : 0));
@@ -201,10 +213,11 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     let y = 40;
 
     // TOP HEADER BANNER
-    // Left: EASYID & ESUS Number
-    doc.fillColor('#333333').fontSize(9).font('Helvetica').text('EASYID', startX, y);
-    y += 12;
-    doc.fillColor('#000000').fontSize(24).font('Helvetica-Bold').text(easyId, startX, y);
+    if (showEasyId) {
+      doc.fillColor('#333333').fontSize(9).font('Helvetica').text('EASYID', startX, y);
+      y += 12;
+      doc.fillColor('#000000').fontSize(24).font('Helvetica-Bold').text(easyId, startX, y);
+    }
 
     // Right: Logo
     const logoHeight = 40;
@@ -225,10 +238,10 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     const logoSource = logoPathToUse ? logoPathToUse : LOGO_BUFFER;
 
     try {
-      doc.image(logoSource, logoX, y - 5, { width: logoWidth, height: logoHeight });
+      doc.image(logoSource, logoX, showEasyId ? y - 5 : y, { width: logoWidth, height: logoHeight });
     } catch (e) {
       try {
-        doc.image(LOGO_BUFFER, logoX, y - 5, { width: logoWidth, height: logoHeight });
+        doc.image(LOGO_BUFFER, logoX, showEasyId ? y - 5 : y, { width: logoWidth, height: logoHeight });
       } catch (err) {
         doc.save();
         doc.fillColor('#F59E0B');
@@ -237,7 +250,6 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
         doc.restore();
       }
     }
-
 
     y += 55;
 
@@ -249,196 +261,210 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
     doc.fillColor('#000000').fontSize(16).font('Helvetica-Bold').text('Packing Slip', startX, y, { width: pageWidth, align: 'center' });
     y += 28;
 
-    // METADATA GRID SECTION (2 Columns with DYNAMIC Y offsets to avoid collisions)
-    const col1X = startX;
-    const col2X = startX + 250;
-    const metaY = y;
+    // METADATA GRID SECTION
+    if (showOrderNumber || showDate || showTrackingNumber || showShipTo || showReturnAddress) {
+      const col1X = startX;
+      const col2X = startX + 220;
+      const metaY = y;
 
-    // Left Column (Ship To & Email)
-    let leftY = metaY;
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('Date:', col1X, leftY);
-    doc.font('Helvetica').text(dateStr, col1X + 65, leftY);
-    leftY += 18;
+      // Left Column: ORDER ID, DATE & TRACKING
+      let leftY = metaY;
+      if (showOrderNumber) {
+        doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('ORDER ID:', col1X, leftY);
+        leftY += 14;
+        doc.fontSize(12).font('Helvetica-Bold').text(`#${orderCode.replace(/^#/, '')}`, col1X, leftY);
+        leftY += 22;
+      }
 
-    doc.font('Helvetica-Bold').text('Ship To:', col1X, leftY);
-    
-    // Build Ship To String
-    const addressParts = [
-      recipientName,
-      recipientPhone ? `Contact: ${recipientPhone}` : null,
-      streetLine,
-      cityStateZip,
-      countryStr
-    ].filter(Boolean);
-    const shipToText = addressParts.join('\n');
+      if (showDate && dateStr) {
+        doc.fontSize(10).font('Helvetica-Bold').text('DATE:', col1X, leftY);
+        leftY += 14;
+        doc.fontSize(10).font('Helvetica').text(dateStr, col1X, leftY);
+        leftY += 20;
+      }
 
-    doc.font('Helvetica').text(shipToText, col1X + 65, leftY, { width: 175 });
-    
-    // DYNAMIC HEIGHT CALCULATION FOR SHIP TO
-    const shipToHeight = doc.heightOfString(shipToText, { width: 175 });
-    leftY += Math.max(shipToHeight, 40) + 12;
+      if (showTrackingNumber && trackingStr) {
+        doc.fontSize(10).font('Helvetica-Bold').text('TRACKING #:', col1X, leftY);
+        leftY += 14;
+        doc.fontSize(10).font('Helvetica').text(trackingStr, col1X, leftY);
+        leftY += 20;
+      }
 
-    doc.font('Helvetica-Bold').text('Email:', col1X, leftY);
-    doc.font('Helvetica').text(emailStr, col1X + 65, leftY, { width: 175 });
-    leftY += 20;
+      // Right Column: SHIP TO ADDRESS & RETURN ADDRESS
+      let rightY = metaY;
+      if (showShipTo) {
+        doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold').text('SHIP TO:', col2X, rightY);
+        rightY += 14;
 
-    // Right Column (Tracking, Return Address, Order)
-    let rightY = metaY;
-    doc.font('Helvetica-Bold').text('Tracking', col2X, rightY);
-    doc.font('Helvetica').text(trackingStr, col2X + 75, rightY);
-    rightY += 18;
+        const addressParts = [
+          recipientName,
+          streetLine,
+          cityStateZip,
+          countryStr,
+          showPhone && recipientPhone ? `Phone: ${recipientPhone}` : '',
+          showEmail && emailStr ? `Email: ${emailStr}` : ''
+        ].filter(Boolean);
+        const shipToText = addressParts.join('\n');
 
-    doc.font('Helvetica-Bold').text('Return\nAddress:', col2X, rightY);
-    doc.font('Helvetica').text(returnAddressStr, col2X + 75, rightY, { width: 175 });
+        doc.fontSize(10).font('Helvetica').text(shipToText, col2X, rightY, { width: 255 });
+        const shipToHeight = doc.heightOfString(shipToText, { width: 255 });
+        rightY += shipToHeight + 12;
+      }
 
-    const returnHeight = doc.heightOfString(returnAddressStr, { width: 175 });
-    rightY += Math.max(returnHeight, 40) + 12;
+      if (showReturnAddress && returnAddressStr) {
+        doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold').text('RETURN ADDRESS:', col2X, rightY);
+        rightY += 12;
+        doc.fontSize(9).font('Helvetica').text(returnAddressStr, col2X, rightY, { width: 255 });
+        const retH = doc.heightOfString(returnAddressStr, { width: 255 });
+        rightY += retH + 15;
+      }
 
-    doc.font('Helvetica-Bold').text('Order:', col2X, rightY);
-    doc.font('Helvetica').text(`#${orderCode.replace(/^#/, '')}`, col2X + 75, rightY);
-    rightY += 20;
-
-    y = Math.max(leftY, rightY) + 15;
+      y = Math.max(leftY, rightY) + 15;
+    }
 
     // ITEMS TABLE HEADER
-    const colQtyW = 45;
-    const colSkuW = 110;
-    const colDescW = showPricing ? 170 : 360;
-    const colPriceW = showPricing ? 95 : 0;
-    const colExtPriceW = showPricing ? 95 : 0;
+    if (showLineItems) {
+      const colQtyW = 45;
+      const colSkuW = 110;
+      const colDescW = showPricing ? 170 : 360;
+      const colPriceW = showPricing ? 95 : 0;
+      const colExtPriceW = showPricing ? 95 : 0;
 
-    const xQty = startX;
-    const xSku = startX + colQtyW;
-    const xDesc = xSku + colSkuW;
-    const xPrice = xDesc + colDescW;
-    const xExtPrice = xPrice + colPriceW;
+      const xQty = startX;
+      const xSku = startX + colQtyW;
+      const xDesc = xSku + colSkuW;
+      const xPrice = xDesc + colDescW;
+      const xExtPrice = xPrice + colPriceW;
 
-    // Outer box and vertical lines for table header
-    doc.rect(startX, y, pageWidth, 22).strokeColor('#000000').lineWidth(1.2).stroke();
-    doc.moveTo(xSku, y).lineTo(xSku, y + 22).strokeColor('#000000').lineWidth(1).stroke();
-    doc.moveTo(xDesc, y).lineTo(xDesc, y + 22).strokeColor('#000000').lineWidth(1).stroke();
-    if (showPricing) {
-      doc.moveTo(xPrice, y).lineTo(xPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
-      doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
-    }
-
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text('Qty', xQty, y + 6, { width: colQtyW, align: 'center' });
-    doc.text('SKU', xSku + 6, y + 6, { width: colSkuW - 12, align: 'left' });
-    doc.text('Description', xDesc + 6, y + 6, { width: colDescW - 12, align: 'left' });
-    if (showPricing) {
-      doc.text('Price', xPrice, y + 6, { width: colPriceW - 8, align: 'right' });
-      doc.text('Ext. Price', xExtPrice, y + 6, { width: colExtPriceW - 8, align: 'right' });
-    }
-
-    y += 22;
-
-    // TABLE ROWS WITH FULL BORDER BOXES & VERTICAL DIVIDERS
-    itemsList.forEach((item) => {
-      const skuH = doc.heightOfString(item.sku, { width: colSkuW - 12 });
-      const descH = doc.heightOfString(item.description, { width: colDescW - 12 });
-      const rowHeight = Math.max(skuH, descH, 18) + 8;
-
-      // Draw row outer rectangle
-      doc.rect(startX, y, pageWidth, rowHeight).strokeColor('#000000').lineWidth(1).stroke();
-
-      // Draw vertical column dividers
-      doc.moveTo(xSku, y).lineTo(xSku, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
-      doc.moveTo(xDesc, y).lineTo(xDesc, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+      // Outer box and vertical lines for table header
+      doc.rect(startX, y, pageWidth, 22).strokeColor('#000000').lineWidth(1.2).stroke();
+      doc.moveTo(xSku, y).lineTo(xSku, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+      doc.moveTo(xDesc, y).lineTo(xDesc, y + 22).strokeColor('#000000').lineWidth(1).stroke();
       if (showPricing) {
-        doc.moveTo(xPrice, y).lineTo(xPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
-        doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+        doc.moveTo(xPrice, y).lineTo(xPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
+        doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + 22).strokeColor('#000000').lineWidth(1).stroke();
       }
 
-      doc.fillColor('#000000').fontSize(9.5).font('Helvetica');
-      doc.text(String(item.qty), xQty, y + 5, { width: colQtyW, align: 'center' });
-      doc.text(item.sku, xSku + 6, y + 5, { width: colSkuW - 12 });
-      doc.text(item.description, xDesc + 6, y + 5, { width: colDescW - 12 });
+      doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+      doc.text('Qty', xQty, y + 6, { width: colQtyW, align: 'center' });
+      doc.text('SKU', xSku + 6, y + 6, { width: colSkuW - 12, align: 'left' });
+      doc.text('Description', xDesc + 6, y + 6, { width: colDescW - 12, align: 'left' });
       if (showPricing) {
-        doc.text(formatPdfCurrency(item.price, currencySymbol), xPrice, y + 5, { width: colPriceW - 8, align: 'right' });
-        doc.text(formatPdfCurrency(item.extPrice, currencySymbol), xExtPrice, y + 5, { width: colExtPriceW - 8, align: 'right' });
+        doc.text('Price', xPrice, y + 6, { width: colPriceW - 8, align: 'right' });
+        doc.text('Ext. Price', xExtPrice, y + 6, { width: colExtPriceW - 8, align: 'right' });
       }
 
-      y += rowHeight;
-    });
+      y += 22;
 
-    y += 8;
+      // TABLE ROWS WITH FULL BORDER BOXES & VERTICAL DIVIDERS
+      itemsList.forEach((item) => {
+        const skuH = doc.heightOfString(item.sku, { width: colSkuW - 12 });
+        const descH = doc.heightOfString(item.description, { width: colDescW - 12 });
+        const rowHeight = Math.max(skuH, descH, 18) + 8;
 
-    // TOTALS SECTION BELOW TABLE
-    doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
-    doc.text(`Qty Total: ${qtyTotal}`, startX + 5, y);
+        // Draw row outer rectangle
+        doc.rect(startX, y, pageWidth, rowHeight).strokeColor('#000000').lineWidth(1).stroke();
 
-    if (showPricing) {
-      const labelX = startX + pageWidth - 280;
-      const valueX = startX + pageWidth - 130;
-      const colW = 125;
+        // Draw vertical column dividers
+        doc.moveTo(xSku, y).lineTo(xSku, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+        doc.moveTo(xDesc, y).lineTo(xDesc, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+        if (showPricing) {
+          doc.moveTo(xPrice, y).lineTo(xPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+          doc.moveTo(xExtPrice, y).lineTo(xExtPrice, y + rowHeight).strokeColor('#000000').lineWidth(1).stroke();
+        }
 
-      doc.fontSize(9.5);
-      doc.font('Helvetica').text('Sub Total', labelX, y, { width: 140, align: 'right' });
-      doc.font('Helvetica-Bold').text(formatPdfTotal(subTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
-      y += 16;
+        doc.fillColor('#000000').fontSize(9.5).font('Helvetica');
+        doc.text(String(item.qty), xQty, y + 5, { width: colQtyW, align: 'center' });
+        doc.text(item.sku, xSku + 6, y + 5, { width: colSkuW - 12 });
+        doc.text(item.description, xDesc + 6, y + 5, { width: colDescW - 12 });
+        if (showPricing) {
+          doc.text(formatPdfCurrency(item.price, currencySymbol), xPrice, y + 5, { width: colPriceW - 8, align: 'right' });
+          doc.text(formatPdfCurrency(item.extPrice, currencySymbol), xExtPrice, y + 5, { width: colExtPriceW - 8, align: 'right' });
+        }
 
-      if (shippingCost > 0 || (codCharge === 0 && taxAmount === 0 && discountAmount === 0)) {
-        doc.font('Helvetica').text('Shipping Cost', labelX, y, { width: 140, align: 'right' });
-        doc.font('Helvetica-Bold').text(formatPdfTotal(shippingCost, currencyCode), valueX, y, { width: colW, align: 'right' });
+        y += rowHeight;
+      });
+
+      y += 8;
+
+      // TOTALS SECTION BELOW TABLE
+      doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+      doc.text(`Qty Total: ${qtyTotal}`, startX + 5, y);
+
+      if (showPricing) {
+        const labelX = startX + pageWidth - 280;
+        const valueX = startX + pageWidth - 130;
+        const colW = 125;
+
+        doc.fontSize(9.5);
+        doc.font('Helvetica').text('Sub Total', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(formatPdfTotal(subTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
         y += 16;
-      }
 
-      if (codCharge > 0) {
-        doc.font('Helvetica').text('COD Handling Charge', labelX, y, { width: 140, align: 'right' });
-        doc.font('Helvetica-Bold').text(formatPdfTotal(codCharge, currencyCode), valueX, y, { width: colW, align: 'right' });
-        y += 16;
-      }
+        if (shippingCost > 0 || (codCharge === 0 && taxAmount === 0 && discountAmount === 0)) {
+          doc.font('Helvetica').text('Shipping Cost', labelX, y, { width: 140, align: 'right' });
+          doc.font('Helvetica-Bold').text(formatPdfTotal(shippingCost, currencyCode), valueX, y, { width: colW, align: 'right' });
+          y += 16;
+        }
 
-      if (taxAmount > 0) {
-        doc.font('Helvetica').text('Tax', labelX, y, { width: 140, align: 'right' });
-        doc.font('Helvetica-Bold').text(formatPdfTotal(taxAmount, currencyCode), valueX, y, { width: colW, align: 'right' });
-        y += 16;
-      }
+        if (codCharge > 0) {
+          doc.font('Helvetica').text('COD Handling Charge', labelX, y, { width: 140, align: 'right' });
+          doc.font('Helvetica-Bold').text(formatPdfTotal(codCharge, currencyCode), valueX, y, { width: colW, align: 'right' });
+          y += 16;
+        }
 
-      if (discountAmount > 0) {
-        doc.font('Helvetica').text('Discount', labelX, y, { width: 140, align: 'right' });
-        doc.font('Helvetica-Bold').text(`-${formatPdfTotal(discountAmount, currencyCode)}`, valueX, y, { width: colW, align: 'right' });
-        y += 16;
-      }
+        if (taxAmount > 0) {
+          doc.font('Helvetica').text('Tax', labelX, y, { width: 140, align: 'right' });
+          doc.font('Helvetica-Bold').text(formatPdfTotal(taxAmount, currencyCode), valueX, y, { width: colW, align: 'right' });
+          y += 16;
+        }
 
-      doc.fontSize(10.5);
-      doc.font('Helvetica-Bold').text('Total', labelX, y, { width: 140, align: 'right' });
-      doc.font('Helvetica-Bold').text(formatPdfTotal(grandTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
-      y += 24;
-    } else {
-      y += 24;
+        if (discountAmount > 0) {
+          doc.font('Helvetica').text('Discount', labelX, y, { width: 140, align: 'right' });
+          doc.font('Helvetica-Bold').text(`-${formatPdfTotal(discountAmount, currencyCode)}`, valueX, y, { width: colW, align: 'right' });
+          y += 16;
+        }
+
+        doc.fontSize(10.5);
+        doc.font('Helvetica-Bold').text('Total', labelX, y, { width: 140, align: 'right' });
+        doc.font('Helvetica-Bold').text(formatPdfTotal(grandTotal, currencyCode), valueX, y, { width: colW, align: 'right' });
+        y += 24;
+      } else {
+        y += 24;
+      }
     }
 
     // ANCHOR FOOTER NOTES TO BOTTOM OF PAGE (A4 height = 842pt)
-    const minFooterY = 690;
-    if (y < minFooterY) {
-      y = minFooterY;
-    }
-
-    // Divider Line above Notes
-    doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#000000').lineWidth(1.5).stroke();
-    y += 15;
-
-    // NOTES FROM SENDER
-    if (notesFromSender) {
-      doc.font('Helvetica-Bold').fontSize(9.5).text('Notes from the\nSender:', startX, y, { width: 110 });
-      doc.font('Helvetica').fontSize(9.5).text(notesFromSender, startX + 120, y, { width: pageWidth - 120 });
-      
-      const senderH = doc.heightOfString(notesFromSender, { width: pageWidth - 120 });
-      y += Math.max(senderH, 24) + 12;
-
-      if (notesFromShipping) {
-        doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#888888').lineWidth(0.75).stroke();
-        y += 15;
+    if ((showNotesFromSender && notesFromSender) || (showNotesFromShipping && notesFromShipping)) {
+      const minFooterY = 690;
+      if (y < minFooterY) {
+        y = minFooterY;
       }
-    }
 
-    // NOTES FROM LISSHIPMENT / WAREHOUSE
-    if (notesFromShipping) {
-      doc.font('Helvetica-Bold').fontSize(9.5).text('Notes from\nLisShipment:', startX, y, { width: 110 });
-      doc.font('Helvetica').fontSize(9.5).text(notesFromShipping, startX + 120, y, { width: pageWidth - 120 });
-      y += 30;
+      // Divider Line above Notes
+      doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#000000').lineWidth(1.5).stroke();
+      y += 15;
+
+      // NOTES FROM SENDER
+      if (showNotesFromSender && notesFromSender) {
+        doc.font('Helvetica-Bold').fontSize(9.5).text('Notes from the\nSender:', startX, y, { width: 110 });
+        doc.font('Helvetica').fontSize(9.5).text(notesFromSender, startX + 120, y, { width: pageWidth - 120 });
+        
+        const senderH = doc.heightOfString(notesFromSender, { width: pageWidth - 120 });
+        y += Math.max(senderH, 24) + 12;
+
+        if (showNotesFromShipping && notesFromShipping) {
+          doc.moveTo(startX, y).lineTo(startX + pageWidth, y).strokeColor('#888888').lineWidth(0.75).stroke();
+          y += 15;
+        }
+      }
+
+      // NOTES FROM LISSHIPMENT / WAREHOUSE
+      if (showNotesFromShipping && notesFromShipping) {
+        doc.font('Helvetica-Bold').fontSize(9.5).text('Notes from\nLisShipment:', startX, y, { width: 110 });
+        doc.font('Helvetica').fontSize(9.5).text(notesFromShipping, startX + 120, y, { width: pageWidth - 120 });
+        y += 30;
+      }
     }
 
     doc.end();

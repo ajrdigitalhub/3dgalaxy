@@ -83,8 +83,6 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                     <option value="">All Statuses</option>
                     <option value="Pending">Pending Auth</option>
                     <option value="Confirmed">Confirmed</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Packed">Packed</option>
                     <option value="Shipped">Shipped</option>
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
@@ -356,8 +354,6 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                         >
                           <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending Auth</option>
                           <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
-                          <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing Job</option>
-                          <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
                           <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
                           <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
                           @if (!isSameStatus(o.status, 'Delivered')) {
@@ -481,8 +477,6 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                     >
                       <option value="Pending" [selected]="isSameStatus(o.status, 'Pending')">Pending</option>
                       <option value="Confirmed" [selected]="isSameStatus(o.status, 'Confirmed')">Confirmed</option>
-                      <option value="Processing" [selected]="isSameStatus(o.status, 'Processing')">Processing</option>
-                      <option value="Packed" [selected]="isSameStatus(o.status, 'Packed')">Packed</option>
                       <option value="Shipped" [selected]="isSameStatus(o.status, 'Shipped')">Shipped</option>
                       <option value="Delivered" [selected]="isSameStatus(o.status, 'Delivered')">Delivered</option>
                       @if (!isSameStatus(o.status, 'Delivered')) {

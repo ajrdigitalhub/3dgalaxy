@@ -34,6 +34,7 @@ import { ShippingService } from "../../core/services/shipping.service";
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { formatWeight, resolveEffectiveWeight, convertToGrams } from "../../shared/utils/weight.utils";
+import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
 
@@ -2029,12 +2030,11 @@ export class ProductDetail {
   }
 
   triggerWhatsAppInquiry(p: Product) {
-    const contact = "919876543210"; // Demo 3D Galaxy WhatsApp business number
+    const contact = this.ds.settings()?.contactPhone || '919876543210';
     const price = this.activePrice(p);
     const textMessage = `Hi 3D Galaxy Team! I am interested in purchasing ${p.name} (SKU: ${p.sku}) for ₹${price} / each. Quantity needed: ${this.quantity()}. Kindly advise on bulk delivery times. Thanks!`;
-    const targetUrl = `https://wa.me/${contact}?text=${encodeURIComponent(textMessage)}`;
+    const targetUrl = buildWhatsAppUrl(contact, textMessage, '919876543210');
 
-    // Attempt non-blocking window redirect or notification log
     if (typeof window !== "undefined") {
       window.open(targetUrl, "_blank");
     }

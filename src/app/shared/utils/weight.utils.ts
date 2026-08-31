@@ -241,7 +241,7 @@ export function resolveEffectiveWeight(
         isFallback: false,
         badgeLabel: 'Variant Specific',
         badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-        sourceLabel: `${formatWeight(vGrams)} (Variant Specific)`
+        sourceLabel: `${formatWeight(g)} (Variant Specific)`
       };
     }
   }

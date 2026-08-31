@@ -17,6 +17,7 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
         firstName: true,
         lastName: true,
         mobile: true,
+        gender: true,
         profileImage: true,
         isActive: true,
         isVerified: true,
@@ -52,7 +53,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { firstName, lastName, mobile, profileImage } = req.body;
+  const { firstName, lastName, mobile, profileImage, gender } = req.body;
 
   try {
     const updated = await prisma.user.update({
@@ -61,6 +62,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
         firstName,
         lastName,
         mobile,
+        gender: gender !== undefined ? gender : undefined,
         profileImage,
         updatedAt: new Date(),
       },
@@ -70,6 +72,7 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
         firstName: true,
         lastName: true,
         mobile: true,
+        gender: true,
         profileImage: true,
         isActive: true,
         isVerified: true,

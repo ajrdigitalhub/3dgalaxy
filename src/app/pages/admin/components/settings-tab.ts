@@ -3770,14 +3770,17 @@ import { environment } from "../../../../environments/environment";
                   </div>
 
                   <div class="space-y-1">
-                    <span class="block text-[9px] font-black text-zinc-400 uppercase">Free Shipping Threshold (₹)</span>
+                    <span class="block text-[9px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider">FREE SHIPPING THRESHOLD (GLOBAL) (₹)</span>
                     <input
                       type="number"
-                      [value]="draft().shippingSettings?.freeShippingThreshold ?? 1000"
+                      [value]="draft().shippingSettings?.freeShippingThreshold ?? 3500"
                       (input)="setNested('shippingSettings', 'freeShippingThreshold', +$any($event.target).value)"
-                      placeholder="e.g. 1000"
+                      placeholder="e.g. 3500"
                       class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
                     />
+                    <p class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
+                      Orders meeting this amount are eligible for free shipping across the application.
+                    </p>
                   </div>
 
                   <div class="space-y-1">

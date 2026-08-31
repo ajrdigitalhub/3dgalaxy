@@ -1115,6 +1115,7 @@ export class DatastoreService {
               role: this.mapRole(u.role || (u.roles && u.roles[0]?.role?.name)),
               active: u.isActive !== false,
               phone: u.mobile || '',
+              gender: u.gender || '',
               profileImage: u.profileImage || '',
               createdAt: u.createdAt
             };
@@ -1247,6 +1248,7 @@ export class DatastoreService {
               role: this.mapRole(u.role),
               active: u.isActive !== false,
               phone: u.mobile || '',
+              gender: u.gender || '',
               profileImage: u.profileImage || '',
             };
             this.userProfile.set(mappedProfile);
@@ -1293,6 +1295,7 @@ export class DatastoreService {
               role: this.mapRole(userObj.role),
               active: true,
               phone: userObj.mobile || '',
+              gender: userObj.gender || '',
               profileImage: userObj.profileImage || '',
             };
             this.userProfile.set(mappedProfile);
@@ -1361,9 +1364,9 @@ export class DatastoreService {
     });
   }
 
-  async updateProfileDetails(firstName: string, lastName: string, mobile: string, profileImage: string) {
+  async updateProfileDetails(firstName: string, lastName: string, mobile: string, profileImage: string, gender: string = '') {
     return new Promise<any>((resolve, reject) => {
-      this.api.put<any>('/profile', { firstName, lastName, mobile, profileImage }).subscribe({
+      this.api.put<any>('/profile', { firstName, lastName, mobile, profileImage, gender }).subscribe({
         next: (res) => {
           if (res && res.success && res.data) {
             const u = res.data;
@@ -1374,6 +1377,7 @@ export class DatastoreService {
               role: this.userRole(),
               active: u.isActive !== false,
               phone: u.mobile || '',
+              gender: u.gender || '',
               profileImage: u.profileImage || '',
               createdAt: u.createdAt
             };
@@ -2471,9 +2475,12 @@ export class DatastoreService {
     const paymentMethod = this.selectedPaymentMethod();
     const globalSettings = this.settingsService.shippingSettings() || {};
 
-    const freeShippingThreshold = globalSettings.freeShippingThreshold !== undefined 
-      ? Number(globalSettings.freeShippingThreshold) 
-      : (globalSettings.freeShippingMinSpent !== undefined ? Number(globalSettings.freeShippingMinSpent) : 3500);
+    const freeShippingThreshold =
+      globalSettings.freeShippingThreshold !== undefined && globalSettings.freeShippingThreshold !== null && !isNaN(Number(globalSettings.freeShippingThreshold))
+        ? Number(globalSettings.freeShippingThreshold)
+        : (globalSettings.freeShippingMinSpent !== undefined && globalSettings.freeShippingMinSpent !== null && !isNaN(Number(globalSettings.freeShippingMinSpent))
+            ? Number(globalSettings.freeShippingMinSpent)
+            : 3500);
 
     const codSurcharge = globalSettings.codSurcharge !== undefined
       ? Number(globalSettings.codSurcharge)

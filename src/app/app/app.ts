@@ -22,6 +22,7 @@ import { HeaderAnnouncementBarComponent } from '../shared/components/header-anno
 import { fromEvent } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { buildWhatsAppUrl } from '../shared/utils/phone.utils';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -514,11 +515,11 @@ export class App {
   }
 
   get whatsappUrl(): string {
-    const phone = this.settingsService.whatsappSettings()?.adminPhoneNumber || this.settingsService.contact()?.phone || '919999999999';
-    // Clean phone number: remove +, spaces, dashes, parentheses
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const message = encodeURIComponent("Hello! I have a query regarding 3D Galaxy store.");
-    return `https://wa.me/${cleanPhone}?text=${message}`;
+    const phone = this.settingsService.whatsappSettings()?.adminPhoneNumber ||
+                  this.settingsService.whatsappSettings()?.adminPhone ||
+                  this.settingsService.contact()?.phone ||
+                  '919999999999';
+    return buildWhatsAppUrl(phone, "Hello! I have a query regarding 3D Galaxy store.", '919999999999');
   }
 
   onImageError(event: Event) {

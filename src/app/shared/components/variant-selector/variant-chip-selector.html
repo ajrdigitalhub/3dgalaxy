@@ -41,8 +41,6 @@
                 [attr.aria-label]="val + (isOutOfStock(group.name, val) ? ' - Currently unavailable' : '')"
                 [tabindex]="isSelected(group.name, val) ? 0 : -1"
                 [disabled]="isOutOfStock(group.name, val)"
-                [matTooltip]="isOutOfStock(group.name, val) ? 'Currently unavailable' : ''"
-                matTooltipPosition="above"
                 (click)="onChipClick(group.name, val)"
                 (keydown)="onKeydown($event, group.name, val, group.values)">
 

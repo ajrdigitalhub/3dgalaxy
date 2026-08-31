@@ -201,8 +201,6 @@ export class OrderDetailsComponent implements OnInit {
   statuses = [
     'Pending',
     'Confirmed',
-    'Processing',
-    'Packed',
     'Shipped',
     'Out for Delivery',
     'Delivered',

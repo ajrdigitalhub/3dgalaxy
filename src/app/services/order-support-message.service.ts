@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SettingsService } from '../core/services/settings.service';
+import { formatWhatsAppNumber, buildWhatsAppUrl } from '../shared/utils/phone.utils';
 
 export interface SupportQuestion {
   id: string;
@@ -435,15 +436,15 @@ export class OrderSupportMessageService {
                 this.settingsService.settingsData()?.support_phone ||
                 '919876543210';
     
-    return String(raw).replace(/[^0-9]/g, '');
+    return formatWhatsAppNumber(raw, '919876543210');
   }
 
   /**
    * Generates wa.me URL for WhatsApp redirection.
    */
   generateWhatsAppUrl(whatsappNumber: string, message: string): string {
-    const cleanPhone = (whatsappNumber || this.getAdminWhatsAppNumber()).replace(/[^0-9]/g, '');
-    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const targetPhone = whatsappNumber || this.getAdminWhatsAppNumber();
+    return buildWhatsAppUrl(targetPhone, message, '919876543210');
   }
 
   /**

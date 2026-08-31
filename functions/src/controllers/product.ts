@@ -725,8 +725,8 @@ export const getProducts = async (req: Request, res: Response) => {
     // Helper to check if a category belongs to a parent (by ID or slug)
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
       if (!cat) return false;
-      const catId = cat.id;
-      const catSlug = cat.slug;
+      const catId = typeof cat === 'object' ? cat.id : String(cat);
+      const catSlug = typeof cat === 'object' ? cat.slug : String(cat);
       if (catId === parentSlugOrId || catSlug === parentSlugOrId) return true;
 
       const targetCat = allDbCategories.find(c => c.id === parentSlugOrId || c.slug === parentSlugOrId);
@@ -878,7 +878,8 @@ export const getProducts = async (req: Request, res: Response) => {
     if (category) {
       const catsArray = (category as string).split(',').map(s => s.trim()).filter(Boolean);
       baseForAgg = baseForAgg.filter(p => {
-        return catsArray.some(cVal => isCategoryChildOf(p.category, cVal));
+        const prodCats = Array.isArray(p.categories) && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
+        return catsArray.some(cVal => prodCats.some((cItem: any) => isCategoryChildOf(cItem, cVal)));
       });
     }
 
@@ -1428,6 +1429,7 @@ export const createProduct = async (req: Request, res: Response) => {
             variantImagesList.push(...(v.variantImages || v.variant_images));
           }
 
+          const isDefaultFlag = v.isDefault !== undefined ? Boolean(v.isDefault) : (parsedVariants.indexOf(v) === 0);
           await tx.productVariant.create({
             data: {
               productId: p.id,
@@ -1437,6 +1439,8 @@ export const createProduct = async (req: Request, res: Response) => {
               salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
               stock: parseInt(v.stock, 10) || 0,
               weight: parseFloat(v.weight) || 0,
+              isDefault: isDefaultFlag,
+              isActive: v.isActive !== false,
               variantImages: variantImagesList,
               optionValues: optVals
             }
@@ -1558,11 +1562,6 @@ export const updateProduct = async (req: Request, res: Response) => {
     const resolvedCategoryId = hasCategoryPayload ? (primaryCatItem ? primaryCatItem.id : await resolveCategoryId(rawCategory)) : undefined;
 
     const updated = await prisma.$transaction(async (tx) => {
-      // Clear previously set variants ONLY if variants array was explicitly passed
-      if (parsedVariants !== undefined) {
-        await tx.productVariant.deleteMany({ where: { productId: id } });
-      }
-
       // Sync multi-categories in ProductCategory table IF category payload was sent
       if (hasCategoryPayload && resolvedCategoryList.length > 0) {
         await tx.productCategory.deleteMany({ where: { productId: id } });
@@ -1579,6 +1578,100 @@ export const updateProduct = async (req: Request, res: Response) => {
         }
       }
 
+      let totalCalculatedVariantStock = 0;
+      let hasExplicitVariantStock = false;
+
+      if (parsedVariants !== undefined && Array.isArray(parsedVariants)) {
+        const existingDbVariants = await tx.productVariant.findMany({ where: { productId: id } });
+        const existingById = new Map(existingDbVariants.map(v => [v.id, v]));
+        const existingBySku = new Map(existingDbVariants.map(v => [v.sku.toLowerCase().trim(), v]));
+        const incomingProcessedIds = new Set<string>();
+
+        hasExplicitVariantStock = parsedVariants.length > 0;
+
+        for (let i = 0; i < parsedVariants.length; i++) {
+          const v = parsedVariants[i];
+          const optVals: Record<string, string> = {};
+          if (v.optionsData && Array.isArray(v.optionsData)) {
+            v.optionsData.forEach((od: any) => {
+              optVals[od.optionName] = od.valueStr;
+            });
+          } else if (v.optionValues || v.option_values) {
+            Object.assign(optVals, v.optionValues || v.option_values);
+          }
+
+          const variantImagesList: string[] = [];
+          if (v.images && Array.isArray(v.images)) {
+            v.images.forEach((img: any) => {
+              if (typeof img === 'string') {
+                variantImagesList.push(img);
+              } else {
+                variantImagesList.push(img.url || img.imageUrl || '');
+              }
+            });
+          } else if (v.variantImages || v.variant_images) {
+            variantImagesList.push(...(v.variantImages || v.variant_images));
+          }
+
+          const vSku = (v.sku || '').trim();
+          const isUuid = v.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+          const existing = (isUuid ? existingById.get(v.id) : null) || (vSku ? existingBySku.get(vSku.toLowerCase()) : null);
+
+          const vStock = Math.max(0, parseInt(v.stock, 10) || 0);
+          totalCalculatedVariantStock += vStock;
+          const isDefaultFlag = v.isDefault !== undefined ? Boolean(v.isDefault) : (i === 0);
+
+          if (existing) {
+            incomingProcessedIds.add(existing.id);
+            await tx.productVariant.update({
+              where: { id: existing.id },
+              data: {
+                name: v.name || existing.name,
+                sku: vSku || existing.sku,
+                price: !isNaN(parseFloat(v.price)) ? parseFloat(v.price) : existing.price,
+                salePrice: v.salePrice !== undefined && v.salePrice !== null ? parseFloat(v.salePrice) : existing.salePrice,
+                stock: vStock,
+                weight: !isNaN(parseFloat(v.weight)) ? parseFloat(v.weight) : (existing.weight || 0),
+                isDefault: isDefaultFlag,
+                isActive: v.isActive !== false,
+                variantImages: variantImagesList.length > 0 ? variantImagesList : (existing.variantImages || []),
+                optionValues: Object.keys(optVals).length > 0 ? optVals : (existing.optionValues || {}),
+                deletedAt: null,
+                updatedAt: new Date()
+              }
+            });
+          } else if (v.name && vSku) {
+            const created = await tx.productVariant.create({
+              data: {
+                productId: id,
+                name: v.name,
+                sku: vSku,
+                price: parseFloat(v.price) || 0,
+                salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
+                stock: vStock,
+                weight: parseFloat(v.weight) || 0,
+                isDefault: isDefaultFlag,
+                isActive: v.isActive !== false,
+                variantImages: variantImagesList,
+                optionValues: optVals
+              }
+            });
+            incomingProcessedIds.add(created.id);
+          }
+        }
+
+        // Soft-delete removed variants to protect historical orders
+        const removedVariants = existingDbVariants.filter(dbV => !incomingProcessedIds.has(dbV.id));
+        if (removedVariants.length > 0) {
+          await tx.productVariant.updateMany({
+            where: { id: { in: removedVariants.map(r => r.id) } },
+            data: { isActive: false, deletedAt: new Date() }
+          });
+        }
+      }
+
+      const finalStock = hasExplicitVariantStock ? totalCalculatedVariantStock : (stock !== undefined ? parseInt(stock, 10) : undefined);
+
       const p = await tx.product.update({
         where: { id },
         data: {
@@ -1590,7 +1683,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           basePrice: mrp ? parseFloat(mrp) : (price ? parseFloat(price) : undefined),
           salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : undefined,
           dealerPrice: resolvedDealerPrice !== undefined && resolvedDealerPrice !== null ? parseFloat(resolvedDealerPrice) : undefined,
-          stock: stock !== undefined ? parseInt(stock, 10) : undefined,
+          stock: finalStock,
           categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : (categoryId !== undefined ? categoryId : undefined),
           brandId: resolvedBrandId !== undefined ? resolvedBrandId : (brandId !== undefined ? brandId : undefined),
           isActive: status !== undefined ? status === 'active' : undefined,
@@ -1623,46 +1716,6 @@ export const updateProduct = async (req: Request, res: Response) => {
           options: parsedOptions !== undefined ? parsedOptions : undefined
         }
       });
-
-      if (parsedVariants && parsedVariants.length > 0) {
-        for (const v of parsedVariants) {
-          const optVals: Record<string, string> = {};
-          if (v.optionsData && Array.isArray(v.optionsData)) {
-            v.optionsData.forEach((od: any) => {
-              optVals[od.optionName] = od.valueStr;
-            });
-          } else if (v.optionValues || v.option_values) {
-            Object.assign(optVals, v.optionValues || v.option_values);
-          }
-
-          const variantImagesList: string[] = [];
-          if (v.images && Array.isArray(v.images)) {
-            v.images.forEach((img: any) => {
-              if (typeof img === 'string') {
-                variantImagesList.push(img);
-              } else {
-                variantImagesList.push(img.url || img.imageUrl || '');
-              }
-            });
-          } else if (v.variantImages || v.variant_images) {
-            variantImagesList.push(...(v.variantImages || v.variant_images));
-          }
-
-          await tx.productVariant.create({
-            data: {
-              productId: p.id,
-              name: v.name,
-              sku: v.sku,
-              price: parseFloat(v.price) || 0,
-              salePrice: v.salePrice ? parseFloat(v.salePrice) : null,
-              stock: parseInt(v.stock, 10) || 0,
-              weight: parseFloat(v.weight) || 0,
-              variantImages: variantImagesList,
-              optionValues: optVals
-            }
-          });
-        }
-      }
 
       return tx.product.findUnique({
         where: { id },

@@ -2003,8 +2003,15 @@ export class AdminCustomersTab implements OnInit {
 
   openWhatsApp(phone?: string, name?: string) {
     if (!phone) return;
-    const cleanPhone = phone.replace(/[^\d]/g, '');
-    const url = `https://wa.me/${cleanPhone.startsWith('91') ? cleanPhone : '91' + cleanPhone}?text=${encodeURIComponent(`Hi ${name || 'Customer'}, reaching out regarding your account at 3D Galaxy.`)}`;
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    } else if (cleanPhone.length === 11 && cleanPhone.startsWith('0')) {
+      cleanPhone = '91' + cleanPhone.slice(1);
+    } else if (!cleanPhone.startsWith('91') && cleanPhone.length < 12) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hi ${name || 'Customer'}, reaching out regarding your account at 3D Galaxy.`)}`;
     window.open(url, '_blank');
   }
 

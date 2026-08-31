@@ -434,6 +434,22 @@ export const createOrder = async (req: any, res: Response) => {
     }
   }
 
+  // Backend GST Validation & Sanitization
+  const businessPurchase = req.body.businessPurchase || {};
+  const rawGstNumber = (req.body.gstNumber || req.body.gstin || req.body.gstDetails?.gstin || businessPurchase.gstNumber || '').toString().trim().toUpperCase();
+  const rawCompanyName = (req.body.companyName || req.body.businessName || req.body.gstDetails?.companyName || businessPurchase.companyName || '').toString().trim();
+
+  let finalGstNumber: string | null = null;
+  let finalCompanyName: string | null = rawCompanyName.length > 0 ? rawCompanyName : null;
+
+  if (rawGstNumber.length > 0) {
+    const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstinRegex.test(rawGstNumber)) {
+      return res.status(400).json({ error: 'Please enter a valid GSTIN.' });
+    }
+    finalGstNumber = rawGstNumber;
+  }
+
   // Validate COD eligibility if paymentMethod is COD
   if (paymentMethod === 'COD') {
     let orderSubtotal = 0;
@@ -664,6 +680,8 @@ export const createOrder = async (req: any, res: Response) => {
           shippingMethod,
           discountAmount,
           status: 'Pending',
+          gstNumber: finalGstNumber,
+          companyName: finalCompanyName,
           shippingAddressId,
           billingAddressId,
           shipment: {

@@ -131,20 +131,6 @@
                   Manage your 3D printing orders, custom requests, and saved configurations.
                 </p>
               </div>
-
-              <!-- Profile Completion Tracker -->
-              <div
-                class="bg-slate-50 dark:bg-[#181C23] border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-2xl min-w-[200px] space-y-1.5">
-                <div class="flex items-center justify-between text-[11px] font-bold">
-                  <span class="text-slate-600 dark:text-slate-300">Profile Completion</span>
-                  <span class="text-orange-500 font-mono font-black">{{ profileCompletion() }}%</span>
-                </div>
-                <div class="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div [style.width.%]="profileCompletion()"
-                    class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-500">
-                  </div>
-                </div>
-              </div>
             </div>
 
             <!-- Statistics Overview Grid (6 Modern Metric Cards) -->

@@ -50,8 +50,9 @@
   }
   } @placeholder {
   <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
-  } } @case ('NEWSLETTER') { @defer (on viewport) {
-  <app-home-newsletter [section]="section" />
+  } }
+   @case ('NEWSLETTER') { @defer (on viewport) {
+  <app-home-newsletter [section]="section" />`
   } @placeholder {
   <div class="h-[300px] max-w-5xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
   } } @case ('SHOP_BY_CATEGORY') { @defer (on viewport) {

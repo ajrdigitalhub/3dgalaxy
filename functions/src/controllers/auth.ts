@@ -293,6 +293,7 @@ export const login = async (req: Request, res: Response) => {
           firstName: user.firstName,
           lastName: user.lastName,
           mobile: user.mobile,
+          gender: user.gender || '',
           profileImage: user.profileImage,
         },
         accessToken,

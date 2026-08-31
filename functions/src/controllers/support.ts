@@ -143,8 +143,16 @@ Kindly review my request and let me know the next steps.
 Thank you.`;
 
     // WhatsApp configuration
-    const supportPhone = supportSettings.whatsappNumber || '+919876543210';
-    const formattedPhone = supportPhone.replace(/[\s\+\-]/g, '');
+    const supportPhone = supportSettings.whatsappNumber || supportSettings.adminPhoneNumber || '+919876543210';
+    let formattedPhone = String(supportPhone).replace(/[^0-9]/g, '');
+    if (formattedPhone.length === 10) {
+      formattedPhone = '91' + formattedPhone;
+    } else if (formattedPhone.length === 11 && formattedPhone.startsWith('0')) {
+      formattedPhone = '91' + formattedPhone.slice(1);
+    }
+    if (!formattedPhone) {
+      formattedPhone = '919876543210';
+    }
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
 
     // Email configuration

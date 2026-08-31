@@ -95,56 +95,82 @@ export interface SlipLineItem {
             
             <!-- SECTION 1: HEADER & IDENTIFIERS -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
-              <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
-                <mat-icon class="text-xs">badge</mat-icon> Header & Identifiers
-              </h3>
+              <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
+                  <mat-icon class="text-xs">badge</mat-icon> Header & Identifiers
+                </h3>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  <input type="checkbox" [ngModel]="showEasyId() || showOrderNumber() || showDate() || showTrackingNumber()" (ngModelChange)="toggleHeaderSection($event)" class="rounded accent-amber-500 cursor-pointer" />
+                  <span>Select Section</span>
+                </label>
+              </div>
               
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">EASYID / Barcode Text</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">EASYID / Barcode</label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showEasyId" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="easyId"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold"
+                    [disabled]="!showEasyId()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold disabled:opacity-50"
                   />
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Order #</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Order #</label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showOrderNumber" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="orderNumber"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold"
+                    [disabled]="!showOrderNumber()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Slip Date</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Slip Date</label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showDate" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="dateStr"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-medium"
+                    [disabled]="!showDate()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-medium disabled:opacity-50"
                   />
                 </div>
                 <div>
                   <div class="flex items-center justify-between mb-1">
                     <label class="block text-[9px] font-bold text-zinc-500 uppercase">Tracking Number</label>
-                    @if (isShipped() && trackingNumber()) {
-                      <span class="text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
-                        <mat-icon class="scale-50 text-[12px] -mr-1">lock</mat-icon> Locked (Shipped)
-                      </span>
-                    }
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showTrackingNumber" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
                   </div>
                   <input
                     type="text"
                     [(ngModel)]="trackingNumber"
                     placeholder="e.g. No tracking assigned"
                     [readonly]="isShipped() && !!trackingNumber()"
-                    [disabled]="isShipped() && !!trackingNumber()"
+                    [disabled]="!showTrackingNumber() || (isShipped() && !!trackingNumber())"
                     [class.opacity-60]="isShipped() && !!trackingNumber()"
                     [class.cursor-not-allowed]="isShipped() && !!trackingNumber()"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-500"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-500 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -152,9 +178,15 @@ export interface SlipLineItem {
 
             <!-- SECTION 2: SHIP TO ADDRESS & EMAIL -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
-              <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
-                <mat-icon class="text-xs">place</mat-icon> Ship To & Destination
-              </h3>
+              <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
+                  <mat-icon class="text-xs">place</mat-icon> Ship To & Destination
+                </h3>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  <input type="checkbox" [(ngModel)]="showShipTo" class="rounded accent-amber-500 cursor-pointer" />
+                  <span>Select Section</span>
+                </label>
+              </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -162,15 +194,23 @@ export interface SlipLineItem {
                   <input
                     type="text"
                     [(ngModel)]="shipToName"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold"
+                    [disabled]="!showShipTo()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-bold disabled:opacity-50"
                   />
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Contact Phone</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Contact Phone</label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showPhone" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="shipToPhone"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs"
+                    [disabled]="!showPhone()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -181,7 +221,8 @@ export interface SlipLineItem {
                   <input
                     type="text"
                     [(ngModel)]="shipToStreet"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs"
+                    [disabled]="!showShipTo()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -189,7 +230,8 @@ export interface SlipLineItem {
                   <input
                     type="text"
                     [(ngModel)]="shipToCityStateZip"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs"
+                    [disabled]="!showShipTo()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -200,36 +242,55 @@ export interface SlipLineItem {
                   <input
                     type="text"
                     [(ngModel)]="shipToCountry"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs"
+                    [disabled]="!showShipTo()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs disabled:opacity-50"
                   />
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Email Address</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Email Address</label>
+                    <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                      <input type="checkbox" [(ngModel)]="showEmail" class="rounded accent-amber-500 cursor-pointer" />
+                      <span>Show</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="email"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs"
+                    [disabled]="!showEmail()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div>
-                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Return Address (Sender)</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-[9px] font-bold text-zinc-500 uppercase">Return Address (Sender)</label>
+                  <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                    <input type="checkbox" [(ngModel)]="showReturnAddress" class="rounded accent-amber-500 cursor-pointer" />
+                    <span>Show</span>
+                  </label>
+                </div>
                 <textarea
                   rows="2"
                   [(ngModel)]="returnAddress"
-                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none"
+                  [disabled]="!showReturnAddress()"
+                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none disabled:opacity-50"
                 ></textarea>
               </div>
             </div>
 
             <!-- SECTION 3: LINE ITEMS & PRICING OPTION -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
-              <div class="flex items-center justify-between">
+              <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
                 <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
                   <mat-icon class="text-xs">shopping_bag</mat-icon> Manifest Line Items
                 </h3>
                 <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                    <input type="checkbox" [(ngModel)]="showLineItems" class="rounded accent-amber-500 cursor-pointer" />
+                    <span>Select Section</span>
+                  </label>
                   <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-zinc-700 dark:text-zinc-300">
                     <input type="checkbox" [(ngModel)]="showPricing" class="rounded accent-amber-500 cursor-pointer" />
                     <span>Show Prices</span>
@@ -358,25 +419,45 @@ export interface SlipLineItem {
 
             <!-- SECTION 4: NOTES -->
             <div class="space-y-3 p-3.5 bg-zinc-50 dark:bg-zinc-950/60 rounded-2xl border border-zinc-200/80 dark:border-zinc-850">
-              <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
-                <mat-icon class="text-xs">sticky_note_2</mat-icon> Notes & Remarks
-              </h3>
+              <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                <h3 class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1">
+                  <mat-icon class="text-xs">sticky_note_2</mat-icon> Notes & Remarks
+                </h3>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  <input type="checkbox" [ngModel]="showNotesFromSender() || showNotesFromShipping()" (ngModelChange)="toggleNotesSection($event)" class="rounded accent-amber-500 cursor-pointer" />
+                  <span>Select Section</span>
+                </label>
+              </div>
 
               <div>
-                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from Sender</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-[9px] font-bold text-zinc-500 uppercase">Notes from Sender</label>
+                  <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                    <input type="checkbox" [(ngModel)]="showNotesFromSender" class="rounded accent-amber-500 cursor-pointer" />
+                    <span>Show</span>
+                  </label>
+                </div>
                 <textarea
                   rows="2"
                   [(ngModel)]="notesFromSender"
-                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none"
+                  [disabled]="!showNotesFromSender()"
+                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none disabled:opacity-50"
                 ></textarea>
               </div>
 
               <div>
-                <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Notes from LisShipment</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-[9px] font-bold text-zinc-500 uppercase">Notes from LisShipment</label>
+                  <label class="flex items-center gap-1 cursor-pointer text-[9px] text-zinc-500">
+                    <input type="checkbox" [(ngModel)]="showNotesFromShipping" class="rounded accent-amber-500 cursor-pointer" />
+                    <span>Show</span>
+                  </label>
+                </div>
                 <textarea
                   rows="2"
                   [(ngModel)]="notesFromShipping"
-                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none"
+                  [disabled]="!showNotesFromShipping()"
+                  class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs resize-none disabled:opacity-50"
                 ></textarea>
               </div>
             </div>
@@ -393,10 +474,12 @@ export interface SlipLineItem {
                 <!-- 1. HEADER ROW -->
                 <div class="flex items-center justify-between pb-3 border-b-2 border-black">
                   <div>
-                    <span class="block text-[10px] sm:text-[11px] font-bold text-zinc-600 uppercase tracking-wider">EASYID</span>
-                    <h1 class="text-xl sm:text-2xl font-black text-black tracking-tight mt-0.5 font-mono uppercase leading-none">
-                      {{ easyId() }}
-                    </h1>
+                    @if (showEasyId()) {
+                      <span class="block text-[10px] sm:text-[11px] font-bold text-zinc-600 uppercase tracking-wider">EASYID</span>
+                      <h1 class="text-xl sm:text-2xl font-black text-black tracking-tight mt-0.5 font-mono uppercase leading-none">
+                        {{ easyId() }}
+                      </h1>
+                    }
                   </div>
                   <div class="flex items-center justify-end">
                     <img [src]="logoUrl" alt="3D Galaxy Logo" class="h-8 sm:h-10 w-auto object-contain" />
@@ -408,154 +491,168 @@ export interface SlipLineItem {
                 </div>
 
                 <!-- 2. ORDER META & ADDRESS GRID -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 text-xs text-black leading-relaxed">
-                  <div class="space-y-2">
-                    <div class="flex items-center">
-                      <span class="font-bold w-16 sm:w-20 shrink-0">Date:</span>
-                      <span>{{ dateStr() }}</span>
+                @if (showOrderNumber() || showDate() || showTrackingNumber() || showShipTo() || showReturnAddress()) {
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 text-xs text-black leading-relaxed border-y border-zinc-300 py-3 my-2">
+                    <div class="space-y-2">
+                      @if (showOrderNumber()) {
+                        <div>
+                          <span class="font-bold text-zinc-600 uppercase tracking-wider block text-[10px]">ORDER ID:</span>
+                          <span class="font-black font-mono text-sm text-black">{{ orderNumber() }}</span>
+                        </div>
+                      }
+                      @if (showDate() && dateStr()) {
+                        <div>
+                          <span class="font-bold text-zinc-600 uppercase tracking-wider block text-[10px]">DATE:</span>
+                          <span class="font-medium text-black">{{ dateStr() }}</span>
+                        </div>
+                      }
+                      @if (showTrackingNumber() && trackingNumber()) {
+                        <div>
+                          <span class="font-bold text-zinc-600 uppercase tracking-wider block text-[10px]">TRACKING #:</span>
+                          <span class="font-mono text-xs text-black">{{ trackingNumber() }}</span>
+                        </div>
+                      }
                     </div>
-                    <div class="flex items-start">
-                      <span class="font-bold w-16 sm:w-20 shrink-0">Ship To:</span>
-                      <div class="whitespace-pre-line text-zinc-900">
-                        <div class="font-bold">{{ shipToName() }}</div>
-                        @if (shipToPhone()) {
-                          <div class="text-zinc-700 font-medium">Contact: {{ shipToPhone() }}</div>
-                        }
-                        <div>{{ shipToStreet() }}</div>
-                        <div>{{ shipToCityStateZip() }}</div>
-                        <div>{{ shipToCountry() }}</div>
-                      </div>
-                    </div>
-                    <div class="flex items-center">
-                      <span class="font-bold w-16 sm:w-20 shrink-0">Email:</span>
-                      <span class="break-all font-medium text-zinc-800">{{ email() }}</span>
-                    </div>
-                  </div>
 
-                  <div class="space-y-2">
-                    <div class="flex items-center">
-                      <span class="font-bold w-16 sm:w-24 shrink-0">Tracking:</span>
-                      <span class="font-mono break-all font-bold" [class.text-zinc-400]="!trackingNumber()">{{ trackingNumber() || 'Not Assigned' }}</span>
-                    </div>
-                    <div class="flex items-start">
-                      <span class="font-bold w-16 sm:w-24 shrink-0 leading-tight">Return<br class="hidden sm:inline"/> Address:</span>
-                      <div class="whitespace-pre-line text-zinc-800">
-                        {{ returnAddress() }}
-                      </div>
-                    </div>
-                    <div class="flex items-center">
-                      <span class="font-bold w-16 sm:w-24 shrink-0">Order:</span>
-                      <span class="font-bold font-mono">{{ orderNumber() }}</span>
+                    <div class="space-y-2">
+                      @if (showShipTo()) {
+                        <div class="space-y-1">
+                          <span class="font-bold text-zinc-600 uppercase tracking-wider block text-[10px]">SHIP TO:</span>
+                          <div class="whitespace-pre-line text-black leading-snug">
+                            <div class="font-bold text-sm text-black">{{ shipToName() }}</div>
+                            <div class="break-words text-zinc-900">{{ shipToStreet() }}</div>
+                            <div class="text-zinc-900">{{ shipToCityStateZip() }}</div>
+                            <div class="text-zinc-900">{{ shipToCountry() }}</div>
+                            @if (showPhone() && shipToPhone()) {
+                              <div class="text-zinc-900 font-semibold pt-0.5">Phone: {{ shipToPhone() }}</div>
+                            }
+                            @if (showEmail() && email()) {
+                              <div class="text-zinc-900 pt-0.5">Email: {{ email() }}</div>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      @if (showReturnAddress() && returnAddress()) {
+                        <div class="space-y-0.5 pt-1.5 border-t border-zinc-200">
+                          <span class="font-bold text-zinc-600 uppercase tracking-wider block text-[10px]">RETURN ADDRESS:</span>
+                          <div class="whitespace-pre-line text-zinc-800 text-[11px] leading-snug">{{ returnAddress() }}</div>
+                        </div>
+                      }
                     </div>
                   </div>
-                </div>
+                }
 
                 <!-- 3. LINE ITEMS TABLE -->
-                <div class="pt-2">
-                  <div class="w-full max-w-full overflow-x-auto pb-1 no-scrollbar">
-                    <table class="w-full border-collapse border border-black text-xs text-black">
-                    <thead>
-                      <tr class="border-b border-black bg-zinc-50">
-                        <th class="py-1.5 px-2 text-center font-bold w-12 border-r border-black">Qty</th>
-                        <th class="py-1.5 px-2 text-left font-bold w-28 border-r border-black">SKU</th>
-                        <th class="py-1.5 px-2 text-left font-bold border-r border-black">Description</th>
-                        @if (showPricing()) {
-                          <th class="py-1.5 px-2 text-right font-bold w-24 border-r border-black">Price</th>
-                          <th class="py-1.5 px-2 text-right font-bold w-24">Ext. Price</th>
-                        }
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (item of items(); track $index) {
-                        <tr class="border-b border-black">
-                          <td class="py-2.5 px-2 text-center border-r border-black align-top font-bold">{{ item.qty }}</td>
-                          <td class="py-2.5 px-2 text-left font-mono border-r border-black align-top break-all max-w-[110px] text-[11px]">{{ item.sku }}</td>
-                          <td class="py-2.5 px-2 text-left border-r border-black align-top leading-tight">{{ item.description }}</td>
+                @if (showLineItems()) {
+                  <div class="pt-2">
+                    <div class="w-full max-w-full overflow-x-auto pb-1 no-scrollbar">
+                      <table class="w-full border-collapse border border-black text-xs text-black">
+                      <thead>
+                        <tr class="border-b border-black bg-zinc-50">
+                          <th class="py-1.5 px-2 text-center font-bold w-12 border-r border-black">Qty</th>
+                          <th class="py-1.5 px-2 text-left font-bold w-28 border-r border-black">SKU</th>
+                          <th class="py-1.5 px-2 text-left font-bold border-r border-black">Description</th>
                           @if (showPricing()) {
-                            <td class="py-2.5 px-2 text-right border-r border-black align-top">{{ currencySymbol() }}{{ item.price | number:"1.2-2" }}</td>
-                            <td class="py-2.5 px-2 text-right align-top font-bold">{{ currencySymbol() }}{{ item.extPrice | number:"1.2-2" }}</td>
+                            <th class="py-1.5 px-2 text-right font-bold w-24 border-r border-black">Price</th>
+                            <th class="py-1.5 px-2 text-right font-bold w-24">Ext. Price</th>
                           }
                         </tr>
-                      }
-                    </tbody>
-                  </table>
-                  </div>
-
-                  <!-- Table Totals Row -->
-                  <div class="pt-3 flex items-start justify-between text-xs text-black font-semibold">
-                    <div>
-                      <span class="font-bold">Qty Total: {{ qtyTotal() }}</span>
+                      </thead>
+                      <tbody>
+                        @for (item of items(); track $index) {
+                          <tr class="border-b border-black">
+                            <td class="py-2.5 px-2 text-center border-r border-black align-top font-bold">{{ item.qty }}</td>
+                            <td class="py-2.5 px-2 text-left font-mono border-r border-black align-top break-all max-w-[110px] text-[11px]">{{ item.sku }}</td>
+                            <td class="py-2.5 px-2 text-left border-r border-black align-top leading-tight">{{ item.description }}</td>
+                            @if (showPricing()) {
+                              <td class="py-2.5 px-2 text-right border-r border-black align-top">{{ currencySymbol() }}{{ item.price | number:"1.2-2" }}</td>
+                              <td class="py-2.5 px-2 text-right align-top font-bold">{{ currencySymbol() }}{{ item.extPrice | number:"1.2-2" }}</td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
                     </div>
 
-                    @if (showPricing()) {
-                      <div class="text-right space-y-1 w-64">
-                        <div class="flex justify-between">
-                          <span>Sub Total</span>
-                          <span class="font-bold">{{ currencyCode() }} {{ subTotal() | number:"1.2-2" }}</span>
-                        </div>
-                        @if (shippingCost() > 0 || (codCharge() === 0 && taxAmount() === 0 && discountAmount() === 0)) {
-                          <div class="flex justify-between">
-                            <span>Shipping Cost</span>
-                            <span class="font-bold">{{ currencyCode() }} {{ shippingCost() | number:"1.2-2" }}</span>
-                          </div>
-                        }
-                        @if (codCharge() > 0) {
-                          <div class="flex justify-between text-amber-800">
-                            <span>COD Handling Charge</span>
-                            <span class="font-bold">{{ currencyCode() }} {{ codCharge() | number:"1.2-2" }}</span>
-                          </div>
-                        }
-                        @if (taxAmount() > 0) {
-                          <div class="flex justify-between">
-                            <span>Tax</span>
-                            <span class="font-bold">{{ currencyCode() }} {{ taxAmount() | number:"1.2-2" }}</span>
-                          </div>
-                        }
-                        @if (discountAmount() > 0) {
-                          <div class="flex justify-between text-emerald-800">
-                            <span>Discount</span>
-                            <span class="font-bold">-{{ currencyCode() }} {{ discountAmount() | number:"1.2-2" }}</span>
-                          </div>
-                        }
-                        <div class="flex justify-between text-sm font-bold border-t border-black pt-1">
-                          <span>Total</span>
-                          <span>{{ currencyCode() }} {{ grandTotal() | number:"1.2-2" }}</span>
-                        </div>
+                    <!-- Table Totals Row -->
+                    <div class="pt-3 flex items-start justify-between text-xs text-black font-semibold">
+                      <div>
+                        <span class="font-bold">Qty Total: {{ qtyTotal() }}</span>
                       </div>
-                    }
+
+                      @if (showPricing()) {
+                        <div class="text-right space-y-1 w-64">
+                          <div class="flex justify-between">
+                            <span>Sub Total</span>
+                            <span class="font-bold">{{ currencyCode() }} {{ subTotal() | number:"1.2-2" }}</span>
+                          </div>
+                          @if (shippingCost() > 0 || (codCharge() === 0 && taxAmount() === 0 && discountAmount() === 0)) {
+                            <div class="flex justify-between">
+                              <span>Shipping Cost</span>
+                              <span class="font-bold">{{ currencyCode() }} {{ shippingCost() | number:"1.2-2" }}</span>
+                            </div>
+                          }
+                          @if (codCharge() > 0) {
+                            <div class="flex justify-between text-amber-800">
+                              <span>COD Handling Charge</span>
+                              <span class="font-bold">{{ currencyCode() }} {{ codCharge() | number:"1.2-2" }}</span>
+                            </div>
+                          }
+                          @if (taxAmount() > 0) {
+                            <div class="flex justify-between">
+                              <span>Tax</span>
+                              <span class="font-bold">{{ currencyCode() }} {{ taxAmount() | number:"1.2-2" }}</span>
+                            </div>
+                          }
+                          @if (discountAmount() > 0) {
+                            <div class="flex justify-between text-emerald-800">
+                              <span>Discount</span>
+                              <span class="font-bold">-{{ currencyCode() }} {{ discountAmount() | number:"1.2-2" }}</span>
+                            </div>
+                          }
+                          <div class="flex justify-between text-sm font-bold border-t border-black pt-1">
+                            <span>Total</span>
+                            <span>{{ currencyCode() }} {{ grandTotal() | number:"1.2-2" }}</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
                   </div>
-                </div>
+                }
               </div>
 
               <!-- FOOTER SECTION (PUSHED TO BOTTOM) -->
-              <div class="mt-auto pt-6 space-y-3">
-                <!-- Top Divider before Notes -->
-                <div class="border-b-2 border-black w-full"></div>
+              @if ((showNotesFromSender() && notesFromSender()) || (showNotesFromShipping() && notesFromShipping())) {
+                <div class="mt-auto pt-6 space-y-3">
+                  <!-- Top Divider before Notes -->
+                  <div class="border-b-2 border-black w-full"></div>
 
-                <!-- 4. NOTES FROM SENDER -->
-                @if (notesFromSender()) {
-                  <div class="flex items-start gap-6 text-xs text-black">
-                    <span class="font-bold w-32 shrink-0 leading-tight">Notes from the<br/>Sender:</span>
-                    <div class="whitespace-pre-line flex-1 leading-normal">
-                      {{ notesFromSender() }}
+                  <!-- 4. NOTES FROM SENDER -->
+                  @if (showNotesFromSender() && notesFromSender()) {
+                    <div class="flex items-start gap-6 text-xs text-black">
+                      <span class="font-bold w-32 shrink-0 leading-tight">Notes from the<br/>Sender:</span>
+                      <div class="whitespace-pre-line flex-1 leading-normal">
+                        {{ notesFromSender() }}
+                      </div>
                     </div>
-                  </div>
-                }
+                  }
 
-                @if (notesFromSender() && notesFromShipping()) {
-                  <div class="border-b border-zinc-400 border-dotted w-full"></div>
-                }
+                  @if (showNotesFromSender() && notesFromSender() && showNotesFromShipping() && notesFromShipping()) {
+                    <div class="border-b border-zinc-400 border-dotted w-full"></div>
+                  }
 
-                <!-- 5. NOTES FROM LISSHIPMENT -->
-                @if (notesFromShipping()) {
-                  <div class="flex items-start gap-6 text-xs text-black">
-                    <span class="font-bold w-32 shrink-0 leading-tight">Notes from<br/>LisShipment:</span>
-                    <div class="whitespace-pre-line flex-1 leading-normal">
-                      {{ notesFromShipping() }}
+                  <!-- 5. NOTES FROM LISSHIPMENT -->
+                  @if (showNotesFromShipping() && notesFromShipping()) {
+                    <div class="flex items-start gap-6 text-xs text-black">
+                      <span class="font-bold w-32 shrink-0 leading-tight">Notes from<br/>LisShipment:</span>
+                      <div class="whitespace-pre-line flex-1 leading-normal">
+                        {{ notesFromShipping() }}
+                      </div>
                     </div>
-                  </div>
-                }
-              </div>
+                  }
+                </div>
+              }
 
             </div>
 
@@ -744,6 +841,34 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
     this.items.update(list => list.filter((_, i) => i !== index));
   }
 
+  // Section & Field Checkbox Visibility Signals
+  showEasyId = signal(true);
+  showOrderNumber = signal(true);
+  showDate = signal(true);
+  showTrackingNumber = signal(false);
+
+  showShipTo = signal(true);
+  showPhone = signal(false);
+  showEmail = signal(false);
+  showReturnAddress = signal(false);
+
+  showLineItems = signal(true);
+
+  showNotesFromSender = signal(true);
+  showNotesFromShipping = signal(true);
+
+  toggleHeaderSection(val: boolean) {
+    this.showEasyId.set(val);
+    this.showOrderNumber.set(val);
+    this.showDate.set(val);
+    this.showTrackingNumber.set(val);
+  }
+
+  toggleNotesSection(val: boolean) {
+    this.showNotesFromSender.set(val);
+    this.showNotesFromShipping.set(val);
+  }
+
   buildPayload() {
     return {
       easyId: this.easyId(),
@@ -759,7 +884,21 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
       returnAddress: this.returnAddress(),
       currencySymbol: this.currencySymbol(),
       currencyCode: this.currencyCode(),
+
+      // Visibility toggles
+      showEasyId: this.showEasyId(),
+      showOrderNumber: this.showOrderNumber(),
+      showDate: this.showDate(),
+      showTrackingNumber: this.showTrackingNumber(),
+      showShipTo: this.showShipTo(),
+      showPhone: this.showPhone(),
+      showEmail: this.showEmail(),
+      showReturnAddress: this.showReturnAddress(),
+      showLineItems: this.showLineItems(),
       showPricing: this.showPricing(),
+      showNotesFromSender: this.showNotesFromSender(),
+      showNotesFromShipping: this.showNotesFromShipping(),
+
       shippingCost: this.shippingCost(),
       codCharge: this.codCharge(),
       taxAmount: this.taxAmount(),

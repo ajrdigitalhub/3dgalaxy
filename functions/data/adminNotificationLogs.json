@@ -1,5 +1,77 @@
 [
   {
+    "id": "5e2cf5a6-a3a0-4320-8cbb-491e176412ec",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0051 for ₹1150.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "7e9f579e-59e7-44b1-950f-c8f631e6092e",
+      "orderNumber": "3DX0051",
+      "totalAmount": "1150",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-31T17:17:55.171Z",
+    "isRead": false
+  },
+  {
+    "id": "76acfef8-89ea-47eb-a2a8-4ab96b51bd99",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0050 for ₹879.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "c37d4455-15ef-4928-b5f8-2e6da10baaaa",
+      "orderNumber": "3DX0050",
+      "totalAmount": "879",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-31T10:47:52.365Z",
+    "isRead": false
+  },
+  {
+    "id": "7b99a1d6-2d3f-438b-a157-9bf27d025ba7",
+    "title": "🛒 Order Confirmed",
+    "body": "admin123 R placed Order #3DX0049 for ₹2110.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "d40c98a3-5afc-4a25-bf3b-7b77dd9de282",
+      "orderNumber": "3DX0049",
+      "totalAmount": "2110",
+      "customerName": "admin123 R",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-31T10:44:26.280Z",
+    "isRead": false
+  },
+  {
+    "id": "ef3b70b0-0b26-453b-a4d8-0ad534bacd52",
+    "title": "🛒 Order Confirmed",
+    "body": "AJR DIGITAL HUB placed Order #3DX0048 for ₹1180.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "a2892f9b-3c8e-4693-8dca-18bea41f3a18",
+      "orderNumber": "3DX0048",
+      "totalAmount": "1180",
+      "customerName": "AJR DIGITAL HUB",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-08-31T09:38:20.526Z",
+    "isRead": false
+  },
+  {
     "id": "f0940d26-4c60-48ae-90bd-170e10451c95",
     "title": "🛒 Order Confirmed",
     "body": "admin123 R placed Order #3DX0024 for ₹2110.00. Payment Pending (COD)",

@@ -70,6 +70,8 @@ export const getCustomers = async (req: Request, res: Response) => {
       orderBy = { [sortField]: sortOrder };
     }
 
+
+
     // Execute queries in parallel
     const [total, list, totalActive, totalBlocked, totalDirectorySpendAgg, repeatBuyersGroup] = await Promise.all([
       prisma.customer.count({ where }),
@@ -131,7 +133,7 @@ export const getCustomers = async (req: Request, res: Response) => {
 
       const rawName = c.user ? `${c.user.firstName || ''} ${c.user.lastName || ''}`.trim() : '';
       const name = rawName || (c.user?.email ? c.user.email.split('@')[0] : 'Customer');
-
+      //test
       return {
         id: c.id,
         userId: c.userId,

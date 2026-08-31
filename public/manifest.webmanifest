@@ -1,5 +1,5 @@
 {
-  "name": "3D Galaxy Admin Portal",
+  "name": "3D Galaxy",
   "short_name": "3D Galaxy Admin",
   "description": "Professional Seller Hub & Admin Control Portal for 3D Galaxy",
   "start_url": "/admin",
@@ -8,7 +8,11 @@
   "orientation": "any",
   "background_color": "#09090b",
   "theme_color": "#d65108",
-  "categories": ["business", "shopping", "productivity"],
+  "categories": [
+    "business",
+    "shopping",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/3d-logo.png",

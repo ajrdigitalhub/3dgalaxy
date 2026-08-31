@@ -169,12 +169,29 @@ export class CheckoutComponent implements OnInit {
   isGstValid = computed(() => {
     if (!this.isBusinessPurchase()) return true;
     const gst = this.gstNumber().trim().toUpperCase();
-    const company = this.companyName().trim();
-    if (!gst || !company) return false;
-    return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(
-      gst,
-    );
+    if (!gst) return true;
+    return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gst);
   });
+
+  onGstCheckboxChange(checked: boolean) {
+    this.isBusinessPurchase.set(checked);
+    if (!checked) {
+      this.gstNumber.set('');
+      this.companyName.set('');
+    }
+    this.saveDraftState();
+  }
+
+  onGstNumberInput(val: string) {
+    const uppercaseVal = (val || '').toUpperCase();
+    this.gstNumber.set(uppercaseVal);
+    this.saveDraftState();
+  }
+
+  onCompanyNameInput(val: string) {
+    this.companyName.set(val || '');
+    this.saveDraftState();
+  }
 
   subtotal = computed(() => this.ds.cartPricingSummary().subtotal);
 
@@ -446,9 +463,11 @@ export class CheckoutComponent implements OnInit {
   restoreDraftState() {
     if (this.isLoggedIn()) {
       const u = this.ds.activeUser();
-      this.name.set(u.name);
-      this.email.set(u.email);
-      this.phone.set(u.phone || "");
+      if (u) {
+        this.name.set(u.name || "");
+        this.email.set(u.email || "");
+        this.phone.set(u.phone || "");
+      }
     } else {
       this.name.set(localStorage.getItem("guest_name") || "");
       this.email.set(localStorage.getItem("guest_email") || "");
@@ -460,6 +479,21 @@ export class CheckoutComponent implements OnInit {
 
     const pay = localStorage.getItem("checkout_restored_pay");
     if (pay) this.paymentMethod.set(pay);
+
+    const gstEnabledStr = localStorage.getItem("checkout_gst_enabled");
+    if (gstEnabledStr !== null) {
+      this.isBusinessPurchase.set(gstEnabledStr === "true");
+    }
+
+    const gstNum = localStorage.getItem("checkout_gst_number");
+    if (gstNum !== null) {
+      this.gstNumber.set(gstNum);
+    }
+
+    const compName = localStorage.getItem("checkout_company_name");
+    if (compName !== null) {
+      this.companyName.set(compName);
+    }
 
     const activeStep = sessionStorage.getItem("checkout_active_step");
     if (activeStep) this.activeStep.set(Number(activeStep) as any);
@@ -475,6 +509,9 @@ export class CheckoutComponent implements OnInit {
     localStorage.setItem("guest_mobile", this.phone());
     localStorage.setItem("checkout_restored_addr1", this.accAddr1());
     localStorage.setItem("checkout_restored_pay", this.paymentMethod());
+    localStorage.setItem("checkout_gst_enabled", this.isBusinessPurchase() ? "true" : "false");
+    localStorage.setItem("checkout_gst_number", this.gstNumber());
+    localStorage.setItem("checkout_company_name", this.companyName());
   }
 
   goToStep(step: 1 | 2 | 3 | 4) {
@@ -608,9 +645,14 @@ export class CheckoutComponent implements OnInit {
       paymentMethod: this.paymentMethod(),
       couponCode: this.ds.activeCouponCode() || null,
       notes: this.orderNotes(),
-      businessPurchase: this.isBusinessPurchase() ? {
-        gstNumber: this.gstNumber(),
-        companyName: this.companyName()
+      gstNumber: (this.isBusinessPurchase() && this.gstNumber().trim()) ? this.gstNumber().trim().toUpperCase() : null,
+      companyName: (this.isBusinessPurchase() && this.companyName().trim()) ? this.companyName().trim() : null,
+      gstin: (this.isBusinessPurchase() && this.gstNumber().trim()) ? this.gstNumber().trim().toUpperCase() : null,
+      businessName: (this.isBusinessPurchase() && this.companyName().trim()) ? this.companyName().trim() : null,
+      gstEnabled: this.isBusinessPurchase() && Boolean(this.gstNumber().trim()),
+      businessPurchase: (this.isBusinessPurchase() && (this.gstNumber().trim() || this.companyName().trim())) ? {
+        gstNumber: this.gstNumber().trim().toUpperCase(),
+        companyName: this.companyName().trim()
       } : null,
       subtotalAmount: this.subtotal(),
       totalAmount: this.grandTotal(),

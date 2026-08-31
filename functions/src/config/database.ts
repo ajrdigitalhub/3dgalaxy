@@ -11,10 +11,10 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: ENV.PG_POOL_MAX || 15,
-  idleTimeoutMillis: 10000, // 10s idle timeout to cleanly recycle sockets before server drops them
-  connectionTimeoutMillis: 5000, // 5s timeout to prevent hanging on dropped connections
-  maxUses: 3000, // Recycle pooled sockets after 3000 queries to prevent stale TCP socket errors
+  max: Math.max(20, ENV.PG_POOL_MAX || 20),
+  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS || 30000,
+  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS || 25000,
+  maxUses: 7500, // Recycle pooled sockets to prevent stale TCP socket accumulation
   keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
   keepAliveInitialDelayMillis: 2000,
   allowExitOnIdle: false, // Keep pool active for server process
@@ -28,7 +28,7 @@ pool.on('error', (err: Error) => {
 /**
  * Executes a database operation with automatic retry on transient connection drops or timeouts.
  */
-export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 150): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 200): Promise<T> {
   let lastError: any;
   for (let attempt = 1; attempt <= retries + 1; attempt++) {
     try {
@@ -40,6 +40,7 @@ export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs 
       const isConnError =
         msg.includes('connection terminated') ||
         msg.includes('connection timeout') ||
+        msg.includes('timeout exceeded') ||
         msg.includes('econnreset') ||
         msg.includes('epipe') ||
         msg.includes('closed') ||
@@ -49,7 +50,7 @@ export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs 
         code === 'P2024';
 
       if (isConnError && attempt <= retries) {
-        console.warn(`⚠️ DB connection drop/timeout detected (attempt ${attempt}/${retries + 1}). Retrying query...`);
+        console.warn(`⚠️ DB connection drop/timeout detected (attempt ${attempt}/${retries + 1}). Retrying query in ${delayMs * attempt}ms...`);
         await new Promise(r => setTimeout(r, delayMs * attempt));
         continue;
       }
@@ -104,9 +105,19 @@ export const isPoolHealthy = async (): Promise<boolean> => {
 
 const adapter = new PrismaPg(pool);
 
-export const prisma = new PrismaClient({
+const basePrisma = new PrismaClient({
   adapter,
   log: ['error', 'warn'],
 });
+
+export const prisma = basePrisma.$extends({
+  query: {
+    $allModels: {
+      async $allOperations({ model, operation, args, query }) {
+        return withDbRetry(() => query(args), 2, 200);
+      }
+    }
+  }
+}) as unknown as PrismaClient;
 
 export default prisma;

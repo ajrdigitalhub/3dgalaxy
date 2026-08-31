@@ -108,7 +108,7 @@ export class ShippingService {
           settings.freeShippingMinSpent !== null &&
           !isNaN(Number(settings.freeShippingMinSpent))
         ? Number(settings.freeShippingMinSpent)
-        : null;
+        : 3500;
     const shippingLabel = settings.shippingLabel || 'Delivery Charges';
 
     // 1. Fetch full product & category records
