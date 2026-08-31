@@ -220,6 +220,9 @@ export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit
   @Input({ required: true }) orderNumber!: string;
   @Input() orderItems: any[] = [];
   @Input() customCourierSettings: any[] = [];
+  @Input() order?: any;
+  @Input() existingTrackingNumber?: string;
+  @Input() existingCourierPartner?: string;
   
   @Output() saveShipment = new EventEmitter<ShipmentDetailsPayload>();
   @Output() cancel = new EventEmitter<void>();
@@ -263,10 +266,45 @@ export class ShipmentDialogComponent implements OnInit, OnDestroy, AfterViewInit
     const calc = this.trackingService.calculateEstimatedDelivery(this.orderItems, new Date());
     this.estimatedDelivery = calc.formattedRange;
 
-    // Auto-select Delhivery by default if present
-    const delhivery = list.find(c => c.id === 'delhivery');
-    if (delhivery) {
-      this.selectedCourierId.set('delhivery');
+    // Pre-populate tracking number from inputs or order object
+    const existingNum = this.existingTrackingNumber ||
+      this.order?.shipments?.[0]?.trackingNumber ||
+      this.order?.shipment?.trackingNumber ||
+      this.order?.trackingNumber ||
+      '';
+    
+    if (existingNum && existingNum !== 'N/A') {
+      this.trackingNumber = String(existingNum).trim();
+    }
+
+    // Pre-populate courier partner if available
+    const existingPartner = this.existingCourierPartner ||
+      this.order?.shipments?.[0]?.courierPartner ||
+      this.order?.shipment?.courierPartner ||
+      this.order?.courierPartner ||
+      '';
+    
+    if (existingPartner) {
+      const match = list.find(c =>
+        c.id.toLowerCase() === existingPartner.toLowerCase() ||
+        c.name.toLowerCase() === existingPartner.toLowerCase()
+      );
+      if (match) {
+        this.selectedCourierId.set(match.id);
+      } else {
+        this.selectedCourierId.set('others');
+        this.customCourierName = existingPartner;
+      }
+    } else {
+      // Auto-select Delhivery by default if present
+      const delhivery = list.find(c => c.id === 'delhivery');
+      if (delhivery) {
+        this.selectedCourierId.set('delhivery');
+      }
+    }
+
+    if (this.trackingNumber) {
+      this.updateTrackingUrl();
     }
   }
 

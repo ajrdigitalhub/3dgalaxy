@@ -9,6 +9,7 @@ import { WeightPipe } from '../../shared/pipes/weight.pipe';
 import { calculateItemWeight, calculatePackageSummary, formatWeight } from '../../shared/utils/weight.utils';
 
 import { DeliveryEstimatePipe } from '../../shared/pipes/delivery-estimate.pipe';
+import { DeliveryEstimateService } from '../../core/services/delivery-estimate.service';
 import { ShippingChargeSkeletonComponent } from '../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component';
 
 @Component({
@@ -23,6 +24,7 @@ export class CartCheckout implements OnInit {
   ds = inject(DatastoreService);
   router = inject(Router);
   settingsService = inject(SettingsService);
+  deliveryEstimateService = inject(DeliveryEstimateService);
 
   couponInputText = signal<string>('');
   showOffers = signal(false);
@@ -34,6 +36,12 @@ export class CartCheckout implements OnInit {
   getItemWeight(item: any): string {
     const res = calculateItemWeight(item);
     return res.totalGrams > 0 ? res.display : '';
+  }
+
+  getItemDeliveryDays(item: any): number | string {
+    const p = item?.product || item;
+    const raw = p?.estimatedDeliveryDays ?? p?.estimated_delivery_days ?? p?.shipping?.estimatedDays ?? p?.shipping?.deliveryDays ?? this.ds.cartPricingSummary().estimatedDeliveryDays;
+    return this.deliveryEstimateService.parseEstimateDays(raw) || this.ds.cartPricingSummary().estimatedDeliveryDays || 305;
   }
 
   calculateLineWeightDisplay(item: any): string {

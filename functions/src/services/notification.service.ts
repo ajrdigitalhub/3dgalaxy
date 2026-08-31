@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import { ENV } from '../config/env';
 import { getFirebaseAdmin } from '../config/firebase';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { triggerWhatsAppNotification, getWhatsappSettings } from '../controllers/whatsapp';
@@ -705,10 +706,10 @@ export class NotificationService {
       const requestDate = new Date(enquiry.createdAt).toLocaleDateString('en-IN');
       const estResponseTime = "24-48 Hours";
       const serviceType = "3D Printing Service";
-      const websiteName = settings.storeName || whatsappSettings.storeName || '3D Galaxy';
-      const siteUrl = process.env.APP_URL || 'https://3dgalaxy.co.in';
+      const websiteName = settings.storeName || whatsappSettings.storeName || ENV.SITE_NAME;
+      const siteUrl = whatsappSettings.siteUrl || ENV.SITE_URL;
       const trackUrl = `${siteUrl}/services/track?trk=${trackingNumber}`;
-      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminBaseUrl = whatsappSettings.adminUrl || ENV.ADMIN_APP_URL;
       const adminPortalUrl = `${adminBaseUrl}/services/${enquiry.id}`;
 
       // 1. NOTIFY CUSTOMER

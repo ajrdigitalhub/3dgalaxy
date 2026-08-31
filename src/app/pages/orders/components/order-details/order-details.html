@@ -5,9 +5,11 @@
       class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
       <mat-icon class="scale-75">arrow_back</mat-icon> Back to My Orders
     </button>
-    <div class="text-xs text-neutral-400 font-semibold" id="current_time_display">
-      Local Time: 2026-06-20 23:49 UTC
-    </div>
+    @if (order(); as ord) {
+      <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium" id="current_time_display">
+        Order Placed: <span class="font-bold text-neutral-800 dark:text-neutral-200">{{ ord.createdAt | date:'dd MMM yyyy, hh:mm a' }}</span>
+      </div>
+    }
   </div>
 
   @if (loading()) {
@@ -60,6 +62,10 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
+      <button type="button" (click)="reorder()"
+        class="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+        <mat-icon class="text-sm scale-95">refresh</mat-icon> Reorder
+      </button>
       <a href="#support-box"
         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
         <mat-icon class="text-sm scale-95">help_outline</mat-icon> Contact
@@ -219,12 +225,18 @@
                 <h4 class="text-sm font-bold text-neutral-900 dark:text-white hover:text-blue-500 transition-colors">
                   <a [routerLink]="['/product', item.product?.slug]">{{ item.product?.name }}</a>
                 </h4>
-                @if (canReviewOrder()) {
-                <button type="button" (click)="openProductReview(item)"
-                  class="rounded-full border border-neutral-200 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-700 transition hover:border-blue-500 hover:text-blue-500 dark:border-neutral-800 dark:text-neutral-300">
-                  Write review
-                </button>
-                }
+                <div class="flex items-center gap-2">
+                  <button type="button" (click)="reorderItem(item)"
+                    class="rounded-full border border-orange-200 bg-orange-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600 hover:bg-orange-500 hover:text-white transition dark:border-orange-900/50 dark:text-orange-400">
+                    Buy again
+                  </button>
+                  @if (canReviewOrder()) {
+                  <button type="button" (click)="openProductReview(item)"
+                    class="rounded-full border border-neutral-200 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-700 transition hover:border-blue-500 hover:text-blue-500 dark:border-neutral-800 dark:text-neutral-300">
+                    Write review
+                  </button>
+                  }
+                </div>
               </div>
 
               <!-- BUNDLE / CONFIGURATION BADGE & SLOTS -->

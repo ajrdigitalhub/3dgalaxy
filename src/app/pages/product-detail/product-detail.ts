@@ -1643,7 +1643,7 @@ export class ProductDetail {
           }
           link.setAttribute(
             "href",
-            `https://3dgalaxy.com/product/${matched.slug}`,
+            `${environment.siteUrl}/product/${matched.slug}`,
           );
         }
       }
@@ -1801,7 +1801,7 @@ export class ProductDetail {
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
       if (bundleDetails) {
         this.isAddingToCart.set(true);
-        this.ds.addBundleToCart(p, bundleDetails);
+        this.ds.addBundleToCart(p, bundleDetails, this.quantity());
         setTimeout(() => {
           this.isAddingToCart.set(false);
           this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
@@ -1942,7 +1942,15 @@ export class ProductDetail {
       }
       const bundleDetails = this.variantEngine.buildCartBundleDetails();
       if (bundleDetails) {
-        this.ds.addBundleToCart(p, bundleDetails);
+        const qty = Math.max(1, this.quantity());
+        this.ds.setBuyNowItem({
+          product: p,
+          quantity: qty,
+          bundleDetails,
+          weightInGrams: bundleDetails.weightInGrams,
+          selectedWeightValue: bundleDetails.selectedWeightValue,
+          selectedWeightUnit: bundleDetails.selectedWeightUnit
+        });
         this.toastService.success(`Proceeding to checkout with ${bundleDetails.bundleName}`);
         this.router.navigate(["/checkout"]);
         return;
@@ -1987,9 +1995,9 @@ export class ProductDetail {
 
   // WHATSAPP REDIRECT AND CAMPAIGN SIMULATION
   async shareProduct(p: Product) {
-    const origin = this.document.location?.origin || "https://3dgalaxy.com";
+    const origin = this.document.location?.origin || environment.siteUrl;
     const shareUrl = `${origin}/product/${p.slug}`;
-    const shareText = `Check out ${p.name} on 3D Galaxy.`;
+    const shareText = `Check out ${p.name} on ${environment.siteName}.`;
 
     try {
       if (navigator.share) {

@@ -74,6 +74,12 @@ export class CheckoutComponent implements OnInit {
     return res.totalGrams > 0 ? res.display : '';
   }
 
+  getItemDeliveryDays(item: any): number | string {
+    const p = item?.product || item;
+    const raw = p?.estimatedDeliveryDays ?? p?.estimated_delivery_days ?? p?.shipping?.estimatedDays ?? p?.shipping?.deliveryDays ?? this.shippingDetails().estimatedDays;
+    return this.deliveryService.parseEstimateDays(raw) || this.shippingDetails().estimatedDays || 305;
+  }
+
   isSubmitting = signal(false);
   showAuthModal = signal(false);
   showTermsModal = signal(false);
@@ -127,6 +133,10 @@ export class CheckoutComponent implements OnInit {
   name = signal("");
   email = signal("");
   phone = signal("");
+  isPhoneLocked = computed(() => {
+    const userPhone = this.ds.activeUser()?.phone;
+    return Boolean(this.isLoggedIn() && userPhone && userPhone.trim().length >= 10);
+  });
 
   // Shipping Address Fields
   accAddr1 = signal("");
@@ -237,6 +247,12 @@ export class CheckoutComponent implements OnInit {
         if (!this.isLoggedIn() && !localStorage.getItem("guest_name")) {
           this.showAuthModal.set(true);
         } else if (this.isLoggedIn()) {
+          const u = this.ds.activeUser();
+          if (u) {
+            if (u.name && !this.name()) this.name.set(u.name);
+            if (u.email) this.email.set(u.email);
+            if (u.phone && (this.isPhoneLocked() || !this.phone())) this.phone.set(u.phone);
+          }
           this.fetchSavedAddresses();
         }
       },
@@ -519,6 +535,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   async placeOrder() {
+    if (this.isSubmitting()) return;
+
     if (!this.isValid()) {
       this.toast.error("Please fill in all required fields and accept terms.");
       return;
@@ -774,20 +792,28 @@ export class CheckoutComponent implements OnInit {
   }
 
   finishOrder(orderId: string, orderObj?: any) {
-    this.ds.clearBuyNowItem();
-    this.ds.cart.set([]);
+    const isBuyNow = !!this.ds.buyNowItem();
+
+    if (isBuyNow) {
+      // Preserve customer's existing cart, clear only the isolated Buy Now session
+      this.ds.clearBuyNowItem();
+    } else {
+      // Clear cart only on regular cart checkouts
+      this.ds.cart.set([]);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("3d-galaxy-cart");
+      }
+    }
+
     this.ds.activeCouponCode.set("");
     this.ds.couponDiscountAmount.set(0);
     this.loading.stopLoading();
     this.isSubmitting.set(false);
 
-    // Clear storage
+    // Clear transient step storage
     sessionStorage.removeItem("checkout_active_step");
     localStorage.removeItem("checkout_restored_addr1");
     localStorage.removeItem("checkout_restored_pay");
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("3d-galaxy-cart");
-    }
 
     const targetId = orderId || orderObj?.id || orderObj?.orderId || "ORD-SUCCESS";
     this.router.navigate(["/order-success"], {

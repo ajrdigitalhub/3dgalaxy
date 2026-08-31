@@ -122,6 +122,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "order-tracking/:orderNumber",
+    loadComponent: () =>
+      import("./pages/order-tracking/order-tracking").then(
+        (m) => m.OrderTrackingComponent,
+      ),
+  },
+  {
     path: "about",
     loadComponent: () => import("./pages/about/about").then((m) => m.AboutPage),
   },

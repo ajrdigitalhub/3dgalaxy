@@ -110,9 +110,9 @@ export function resolveEffectiveWeight(
         displayWeight: formatWeight(bdGrams),
         source: 'VARIANT',
         isFallback: false,
-        badgeLabel: 'Tier Weight',
+        badgeLabel: 'Bundle Weight',
         badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-        sourceLabel: `${formatWeight(bdGrams)} (Tier Weight)`
+        sourceLabel: `${formatWeight(bdGrams)} (Bundle Weight)`
       };
     }
     if (bd.selectedWeightValue !== undefined && bd.selectedWeightValue !== null && Number(bd.selectedWeightValue) > 0) {
@@ -122,9 +122,44 @@ export function resolveEffectiveWeight(
         displayWeight: formatWeight(g),
         source: 'VARIANT',
         isFallback: false,
-        badgeLabel: 'Tier Weight',
+        badgeLabel: 'Bundle Weight',
         badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-        sourceLabel: `${formatWeight(g)} (Tier Weight)`
+        sourceLabel: `${formatWeight(g)} (Bundle Weight)`
+      };
+    }
+    if (Array.isArray(bd.selectedVariants) && bd.selectedVariants.length > 0) {
+      let slotSum = 0;
+      for (const slot of bd.selectedVariants) {
+        const v = slot?.selectedVariant || slot;
+        if (v) {
+          const vGrams = Number(v.weightInGrams ?? v.weight_in_grams ?? v.weight ?? 0);
+          if (vGrams > 0) slotSum += vGrams;
+          else if (v.weightValue) slotSum += convertToGrams(v.weightValue, v.weightUnit || 'kg');
+        }
+      }
+      if (slotSum > 0) {
+        return {
+          weightInGrams: slotSum,
+          displayWeight: formatWeight(slotSum),
+          source: 'VARIANT',
+          isFallback: false,
+          badgeLabel: 'Bundle Weight',
+          badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+          sourceLabel: `${formatWeight(slotSum)} (Bundle Weight)`
+        };
+      }
+    }
+    if (bd.bundleCount && Number(bd.bundleCount) > 0) {
+      const perUnitGrams = Number(p.weightInGrams ?? p.weight_in_grams ?? p.weight ?? 1000) || 1000;
+      const totalBundleUnitGrams = perUnitGrams * Number(bd.bundleCount);
+      return {
+        weightInGrams: totalBundleUnitGrams,
+        displayWeight: formatWeight(totalBundleUnitGrams),
+        source: 'VARIANT',
+        isFallback: false,
+        badgeLabel: 'Bundle Weight',
+        badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+        sourceLabel: `${formatWeight(totalBundleUnitGrams)} (Bundle Weight)`
       };
     }
   }

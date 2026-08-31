@@ -17,6 +17,7 @@ import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 import { AdminDevicesTab } from "./admin-devices-tab";
 import { TrackingService, CourierPartnerConfig } from "../../../core/services/tracking.service";
+import { environment } from "../../../../environments/environment";
 
 
 @Component({
@@ -5292,10 +5293,10 @@ export class AdminSettingsTab {
       payment_status: "PAID",
       order_total: "4,890.00",
       currency: "INR",
-      store_name: "3D Galaxy Hub",
+      store_name: this.admin.storeName() || environment.siteName,
       support_phone: "+91 99999 99999",
-      support_email: "support@3dgalaxy.com",
-      site_url: "https://3dgalaxy.com",
+      support_email: environment.supportEmail,
+      site_url: environment.siteUrl,
       order_items: "Carbon Fiber PETG x 2, Resin Clear Pro x 1",
       shipping_address: "12/4 East Coast Road, Chennai, Tamil Nadu - 600041",
       otp_code: "482091",
@@ -5397,7 +5398,7 @@ export class AdminSettingsTab {
           requestDate: new Date().toLocaleDateString('en-IN'),
           estimatedResponseTime: "24-48 Hours",
           serviceType: "3D Printing Service",
-          trackUrl: "https://3dgalaxy.co.in/services/track?trk=TRK-748920",
+          trackUrl: `${environment.siteUrl}/services/track?trk=TRK-748920`,
           mobile: "+919876543210",
           email: "jayakumar@example.com",
           city: "Bangalore",
@@ -5405,7 +5406,7 @@ export class AdminSettingsTab {
           material: "PLA",
           color: "Black",
           remarks: "Print with high resolution",
-          adminPortalUrl: "https://admin.3dgalaxy.in/services/ENQ-748920"
+          adminPortalUrl: `${environment.adminUrl}/services/ENQ-748920`
         }
       })
       .subscribe({

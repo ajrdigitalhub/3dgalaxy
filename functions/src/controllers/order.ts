@@ -221,12 +221,14 @@ export const getMyOrders = async (req: any, res: Response) => {
 
   try {
     const page = parseInt(req.query.page as string, 10) || 1;
-    const limitNum = parseInt(req.query.limit as string, 10) || 20;
-    const skip = (page - 1) * limitNum;
+    const limitQuery = req.query.limit as string;
+    const isAll = limitQuery === 'all' || limitQuery === '-1';
+    const limitNum = isAll ? 500 : (parseInt(limitQuery, 10) || 50);
+    const skip = isAll ? 0 : (page - 1) * limitNum;
 
     const customer = await prisma.customer.findFirst({ where: { userId } });
     if (!customer) {
-      return res.status(200).json({ total: 0, page, limit: limitNum, data: [] });
+      return res.status(200).json({ total: 0, page: 1, limit: limitNum, data: [] });
     }
 
     const where = { customerId: customer.id };
@@ -728,11 +730,28 @@ export const trackOrder = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Order Number and Email are required for tracking' });
   }
 
+  const cleanNum = String(orderNumber).trim();
+  const cleanMail = String(email).trim();
+
   try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanNum);
     const order = await prisma.order.findFirst({
       where: {
-        orderNumber: orderNumber.trim(),
-        customer: { user: { email: email.trim() } }
+        AND: [
+          {
+            OR: [
+              { orderNumber: { equals: cleanNum, mode: 'insensitive' } },
+              ...(isUuid ? [{ id: cleanNum }] : [])
+            ]
+          },
+          {
+            customer: {
+              user: {
+                email: { equals: cleanMail, mode: 'insensitive' }
+              }
+            }
+          }
+        ]
       },
       include: {
         customer: {

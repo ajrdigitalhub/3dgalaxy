@@ -1,9 +1,10 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../services/api.service';
+import { DatastoreService } from '../../services/datastore';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { LoadingService } from '../../core/services/loading.service';
 
@@ -720,6 +721,8 @@ import { LoadingService } from '../../core/services/loading.service';
 })
 export class OrderTrackingComponent implements OnInit, OnDestroy {
   router = inject(Router);
+  route = inject(ActivatedRoute);
+  ds = inject(DatastoreService);
   api = inject(ApiService);
   toast = inject(ToastService);
   loading = inject(LoadingService);
@@ -740,6 +743,25 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   private enterTimeout: any;
 
   ngOnInit() {
+    // Check for orderNumber and email from route parameters or query parameters
+    const routeOrderNum = this.route.snapshot.paramMap.get('orderNumber') ||
+      this.route.snapshot.queryParamMap.get('orderNumber') ||
+      this.route.snapshot.queryParamMap.get('orderId') ||
+      this.route.snapshot.queryParamMap.get('id') ||
+      this.route.snapshot.queryParamMap.get('trk');
+
+    if (routeOrderNum) {
+      this.orderNumber = routeOrderNum.trim();
+    }
+
+    const queryEmail = this.route.snapshot.queryParamMap.get('email');
+    const userEmail = this.ds.activeUser()?.email;
+    if (queryEmail) {
+      this.email = queryEmail.trim();
+    } else if (userEmail) {
+      this.email = userEmail.trim();
+    }
+
     // Start truck entry animation
     this.isEntering.set(true);
     this.isParked.set(false);
@@ -749,7 +771,12 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.isParked.set(true);
       // Brief horn animation on arrival
       this.triggerHorn();
-    }, 2500);
+
+      // Auto-trigger track if both orderNumber and email are pre-filled
+      if (this.orderNumber && this.email && this.currentState() === 'idle') {
+        this.performTrack();
+      }
+    }, 1500);
   }
 
   ngOnDestroy() {
@@ -767,7 +794,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   resetPortal() {
     this.orderNumber = '';
-    this.email = '';
+    this.email = this.ds.activeUser()?.email || '';
     this.currentState.set('idle');
     this.order.set(null);
     this.error.set(null);
@@ -776,11 +803,18 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   async performTrack() {
+    if (this.searching()) return;
+
     const num = this.orderNumber.trim();
-    const mail = this.email.trim();
+    let mail = this.email.trim();
+
+    if (!mail && this.ds.activeUser()?.email) {
+      mail = this.ds.activeUser()!.email.trim();
+      this.email = mail;
+    }
 
     if (!num || !mail) {
-      this.toast.error('Both order reference number and checkout credentials are required.');
+      this.toast.error('Both order reference number and email address are required.');
       return;
     }
 
@@ -791,8 +825,8 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.order.set(null);
     this.loading.startLoading();
 
-    // Brief delay to appreciate the doors slam shut and moving truck loading states
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // Brief delay to appreciate the doors animation
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
       const res = await this.api.post<any>('/orders/track', { orderNumber: num, email: mail }).toPromise();

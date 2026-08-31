@@ -1,3 +1,4 @@
+import "./config/env";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import path from "path";
@@ -87,7 +88,7 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 // Strict Environment-Based CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:4200', 'http://localhost:3000', 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in', 'https://ajr3dgalaxy.web.app'];
+  : ['http://localhost:4200', 'http://localhost:3000', ENV.CLIENT_URL, ENV.SITE_URL, ENV.ADMIN_APP_URL, 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in', 'https://ajr3dgalaxy.web.app'].filter(Boolean);
 
 app.use(
   cors({

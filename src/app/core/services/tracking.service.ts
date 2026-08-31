@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 export interface CourierPartnerConfig {
   id: string;
@@ -153,7 +154,7 @@ export class TrackingService {
 
     return cleanNum
       ? `https://www.google.com/search?q=${encodeURIComponent((courierPartner || '') + ' tracking ' + cleanNum)}`
-      : 'https://3dgalaxy.co.in/order-tracking';
+      : `${environment.siteUrl}/order-tracking`;
   }
 
   decodeDays(val: number | string | null | undefined): string {

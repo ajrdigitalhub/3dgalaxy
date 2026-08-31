@@ -673,7 +673,12 @@ export class DatastoreService {
     variant?: ProductVariant | null;
     quantity: number;
     options?: any;
+    bundleDetails?: CartBundleDetails | null;
     codAvailable: boolean;
+    weightInGrams?: number;
+    selectedWeightValue?: number | string;
+    selectedWeightUnit?: string;
+    effectiveWeightGrams?: number;
   } | null>(null);
 
   isCodAvailable(p: any): boolean {
@@ -687,7 +692,17 @@ export class DatastoreService {
     return true;
   }
 
-  setBuyNowItem(item: { product: Product; variant?: ProductVariant | null; quantity: number; options?: any }) {
+  setBuyNowItem(item: {
+    product: Product;
+    variant?: ProductVariant | null;
+    quantity: number;
+    options?: any;
+    bundleDetails?: CartBundleDetails | null;
+    weightInGrams?: number;
+    selectedWeightValue?: number | string;
+    selectedWeightUnit?: string;
+    effectiveWeightGrams?: number;
+  }) {
     const codAvailable = this.isCodAvailable(item.product) && (!item.variant || item.variant.codAvailable !== false);
     const sessionData = { ...item, codAvailable };
     this.buyNowItem.set(sessionData);
@@ -713,20 +728,27 @@ export class DatastoreService {
     if (buyNow && buyNow.product) {
       const allProds = this.products();
       const found = allProds.find(p => p.id === buyNow.product.id);
-      const prod = found || buyNow.product;
+      const prod = found ? { ...found, ...buyNow.product } : buyNow.product;
       let refreshedVariant = buyNow.variant || null;
       if (refreshedVariant && prod.variants) {
         const vId = refreshedVariant.id;
         const vFound = prod.variants.find((v: any) => v.id === vId);
         if (vFound) refreshedVariant = vFound;
       }
+      const qty = Math.max(1, Number(buyNow.quantity) || 1);
+      const calculatedWeightGrams = buyNow.weightInGrams || buyNow.bundleDetails?.weightInGrams || (buyNow.selectedWeightValue ? convertToGrams(Number(buyNow.selectedWeightValue), buyNow.selectedWeightUnit || 'kg') : undefined);
       return [
         {
           product: prod,
           variant: refreshedVariant,
-          quantity: buyNow.quantity || 1,
+          quantity: qty,
           isFree: false,
           bundleProducts: [],
+          bundleDetails: buyNow.bundleDetails || undefined,
+          weightInGrams: calculatedWeightGrams,
+          selectedWeightValue: buyNow.selectedWeightValue || buyNow.bundleDetails?.selectedWeightValue,
+          selectedWeightUnit: buyNow.selectedWeightUnit || buyNow.bundleDetails?.selectedWeightUnit,
+          effectiveWeightGrams: calculatedWeightGrams,
           isBuyNow: true
         }
       ];
@@ -2297,15 +2319,27 @@ export class DatastoreService {
     this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name} to cart.`);
   }
 
-  addBundleToCart(product: Product, bundleDetails: CartBundleDetails) {
+  addBundleToCart(product: Product, bundleDetails: CartBundleDetails, quantity: number = 1) {
+    const qty = Math.max(1, Number(quantity) || 1);
     this.clearBuyNowItem();
     this.cart.update(items => {
       const role = this.userRole();
       const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
       const calculatedWeightGrams = bundleDetails.weightInGrams || (bundleDetails.selectedWeightValue ? convertToGrams(bundleDetails.selectedWeightValue, bundleDetails.selectedWeightUnit || 'kg') : undefined);
+      
+      const existingIdx = items.findIndex(i => 
+        i.product.id === product.id && 
+        i.bundleDetails?.bundleName === bundleDetails.bundleName &&
+        JSON.stringify(i.bundleDetails?.selectedVariants || []) === JSON.stringify(bundleDetails.selectedVariants || [])
+      );
+
+      if (existingIdx !== -1) {
+        return items.map((item, idx) => idx === existingIdx ? { ...item, quantity: item.quantity + qty } : item);
+      }
+
       return [...items, {
         product,
-        quantity: 1,
+        quantity: qty,
         selectedPriceType: priceType,
         weightInGrams: calculatedWeightGrams,
         selectedWeightValue: bundleDetails.selectedWeightValue,
@@ -2314,7 +2348,7 @@ export class DatastoreService {
       }];
     });
     this.recalcDiscount();
-    this.logCartActivity('Added Bundle to Cart', `Added ${bundleDetails.bundleName} for ${product.name} to cart.`);
+    this.logCartActivity('Added Bundle to Cart', `Added ${qty}x ${bundleDetails.bundleName} for ${product.name} to cart.`);
   }
 
   updateCartQty(productId: string, qty: number, variantId?: string) {
@@ -2684,7 +2718,18 @@ export class DatastoreService {
       });
     }
 
-    this.cart.set([]);
+    const isBuyNow = !!this.buyNowItem();
+    if (isBuyNow) {
+      this.clearBuyNowItem();
+    } else {
+      this.cart.set([]);
+      if (isPlatformBrowser(this.platformId)) {
+        try {
+          localStorage.removeItem("3d-galaxy-cart");
+        } catch (e) {}
+      }
+    }
+
     this.activeCouponCode.set('');
     this.couponDiscountAmount.set(0);
 

@@ -32,12 +32,14 @@ import { ErrorHandler } from "@angular/core";
 import { loggingInterceptor } from "./interceptors/logging.interceptor";
 import { GlobalErrorHandler } from "./services/global-error-handler";
 
+import { DATE_PIPE_DEFAULT_OPTIONS } from "@angular/common";
 import { routes } from "./app.routes";
 import { SettingsService } from "./core/services/settings.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    { provide: DATE_PIPE_DEFAULT_OPTIONS, useValue: { timezone: '+0530' } },
     provideExperimentalZonelessChangeDetection(),
     provideAppInitializer(() => {
       const settingsService = inject(SettingsService);

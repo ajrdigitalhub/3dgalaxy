@@ -127,17 +127,42 @@ export class ShippingService {
   }
 
   private parseItemDays(val: any): number {
-    if (val === undefined || val === null || val === '') return 3;
-    if (typeof val === 'number') return isNaN(val) ? 3 : val;
-    const str = String(val).trim();
+    if (val === undefined || val === null || val === '') return 305;
+    let raw = val;
+    if (typeof val === 'object') {
+      raw = val.estimatedDeliveryDays ??
+            val.estimated_delivery_days ??
+            val.shipping?.estimatedDays ??
+            val.shipping?.deliveryDays ??
+            val.shipping?.deliveryTime ??
+            val.category?.estimatedDeliveryDays ??
+            val.category?.estimated_delivery_days;
+    }
+    if (raw === undefined || raw === null || raw === '') return 305;
+    if (typeof raw === 'number') {
+      if (isNaN(raw) || raw <= 0) return 305;
+      if (raw >= 100) return raw;
+      if (raw < 10) return raw * 100 + (raw + 2);
+      return raw;
+    }
+    const str = String(raw).trim();
     if (str.includes('-')) {
       const parts = str.split('-').map(p => parseInt(p.trim(), 10));
       if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] < parts[1]) {
         return parts[0] * 100 + parts[1];
       }
     }
+    if (str.toLowerCase().includes('to')) {
+      const parts = str.toLowerCase().split('to').map(p => parseInt(p.trim(), 10));
+      if (!isNaN(parts[0]) && !isNaN(parts[1]) && parts[0] < parts[1]) {
+        return parts[0] * 100 + parts[1];
+      }
+    }
     const parsed = parseInt(str, 10);
-    return isNaN(parsed) ? 3 : parsed;
+    if (isNaN(parsed) || parsed <= 0) return 305;
+    if (parsed >= 100) return parsed;
+    if (parsed < 10) return parsed * 100 + (parsed + 2);
+    return parsed;
   }
 
   public globalSettings = computed(() => {

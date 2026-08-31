@@ -537,6 +537,7 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
       @if (showShipmentModal() && selectedOrderForShipment()) {
         <app-shipment-dialog
           [orderNumber]="selectedOrderForShipment().orderNumber"
+          [order]="selectedOrderForShipment()"
           [orderItems]="selectedOrderForShipment().items || []"
           (saveShipment)="onSaveShipmentPayload($event)"
           (cancel)="showShipmentModal.set(false)"

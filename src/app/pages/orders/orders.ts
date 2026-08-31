@@ -7,7 +7,7 @@ import {
   effect,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { RouterModule } from "@angular/router";
+import { RouterModule, Router } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { HttpClient } from "@angular/common/http";
 import { ApiService } from "../../services/api.service";
@@ -24,6 +24,7 @@ import { ToastService } from "../../shared/components/toast/toast.service";
 export class OrdersTracking {
   toastService = inject(ToastService);
   ds = inject(DatastoreService);
+  router = inject(Router);
 
   searchPhoneQuery = signal<string>("");
 
@@ -63,7 +64,7 @@ export class OrdersTracking {
     this.isLoading.set(true);
     this.error.set("");
     try {
-      const resp = await this.api.get<any>("/orders/my-orders").toPromise();
+      const resp = await this.api.get<any>("/orders/my-orders?limit=100").toPromise();
       const orders = Array.isArray(resp)
         ? resp
         : resp && Array.isArray(resp.data)
@@ -203,9 +204,40 @@ export class OrdersTracking {
     }
 
     this.toastService.success(
-      `SUPPORT TICKET SUBMITTED SUCCESS!\n\nReference Ticket ID: #TICK-${Math.floor(1000 + Math.random() * 9000)}\n\n3D Galaxy tech labs team will analyze your retraction profile and reply on your email: ${this.ds.activeUser().email} inside 6 hours.`,
+      `SUPPORT TICKET SUBMITTED SUCCESS!\n\nReference Ticket ID: #TICK-${Math.floor(1000 + Math.random() * 9000)}\n\n3D Galaxy tech labs team will analyze your retraction profile and reply on your email: ${this.ds.activeUser()?.email || ''} inside 6 hours.`,
     );
     this.ticketSub.set("");
     this.ticketDesc.set("");
+  }
+
+  reorder(order: any) {
+    if (order.items && order.items.length > 0) {
+      for (const item of order.items) {
+        this.ds.addToCart({
+          id: item.productId || 'prod-reorder',
+          name: item.name,
+          mrp: (item.price || 0) * 1.2,
+          sale_price: item.price || 0,
+          stock: 50,
+          brand: '3D GALAXY',
+          slug: 'product',
+          sku: 'SKU-' + (item.productId || 'REORDER'),
+          barcode: 'BC-' + (item.productId || 'REORDER'),
+          category_id: 'reorder',
+          description: item.name,
+          dealer_price: item.price || 0,
+          reserved: 0,
+          images: item.image ? [item.image] : [],
+          specs: [],
+          reviews: [],
+          qnas: [],
+          featured: false,
+          is360Supported: false,
+          tags: []
+        }, 1, item.variant || undefined);
+      }
+      this.toastService.success(`Items added to cart!`);
+      this.router.navigate(["/cart"]);
+    }
   }
 }

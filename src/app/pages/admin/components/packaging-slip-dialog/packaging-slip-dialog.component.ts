@@ -128,11 +128,23 @@ export interface SlipLineItem {
                   />
                 </div>
                 <div>
-                  <label class="block text-[9px] font-bold text-zinc-500 uppercase mb-1">Tracking Number</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[9px] font-bold text-zinc-500 uppercase">Tracking Number</label>
+                    @if (isShipped() && trackingNumber()) {
+                      <span class="text-[8px] font-extrabold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                        <mat-icon class="scale-50 text-[12px] -mr-1">lock</mat-icon> Locked (Shipped)
+                      </span>
+                    }
+                  </div>
                   <input
                     type="text"
                     [(ngModel)]="trackingNumber"
-                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600"
+                    placeholder="e.g. No tracking assigned"
+                    [readonly]="isShipped() && !!trackingNumber()"
+                    [disabled]="isShipped() && !!trackingNumber()"
+                    [class.opacity-60]="isShipped() && !!trackingNumber()"
+                    [class.cursor-not-allowed]="isShipped() && !!trackingNumber()"
+                    class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-lg text-xs font-mono font-bold text-blue-600 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-500"
                   />
                 </div>
               </div>
@@ -423,7 +435,7 @@ export interface SlipLineItem {
                   <div class="space-y-2">
                     <div class="flex items-center">
                       <span class="font-bold w-16 sm:w-24 shrink-0">Tracking:</span>
-                      <span class="font-mono break-all">{{ trackingNumber() }}</span>
+                      <span class="font-mono break-all font-bold" [class.text-zinc-400]="!trackingNumber()">{{ trackingNumber() || 'Not Assigned' }}</span>
                     </div>
                     <div class="flex items-start">
                       <span class="font-bold w-16 sm:w-24 shrink-0 leading-tight">Return<br class="hidden sm:inline"/> Address:</span>
@@ -565,7 +577,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   easyId = signal('ESUS2026217234');
   orderNumber = signal('#ORD-2026-217234');
   dateStr = signal('August 7, 2026');
-  trackingNumber = signal('LZ92738101');
+  trackingNumber = signal('');
 
   shipToName = signal('admin123 R');
   shipToPhone = signal('8870107785');
@@ -592,6 +604,13 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
   notesFromShipping = signal('Thanks for ordering our famous boxes!');
 
   // Computed Totals
+  isShipped = computed(() => {
+    const status = (this.order?.status || '').toLowerCase();
+    const hasShipment = !!(this.order?.shipments && this.order.shipments.length > 0 && this.order.shipments[0]?.trackingNumber);
+    const hasShipmentObj = !!(this.order?.shipment && this.order.shipment?.trackingNumber);
+    return status === 'shipped' || status === 'delivered' || status === 'out for delivery' || hasShipment || hasShipmentObj;
+  });
+
   qtyTotal = computed(() => {
     return this.items().reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
   });
@@ -668,7 +687,8 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
     this.email.set(addr.email || ord.customer?.user?.email || ord.customerEmail || 'customer@example.com');
 
     const shipmentObj = (ord.shipments && ord.shipments.length > 0) ? ord.shipments[0] : (typeof ord.shipment === 'object' ? ord.shipment : null);
-    this.trackingNumber.set(shipmentObj?.trackingNumber || 'LZ92738101');
+    const resolvedTracking = ord.trackingNumber || shipmentObj?.trackingNumber || ord.awbNumber || shipmentObj?.awbNumber || '';
+    this.trackingNumber.set(resolvedTracking);
     
     const shipAmt = ord.shippingAmount !== undefined && ord.shippingAmount !== null ? Number(ord.shippingAmount) : 0;
     this.shippingCost.set(shipAmt);
@@ -729,7 +749,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
       easyId: this.easyId(),
       orderNumber: this.orderNumber(),
       dateStr: this.dateStr(),
-      trackingNumber: this.trackingNumber(),
+      trackingNumber: this.trackingNumber() || 'Not Assigned',
       shipToName: this.shipToName(),
       shipToPhone: this.shipToPhone(),
       shipToStreet: this.shipToStreet(),

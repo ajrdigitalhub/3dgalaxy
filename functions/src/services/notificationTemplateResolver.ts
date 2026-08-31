@@ -1,3 +1,4 @@
+import { ENV } from '../config/env';
 import { DeliveryEstimateService } from './deliveryEstimate.service';
 import { WhatsAppNotificationService } from './whatsappNotificationService';
 
@@ -68,8 +69,8 @@ export class NotificationTemplateResolver {
     whatsappSettings: any = {},
     extraParams: any = {}
   ): Promise<ResolvedTemplateResult> {
-    const siteName = whatsappSettings?.storeName || extraParams?.siteName || '3D Galaxy';
-    const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
+    const siteName = whatsappSettings?.storeName || extraParams?.siteName || ENV.SITE_NAME;
+    const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || ENV.SITE_URL;
 
     const orderId = order?.orderNumber || order?.id || extraParams?.orderId || 'N/A';
     const orderUrl = extraParams?.orderLink || `${siteUrl}/account/orders/${order?.id || orderId}`;

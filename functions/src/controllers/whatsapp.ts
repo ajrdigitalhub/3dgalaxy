@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
 import prisma from '../config/database';
+import { ENV } from '../config/env';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
@@ -28,10 +29,10 @@ function getPlaceholderKeys(text: string): string[] {
 
 // Generate values for placeholders
 function resolvePlaceholders(order: any, customer: any, settings: any, extraParams: any = {}) {
-  const storeName = settings.storeName || '3D Galaxy';
+  const storeName = settings.storeName || ENV.SITE_NAME;
   const supportPhone = settings.adminPhoneNumber || '9999999999';
-  const supportEmail = 'support@3dgalaxy.com';
-  const siteUrl = extraParams.origin || 'http://localhost:4200';
+  const supportEmail = settings.storeSupportEmail || ENV.SUPPORT_EMAIL;
+  const siteUrl = extraParams.origin || settings.siteUrl || ENV.SITE_URL;
 
   let customerName = 'Customer';
   if (customer) {
@@ -61,10 +62,10 @@ function resolvePlaceholders(order: any, customer: any, settings: any, extraPara
     payment_status: sanitizeTemplateParam(order?.paymentStatus || order?.payment?.status, 'Pending'),
     order_total: sanitizeTemplateParam(String(order?.totalAmount || '0')),
     currency: sanitizeTemplateParam(settings.currency, 'INR'),
-    store_name: sanitizeTemplateParam(storeName, '3D Galaxy'),
+    store_name: sanitizeTemplateParam(storeName, ENV.SITE_NAME),
     support_phone: sanitizeTemplateParam(supportPhone, '9999999999'),
-    support_email: sanitizeTemplateParam(supportEmail, 'support@3dgalaxy.com'),
-    site_url: sanitizeTemplateParam(siteUrl, 'http://localhost:4200'),
+    support_email: sanitizeTemplateParam(supportEmail, ENV.SUPPORT_EMAIL),
+    site_url: sanitizeTemplateParam(siteUrl, ENV.SITE_URL),
     order_items: sanitizeTemplateParam(orderItems, 'Order Items'),
     shipping_address: sanitizeTemplateParam(shippingAddress, 'Address details in Admin'),
     ...extraParams
@@ -204,8 +205,8 @@ export const triggerWhatsAppNotification = async (
     let components: any[] = [];
     let isStandardTemplate = false;
 
-    const siteName = settings.storeName || '3D Galaxy';
-    const siteUrl = extraParams.origin || process.env.APP_URL || 'http://localhost:4200';
+    const siteName = settings.storeName || ENV.SITE_NAME;
+    const siteUrl = extraParams.origin || settings.siteUrl || ENV.SITE_URL;
     const currency = settings.currency || '₹';
 
     const isAdmin = !!extraParams.is_admin || triggerKey === 'admin_new_order';
@@ -259,7 +260,7 @@ export const triggerWhatsAppNotification = async (
         itemsSummary = 'Order Items';
       }
 
-      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminBaseUrl = settings.adminUrl || ENV.ADMIN_APP_URL;
       const adminPortalUrl = order ? `${adminBaseUrl}/orders/${order.id}` : adminBaseUrl;
 
       components = sanitizeComponents([
@@ -275,7 +276,7 @@ export const triggerWhatsAppNotification = async (
             { type: "text", text: sanitizeTemplateParam(paymentMethod, 'Online Payment') },
             { type: "text", text: sanitizeTemplateParam(paymentStatus, 'Pending') },
             { type: "text", text: sanitizeTemplateParam(itemsSummary, 'Order Items') },
-            { type: "text", text: sanitizeTemplateParam(adminPortalUrl, 'https://admin.3dgalaxy.in') }
+            { type: "text", text: sanitizeTemplateParam(adminPortalUrl, adminBaseUrl) }
           ],
         }
       ]);
@@ -346,7 +347,7 @@ export const triggerWhatsAppNotification = async (
       const printQuality = order?.layerHeight || extraParams.printQuality || 'Standard (0.20mm)';
       const infill = extraParams.infill || `${order?.infillPercent ?? 20}%`;
       const additionalReqs = extraParams.additioanalRequirements || extraParams.additionalRequirements || (order?.notes && order.notes.trim() ? order.notes.trim() : 'None');
-      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminBaseUrl = settings.adminUrl || ENV.ADMIN_APP_URL;
       const adminPortalUrl = extraParams.adminorderUrlLink || extraParams.adminPortalUrl || (order ? `${adminBaseUrl}/services/${order.id}` : `${adminBaseUrl}/services/ENQ-123456`);
       const rawStatus = order?.status || extraParams.status || 'submitted';
       const statusFormatted = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
@@ -629,8 +630,8 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
   try {
     const { status, customerName, orderId, extraParams } = req.body;
     const settings = await getWhatsappSettings();
-    const siteName = settings.storeName || '3D Galaxy';
-    const siteUrl = extraParams?.origin || process.env.APP_URL || 'https://3dgalaxy.co.in';
+    const siteName = settings.storeName || ENV.SITE_NAME;
+    const siteUrl = extraParams?.origin || settings.siteUrl || ENV.SITE_URL;
     const content = WhatsAppNotificationService.generateStatusContent(status || 'Order Confirmed', null, extraParams || {}, siteName);
 
     const name = customerName || 'Alex Johnson';
@@ -684,9 +685,9 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
         3: sanitizeTemplateParam(content.currentStatus, 'Order Update'),
         4: sanitizeTemplateParam(content.statusDescription, 'Order status updated'),
         5: sanitizeTemplateParam(content.additionalInformation, 'Thank you for shopping with 3D Galaxy'),
-        6: sanitizeTemplateParam(siteName, '3D Galaxy'),
-        7: sanitizeTemplateParam(siteName, '3D Galaxy'),
-        8: sanitizeTemplateParam(orderLink, 'https://3dgalaxy.co.in')
+        6: sanitizeTemplateParam(siteName, ENV.SITE_NAME),
+        7: sanitizeTemplateParam(siteName, ENV.SITE_NAME),
+        8: sanitizeTemplateParam(orderLink, siteUrl)
       },
       previewText
     });
@@ -700,8 +701,8 @@ export const handlePreviewServiceTemplate = async (req: Request, res: Response) 
   try {
     const { templateType, customerName, trackingId, email, mobile, city, material, color, remarks } = req.body;
     const settings = await getWhatsappSettings();
-    const siteName = settings.storeName || '3D Galaxy';
-    const siteUrl = process.env.APP_URL || 'https://3dgalaxy.co.in';
+    const siteName = settings.storeName || ENV.SITE_NAME;
+    const siteUrl = settings.siteUrl || ENV.SITE_URL;
 
     const name = customerName || 'Jayakumar';
     const trkId = trackingId || 'ENQ-123456';
@@ -788,7 +789,7 @@ Best Regards,
       const prInfill = req.body.infill || '20%';
       const prRemarks = remarks || 'Print with high resolution';
       const prStatus = 'Submitted';
-      const adminBaseUrl = process.env.ADMIN_APP_URL || 'https://admin.3dgalaxy.in';
+      const adminBaseUrl = settings.adminUrl || ENV.ADMIN_APP_URL;
       const adminPortalUrl = `${adminBaseUrl}/services/${trkId}`;
 
       const previewText = `*🔔 NEW 3D PRINT REQUEST!*
