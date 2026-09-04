@@ -1,0 +1,3 @@
+{"timestamp":"2026-09-03T21:42:06.475Z","level":"INFO","service":"3dgalaxy-backend","environment":"development","message":"[WhatsAppConversationService] Created new minimum customer profile: b12a75e5-b361-4ddb-b8bd-918c9e04e865 for +919876543299"}
+{"timestamp":"2026-09-03T21:42:07.295Z","level":"INFO","service":"3dgalaxy-backend","environment":"development","message":"[WhatsAppConversationService] Created new conversation fe4fd93c-146b-4ded-a3e3-ab1f875aac83 for phone +919876543299"}
+{"timestamp":"2026-09-03T21:42:08.212Z","level":"INFO","service":"3dgalaxy-backend","environment":"development","message":"[WhatsAppConversationService] Duplicate webhook message ignored: wamid.HBgLTEST1788471722376"}

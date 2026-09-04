@@ -1,0 +1,496 @@
+<div class="h-[calc(100vh-80px)] flex flex-col bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-white rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xl">
+  <!-- Top Global Header -->
+  <header class="px-6 py-3.5 bg-white dark:bg-neutral-900/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between z-10 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+        <mat-icon class="scale-110">chat</mat-icon>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold tracking-tight text-neutral-900 dark:text-white font-sans">
+            WhatsApp Customer Conversations
+          </h1>
+          @if (waService.unreadTotal() > 0) {
+            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500 text-white animate-pulse">
+              {{ waService.unreadTotal() }} New
+            </span>
+          }
+        </div>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">
+          Two-way Meta Cloud API integration with AI assistant and order context
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Header Actions -->
+    <div class="flex items-center gap-2.5">
+      <button
+        (click)="waService.loadConversations()"
+        [disabled]="waService.isLoading()"
+        class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center gap-1.5 transition-colors cursor-pointer border-none"
+        title="Refresh conversations">
+        <mat-icon class="scale-75" [class.animate-spin]="waService.isLoading()">refresh</mat-icon>
+        <span>Refresh</span>
+      </button>
+      <span class="text-xs text-neutral-400 font-mono hidden sm:inline">
+        {{ waService.totalCount() }} Total
+      </span>
+    </div>
+  </header>
+
+  <!-- Main 3-Pane Body -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- ========================================================================= -->
+    <!-- PANE 1: CONVERSATIONS LIST (Left, 340px) -->
+    <!-- ========================================================================= -->
+    <aside class="w-full md:w-80 lg:w-96 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 flex flex-col shrink-0">
+      <!-- Search & Filters Container -->
+      <div class="p-3 border-b border-neutral-200 dark:border-neutral-800 space-y-2.5">
+        <!-- Search Input -->
+        <div class="relative">
+          <mat-icon class="absolute left-3 top-2.5 text-neutral-400 text-lg scale-90">search</mat-icon>
+          <input
+            type="text"
+            [ngModel]="waService.searchQuery()"
+            (ngModelChange)="waService.searchQuery.set($event)"
+            placeholder="Search name, phone, message..."
+            class="w-full pl-9 pr-8 py-2 bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-900 dark:text-white rounded-xl border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-sans" />
+          @if (waService.searchQuery()) {
+            <button
+              (click)="waService.searchQuery.set('')"
+              class="absolute right-2.5 top-2.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 border-none bg-transparent cursor-pointer">
+              <mat-icon class="scale-75">close</mat-icon>
+            </button>
+          }
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-[11px]">
+          <button
+            (click)="setFilter('ALL')"
+            [ngClass]="{
+              'bg-emerald-600 text-white': waService.statusFilter() === 'ALL' && !waService.unreadOnlyFilter(),
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'ALL' || waService.unreadOnlyFilter()
+            }"
+            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            All
+          </button>
+          <button
+            (click)="toggleUnreadOnly()"
+            [ngClass]="{
+              'bg-emerald-600 text-white': waService.unreadOnlyFilter(),
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': !waService.unreadOnlyFilter()
+            }"
+            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap flex items-center gap-1">
+            <span>Unread</span>
+            @if (waService.unreadTotal() > 0) {
+              <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-white text-emerald-700 font-bold">
+                {{ waService.unreadTotal() }}
+              </span>
+            }
+          </button>
+          <button
+            (click)="setFilter('OPEN')"
+            [ngClass]="{
+              'bg-emerald-600 text-white': waService.statusFilter() === 'OPEN',
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'OPEN'
+            }"
+            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            Open
+          </button>
+          <button
+            (click)="setFilter('RESOLVED')"
+            [ngClass]="{
+              'bg-emerald-600 text-white': waService.statusFilter() === 'RESOLVED',
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'RESOLVED'
+            }"
+            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            Resolved
+          </button>
+          <button
+            (click)="setAiModeFilter(waService.aiModeFilter() === 'AI' ? 'ALL' : 'AI')"
+            [ngClass]="{
+              'bg-purple-600 text-white': waService.aiModeFilter() === 'AI',
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.aiModeFilter() !== 'AI'
+            }"
+            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap flex items-center gap-1">
+            <span>AI Bot</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Conversations Scrollable Feed -->
+      <div class="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800">
+        @if (waService.filteredConversations().length === 0) {
+          <div class="p-8 text-center text-neutral-400 space-y-2">
+            <mat-icon class="text-4xl text-neutral-300 dark:text-neutral-700">forum</mat-icon>
+            <p class="text-xs font-semibold">No conversations match your filter</p>
+            <p class="text-[11px] text-neutral-500">Incoming messages from Meta WhatsApp webhook will appear here in real-time.</p>
+          </div>
+        }
+
+        @for (conv of waService.filteredConversations(); track conv.id) {
+          <div
+            (click)="selectConversation(conv)"
+            [ngClass]="{
+              'bg-emerald-500/10 border-l-4 border-emerald-500': waService.activeConversation()?.id === conv.id
+            }"
+            class="p-3.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors flex items-start gap-3 relative">
+            
+            <!-- Avatar -->
+            <div class="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 font-bold text-xs flex items-center justify-center shrink-0">
+              {{ getInitials(conv.customerName) }}
+            </div>
+
+            <!-- Content preview -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1 mb-0.5">
+                <span class="text-xs font-bold text-neutral-900 dark:text-white truncate font-sans">
+                  {{ conv.customerName || conv.phone }}
+                </span>
+                <span class="text-[10px] text-neutral-400 font-mono whitespace-nowrap">
+                  {{ formatTime(conv.lastMessageAt) }}
+                </span>
+              </div>
+
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[10px] text-neutral-400 font-mono">
+                  {{ conv.phone }}
+                </span>
+                @if (conv.aiMode === 'AI') {
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300">
+                    AI Active
+                  </span>
+                } @else {
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                    Human
+                  </span>
+                }
+              </div>
+
+              <!-- Message preview snippet -->
+              <p class="text-xs text-neutral-600 dark:text-neutral-400 truncate leading-snug font-sans">
+                @if (conv.lastDirection === 'OUTBOUND') {
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold">You: </span>
+                }
+                {{ conv.lastMessage || 'Conversation initiated' }}
+              </p>
+            </div>
+
+            <!-- Unread badge pill -->
+            @if (conv.unreadCount > 0) {
+              <span class="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                {{ conv.unreadCount }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- PANE 2: ACTIVE CHAT & MESSAGING CENTER (Center, Flex-1) -->
+    <!-- ========================================================================= -->
+    <main class="flex-1 flex flex-col bg-white dark:bg-neutral-950 overflow-hidden relative">
+      @if (waService.activeConversation(); as active) {
+        <!-- Chat Header -->
+        <header class="px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md flex items-center justify-between z-10 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center">
+              {{ getInitials(active.customerName) }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm font-bold text-neutral-900 dark:text-white">
+                  {{ active.customerName || 'Customer' }}
+                </h2>
+                <span class="text-xs text-neutral-400 font-mono">{{ active.phone }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <!-- AI / Human mode badge -->
+                @if (active.aiMode === 'AI') {
+                  <span class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                    <span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>
+                    AI Assistant Handling
+                  </span>
+                } @else {
+                  <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                    Human Takeover Active
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls & Takeover Buttons -->
+          <div class="flex items-center gap-2">
+            <!-- Take Over / Enable AI Toggle -->
+            @if (active.aiMode === 'AI') {
+              <button
+                (click)="toggleAiMode()"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
+                title="Disable AI and manually chat with customer">
+                <mat-icon class="scale-75">person</mat-icon>
+                <span>Take Over (Disable AI)</span>
+              </button>
+            } @else {
+              <button
+                (click)="toggleAiMode()"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
+                title="Enable AI Assistant for automatic replies">
+                <mat-icon class="scale-75">smart_toy</mat-icon>
+                <span>Enable AI</span>
+              </button>
+            }
+
+            <!-- Status Dropdown -->
+            <select
+              [value]="active.status"
+              (change)="updateStatus($any($event.target).value)"
+              class="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-xs font-bold text-neutral-800 dark:text-neutral-200 rounded-xl border border-neutral-200 dark:border-neutral-700 outline-none cursor-pointer">
+              <option value="OPEN">Open</option>
+              <option value="PENDING">Pending</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+        </header>
+
+        <!-- Message History Feed -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-4 bg-neutral-50/50 dark:bg-neutral-950/50">
+          @if (waService.messages().length === 0) {
+            <div class="text-center py-12 text-neutral-400">
+              <mat-icon class="text-3xl text-neutral-300 dark:text-neutral-700">chat_bubble_outline</mat-icon>
+              <p class="text-xs font-semibold mt-1">No messages recorded yet</p>
+            </div>
+          }
+
+          @for (msg of waService.messages(); track msg.id) {
+            <div
+              class="flex flex-col max-w-[82%] sm:max-w-[70%]"
+              [class.ml-auto]="msg.direction === 'OUTBOUND'"
+              [class.items-end]="msg.direction === 'OUTBOUND'"
+              [class.items-start]="msg.direction === 'INBOUND'">
+              
+              <!-- Sender label for outbound messages -->
+              @if (msg.direction === 'OUTBOUND') {
+                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-neutral-400 mb-1">
+                  @if (msg.senderType === 'AI') {
+                    <span class="text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
+                      <mat-icon class="scale-50">smart_toy</mat-icon> 3D Galaxy AI
+                    </span>
+                  } @else {
+                    <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                      <mat-icon class="scale-50">shield_person</mat-icon> Admin Reply
+                    </span>
+                  }
+                </div>
+              }
+
+              <!-- Bubble Box -->
+              <div
+                [ngClass]="{
+                  'bg-emerald-600 text-white': msg.direction === 'OUTBOUND' && msg.senderType !== 'AI',
+                  'bg-purple-600 text-white': msg.direction === 'OUTBOUND' && msg.senderType === 'AI',
+                  'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800': msg.direction === 'INBOUND'
+                }"
+                class="px-4 py-2.5 rounded-2xl shadow-xs text-xs font-sans leading-relaxed break-words whitespace-pre-wrap">
+                
+                <!-- Media Attachment Preview -->
+                @if (msg.mediaUrl) {
+                  <div class="mb-2 rounded-xl overflow-hidden max-w-xs border border-white/20">
+                    <img [src]="msg.mediaUrl" alt="Media attachment" class="w-full object-cover max-h-56 cursor-pointer" />
+                  </div>
+                }
+
+                <p>{{ msg.messageText }}</p>
+              </div>
+
+              <!-- Message metadata & status checks -->
+              <div class="flex items-center gap-1 text-[10px] text-neutral-400 mt-1 font-mono">
+                <span>{{ formatTime(msg.createdAt) }}</span>
+                @if (msg.direction === 'OUTBOUND') {
+                  @if (msg.status === 'READ') {
+                    <mat-icon class="text-blue-500 scale-65">done_all</mat-icon>
+                  } @else if (msg.status === 'DELIVERED') {
+                    <mat-icon class="text-neutral-400 scale-65">done_all</mat-icon>
+                  } @else if (msg.status === 'FAILED') {
+                    <span class="text-rose-500 flex items-center gap-0.5 font-sans" [title]="msg.errorMessage || 'Failed to send'">
+                      <mat-icon class="scale-65 text-rose-500">error_outline</mat-icon> Failed
+                    </span>
+                  } @else {
+                    <mat-icon class="text-neutral-400 scale-65">done</mat-icon>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Quick Canned Replies Row -->
+        <div class="px-4 py-2 bg-neutral-100/80 dark:bg-neutral-900/80 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 text-[11px]">
+          <span class="text-[10px] text-neutral-400 font-bold uppercase shrink-0 font-mono">Quick Replies:</span>
+          @for (qr of quickReplies; track $index) {
+            <button
+              (click)="insertQuickReply(qr)"
+              class="px-2.5 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs truncate max-w-xs border border-neutral-200 dark:border-neutral-700 cursor-pointer shrink-0 transition-colors">
+              {{ qr }}
+            </button>
+          }
+        </div>
+
+        <!-- Reply Input Bar -->
+        <footer class="p-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-2 shrink-0">
+          @if (showMediaInput()) {
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                [(ngModel)]="mediaUrlInput"
+                placeholder="Image/Media URL (e.g. https://storage.googleapis.com/...)"
+                class="flex-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs border border-neutral-200 dark:border-neutral-700 outline-none text-neutral-900 dark:text-white font-sans" />
+              <button
+                (click)="showMediaInput.set(false)"
+                class="text-neutral-400 hover:text-neutral-600 text-xs border-none bg-transparent cursor-pointer">
+                Cancel
+              </button>
+            </div>
+          }
+
+          <div class="flex items-center gap-2">
+            <button
+              (click)="showMediaInput.set(!showMediaInput())"
+              class="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border-none bg-transparent cursor-pointer"
+              title="Attach image URL">
+              <mat-icon class="scale-90">attach_file</mat-icon>
+            </button>
+
+            <textarea
+              [(ngModel)]="replyText"
+              (keydown.enter)="$event.preventDefault(); sendReply()"
+              rows="1"
+              placeholder="Type message to customer on WhatsApp (Enter to send)..."
+              class="flex-1 px-3.5 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-900 dark:text-white rounded-xl border-none outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none font-sans"></textarea>
+
+            <button
+              (click)="sendReply()"
+              [disabled]="waService.isSending() || (!replyText().trim() && !mediaUrlInput().trim())"
+              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm">
+              @if (waService.isSending()) {
+                <span class="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              } @else {
+                <mat-icon class="scale-80">send</mat-icon>
+              }
+              <span>Send</span>
+            </button>
+          </div>
+        </footer>
+      } @else {
+        <!-- Empty State: No conversation selected -->
+        <div class="flex-1 flex flex-col items-center justify-center p-8 text-center text-neutral-400 space-y-3">
+          <div class="h-16 w-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <mat-icon class="text-4xl">chat</mat-icon>
+          </div>
+          <h3 class="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+            Select a Conversation to Start Chatting
+          </h3>
+          <p class="text-xs max-w-sm text-neutral-500">
+            Choose a customer from the left panel to review messages, toggle AI assistance, or reply directly.
+          </p>
+        </div>
+      }
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- PANE 3: CUSTOMER CONTEXT & RECENT ORDERS (Right, 340px) -->
+    <!-- ========================================================================= -->
+    @if (waService.activeConversation(); as active) {
+      <aside class="w-full md:w-80 lg:w-88 border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-4 overflow-y-auto space-y-5 hidden xl:block shrink-0">
+        <!-- Customer Profile Card -->
+        <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="h-12 w-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-sm flex items-center justify-center shadow-md">
+              {{ getInitials(active.customerName) }}
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-xs font-bold text-neutral-900 dark:text-white truncate">
+                {{ active.customerName || 'WhatsApp Customer' }}
+              </h3>
+              <p class="text-[11px] text-neutral-400 font-mono">{{ active.phone }}</p>
+              <span class="inline-block mt-1 px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                {{ active.customer?.customerType || 'RETAIL CUSTOMER' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+            <button
+              (click)="openWhatsAppWeb(active.phone)"
+              class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold flex items-center justify-center gap-1 border-none cursor-pointer transition-colors">
+              <mat-icon class="scale-75">open_in_new</mat-icon>
+              <span>WhatsApp Web</span>
+            </button>
+            <a
+              [href]="'tel:' + active.phone"
+              class="px-2.5 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-bold flex items-center justify-center gap-1 no-underline transition-colors">
+              <mat-icon class="scale-75">call</mat-icon>
+              <span>Call Phone</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Recent Customer Orders Section -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-neutral-700 dark:text-neutral-300 font-mono uppercase tracking-wider flex items-center gap-1.5">
+              <mat-icon class="scale-75 text-emerald-500">shopping_bag</mat-icon>
+              <span>Recent Orders ({{ active.customer?.orders?.length || 0 }})</span>
+            </h4>
+          </div>
+
+          @if (!active.customer?.orders || active.customer?.orders?.length === 0) {
+            <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 text-center text-neutral-400 text-xs">
+              No orders found for this customer.
+            </div>
+          } @else {
+            <div class="space-y-2.5">
+              @for (ord of active.customer?.orders; track ord.id) {
+                <div class="p-3 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black font-mono text-neutral-900 dark:text-white">
+                      {{ ord.orderNumber }}
+                    </span>
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                      [ngClass]="{
+                        'bg-emerald-500/10 text-emerald-500': ord.status === 'Delivered' || ord.status === 'Completed',
+                        'bg-blue-500/10 text-blue-500': ord.status === 'Shipped' || ord.status === 'Confirmed',
+                        'bg-amber-500/10 text-amber-500': ord.status === 'Pending'
+                      }">
+                      {{ ord.status }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between text-[11px] text-neutral-500">
+                    <span>{{ ord.createdAt | date:'dd MMM yyyy' }}</span>
+                    <span class="font-bold text-neutral-900 dark:text-white font-mono">₹{{ ord.totalAmount }}</span>
+                  </div>
+
+                  <!-- Items snippet -->
+                  @if (ord.items && ord.items.length > 0) {
+                    <div class="pt-1.5 border-t border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-600 dark:text-neutral-400 space-y-0.5">
+                      @for (it of ord.items; track it.id) {
+                        <p class="truncate">• {{ it.product?.name }} ({{ it.variant?.name || 'Standard' }}) x{{ it.quantity }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </aside>
+    }
+  </div>
+</div>

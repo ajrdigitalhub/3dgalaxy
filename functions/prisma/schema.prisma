@@ -71,6 +71,8 @@ model User {
   notificationDevices NotificationDevice[]
   productImportHistories ProductImportHistory[]
   customerNotes   CustomerNote[]
+  assignedWhatsappConversations WhatsappConversation[] @relation("AssignedAdminConversations")
+  sentWhatsappMessages          WhatsappMessage[]      @relation("SentAdminMessages")
 
   @@index([mobile])
   @@index([isActive])
@@ -388,6 +390,8 @@ model Customer {
   notes           CustomerNote[]
   activities      CustomerActivityLog[]
   supportRequests SupportRequest[]
+  whatsappConversations WhatsappConversation[]
+  whatsappMessages      WhatsappMessage[]
 
   @@index([phone])
   @@index([customerType])
@@ -927,6 +931,65 @@ model WhatsappCampaign {
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   @@map("whatsapp_campaigns")
+}
+
+model WhatsappConversation {
+  id              String            @id @default(uuid()) @db.Uuid
+  customerId      String?           @map("customer_id") @db.Uuid
+  phone           String            @db.VarChar(50)
+  customerName    String?           @map("customer_name") @db.VarChar(255)
+  status          String            @default("OPEN") @db.VarChar(50)
+  aiMode          String            @default("AI") @map("ai_mode") @db.VarChar(50)
+  unreadCount     Int               @default(0) @map("unread_count")
+  lastMessage     String?           @map("last_message") @db.Text
+  lastMessageAt   DateTime          @default(now()) @map("last_message_at") @db.Timestamptz
+  lastDirection   String            @default("INBOUND") @map("last_direction") @db.VarChar(20)
+  assignedAdminId String?           @map("assigned_admin_id") @db.Uuid
+  metadata        Json?             @default("{}")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignedAdmin   User?             @relation("AssignedAdminConversations", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  messages        WhatsappMessage[]
+
+  @@index([phone])
+  @@index([customerId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@index([assignedAdminId])
+  @@map("whatsapp_conversations")
+}
+
+model WhatsappMessage {
+  id                String               @id @default(uuid()) @db.Uuid
+  conversationId    String               @map("conversation_id") @db.Uuid
+  customerId        String?              @map("customer_id") @db.Uuid
+  whatsappMessageId String?              @unique @map("whatsapp_message_id") @db.VarChar(255)
+  direction         String               @db.VarChar(20)
+  senderType        String               @default("CUSTOMER") @map("sender_type") @db.VarChar(50)
+  senderId          String?              @map("sender_id") @db.Uuid
+  messageType       String               @default("TEXT") @map("message_type") @db.VarChar(50)
+  messageText       String?              @map("message_text") @db.Text
+  mediaId           String?              @map("media_id") @db.VarChar(255)
+  mediaUrl          String?              @map("media_url") @db.Text
+  mediaMetadata     Json?                @map("media_metadata")
+  status            String               @default("SENT") @db.VarChar(50)
+  errorMessage      String?              @map("error_message") @db.Text
+  rawPayload        Json?                @map("raw_payload")
+  metadata          Json?                @default("{}")
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  conversation      WhatsappConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  customer          Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  sender            User?                @relation("SentAdminMessages", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("whatsapp_messages")
 }
 
 model AbandonedCheckout {

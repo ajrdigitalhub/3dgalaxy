@@ -39,6 +39,7 @@ export type NotificationEventKey =
   | 'RETURN_REQUEST'
   | 'FAILED_NOTIFICATION'
   | 'FAILED_BACKGROUND_JOB'
+  | 'WHATSAPP_MESSAGE_RECEIVED'
   | 'SYSTEM_ALERT';
 
 export interface NotificationEventDefinition {
@@ -61,6 +62,14 @@ export interface NotificationPayload {
 
 // Master Notification Events Configuration Matrix
 export const EVENT_DEFINITIONS: Record<NotificationEventKey, NotificationEventDefinition> = {
+  WHATSAPP_MESSAGE_RECEIVED: {
+    eventKey: 'WHATSAPP_MESSAGE_RECEIVED',
+    eventLabel: 'New WhatsApp Customer Message',
+    category: 'customers',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
   NEW_ORDER: {
     eventKey: 'NEW_ORDER',
     eventLabel: 'New Customer Order Received',

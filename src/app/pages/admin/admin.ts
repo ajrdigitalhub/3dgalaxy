@@ -96,6 +96,7 @@ export type AdminTab =
   | "explore-config"
   | "transactions"
   | "webhook-logs"
+  | "whatsapp-conversations"
   | "whatsapp-logs"
   | "whatsapp-campaign"
   | "system-logs";
@@ -103,6 +104,8 @@ export type AdminTab =
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { AdminExploreConfigTabComponent } from "./components/admin-explore-config-tab";
 import { AdminLogsTab } from "./components/logs-tab";
+import { AdminWhatsappInboxComponent } from "./components/admin-whatsapp-inbox/admin-whatsapp-inbox.component";
+import { AdminWhatsAppService } from "../../core/services/admin-whatsapp.service";
 
 @Component({
   selector: "app-admin-panel",
@@ -123,6 +126,7 @@ import { AdminLogsTab } from "./components/logs-tab";
     AdminAbandonedCheckoutsTab,
     AdminServiceEnquiriesTab,
     AdminNotificationCenterTabComponent,
+    AdminWhatsappInboxComponent,
     OmniSearchComponent,
     AdminVariantGroupConfigComponent,
     AdminReviewsTabComponent,
@@ -142,6 +146,7 @@ export class AdminPanel implements OnInit {
   settingsService = inject(SettingsService);
   pwa = inject(PwaService);
   deliveryService = inject(DeliveryEstimateService);
+  waService = inject(AdminWhatsAppService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
@@ -299,6 +304,7 @@ export class AdminPanel implements OnInit {
       {
         group: "Communication",
         items: [
+          { id: "whatsapp-conversations", label: "WhatsApp Inbox", icon: "chat" },
           { id: "whatsapp-logs", label: "WhatsApp Logs", icon: "history" },
         ],
       },

@@ -75,12 +75,18 @@
                       @if (item.id === 'quotes' && ds.quotes().length > 0) {
                         <span class="ml-auto h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
                       }
+                      @if (item.id === 'whatsapp-conversations' && waService.unreadTotal() > 0) {
+                        <span class="ml-auto px-1.5 py-0.5 bg-emerald-500 text-white text-[9px] font-black rounded-full animate-pulse">{{ waService.unreadTotal() }}</span>
+                      }
                     } @else {
                       @if (item.id === 'orders' && ds.orders().length > 0) {
                         <span class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-zinc-900"></span>
                       }
                       @if (item.id === 'quotes' && ds.quotes().length > 0) {
                         <span class="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse ring-2 ring-zinc-900"></span>
+                      }
+                      @if (item.id === 'whatsapp-conversations' && waService.unreadTotal() > 0) {
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-emerald-400 rounded-full animate-pulse ring-2 ring-zinc-900"></span>
                       }
                     }
                   </button>
@@ -529,6 +535,8 @@
       <app-admin-payments-tab [admin]="this" />
       } @if (activeTab() === 'notification-center') {
       <app-admin-notification-center-tab />
+      } @if (activeTab() === 'whatsapp-conversations') {
+      <app-admin-whatsapp-inbox />
       } @if (activeTab() === 'whatsapp-logs' || activeTab() ===
       'whatsapp-campaign') {
       <app-admin-communication-tab [admin]="this" />
