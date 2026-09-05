@@ -17,7 +17,7 @@ export const pool = new Pool({
   maxUses: 7500, // Recycle pooled sockets to prevent stale TCP socket accumulation
   keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
   keepAliveInitialDelayMillis: 2000,
-  allowExitOnIdle: false, // Keep pool active for server process
+  allowExitOnIdle: true, // Allow Node process to exit when idle (critical for Cloud Functions inspection)
 });
 
 // Automatic reconnect handling and error logging
@@ -86,8 +86,8 @@ export const initProductCategoriesTable = async () => {
   }
 };
 
-// Initialize table asynchronously
-initProductCategoriesTable();
+// Table initialization can be invoked on startup or migration, avoid top-level DDL execution on module import
+// initProductCategoriesTable();
 
 export const isPoolHealthy = async (): Promise<boolean> => {
   try {

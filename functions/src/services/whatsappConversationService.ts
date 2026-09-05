@@ -82,16 +82,22 @@ export class WhatsAppConversationService {
       return { customer: newCust, isNew: false };
     }
 
-    // 3. Check CustomerAddress records matching phone
-    const matchingAddress = await prisma.customerAddress.findFirst({
-      where: {
-        addressLine1: { contains: raw10 }
-      },
-      include: { customer: { include: { user: true } } }
-    });
+    // 3. Check customerAddress if model is available
+    if ((prisma as any).customerAddress) {
+      const matchingAddress = await (prisma as any).customerAddress.findFirst({
+        where: {
+          OR: [
+            { phone: raw10 },
+            { phone: e164 },
+            { phone: meta }
+          ]
+        },
+        include: { customer: { include: { user: true } } }
+      }).catch(() => null);
 
-    if (matchingAddress?.customer) {
-      return { customer: matchingAddress.customer, isNew: false };
+      if (matchingAddress?.customer) {
+        return { customer: matchingAddress.customer, isNew: false };
+      }
     }
 
     // 4. Create minimum guest user and customer profile
@@ -101,24 +107,32 @@ export class WhatsAppConversationService {
 
     let guestUser = await prisma.user.findFirst({ where: { email: guestEmail } });
     if (!guestUser) {
-      let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
-      if (!guestRole) {
-        guestRole = await prisma.role.create({
-          data: { name: 'Guest', description: 'Guest customer role' }
-        });
+      let guestRole: any = null;
+      try {
+        guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
+        if (!guestRole) {
+          guestRole = await prisma.role.create({
+            data: { name: 'Guest', description: 'Guest customer role' }
+          });
+        }
+      } catch (roleErr: any) {
+        logger.warn(`[WhatsAppConversationService] Could not find/create Guest role: ${roleErr.message}`);
       }
 
-      guestUser = await prisma.user.create({
-        data: {
-          email: guestEmail,
-          firstName,
-          lastName,
-          mobile: e164,
-          passwordHash: '',
-          isActive: true,
-          roles: { create: { roleId: guestRole.id } }
-        }
-      });
+      const userData: any = {
+        email: guestEmail,
+        firstName,
+        lastName,
+        mobile: e164,
+        passwordHash: '',
+        isActive: true,
+      };
+
+      if (guestRole) {
+        userData.roles = { create: { roleId: guestRole.id } };
+      }
+
+      guestUser = await prisma.user.create({ data: userData });
     }
 
     const createdCustomer = await prisma.customer.create({
@@ -302,6 +316,15 @@ export class WhatsAppConversationService {
       errorMessage
     } = params;
 
+    // Ensure senderId is a valid UUID and exists in users table, else null
+    let validSenderId: string | null = null;
+    if (senderId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(senderId)) {
+      try {
+        const u = await prisma.user.findUnique({ where: { id: senderId }, select: { id: true } });
+        if (u) validSenderId = senderId;
+      } catch {}
+    }
+
     const message = await prisma.whatsappMessage.create({
       data: {
         conversationId,
@@ -309,7 +332,7 @@ export class WhatsAppConversationService {
         whatsappMessageId: whatsappMessageId || null,
         direction: 'OUTBOUND',
         senderType,
-        senderId: senderId || null,
+        senderId: validSenderId,
         messageType: messageType.toUpperCase(),
         messageText,
         mediaId: mediaId || null,

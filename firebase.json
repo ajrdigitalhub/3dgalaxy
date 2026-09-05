@@ -47,10 +47,7 @@
         "firebase-debug.*.log",
         "*.local"
       ],
-      "source": "functions",
-      "predeploy": [
-        "npm run build"
-      ]
+      "source": "functions"
     }
   ]
 }

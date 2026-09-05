@@ -1,9 +1,21 @@
-import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  signal,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { AdminWhatsAppService, WhatsAppConversation, WhatsAppMessage } from '../../../../core/services/admin-whatsapp.service';
+import {
+  AdminWhatsAppService,
+  WhatsAppConversation
+} from '../../../../core/services/admin-whatsapp.service';
 
 @Component({
   selector: 'app-admin-whatsapp-inbox',
@@ -11,14 +23,20 @@ import { AdminWhatsAppService, WhatsAppConversation, WhatsAppMessage } from '../
   imports: [CommonModule, FormsModule, RouterModule, MatIconModule],
   templateUrl: './admin-whatsapp-inbox.component.html'
 })
-export class AdminWhatsappInboxComponent implements OnInit, OnDestroy {
+export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterViewChecked {
   public waService = inject(AdminWhatsAppService);
+
+  @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
   // Local UI State
   replyText = signal<string>('');
   mediaUrlInput = signal<string>('');
   showMediaInput = signal<boolean>(false);
-  selectedImagePreview = signal<string | null>(null);
+  showRightDrawer = signal<boolean>(true);
+  sendErrorMessage = signal<string | null>(null);
+
+  private lastMessageCount = 0;
+  private shouldScrollToBottom = false;
 
   // Quick canned reply templates
   readonly quickReplies = [
@@ -34,10 +52,23 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.waService.loadConversations();
 
-    // Poll for new messages every 8 seconds
+    // Real-time polling: refresh conversation list & active messages every 5s
     this.pollTimer = setInterval(() => {
       this.waService.loadConversations(true);
-    }, 8000);
+      const active = this.waService.activeConversation();
+      if (active) {
+        this.waService.reloadActiveMessages(active.id);
+      }
+    }, 5000);
+  }
+
+  ngAfterViewChecked() {
+    const currentCount = this.waService.messages().length;
+    if (currentCount !== this.lastMessageCount || this.shouldScrollToBottom) {
+      this.lastMessageCount = currentCount;
+      this.shouldScrollToBottom = false;
+      this.scrollToBottom();
+    }
   }
 
   ngOnDestroy() {
@@ -47,7 +78,9 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy {
   }
 
   selectConversation(conv: WhatsAppConversation) {
+    this.sendErrorMessage.set(null);
     this.waService.selectConversation(conv.id);
+    this.shouldScrollToBottom = true;
   }
 
   setFilter(status: string) {
@@ -65,18 +98,32 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy {
     this.waService.loadConversations();
   }
 
+  toggleRightDrawer() {
+    this.showRightDrawer.set(!this.showRightDrawer());
+  }
+
   async sendReply() {
     const text = this.replyText().trim();
     const media = this.mediaUrlInput().trim() || undefined;
 
     if (!text && !media) return;
 
-    const success = await this.waService.sendAdminReply(text, media);
-    if (success) {
+    this.sendErrorMessage.set(null);
+    const res = await this.waService.sendAdminReply(text, media);
+    if (res.success) {
       this.replyText.set('');
       this.mediaUrlInput.set('');
       this.showMediaInput.set(false);
+      this.shouldScrollToBottom = true;
+    } else {
+      this.sendErrorMessage.set(res.error || 'Failed to send WhatsApp message.');
     }
+  }
+
+  onEnterPress(event: any) {
+    if (event.shiftKey) return;
+    event.preventDefault();
+    this.sendReply();
   }
 
   insertQuickReply(text: string) {
@@ -97,6 +144,15 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy {
   openWhatsAppWeb(phone: string) {
     const cleanDigits = phone.replace(/[^\d]/g, '');
     window.open(`https://wa.me/${cleanDigits}`, '_blank');
+  }
+
+  scrollToBottom() {
+    try {
+      if (this.messagesContainer?.nativeElement) {
+        this.messagesContainer.nativeElement.scrollTop =
+          this.messagesContainer.nativeElement.scrollHeight;
+      }
+    } catch {}
   }
 
   formatTime(isoString?: string): string {

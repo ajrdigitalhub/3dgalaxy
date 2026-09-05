@@ -139,8 +139,15 @@ export class AdminWhatsAppService {
           if (currentActive) {
             const updatedActive = (res.conversations || []).find((c: any) => c.id === currentActive.id);
             if (updatedActive) {
+              const hasNewMessage = updatedActive.lastMessageAt !== currentActive.lastMessageAt;
               this.activeConversation.update((c) => (c ? { ...c, ...updatedActive } : null));
+              if (hasNewMessage) {
+                this.reloadActiveMessages(currentActive.id);
+              }
             }
+          } else if ((res.conversations || []).length > 0 && !silent) {
+            // Auto select latest conversation on initial page load
+            this.selectConversation(res.conversations[0].id);
           }
         }
         if (!silent) this.isLoading.set(false);
@@ -149,6 +156,32 @@ export class AdminWhatsAppService {
         console.error('[AdminWhatsAppService] Error fetching conversations:', err);
         if (!silent) this.isLoading.set(false);
       }
+    });
+  }
+
+  /**
+   * Reloads messages for the currently open conversation without full reload
+   */
+  reloadActiveMessages(conversationId: string): Promise<boolean> {
+    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${conversationId}`;
+    return new Promise((resolve) => {
+      this.http.get<any>(url, this.getHeaders()).subscribe({
+        next: (res) => {
+          if (res.success && res.conversation) {
+            if (res.conversation.messages) {
+              this.messages.set(res.conversation.messages);
+            }
+            this.activeConversation.update((c) => (c && c.id === conversationId ? { ...c, ...res.conversation } : c));
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        },
+        error: (err) => {
+          console.warn('[AdminWhatsAppService] Error refreshing messages:', err);
+          resolve(false);
+        }
+      });
     });
   }
 
@@ -182,9 +215,9 @@ export class AdminWhatsAppService {
   /**
    * Sends an admin reply to the active customer conversation
    */
-  sendAdminReply(messageText: string, mediaUrl?: string): Promise<boolean> {
+  sendAdminReply(messageText: string, mediaUrl?: string): Promise<{ success: boolean; error?: string }> {
     const active = this.activeConversation();
-    if (!active) return Promise.resolve(false);
+    if (!active) return Promise.resolve({ success: false, error: 'No active conversation selected' });
 
     this.isSending.set(true);
     const url = `${environment.apiUrl}/admin/whatsapp/conversations/${active.id}/messages`;
@@ -195,24 +228,28 @@ export class AdminWhatsAppService {
         next: (res) => {
           this.isSending.set(false);
           if (res.success && res.message) {
-            this.messages.update((msgs) => [...msgs, res.message]);
+            this.messages.update((msgs) => {
+              if (msgs.some((m) => m.id === res.message.id)) return msgs;
+              return [...msgs, res.message];
+            });
             // Update last message in list
             this.conversations.update((list) =>
               list.map((c) =>
                 c.id === active.id
-                  ? { ...c, lastMessage: messageText, lastDirection: 'OUTBOUND', lastMessageAt: new Date().toISOString() }
+                  ? { ...c, lastMessage: messageText || '[Media Attachment]', lastDirection: 'OUTBOUND', lastMessageAt: new Date().toISOString() }
                   : c
               )
             );
-            resolve(true);
+            resolve({ success: true });
           } else {
-            resolve(false);
+            resolve({ success: false, error: res.error || 'Failed to send message via WhatsApp' });
           }
         },
         error: (err) => {
           console.error('[AdminWhatsAppService] Send error:', err);
           this.isSending.set(false);
-          resolve(false);
+          const errDetail = err.error?.details || err.error?.error || err.message || 'Failed to communicate with server';
+          resolve({ success: false, error: errDetail });
         }
       });
     });

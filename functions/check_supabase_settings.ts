@@ -8,12 +8,12 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const prisma = new PrismaClient();
 
-async function main() {
-  const themeSettings = await prisma.themeSetting.findMany();
-  console.log('ThemeSettings:', JSON.stringify(themeSettings, null, 2));
+import { WhatsAppConversationService } from './src/services/whatsappConversationService';
 
-  const settings = await prisma.setting.findMany();
-  console.log('Settings:', JSON.stringify(settings, null, 2));
+async function main() {
+  const convCount = await prisma.whatsappConversation.count();
+  const msgCount = await prisma.whatsappMessage.count();
+  console.log(`Conversations: ${convCount}, Messages: ${msgCount}`);
 }
 
 main()

@@ -234,6 +234,7 @@ app.use("/api/admin/customers", adminCustomerRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", whatsappRoutes);
+app.use("/", whatsappRoutes);
 app.use("/api", abandonedCheckoutRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/wishlist", wishlistRoutes);
