@@ -10,12 +10,11 @@ export class CategoryService {
 
   categories = signal<Category[]>([]);
 
-  constructor() {
-    this.loadCategories();
-  }
-
-  loadCategories() {
-    this.api.get<Category[]>('/categories', null, true).subscribe({
+  loadCategories(force = false) {
+    if (!force && this.categories().length > 0) {
+      return;
+    }
+    this.api.get<Category[]>('/categories', null, force).subscribe({
       next: (data) => {
         if (data) {
           const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];

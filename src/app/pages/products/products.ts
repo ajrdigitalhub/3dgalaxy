@@ -7,7 +7,9 @@ import {
   effect,
   OnInit,
   HostListener,
+  DestroyRef,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { RouterModule, ActivatedRoute, Router } from "@angular/router";
 import { Title, Meta } from "@angular/platform-browser";
@@ -16,8 +18,8 @@ import { DatastoreService, Product, Category } from "../../services/datastore";
 import { ApiService } from "../../services/api.service";
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonProductCardComponent } from "../../shared/components/skeleton/skeleton-product-card/skeleton-product-card.component";
-import { Subject, combineLatest } from "rxjs";
-import { debounceTime, distinctUntilChanged } from "rxjs/operators";
+import { Subject, combineLatest, of } from "rxjs";
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { hasProductVariants } from "../../shared/utils/product.utils";
@@ -115,6 +117,8 @@ export class Products implements OnInit {
 
   // Debounced search subject
   private searchSubject = new Subject<string>();
+  private filterRequest$ = new Subject<any>();
+  private destroyRef = inject(DestroyRef);
 
   constructor() {
     // Automatically re-resolve categories/brands when datastore finishes loading asynchronously
@@ -136,7 +140,6 @@ export class Products implements OnInit {
               `Shop premium ${cat.name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
               `category/${slug}`
             );
-            this.fetchFilteredProducts();
           }
         }
       }
@@ -145,8 +148,9 @@ export class Products implements OnInit {
 
   ngOnInit() {
     // Combine route path parameters and query parameters to run synchronously
-    combineLatest([this.route.params, this.route.queryParams]).subscribe(
-      ([params, queryParams]) => {
+    combineLatest([this.route.params, this.route.queryParams])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([params, queryParams]) => {
         const mergedParams = { ...(queryParams || {}) };
 
         if (params["categorySlug"]) {
@@ -192,15 +196,41 @@ export class Products implements OnInit {
         this.queryParams.set(mergedParams);
         this.syncParamsToSignals(mergedParams);
         this.fetchFilteredProducts();
-      }
-    );
+      });
 
     // Set up debounced search inside page input
     this.searchSubject
-      .pipe(debounceTime(400), distinctUntilChanged())
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((term) => {
         this.updateUrlQueryParam("search", term);
       });
+
+    // Set up switchMap request cancellation for product filters
+    this.filterRequest$.pipe(
+      switchMap((queryParams) => {
+        this.isLoading.set(true);
+        return this.api.get<any>("/products", queryParams).pipe(
+          catchError((err) => {
+            console.error("Failed to load products:", err);
+            return of({ products: [], total: 0, totalPages: 1, availableFilters: null });
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((res: any) => {
+      const products = res?.products || [];
+      this.productsList.set(products);
+      this.totalProducts.set(res?.total || 0);
+      this.totalPages.set(res?.totalPages || 1);
+      if (res?.availableFilters) {
+        this.availableFilters.set(res.availableFilters);
+      }
+      this.isLoading.set(false);
+    });
   }
 
   setSeoTags(title: string, desc: string, path: string) {
@@ -276,25 +306,7 @@ export class Products implements OnInit {
     if (this.activeCompatibility())
       queryParams.compatibility = this.activeCompatibility();
 
-    this.api.get<any>("/products", queryParams).subscribe({
-      next: (res: any) => {
-        const products = res?.products || [];
-        this.productsList.set(products);
-        this.totalProducts.set(res?.total || 0);
-        this.totalPages.set(res?.totalPages || 1);
-        if (res?.availableFilters) {
-          this.availableFilters.set(res.availableFilters);
-        }
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error("Failed to load products:", err);
-        this.productsList.set([]);
-        this.totalProducts.set(0);
-        this.totalPages.set(1);
-        this.isLoading.set(false);
-      },
-    });
+    this.filterRequest$.next(queryParams);
   }
 
   // URL Manipulation Helpers

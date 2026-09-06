@@ -8,6 +8,9 @@ import {
   ViewChild,
   effect,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { of } from "rxjs";
+import { switchMap, catchError, filter } from "rxjs/operators";
 import { CommonModule, DOCUMENT } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterModule, Router } from "@angular/router";
@@ -1543,152 +1546,151 @@ export class ProductDetail {
       }
     });
 
-    this.route.params.subscribe((p) => {
-      if (p["slug"]) {
-        const slugStr = p["slug"];
-        this.slug.set(slugStr);
-        this.fetchedRelatedProducts.set([]);
-        this.lastSyncedVariantId.set(null);
+    this.route.params
+      .pipe(
+        takeUntilDestroyed(),
+        filter((p) => !!p["slug"]),
+        switchMap((p) => {
+          const slugStr = p["slug"];
+          this.slug.set(slugStr);
+          this.fetchedRelatedProducts.set([]);
+          this.lastSyncedVariantId.set(null);
+          this.isLoadingProduct.set(true);
 
-        // Fetch detailed product data
-        this.isLoadingProduct.set(true);
-        fetch(`${environment.apiUrl}/products/slug/${slugStr}`)
-          .then((res) => res.json())
-          .then((detailedProd) => {
-            if (detailedProd && !detailedProd.error) {
-              // Reconstruct flat object for existing frontend properties mapped to it
-              const merged = {
-                ...detailedProd.product,
-                category_id:
-                  detailedProd.product?.categoryId ||
-                  detailedProd.product?.category_id,
-                options:
-                  detailedProd.options || detailedProd.product?.options || [],
-                images: detailedProd.images,
-                variants: detailedProd.variants,
-                reviews: detailedProd.reviews || detailedProd.product?.reviews || [],
-                relatedProducts: detailedProd.relatedProducts,
-              };
-              this.fetchedProduct.set(merged);
-              this.initializeDefaultVariant(merged);
-              void this.loadRelatedProducts(
-                merged,
-                detailedProd.relatedProducts || merged.relatedProducts || [],
-              );
-              // Load fresh reviews and eligibility after product loads
-              if (merged.id) {
-                this.loadReviews(merged.id);
-                this.checkPurchaseEligibility(merged.id);
-              }
-            }
-          })
-          .catch((err) =>
-            console.error("Could not fetch product details:", err),
-          )
-          .finally(() => {
-            this.isLoadingProduct.set(false);
-          });
+          const matched = this.ds.products().find((x) => x.slug === slugStr);
+          if (matched) {
+            const firstImg =
+              matched.images && matched.images.length > 0
+                ? this.getImageUrl(matched.images[0])
+                : "";
+            this.activeImage.set(firstImg);
+            this.quantity.set(1);
+            this.is360Active.set(false);
+            this.rotationAngle.set(0);
 
-        const matched = this.ds.products().find((x) => x.slug === slugStr);
-        if (matched) {
-          const firstImg =
-            matched.images && matched.images.length > 0
-              ? this.getImageUrl(matched.images[0])
-              : "";
-          this.activeImage.set(firstImg);
-          this.quantity.set(1);
-          this.is360Active.set(false);
-          this.rotationAngle.set(0);
+            this.initializeDefaultVariant(matched);
 
-          this.initializeDefaultVariant(matched);
-
-          if (matched.id) {
-            this.loadReviews(matched.id);
-            this.checkPurchaseEligibility(matched.id);
-          }
-
-          // Update SEO
-          const pageTitle =
-            (matched as any).seoTitle ||
-            `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
-          const pageDesc =
-            (matched as any).seoDescription ||
-            `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
-          this.titleService.setTitle(pageTitle);
-          this.metaService.updateTag({
-            name: "description",
-            content: pageDesc,
-          });
-          this.metaService.updateTag({
-            property: "og:title",
-            content: pageTitle,
-          });
-          this.metaService.updateTag({
-            property: "og:description",
-            content: pageDesc,
-          });
-          if (firstImg) {
+            // Update SEO
+            const pageTitle =
+              (matched as any).seoTitle ||
+              `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
+            const pageDesc =
+              (matched as any).seoDescription ||
+              `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
+            this.titleService.setTitle(pageTitle);
             this.metaService.updateTag({
-              property: "og:image",
-              content: firstImg,
+              name: "description",
+              content: pageDesc,
             });
+            this.metaService.updateTag({
+              property: "og:title",
+              content: pageTitle,
+            });
+            this.metaService.updateTag({
+              property: "og:description",
+              content: pageDesc,
+            });
+            if (firstImg) {
+              this.metaService.updateTag({
+                property: "og:image",
+                content: firstImg,
+              });
+            }
+
+            let link: HTMLLinkElement | null = this.document.querySelector(
+              "link[rel='canonical']",
+            );
+            if (!link) {
+              link = this.document.createElement("link");
+              link.setAttribute("rel", "canonical");
+              this.document.head.appendChild(link);
+            }
+            link.setAttribute(
+              "href",
+              `${environment.siteUrl}/product/${matched.slug}`,
+            );
           }
 
-          let link: HTMLLinkElement | null = this.document.querySelector(
-            "link[rel='canonical']",
+          return this.api.get<any>(`/products/slug/${slugStr}`).pipe(
+            catchError((err) => {
+              console.error("Could not fetch product details:", err);
+              return of(null);
+            })
           );
-          if (!link) {
-            link = this.document.createElement("link");
-            link.setAttribute("rel", "canonical");
-            this.document.head.appendChild(link);
+        })
+      )
+      .subscribe((detailedProd: any) => {
+        this.isLoadingProduct.set(false);
+        if (detailedProd && !detailedProd.error) {
+          // Reconstruct flat object for existing frontend properties mapped to it
+          const merged = {
+            ...detailedProd.product,
+            category_id:
+              detailedProd.product?.categoryId ||
+              detailedProd.product?.category_id,
+            options:
+              detailedProd.options || detailedProd.product?.options || [],
+            images: detailedProd.images,
+            variants: detailedProd.variants,
+            reviews: detailedProd.reviews || detailedProd.product?.reviews || [],
+            relatedProducts: detailedProd.relatedProducts,
+          };
+          this.fetchedProduct.set(merged);
+          this.initializeDefaultVariant(merged);
+          void this.loadRelatedProducts(
+            merged,
+            detailedProd.relatedProducts || merged.relatedProducts || [],
+          );
+          // Only check purchase eligibility once for logged in users
+          if (merged.id && this.ds.userRole() !== 'guest') {
+            this.checkPurchaseEligibility(merged.id);
           }
-          link.setAttribute(
-            "href",
-            `${environment.siteUrl}/product/${matched.slug}`,
-          );
         }
-      }
-    });
+      });
 
     // When query parameters change, update selected options if a variant matches
-    this.route.queryParams.subscribe((q) => {
-      const varId = q["variant"];
-      if (varId) {
-        const prod = this.product();
-        const currentVariant = this.selectedVariant();
-        if (currentVariant && String(currentVariant.id) === String(varId)) {
-          return; // Already matched
-        }
-        if (prod && prod.variants) {
-          const matchedVar = prod.variants.find(
-            (v: any) => String(v.id) === String(varId),
-          );
-          if (matchedVar) {
-            this.syncVariantSelection(prod, matchedVar);
+    this.route.queryParams
+      .pipe(takeUntilDestroyed())
+      .subscribe((q) => {
+        const varId = q["variant"];
+        if (varId) {
+          const prod = this.product();
+          const currentVariant = this.selectedVariant();
+          if (currentVariant && String(currentVariant.id) === String(varId)) {
+            return; // Already matched
+          }
+          if (prod && prod.variants) {
+            const matchedVar = prod.variants.find(
+              (v: any) => String(v.id) === String(varId),
+            );
+            if (matchedVar) {
+              this.syncVariantSelection(prod, matchedVar);
+            }
           }
         }
-      }
-    });
+      });
 
-    this.route.fragment.subscribe((fragment) => {
-      if (fragment === "reviews") {
-        this.activeTab.set("reviews");
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            const reviewSection = this.document.getElementById("reviews");
-            if (reviewSection) {
-              this.reviewsHighlight.set(true);
-              const top =
-                reviewSection.getBoundingClientRect().top +
-                window.scrollY -
-                96;
-              window.scrollTo({ top, behavior: "smooth" });
-              setTimeout(() => this.reviewsHighlight.set(false), 1600);
-            }
-          }, 150);
-        });
-      }
-    });
+    this.route.fragment
+      .pipe(takeUntilDestroyed())
+      .subscribe((fragment) => {
+        if (fragment === "reviews") {
+          this.activeTab.set("reviews");
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const reviewSection = this.document.getElementById("reviews");
+              if (reviewSection) {
+                this.reviewsHighlight.set(true);
+                const top =
+                  reviewSection.getBoundingClientRect().top +
+                  window.scrollY -
+                  96;
+                window.scrollTo({ top, behavior: "smooth" });
+                setTimeout(() => this.reviewsHighlight.set(false), 1600);
+              }
+            }, 150);
+          });
+        }
+      });
   }
 
   adjustQty(diff: number) {

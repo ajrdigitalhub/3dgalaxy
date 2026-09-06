@@ -900,11 +900,11 @@ export class HomeShopByCategoryComponent {
         .sort((a, b) => {
           const aScore =
             ((a as any).salesCount || 0) +
-            (a.reviews?.length || 0) +
+            (a.reviewCount || a.reviews?.length || 0) +
             (a.avgRating || 0);
           const bScore =
             ((b as any).salesCount || 0) +
-            (b.reviews?.length || 0) +
+            (b.reviewCount || b.reviews?.length || 0) +
             (b.avgRating || 0);
           return (
             bScore - aScore ||

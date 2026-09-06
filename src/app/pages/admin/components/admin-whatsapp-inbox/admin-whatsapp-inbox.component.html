@@ -17,20 +17,51 @@
           }
         </div>
         <p class="text-xs text-neutral-500 dark:text-neutral-400">
-          Two-way Meta Cloud API integration with AI assistant and order context
+          Two-way Meta Cloud API integration with automated replies and order context
         </p>
       </div>
     </div>
 
     <!-- Right Header Actions -->
     <div class="flex items-center gap-2.5">
+      <!-- Live Connection State Indicator -->
+      @if (waService.connectionStatus() === 'LIVE') {
+        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center gap-1.5 shadow-2xs" title="Real-time SSE event stream connected">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>Live</span>
+        </span>
+      } @else if (waService.connectionStatus() === 'RECONNECTING') {
+        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 flex items-center gap-1.5" title="Reconnecting to real-time event stream...">
+          <span class="h-2 w-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>Reconnecting</span>
+        </span>
+      } @else {
+        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-neutral-500/10 text-neutral-500 border border-neutral-500/20 flex items-center gap-1.5" title="Real-time connection offline">
+          <span class="h-2 w-2 rounded-full bg-neutral-400"></span>
+          <span>Offline</span>
+        </span>
+      }
+
+      <!-- Auto Replies & Rules Settings Button -->
+      <button
+        (click)="openAutoReplySettings('GLOBAL')"
+        class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
+        title="Configure rule-based auto-replies, business hours, and quick replies">
+        <mat-icon class="scale-75">smart_toy</mat-icon>
+        <span class="hidden sm:inline">Auto Replies & Rules</span>
+      </button>
+
+      <!-- Manual Refresh Button -->
       <button
         (click)="waService.loadConversations()"
         [disabled]="waService.isLoading()"
         class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center gap-1.5 transition-colors cursor-pointer border-none"
         title="Refresh conversations">
         <mat-icon class="scale-75" [class.animate-spin]="waService.isLoading()">refresh</mat-icon>
-        <span>Refresh</span>
+        <span class="hidden md:inline">Refresh</span>
       </button>
       <span class="text-xs text-neutral-400 font-mono hidden sm:inline">
         {{ waService.totalCount() }} Total
@@ -107,15 +138,7 @@
             class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
             Resolved
           </button>
-          <button
-            (click)="setAiModeFilter(waService.aiModeFilter() === 'AI' ? 'ALL' : 'AI')"
-            [ngClass]="{
-              'bg-purple-600 text-white': waService.aiModeFilter() === 'AI',
-              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.aiModeFilter() !== 'AI'
-            }"
-            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap flex items-center gap-1">
-            <span>AI Bot</span>
-          </button>
+          
         </div>
       </div>
 
@@ -169,11 +192,11 @@
               </div>
 
               <!-- Message preview snippet -->
-              <p class="text-xs text-neutral-600 dark:text-neutral-400 truncate leading-snug font-sans">
+              <p class="text-xs text-neutral-600 dark:text-neutral-400 truncate leading-snug font-sans flex items-center gap-1">
                 @if (conv.lastDirection === 'OUTBOUND') {
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold">You: </span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">You:</span>
                 }
-                {{ conv.lastMessage || 'Conversation initiated' }}
+                <span class="truncate">{{ conv.lastMessage || 'Conversation initiated' }}</span>
               </p>
             </div>
 
@@ -211,39 +234,58 @@
                 <span class="text-[11px] font-mono sm:hidden text-neutral-400">{{ active.phone }}</span>
                 <span class="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
                 <!-- AI / Human mode badge -->
-                @if (active.aiMode === 'AI') {
-                  <span class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 shrink-0">
-                    <span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>
-                    AI Active
+                @if (active.aiMode === 'AUTO' || active.aiMode === 'AI') {
+                  <span class="inline-flex items-center gap-1 text-[10px] font-bold text-sky-600 dark:text-sky-400 shrink-0">
+                    <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+                    Auto-Reply Active
                   </span>
                 } @else {
                   <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
                     <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                    Human Takeover
+                    Human Agent Only
                   </span>
                 }
+                <span class="text-neutral-300 dark:text-neutral-700">•</span>
+                <!-- WhatsApp Live Sync indicator with pulsing dot -->
+                <span class="inline-flex items-center gap-1.5 text-[10px] font-mono shrink-0">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Live Sync Active</span>
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- Right side: Controls (AI Toggle, Status Dropdown, Details Drawer Toggle) -->
+          <!-- Right side: Controls (AI Toggle, Manual Sync, Status Dropdown, Details Drawer Toggle) -->
           <div class="flex items-center gap-2 shrink-0">
+            <!-- Manual Sync Button -->
+            <button
+              (click)="manualSync()"
+              [disabled]="waService.isLiveSyncing()"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center gap-1 transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700 shadow-xs shrink-0"
+              title="Sync delivery and seen status with WhatsApp now">
+              <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center" [class.animate-spin]="waService.isLiveSyncing()">sync</mat-icon>
+              <span class="hidden md:inline">Sync Status</span>
+            </button>
+
             <!-- Take Over / Enable AI Button -->
-            @if (active.aiMode === 'AI') {
+            @if (active.aiMode === 'AUTO' || active.aiMode === 'AI') {
               <button
                 (click)="toggleAiMode()"
                 class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 transition-colors cursor-pointer border-none shadow-sm shrink-0 whitespace-nowrap"
-                title="Disable AI and manually chat with customer">
+                title="Disable auto-reply and handle manually as human agent">
                 <mat-icon class="scale-75">person</mat-icon>
-                <span>Take Over</span>
+                <span>Take Over (Human)</span>
               </button>
             } @else {
               <button
                 (click)="toggleAiMode()"
-                class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1 transition-colors cursor-pointer border-none shadow-sm shrink-0 whitespace-nowrap"
-                title="Enable AI Assistant for automatic replies">
-                <mat-icon class="scale-75">smart_toy</mat-icon>
-                <span>Enable AI</span>
+                class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-1 transition-colors cursor-pointer border-none shadow-sm shrink-0 whitespace-nowrap"
+                title="Enable auto-reply for incoming messages">
+                <mat-icon class="scale-75">bolt</mat-icon>
+                <span>Enable Auto-Reply</span>
               </button>
             }
 
@@ -295,9 +337,9 @@
             </div>
           }
 
-          @for (msg of waService.messages(); track msg.id) {
+          @for (msg of waService.messages(); track (msg.whatsappMessageId || msg.id)) {
             <div
-              class="flex flex-col max-w-[85%] sm:max-w-[75%]"
+              class="flex flex-col max-w-[88%] sm:max-w-[75%]"
               [class.ml-auto]="msg.direction === 'OUTBOUND'"
               [class.items-end]="msg.direction === 'OUTBOUND'"
               [class.items-start]="msg.direction === 'INBOUND'">
@@ -305,9 +347,9 @@
               <!-- Sender label for outbound messages -->
               @if (msg.direction === 'OUTBOUND') {
                 <div class="flex items-center gap-1.5 text-[10px] font-semibold text-neutral-400 mb-1">
-                  @if (msg.senderType === 'AI') {
-                    <span class="text-purple-600 dark:text-purple-400 flex items-center gap-0.5">
-                      <mat-icon class="scale-50">smart_toy</mat-icon> 3D Galaxy AI
+                  @if (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM' || msg.senderType === 'AI') {
+                    <span class="text-sky-600 dark:text-sky-400 flex items-center gap-0.5">
+                      <mat-icon class="scale-50">bolt</mat-icon> • 3D Galaxy Auto-Reply
                     </span>
                   } @else {
                     <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
@@ -317,14 +359,14 @@
                 </div>
               }
 
-              <!-- Bubble Box -->
+              <!-- Bubble Box with WhatsApp in-bubble footer -->
               <div
                 [ngClass]="{
-                  'bg-emerald-600 text-white rounded-2xl rounded-tr-xs': msg.direction === 'OUTBOUND' && msg.senderType !== 'AI',
-                  'bg-purple-600 text-white rounded-2xl rounded-tr-xs': msg.direction === 'OUTBOUND' && msg.senderType === 'AI',
+                  'bg-emerald-600 text-white rounded-2xl rounded-tr-xs shadow-sm': msg.direction === 'OUTBOUND' && msg.senderType === 'ADMIN',
+                  'bg-sky-600 text-white rounded-2xl rounded-tr-xs shadow-sm': msg.direction === 'OUTBOUND' && (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM' || msg.senderType === 'AI'),
                   'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 shadow-xs rounded-2xl rounded-tl-xs': msg.direction === 'INBOUND'
                 }"
-                class="px-4 py-2.5 text-xs font-sans leading-relaxed break-words whitespace-pre-wrap">
+                class="px-3.5 py-2 text-xs font-sans leading-relaxed break-words min-w-[120px] overflow-hidden">
                 
                 <!-- Media Attachment Preview -->
                 @if (msg.mediaUrl) {
@@ -333,24 +375,49 @@
                   </div>
                 }
 
-                <p>{{ msg.messageText }}</p>
-              </div>
+                <!-- Message text body -->
+                <span class="whitespace-pre-wrap">{{ msg.messageText }}</span>
 
-              <!-- Message metadata & status checks -->
-              <div class="flex items-center gap-1 text-[10px] text-neutral-400 mt-1 font-mono">
-                <span>{{ formatTime(msg.createdAt) }}</span>
+                <!-- WhatsApp In-Bubble Timestamp & Status Checkmarks -->
                 @if (msg.direction === 'OUTBOUND') {
-                  @if (msg.status === 'READ') {
-                    <mat-icon class="text-blue-500 scale-65">done_all</mat-icon>
-                  } @else if (msg.status === 'DELIVERED') {
-                    <mat-icon class="text-neutral-400 scale-65">done_all</mat-icon>
-                  } @else if (msg.status === 'FAILED') {
-                    <span class="text-rose-500 flex items-center gap-0.5 font-sans" [title]="msg.errorMessage || 'Failed to send'">
-                      <mat-icon class="scale-65 text-rose-500">error_outline</mat-icon> Failed
-                    </span>
-                  } @else {
-                    <mat-icon class="text-neutral-400 scale-65">done</mat-icon>
-                  }
+                  <span class="float-right ml-3 -mb-0.5 mt-1 inline-flex items-center gap-1 text-[10px] text-white/80 select-none font-mono">
+                    <span>{{ formatTime(msg.createdAt) }}</span>
+
+                    <!-- Double Blue Ticks: READ / SEEN -->
+                    @if (msg.status === 'READ') {
+                      <span title="Read / Seen by customer" class="inline-flex items-center text-sky-200 font-bold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done_all</mat-icon>
+                      </span>
+                    }
+                    <!-- Double Grey Ticks: DELIVERED -->
+                    @else if (msg.status === 'DELIVERED') {
+                      <span title="Delivered to customer's phone" class="inline-flex items-center text-white/75 font-semibold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done_all</mat-icon>
+                      </span>
+                    }
+                    <!-- Red Exclamation: FAILED -->
+                    @else if (msg.status === 'FAILED') {
+                      <span [title]="msg.errorMessage || 'Failed to deliver'" class="inline-flex items-center text-rose-300 font-bold">
+                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px] inline-flex items-center justify-center">error_outline</mat-icon>
+                      </span>
+                    }
+                    <!-- Clock: SENDING / PENDING -->
+                    @else if (msg.status === 'PENDING') {
+                      <span title="Sending message to WhatsApp..." class="inline-flex items-center text-white/70">
+                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px] inline-flex items-center justify-center animate-pulse">schedule</mat-icon>
+                      </span>
+                    }
+                    <!-- Single Grey Tick: SENT -->
+                    @else {
+                      <span title="Sent to WhatsApp server" class="inline-flex items-center text-white/75 font-semibold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done</mat-icon>
+                      </span>
+                    }
+                  </span>
+                } @else {
+                  <span class="float-right ml-3 -mb-0.5 mt-1 inline-flex items-center text-[10px] text-neutral-400 dark:text-neutral-400 select-none font-mono">
+                    <span>{{ formatTime(msg.createdAt) }}</span>
+                  </span>
                 }
               </div>
             </div>
@@ -360,13 +427,24 @@
         <!-- Quick Canned Replies Row (Zero native chunky scrollbar) -->
         <div class="px-3 py-2 bg-neutral-100/80 dark:bg-neutral-900/80 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-1.5 overflow-x-auto shrink-0 text-[11px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <span class="text-[10px] text-neutral-400 font-bold uppercase shrink-0 font-mono pl-1">Quick Replies:</span>
-          @for (qr of quickReplies; track $index) {
+          @for (qr of quickRepliesList(); track qr.id || $index) {
             <button
               (click)="insertQuickReply(qr)"
-              class="px-2.5 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs truncate max-w-[240px] border border-neutral-200 dark:border-neutral-700 cursor-pointer shrink-0 transition-colors shadow-2xs">
-              {{ qr }}
+              class="px-2.5 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs truncate max-w-[260px] border border-neutral-200 dark:border-neutral-700 cursor-pointer shrink-0 transition-colors shadow-2xs flex items-center gap-1.5"
+              [title]="qr.message">
+              @if (qr.shortcut) {
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px]">{{ qr.shortcut }}</span>
+              }
+              <span class="truncate">{{ qr.title || qr.message }}</span>
             </button>
           }
+          <button
+            (click)="openAutoReplySettings('QUICK_REPLIES')"
+            class="px-2 py-1 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-lg text-xs border-none cursor-pointer shrink-0 transition-colors font-medium flex items-center gap-1"
+            title="Manage Quick Replies">
+            <mat-icon class="!text-[12px] !w-[12px] !h-[12px] inline-flex items-center justify-center">edit</mat-icon>
+            <span>Manage</span>
+          </button>
         </div>
 
         <!-- Reply Input Bar -->
@@ -424,7 +502,7 @@
             Select a Conversation to Start Chatting
           </h3>
           <p class="text-xs max-w-sm text-neutral-500">
-            Choose a customer from the left panel to review messages, toggle AI assistance, or reply directly.
+            Choose a customer from the left panel to review messages, manage auto-replies, or reply directly.
           </p>
         </div>
       }
@@ -524,4 +602,305 @@
       }
     }
   </div>
+
+  <!-- ========================================================================= -->
+  <!-- AUTO-REPLY & QUICK REPLIES CONFIGURATION MODAL -->
+  <!-- ========================================================================= -->
+  @if (showAutoReplyModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/50">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <mat-icon class="scale-90">smart_toy</mat-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-neutral-900 dark:text-white font-sans">
+                WhatsApp Automation & Quick Replies
+              </h3>
+              <p class="text-[11px] text-neutral-500">
+                Configure rule-based auto replies, operating hours, order lookup, and canned responses without AI
+              </p>
+            </div>
+          </div>
+          <button
+            (click)="closeAutoReplySettings()"
+            class="h-8 w-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 border-none bg-transparent cursor-pointer transition-colors">
+            <mat-icon class="scale-90">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="px-6 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-4 bg-white dark:bg-neutral-900 text-xs font-semibold">
+          <button
+            (click)="autoReplyTab.set('GLOBAL')"
+            [ngClass]="{
+              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'GLOBAL',
+              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'GLOBAL'
+            }"
+            class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors">
+            Global Settings & Hours
+          </button>
+          <button
+            (click)="autoReplyTab.set('RULES')"
+            [ngClass]="{
+              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'RULES',
+              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'RULES'
+            }"
+            class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
+            <span>Automation Rules</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+              {{ autoReplyConfig()?.rules?.length || 0 }}
+            </span>
+          </button>
+          <button
+            (click)="autoReplyTab.set('QUICK_REPLIES')"
+            [ngClass]="{
+              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'QUICK_REPLIES',
+              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'QUICK_REPLIES'
+            }"
+            class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
+            <span>Quick Replies</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+              {{ quickRepliesList().length }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="p-6 overflow-y-auto flex-1 space-y-5 text-xs text-neutral-800 dark:text-neutral-200">
+          
+          <!-- Status Banner -->
+          @if (saveStatusMsg()) {
+            <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2">
+              <mat-icon class="scale-75 text-emerald-500">check_circle</mat-icon>
+              <span>{{ saveStatusMsg() }}</span>
+            </div>
+          }
+
+          <!-- TAB 1: GLOBAL SETTINGS -->
+          @if (autoReplyTab() === 'GLOBAL' && autoReplyConfig(); as cfg) {
+            <div class="space-y-5">
+              <!-- Master Switches -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Enable Auto Reply</h4>
+                      <p class="text-[11px] text-neutral-500">Master rule-based automation switch</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" [(ngModel)]="cfg.enabled" class="sr-only peer">
+                      <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Human Takeover (Global)</h4>
+                      <p class="text-[11px] text-neutral-500">Temporarily pause all automated replies</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" [(ngModel)]="cfg.humanTakeoverGlobal" class="sr-only peer">
+                      <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Business Hours Section -->
+              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-3">
+                <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+                  <div>
+                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Operating Business Hours</h4>
+                    <p class="text-[11px] text-neutral-500">Auto-replies outside these hours with offline message</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" [(ngModel)]="cfg.businessHours.enabled" class="sr-only peer">
+                    <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Timezone</label>
+                    <input type="text" [(ngModel)]="cfg.businessHours.timezone" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Start Time (24h)</label>
+                    <input type="text" [(ngModel)]="cfg.businessHours.start" placeholder="09:30" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">End Time (24h)</label>
+                    <input type="text" [(ngModel)]="cfg.businessHours.end" placeholder="19:00" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Offline Notice Reply Message</label>
+                  <textarea [(ngModel)]="cfg.businessHours.offlineMessage" rows="3" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
+                </div>
+              </div>
+
+              <!-- Default Fallback Message -->
+              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Default Fallback Reply</h4>
+                <p class="text-[11px] text-neutral-500">Sent when no specific rule matches (supports customer name placeholder)</p>
+                <textarea [(ngModel)]="cfg.defaultReply" rows="2" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
+              </div>
+            </div>
+          }
+
+          <!-- TAB 2: RULES BUILDER -->
+          @if (autoReplyTab() === 'RULES' && autoReplyConfig(); as cfg) {
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Rule Priority Hierarchy</h4>
+                  <p class="text-[11px] text-neutral-500">Rules evaluate from lowest priority number (1) to highest. First matching rule executes.</p>
+                </div>
+                <button
+                  (click)="addNewRule()"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer border-none shadow-2xs">
+                  <mat-icon class="scale-75">add</mat-icon>
+                  <span>Add Rule</span>
+                </button>
+              </div>
+
+              <div class="space-y-3">
+                @for (rule of cfg.rules; track rule.id; let i = $index) {
+                  <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex items-center gap-2 flex-1">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" [(ngModel)]="rule.isActive" class="sr-only peer">
+                          <div class="w-7 h-4 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                        <input type="text" [(ngModel)]="rule.name" class="font-bold text-xs bg-transparent border-b border-transparent focus:border-emerald-500 outline-none px-1 text-neutral-900 dark:text-white" />
+                      </div>
+
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                          {{ rule.triggerType }}
+                        </span>
+                        <div class="flex items-center gap-1 text-[11px] text-neutral-500">
+                          <span>Priority:</span>
+                          <input type="number" [(ngModel)]="rule.priority" class="w-12 px-1.5 py-0.5 text-center font-mono rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs" />
+                        </div>
+                        <button
+                          (click)="removeRule(i)"
+                          class="p-1 text-neutral-400 hover:text-rose-500 border-none bg-transparent cursor-pointer"
+                          title="Delete rule">
+                          <mat-icon class="scale-75">delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+
+                    @if (rule.triggerType === 'KEYWORD' || rule.triggerType === 'ORDER_STATUS' || rule.triggerType === 'WELCOME') {
+                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="sm:col-span-2">
+                          <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Matching Keywords (comma separated)</label>
+                          <input
+                            type="text"
+                            [ngModel]="rule.conditions?.keywords?.join(', ')"
+                            (ngModelChange)="updateRuleKeywords(rule, $event)"
+                            class="w-full px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
+                        </div>
+                        <div>
+                          <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Match Type</label>
+                          <select
+                            [(ngModel)]="rule.conditions.matchType"
+                            class="w-full px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs">
+                            <option value="CONTAINS_ANY">Contains Any</option>
+                            <option value="CONTAINS_ALL">Contains All</option>
+                            <option value="EXACT">Exact Match</option>
+                          </select>
+                        </div>
+                      </div>
+                    }
+
+                    @if (rule.actionType !== 'ORDER_STATUS_LOOKUP') {
+                      <div>
+                        <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Response Text</label>
+                        <textarea [(ngModel)]="rule.responseText" rows="2" class="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
+                      </div>
+                    } @else {
+                      <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-700 dark:text-emerald-300">
+                        ⚡ <strong>Order Status Action:</strong> Dynamically checks customer's latest order from PostgreSQL (Order ID, Status, Items, Courier Tracking & Delivery Date) and formats response automatically.
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- TAB 3: QUICK REPLIES -->
+          @if (autoReplyTab() === 'QUICK_REPLIES') {
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Admin Canned Quick Replies</h4>
+                  <p class="text-[11px] text-neutral-500">Shortcuts click-to-populate directly into WhatsApp chat composer</p>
+                </div>
+                <button
+                  (click)="addNewQuickReply()"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer border-none shadow-2xs">
+                  <mat-icon class="scale-75">add</mat-icon>
+                  <span>Add Shortcut</span>
+                </button>
+              </div>
+
+              <div class="space-y-2.5">
+                @for (qr of quickRepliesList(); track qr.id; let i = $index) {
+                  <div class="p-3 bg-neutral-50 dark:bg-neutral-850 rounded-xl border border-neutral-200 dark:border-neutral-800 flex items-start gap-3">
+                    <div class="w-24 shrink-0">
+                      <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Shortcut</label>
+                      <input type="text" [(ngModel)]="qr.shortcut" class="w-full px-2 py-1 rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono font-bold text-emerald-600" />
+                    </div>
+                    <div class="w-32 shrink-0">
+                      <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Label</label>
+                      <input type="text" [(ngModel)]="qr.title" class="w-full px-2 py-1 rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Message Text</label>
+                      <input type="text" [(ngModel)]="qr.message" class="w-full px-2.5 py-1 rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs" />
+                    </div>
+                    <button
+                      (click)="removeQuickReply(i)"
+                      class="mt-4 p-1 text-neutral-400 hover:text-rose-500 border-none bg-transparent cursor-pointer shrink-0"
+                      title="Delete">
+                      <mat-icon class="scale-75">delete_outline</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="px-6 py-3.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-900">
+          <button
+            (click)="closeAutoReplySettings()"
+            class="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 border-none bg-transparent cursor-pointer transition-colors">
+            Cancel
+          </button>
+          
+          <button
+            (click)="autoReplyTab() === 'QUICK_REPLIES' ? saveQuickReplies() : saveAutoReplySettings()"
+            [disabled]="isSavingConfig()"
+            class="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer border-none shadow-md transition-colors">
+            <mat-icon class="scale-75" [class.animate-spin]="isSavingConfig()">save</mat-icon>
+            <span>{{ isSavingConfig() ? 'Saving...' : 'Save Configuration' }}</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
 </div>

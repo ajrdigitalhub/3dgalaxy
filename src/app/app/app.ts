@@ -72,9 +72,6 @@ export class App {
   constructor() {
     this.scrollRestoration.init();
 
-    // Fetch and apply application theme strictly from Settings API
-    this.settingsService.loadSettings();
-
     // Keep isHome updated with active path
     this.router.events.subscribe((val) => {
       if (val instanceof NavigationEnd) {

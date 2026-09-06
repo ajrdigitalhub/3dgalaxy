@@ -254,6 +254,7 @@ model Product {
   @@index([createdAt])
   @@index([isActive])
   @@index([isFeatured])
+  @@index([isActive, deletedAt])
   @@map("products")
 }
 
@@ -300,6 +301,7 @@ model ProductVariant {
   cartItems       CartItem[]
 
   @@index([productId])
+  @@index([productId, isActive])
   @@map("product_variants")
 }
 
@@ -319,6 +321,10 @@ model ProductReview {
   product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
   user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([productId])
+  @@index([userId])
+  @@index([isApproved])
+  @@index([productId, isApproved])
   @@map("product_reviews")
 }
 
@@ -394,6 +400,7 @@ model Customer {
   whatsappConversations WhatsappConversation[]
   whatsappMessages      WhatsappMessage[]
 
+  @@index([userId])
   @@index([phone])
   @@index([customerType])
   @@index([createdAt])
@@ -416,6 +423,8 @@ model CustomerAddress {
   shippingOrders  Order[]           @relation("ShippingAddress")
   billingOrders   Order[]           @relation("BillingAddress")
 
+  @@index([customerId])
+  @@index([isDefault])
   @@map("customer_addresses")
 }
 
@@ -442,6 +451,8 @@ model CustomerReview {
   customer        Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
   product         Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
+  @@index([customerId])
   @@map("customer_reviews")
 }
 
@@ -491,8 +502,10 @@ model Order {
   supportRequests SupportRequest[]
 
   @@index([customerId])
+  @@index([customerId, status])
   @@index([createdAt])
   @@index([status])
+  @@index([createdAt, status])
   @@map("orders")
 }
 
@@ -584,7 +597,9 @@ model Cart {
   items           CartItem[]
 
   @@index([customerId])
+  @@index([customerId, status])
   @@index([sessionId])
+  @@index([sessionId, status])
   @@map("carts")
 }
 
@@ -987,6 +1002,7 @@ model WhatsappMessage {
   sender            User?                @relation("SentAdminMessages", fields: [senderId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@index([customerId])
   @@index([createdAt])
   @@index([status])
@@ -1023,6 +1039,10 @@ model AbandonedCheckout {
   activityLogs        CheckoutActivityLog[]
   notifications       RecoveryNotification[]
 
+  @@index([sessionId])
+  @@index([customerId])
+  @@index([recoveryStatus])
+  @@index([createdAt])
   @@map("abandoned_checkouts")
 }
 
@@ -1069,6 +1089,9 @@ model NotificationDevice {
 
   user                User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([sessionId])
+  @@index([guestId])
   @@map("notification_devices")
 }
 
@@ -1104,6 +1127,12 @@ model Notification {
 
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([guestId])
+  @@index([guestId, isRead])
+  @@index([isRead])
+  @@index([createdAt])
   @@map("notifications")
 }
 

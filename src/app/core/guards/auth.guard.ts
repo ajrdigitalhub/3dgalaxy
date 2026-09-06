@@ -2,21 +2,24 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { DatastoreService } from '../../services/datastore';
 
+const waitForAuthReady = (ds: DatastoreService, timeoutMs = 2500): Promise<void> => {
+  if (ds.authReady()) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const start = Date.now();
+    const timer = setInterval(() => {
+      if (ds.authReady() || Date.now() - start >= timeoutMs) {
+        clearInterval(timer);
+        resolve();
+      }
+    }, 40);
+  });
+};
+
 export const authGuard: CanActivateFn = async (route, state) => {
   const router = inject(Router);
   const ds = inject(DatastoreService);
 
-  // Wait for authentication init to be ready
-  if (!ds.authReady()) {
-    await new Promise<void>((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (ds.authReady()) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 50);
-    });
-  }
+  await waitForAuthReady(ds);
 
   if (ds.userProfile()) {
     return true;
@@ -31,17 +34,7 @@ export const roleGuard: CanActivateFn = async (route, state) => {
   const router = inject(Router);
   const ds = inject(DatastoreService);
 
-  // Wait for authentication init to be ready
-  if (!ds.authReady()) {
-    await new Promise<void>((resolve) => {
-      const checkInterval = setInterval(() => {
-        if (ds.authReady()) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 50);
-    });
-  }
+  await waitForAuthReady(ds);
 
   const profile = ds.userProfile();
   const role = ds.userRole();

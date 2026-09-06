@@ -1041,8 +1041,6 @@ export class DatastoreService {
 
     // Save cart to local storage (still useful for guest persistence)
     if (typeof window !== 'undefined') {
-      this.reloadCategories(false);
-      this.reloadProducts(false);
       const storedCart = localStorage.getItem('3d-galaxy-cart');
       if (storedCart) try { this.cart.set(JSON.parse(storedCart)); } catch { /* ignore */ }
       
@@ -1450,13 +1448,19 @@ export class DatastoreService {
           }
 
           // 2. Categories
-          if (d.featuredCategories) {
-            const mappedCats = d.featuredCategories.map((c: any) => ({
+          const rawCats = d.categories || d.featuredCategories;
+          if (rawCats && Array.isArray(rawCats)) {
+            const mappedCats = rawCats.map((c: any) => ({
               ...c,
-              isFeatured: true,
-              isActive: true
+              isFeatured: c.isFeatured ?? true,
+              isActive: c.isActive ?? true
             }));
             this.categories.set(mappedCats);
+          }
+
+          // 2b. Brands
+          if (d.brands && Array.isArray(d.brands)) {
+            this.brands.set(d.brands);
           }
 
           // 3. Navigation megamenu
@@ -1464,11 +1468,15 @@ export class DatastoreService {
             this.menuItems.set(d.navigation);
           }
 
-          // 4. Initial Products
-          if (d.products && Array.isArray(d.products) && d.products.length > 0) {
+          // 4. Featured Products & Initial Products
+          if (d.featuredProducts && Array.isArray(d.featuredProducts)) {
+            const mappedFeatured = d.featuredProducts.map((p: any) => this.mapProductFromServer(p));
+            this.featuredProducts.set(mappedFeatured);
+            if (this.products().length === 0) {
+              this.products.set(mappedFeatured);
+            }
+          } else if (d.products && Array.isArray(d.products) && d.products.length > 0) {
             this.products.set(d.products.map((p: any) => this.mapProductFromServer(p)));
-          } else if (d.featuredProducts && this.products().length <= d.featuredProducts.length) {
-            this.products.set(d.featuredProducts.map((p: any) => this.mapProductFromServer(p)));
           }
 
           // 5. Store consolidated dynamic payload
@@ -1479,10 +1487,8 @@ export class DatastoreService {
   }
 
   private initRealtimeSync() {
-    // Consolidated /home loader replaces separate startup calls
+    // Consolidated /home loader provides categories, brands, navigation & featured products
     this.loadConsolidatedHome();
-    this.reloadFeaturedProducts();
-    this.reloadProducts(false);
 
 
 
@@ -1553,12 +1559,15 @@ export class DatastoreService {
   private categoriesCache$?: Observable<Category[]>;
 
   reloadCategories(force = false) {
+    if (!force && this.categories().length > 0) {
+      return;
+    }
     if (force) {
-      this.api.clearCache();
+      this.api.clearCache('categor');
       this.categoriesCache$ = undefined;
     }
     if (force || !this.categoriesCache$) {
-      this.categoriesCache$ = this.api.get<Category[]>('/categories', null, true).pipe(
+      this.categoriesCache$ = this.api.get<Category[]>('/categories', null, force).pipe(
         shareReplay(1),
         catchError(err => {
           this.categoriesCache$ = undefined;
@@ -1607,12 +1616,15 @@ export class DatastoreService {
   }
 
   reloadBrands(force = false) {
+    if (!force && this.brands().length > 0) {
+      return;
+    }
     if (force) {
-      this.api.clearCache();
+      this.api.clearCache('brand');
       this.brandsCache$ = undefined;
     }
     if (force || !this.brandsCache$) {
-      this.brandsCache$ = this.api.get<Brand[]>('/brands', null, true).pipe(
+      this.brandsCache$ = this.api.get<Brand[]>('/brands', null, force).pipe(
         shareReplay(1),
         catchError(err => {
           this.brandsCache$ = undefined;
@@ -1879,8 +1891,10 @@ export class DatastoreService {
     });
   }
 
-  reloadProducts(showLoader = true, force = false, limit = 500, search?: string) {
-    this.reloadCategories(force);
+  reloadProducts(showLoader = true, force = false, limit = 24, search?: string) {
+    if (!force && !search && this.products().length > 0) {
+      return;
+    }
     if (showLoader) {
       this.productsLoading.set(true);
     }
@@ -1914,8 +1928,11 @@ export class DatastoreService {
   }
 
   reloadFeaturedProducts(force = false) {
+    if (!force && this.featuredProducts().length > 0) {
+      return;
+    }
     if (force || !this.featuredProductsCache$) {
-      this.featuredProductsCache$ = this.api.get<{ products: any[] }>('/home/featured-products').pipe(
+      this.featuredProductsCache$ = this.api.get<{ products: any[] }>('/home/featured-products', null, force).pipe(
         shareReplay(1),
         catchError((err) => {
           console.error('Error loading featured products:', err);

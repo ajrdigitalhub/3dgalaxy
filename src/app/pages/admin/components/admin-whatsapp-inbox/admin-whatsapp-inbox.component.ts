@@ -35,31 +35,45 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
   showRightDrawer = signal<boolean>(true);
   sendErrorMessage = signal<string | null>(null);
 
+  // Auto-Reply & Configuration Modal State
+  showAutoReplyModal = signal<boolean>(false);
+  autoReplyTab = signal<'GLOBAL' | 'RULES' | 'QUICK_REPLIES'>('GLOBAL');
+  autoReplyConfig = signal<any>(null);
+  quickRepliesList = signal<any[]>([]);
+  isSavingConfig = signal<boolean>(false);
+  saveStatusMsg = signal<string | null>(null);
+
   private lastMessageCount = 0;
   private shouldScrollToBottom = false;
-
-  // Quick canned reply templates
-  readonly quickReplies = [
-    'Hello! Thank you for reaching out to 3D Galaxy. How can we assist you today?',
-    'Your order is packed and scheduled for dispatch today. Tracking details will follow shortly.',
-    'We are checking this with our logistics partner and will update you in a few minutes.',
-    'Could you please share your Order Number so we can check the status for you?',
-    'Thank you for shopping with 3D Galaxy! Let us know if you need any further assistance.'
-  ];
-
-  private pollTimer: any = null;
+  private visibilityHandler: (() => void) | null = null;
 
   ngOnInit() {
+    // 1. Initial load of conversations list
     this.waService.loadConversations();
 
-    // Real-time polling: refresh conversation list & active messages every 5s
-    this.pollTimer = setInterval(() => {
-      this.waService.loadConversations(true);
-      const active = this.waService.activeConversation();
-      if (active) {
-        this.waService.reloadActiveMessages(active.id);
-      }
-    }, 5000);
+    // 2. Connect to real-time Server-Sent Events stream for instant two-way synchronization
+    this.waService.connectToRealtimeStream();
+
+    // 3. Load quick replies & auto-reply settings
+    this.loadQuickReplies();
+    this.loadAutoReplyConfig();
+
+    // 4. Tab visibility handler: when tab regains focus, reconnect SSE stream if disconnected
+    // STRICT RULE: No continuous polling setInterval or recursive loops while idle
+    if (typeof document !== 'undefined') {
+      this.visibilityHandler = () => {
+        if (!document.hidden) {
+          if (!this.waService.isConnected()) {
+            this.waService.connectToRealtimeStream();
+          }
+          const active = this.waService.activeConversation();
+          if (active) {
+            this.waService.reloadActiveMessages(active.id, true);
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
   }
 
   ngAfterViewChecked() {
@@ -72,9 +86,144 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
   }
 
   ngOnDestroy() {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
+    this.waService.disconnectRealtimeStream();
+    if (typeof document !== 'undefined' && this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
     }
+  }
+
+  async loadQuickReplies() {
+    const list = await this.waService.getQuickReplies();
+    if (list && list.length > 0) {
+      this.quickRepliesList.set(list);
+    } else {
+      // Fallback defaults
+      this.quickRepliesList.set([
+        { id: '1', shortcut: '/order', title: 'Order ID', message: 'Could you please share your Order Number (e.g. #3DX0012) so we can check the status for you?', isActive: true },
+        { id: '2', shortcut: '/shipping', title: 'Location / Pincode', message: 'Could you please share your location or PIN code so we can confirm delivery availability?', isActive: true },
+        { id: '3', shortcut: '/support', title: 'Support Executive', message: 'Our support team is reviewing your message and will assist you shortly.', isActive: true },
+        { id: '4', shortcut: '/quote', title: '3D Print Quote', message: 'Please share your 3D model file (.STL or .OBJ) and preferred material (PLA, PETG, Resin) for an instant quote.', isActive: true }
+      ]);
+    }
+  }
+
+  async loadAutoReplyConfig() {
+    const config = await this.waService.getAutoReplyConfig();
+    if (config) {
+      this.autoReplyConfig.set(config);
+    }
+  }
+
+  openAutoReplySettings(tab: 'GLOBAL' | 'RULES' | 'QUICK_REPLIES' = 'GLOBAL') {
+    this.autoReplyTab.set(tab);
+    this.saveStatusMsg.set(null);
+    this.loadAutoReplyConfig();
+    this.loadQuickReplies();
+    this.showAutoReplyModal.set(true);
+  }
+
+  closeAutoReplySettings() {
+    this.showAutoReplyModal.set(false);
+    this.saveStatusMsg.set(null);
+  }
+
+  async saveAutoReplySettings() {
+    const cfg = this.autoReplyConfig();
+    if (!cfg) return;
+
+    this.isSavingConfig.set(true);
+    this.saveStatusMsg.set(null);
+
+    const success = await this.waService.saveAutoReplyConfig(cfg);
+    this.isSavingConfig.set(false);
+
+    if (success) {
+      this.saveStatusMsg.set('Auto-reply settings successfully saved!');
+      setTimeout(() => this.saveStatusMsg.set(null), 3000);
+    } else {
+      this.saveStatusMsg.set('Failed to save settings. Please try again.');
+    }
+  }
+
+  async saveQuickReplies() {
+    this.isSavingConfig.set(true);
+    this.saveStatusMsg.set(null);
+
+    const success = await this.waService.saveQuickReplies(this.quickRepliesList());
+    this.isSavingConfig.set(false);
+
+    if (success) {
+      this.saveStatusMsg.set('Quick replies successfully saved!');
+      setTimeout(() => this.saveStatusMsg.set(null), 3000);
+    } else {
+      this.saveStatusMsg.set('Failed to save quick replies.');
+    }
+  }
+
+  toggleRuleActive(rule: any) {
+    rule.isActive = !rule.isActive;
+  }
+
+  addNewRule() {
+    const cfg = this.autoReplyConfig();
+    if (!cfg) return;
+
+    const newRule = {
+      id: 'rule_' + Date.now(),
+      name: 'New Custom Rule',
+      priority: (cfg.rules?.length || 0) + 2,
+      triggerType: 'KEYWORD',
+      conditions: {
+        keywords: ['keyword1', 'keyword2'],
+        matchType: 'CONTAINS_ANY'
+      },
+      actionType: 'TEXT',
+      responseText: 'Thank you for reaching out! How can we assist you?',
+      delayMs: 1000,
+      isActive: true
+    };
+
+    const rules = [...(cfg.rules || []), newRule];
+    this.autoReplyConfig.set({ ...cfg, rules });
+  }
+
+  removeRule(index: number) {
+    const cfg = this.autoReplyConfig();
+    if (!cfg) return;
+    const rules = cfg.rules.filter((_: any, i: number) => i !== index);
+    this.autoReplyConfig.set({ ...cfg, rules });
+  }
+
+  updateRuleKeywords(rule: any, rawKeywords: string) {
+    const keywords = (rawKeywords || '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    rule.conditions = {
+      keywords,
+      matchType: rule.conditions?.matchType || 'CONTAINS_ANY'
+    };
+  }
+
+  addNewQuickReply() {
+    const newItem = {
+      id: 'qr_' + Date.now(),
+      shortcut: '/new',
+      title: 'New Quick Reply',
+      message: 'Type response message here...',
+      category: 'General',
+      isActive: true
+    };
+    this.quickRepliesList.update(list => [...list, newItem]);
+  }
+
+  removeQuickReply(index: number) {
+    this.quickRepliesList.update(list => list.filter((_, i) => i !== index));
+  }
+
+  async manualSync() {
+    await this.waService.syncActiveConversationNow();
+    this.shouldScrollToBottom = true;
   }
 
   selectConversation(conv: WhatsAppConversation) {
@@ -126,15 +275,19 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
     this.sendReply();
   }
 
-  insertQuickReply(text: string) {
-    this.replyText.set(text);
+  insertQuickReply(textOrQr: any) {
+    const text = typeof textOrQr === 'string' ? textOrQr : textOrQr?.message;
+    if (text) {
+      this.replyText.set(text);
+    }
   }
 
   async toggleAiMode() {
     const active = this.waService.activeConversation();
     if (!active) return;
-    const nextMode = active.aiMode === 'AI' ? 'HUMAN' : 'AI';
-    await this.waService.toggleAiMode(nextMode);
+    const isAuto = active.aiMode === 'AUTO' || active.aiMode === 'AI';
+    const nextMode = isAuto ? 'HUMAN' : 'AUTO';
+    await this.waService.toggleAiMode(nextMode as any);
   }
 
   async updateStatus(status: 'OPEN' | 'PENDING' | 'RESOLVED' | 'CLOSED') {

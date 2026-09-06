@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 import PDFDocument from 'pdfkit';
@@ -10,7 +11,9 @@ import { getSettingsService } from '../modules/settings/settings.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { WhatsAppConversationService } from '../services/whatsappConversationService';
 import { WhatsAppAiService } from '../services/whatsappAiService';
+import { WhatsAppAutoReplyService } from '../services/whatsappAutoReplyService';
 import { NotificationService } from '../services/notification.service';
+import { ConversationEventService } from '../services/conversationEventService';
 import { logger } from '../utils/logger';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 
@@ -665,12 +668,34 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                   logger.warn('[WhatsApp Webhook] Admin notification dispatch error:', err.message);
                 });
 
-                // AI Evaluation & Auto-reply (if AI mode is active)
-                if (conversation.aiMode === 'AI' || conversation.aiMode === 'HYBRID') {
-                  if (textContent && textContent.trim()) {
-                    await WhatsAppAiService.processCustomerMessage(conversation.id, textContent).catch((aiErr) => {
-                      logger.error('[WhatsApp Webhook] AI Assistant error:', aiErr.message);
-                    });
+                // Automation Routing Architecture (Section 27):
+                // 1. Human Takeover active -> Stop
+                // 2. Rule-based Auto-Reply without AI -> Try rule matching
+                // 3. If no rule matched and AI enabled (AI or HYBRID) -> AI Assistant
+                if (textContent && textContent.trim()) {
+                  if (conversation.aiMode === 'HUMAN') {
+                    logger.info(`[WhatsApp Webhook] Conversation ${conversation.id} is in HUMAN mode. Automation skipped.`);
+                  } else {
+                    let autoReplied = false;
+                    try {
+                      const autoRes = await WhatsAppAutoReplyService.processCustomerMessage(conversation.id, textContent);
+                      autoReplied = autoRes?.replied || false;
+                      if (autoReplied) {
+                        logger.info(`[WhatsApp Webhook] AUTO_REPLY_SENT: Conversation ${conversation.id} responded via rule '${autoRes.ruleName}'`);
+                      }
+                    } catch (autoErr: any) {
+                      logger.error('[WhatsApp Webhook] Rule-based auto-reply error:', autoErr.message);
+                    }
+
+                    // Fallback to AI only if auto-reply did not match and AI mode is active
+                    if (!autoReplied && (conversation.aiMode === 'AI' || conversation.aiMode === 'HYBRID')) {
+                      try {
+                        await WhatsAppAiService.processCustomerMessage(conversation.id, textContent);
+                        logger.info(`[WhatsApp Webhook] AI_SENT: Conversation ${conversation.id} responded via AI Assistant`);
+                      } catch (aiErr: any) {
+                        logger.error('[WhatsApp Webhook] AI Assistant error:', aiErr.message);
+                      }
+                    }
                   }
                 }
               }
@@ -867,20 +892,59 @@ export const getAdminWhatsappMessages = async (req: Request, res: Response) => {
       queryOptions.skip = 1;
     }
 
-    const msgModel = (prisma as any).whatsappMessage;
-    if (!msgModel) {
-      return res.status(200).json({ success: true, messages: [], nextCursor: null });
+    // When fetching latest messages without pagination cursor, run status reconciliation
+    let messages: any[] = [];
+    if (!cursor) {
+      messages = await WhatsAppConversationService.syncConversationMessages(id, limitNum);
+    } else {
+      const msgModel = (prisma as any).whatsappMessage;
+      if (!msgModel) {
+        return res.status(200).json({ success: true, messages: [], nextCursor: null });
+      }
+      const rawMessages = await msgModel.findMany(queryOptions);
+      messages = rawMessages.reverse();
     }
-
-    const messages = await msgModel.findMany(queryOptions);
 
     return res.status(200).json({
       success: true,
-      messages: messages.reverse(),
+      messages,
       nextCursor: messages.length === limitNum ? messages[0]?.id : null
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch messages', details: error.message });
+  }
+};
+
+/**
+ * Explicit live sync endpoint for admin WhatsApp inbox.
+ * Reconciles read/delivered receipts and returns latest messages.
+ */
+export const syncAdminWhatsappConversation = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const conversation = await prisma.whatsappConversation.findUnique({
+      where: { id },
+      include: {
+        customer: { include: { user: true } },
+        assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
+      }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const messages = await WhatsAppConversationService.syncConversationMessages(id, 50);
+
+    return res.status(200).json({
+      success: true,
+      conversation,
+      messages,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    logger.error('[syncAdminWhatsappConversation Error]:', error);
+    return res.status(500).json({ error: 'Failed to sync conversation', details: error.message });
   }
 };
 
@@ -992,6 +1056,13 @@ export const handleUpdateConversationStatus = async (req: Request, res: Response
       data: { status: String(status).toUpperCase(), updatedAt: new Date() }
     });
 
+    ConversationEventService.broadcast({
+      type: 'CONVERSATION_UPDATED',
+      conversationId: id,
+      conversation: updated,
+      timestamp: new Date().toISOString()
+    });
+
     return res.status(200).json({ success: true, conversation: updated });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update conversation status', details: error.message });
@@ -1003,7 +1074,7 @@ export const handleUpdateConversationMode = async (req: Request, res: Response) 
     const { id } = req.params;
     const { aiMode } = req.body;
 
-    const validModes = ['AI', 'HUMAN', 'HYBRID'];
+    const validModes = ['AUTO', 'HUMAN', 'AI', 'HYBRID'];
     if (!validModes.includes(String(aiMode).toUpperCase())) {
       return res.status(400).json({ error: `Invalid mode. Must be one of: ${validModes.join(', ')}` });
     }
@@ -1011,6 +1082,13 @@ export const handleUpdateConversationMode = async (req: Request, res: Response) 
     const updated = await prisma.whatsappConversation.update({
       where: { id },
       data: { aiMode: String(aiMode).toUpperCase(), updatedAt: new Date() }
+    });
+
+    ConversationEventService.broadcast({
+      type: 'CONVERSATION_UPDATED',
+      conversationId: id,
+      conversation: updated,
+      timestamp: new Date().toISOString()
     });
 
     return res.status(200).json({ success: true, conversation: updated });
@@ -1032,10 +1110,53 @@ export const handleAssignConversation = async (req: Request, res: Response) => {
       }
     });
 
+    ConversationEventService.broadcast({
+      type: 'CONVERSATION_UPDATED',
+      conversationId: id,
+      conversation: updated,
+      timestamp: new Date().toISOString()
+    });
+
     return res.status(200).json({ success: true, conversation: updated });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to assign conversation', details: error.message });
   }
+};
+
+/**
+ * Real-time SSE Stream for WhatsApp Inbox Live Events
+ * Endpoint: GET /api/admin/whatsapp/stream
+ */
+export const whatsappStream = (req: Request, res: Response) => {
+  const token = (req.query.token as string) || (req.headers.authorization?.replace(/^Bearer\s+/i, ''));
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token for real-time stream' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret') as any;
+    if (!decoded) {
+      return res.status(403).json({ error: 'Forbidden: Invalid token' });
+    }
+  } catch (err) {
+    return res.status(403).json({ error: 'Forbidden: Token expired or invalid' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  const clientId = `admin_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  ConversationEventService.addClient(clientId, res);
+
+  // Send initial handshake
+  res.write(`data: ${JSON.stringify({ type: 'CONNECTED', clientId, timestamp: new Date().toISOString() })}\n\n`);
+
+  req.on('close', () => {
+    ConversationEventService.removeClient(clientId);
+    res.end();
+  });
 };
 
 export const handleMarkConversationRead = async (req: Request, res: Response) => {
@@ -1600,4 +1721,48 @@ export const startRetryWorker = () => {
       console.error('Error in background WhatsApp retry worker:', e);
     }
   }, 60000); // Check every minute
+};
+
+// ==========================================
+// ADMIN AUTO-REPLIES & QUICK REPLIES
+// ==========================================
+
+export const getAdminWhatsappAutoReplies = async (req: Request, res: Response) => {
+  try {
+    const config = await WhatsAppAutoReplyService.getConfig();
+    return res.status(200).json({ success: true, config });
+  } catch (error: any) {
+    logger.error('[getAdminWhatsappAutoReplies Error]:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const saveAdminWhatsappAutoReplies = async (req: Request, res: Response) => {
+  try {
+    const saved = await WhatsAppAutoReplyService.saveConfig(req.body);
+    return res.status(200).json({ success: true, config: saved });
+  } catch (error: any) {
+    logger.error('[saveAdminWhatsappAutoReplies Error]:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const getAdminWhatsappQuickReplies = async (req: Request, res: Response) => {
+  try {
+    const quickReplies = await WhatsAppAutoReplyService.getQuickReplies();
+    return res.status(200).json({ success: true, quickReplies });
+  } catch (error: any) {
+    logger.error('[getAdminWhatsappQuickReplies Error]:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const saveAdminWhatsappQuickReplies = async (req: Request, res: Response) => {
+  try {
+    const saved = await WhatsAppAutoReplyService.saveQuickReplies(req.body);
+    return res.status(200).json({ success: true, quickReplies: saved });
+  } catch (error: any) {
+    logger.error('[saveAdminWhatsappQuickReplies Error]:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
 };

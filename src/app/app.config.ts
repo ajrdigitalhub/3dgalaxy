@@ -20,6 +20,7 @@ import {
   withFetch,
   withInterceptors,
 } from "@angular/common/http";
+import { deduplicationInterceptor } from "./core/interceptors/deduplication.interceptor";
 import { loadingInterceptor } from "./core/interceptors/loading.interceptor";
 import { errorInterceptor } from "./core/interceptors/error.interceptor";
 import { apiUrlInterceptor } from "./core/interceptors/api-url.interceptor";
@@ -92,6 +93,7 @@ export const appConfig: ApplicationConfig = {
         apiUrlInterceptor,
         errorInterceptor,
         authInterceptor,
+        deduplicationInterceptor,
         loadingInterceptor,
       ]),
     ),

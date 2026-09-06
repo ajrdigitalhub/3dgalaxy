@@ -2,6 +2,53 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../config/database';
 
+interface DirectoryKpis {
+  totalSpend: number;
+  repeatBuyersCount: number;
+  timestamp: number;
+}
+let cachedDirectoryKpis: DirectoryKpis | null = null;
+const DIRECTORY_KPIS_TTL = 3 * 60 * 1000; // 3 minutes cache
+
+async function getDirectoryKpis(): Promise<{ totalSpend: number; repeatBuyersCount: number }> {
+  if (cachedDirectoryKpis && Date.now() - cachedDirectoryKpis.timestamp < DIRECTORY_KPIS_TTL) {
+    return {
+      totalSpend: cachedDirectoryKpis.totalSpend,
+      repeatBuyersCount: cachedDirectoryKpis.repeatBuyersCount,
+    };
+  }
+
+  const [totalDirectorySpendAgg, repeatBuyersGroup] = await Promise.all([
+    prisma.order.aggregate({
+      _sum: {
+        totalAmount: true
+      },
+      where: {
+        status: {
+          notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
+        }
+      }
+    }),
+    prisma.order.groupBy({
+      by: ['customerId'],
+      where: {
+        customerId: { not: null },
+        status: {
+          notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
+        }
+      },
+      _count: { customerId: true },
+      having: { customerId: { _count: { gte: 2 } } }
+    })
+  ]);
+
+  const totalSpend = Number(totalDirectorySpendAgg._sum.totalAmount || 0);
+  const repeatBuyersCount = repeatBuyersGroup.length;
+  cachedDirectoryKpis = { totalSpend, repeatBuyersCount, timestamp: Date.now() };
+
+  return { totalSpend, repeatBuyersCount };
+}
+
 // 1. Get Customers List (Server-side Paginated, Filtered, Sorted)
 export const getCustomers = async (req: Request, res: Response) => {
   try {
@@ -70,10 +117,8 @@ export const getCustomers = async (req: Request, res: Response) => {
       orderBy = { [sortField]: sortOrder };
     }
 
-
-
     // Execute queries in parallel
-    const [total, list, totalActive, totalBlocked, totalDirectorySpendAgg, repeatBuyersGroup] = await Promise.all([
+    const [total, list, totalActive, totalBlocked, directoryKpis] = await Promise.all([
       prisma.customer.count({ where }),
       prisma.customer.findMany({
         where,
@@ -93,30 +138,11 @@ export const getCustomers = async (req: Request, res: Response) => {
       }),
       prisma.customer.count({ where: { ...where, user: { ...where.user, isActive: true } } }),
       prisma.customer.count({ where: { ...where, user: { ...where.user, isActive: false } } }),
-      prisma.order.aggregate({
-        _sum: {
-          totalAmount: true
-        },
-        where: {
-          status: {
-            notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
-          }
-        }
-      }),
-      prisma.order.groupBy({
-        by: ['customerId'],
-        where: {
-          customerId: { not: null },
-          status: {
-            notIn: ['CANCELLED', 'REJECTED', 'FAILED', 'Cancelled', 'Rejected', 'Failed']
-          }
-        },
-        _count: { customerId: true },
-        having: { customerId: { _count: { gte: 2 } } }
-      })
+      getDirectoryKpis()
     ]);
 
-    const repeatBuyersCount = repeatBuyersGroup.length;
+    const repeatBuyersCount = directoryKpis.repeatBuyersCount;
+    const totalDirectorySpend = directoryKpis.totalSpend;
 
     // Map list for client response
     const data = list.map((c) => {
@@ -149,8 +175,6 @@ export const getCustomers = async (req: Request, res: Response) => {
         profileImage: c.user?.profileImage || '',
       };
     });
-
-    const totalDirectorySpend = Number(totalDirectorySpendAgg._sum.totalAmount || 0);
 
     return res.status(200).json({
       success: true,

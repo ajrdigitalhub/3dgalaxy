@@ -193,8 +193,7 @@ export class SettingsService {
         }
       });
 
-      // DISABLED: Version polling was triggering /api/settings/version every 12s — excessive billing
-      // this.initVersionPolling();
+      this.setupVisibilitySync();
     }
   }
 
@@ -212,13 +211,18 @@ export class SettingsService {
     }
   }
 
-  private initVersionPolling() {
-    if (typeof window === "undefined") return;
-    setInterval(() => {
+  private lastVisibilityCheck = 0;
+  private setupVisibilitySync() {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        this.checkVersionAndSync();
+        const now = Date.now();
+        if (now - this.lastVisibilityCheck > 300000) {
+          this.lastVisibilityCheck = now;
+          this.checkVersionAndSync();
+        }
       }
-    }, 12000);
+    });
   }
 
   private async checkVersionAndSync() {
@@ -434,6 +438,7 @@ export class SettingsService {
   }
 
   async loadSettings(force = false) {
+    if (!force && this.isLoaded()) return this.settingsData();
     if (this.loadPromise && !force) return this.loadPromise;
 
     // Immediately hydrate from localStorage if available for fast initial rendering

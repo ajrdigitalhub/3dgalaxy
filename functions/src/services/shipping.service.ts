@@ -125,19 +125,26 @@ export class ShippingService {
     let totalCartSubtotal = 0;
     let totalCartWeightGrams = 0;
 
+    const productIds = Array.from(new Set(items.map(i => i.productId).filter(Boolean)));
+    const products = productIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          include: {
+            category: true,
+            productCategories: {
+              include: { category: true },
+              orderBy: { sortOrder: 'asc' },
+            },
+            variants: true,
+          },
+        })
+      : [];
+
+    const productMap = new Map(products.map(p => [p.id, p]));
+
     for (const item of items) {
       if (!item.productId) continue;
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-        include: {
-          category: true,
-          productCategories: {
-            include: { category: true },
-            orderBy: { sortOrder: 'asc' },
-          },
-          variants: true,
-        },
-      });
+      const product = productMap.get(item.productId);
 
       if (product) {
         const qty = Math.max(1, Number(item.quantity) || 1);

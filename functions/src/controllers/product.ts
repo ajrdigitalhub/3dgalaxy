@@ -129,39 +129,29 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
 
   pendingMappedProductsPromise = (async () => {
     try {
-      const [items, allCustomerReviews] = await Promise.all([
-        prisma.product.findMany({
-          where: { deletedAt: null, isActive: true },
-          include: {
-            brand: true,
-            category: true,
-            productCategories: {
-              include: { category: true }
-            },
-            variants: {
-              where: { isActive: true }
-            },
-            reviews: {
-              include: { user: true }
-            },
-          }
-        }),
-        prisma.customerReview.findMany({
-          include: {
-            customer: {
-              include: { user: true }
+      const items = await prisma.product.findMany({
+        where: { deletedAt: null, isActive: true },
+        include: {
+          brand: true,
+          category: true,
+          productCategories: {
+            include: { category: true }
+          },
+          variants: {
+            where: { isActive: true }
+          },
+          reviews: {
+            include: { user: true }
+          },
+          customerReviews: {
+            include: {
+              customer: {
+                include: { user: true }
+              }
             }
           }
-        })
-      ]);
-
-      const customerReviewsByProduct = new Map<string, any[]>();
-      for (const cr of allCustomerReviews) {
-        if (!customerReviewsByProduct.has(cr.productId)) {
-          customerReviewsByProduct.set(cr.productId, []);
         }
-        customerReviewsByProduct.get(cr.productId)!.push(cr);
-      }
+      });
 
       const getSpecsArray = (specsJson: any): any[] => {
         if (!specsJson) return [];
@@ -174,7 +164,7 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
 
       const allMapped = items.map(p => {
         const specs = getSpecsArray(p.specifications);
-        const prodCustReviews = customerReviewsByProduct.get(p.id) || [];
+        const prodCustReviews = (p as any).customerReviews || [];
         const combinedRawReviews = [...(p.reviews || []), ...prodCustReviews];
 
         const mappedReviews = combinedRawReviews.map((review: any) => {
@@ -971,7 +961,22 @@ export const getProducts = async (req: Request, res: Response) => {
 
     // Paging
     const total = filtered.length;
-    const paginated = filtered.slice(skip, skip + limitNum);
+    const paginated = filtered.slice(skip, skip + limitNum).map((p: any) => {
+      const {
+        downloads,
+        specifications,
+        faqs,
+        warrantyHtml,
+        bundleProducts,
+        recommendedFilaments,
+        relatedProducts,
+        ...lean
+      } = p;
+      return {
+        ...lean,
+        reviews: [] // Empty array preserves type safety while saving bandwidth; avgRating and reviewCount are kept at root
+      };
+    });
 
     const finalResponse = {
       products: paginated,

@@ -10,7 +10,7 @@ import { isPlatformBrowser } from "@angular/common";
 import { ApiService } from "./api.service";
 import { DatastoreService } from "./datastore";
 import { initFirebase, app } from "../firebase";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, Observable, firstValueFrom } from "rxjs";
 import { SettingsService } from "../core/services/settings.service";
 
 export interface InboxNotification {
@@ -92,7 +92,12 @@ export class NotificationService {
     }
   }
 
+  private fcmConfigPromise: Promise<any> | null = null;
+  private popupConfigLoaded = false;
+
   fetchPopupConfig() {
+    if (this.popupConfigLoaded) return;
+    this.popupConfigLoaded = true;
     this.api.get<any>('/notifications/popup-config').subscribe({
       next: (res) => {
         if (res && res.success && res.data) {
@@ -100,19 +105,36 @@ export class NotificationService {
           this.initPopupTriggers();
         }
       },
-      error: (err) => console.error("Failed to load popup config:", err)
+      error: (err) => {
+        this.popupConfigLoaded = false;
+        console.error("Failed to load popup config:", err);
+      }
     });
   }
 
-  fetchFcmConfig() {
-    this.api.get<any>('/notifications/fcm-config/public').subscribe({
-      next: (res) => {
+  async fetchFcmConfig(): Promise<any> {
+    if (this.publicFcmConfig()) {
+      return this.publicFcmConfig();
+    }
+    if (this.fcmConfigPromise) {
+      return this.fcmConfigPromise;
+    }
+    this.fcmConfigPromise = firstValueFrom(this.api.get<any>('/notifications/fcm-config/public'))
+      .then((res) => {
         if (res && res.success && res.data) {
           this.publicFcmConfig.set(res.data);
+          return res.data;
         }
-      },
-      error: (err) => console.error("Failed to load public FCM config:", err)
-    });
+        return null;
+      })
+      .catch((err) => {
+        console.error("Failed to load public FCM config:", err);
+        return null;
+      })
+      .finally(() => {
+        this.fcmConfigPromise = null;
+      });
+    return this.fcmConfigPromise;
   }
 
   private initPopupTriggers() {
@@ -278,15 +300,7 @@ export class NotificationService {
 
     let config = this.publicFcmConfig();
     if (!config) {
-      try {
-        const res = await this.api.get<any>('/notifications/fcm-config/public').toPromise();
-        if (res && res.success && res.data) {
-          this.publicFcmConfig.set(res.data);
-          config = res.data;
-        }
-      } catch (err) {
-        console.warn("Failed to fetch public FCM config for SW registration:", err);
-      }
+      config = await this.fetchFcmConfig();
     }
 
     const cfg = config || {};

@@ -11,10 +11,6 @@ export class ProductService {
   products = signal<Product[]>([]);
   isLoading = signal<boolean>(false);
 
-  constructor() {
-    this.loadProducts();
-  }
-
   loadProducts(searchQuery?: string) {
     this.isLoading.set(true);
     const params: any = { limit: 500 };

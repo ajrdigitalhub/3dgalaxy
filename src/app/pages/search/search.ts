@@ -4,15 +4,17 @@ import {
   inject,
   OnInit,
   signal,
-  effect,
+  DestroyRef,
 } from "@angular/core";
-import { CommonModule, isPlatformBrowser } from "@angular/common";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Router, ActivatedRoute, RouterModule } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { FormsModule } from "@angular/forms";
-import { PLATFORM_ID } from "@angular/core";
 import { DatastoreService } from "../../services/datastore";
+import { Subject, of } from "rxjs";
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 
@@ -28,6 +30,7 @@ export class SearchComponent implements OnInit {
   private router = inject(Router);
   private http = inject(HttpClient);
   public ds = inject(DatastoreService);
+  private destroyRef = inject(DestroyRef);
 
   query = signal<string>("");
   activeTab = signal<string>("all");
@@ -43,14 +46,43 @@ export class SearchComponent implements OnInit {
 
   priceRange = signal([0, 10000]);
 
+  private searchSubject = new Subject<string>();
+
   ngOnInit() {
-    this.route.queryParams.subscribe((params) => {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((q) => {
+        const clean = (q || '').trim();
+        if (!clean) {
+          this.loading.set(false);
+          return of({ success: true, data: { products: [], categories: [], brands: [], services: [] } });
+        }
+        this.loading.set(true);
+        return this.http.get<any>(`/api/search?q=${encodeURIComponent(clean)}`).pipe(
+          catchError((err) => {
+            console.error("Search failed:", err);
+            return of({ success: false, data: { products: [], categories: [], brands: [], services: [] } });
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((res: any) => {
+      this.loading.set(false);
+      if (res && res.success && res.data) {
+        this.results.set(res.data);
+      }
+    });
+
+    this.route.queryParams.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((params) => {
       if (params["q"]) {
         this.query.set(params["q"]);
         if (params["tab"]) {
           this.activeTab.set(params["tab"]);
         }
-        this.performSearch(params["q"]);
+        this.searchSubject.next(params["q"]);
       }
     });
   }
@@ -75,19 +107,6 @@ export class SearchComponent implements OnInit {
   }
 
   performSearch(q: string) {
-    if (!q) return;
-    this.loading.set(true);
-
-    this.http.get<any>(`/api/search?q=${encodeURIComponent(q)}`).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.results.set(res.data);
-        }
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      },
-    });
+    this.searchSubject.next(q);
   }
 }

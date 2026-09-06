@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { logger } from '../utils/logger';
+import { ConversationEventService } from './conversationEventService';
 
 export interface InboundWhatsAppMessageData {
   whatsappMessageId: string;
@@ -17,21 +18,34 @@ export interface InboundWhatsAppMessageData {
 export class WhatsAppConversationService {
   /**
    * Normalizes phone number into standard variations for robust matching.
-   * e.g. "919876543210" -> e164: "+919876543210", raw10: "9876543210", meta: "919876543210"
+   * e.g. "919876543210", "+919876543210", "+91919876543210", "09876543210"
+   * All resolve to canonical e164: "+919876543210", raw10: "9876543210"
    */
-  public static normalizePhone(phone: string): { e164: string; raw10: string; meta: string } {
+  public static normalizePhone(phone: string): { e164: string; raw10: string; meta: string; candidates: string[] } {
     const cleanDigits = (phone || '').replace(/[^\d]/g, '');
     let raw10 = cleanDigits;
-    if (cleanDigits.length > 10 && cleanDigits.startsWith('91')) {
-      raw10 = cleanDigits.slice(2);
-    } else if (cleanDigits.length > 10) {
+    if (cleanDigits.length >= 10) {
       raw10 = cleanDigits.slice(-10);
     }
 
     const meta = `91${raw10}`;
     const e164 = `+91${raw10}`;
 
-    return { e164, raw10, meta };
+    const candidates = Array.from(
+      new Set([
+        phone,
+        e164,
+        raw10,
+        meta,
+        `0${raw10}`,
+        `+9191${raw10}`,
+        `9191${raw10}`,
+        `+910${raw10}`,
+        `0091${raw10}`
+      ].filter(Boolean))
+    );
+
+    return { e164, raw10, meta, candidates };
   }
 
   /**
@@ -41,13 +55,12 @@ export class WhatsAppConversationService {
     phone: string,
     profileName?: string
   ): Promise<{ customer: any; isNew: boolean }> {
-    const { e164, raw10, meta } = this.normalizePhone(phone);
-    const phoneCandidates = [phone, e164, raw10, meta, `0${raw10}`];
+    const { e164, raw10, candidates } = this.normalizePhone(phone);
 
-    // 1. Check Customer table by phone
+    // 1. Check Customer table by phone candidates
     let customer = await prisma.customer.findFirst({
       where: {
-        phone: { in: phoneCandidates }
+        phone: { in: candidates }
       },
       include: { user: true }
     });
@@ -59,7 +72,7 @@ export class WhatsAppConversationService {
     // 2. Check User table by mobile
     const userWithMobile = await prisma.user.findFirst({
       where: {
-        mobile: { in: phoneCandidates }
+        mobile: { in: candidates }
       },
       include: { customers: true }
     });
@@ -86,11 +99,7 @@ export class WhatsAppConversationService {
     if ((prisma as any).customerAddress) {
       const matchingAddress = await (prisma as any).customerAddress.findFirst({
         where: {
-          OR: [
-            { phone: raw10 },
-            { phone: e164 },
-            { phone: meta }
-          ]
+          phone: { in: candidates }
         },
         include: { customer: { include: { user: true } } }
       }).catch(() => null);
@@ -149,21 +158,20 @@ export class WhatsAppConversationService {
   }
 
   /**
-   * Finds an active conversation or creates a new conversation for the phone/customer.
+   * Finds an active conversation or reopens an existing conversation for the phone/customer.
    */
   public static async findOrCreateConversation(
     phone: string,
     customer: any,
     profileName?: string
   ): Promise<{ conversation: any; isNew: boolean }> {
-    const { e164, raw10, meta } = this.normalizePhone(phone);
-    const phoneCandidates = [phone, e164, raw10, meta];
+    const { e164, candidates } = this.normalizePhone(phone);
 
-    // Find active (OPEN or PENDING) conversation
+    // 1. Find active (OPEN or PENDING) conversation first
     let conversation = await prisma.whatsappConversation.findFirst({
       where: {
         OR: [
-          { phone: { in: phoneCandidates } },
+          { phone: { in: candidates } },
           ...(customer?.id ? [{ customerId: customer.id }] : [])
         ],
         status: { in: ['OPEN', 'PENDING'] }
@@ -176,11 +184,14 @@ export class WhatsAppConversationService {
     });
 
     if (conversation) {
-      // Update customer link if missing
-      if (!conversation.customerId && customer?.id) {
+      // Update customer link and phone normalization if needed
+      if ((!conversation.customerId && customer?.id) || conversation.phone !== e164) {
         conversation = await prisma.whatsappConversation.update({
           where: { id: conversation.id },
-          data: { customerId: customer.id },
+          data: {
+            customerId: customer?.id || conversation.customerId,
+            phone: e164
+          },
           include: {
             customer: { include: { user: true } },
             assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
@@ -190,7 +201,40 @@ export class WhatsAppConversationService {
       return { conversation, isNew: false };
     }
 
-    // Create new conversation
+    // 2. Check if ANY existing conversation exists (e.g. RESOLVED or CLOSED) and reopen it
+    const pastConversation = await prisma.whatsappConversation.findFirst({
+      where: {
+        OR: [
+          { phone: { in: candidates } },
+          ...(customer?.id ? [{ customerId: customer.id }] : [])
+        ]
+      },
+      include: {
+        customer: { include: { user: true } },
+        assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
+      },
+      orderBy: { lastMessageAt: 'desc' }
+    });
+
+    if (pastConversation) {
+      conversation = await prisma.whatsappConversation.update({
+        where: { id: pastConversation.id },
+        data: {
+          status: 'OPEN',
+          phone: e164,
+          customerId: customer?.id || pastConversation.customerId,
+          updatedAt: new Date()
+        },
+        include: {
+          customer: { include: { user: true } },
+          assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
+        }
+      });
+      logger.info(`[WhatsAppConversationService] Reopened conversation ${conversation.id} for phone ${e164}`);
+      return { conversation, isNew: false };
+    }
+
+    // 3. Create new conversation if none existed before
     const customerFullName = customer?.user
       ? `${customer.user.firstName || ''} ${customer.user.lastName || ''}`.trim()
       : (profileName || 'WhatsApp Customer');
@@ -201,7 +245,7 @@ export class WhatsAppConversationService {
         customerId: customer?.id || null,
         customerName: customerFullName,
         status: 'OPEN',
-        aiMode: 'AI',
+        aiMode: 'AUTO',
         unreadCount: 0,
         lastMessage: '',
         lastMessageAt: new Date(),
@@ -264,6 +308,21 @@ export class WhatsAppConversationService {
       }
     });
 
+    // 4b. When customer replies, all preceding outbound messages in this conversation have been seen/read
+    await prisma.whatsappMessage.updateMany({
+      where: {
+        conversationId: conversation.id,
+        direction: 'OUTBOUND',
+        status: { in: ['SENT', 'DELIVERED'] }
+      },
+      data: {
+        status: 'READ',
+        updatedAt: new Date()
+      }
+    }).catch((err) => {
+      logger.warn(`[WhatsAppConversationService] Failed to auto-mark outbound messages as READ: ${err.message}`);
+    });
+
     // 5. Update conversation unread count and latest message preview
     const previewText = data.messageText || `[${data.messageType.toUpperCase()} Message]`;
     const updatedConv = await prisma.whatsappConversation.update({
@@ -273,7 +332,7 @@ export class WhatsAppConversationService {
         lastMessageAt: data.timestamp || new Date(),
         lastDirection: 'INBOUND',
         unreadCount: { increment: 1 },
-        status: conversation.status === 'RESOLVED' || conversation.status === 'CLOSED' ? 'OPEN' : conversation.status
+        status: 'OPEN'
       },
       include: {
         customer: { include: { user: true } },
@@ -281,17 +340,26 @@ export class WhatsAppConversationService {
       }
     });
 
+    // 6. Broadcast Real-time Server-Sent Event to Admin Inbox
+    ConversationEventService.broadcast({
+      type: 'MESSAGE_RECEIVED',
+      conversationId: conversation.id,
+      message,
+      conversation: updatedConv,
+      timestamp: new Date().toISOString()
+    });
+
     return { message, conversation: updatedConv, isDuplicate: false };
   }
 
   /**
-   * Stores an outbound message (from Admin or AI).
+   * Stores an outbound message (from Admin, Quick Reply, Auto-Reply, or AI).
    */
   public static async recordOutboundMessage(params: {
     conversationId: string;
     customerId?: string | null;
     whatsappMessageId?: string | null;
-    senderType: 'ADMIN' | 'AI' | 'SYSTEM';
+    senderType: 'ADMIN' | 'AUTO' | 'AI' | 'SYSTEM';
     senderId?: string | null;
     messageType?: string;
     messageText: string;
@@ -344,7 +412,7 @@ export class WhatsAppConversationService {
     });
 
     // Update conversation
-    await prisma.whatsappConversation.update({
+    const updatedConv = await prisma.whatsappConversation.update({
       where: { id: conversationId },
       data: {
         lastMessage: messageText || `[${messageType.toUpperCase()} Attachment]`,
@@ -353,11 +421,21 @@ export class WhatsAppConversationService {
       }
     });
 
+    // Broadcast Real-time Server-Sent Event to Admin Inbox
+    ConversationEventService.broadcast({
+      type: 'MESSAGE_SENT',
+      conversationId,
+      message,
+      conversation: updatedConv,
+      timestamp: new Date().toISOString()
+    });
+
     return message;
   }
 
   /**
    * Updates message delivery and read status from Meta webhook status receipts.
+   * Enforces status rank hierarchy to prevent out-of-order webhook regressions.
    */
   public static async updateMessageStatus(
     whatsappMessageId: string,
@@ -367,10 +445,11 @@ export class WhatsAppConversationService {
   ): Promise<boolean> {
     if (!whatsappMessageId) return false;
 
+    const normalizedStatus = String(statusStr || '').toLowerCase();
     let dbStatus = 'SENT';
-    if (statusStr === 'delivered') dbStatus = 'DELIVERED';
-    if (statusStr === 'read') dbStatus = 'READ';
-    if (statusStr === 'failed') dbStatus = 'FAILED';
+    if (normalizedStatus === 'delivered') dbStatus = 'DELIVERED';
+    if (normalizedStatus === 'read') dbStatus = 'READ';
+    if (normalizedStatus === 'failed') dbStatus = 'FAILED';
 
     const msg = await prisma.whatsappMessage.findUnique({
       where: { whatsappMessageId }
@@ -378,7 +457,24 @@ export class WhatsAppConversationService {
 
     if (!msg) return false;
 
-    await prisma.whatsappMessage.update({
+    // Status precedence hierarchy: FAILED (-1) < PENDING (0) < SENT (1) < DELIVERED (2) < READ (3)
+    const rank: Record<string, number> = {
+      FAILED: -1,
+      PENDING: 0,
+      SENT: 1,
+      DELIVERED: 2,
+      READ: 3
+    };
+
+    const currentRank = rank[msg.status] ?? 0;
+    const newRank = rank[dbStatus] ?? 0;
+
+    // Never downgrade status if new rank is lower (e.g. out-of-order 'sent' arriving after 'delivered' or 'read')
+    if (dbStatus !== 'FAILED' && newRank <= currentRank) {
+      return true;
+    }
+
+    const updated = await prisma.whatsappMessage.update({
       where: { id: msg.id },
       data: {
         status: dbStatus,
@@ -387,6 +483,56 @@ export class WhatsAppConversationService {
       }
     });
 
+    ConversationEventService.broadcast({
+      type: 'STATUS_CHANGED',
+      conversationId: msg.conversationId,
+      message: updated,
+      timestamp: new Date().toISOString()
+    });
+
     return true;
+  }
+
+  /**
+   * Reconciles message statuses in a conversation and returns latest messages.
+   * If customer has replied, any earlier outbound messages are marked as READ.
+   */
+  public static async syncConversationMessages(conversationId: string, limit = 40): Promise<any[]> {
+    // 1. Check if any inbound customer message exists
+    const latestInbound = await prisma.whatsappMessage.findFirst({
+      where: {
+        conversationId,
+        direction: 'INBOUND'
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // 2. If inbound message exists, ensure preceding outbound messages are marked READ
+    if (latestInbound) {
+      await prisma.whatsappMessage.updateMany({
+        where: {
+          conversationId,
+          direction: 'OUTBOUND',
+          status: { in: ['SENT', 'DELIVERED'] },
+          createdAt: { lte: latestInbound.createdAt }
+        },
+        data: {
+          status: 'READ',
+          updatedAt: new Date()
+        }
+      }).catch(() => {});
+    }
+
+    // 3. Fetch latest messages in chronological order
+    const messages = await prisma.whatsappMessage.findMany({
+      where: { conversationId },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sender: { select: { id: true, firstName: true, lastName: true } }
+      }
+    });
+
+    return messages.reverse();
   }
 }

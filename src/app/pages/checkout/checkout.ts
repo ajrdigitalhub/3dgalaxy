@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   HostListener,
   OnInit,
 } from "@angular/core";
@@ -241,8 +242,6 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit() {
     this.restoreDraftState();
-    this.ds.reloadCategories(false);
-    this.ds.reloadProducts(false);
     if (this.isLoggedIn()) {
       this.fetchSavedAddresses();
     } else {
@@ -266,11 +265,15 @@ export class CheckoutComponent implements OnInit {
         } else if (this.isLoggedIn()) {
           const u = this.ds.activeUser();
           if (u) {
-            if (u.name && !this.name()) this.name.set(u.name);
-            if (u.email) this.email.set(u.email);
-            if (u.phone && (this.isPhoneLocked() || !this.phone())) this.phone.set(u.phone);
+            untracked(() => {
+              if (u.name && !this.name()) this.name.set(u.name);
+              if (u.email && !this.email()) this.email.set(u.email);
+              if (u.phone && (this.isPhoneLocked() || !this.phone())) this.phone.set(u.phone);
+            });
           }
-          this.fetchSavedAddresses();
+          if (untracked(() => this.savedAddresses().length === 0 && !this.isLoadingAddresses())) {
+            this.fetchSavedAddresses();
+          }
         }
       },
       { allowSignalWrites: true },
@@ -344,7 +347,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   // --- Saved Address Logic ---
-  fetchSavedAddresses() {
+  fetchSavedAddresses(force = false) {
+    if (!force && (this.isLoadingAddresses() || this.savedAddresses().length > 0)) return;
     this.isLoadingAddresses.set(true);
     this.api.get<any>("/customer/addresses").subscribe({
       next: (res) => {

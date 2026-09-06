@@ -197,8 +197,35 @@ export const getOrders = async (req: Request, res: Response) => {
           billingAddress: true,
           items: {
             include: {
-              product: true,
-              variant: true
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  sku: true,
+                  basePrice: true,
+                  salePrice: true,
+                  images: true,
+                  brandId: true,
+                  categoryId: true,
+                  codAvailable: true,
+                  weightInGrams: true,
+                  weightUnit: true
+                }
+              },
+              variant: {
+                select: {
+                  id: true,
+                  name: true,
+                  sku: true,
+                  price: true,
+                  salePrice: true,
+                  variantImages: true,
+                  weight: true,
+                  stock: true,
+                  isActive: true
+                }
+              }
             }
           },
           payments: true
@@ -223,7 +250,7 @@ export const getMyOrders = async (req: any, res: Response) => {
     const page = parseInt(req.query.page as string, 10) || 1;
     const limitQuery = req.query.limit as string;
     const isAll = limitQuery === 'all' || limitQuery === '-1';
-    const limitNum = isAll ? 500 : (parseInt(limitQuery, 10) || 50);
+    const limitNum = isAll ? 500 : (parseInt(limitQuery, 10) || 10);
     const skip = isAll ? 0 : (page - 1) * limitNum;
 
     const customer = await prisma.customer.findFirst({ where: { userId } });
@@ -247,8 +274,35 @@ export const getMyOrders = async (req: any, res: Response) => {
           billingAddress: true,
           items: {
             include: {
-              product: true,
-              variant: true
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  sku: true,
+                  basePrice: true,
+                  salePrice: true,
+                  images: true,
+                  brandId: true,
+                  categoryId: true,
+                  codAvailable: true,
+                  weightInGrams: true,
+                  weightUnit: true
+                }
+              },
+              variant: {
+                select: {
+                  id: true,
+                  name: true,
+                  sku: true,
+                  price: true,
+                  salePrice: true,
+                  variantImages: true,
+                  weight: true,
+                  stock: true,
+                  isActive: true
+                }
+              }
             }
           },
           payments: true

@@ -10,12 +10,11 @@ export class BrandService {
 
   brands = signal<Brand[]>([]);
 
-  constructor() {
-    this.loadBrands();
-  }
-
-  loadBrands() {
-    this.api.get<Brand[]>('/brands').subscribe({
+  loadBrands(force = false) {
+    if (!force && this.brands().length > 0) {
+      return;
+    }
+    this.api.get<Brand[]>('/brands', null, force).subscribe({
       next: (data) => {
         if (data) {
           const list = Array.isArray(data) ? data : ((data as any)?.data && Array.isArray((data as any).data)) ? (data as any).data : [];
