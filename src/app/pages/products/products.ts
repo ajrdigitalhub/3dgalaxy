@@ -18,7 +18,7 @@ import { DatastoreService, Product, Category } from "../../services/datastore";
 import { ApiService } from "../../services/api.service";
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonProductCardComponent } from "../../shared/components/skeleton/skeleton-product-card/skeleton-product-card.component";
-import { Subject, combineLatest, of } from "rxjs";
+import { Subject, ReplaySubject, combineLatest, of } from "rxjs";
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/operators";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
@@ -117,7 +117,7 @@ export class Products implements OnInit {
 
   // Debounced search subject
   private searchSubject = new Subject<string>();
-  private filterRequest$ = new Subject<any>();
+  private filterRequest$ = new ReplaySubject<any>(1);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -147,6 +147,29 @@ export class Products implements OnInit {
   }
 
   ngOnInit() {
+    // Set up switchMap request cancellation for product filters
+    this.filterRequest$.pipe(
+      switchMap((queryParams) => {
+        this.isLoading.set(true);
+        return this.api.get<any>("/products", queryParams).pipe(
+          catchError((err) => {
+            console.error("Failed to load products:", err);
+            return of({ products: [], total: 0, totalPages: 1, availableFilters: null });
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((res: any) => {
+      const products = res?.products || [];
+      this.productsList.set(products);
+      this.totalProducts.set(res?.total || 0);
+      this.totalPages.set(res?.totalPages || 1);
+      if (res?.availableFilters) {
+        this.availableFilters.set(res.availableFilters);
+      }
+      this.isLoading.set(false);
+    });
+
     // Combine route path parameters and query parameters to run synchronously
     combineLatest([this.route.params, this.route.queryParams])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -209,28 +232,7 @@ export class Products implements OnInit {
         this.updateUrlQueryParam("search", term);
       });
 
-    // Set up switchMap request cancellation for product filters
-    this.filterRequest$.pipe(
-      switchMap((queryParams) => {
-        this.isLoading.set(true);
-        return this.api.get<any>("/products", queryParams).pipe(
-          catchError((err) => {
-            console.error("Failed to load products:", err);
-            return of({ products: [], total: 0, totalPages: 1, availableFilters: null });
-          })
-        );
-      }),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe((res: any) => {
-      const products = res?.products || [];
-      this.productsList.set(products);
-      this.totalProducts.set(res?.total || 0);
-      this.totalPages.set(res?.totalPages || 1);
-      if (res?.availableFilters) {
-        this.availableFilters.set(res.availableFilters);
-      }
-      this.isLoading.set(false);
-    });
+
   }
 
   setSeoTags(title: string, desc: string, path: string) {
