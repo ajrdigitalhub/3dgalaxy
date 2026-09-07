@@ -7,6 +7,7 @@ import {
   effect,
   PLATFORM_ID,
   HostListener,
+  NgZone,
 } from "@angular/core";
 import { isPlatformBrowser, CommonModule } from "@angular/common";
 import { DomSanitizer } from "@angular/platform-browser";
@@ -106,6 +107,9 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
                       [src]="slide.bgImageUrl"
                       class="absolute inset-0 w-full h-full object-cover"
                       alt="Background"
+                      [attr.fetchpriority]="idx === 0 ? 'high' : 'low'"
+                      [loading]="idx === 0 ? 'eager' : 'lazy'"
+                      decoding="async"
                     />
                   } @else if (slide.bgGradient) {
                     <div
@@ -161,8 +165,11 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
                                 ? slide.mobileImageUrl
                                 : slide.imageUrl
                             "
-                            loading="eager"
-                            fetchpriority="high"
+                            width="420"
+                            height="420"
+                            [loading]="idx === 0 ? 'eager' : 'lazy'"
+                            [attr.fetchpriority]="idx === 0 ? 'high' : 'low'"
+                            decoding="async"
                             class="max-w-[90%] max-h-[90%] object-contain transition-transform duration-700 ease-out group-hover/card:scale-105 filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] select-none pointer-events-none animate-float-slow"
                             [alt]="slide.title"
                           />
@@ -446,26 +453,35 @@ export class HomeHeroComponent {
   }
 
   isSlideVisible(index: number): boolean {
-    const current = this.currentSlide();
-    const total = this.heroSlides().length;
-    if (total <= 1) return true;
-
-    const prev = (current - 1 + total) % total;
-    const next = (current + 1) % total;
-
-    return index === current || index === prev || index === next;
+    return index === this.currentSlide();
   }
+
+  autoplayReady = signal(false);
+  private ngZone = inject(NgZone);
 
   constructor() {
     const isBrowser = isPlatformBrowser(this.platformId);
 
     if (isBrowser) {
       this.isMobile.set(window.innerWidth < 768);
+
+      // Start autoplay on user interaction or after a 15-second stabilization window
+      const startAutoplay = () => {
+        this.autoplayReady.set(true);
+        window.removeEventListener("scroll", startAutoplay);
+        window.removeEventListener("touchstart", startAutoplay);
+        window.removeEventListener("click", startAutoplay);
+      };
+
+      window.addEventListener("scroll", startAutoplay, { passive: true, once: true });
+      window.addEventListener("touchstart", startAutoplay, { passive: true, once: true });
+      window.addEventListener("click", startAutoplay, { passive: true, once: true });
+      setTimeout(startAutoplay, 15000);
     }
 
-    // Autoplay ticks progress timer
+    // Autoplay ticks progress timer outside Angular zone to prevent continuous change detection
     effect((onCleanup) => {
-      if (!isBrowser) return;
+      if (!isBrowser || !this.autoplayReady()) return;
 
       const slides = this.heroSlides();
       if (slides.length <= 1) {
@@ -474,21 +490,26 @@ export class HomeHeroComponent {
       }
 
       const activeSlide = slides[this.currentSlide()];
-      const duration = Number(activeSlide?.slideDuration) || 3000;
-      const tickStep = 100;
+      const duration = Math.max(Number(activeSlide?.slideDuration) || 5000, 4000);
+      const tickStep = 250;
       const increment = (tickStep / duration) * 100;
 
-      const timer = setInterval(() => {
-        if (this.isHovered()) return;
+      let timer: any;
+      this.ngZone.runOutsideAngular(() => {
+        timer = setInterval(() => {
+          if (this.isHovered()) return;
 
-        this.progress.update((p) => {
-          if (p >= 100) {
-            this.nextSlide();
-            return 0;
+          const currentP = this.progress();
+          if (currentP >= 100) {
+            this.ngZone.run(() => {
+              this.nextSlide();
+              this.progress.set(0);
+            });
+          } else {
+            this.progress.set(currentP + increment);
           }
-          return p + increment;
-        });
-      }, tickStep);
+        }, tickStep);
+      });
 
       onCleanup(() => clearInterval(timer));
     });

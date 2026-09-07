@@ -44,19 +44,13 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="apple-touch-icon" href="3d-logo.png" />
 
-  <!-- Preload key LCP Branding Image -->
-  <link rel="preload" as="image" href="3d-logo.png" fetchpriority="high" />
-
-  <!-- Preconnect Google Fonts for performance optimization (LCP/FID/CLS) -->
+  <!-- Preconnect Critical Origins for performance optimization (LCP/FID/CLS) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" media="print" onload="this.media='all'" />
+  <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
+  <link rel="preload" as="image" href="https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/uploads/1784893575124-image-1784893575116-226385731.jpeg" fetchpriority="high" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" media="print" onload="this.media='all'" />
-
-  <!-- Razorpay Checkout Integration -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-  <!-- Cashfree PG SDK -->
-  <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
 
   <!-- Font loader helper to prevent layout shift and ligature glitches -->
   <script>
@@ -174,7 +168,7 @@
       <div class="initial-loader-progress-bar"></div>
     </div>
     <div class="initial-loader-container">
-      <img src="3d-logo.png" alt="3D Galaxy" class="initial-loader-logo" />
+      <img src="logo.svg" alt="3D Galaxy" class="initial-loader-logo" />
       <div class="initial-loader-spinner"></div>
       <p class="initial-loader-caption">Loading 3D Galaxy...</p>
     </div>

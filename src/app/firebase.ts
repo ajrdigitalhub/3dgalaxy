@@ -8,11 +8,43 @@ export let db: Firestore | any;
 export let auth: Auth | any;
 export let storage: FirebaseStorage | any;
 
-import { environment } from "../environments/environment";
+const STATIC_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8",
+  authDomain: "ajr3dgalaxy.firebaseapp.com",
+  projectId: "ajr3dgalaxy",
+  storageBucket: "ajr3dgalaxy.firebasestorage.app",
+  messagingSenderId: "111872927152",
+  appId: "1:111872927152:web:b498fd9a072f776a2ae275",
+  measurementId: "G-C9R96N5FR6",
+};
 
+/**
+ * Lightweight Auth initialization - avoids pulling Firestore and Storage
+ */
+export const initFirebaseAuth = async () => {
+  if (typeof window === "undefined") return { app, auth };
+  if (auth) return { app, auth };
+
+  const [fbApp, fbAuth] = await Promise.all([
+    import("firebase/app"),
+    import("firebase/auth"),
+  ]);
+
+  if (!app) {
+    app = fbApp.initializeApp(STATIC_FIREBASE_CONFIG);
+  }
+  if (!auth) {
+    auth = fbAuth.getAuth(app);
+  }
+  return { app, auth };
+};
+
+/**
+ * Full Firebase initialization (auth, db, storage) loaded on-demand
+ */
 export const initFirebase = async () => {
   if (typeof window === "undefined") return { app, db, auth, storage };
-  if (app) return { app, db, auth, storage }; // Already initialized
+  if (app && db && auth && storage) return { app, db, auth, storage };
 
   const [fbApp, fbAuth, fbFirestore, fbStorage] = await Promise.all([
     import("firebase/app"),
@@ -21,58 +53,18 @@ export const initFirebase = async () => {
     import("firebase/storage"),
   ]);
 
-  let firebaseConfig: any = null;
-  try {
-    const res = await fetch(environment.apiUrl + "/notifications/fcm-config/public");
-    if (res.ok) {
-      const fcmRes = await res.json();
-      const pushConfig = fcmRes?.data;
-      if (pushConfig && pushConfig.enabled && pushConfig.projectId && pushConfig.apiKey) {
-        firebaseConfig = {
-          apiKey: pushConfig.apiKey,
-          authDomain: `${pushConfig.projectId}.firebaseapp.com`,
-          projectId: pushConfig.projectId,
-          storageBucket: `${pushConfig.projectId}.firebasestorage.app`,
-          messagingSenderId: pushConfig.messagingSenderId,
-          appId: pushConfig.appId,
-        };
-      }
-    }
-  } catch (err) {
-    console.warn("Failed to load Firebase configurations dynamically from marketing settings API:", err);
+  if (!app) {
+    app = fbApp.initializeApp(STATIC_FIREBASE_CONFIG);
+  }
+  if (!auth) {
+    auth = fbAuth.getAuth(app);
+  }
+  if (!db) {
+    db = fbFirestore.getFirestore(app);
+  }
+  if (!storage) {
+    storage = fbStorage.getStorage(app);
   }
 
-  if (!firebaseConfig) {
-    try {
-      const res = await fetch("/firebase-applet-config.json");
-      if (res.ok) {
-        firebaseConfig = await res.json();
-      } else {
-        throw new Error(`HTTP status ${res.status}`);
-      }
-    } catch (err) {
-      console.warn("Failed to dynamically load Firebase configurations from static file:", err);
-    }
-  }
-
-  if (!firebaseConfig) {
-    firebaseConfig = {
-      apiKey: "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8",
-      authDomain: "ajr3dgalaxy.firebaseapp.com",
-      projectId: "ajr3dgalaxy",
-      storageBucket: "ajr3dgalaxy.firebasestorage.app",
-      messagingSenderId: "111872927152",
-      appId: "1:111872927152:web:b498fd9a072f776a2ae275",
-      measurementId: "G-C9R96N5FR6",
-    };
-  }
-
-  app = fbApp.initializeApp(firebaseConfig);
-  const dbId = (firebaseConfig as any).firestoreDatabaseId;
-  db = dbId
-    ? fbFirestore.getFirestore(app, dbId)
-    : fbFirestore.getFirestore(app);
-  auth = fbAuth.getAuth(app);
-  storage = fbStorage.getStorage(app);
   return { app, db, auth, storage };
 };

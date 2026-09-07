@@ -94,8 +94,8 @@ export class RecentPurchasePopupComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Start after 2.5s delay so page has time to settle
-    this.initTimer = setTimeout(() => this.init(), 2500);
+    // Start after 20s so initial page load and critical rendering are undisturbed
+    this.initTimer = setTimeout(() => this.init(), 20000);
   }
 
   private isAdminRoute(): boolean {

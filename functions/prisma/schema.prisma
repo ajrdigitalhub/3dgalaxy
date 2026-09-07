@@ -177,6 +177,9 @@ model Category {
   productCategories ProductCategory[]
   homepageItems   HomepageSectionItem[]
 
+  @@index([isActive, deletedAt])             // explore-navigation primary filter
+  @@index([parentId, isActive, deletedAt])   // subcategory BFS descendant lookup
+  @@index([isActive, deletedAt, sortOrder])  // ordered root-category fetch
   @@map("categories")
 }
 

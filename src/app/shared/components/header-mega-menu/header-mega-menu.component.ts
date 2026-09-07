@@ -465,12 +465,11 @@ export class HeaderMegaMenuComponent implements OnInit {
   private hoverTimeout: any = null;
 
   ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.fetchHeaderMenu();
-    }
+    // Menu data is loaded lazily on user interaction (hover or click)
   }
 
   fetchHeaderMenu() {
+    if (this.menuData()) return;
     this.api.get<any>('/header-menu').subscribe({
       next: (res) => {
         if (res && res.data) {
@@ -613,6 +612,7 @@ export class HeaderMegaMenuComponent implements OnInit {
   private closeTimeout: any = null;
 
   onMouseEnter() {
+    this.fetchHeaderMenu();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
@@ -642,6 +642,7 @@ export class HeaderMegaMenuComponent implements OnInit {
   }
 
   toggleMenu() {
+    this.fetchHeaderMenu();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;

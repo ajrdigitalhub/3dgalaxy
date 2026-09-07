@@ -5,6 +5,7 @@ import { sendPushNotificationInternal } from './notification';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { encodeDays } from '../utils/delivery';
+import { invalidateExploreCache } from './exploreConfig';
 
 let pendingMappedProductsPromise: Promise<any[]> | null = null;
 let pendingCategoriesPromise: Promise<any[]> | null = null;
@@ -21,6 +22,8 @@ export const clearProductCache = () => {
   sysCache.del('consolidated_home_payload');
   sysCache.del('featured_products_payload');
   sysCache.del('header_menu_data');
+  // Invalidate explore-navigation cache so product changes take effect immediately
+  invalidateExploreCache();
   clearCache(); // Flushes route cache for /api/home and other routes
 };
 clearProductCache();

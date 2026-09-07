@@ -33,6 +33,7 @@ const buildCategoryTree = (
 };
 
 import { invalidateHeaderMenuCache } from './headerMenu';
+import { invalidateExploreCache } from './exploreConfig';
 
 export const clearCategoryCache = () => {
   sysCache.del('categories_tree');
@@ -42,6 +43,8 @@ export const clearCategoryCache = () => {
   sysCache.clearPattern('category_slug_');
   sysCache.clearPattern('category_id_');
   invalidateHeaderMenuCache();
+  // Invalidate explore-navigation cache so Admin category changes take effect immediately
+  invalidateExploreCache();
   clearCache();
 };
 

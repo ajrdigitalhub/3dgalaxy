@@ -45,6 +45,7 @@ export interface CustomerAddress {
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
+import { PaymentLoaderService } from "../../core/services/payment-loader.service";
 
 @Component({
   selector: "app-checkout",
@@ -58,6 +59,7 @@ export class CheckoutComponent implements OnInit {
   ds = inject(DatastoreService);
   loading = inject(LoadingService);
   toast = inject(ToastService);
+  paymentLoader = inject(PaymentLoaderService);
   http = inject(HttpClient);
   api = inject(ApiService);
   settingsService = inject(SettingsService);
@@ -247,6 +249,9 @@ export class CheckoutComponent implements OnInit {
     } else {
       this.addressMode.set('new');
     }
+    // Preload payment gateways silently in checkout background
+    this.paymentLoader.loadRazorpay();
+    this.paymentLoader.loadCashfree();
   }
 
   constructor() {
@@ -699,7 +704,8 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  openRazorpay(orderData: any) {
+  async openRazorpay(orderData: any) {
+    await this.paymentLoader.loadRazorpay();
     const expectedPaise = Math.round(this.grandTotal() * 100);
     const amountInPaise = (orderData && typeof orderData.amount === 'number' && orderData.amount >= expectedPaise)
       ? orderData.amount
@@ -775,7 +781,8 @@ export class CheckoutComponent implements OnInit {
     }
   }
 
-  openCashfree(orderData: any) {
+  async openCashfree(orderData: any) {
+    await this.paymentLoader.loadCashfree();
     if (!orderData) {
       this.toast.error("Invalid payment order response.");
       this.isSubmitting.set(false);

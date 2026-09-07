@@ -1884,6 +1884,13 @@ export class ProductDetail {
   }
 
   async loadWishlist() {
+    // Wait for auth state to resolve before making any API decisions.
+    // trySyncAuthFromToken() runs synchronously at startup, so authReady is
+    // typically true by the time this is called — but we guard for safety.
+    if (!this.ds.authReady()) {
+      return;
+    }
+
     if (this.ds.userRole() === "guest") {
       this.wishlistIds.set(new Set());
       return;

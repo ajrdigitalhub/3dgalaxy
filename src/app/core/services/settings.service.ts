@@ -197,6 +197,10 @@ export class SettingsService {
     }
   }
 
+  public initSync() {
+    this.loadFromLocalStorage();
+  }
+
   private loadFromLocalStorage() {
     if (typeof window === "undefined") return;
     try {

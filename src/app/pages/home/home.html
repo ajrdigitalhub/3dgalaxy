@@ -1,6 +1,3 @@
-@if(loading()) {
-<app-skeleton-page />
-} @else {
 <!-- Top Advertisement Banner -->
 @if (activeTopAd(); as ad) {
 <div
@@ -18,7 +15,7 @@
   } @case ('CATEGORIES') { @defer (on viewport) {
   <app-home-categories />
   } @placeholder {
-  <div class="h-32 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
+  <div class="h-[250px] md:h-[280px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
   } } @case ('BRANDS') { @defer (on viewport) {
   <app-home-brands />
   } @placeholder {
@@ -153,4 +150,4 @@
   (click)="trackAdClick(ad.id)">
   <a [href]="ad.targetUrl" target="_blank" class="hover:text-orange-400 font-bold">{{ ad.title }}</a>
 </div>
-} }
+}

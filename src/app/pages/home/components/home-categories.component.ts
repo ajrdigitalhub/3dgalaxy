@@ -30,40 +30,50 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
       <div class="flex md:block overflow-x-auto md:overflow-visible pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scroll border-b border-transparent [scrollbar-width:none] [-ms-overflow-style:none]">
         <div class="flex md:grid gap-3 md:gap-4 md:grid-cols-5 lg:grid-cols-10 pb-2 w-full">
-          @for (item of parentCategories(); track item.id; let idx = $index) {
-            <button (click)="selectFilterCategory(item.id)" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
-              [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md rounded-3xl md:rounded-[2rem] transition-all h-44 w-36 md:h-56 md:w-full border-none cursor-pointer relative overflow-hidden ' + 
-                       (ds.filterCategory() === item.id 
-                         ? 'bg-theme-primary/10 shadow-lg shadow-theme-primary/20 scale-[1.05]' 
-                         : 'hover:scale-[1.06] hover:bg-white/80 dark:hover:bg-neutral-900/80')"
-              [attr.aria-label]="'Filter by ' + item.name">
-              
-              @if (ds.filterCategory() === item.id) {
-                <div class="absolute top-0 left-0 right-0 h-1.5 bg-theme-gradient rounded-full"></div>
-              }
-
-              <div [class]="'h-28 w-28 md:h-36 md:w-36 rounded-full flex flex-col items-center justify-center transition-all duration-300 border-none bg-transparent p-1 ' + 
-                            (ds.filterCategory() === item.id 
-                              ? 'text-theme-primary scale-110' 
-                              : 'text-neutral-700 dark:text-neutral-200 group-hover:scale-110')">
-                @if (item.image) {
-                  <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-img group-hover:scale-110 transition-transform duration-500 ease-out"
-                    (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
-                } @else {
-                  <mat-icon class="scale-[3.2] md:scale-[4] filter drop-shadow-md transition-transform duration-300 group-hover:scale-[3.5] md:group-hover:scale-[4.5]">{{ getIcon(item.id) }}</mat-icon>
+          @if (parentCategories().length === 0) {
+            @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+              <div class="flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-white/40 dark:bg-neutral-900/40 rounded-3xl md:rounded-[2rem] h-44 w-36 md:h-56 md:w-full animate-pulse border border-neutral-100 dark:border-neutral-800/40">
+                <div class="h-24 w-24 md:h-32 md:w-32 rounded-full bg-neutral-200 dark:bg-neutral-800"></div>
+                <div class="h-3 w-16 bg-neutral-200 dark:bg-neutral-800 rounded-full mt-2"></div>
+                <div class="h-2 w-10 bg-neutral-200 dark:bg-neutral-800 rounded-full"></div>
+              </div>
+            }
+          } @else {
+            @for (item of parentCategories(); track item.id; let idx = $index) {
+              <button (click)="selectFilterCategory(item.id)" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
+                [class]="'group flex-shrink-0 snap-center flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md rounded-3xl md:rounded-[2rem] transition-all h-44 w-36 md:h-56 md:w-full border-none cursor-pointer relative overflow-hidden ' + 
+                         (ds.filterCategory() === item.id 
+                           ? 'bg-theme-primary/10 shadow-lg shadow-theme-primary/20 scale-[1.05]' 
+                           : 'hover:scale-[1.06] hover:bg-white/80 dark:hover:bg-neutral-900/80')"
+                [attr.aria-label]="'Filter by ' + item.name">
+                
+                @if (ds.filterCategory() === item.id) {
+                  <div class="absolute top-0 left-0 right-0 h-1.5 bg-theme-gradient rounded-full"></div>
                 }
-              </div>
 
-              <div class="flex flex-col items-center gap-0.5 mt-1">
-                <span [class]="'text-xs md:text-sm font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
-                               (ds.filterCategory() === item.id 
-                                 ? 'text-theme-primary font-bold' 
-                                 : 'text-neutral-800 dark:text-neutral-200 group-hover:text-theme-primary')">{{ item.name }}</span>
-                <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-wide">
-                  {{ ds.productCountMap()[item.id] || 0 }} Items
-                </span>
-              </div>
-            </button>
+                <div [class]="'h-28 w-28 md:h-36 md:w-36 rounded-full flex flex-col items-center justify-center transition-all duration-300 border-none bg-transparent p-1 ' + 
+                              (ds.filterCategory() === item.id 
+                                ? 'text-theme-primary scale-110' 
+                                : 'text-neutral-700 dark:text-neutral-200 group-hover:scale-110')">
+                  @if (item.image) {
+                    <img [src]="item.image" [alt]="item.name" class="w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-img group-hover:scale-110 transition-transform duration-500 ease-out"
+                      (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
+                  } @else {
+                    <mat-icon class="scale-[3.2] md:scale-[4] filter drop-shadow-md transition-transform duration-300 group-hover:scale-[3.5] md:group-hover:scale-[4.5]">{{ getIcon(item.id) }}</mat-icon>
+                  }
+                </div>
+
+                <div class="flex flex-col items-center gap-0.5 mt-1">
+                  <span [class]="'text-xs md:text-sm font-black uppercase tracking-wider text-center leading-tight px-1 transition-colors ' + 
+                                 (ds.filterCategory() === item.id 
+                                   ? 'text-theme-primary font-bold' 
+                                   : 'text-neutral-800 dark:text-neutral-200 group-hover:text-theme-primary')">{{ item.name }}</span>
+                  <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-wide">
+                    {{ ds.productCountMap()[item.id] || 0 }} Items
+                  </span>
+                </div>
+              </button>
+            }
           }
         </div>
       </div>

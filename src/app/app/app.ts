@@ -235,6 +235,8 @@ export class App {
   }
 
   fetchRecentSearches() {
+    // Always read from localStorage first — works for both guest and authenticated users.
+    // Recent searches are saved to localStorage in submitSearch() for every user.
     if (typeof window !== 'undefined') {
       const cached = localStorage.getItem('recentSearches');
       if (cached) {
@@ -243,7 +245,15 @@ export class App {
         } catch (e) {}
       }
     }
-    // Also fetch from API to sync
+
+    // /api/search/recent is an authenticated-only endpoint.
+    // Do NOT call it for guests — it will return 401.
+    // Wait for auth state to resolve (authReady) before checking user role.
+    if (!this.ds.authReady() || this.ds.userRole() === 'guest') {
+      return;
+    }
+
+    // Authenticated user: sync recent searches from server to stay in sync across devices.
     this.http.get<any>('/api/search/recent').subscribe({
       next: res => {
         if (res.success && res.data && res.data.length) {
@@ -253,7 +263,7 @@ export class App {
           }
         }
       },
-      error: () => {}
+      error: () => {} // Silently ignore — localStorage fallback is already loaded above
     });
   }
 

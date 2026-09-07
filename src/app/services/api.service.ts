@@ -164,8 +164,6 @@ export class ApiService {
 
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        headers['Authorization'] = `Bearer dev-admin-session-token`;
       }
     }
     return headers;

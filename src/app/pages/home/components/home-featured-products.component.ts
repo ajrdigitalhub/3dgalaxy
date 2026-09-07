@@ -485,7 +485,26 @@ export class HomeFeaturedProductsComponent implements OnInit {
 
     if (isBrowser) {
       this.windowWidth.set(window.innerWidth);
-      this.loadWishlist();
+
+      // Reactively load wishlist once auth state is known.
+      // - Waits for authReady so we don't call the API before JWT is validated.
+      // - Skips the API call entirely for guests (no 401 generated).
+      // - Re-triggers automatically if the user logs in after component is mounted.
+      effect(() => {
+        const ready = this.ds.authReady();
+        const role = this.ds.userRole();
+
+        if (!ready) return; // Auth state not yet resolved — wait
+
+        if (role === 'guest') {
+          // Guest: clear wishlist and skip API call
+          this.wishlistIds.set(new Set());
+          return;
+        }
+
+        // Authenticated user: fetch wishlist from server
+        this.loadWishlist();
+      });
     }
 
     // Autoplay scroll timer

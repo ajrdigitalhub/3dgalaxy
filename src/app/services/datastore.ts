@@ -11,7 +11,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile
 } from 'firebase/auth';
-import { initFirebase, auth } from '../firebase';
+import { initFirebase, initFirebaseAuth, auth } from '../firebase';
 import { ApiService } from './api.service';
 import { SettingsService, DEFAULT_FOOTER_GROUPS, DEFAULT_PAYMENT_ICONS } from '../core/services/settings.service';
 import { ShippingService } from '../core/services/shipping.service';
@@ -977,48 +977,56 @@ export class DatastoreService {
       }
       this.guestSessionId.set(guestId);
 
-      initFirebase().then(() => {
-        let firstAuthCheckDone = false;
-        // Monitor Firebase Auth State (e.g. Google Sign-In)
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            this.currentUser.set(user);
-            if (!this.userProfile()) {
-              this.userProfile.set({
-                id: user.uid,
-                name: user.displayName || user.email || 'Google User',
-                email: user.email || '',
-                role: 'customer',
-                active: true,
-                phone: user.phoneNumber || '',
-                profileImage: user.photoURL || '',
-              });
-              this.userRole.set('customer');
-            }
-          } else {
-            if (!localStorage.getItem('access_token')) {
-              this.currentUser.set(null);
-            }
-          }
+      // Start loading critical homepage data immediately without waiting for Firebase
+      this.initRealtimeSync();
+      this.initAuth();
 
-          if (!firstAuthCheckDone) {
-            firstAuthCheckDone = true;
-            this.initAuth();
-          }
+      // Defer Firebase Auth initialization away from the critical rendering path
+      const deferFbAuth = () => {
+        initFirebaseAuth().then(({ auth: fbAuth }) => {
+          if (!fbAuth) return;
+          onAuthStateChanged(fbAuth, (user) => {
+            if (user) {
+              this.currentUser.set(user);
+              if (!this.userProfile()) {
+                this.userProfile.set({
+                  id: user.uid,
+                  name: user.displayName || user.email || 'Google User',
+                  email: user.email || '',
+                  role: 'customer',
+                  active: true,
+                  phone: user.phoneNumber || '',
+                  profileImage: user.photoURL || '',
+                });
+                this.userRole.set('customer');
+              }
+            } else {
+              if (!localStorage.getItem('access_token')) {
+                this.currentUser.set(null);
+              }
+            }
+          });
+        }).catch((err) => {
+          console.warn('Deferred Firebase Auth init warning:', err);
         });
+      };
 
-        this.initRealtimeSync();
-        this.testConnection();
-      }).catch((err) => {
-        console.error('Firebase failed to initialize:', err);
-        // Fallback / safety recovery to unblock UI loading indicators
-        this.authReady.set(true);
-        this.homepageLoading.set(false);
-        this.categoriesLoading.set(false);
-        this.bannersLoading.set(false);
-        this.productsLoading.set(false);
-      });
-      
+      let fbAuthTriggered = false;
+      const triggerFbAuth = () => {
+        if (fbAuthTriggered) return;
+        fbAuthTriggered = true;
+        window.removeEventListener('scroll', triggerFbAuth);
+        window.removeEventListener('touchstart', triggerFbAuth);
+        window.removeEventListener('click', triggerFbAuth);
+        window.removeEventListener('mousemove', triggerFbAuth);
+        deferFbAuth();
+      };
+
+      window.addEventListener('scroll', triggerFbAuth, { passive: true, once: true });
+      window.addEventListener('touchstart', triggerFbAuth, { passive: true, once: true });
+      window.addEventListener('click', triggerFbAuth, { passive: true, once: true });
+      window.addEventListener('mousemove', triggerFbAuth, { passive: true, once: true });
+      setTimeout(triggerFbAuth, 12000);
     }
     
     // Sync theme class & SettingsService theme updates
@@ -1502,10 +1510,11 @@ export class DatastoreService {
       });
     });
 
-    // Quotes and dynamic auth-triggered reloads
+    // Quotes and dynamic auth-triggered reloads (admin-only to prevent guest API leakage)
     runInInjectionContext(this.injector, () => {
       effect(() => {
-        if (this.authReady()) {
+        const role = this.userRole();
+        if (this.authReady() && (role === 'admin' || role === 'super-admin')) {
           this.reloadQuotes();
         }
       });

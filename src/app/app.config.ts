@@ -44,11 +44,14 @@ export const appConfig: ApplicationConfig = {
     provideExperimentalZonelessChangeDetection(),
     provideAppInitializer(() => {
       const settingsService = inject(SettingsService);
-      settingsService.loadSettings();
+      settingsService.initSync();
+      if (typeof window !== 'undefined') {
+        setTimeout(() => settingsService.loadSettings(), 50);
+      }
     }),
     provideAnalytics({
       enabled: true,
-      debugMode: true,
+      debugMode: false,
       defaultCurrency: 'INR',
       meta: {
         pixelIds: ['1234567890'],

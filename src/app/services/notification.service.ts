@@ -57,10 +57,6 @@ export class NotificationService {
         this.permission.set(Notification.permission);
       }
 
-      // Fetch marketing and popup configurations from backend
-      this.fetchPopupConfig();
-      this.fetchFcmConfig();
-
       // Automatically fetch FCM token when permission is granted and settings are loaded
       effect(() => {
         const perm = this.permission();
@@ -84,11 +80,30 @@ export class NotificationService {
         }
       });
 
-      // Fetch inbox notifications on initialization
-      this.fetchInbox();
+      // Defer non-critical notification background work to idle time away from initial paint
+      const initNotifications = () => {
+        this.fetchPopupConfig();
+        this.fetchFcmConfig();
+        this.fetchInbox();
+        this.setupForegroundListener();
+      };
 
-      // Setup dynamic foreground message listener once Firebase is initialized
-      this.setupForegroundListener();
+      let notifTriggered = false;
+      const triggerNotifications = () => {
+        if (notifTriggered) return;
+        notifTriggered = true;
+        window.removeEventListener('scroll', triggerNotifications);
+        window.removeEventListener('touchstart', triggerNotifications);
+        window.removeEventListener('click', triggerNotifications);
+        window.removeEventListener('mousemove', triggerNotifications);
+        initNotifications();
+      };
+
+      window.addEventListener('scroll', triggerNotifications, { passive: true, once: true });
+      window.addEventListener('touchstart', triggerNotifications, { passive: true, once: true });
+      window.addEventListener('click', triggerNotifications, { passive: true, once: true });
+      window.addEventListener('mousemove', triggerNotifications, { passive: true, once: true });
+      setTimeout(triggerNotifications, 14000);
     }
   }
 

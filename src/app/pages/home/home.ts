@@ -10,7 +10,6 @@ import { CommonModule } from "@angular/common";
 import { Title, Meta } from "@angular/platform-browser";
 import { DatastoreService } from "../../services/datastore";
 import { LoadingService } from "../../core/services/loading.service";
-import { SkeletonPageComponent } from "../../shared/components/skeleton/skeleton-page/skeleton-page.component";
 
 // Import subcomponents
 import { HomeHeroComponent } from "./components/home-hero.component";
@@ -46,7 +45,6 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    SkeletonPageComponent,
     HomeHeroComponent,
     HomeCategoriesComponent,
     HomeFeaturedProductsComponent,

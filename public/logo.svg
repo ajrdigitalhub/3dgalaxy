@@ -1,17 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
   <defs>
     <!-- Importing Outfit and Space Grotesk for the exact modern, geometric look -->
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;family=Space+Grotesk:wght@700;900&amp;display=swap');
-      
       .logo-3 {
-        font-family: 'Outfit', 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+        font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
         font-weight: 900;
         letter-spacing: -0.05em;
       }
       
       .logo-text {
-        font-family: 'Outfit', 'Space Grotesk', 'Inter', -apple-system, sans-serif;
+        font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
         font-weight: 900;
         letter-spacing: 0.16em;
       }
