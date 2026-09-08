@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { updateThemeSettings, getPaymentGateways, updatePaymentGateway, getSecuritySettings, updateSecuritySettings } from '../controllers/settings';
-import { getSettings } from '../modules/settings/settings.controller';
+import { getSettings, getSettingsVersion } from '../modules/settings/settings.controller';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { cacheMiddleware } from '../middleware/cache';
 
 const router = Router();
 
+router.get('/version', getSettingsVersion);
 router.get('/', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   next();

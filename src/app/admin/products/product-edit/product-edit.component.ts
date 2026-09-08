@@ -8,7 +8,7 @@ import { ProductService } from '../../shared/services/product.service';
 import { CategoryService } from '../../shared/services/category.service';
 import { BrandService } from '../../shared/services/brand.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
-import { CategoryMultiSelectComponent } from '../../../shared/components/category-multi-select/category-multi-select.component';
+import { CategoryMultiSelectComponent, extractNormalizedCategoryIds, normalizeCategoryId } from '../../../shared/components/category-multi-select/category-multi-select.component';
 import { Product } from '../../../services/datastore';
 import { ToastService } from '../../../shared/components/toast/toast.service';
 import { environment } from '../../../../environments/environment';
@@ -77,7 +77,7 @@ export class ProductEditComponent implements OnInit {
       if (data && cats && cats.length > 0) {
         this.extractAndSetCategories(data);
       }
-    });
+    }, { allowSignalWrites: true });
 
     // Auto-update preview selection when variants change
     effect(() => {
@@ -93,6 +93,9 @@ export class ProductEditComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.categoryService.loadCategories();
+    this.brandService.loadBrands();
+
     const id = this.route.snapshot.paramMap.get('id');
     this.productId.set(id);
 
@@ -122,73 +125,19 @@ export class ProductEditComponent implements OnInit {
 
   extractAndSetCategories(data: any) {
     if (!data) return;
-    const p = data.product || data;
     const allCats = this.categoryService.categories();
-
-    const rawHints: any[] = [];
-    const pushHint = (val: any) => {
-      if (!val) return;
-      if (Array.isArray(val)) {
-        val.forEach(v => pushHint(v));
-      } else {
-        rawHints.push(val);
+    const resolved = extractNormalizedCategoryIds(data, allCats);
+    if (resolved.categoryIds.length > 0) {
+      this.pCategoryIds.set(resolved.categoryIds);
+      this.pCatId.set(resolved.primaryCategoryId || resolved.categoryIds[0]);
+    } else {
+      const p = data.product || data;
+      const singleId = normalizeCategoryId(p.categoryId || p.category_id || p.category);
+      if (singleId) {
+        this.pCategoryIds.set([singleId]);
+        this.pCatId.set(singleId);
       }
-    };
-
-    pushHint(p.categoryPath || data.categoryPath);
-    pushHint(p.category_path || data.category_path);
-    pushHint(p.categoryIds || data.categoryIds);
-    pushHint(p.category_ids || data.category_ids);
-    pushHint(p.categories || data.categories);
-    pushHint(p.category || data.category);
-    pushHint(p.categoryId || data.categoryId);
-    pushHint(p.category_id || data.category_id);
-    pushHint(p.categorySlug || data.categorySlug);
-    pushHint(p.category_slug || data.category_slug);
-
-    const resolvedIds = new Set<string>();
-
-    rawHints.forEach(hint => {
-      if (!hint) return;
-      const hintStr = typeof hint === 'string' ? hint.trim() : (hint.id || hint._id || hint.name || hint.slug || '');
-      if (!hintStr) return;
-
-      const lower = hintStr.toLowerCase();
-      const slugified = lower.replace(/[^a-z0-9]+/g, '-');
-
-      let matched = allCats.find(c => 
-        c.id === hintStr ||
-        (c.id && c.id.toLowerCase() === lower) ||
-        (c.name && c.name.toLowerCase() === lower) ||
-        (c.slug && c.slug.toLowerCase() === lower) ||
-        (c.slug && c.slug.toLowerCase() === slugified) ||
-        (c.name && c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === slugified)
-      );
-
-      if (matched) {
-        resolvedIds.add(matched.id);
-      } else {
-        resolvedIds.add(hintStr);
-      }
-    });
-
-    const finalIds = Array.from(resolvedIds);
-    if (finalIds.length > 0) {
-      this.pCategoryIds.set(finalIds);
     }
-
-    const primaryHint = p.categoryId || p.category_id || p.category?.id || p.category?.slug || (finalIds.length > 0 ? finalIds[0] : '');
-    const primaryStr = typeof primaryHint === 'string' ? primaryHint.trim() : (primaryHint?.id || primaryHint?.slug || primaryHint?.name || '');
-    const primaryLower = primaryStr.toLowerCase();
-    const primaryMatched = allCats.find(c => 
-      c.id === primaryStr ||
-      (c.id && c.id.toLowerCase() === primaryLower) ||
-      (c.name && c.name.toLowerCase() === primaryLower) ||
-      (c.slug && c.slug.toLowerCase() === primaryLower)
-    );
-
-    const finalPrimaryId = primaryMatched ? primaryMatched.id : (finalIds.length > 0 ? finalIds[0] : '');
-    this.pCatId.set(finalPrimaryId);
   }
 
   fillForm(data: any) {

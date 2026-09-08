@@ -198,6 +198,7 @@ export interface Product {
   categoryId?: string;
   category?: any;
   categories?: Array<Category & { isPrimary?: boolean }>;
+  categoryIds?: string[];
   primaryCategory?: Category;
   subcategory_id?: string;
   brand: string;
@@ -1794,6 +1795,10 @@ export class DatastoreService {
 
   public mapProductFromServer(p: any): Product {
     const brandVal = typeof p.brand === 'object' ? p.brand?.name : (p.brand || p.brandId || '');
+    const primaryCatId = p.categoryId || p.category_id || (typeof p.category === 'object' ? p.category?.id : p.category) || '';
+    const rawCatIds = p.categoryIds || (Array.isArray(p.categories) ? p.categories.map((c: any) => typeof c === 'object' ? (c.id || c.categoryId) : c) : (primaryCatId ? [primaryCatId] : []));
+    const normalizedCatIds = Array.isArray(rawCatIds) ? rawCatIds.map((c: any) => typeof c === 'object' ? (c.id || c.categoryId) : String(c).trim()).filter(Boolean) : [];
+
     return {
       id: p.id,
       createdAt: p.createdAt,
@@ -1801,8 +1806,13 @@ export class DatastoreService {
       slug: p.slug,
       sku: p.sku || '',
       barcode: p.barcode || '',
-      category_id: p.categoryId || p.category_id || '',
+      category_id: primaryCatId,
+      categoryId: primaryCatId,
+      categoryIds: normalizedCatIds,
+      categories: p.categories || [],
+      primaryCategory: p.primaryCategory || null,
       brand: brandVal,
+      brandId: p.brandId || (typeof p.brand === 'object' ? p.brand?.id : undefined),
       description: p.description || '',
       long_description: p.long_description || p.longDescription || p.description || '',
       mrp: Number(p.basePrice || p.mrp || 0),

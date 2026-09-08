@@ -4,34 +4,12 @@ import { logger } from '../utils/logger';
 import { WhatsAppConversationService } from './whatsappConversationService';
 import { getWhatsappSettings } from '../controllers/whatsapp';
 
-export interface AutoReplyRule {
-  id: string;
-  name: string;
-  priority: number;
-  triggerType: 'BUSINESS_HOURS' | 'ORDER_STATUS' | 'KEYWORD' | 'WELCOME' | 'DEFAULT';
-  conditions?: {
-    keywords: string[];
-    matchType?: 'CONTAINS_ANY' | 'CONTAINS_ALL' | 'EXACT';
-  };
-  actionType: 'ORDER_STATUS_LOOKUP' | 'TEXT';
-  responseText: string;
-  delayMs?: number;
-  isActive: boolean;
-}
-
 export interface AutoReplyConfig {
   enabled: boolean;
-  humanTakeoverGlobal: boolean;
-  businessHours: {
-    enabled: boolean;
-    days: number[]; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    start: string; // "09:30"
-    end: string;   // "19:00"
-    timezone: string; // "Asia/Kolkata"
-    offlineMessage: string;
-  };
-  defaultReply: string;
-  rules: AutoReplyRule[];
+  replyMessage: string;
+  keywords: string[];
+  onlyReplyOnce: boolean;
+  humanTakeoverGlobal?: boolean;
 }
 
 export interface QuickReplyItem {
@@ -45,108 +23,13 @@ export interface QuickReplyItem {
 
 const DEFAULT_CONFIG: AutoReplyConfig = {
   enabled: true,
-  humanTakeoverGlobal: false,
-  businessHours: {
-    enabled: true,
-    days: [1, 2, 3, 4, 5, 6], // Mon - Sat
-    start: '09:30',
-    end: '19:00',
-    timezone: 'Asia/Kolkata',
-    offlineMessage:
-      'Thank you for contacting 3D Galaxy! 🌙 Our customer support team is currently offline.\n' +
-      'Our business hours are Monday to Saturday, 9:30 AM to 7:00 PM IST. We will respond promptly as soon as we are back online!'
-  },
-  defaultReply:
-    'Thank you for reaching out to *3D Galaxy*! ✨\n' +
-    'We have received your message and an executive will assist you shortly. If this is regarding an order, please provide your Order ID (e.g., #3DX0012).',
-  rules: [
-    {
-      id: 'rule_biz_hours',
-      name: 'Outside Business Hours',
-      priority: 2,
-      triggerType: 'BUSINESS_HOURS',
-      actionType: 'TEXT',
-      responseText:
-        'Thank you for contacting 3D Galaxy! 🌙 Our customer support team is currently offline.\n' +
-        'Our business hours are Monday to Saturday, 9:30 AM to 7:00 PM IST. We will respond promptly as soon as we open!',
-      delayMs: 1000,
-      isActive: true
-    },
-    {
-      id: 'rule_order_status',
-      name: 'Order Tracking & Status',
-      priority: 3,
-      triggerType: 'ORDER_STATUS',
-      conditions: {
-        keywords: ['order', 'tracking', 'track', 'status', 'where is my order', 'delivery', 'dispatch', 'shipment', 'awb'],
-        matchType: 'CONTAINS_ANY'
-      },
-      actionType: 'ORDER_STATUS_LOOKUP',
-      responseText: '', // dynamically synthesized
-      delayMs: 1000,
-      isActive: true
-    },
-    {
-      id: 'rule_printing_service',
-      name: '3D Printing & Custom Quote',
-      priority: 4,
-      triggerType: 'KEYWORD',
-      conditions: {
-        keywords: ['print', 'printing', 'stl', 'obj', 'quote', 'custom', 'service', 'fabricat', 'resin', 'fdm'],
-        matchType: 'CONTAINS_ANY'
-      },
-      actionType: 'TEXT',
-      responseText:
-        'Great to connect with you! 🛠️ At *3D Galaxy*, we provide rapid high-accuracy FDM and SLA Resin custom printing services.\n\n' +
-        'To get an instant custom quote, please share:\n' +
-        '📁 Your 3D file (*.STL, *.OBJ, or STEP format)\n' +
-        '🎨 Desired material (PLA, ABS, PETG, TPU, or 8K Resin)\n' +
-        '⚙️ Required quantity & infill percentage\n\n' +
-        'You can also upload directly at https://3dgalaxy.co.in/printing-service. Our engineering team will review it right away!',
-      delayMs: 1000,
-      isActive: true
-    },
-    {
-      id: 'rule_filaments_catalog',
-      name: 'Filaments, Materials & Spares',
-      priority: 5,
-      triggerType: 'KEYWORD',
-      conditions: {
-        keywords: ['filament', 'pla', 'petg', 'abs', 'tpu', 'spool', 'nozzle', 'bed', 'spares', 'stock', 'available'],
-        matchType: 'CONTAINS_ANY'
-      },
-      actionType: 'TEXT',
-      responseText:
-        'Looking for high-grade 3D printing supplies? 🎯\n\n' +
-        'We stock:\n' +
-        '• Premium PLA, Silk PLA, Tough PETG & Flexible TPU filaments\n' +
-        '• Standard & Water-Washable 8K Photopolymer Resins\n' +
-        '• High-temp nozzles, PEI magnetic sheets & upgrade kits\n\n' +
-        'Explore our catalog at https://3dgalaxy.co.in or let us know what specific item you need!',
-      delayMs: 1000,
-      isActive: true
-    },
-    {
-      id: 'rule_welcome',
-      name: 'Welcome Greeting',
-      priority: 6,
-      triggerType: 'WELCOME',
-      conditions: {
-        keywords: ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings'],
-        matchType: 'CONTAINS_ANY'
-      },
-      actionType: 'TEXT',
-      responseText:
-        'Hello 👋 Welcome to *3D Galaxy* — India\'s premier 3D Printing & Filament Hub! ✨\n\n' +
-        'How can we assist you today?\n' +
-        '1️⃣ *Track an Order* (Reply order)\n' +
-        '2️⃣ *Custom 3D Printing Quote* (Send your .STL file)\n' +
-        '3️⃣ *Filaments & Spares Advice* (PLA, PETG, TPU, Resin)\n' +
-        '4️⃣ *Talk to Support Executive*',
-      delayMs: 1000,
-      isActive: true
-    }
-  ]
+  replyMessage:
+    'Hello 👋 Welcome to *3D Galaxy*! ✨\n\n' +
+    'Thank you for contacting us. How can we assist you today?\n' +
+    'Our customer support team has received your message and an executive will assist you shortly.',
+  keywords: ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings'],
+  onlyReplyOnce: true,
+  humanTakeoverGlobal: false
 };
 
 const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
@@ -205,7 +88,24 @@ export class WhatsAppAutoReplyService {
         const parsed = typeof record.settingData === 'string'
           ? JSON.parse(record.settingData)
           : record.settingData;
-        return { ...DEFAULT_CONFIG, ...parsed };
+
+        // Gracefully migrate / extract reply message and keywords from legacy configs if present
+        const replyMsg = parsed.replyMessage ||
+          parsed.rules?.find((r: any) => r.triggerType === 'WELCOME')?.responseText ||
+          parsed.defaultReply ||
+          DEFAULT_CONFIG.replyMessage;
+
+        const kw = Array.isArray(parsed.keywords) && parsed.keywords.length > 0
+          ? parsed.keywords
+          : (parsed.rules?.find((r: any) => r.triggerType === 'WELCOME')?.conditions?.keywords || DEFAULT_CONFIG.keywords);
+
+        return {
+          ...DEFAULT_CONFIG,
+          ...parsed,
+          replyMessage: replyMsg,
+          keywords: kw,
+          onlyReplyOnce: parsed.onlyReplyOnce !== undefined ? parsed.onlyReplyOnce : true
+        };
       }
     } catch (e: any) {
       logger.warn('[WhatsAppAutoReplyService] Could not read settings from DB:', e.message);
@@ -217,12 +117,21 @@ export class WhatsAppAutoReplyService {
    * Persists auto-reply configuration to database setting table.
    */
   public static async saveConfig(config: AutoReplyConfig): Promise<AutoReplyConfig> {
+    const payloadToSave = {
+      enabled: !!config.enabled,
+      replyMessage: config.replyMessage || DEFAULT_CONFIG.replyMessage,
+      keywords: Array.isArray(config.keywords) && config.keywords.length > 0 ? config.keywords : DEFAULT_CONFIG.keywords,
+      onlyReplyOnce: config.onlyReplyOnce !== undefined ? !!config.onlyReplyOnce : true,
+      humanTakeoverGlobal: !!config.humanTakeoverGlobal
+    };
+
     const updated = await prisma.setting.upsert({
       where: { settingKey: 'whatsapp-auto-reply-settings' },
-      update: { settingData: config as any, updatedAt: new Date() },
-      create: { settingKey: 'whatsapp-auto-reply-settings', settingData: config as any }
+      update: { settingData: payloadToSave as any, updatedAt: new Date() },
+      create: { settingKey: 'whatsapp-auto-reply-settings', settingData: payloadToSave as any }
     });
-    return typeof updated.settingData === 'string' ? JSON.parse(updated.settingData) : (updated.settingData as any);
+    const parsed = typeof updated.settingData === 'string' ? JSON.parse(updated.settingData) : (updated.settingData as any);
+    return { ...DEFAULT_CONFIG, ...parsed };
   }
 
   /**
@@ -258,87 +167,29 @@ export class WhatsAppAutoReplyService {
   }
 
   /**
-   * Checks whether the current time in the given timezone (default IST) is outside business hours.
-   */
-  public static isOutsideBusinessHours(bh: AutoReplyConfig['businessHours']): boolean {
-    if (!bh || !bh.enabled) return false;
-
-    try {
-      // Get current date/time in the target timezone (default Asia/Kolkata)
-      const now = new Date();
-      const tz = bh.timezone || 'Asia/Kolkata';
-
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: tz,
-        hour12: false,
-        weekday: 'short',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      const parts = formatter.formatToParts(now);
-      const weekdayStr = parts.find(p => p.type === 'weekday')?.value || 'Mon';
-      const hourStr = parts.find(p => p.type === 'hour')?.value || '00';
-      const minuteStr = parts.find(p => p.type === 'minute')?.value || '00';
-
-      const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-      const currentDay = dayMap[weekdayStr] ?? 1;
-
-      // Check if current day is an active business day
-      if (Array.isArray(bh.days) && bh.days.length > 0 && !bh.days.includes(currentDay)) {
-        return true;
-      }
-
-      // Check time range
-      const [startHour, startMin] = bh.start.split(':').map(Number);
-      const [endHour, endMin] = bh.end.split(':').map(Number);
-
-      const currentMinutes = Number(hourStr) * 60 + Number(minuteStr);
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
-
-      if (currentMinutes < startMinutes || currentMinutes >= endMinutes) {
-        return true;
-      }
-
-      return false;
-    } catch (e: any) {
-      logger.warn('[WhatsAppAutoReplyService] Business hours check error:', e.message);
-      return false;
-    }
-  }
-
-  /**
    * Matches keyword conditions against incoming customer text.
    */
-  private static matchesKeywords(
+  public static matchesKeywords(
     text: string,
-    keywords: string[],
-    matchType: 'CONTAINS_ANY' | 'CONTAINS_ALL' | 'EXACT' = 'CONTAINS_ANY'
+    keywords: string[]
   ): boolean {
-    const normalized = text.toLowerCase().trim();
-    if (!keywords || keywords.length === 0) return false;
+    const normalized = (text || '').toLowerCase().trim();
+    if (!normalized || !keywords || keywords.length === 0) return false;
 
     const lowerKeywords = keywords.map(k => k.toLowerCase().trim()).filter(Boolean);
 
-    if (matchType === 'EXACT') {
-      return lowerKeywords.some(k => normalized === k);
-    }
-
-    if (matchType === 'CONTAINS_ALL') {
-      return lowerKeywords.every(k => normalized.includes(k));
-    }
-
-    // Default: CONTAINS_ANY
     return lowerKeywords.some(k => {
-      // Match word boundaries or substring
-      const regex = new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
-      return regex.test(normalized) || normalized.includes(k);
+      // Check exact match or word boundary (e.g. "hi!", "hello team", "hey")
+      const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(^|\\b|\\s)${escaped}(\\b|\\s|[!.,?]|$)`, 'i');
+      return regex.test(normalized) || normalized === k;
     });
   }
 
   /**
-   * Primary entry point: Evaluates incoming customer message through rule engine and sends automated reply without AI.
+   * Primary entry point: Evaluates incoming customer message.
+   * RESTRICTION: Sends ONLY ONE auto-reply per conversation, and ONLY IF customer message is a greeting (hi/hello).
+   * No other automated messages or complex configurations are evaluated.
    */
   public static async processCustomerMessage(
     conversationId: string,
@@ -347,7 +198,7 @@ export class WhatsAppAutoReplyService {
     try {
       const config = await this.getConfig();
 
-      // Check 1: Global auto-reply master toggle
+      // Check 1: Master auto-reply toggle
       if (!config.enabled) {
         return { replied: false, reason: 'AUTO_REPLY_DISABLED' };
       }
@@ -362,26 +213,11 @@ export class WhatsAppAutoReplyService {
         where: { id: conversationId },
         include: {
           customer: {
-            include: {
-              user: true,
-              orders: {
-                orderBy: { createdAt: 'desc' },
-                take: 3,
-                include: {
-                  items: {
-                    include: {
-                      product: { select: { name: true, sku: true } },
-                      variant: { select: { name: true, sku: true } }
-                    }
-                  },
-                  payments: true
-                }
-              }
-            }
+            include: { user: true }
           },
           messages: {
             orderBy: { createdAt: 'desc' },
-            take: 10
+            take: 30
           }
         }
       });
@@ -396,132 +232,47 @@ export class WhatsAppAutoReplyService {
         return { replied: false, reason: 'CONVERSATION_HUMAN_MODE' };
       }
 
+      // Check 4: RESTRICTION - "only one message should send"
+      // If ANY outbound message has already been sent (AUTO, ADMIN, or AGENT), do NOT send another!
+      const previousMessages = conv.messages || [];
+      const hasAutoReplied = previousMessages.some(m => m.direction === 'OUTBOUND' && m.senderType === 'AUTO');
+      const hasAdminReplied = previousMessages.some(m => m.direction === 'OUTBOUND' && (m.senderType === 'ADMIN' || m.senderType === 'AGENT'));
+
+      if (config.onlyReplyOnce !== false && (hasAutoReplied || hasAdminReplied)) {
+        logger.info(`[WhatsAppAutoReply] Conversation ${conversationId} already received a reply. Auto-reply restricted to single reply.`);
+        return { replied: false, reason: 'ALREADY_REPLIED_ONCE' };
+      }
+
+      // Check 5: RESTRICTION - "if hi or hello then only one message should send not other configuration needed"
       const text = (inboundText || '').trim();
+      const keywords = config.keywords && config.keywords.length > 0
+        ? config.keywords
+        : DEFAULT_CONFIG.keywords;
+
+      const isGreeting = this.matchesKeywords(text, keywords);
+
+      if (!isGreeting) {
+        logger.info(`[WhatsAppAutoReply] Inbound message '${text}' is not a greeting (hi/hello). Auto-reply skipped as per restriction.`);
+        return { replied: false, reason: 'NOT_A_GREETING' };
+      }
+
+      // Resolve customer name for placeholder replacement
       const customer = conv.customer;
       const customerName = customer?.user
         ? `${customer.user.firstName || ''} ${customer.user.lastName || ''}`.trim()
         : (conv.customerName || 'Customer');
 
-      // Sort rules by priority ascending (1 is highest priority)
-      const sortedRules = [...(config.rules || [])]
-        .filter(r => r.isActive)
-        .sort((a, b) => (a.priority || 99) - (b.priority || 99));
+      const rawReply = config.replyMessage || DEFAULT_CONFIG.replyMessage;
+      const replyContent = rawReply.replace(/{customerName}/g, customerName);
 
-      let matchedRule: AutoReplyRule | null = null;
-      let replyContent = '';
-
-      for (const rule of sortedRules) {
-        // Evaluate rule by triggerType
-        if (rule.triggerType === 'BUSINESS_HOURS') {
-          if (this.isOutsideBusinessHours(config.businessHours)) {
-            matchedRule = rule;
-            replyContent = rule.responseText || config.businessHours.offlineMessage;
-            break;
-          }
-        } else if (rule.triggerType === 'ORDER_STATUS') {
-          const kw = rule.conditions?.keywords || ['order', 'tracking', 'track', 'status', 'where is my order'];
-          if (this.matchesKeywords(text, kw, rule.conditions?.matchType)) {
-            matchedRule = rule;
-
-            // Dynamically construct order response using customer's actual latest order
-            const recentOrders = customer?.orders || [];
-            if (recentOrders.length > 0) {
-              const ord = recentOrders[0];
-              const orderNum = ord.orderNumber;
-              const ordStatus = ord.status;
-              const ordTotal = ord.totalAmount;
-              const delivery = ord.estimatedDelivery || '3-5 business days';
-              const itemsList = ord.items?.map((it: any) => `${it.product?.name || 'Item'} (x${it.quantity})`).join(', ') || '';
-
-              replyContent =
-                `Hello ${customerName}! 👋\n\n` +
-                `Here is the latest update on your order:\n` +
-                `📦 *Order:* #${orderNum}\n` +
-                `📊 *Status:* *${ordStatus}*\n` +
-                `💳 *Total:* ₹${ordTotal}\n` +
-                (itemsList ? `🛍️ *Items:* ${itemsList}\n` : '') +
-                `🚚 *Estimated Delivery:* ${delivery}\n\n` +
-                `Reply here if you need additional assistance, and our support team will assist you!`;
-            } else {
-              // Try finding order by matching phone number in database
-              const cleanPhone = conv.phone.replace(/[^\d]/g, '').slice(-10);
-              const foundByPhone = await prisma.order.findFirst({
-                where: {
-                  OR: [
-                    { customer: { user: { mobile: { contains: cleanPhone } } } },
-                    { notes: { contains: cleanPhone } }
-                  ]
-                },
-                orderBy: { createdAt: 'desc' }
-              });
-
-              if (foundByPhone) {
-                replyContent =
-                  `Hello ${customerName}! 👋\n\n` +
-                  `We located your recent order *#${foundByPhone.orderNumber}*!\n` +
-                  `📊 *Status:* *${foundByPhone.status}*\n` +
-                  `💳 *Total:* ₹${foundByPhone.totalAmount}\n` +
-                  `🚚 *Estimated Delivery:* ${foundByPhone.estimatedDelivery || '3-5 business days'}\n\n` +
-                  `Reply here if you'd like tracking details!`;
-              } else {
-                replyContent =
-                  `Hello ${customerName}! 👋\n\n` +
-                  `We could not locate an active order linked to your phone number.\n` +
-                  `Please share your *Order ID* (e.g. *#3DX0012*) and we will gladly check the status for you!`;
-              }
-            }
-            break;
-          }
-        } else if (rule.triggerType === 'WELCOME') {
-          // Check if conversation is new or first customer message
-          const customerMsgCount = (conv.messages || []).filter(m => m.direction === 'INBOUND').length;
-          const isFirstMessage = customerMsgCount <= 1;
-          const kw = rule.conditions?.keywords || ['hi', 'hello', 'hey'];
-
-          if (isFirstMessage || this.matchesKeywords(text, kw, rule.conditions?.matchType)) {
-            matchedRule = rule;
-            replyContent = rule.responseText.replace(/{customerName}/g, customerName);
-            break;
-          }
-        } else if (rule.triggerType === 'KEYWORD') {
-          if (rule.conditions && this.matchesKeywords(text, rule.conditions.keywords, rule.conditions.matchType)) {
-            matchedRule = rule;
-            replyContent = rule.responseText.replace(/{customerName}/g, customerName);
-            break;
-          }
-        } else if (rule.triggerType === 'DEFAULT') {
-          matchedRule = rule;
-          replyContent = rule.responseText.replace(/{customerName}/g, customerName);
-          break;
-        }
+      if (!replyContent || !replyContent.trim()) {
+        return { replied: false, reason: 'EMPTY_REPLY_MESSAGE' };
       }
 
-      // If no rule matched, check if default reply should be sent
-      if (!matchedRule && config.defaultReply && config.defaultReply.trim()) {
-        // Only if message is not empty and no other rule handled it
-        matchedRule = {
-          id: 'rule_default_fallback',
-          name: 'Default Reply',
-          priority: 99,
-          triggerType: 'DEFAULT',
-          actionType: 'TEXT',
-          responseText: config.defaultReply,
-          isActive: true
-        };
-        replyContent = config.defaultReply.replace(/{customerName}/g, customerName);
-      }
+      logger.info(`[WhatsAppAutoReply] GREETING_MATCHED: Sending single auto-reply to conversation ${conversationId}`);
 
-      if (!matchedRule || !replyContent || !replyContent.trim()) {
-        return { replied: false, reason: 'NO_RULE_MATCHED' };
-      }
-
-      logger.info(`[WhatsAppAutoReply] AUTO_REPLY_MATCHED: Rule '${matchedRule.name}' matched for conversation ${conversationId}`);
-
-      // Apply delay if configured
-      const delay = matchedRule.delayMs || 0;
-      if (delay > 0 && delay <= 5000) {
-        await new Promise(r => setTimeout(r, delay));
-      }
+      // Small delay (1000ms) for natural delivery
+      await new Promise(r => setTimeout(r, 1000));
 
       // Dispatch auto-reply through Meta WhatsApp Cloud API
       const settings = await getWhatsappSettings();
@@ -574,10 +325,10 @@ export class WhatsAppAutoReplyService {
         errorMessage
       });
 
-      logger.info(`[WhatsAppAutoReply] AUTO_REPLY_SENT: Dispatched rule '${matchedRule.name}' to ${conv.phone}`);
+      logger.info(`[WhatsAppAutoReply] AUTO_REPLY_SENT: Dispatched single greeting reply to ${conv.phone}`);
       return {
         replied: true,
-        ruleName: matchedRule.name,
+        ruleName: 'Single Greeting Auto-Reply',
         replyText: replyContent
       };
     } catch (err: any) {

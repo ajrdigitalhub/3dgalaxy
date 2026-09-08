@@ -478,17 +478,7 @@ export class OmniSearchComponent implements OnInit, OnDestroy {
       this.toast.success('Switched to light theme.');
     } else if (action === 'create_product') {
       this.admin.setActiveTab('products');
-      this.admin.editingProduct.set({
-        id: '',
-        name: 'New Product Draft',
-        basePrice: 0,
-        salePrice: 0,
-        sku: 'SKU-' + Math.floor(Math.random() * 100000),
-        images: [],
-        isActive: true,
-        stock: 10,
-        slug: 'new-product-' + Date.now()
-      } as any);
+      this.admin.createNewProductDraft();
       this.toast.info('Initiated new product draft builder.');
     } else if (action === 'send_push') {
       this.admin.setActiveTab('push-settings');
@@ -511,7 +501,7 @@ export class OmniSearchComponent implements OnInit, OnDestroy {
 
   selectProduct(product: any) {
     this.admin.setActiveTab('products');
-    this.admin.editingProduct.set(product);
+    this.admin.startProductEdit(product);
     this.close.emit();
     this.toast.success(`Opening product editor: ${product.name}`);
   }

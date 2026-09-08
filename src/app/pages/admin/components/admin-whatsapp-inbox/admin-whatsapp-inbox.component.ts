@@ -37,7 +37,7 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
 
   // Auto-Reply & Configuration Modal State
   showAutoReplyModal = signal<boolean>(false);
-  autoReplyTab = signal<'GLOBAL' | 'RULES' | 'QUICK_REPLIES'>('GLOBAL');
+  autoReplyTab = signal<'AUTOREPLY' | 'QUICK_REPLIES'>('AUTOREPLY');
   autoReplyConfig = signal<any>(null);
   quickRepliesList = signal<any[]>([]);
   isSavingConfig = signal<boolean>(false);
@@ -110,11 +110,36 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
   async loadAutoReplyConfig() {
     const config = await this.waService.getAutoReplyConfig();
     if (config) {
+      if (!config.replyMessage) {
+        config.replyMessage =
+          'Hello 👋 Welcome to *3D Galaxy*! ✨\n\n' +
+          'Thank you for contacting us. How can we assist you today?\n' +
+          'Our customer support team has received your message and an executive will assist you shortly.';
+      }
+      if (!config.keywords || !config.keywords.length) {
+        config.keywords = ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings'];
+      }
+      if (config.onlyReplyOnce === undefined) {
+        config.onlyReplyOnce = true;
+      }
       this.autoReplyConfig.set(config);
     }
   }
 
-  openAutoReplySettings(tab: 'GLOBAL' | 'RULES' | 'QUICK_REPLIES' = 'GLOBAL') {
+  getKeywordsString(cfg: any): string {
+    if (!cfg || !Array.isArray(cfg.keywords)) return 'hi, hello, hey, start, vanakkam, namaste, greetings';
+    return cfg.keywords.join(', ');
+  }
+
+  updateKeywords(cfg: any, rawKeywords: string) {
+    if (!cfg) return;
+    cfg.keywords = (rawKeywords || '')
+      .split(',')
+      .map((k: string) => k.trim())
+      .filter(Boolean);
+  }
+
+  openAutoReplySettings(tab: 'AUTOREPLY' | 'QUICK_REPLIES' = 'AUTOREPLY') {
     this.autoReplyTab.set(tab);
     this.saveStatusMsg.set(null);
     this.loadAutoReplyConfig();
@@ -158,51 +183,6 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
     } else {
       this.saveStatusMsg.set('Failed to save quick replies.');
     }
-  }
-
-  toggleRuleActive(rule: any) {
-    rule.isActive = !rule.isActive;
-  }
-
-  addNewRule() {
-    const cfg = this.autoReplyConfig();
-    if (!cfg) return;
-
-    const newRule = {
-      id: 'rule_' + Date.now(),
-      name: 'New Custom Rule',
-      priority: (cfg.rules?.length || 0) + 2,
-      triggerType: 'KEYWORD',
-      conditions: {
-        keywords: ['keyword1', 'keyword2'],
-        matchType: 'CONTAINS_ANY'
-      },
-      actionType: 'TEXT',
-      responseText: 'Thank you for reaching out! How can we assist you?',
-      delayMs: 1000,
-      isActive: true
-    };
-
-    const rules = [...(cfg.rules || []), newRule];
-    this.autoReplyConfig.set({ ...cfg, rules });
-  }
-
-  removeRule(index: number) {
-    const cfg = this.autoReplyConfig();
-    if (!cfg) return;
-    const rules = cfg.rules.filter((_: any, i: number) => i !== index);
-    this.autoReplyConfig.set({ ...cfg, rules });
-  }
-
-  updateRuleKeywords(rule: any, rawKeywords: string) {
-    const keywords = (rawKeywords || '')
-      .split(',')
-      .map((k) => k.trim())
-      .filter(Boolean);
-    rule.conditions = {
-      keywords,
-      matchType: rule.conditions?.matchType || 'CONTAINS_ANY'
-    };
   }
 
   addNewQuickReply() {

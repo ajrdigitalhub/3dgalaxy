@@ -47,6 +47,7 @@ import { OmniSearchComponent } from "./components/omni-search";
 import { AdminVariantGroupConfigComponent } from "./components/admin-variant-group-config/admin-variant-group-config.component";
 import { AdminReviewsTabComponent } from "./components/reviews-tab";
 import { ToastService } from "../../shared/components/toast/toast.service";
+import { extractNormalizedCategoryIds, normalizeCategoryId } from "../../shared/components/category-multi-select/category-multi-select.component";
 
 export type AdminTab =
   | "notification-center"
@@ -1230,6 +1231,8 @@ export class AdminPanel implements OnInit {
     this.pSku.set("");
     this.pDesc.set("");
     this.pBrand.set("3D Galaxy");
+    this.pCatId.set("");
+    this.pCategoryIds.set([]);
     this.pMrp.set(1499);
     this.pSale.set(1199);
     this.pDealer.set(999);
@@ -1682,13 +1685,17 @@ export class AdminPanel implements OnInit {
   startProductEdit(p: Product) {
     this.editingProduct.set(p);
 
+    // Synchronize categories immediately from product object
+    const initialCats = extractNormalizedCategoryIds(p, this.ds.categories());
+    this.pCategoryIds.set(initialCats.categoryIds);
+    this.pCatId.set(initialCats.primaryCategoryId || p.category_id || (initialCats.categoryIds.length > 0 ? initialCats.categoryIds[0] : ""));
+
     // Set immediate basic fields
     this.pName.set(p.name);
     this.pSku.set(p.sku || "");
     this.pDesc.set(p.description || "");
     this.pLongDesc.set(p.long_description || "");
     this.pBrand.set(p.brandId || (p as any).brand_id || (p as any).brand?.id || p.brand || "");
-    this.pCatId.set(p.category_id || "");
     this.pMrp.set(p.mrp || 0);
     this.pSale.set(p.sale_price || 0);
     this.pDealer.set(p.dealer_price || 0);
@@ -1756,9 +1763,25 @@ export class AdminPanel implements OnInit {
     // Asynchronously fetch complete product specifications, options, downloads, etc. from dedicated details endpoint
     this.http.get<any>(`/api/admin/products/${p.id}/details`).subscribe({
       next: (found) => {
+        // Prevent race conditions if admin switched to another product while request was in-flight
+        if (this.editingProduct()?.id !== p.id) return;
+
         if (found && !found.error) {
           const detail = found.product || found;
           const master = found.masterData || {};
+
+          // Synchronize complete categories from API response
+          const resolvedCats = extractNormalizedCategoryIds(found, this.ds.categories());
+          if (resolvedCats.categoryIds.length > 0) {
+            this.pCategoryIds.set(resolvedCats.categoryIds);
+            this.pCatId.set(resolvedCats.primaryCategoryId || (resolvedCats.categoryIds.length > 0 ? resolvedCats.categoryIds[0] : ""));
+          } else if (detail.categoryId || detail.category_id) {
+            const singleId = normalizeCategoryId(detail.categoryId || detail.category_id);
+            if (singleId) {
+              this.pCategoryIds.set([singleId]);
+              this.pCatId.set(singleId);
+            }
+          }
 
           this.pName.set(detail.name || p.name);
           this.pSku.set(detail.sku || p.sku || "");
@@ -1769,9 +1792,13 @@ export class AdminPanel implements OnInit {
           this.pBrand.set(
             detail.brandId || detail.brand_id || detail.brand?.id || p.brandId || (p as any).brand_id || ""
           );
-          this.pCatId.set(
-            detail.categoryId || detail.category_id || p.category_id || "",
-          );
+          if (resolvedCats.primaryCategoryId) {
+            this.pCatId.set(resolvedCats.primaryCategoryId);
+          } else {
+            this.pCatId.set(
+              detail.categoryId || detail.category_id || p.category_id || "",
+            );
+          }
           this.pMrp.set(detail.mrp || p.mrp || 0);
           this.pSale.set(
             detail.salePrice || detail.sale_price || p.sale_price || 0,
@@ -1876,6 +1903,8 @@ export class AdminPanel implements OnInit {
     this.pDesc.set("");
     this.pLongDesc.set("");
     this.pBrand.set("3D Galaxy");
+    this.pCatId.set("");
+    this.pCategoryIds.set([]);
     this.pMrp.set(1499);
     this.pSale.set(1199);
     this.pDealer.set(999);
@@ -2258,6 +2287,13 @@ export class AdminPanel implements OnInit {
       };
     });
 
+    const primaryId = this.pCatId() || (this.pCategoryIds().length > 0 ? this.pCategoryIds()[0] : "");
+    const selectedCategoryIds = this.pCategoryIds();
+    const categoryIdsArr = selectedCategoryIds.map((cId, idx) => ({
+      id: cId,
+      isPrimary: cId === primaryId || (idx === 0 && !primaryId)
+    }));
+
     const pData: any = {
       name,
       slug:
@@ -2267,7 +2303,11 @@ export class AdminPanel implements OnInit {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)+/g, ""),
       brand: this.pBrand() || "3D Galaxy",
-      category_id: this.pCatId() || "materials",
+      brandId: this.pBrand() || undefined,
+      category_id: primaryId || "materials",
+      categoryId: primaryId || "materials",
+      categoryIds: selectedCategoryIds,
+      categories: categoryIdsArr,
       sku: this.pSku() || "GLX-SKU-" + Math.floor(1000 + Math.random() * 9000),
       barcode: isEdit
         ? this.editingProduct()?.barcode || Date.now().toString()

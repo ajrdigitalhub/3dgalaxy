@@ -4,8 +4,7 @@ import { authenticateToken, requireRole } from '../../middleware/auth';
 import { cacheMiddleware } from '../../middleware/cache';
 
 const settingsRoutes = Router();
-// DISABLED TO REDUCE BILLING — version polling removed from frontend
-// settingsRoutes.get('/version', getSettingsVersion);
+settingsRoutes.get('/version', getSettingsVersion);
 settingsRoutes.get('/', (req, res, next) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   next();

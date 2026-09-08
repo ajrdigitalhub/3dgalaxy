@@ -16,6 +16,9 @@ if (!process.env.PG_USER || process.env.PG_USER === 'postgres') {
 if (!process.env.PG_PORT || process.env.PG_PORT === '5432') {
   process.env.PG_PORT = '6543';
 }
+if (!process.env.APP_FIREBASE_STORAGE_BUCKET) {
+  process.env.APP_FIREBASE_STORAGE_BUCKET = 'ajr3dgalaxy.firebasestorage.app';
+}
 
 export const ENV = {
   PG_USER: process.env.PG_USER || 'postgres.glaljifokncxzjvajzrg',

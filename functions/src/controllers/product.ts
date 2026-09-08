@@ -1246,6 +1246,10 @@ export const getProductById = async (req: Request, res: Response) => {
       codAvailable: mappedProduct.codAvailable,
       is_cod_available: mappedProduct.is_cod_available,
       categoryPath: catPath,
+      categoryId: mappedProduct.categoryId,
+      categoryIds: mappedProduct.categoryIds,
+      categories: mappedProduct.categories,
+      primaryCategory: mappedProduct.primaryCategory,
       variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
         imageIds: v.variantImages || []
@@ -1567,11 +1571,11 @@ export const updateProduct = async (req: Request, res: Response) => {
     const hasCategoryPayload = req.body.categoryIds !== undefined || req.body.categories !== undefined || req.body.categoryId !== undefined || req.body.category_id !== undefined || req.body.category !== undefined;
     const resolvedCategoryList = hasCategoryPayload ? await resolveCategoryIds(req.body) : [];
     const primaryCatItem = resolvedCategoryList.find(c => c.isPrimary) || resolvedCategoryList[0];
-    const resolvedCategoryId = hasCategoryPayload ? (primaryCatItem ? primaryCatItem.id : await resolveCategoryId(rawCategory)) : undefined;
+    const resolvedCategoryId = hasCategoryPayload ? (primaryCatItem ? primaryCatItem.id : (req.body.categoryIds && Array.isArray(req.body.categoryIds) && req.body.categoryIds.length === 0 ? null : await resolveCategoryId(rawCategory))) : undefined;
 
     const updated = await prisma.$transaction(async (tx) => {
       // Sync multi-categories in ProductCategory table IF category payload was sent
-      if (hasCategoryPayload && resolvedCategoryList.length > 0) {
+      if (hasCategoryPayload) {
         await tx.productCategory.deleteMany({ where: { productId: id } });
         for (let i = 0; i < resolvedCategoryList.length; i++) {
           const catItem = resolvedCategoryList[i];
@@ -1692,7 +1696,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : undefined,
           dealerPrice: resolvedDealerPrice !== undefined && resolvedDealerPrice !== null ? parseFloat(resolvedDealerPrice) : undefined,
           stock: finalStock,
-          categoryId: resolvedCategoryId !== undefined ? resolvedCategoryId : (categoryId !== undefined ? categoryId : undefined),
+          categoryId: hasCategoryPayload ? (resolvedCategoryId !== undefined ? resolvedCategoryId : null) : (categoryId !== undefined ? categoryId : undefined),
           brandId: resolvedBrandId !== undefined ? resolvedBrandId : (brandId !== undefined ? brandId : undefined),
           isActive: status !== undefined ? status === 'active' : undefined,
           isFeatured: isFeatured !== undefined ? !!isFeatured : (featured !== undefined ? !!featured : undefined),

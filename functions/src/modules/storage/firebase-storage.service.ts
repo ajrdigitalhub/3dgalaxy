@@ -1,4 +1,4 @@
-import { getStorageBucket } from '../../config/firebase';
+import { getStorageBucket, getFirebaseAdmin } from '../../config/firebase';
 import path from 'path';
 
 export class FirebaseStorageService {
@@ -10,7 +10,19 @@ export class FirebaseStorageService {
     destination: string,
     mimeType: string
   ): Promise<string> {
-    const bucket = getStorageBucket();
+    let bucket = getStorageBucket();
+    if (!bucket) {
+      try {
+        const fbAdmin = getFirebaseAdmin();
+        if (fbAdmin.apps.length > 0) {
+          const bucketName = process.env.APP_FIREBASE_STORAGE_BUCKET || 'ajr3dgalaxy.firebasestorage.app';
+          bucket = fbAdmin.storage().bucket(bucketName);
+        }
+      } catch (reInitErr) {
+        console.error('Re-init bucket attempt failed:', reInitErr);
+      }
+    }
+
     if (!bucket) {
       throw new Error('Firebase Storage is not initialized properly. Please check your APP_FIREBASE_STORAGE_BUCKET environment variable.');
     }
@@ -21,10 +33,15 @@ export class FirebaseStorageService {
       resumable: false,
     });
     
-    await file.makePublic();
+    try {
+      await file.makePublic();
+    } catch (aclErr: any) {
+      console.warn('file.makePublic() skipped or not supported with uniform bucket access:', aclErr?.message || aclErr);
+    }
     
     // We can return the direct googleapis public URL
-    return `https://storage.googleapis.com/${bucket.name}/${destination}`;
+    const bucketName = bucket.name || process.env.APP_FIREBASE_STORAGE_BUCKET || 'ajr3dgalaxy.firebasestorage.app';
+    return `https://storage.googleapis.com/${bucketName}/${destination}`;
   }
 
   /**
@@ -33,7 +50,19 @@ export class FirebaseStorageService {
   static async deleteFile(fileUrlOrPath: string): Promise<void> {
     if (!fileUrlOrPath) return;
 
-    const bucket = getStorageBucket();
+    let bucket = getStorageBucket();
+    if (!bucket) {
+      try {
+        const fbAdmin = getFirebaseAdmin();
+        if (fbAdmin.apps.length > 0) {
+          const bucketName = process.env.APP_FIREBASE_STORAGE_BUCKET || 'ajr3dgalaxy.firebasestorage.app';
+          bucket = fbAdmin.storage().bucket(bucketName);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     if (!bucket) {
       console.warn('Firebase Storage not initialized, skipping deletion of', fileUrlOrPath);
       return;
@@ -48,9 +77,9 @@ export class FirebaseStorageService {
         if (url.hostname === 'storage.googleapis.com') {
           // Format: https://storage.googleapis.com/bucket-name/path/to/file.jpg
           const pathParts = url.pathname.split('/');
-          // First part is empty, second is bucket name, rest is path
+          // pathParts[0] is empty, pathParts[1] is bucket name, rest is storage path
           if (pathParts.length > 2) {
-            storagePath = pathParts.slice(3).join('/');
+            storagePath = pathParts.slice(2).join('/');
           }
         } else if (url.hostname === 'firebasestorage.googleapis.com') {
           // Format: https://firebasestorage.googleapis.com/v0/b/bucket-name/o/path%2Fto%2Ffile.jpg?alt=media

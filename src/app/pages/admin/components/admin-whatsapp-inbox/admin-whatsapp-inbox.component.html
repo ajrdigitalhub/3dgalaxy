@@ -45,13 +45,13 @@
         </span>
       }
 
-      <!-- Auto Replies & Rules Settings Button -->
+      <!-- Auto-Reply & Quick Replies Button -->
       <button
-        (click)="openAutoReplySettings('GLOBAL')"
+        (click)="openAutoReplySettings('AUTOREPLY')"
         class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
-        title="Configure rule-based auto-replies, business hours, and quick replies">
+        title="Configure single greeting auto-reply (hi/hello) and quick replies">
         <mat-icon class="scale-75">smart_toy</mat-icon>
-        <span class="hidden sm:inline">Auto Replies & Rules</span>
+        <span class="hidden sm:inline">Auto-Reply & Quick Replies</span>
       </button>
 
       <!-- Manual Refresh Button -->
@@ -618,10 +618,10 @@
             </div>
             <div>
               <h3 class="text-sm font-bold text-neutral-900 dark:text-white font-sans">
-                WhatsApp Automation & Quick Replies
+                WhatsApp Auto-Reply & Quick Replies
               </h3>
               <p class="text-[11px] text-neutral-500">
-                Configure rule-based auto replies, operating hours, order lookup, and canned responses without AI
+                Single greeting auto-reply for incoming customer messages and agent canned responses
               </p>
             </div>
           </div>
@@ -635,25 +635,14 @@
         <!-- Navigation Tabs -->
         <div class="px-6 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-4 bg-white dark:bg-neutral-900 text-xs font-semibold">
           <button
-            (click)="autoReplyTab.set('GLOBAL')"
+            (click)="autoReplyTab.set('AUTOREPLY')"
             [ngClass]="{
-              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'GLOBAL',
-              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'GLOBAL'
-            }"
-            class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors">
-            Global Settings & Hours
-          </button>
-          <button
-            (click)="autoReplyTab.set('RULES')"
-            [ngClass]="{
-              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'RULES',
-              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'RULES'
+              'border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400': autoReplyTab() === 'AUTOREPLY',
+              'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'AUTOREPLY'
             }"
             class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
-            <span>Automation Rules</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
-              {{ autoReplyConfig()?.rules?.length || 0 }}
-            </span>
+            <mat-icon class="scale-75">waving_hand</mat-icon>
+            <span>Auto-Reply (Hi / Hello)</span>
           </button>
           <button
             (click)="autoReplyTab.set('QUICK_REPLIES')"
@@ -662,6 +651,7 @@
               'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200': autoReplyTab() !== 'QUICK_REPLIES'
             }"
             class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
+            <mat-icon class="scale-75">flash_on</mat-icon>
             <span>Quick Replies</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
               {{ quickRepliesList().length }}
@@ -680,16 +670,27 @@
             </div>
           }
 
-          <!-- TAB 1: GLOBAL SETTINGS -->
-          @if (autoReplyTab() === 'GLOBAL' && autoReplyConfig(); as cfg) {
-            <div class="space-y-5">
-              <!-- Master Switches -->
+          <!-- TAB 1: SINGLE GREETING AUTO-REPLY -->
+          @if (autoReplyTab() === 'AUTOREPLY' && autoReplyConfig(); as cfg) {
+            <div class="space-y-4">
+              <!-- Single-Reply Restriction Notice -->
+              <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs space-y-1">
+                <div class="font-bold flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-200">
+                  <mat-icon class="scale-75">verified_user</mat-icon>
+                  <span>Single-Reply Restriction Active</span>
+                </div>
+                <p class="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  The system will send <strong>only one greeting reply</strong> when a customer contacts with "hi", "hello", etc. No other automated messages or bot workflows will trigger, keeping the chat clean for your human support team.
+                </p>
+              </div>
+
+              <!-- Master Controls -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
                   <div class="flex items-center justify-between">
                     <div>
                       <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Enable Auto Reply</h4>
-                      <p class="text-[11px] text-neutral-500">Master rule-based automation switch</p>
+                      <p class="text-[11px] text-neutral-500">Send greeting on initial customer contact</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" [(ngModel)]="cfg.enabled" class="sr-only peer">
@@ -701,140 +702,65 @@
                 <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
                   <div class="flex items-center justify-between">
                     <div>
-                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Human Takeover (Global)</h4>
-                      <p class="text-[11px] text-neutral-500">Temporarily pause all automated replies</p>
+                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Send Only Once</h4>
+                      <p class="text-[11px] text-neutral-500">Prevent sending again if already replied</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" [(ngModel)]="cfg.humanTakeoverGlobal" class="sr-only peer">
-                      <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                      <input type="checkbox" [(ngModel)]="cfg.onlyReplyOnce" class="sr-only peer">
+                      <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
                     </label>
                   </div>
                 </div>
               </div>
 
-              <!-- Business Hours Section -->
-              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-3">
-                <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+              <!-- Trigger Keywords -->
+              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                <div class="flex items-center justify-between">
                   <div>
-                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Operating Business Hours</h4>
-                    <p class="text-[11px] text-neutral-500">Auto-replies outside these hours with offline message</p>
+                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Greeting Trigger Keywords</h4>
+                    <p class="text-[11px] text-neutral-500">Comma-separated keywords that trigger the reply (matched as whole words)</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600">Exact / Word Match</span>
+                </div>
+                <input
+                  type="text"
+                  [ngModel]="getKeywordsString(cfg)"
+                  (ngModelChange)="updateKeywords(cfg, $event)"
+                  placeholder="hi, hello, hey, start, vanakkam, namaste, greetings"
+                  class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white focus:outline-none focus:border-emerald-500" />
+                <p class="text-[10px] text-neutral-400">
+                  Examples: <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>start</code>, <code>vanakkam</code>, <code>namaste</code>
+                </p>
+              </div>
+
+              <!-- Greeting Response Text -->
+              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Auto-Reply Greeting Message</h4>
+                    <p class="text-[11px] text-neutral-500">The single greeting message dispatched to the customer</p>
+                  </div>
+                  <span class="text-[10px] text-neutral-400 font-mono">&#123;customerName&#125; supported</span>
+                </div>
+                <textarea
+                  [(ngModel)]="cfg.replyMessage"
+                  rows="5"
+                  placeholder="Hello {customerName}! 👋 Welcome to 3D Galaxy..."
+                  class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white resize-none focus:outline-none focus:border-emerald-500 font-sans leading-relaxed"></textarea>
+              </div>
+
+              <!-- Global Pause / Human Takeover -->
+              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Human Takeover (Pause All Greetings)</h4>
+                    <p class="text-[11px] text-neutral-500">Temporarily pause all automated greetings when support agents are online</p>
                   </div>
                   <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" [(ngModel)]="cfg.businessHours.enabled" class="sr-only peer">
-                    <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                    <input type="checkbox" [(ngModel)]="cfg.humanTakeoverGlobal" class="sr-only peer">
+                    <div class="w-9 h-5 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
                   </label>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  <div>
-                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Timezone</label>
-                    <input type="text" [(ngModel)]="cfg.businessHours.timezone" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Start Time (24h)</label>
-                    <input type="text" [(ngModel)]="cfg.businessHours.start" placeholder="09:30" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-semibold text-neutral-500 mb-1">End Time (24h)</label>
-                    <input type="text" [(ngModel)]="cfg.businessHours.end" placeholder="19:00" class="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-[11px] font-semibold text-neutral-500 mb-1">Offline Notice Reply Message</label>
-                  <textarea [(ngModel)]="cfg.businessHours.offlineMessage" rows="3" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
-                </div>
-              </div>
-
-              <!-- Default Fallback Message -->
-              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
-                <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Default Fallback Reply</h4>
-                <p class="text-[11px] text-neutral-500">Sent when no specific rule matches (supports customer name placeholder)</p>
-                <textarea [(ngModel)]="cfg.defaultReply" rows="2" class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
-              </div>
-            </div>
-          }
-
-          <!-- TAB 2: RULES BUILDER -->
-          @if (autoReplyTab() === 'RULES' && autoReplyConfig(); as cfg) {
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Rule Priority Hierarchy</h4>
-                  <p class="text-[11px] text-neutral-500">Rules evaluate from lowest priority number (1) to highest. First matching rule executes.</p>
-                </div>
-                <button
-                  (click)="addNewRule()"
-                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer border-none shadow-2xs">
-                  <mat-icon class="scale-75">add</mat-icon>
-                  <span>Add Rule</span>
-                </button>
-              </div>
-
-              <div class="space-y-3">
-                @for (rule of cfg.rules; track rule.id; let i = $index) {
-                  <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
-                    <div class="flex items-center justify-between gap-3">
-                      <div class="flex items-center gap-2 flex-1">
-                        <label class="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" [(ngModel)]="rule.isActive" class="sr-only peer">
-                          <div class="w-7 h-4 bg-neutral-300 dark:bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </label>
-                        <input type="text" [(ngModel)]="rule.name" class="font-bold text-xs bg-transparent border-b border-transparent focus:border-emerald-500 outline-none px-1 text-neutral-900 dark:text-white" />
-                      </div>
-
-                      <div class="flex items-center gap-2 shrink-0">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                          {{ rule.triggerType }}
-                        </span>
-                        <div class="flex items-center gap-1 text-[11px] text-neutral-500">
-                          <span>Priority:</span>
-                          <input type="number" [(ngModel)]="rule.priority" class="w-12 px-1.5 py-0.5 text-center font-mono rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs" />
-                        </div>
-                        <button
-                          (click)="removeRule(i)"
-                          class="p-1 text-neutral-400 hover:text-rose-500 border-none bg-transparent cursor-pointer"
-                          title="Delete rule">
-                          <mat-icon class="scale-75">delete_outline</mat-icon>
-                        </button>
-                      </div>
-                    </div>
-
-                    @if (rule.triggerType === 'KEYWORD' || rule.triggerType === 'ORDER_STATUS' || rule.triggerType === 'WELCOME') {
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="sm:col-span-2">
-                          <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Matching Keywords (comma separated)</label>
-                          <input
-                            type="text"
-                            [ngModel]="rule.conditions?.keywords?.join(', ')"
-                            (ngModelChange)="updateRuleKeywords(rule, $event)"
-                            class="w-full px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono" />
-                        </div>
-                        <div>
-                          <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Match Type</label>
-                          <select
-                            [(ngModel)]="rule.conditions.matchType"
-                            class="w-full px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs">
-                            <option value="CONTAINS_ANY">Contains Any</option>
-                            <option value="CONTAINS_ALL">Contains All</option>
-                            <option value="EXACT">Exact Match</option>
-                          </select>
-                        </div>
-                      </div>
-                    }
-
-                    @if (rule.actionType !== 'ORDER_STATUS_LOOKUP') {
-                      <div>
-                        <label class="block text-[10px] font-semibold text-neutral-400 mb-0.5">Response Text</label>
-                        <textarea [(ngModel)]="rule.responseText" rows="2" class="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs resize-none"></textarea>
-                      </div>
-                    } @else {
-                      <div class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-700 dark:text-emerald-300">
-                        ⚡ <strong>Order Status Action:</strong> Dynamically checks customer's latest order from PostgreSQL (Order ID, Status, Items, Courier Tracking & Delivery Date) and formats response automatically.
-                      </div>
-                    }
-                  </div>
-                }
               </div>
             </div>
           }

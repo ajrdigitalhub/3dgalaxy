@@ -10,7 +10,6 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { WhatsAppConversationService } from '../services/whatsappConversationService';
-import { WhatsAppAiService } from '../services/whatsappAiService';
 import { WhatsAppAutoReplyService } from '../services/whatsappAutoReplyService';
 import { NotificationService } from '../services/notification.service';
 import { ConversationEventService } from '../services/conversationEventService';
@@ -668,33 +667,20 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                   logger.warn('[WhatsApp Webhook] Admin notification dispatch error:', err.message);
                 });
 
-                // Automation Routing Architecture (Section 27):
-                // 1. Human Takeover active -> Stop
-                // 2. Rule-based Auto-Reply without AI -> Try rule matching
-                // 3. If no rule matched and AI enabled (AI or HYBRID) -> AI Assistant
+                // Single Greeting Auto-Reply Architecture:
+                // Only sends a single greeting message when a customer sends hi/hello.
+                // Does not send any other automated or AI fallback messages.
                 if (textContent && textContent.trim()) {
                   if (conversation.aiMode === 'HUMAN') {
                     logger.info(`[WhatsApp Webhook] Conversation ${conversation.id} is in HUMAN mode. Automation skipped.`);
                   } else {
-                    let autoReplied = false;
                     try {
                       const autoRes = await WhatsAppAutoReplyService.processCustomerMessage(conversation.id, textContent);
-                      autoReplied = autoRes?.replied || false;
-                      if (autoReplied) {
-                        logger.info(`[WhatsApp Webhook] AUTO_REPLY_SENT: Conversation ${conversation.id} responded via rule '${autoRes.ruleName}'`);
+                      if (autoRes?.replied) {
+                        logger.info(`[WhatsApp Webhook] AUTO_REPLY_SENT: Conversation ${conversation.id} responded with single greeting.`);
                       }
                     } catch (autoErr: any) {
-                      logger.error('[WhatsApp Webhook] Rule-based auto-reply error:', autoErr.message);
-                    }
-
-                    // Fallback to AI only if auto-reply did not match and AI mode is active
-                    if (!autoReplied && (conversation.aiMode === 'AI' || conversation.aiMode === 'HYBRID')) {
-                      try {
-                        await WhatsAppAiService.processCustomerMessage(conversation.id, textContent);
-                        logger.info(`[WhatsApp Webhook] AI_SENT: Conversation ${conversation.id} responded via AI Assistant`);
-                      } catch (aiErr: any) {
-                        logger.error('[WhatsApp Webhook] AI Assistant error:', aiErr.message);
-                      }
+                      logger.error('[WhatsApp Webhook] Single greeting auto-reply error:', autoErr.message);
                     }
                   }
                 }

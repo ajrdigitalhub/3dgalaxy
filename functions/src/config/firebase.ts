@@ -48,12 +48,59 @@ export const loadFirebaseConfigFromDb = async () => {
 let dynamicServiceAccount: any = null;
 let dynamicStorageBucket: string | null = null;
 
+const DEFAULT_STORAGE_BUCKET = 'ajr3dgalaxy.firebasestorage.app';
+const DEFAULT_PROJECT_ID = 'ajr3dgalaxy';
+const DEFAULT_CLIENT_EMAIL = 'firebase-adminsdk-fbsvc@ajr3dgalaxy.iam.gserviceaccount.com';
+
+export const parseOrRepairServiceAccount = (saInput: any): any => {
+  if (!saInput) return null;
+  let rawStr = typeof saInput === 'string' ? saInput.trim() : '';
+  
+  if (rawStr && !rawStr.startsWith('{')) {
+    try {
+      rawStr = Buffer.from(rawStr, 'base64').toString('utf-8');
+    } catch {
+      // ignore
+    }
+  }
+
+  let obj: any = null;
+  if (rawStr && rawStr.startsWith('{')) {
+    try {
+      obj = JSON.parse(rawStr);
+    } catch (e) {
+      const keyMatch = rawStr.match(/-----BEGIN PRIVATE KEY-----[\s\S]+?-----END PRIVATE KEY-----/);
+      if (keyMatch) {
+        obj = {
+          type: 'service_account',
+          project_id: DEFAULT_PROJECT_ID,
+          private_key: keyMatch[0].replace(/\\n/g, '\n'),
+          client_email: DEFAULT_CLIENT_EMAIL
+        };
+      }
+    }
+  } else if (typeof saInput === 'object' && saInput !== null) {
+    obj = { ...saInput };
+  }
+
+  if (obj) {
+    if (!obj.client_email) obj.client_email = DEFAULT_CLIENT_EMAIL;
+    if (!obj.project_id) obj.project_id = DEFAULT_PROJECT_ID;
+    if (obj.private_key && typeof obj.private_key === 'string') {
+      obj.private_key = obj.private_key.replace(/\\n/g, '\n');
+    }
+  }
+  return obj;
+};
+
 export const setDynamicFirebaseConfig = async (serviceAccount: any, storageBucket?: string) => {
   dynamicServiceAccount = serviceAccount;
   if (storageBucket) {
     dynamicStorageBucket = storageBucket;
   }
   initialized = false;
+  bucketInstance = null;
+  storageInstance = null;
   if (admin.apps.length > 0) {
     await Promise.all(admin.apps.map(async (app) => {
       try {
@@ -68,50 +115,64 @@ export const setDynamicFirebaseConfig = async (serviceAccount: any, storageBucke
 };
 
 export const getFirebaseAdmin = () => {
-  if (!initialized) {
+  if (!initialized || admin.apps.length === 0) {
     if (!admin.apps.length) {
       try {
-        let credential;
-        let storageBucket = dynamicStorageBucket || process.env.APP_FIREBASE_STORAGE_BUCKET;
+        let credential: admin.credential.Credential | undefined;
+        const bucketName = dynamicStorageBucket || process.env.APP_FIREBASE_STORAGE_BUCKET || process.env.STORAGE_BUCKET || DEFAULT_STORAGE_BUCKET;
 
         if (dynamicServiceAccount) {
           try {
-            const certObj = typeof dynamicServiceAccount === 'string' 
-              ? JSON.parse(dynamicServiceAccount) 
-              : dynamicServiceAccount;
-            credential = admin.credential.cert(certObj);
+            const certObj = parseOrRepairServiceAccount(dynamicServiceAccount);
+            if (certObj && certObj.private_key) {
+              credential = admin.credential.cert(certObj);
+            }
           } catch (err) {
             console.error("Failed to load Firebase cert from dynamic settings:", err);
           }
-        } else {
+        }
+
+        if (!credential) {
           const base64ServiceAccount = process.env.APP_FIREBASE_SERVICE_ACCOUNT_BASE64;
           if (base64ServiceAccount && base64ServiceAccount.trim() !== '' && base64ServiceAccount !== 'your_base64_encoded_service_account_json_here') {
             try {
-              let decodedServiceAccount = Buffer.from(base64ServiceAccount, 'base64').toString('utf-8');
-              if (!decodedServiceAccount.trim().startsWith('{')) {
-                if (base64ServiceAccount.trim().startsWith('{')) {
-                  decodedServiceAccount = base64ServiceAccount;
-                } else {
-                  throw new Error('Not a JSON format');
-                }
+              const certObj = parseOrRepairServiceAccount(base64ServiceAccount);
+              if (certObj && certObj.private_key) {
+                credential = admin.credential.cert(certObj);
               }
-              credential = admin.credential.cert(JSON.parse(decodedServiceAccount));
             } catch (parseError) {
               console.warn('Invalid Firebase Service Account JSON provided:', parseError instanceof Error ? parseError.message : parseError);
             }
           }
         }
 
-        admin.initializeApp({
-          credential,
-          storageBucket,
-        });
+        if (!credential) {
+          try {
+            credential = admin.credential.applicationDefault();
+            console.log("Using Google Application Default Credentials for Firebase Admin.");
+          } catch {
+            // ADC may not be available locally without gcloud auth
+          }
+        }
+
+        const appOptions: admin.AppOptions = {
+          storageBucket: bucketName,
+          projectId: process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || DEFAULT_PROJECT_ID,
+        };
+
+        if (credential) {
+          appOptions.credential = credential;
+        }
+
+        admin.initializeApp(appOptions);
         console.log('Firebase Admin SDK initialized successfully.');
       } catch (error) {
         console.error('Failed to initialize Firebase Admin:', error);
       }
     }
-    initialized = true;
+    if (admin.apps.length > 0) {
+      initialized = true;
+    }
   }
   return admin;
 };
@@ -120,8 +181,13 @@ export const getStorageBucket = () => {
   if (!bucketInstance) {
     const fbAdmin = getFirebaseAdmin();
     if (fbAdmin.apps.length > 0) {
-      storageInstance = fbAdmin.storage();
-      bucketInstance = storageInstance.bucket();
+      try {
+        storageInstance = fbAdmin.storage();
+        const bucketName = dynamicStorageBucket || process.env.APP_FIREBASE_STORAGE_BUCKET || process.env.STORAGE_BUCKET || DEFAULT_STORAGE_BUCKET;
+        bucketInstance = storageInstance.bucket(bucketName);
+      } catch (err) {
+        console.error("Failed to acquire bucket instance:", err);
+      }
     }
   }
   return bucketInstance;
