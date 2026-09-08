@@ -1761,48 +1761,51 @@ export class AdminPanel implements OnInit {
     );
 
     // Asynchronously fetch complete product specifications, options, downloads, etc. from dedicated details endpoint
-    this.http.get<any>(`/api/admin/products/${p.id}/details`).subscribe({
-      next: (found) => {
-        // Prevent race conditions if admin switched to another product while request was in-flight
-        if (this.editingProduct()?.id !== p.id) return;
+    if (p.id && p.id !== 'new') {
+      this.http.get<any>(`/api/admin/products/${p.id}/details`).subscribe({
+        next: (found) => {
+          // Prevent race conditions if admin switched to another product while request was in-flight
+          if (this.editingProduct()?.id !== p.id) return;
 
-        if (found && !found.error) {
-          const detail = found.product || found;
-          const master = found.masterData || {};
+          if (found && !found.error) {
+            const detail = found.product || found;
+            const master = found.masterData || {};
 
-          // Synchronize complete categories from API response
-          const resolvedCats = extractNormalizedCategoryIds(found, this.ds.categories());
-          if (resolvedCats.categoryIds.length > 0) {
-            this.pCategoryIds.set(resolvedCats.categoryIds);
-            this.pCatId.set(resolvedCats.primaryCategoryId || (resolvedCats.categoryIds.length > 0 ? resolvedCats.categoryIds[0] : ""));
-          } else if (detail.categoryId || detail.category_id) {
-            const singleId = normalizeCategoryId(detail.categoryId || detail.category_id);
-            if (singleId) {
-              this.pCategoryIds.set([singleId]);
-              this.pCatId.set(singleId);
+            // Synchronize complete categories from API response
+            const resolvedCats = extractNormalizedCategoryIds(found, this.ds.categories());
+            if (resolvedCats.categoryIds.length > 0) {
+              this.pCategoryIds.set(resolvedCats.categoryIds);
+              this.pCatId.set(resolvedCats.primaryCategoryId || resolvedCats.categoryIds[0]);
+            } else if (detail.categoryId || detail.category_id) {
+              const singleId = normalizeCategoryId(detail.categoryId || detail.category_id);
+              if (singleId) {
+                this.pCategoryIds.set([singleId]);
+                this.pCatId.set(singleId);
+              }
             }
-          }
 
-          this.pName.set(detail.name || p.name);
-          this.pSku.set(detail.sku || p.sku || "");
-          this.pDesc.set(detail.description || p.description || "");
-          this.pLongDesc.set(
-            detail.long_description || p.long_description || "",
-          );
-          this.pBrand.set(
-            detail.brandId || detail.brand_id || detail.brand?.id || p.brandId || (p as any).brand_id || ""
-          );
-          if (resolvedCats.primaryCategoryId) {
-            this.pCatId.set(resolvedCats.primaryCategoryId);
-          } else {
-            this.pCatId.set(
-              detail.categoryId || detail.category_id || p.category_id || "",
+            this.pName.set(detail.name || p.name);
+            this.pSku.set(detail.sku || p.sku || "");
+            this.pDesc.set(detail.description || p.description || "");
+            this.pLongDesc.set(
+              detail.long_description || p.long_description || "",
             );
-          }
-          this.pMrp.set(detail.mrp || p.mrp || 0);
-          this.pSale.set(
-            detail.salePrice || detail.sale_price || p.sale_price || 0,
-          );
+            this.pBrand.set(
+              detail.brandId || detail.brand_id || detail.brand?.id || p.brandId || (p as any).brand_id || ""
+            );
+            if (resolvedCats.primaryCategoryId) {
+              this.pCatId.set(resolvedCats.primaryCategoryId);
+            } else if (resolvedCats.categoryIds.length > 0) {
+              this.pCatId.set(resolvedCats.categoryIds[0]);
+            } else {
+              this.pCatId.set(
+                detail.categoryId || detail.category_id || p.category_id || "",
+              );
+            }
+            this.pMrp.set(detail.mrp || p.mrp || 0);
+            this.pSale.set(
+              detail.salePrice || detail.sale_price || p.sale_price || 0,
+            );
           this.pDealer.set(
             detail.dealerPrice || detail.dealer_price || p.dealer_price || 0,
           );
@@ -1894,6 +1897,7 @@ export class AdminPanel implements OnInit {
         this.toastService.error("Error fetching complete specifications.");
       },
     });
+    }
   }
 
   cancelProductEdit() {
@@ -2304,8 +2308,8 @@ export class AdminPanel implements OnInit {
           .replace(/(^-|-$)+/g, ""),
       brand: this.pBrand() || "3D Galaxy",
       brandId: this.pBrand() || undefined,
-      category_id: primaryId || "materials",
-      categoryId: primaryId || "materials",
+      category_id: primaryId || undefined,
+      categoryId: primaryId || undefined,
       categoryIds: selectedCategoryIds,
       categories: categoryIdsArr,
       sku: this.pSku() || "GLX-SKU-" + Math.floor(1000 + Math.random() * 9000),

@@ -66,7 +66,7 @@ export const resolveCategoryId = async (input: any): Promise<string | null | und
 
   let val: string = '';
   if (typeof input === 'object') {
-    val = String(input.id || input.slug || input.name || '').trim();
+    val = String(input.id || input.categoryId || input.category_id || (input.category?.id) || input.slug || input.name || '').trim();
   } else {
     val = String(input).trim();
   }
@@ -92,13 +92,32 @@ export const resolveCategoryId = async (input: any): Promise<string | null | und
 
 export const resolveCategoryIds = async (body: any): Promise<Array<{ id: string; isPrimary: boolean }>> => {
   let items: any[] = [];
-  if (Array.isArray(body.categoryIds)) {
-    items = body.categoryIds;
-  } else if (Array.isArray(body.categories)) {
-    items = body.categories;
+  const parseRaw = (val: any) => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+      if (val.includes(',')) {
+        return val.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      return [val.trim()];
+    }
+    return [val];
+  };
+
+  if (body.categoryIds !== undefined && body.categoryIds !== null) {
+    items = parseRaw(body.categoryIds);
+  } else if (body.categories !== undefined && body.categories !== null) {
+    items = parseRaw(body.categories);
   } else if (body.categoryId || body.category_id || body.category) {
     items = [body.categoryId || body.category_id || body.category];
   }
+
+  const rawPrimary = body.primaryCategoryId || body.primary_category_id || body.categoryId || body.category_id;
+  const targetPrimaryId = rawPrimary ? await resolveCategoryId(rawPrimary) : null;
 
   const result: Array<{ id: string; isPrimary: boolean }> = [];
   const seen = new Set<string>();
@@ -108,7 +127,14 @@ export const resolveCategoryIds = async (body: any): Promise<Array<{ id: string;
     const catId = await resolveCategoryId(raw);
     if (catId && !seen.has(catId)) {
       seen.add(catId);
-      const isPrimary = typeof raw === 'object' && raw !== null && 'isPrimary' in raw ? !!raw.isPrimary : i === 0;
+      let isPrimary = false;
+      if (targetPrimaryId) {
+        isPrimary = catId === targetPrimaryId;
+      } else if (typeof raw === 'object' && raw !== null && 'isPrimary' in raw) {
+        isPrimary = !!raw.isPrimary;
+      } else {
+        isPrimary = i === 0;
+      }
       result.push({ id: catId, isPrimary });
     }
   }

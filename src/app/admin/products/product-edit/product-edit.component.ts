@@ -70,15 +70,6 @@ export class ProductEditComponent implements OnInit {
   isLoading = signal<boolean>(false);
 
   constructor() {
-    // Automatically re-resolve categories when CategoryService finishes loading categories list
-    effect(() => {
-      const data = this.rawProductData();
-      const cats = this.categoryService.categories();
-      if (data && cats && cats.length > 0) {
-        this.extractAndSetCategories(data);
-      }
-    }, { allowSignalWrites: true });
-
     // Auto-update preview selection when variants change
     effect(() => {
       const vars = this.adminVariants();

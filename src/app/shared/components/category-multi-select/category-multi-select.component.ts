@@ -18,6 +18,7 @@ export { normalizeCategoryId, extractNormalizedCategoryIds };
 })
 export class CategoryMultiSelectComponent {
   private _rawIncomingSelectedIds: any[] = [];
+  private _rawIncomingPrimaryId: any = null;
 
   @Input() set categories(val: Category[]) {
     this.allCategories.set(val || []);
@@ -29,6 +30,7 @@ export class CategoryMultiSelectComponent {
     this.syncSelectionWithCategories();
   }
   @Input() set primaryCategoryId(val: any) {
+    this._rawIncomingPrimaryId = val;
     const nid = normalizeCategoryId(val);
     this.primaryId.set(nid || null);
   }
@@ -48,7 +50,7 @@ export class CategoryMultiSelectComponent {
     const q = this.searchQuery().toLowerCase().trim();
     const cats = this.allCategories();
     if (!q) return cats;
-    return cats.filter(c => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
+    return cats.filter(c => (c.name && c.name.toLowerCase().includes(q)) || (c.slug && c.slug.toLowerCase().includes(q)));
   });
 
   // Selected Category Objects derived from isSelected matching
@@ -60,10 +62,18 @@ export class CategoryMultiSelectComponent {
   private syncSelectionWithCategories() {
     const rawList = this._rawIncomingSelectedIds || [];
     const available = this.allCategories();
-    const normalized = extractNormalizedCategoryIds({ categoryIds: rawList }, available);
+    const normalized = extractNormalizedCategoryIds(rawList, available);
     const newSet = new Set<string>(normalized.categoryIds);
 
-    // Only update if the resolved set differs from current state to prevent overwriting manual user changes
+    if (newSet.size === 0 && (!rawList || rawList.length === 0)) {
+      if (this.selectedIds().size > 0) {
+        this.selectedIds.set(new Set());
+        this.primaryId.set(null);
+      }
+      return;
+    }
+
+    // Compare with current set to avoid re-writing identical state
     const current = this.selectedIds();
     let hasDiff = current.size !== newSet.size;
     if (!hasDiff) {
@@ -77,9 +87,11 @@ export class CategoryMultiSelectComponent {
 
     if (hasDiff) {
       this.selectedIds.set(newSet);
-      if (!this.primaryId() && newSet.size > 0) {
-        this.primaryId.set(normalized.primaryCategoryId || Array.from(newSet)[0]);
-      }
+      const incomingPrimaryNorm = normalizeCategoryId(this._rawIncomingPrimaryId);
+      const primaryToSet = (incomingPrimaryNorm && newSet.has(incomingPrimaryNorm))
+        ? incomingPrimaryNorm
+        : (normalized.primaryCategoryId || Array.from(newSet)[0] || null);
+      this.primaryId.set(primaryToSet);
     }
   }
 
@@ -226,3 +238,4 @@ export class CategoryMultiSelectComponent {
     });
   }
 }
+
