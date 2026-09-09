@@ -40,7 +40,7 @@ export interface WhatsAppMessage {
   mediaId?: string | null;
   mediaUrl?: string | null;
   mediaMetadata?: any;
-  status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
+  status: 'PENDING' | 'QUEUED' | 'SENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'RECEIVED';
   errorMessage?: string | null;
   createdAt: string;
 }
@@ -51,6 +51,7 @@ export interface WhatsAppMessage {
 export class AdminWhatsAppService {
   private http = inject(HttpClient);
   private eventSource: EventSource | null = null;
+  private reconnectTimer: any = null;
 
   // State Signals
   readonly conversations = signal<WhatsAppConversation[]>([]);
@@ -99,11 +100,18 @@ export class AdminWhatsAppService {
     });
   });
 
+  public getAuthToken(): string {
+    if (typeof localStorage === 'undefined') return '';
+    return (
+      localStorage.getItem('access_token') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('auth_token') ||
+      ''
+    );
+  }
+
   private getHeaders(): { headers: HttpHeaders } {
-    let token = '';
-    if (typeof localStorage !== 'undefined') {
-      token = localStorage.getItem('token') || localStorage.getItem('auth_token') || '';
-    }
+    const token = this.getAuthToken();
     return {
       headers: new HttpHeaders({
         'Content-Type': 'application/json',
@@ -123,11 +131,7 @@ export class AdminWhatsAppService {
       this.eventSource = null;
     }
 
-    let token = '';
-    if (typeof localStorage !== 'undefined') {
-      token = localStorage.getItem('token') || localStorage.getItem('auth_token') || '';
-    }
-
+    const token = this.getAuthToken();
     const streamUrl = `${environment.apiUrl}/admin/whatsapp/stream?token=${encodeURIComponent(token)}`;
     const es = new EventSource(streamUrl);
     this.eventSource = es;
@@ -135,6 +139,15 @@ export class AdminWhatsAppService {
     es.onopen = () => {
       this.isConnected.set(true);
       this.connectionStatus.set('LIVE');
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+      // If a conversation is already open, reload messages silently to catch any missed messages
+      const active = this.activeConversation();
+      if (active) {
+        this.reloadActiveMessages(active.id, true);
+      }
     };
 
     es.onmessage = (event) => {
@@ -149,10 +162,14 @@ export class AdminWhatsAppService {
 
     es.onerror = () => {
       this.isConnected.set(false);
-      if (this.eventSource && this.eventSource.readyState === 0) {
-        this.connectionStatus.set('RECONNECTING');
-      } else {
-        this.connectionStatus.set('OFFLINE');
+      this.connectionStatus.set('RECONNECTING');
+
+      // Schedule automatic reconnection in 3 seconds
+      if (!this.reconnectTimer) {
+        this.reconnectTimer = setTimeout(() => {
+          this.reconnectTimer = null;
+          this.connectToRealtimeStream();
+        }, 3000);
       }
     };
   }
@@ -161,6 +178,10 @@ export class AdminWhatsAppService {
    * Disconnects the real-time SSE stream when tab is hidden or component destroyed.
    */
   disconnectRealtimeStream() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
@@ -179,9 +200,10 @@ export class AdminWhatsAppService {
 
     if (type === 'MESSAGE_RECEIVED' || type === 'MESSAGE_SENT') {
       const active = this.activeConversation();
+      const isCurrentActive = active && active.id === conversationId;
 
       // 1. If this message is for the currently open active conversation, append it!
-      if (active && active.id === conversationId && message) {
+      if (isCurrentActive && message) {
         this.messages.update((msgs) => {
           // Deduplicate by ID or external Meta whatsappMessageId
           const exists = msgs.some(
@@ -197,6 +219,8 @@ export class AdminWhatsAppService {
           return [...msgs, message];
         });
 
+        this.newMessagesTrigger.update((n) => n + 1);
+
         // Update active conversation preview in header
         this.activeConversation.update((c) =>
           c
@@ -208,6 +232,11 @@ export class AdminWhatsAppService {
               }
             : null
         );
+
+        // If customer sent a message while admin is looking at it, auto-clear unread count
+        if (type === 'MESSAGE_RECEIVED') {
+          this.markAsRead(conversationId);
+        }
       }
 
       // 2. Update conversation snippet in the left sidebar list and bump to top
@@ -215,30 +244,36 @@ export class AdminWhatsAppService {
         const index = list.findIndex((c) => c.id === conversationId);
         if (index === -1) {
           if (conversation) {
-            return [conversation, ...list];
+            return [
+              {
+                ...conversation,
+                unreadCount: isCurrentActive ? 0 : (conversation.unreadCount || 1)
+              },
+              ...list
+            ];
           }
           return list;
         }
 
         const target = list[index];
-        const isCurrentActive = active && active.id === conversationId;
         const updated: WhatsAppConversation = {
           ...target,
           lastMessage: message?.messageText || conversation?.lastMessage || target.lastMessage,
           lastMessageAt: message?.createdAt || conversation?.lastMessageAt || new Date().toISOString(),
           lastDirection: message?.direction || conversation?.lastDirection || target.lastDirection,
-          unreadCount:
-            type === 'MESSAGE_RECEIVED' && !isCurrentActive
-              ? (target.unreadCount || 0) + 1
-              : target.unreadCount,
-          ...(conversation || {})
+          unreadCount: isCurrentActive
+            ? 0
+            : type === 'MESSAGE_RECEIVED'
+            ? (target.unreadCount || 0) + 1
+            : target.unreadCount,
+          ...(conversation ? { ...conversation, unreadCount: isCurrentActive ? 0 : conversation.unreadCount } : {})
         };
 
         const remaining = list.filter((_, i) => i !== index);
         return [updated, ...remaining];
       });
 
-      if (type === 'MESSAGE_RECEIVED' && (!active || active.id !== conversationId)) {
+      if (type === 'MESSAGE_RECEIVED' && !isCurrentActive) {
         this.unreadTotal.update((u) => u + 1);
       }
     } else if (type === 'STATUS_CHANGED' && message) {
@@ -247,10 +282,12 @@ export class AdminWhatsAppService {
       if (active && active.id === conversationId) {
         const rank: Record<string, number> = {
           FAILED: -1,
-          PENDING: 0,
-          SENT: 1,
-          DELIVERED: 2,
-          READ: 3
+          QUEUED: 0,
+          SENDING: 1,
+          PENDING: 1,
+          SENT: 2,
+          DELIVERED: 3,
+          READ: 4
         };
 
         this.messages.update((msgs) =>
@@ -264,11 +301,14 @@ export class AdminWhatsAppService {
 
             return {
               ...m,
+              ...message,
               status: resolvedStatus,
               errorMessage: message.errorMessage || m.errorMessage
             };
           })
         );
+
+        this.newMessagesTrigger.update((n) => n + 1);
       }
     } else if (type === 'CONVERSATION_UPDATED' && conversation) {
       this.conversations.update((list) =>
@@ -661,6 +701,20 @@ export class AdminWhatsAppService {
     const url = `${environment.apiUrl}/admin/whatsapp/quick-replies`;
     return new Promise((resolve) => {
       this.http.post<any>(url, quickReplies, this.getHeaders()).subscribe({
+        next: (res) => resolve(res.success || false),
+        error: () => resolve(false)
+      });
+    });
+  }
+
+  /**
+   * Marks conversation as read in backend
+   */
+  markAsRead(conversationId: string): Promise<boolean> {
+    if (!conversationId) return Promise.resolve(false);
+    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${conversationId}/read`;
+    return new Promise((resolve) => {
+      this.http.post<any>(url, {}, this.getHeaders()).subscribe({
         next: (res) => resolve(res.success || false),
         error: () => resolve(false)
       });

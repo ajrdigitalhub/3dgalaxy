@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import {
   AdminWhatsAppService,
@@ -25,6 +25,7 @@ import {
 })
 export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterViewChecked {
   public waService = inject(AdminWhatsAppService);
+  private route = inject(ActivatedRoute);
 
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
@@ -50,6 +51,13 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
   ngOnInit() {
     // 1. Initial load of conversations list
     this.waService.loadConversations();
+
+    // 1b. Check for deep linked conversationId
+    this.route.queryParams.subscribe(params => {
+      if (params['conversationId']) {
+        this.waService.selectConversation(params['conversationId']);
+      }
+    });
 
     // 2. Connect to real-time Server-Sent Events stream for instant two-way synchronization
     this.waService.connectToRealtimeStream();
@@ -112,12 +120,10 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
     if (config) {
       if (!config.replyMessage) {
         config.replyMessage =
-          'Hello 👋 Welcome to *3D Galaxy*! ✨\n\n' +
-          'Thank you for contacting us. How can we assist you today?\n' +
-          'Our customer support team has received your message and an executive will assist you shortly.';
+          'Hi! 👋 Thank you for reaching out to AJR Digital HUB. Please tell us your questions about website development, and our team will assist you shortly.';
       }
       if (!config.keywords || !config.keywords.length) {
-        config.keywords = ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings'];
+        config.keywords = ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings', 'website', 'service', 'info', 'information', 'enquiry', 'query'];
       }
       if (config.onlyReplyOnce === undefined) {
         config.onlyReplyOnce = true;

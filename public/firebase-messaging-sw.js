@@ -111,12 +111,26 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // First try to find a client already at the exact target URL
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
         if (client.url.includes(targetUrl) && 'focus' in client) {
           return client.focus();
         }
       }
+      
+      // If not found, try to find ANY existing window for the app to reuse and navigate
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          client.focus();
+          if ('navigate' in client) {
+            return client.navigate(targetUrl);
+          }
+        }
+      }
+
+      // Fallback: open a new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

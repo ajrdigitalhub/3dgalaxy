@@ -17,11 +17,17 @@ export class ConversationEventService {
     this.clients.set(clientId, res);
     logger.info(`[ConversationEventService] Client connected: ${clientId}. Total clients: ${this.clients.size}`);
 
+    // Send initial keepalive comment
+    try {
+      res.write(`: connected ${Date.now()}\n\n`);
+      if (typeof (res as any).flush === 'function') (res as any).flush();
+    } catch {}
+
     // Start heartbeat if not already running
     if (!this.heartbeatInterval) {
       this.heartbeatInterval = setInterval(() => {
         this.sendHeartbeat();
-      }, 25000);
+      }, 20000);
     }
   }
 
@@ -38,6 +44,7 @@ export class ConversationEventService {
   }
 
   public static broadcast(event: ConversationEvent) {
+    logger.info(`[ConversationEventService] Broadcasting ${event.type} to ${this.clients.size} client(s) (conv: ${event.conversationId})`);
     if (this.clients.size === 0) return;
 
     const payload = `data: ${JSON.stringify(event)}\n\n`;
@@ -46,6 +53,7 @@ export class ConversationEventService {
     this.clients.forEach((res, clientId) => {
       try {
         res.write(payload);
+        if (typeof (res as any).flush === 'function') (res as any).flush();
       } catch (err) {
         deadClients.push(clientId);
       }
@@ -63,6 +71,7 @@ export class ConversationEventService {
     this.clients.forEach((res, clientId) => {
       try {
         res.write(payload);
+        if (typeof (res as any).flush === 'function') (res as any).flush();
       } catch (err) {
         deadClients.push(clientId);
       }

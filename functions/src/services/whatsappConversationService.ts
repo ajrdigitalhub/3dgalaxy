@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { logger } from '../utils/logger';
 import { ConversationEventService } from './conversationEventService';
+import { NotificationService } from './notification.service';
 
 export interface InboundWhatsAppMessageData {
   whatsappMessageId: string;
@@ -261,95 +262,129 @@ export class WhatsAppConversationService {
     return { conversation: newConversation, isNew: true };
   }
 
+  private static processingMessageIds = new Set<string>();
+
   /**
    * Processes and stores an incoming WhatsApp message with deduplication.
    */
   public static async processInboundMessage(
     data: InboundWhatsAppMessageData
-  ): Promise<{ message: any; conversation: any; isDuplicate: boolean }> {
+  ): Promise<{ message: any; conversation: any; isDuplicate: boolean; isNewConversation?: boolean }> {
     const { whatsappMessageId } = data;
 
-    // 1. Deduplication check by Meta WhatsApp Message ID
+    // 1. Deduplication check by in-memory lock and Meta WhatsApp Message ID
     if (whatsappMessageId) {
+      if (this.processingMessageIds.has(whatsappMessageId)) {
+        logger.info(`[WHATSAPP WEBHOOK] Duplicate concurrent webhook ignored: ${whatsappMessageId}`);
+        return { message: null, conversation: null, isDuplicate: true };
+      }
+
       const existing = await prisma.whatsappMessage.findUnique({
         where: { whatsappMessageId }
       });
       if (existing) {
-        logger.info(`[WhatsAppConversationService] Duplicate webhook message ignored: ${whatsappMessageId}`);
+        logger.info(`[WHATSAPP WEBHOOK] Duplicate webhook message already processed: ${whatsappMessageId}`);
         const conv = await prisma.whatsappConversation.findUnique({
           where: { id: existing.conversationId }
         });
         return { message: existing, conversation: conv, isDuplicate: true };
       }
+
+      this.processingMessageIds.add(whatsappMessageId);
     }
 
-    // 2. Identify or create customer
-    const { customer } = await this.findOrCreateCustomer(data.fromPhone, data.customerName);
+    try {
+      // 2. Identify or create customer
+      const { customer } = await this.findOrCreateCustomer(data.fromPhone, data.customerName);
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Customer identified: ${customer.id} (${customer.phone || data.fromPhone})`);
 
-    // 3. Find or create active conversation
-    const { conversation } = await this.findOrCreateConversation(data.fromPhone, customer, data.customerName);
+      // 3. Find or create active conversation
+      const { conversation, isNew } = await this.findOrCreateConversation(data.fromPhone, customer, data.customerName);
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Conversation identified/created: ${conversation.id} (new: ${isNew})`);
 
-    // 4. Save inbound message
-    const message = await prisma.whatsappMessage.create({
-      data: {
+      // 4. Save inbound message with status: 'RECEIVED'
+      const message = await prisma.whatsappMessage.create({
+        data: {
+          conversationId: conversation.id,
+          customerId: customer?.id || null,
+          whatsappMessageId: data.whatsappMessageId,
+          direction: 'INBOUND',
+          senderType: 'CUSTOMER',
+          messageType: data.messageType.toUpperCase(),
+          messageText: data.messageText || '',
+          mediaId: data.mediaId || null,
+          mediaUrl: data.mediaUrl || null,
+          mediaMetadata: data.mediaMetadata || null,
+          status: 'RECEIVED',
+          rawPayload: data.rawPayload || null,
+          createdAt: data.timestamp || new Date()
+        }
+      });
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Incoming message saved: ${message.id} (status: RECEIVED)`);
+
+      // 4b. When customer replies, all preceding outbound messages in this conversation have been seen/read
+      await prisma.whatsappMessage.updateMany({
+        where: {
+          conversationId: conversation.id,
+          direction: 'OUTBOUND',
+          status: { in: ['SENT', 'DELIVERED'] }
+        },
+        data: {
+          status: 'READ',
+          updatedAt: new Date()
+        }
+      }).catch((err) => {
+        logger.warn(`[WhatsAppConversationService] Failed to auto-mark outbound messages as READ: ${err.message}`);
+      });
+
+      // 5. Update conversation unread count and latest message preview
+      const previewText = data.messageText || `[${data.messageType.toUpperCase()} Message]`;
+      const updatedConv = await prisma.whatsappConversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessage: previewText,
+          lastMessageAt: data.timestamp || new Date(),
+          lastDirection: 'INBOUND',
+          unreadCount: { increment: 1 },
+          status: 'OPEN'
+        },
+        include: {
+          customer: { include: { user: true } },
+          assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
+        }
+      });
+
+      // 6. Broadcast Real-time Server-Sent Event to Admin Inbox
+      ConversationEventService.broadcast({
+        type: 'MESSAGE_RECEIVED',
         conversationId: conversation.id,
-        customerId: customer?.id || null,
-        whatsappMessageId: data.whatsappMessageId,
-        direction: 'INBOUND',
-        senderType: 'CUSTOMER',
-        messageType: data.messageType.toUpperCase(),
-        messageText: data.messageText || '',
-        mediaId: data.mediaId || null,
-        mediaUrl: data.mediaUrl || null,
-        mediaMetadata: data.mediaMetadata || null,
-        status: 'DELIVERED',
-        rawPayload: data.rawPayload || null,
-        createdAt: data.timestamp || new Date()
+        message,
+        conversation: updatedConv,
+        timestamp: new Date().toISOString()
+      });
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Realtime event emitted: MESSAGE_RECEIVED (conv: ${conversation.id})`);
+
+      // 7. Dispatch Push Notification to active admins
+      NotificationService.dispatch({
+        eventKey: 'WHATSAPP_MESSAGE_RECEIVED',
+        title: `WhatsApp from ${updatedConv.customerName || data.fromPhone}`,
+        body: previewText,
+        deepLink: `/admin?tab=whatsapp-conversations&conversationId=${conversation.id}`,
+        metadata: {
+          conversationId: conversation.id,
+          messageId: message.id,
+          phone: updatedConv.phone
+        }
+      }).catch(err => {
+        logger.warn(`[WHATSAPP WEBHOOK] Failed to dispatch admin push notification: ${err.message}`);
+      });
+
+      return { message, conversation: updatedConv, isDuplicate: false, isNewConversation: isNew };
+    } finally {
+      if (whatsappMessageId) {
+        this.processingMessageIds.delete(whatsappMessageId);
       }
-    });
-
-    // 4b. When customer replies, all preceding outbound messages in this conversation have been seen/read
-    await prisma.whatsappMessage.updateMany({
-      where: {
-        conversationId: conversation.id,
-        direction: 'OUTBOUND',
-        status: { in: ['SENT', 'DELIVERED'] }
-      },
-      data: {
-        status: 'READ',
-        updatedAt: new Date()
-      }
-    }).catch((err) => {
-      logger.warn(`[WhatsAppConversationService] Failed to auto-mark outbound messages as READ: ${err.message}`);
-    });
-
-    // 5. Update conversation unread count and latest message preview
-    const previewText = data.messageText || `[${data.messageType.toUpperCase()} Message]`;
-    const updatedConv = await prisma.whatsappConversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessage: previewText,
-        lastMessageAt: data.timestamp || new Date(),
-        lastDirection: 'INBOUND',
-        unreadCount: { increment: 1 },
-        status: 'OPEN'
-      },
-      include: {
-        customer: { include: { user: true } },
-        assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
-      }
-    });
-
-    // 6. Broadcast Real-time Server-Sent Event to Admin Inbox
-    ConversationEventService.broadcast({
-      type: 'MESSAGE_RECEIVED',
-      conversationId: conversation.id,
-      message,
-      conversation: updatedConv,
-      timestamp: new Date().toISOString()
-    });
-
-    return { message, conversation: updatedConv, isDuplicate: false };
+    }
   }
 
   /**
@@ -366,7 +401,7 @@ export class WhatsAppConversationService {
     mediaId?: string | null;
     mediaUrl?: string | null;
     mediaMetadata?: any;
-    status?: 'SENT' | 'DELIVERED' | 'FAILED';
+    status?: 'QUEUED' | 'SENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
     errorMessage?: string | null;
   }): Promise<any> {
     const {
@@ -421,6 +456,8 @@ export class WhatsAppConversationService {
       }
     });
 
+    logger.info(`[WHATSAPP WEBHOOK] ↓ Outgoing message saved: ${message.id} (status: ${status})`);
+
     // Broadcast Real-time Server-Sent Event to Admin Inbox
     ConversationEventService.broadcast({
       type: 'MESSAGE_SENT',
@@ -429,6 +466,7 @@ export class WhatsAppConversationService {
       conversation: updatedConv,
       timestamp: new Date().toISOString()
     });
+    logger.info(`[WHATSAPP WEBHOOK] ↓ Realtime event emitted: MESSAGE_SENT (conv: ${conversationId})`);
 
     return message;
   }
@@ -457,13 +495,15 @@ export class WhatsAppConversationService {
 
     if (!msg) return false;
 
-    // Status precedence hierarchy: FAILED (-1) < PENDING (0) < SENT (1) < DELIVERED (2) < READ (3)
+    // Status precedence hierarchy: FAILED (-1) < QUEUED (0) < SENDING (1) < SENT (2) < DELIVERED (3) < READ (4)
     const rank: Record<string, number> = {
       FAILED: -1,
-      PENDING: 0,
-      SENT: 1,
-      DELIVERED: 2,
-      READ: 3
+      QUEUED: 0,
+      SENDING: 1,
+      PENDING: 1,
+      SENT: 2,
+      DELIVERED: 3,
+      READ: 4
     };
 
     const currentRank = rank[msg.status] ?? 0;
@@ -482,6 +522,8 @@ export class WhatsAppConversationService {
         updatedAt: timestamp || new Date()
       }
     });
+
+    logger.info(`[WHATSAPP WEBHOOK] ↓ Message ${msg.id} status updated to ${dbStatus} (receipt: ${whatsappMessageId})`);
 
     ConversationEventService.broadcast({
       type: 'STATUS_CHANGED',

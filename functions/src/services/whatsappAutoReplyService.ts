@@ -24,10 +24,8 @@ export interface QuickReplyItem {
 const DEFAULT_CONFIG: AutoReplyConfig = {
   enabled: true,
   replyMessage:
-    'Hello 👋 Welcome to *3D Galaxy*! ✨\n\n' +
-    'Thank you for contacting us. How can we assist you today?\n' +
-    'Our customer support team has received your message and an executive will assist you shortly.',
-  keywords: ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings'],
+    'Hi! 👋 Thank you for reaching out to AJR Digital HUB. Please tell us your questions about website development, and our team will assist you shortly.',
+  keywords: ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings', 'website', 'service', 'info', 'information', 'enquiry', 'query'],
   onlyReplyOnce: true,
   humanTakeoverGlobal: false
 };
@@ -187,24 +185,30 @@ export class WhatsAppAutoReplyService {
   }
 
   /**
-   * Primary entry point: Evaluates incoming customer message.
-   * RESTRICTION: Sends ONLY ONE auto-reply per conversation, and ONLY IF customer message is a greeting (hi/hello).
-   * No other automated messages or complex configurations are evaluated.
+   * Primary entry point: Evaluates incoming customer message for automated welcome reply.
+   * Trigger conditions:
+   * 1. Customer sends their first message in this conversation (initial contact).
+   * 2. Or customer sends a greeting / trigger keyword.
+   * Outgoing message lifecycle:
+   * QUEUED / SENDING -> SENT (or FAILED) -> DELIVERED -> READ.
    */
   public static async processCustomerMessage(
     conversationId: string,
-    inboundText: string
+    inboundText: string,
+    isNewConversation: boolean = false
   ): Promise<{ replied: boolean; ruleName?: string; replyText?: string; reason?: string }> {
     try {
       const config = await this.getConfig();
 
       // Check 1: Master auto-reply toggle
       if (!config.enabled) {
+        logger.info(`[WhatsAppAutoReply] Auto-reply is disabled globally.`);
         return { replied: false, reason: 'AUTO_REPLY_DISABLED' };
       }
 
       // Check 2: Global human takeover
       if (config.humanTakeoverGlobal) {
+        logger.info(`[WhatsAppAutoReply] Global human takeover is active.`);
         return { replied: false, reason: 'GLOBAL_HUMAN_TAKEOVER_ACTIVE' };
       }
 
@@ -217,7 +221,7 @@ export class WhatsAppAutoReplyService {
           },
           messages: {
             orderBy: { createdAt: 'desc' },
-            take: 30
+            take: 40
           }
         }
       });
@@ -232,29 +236,56 @@ export class WhatsAppAutoReplyService {
         return { replied: false, reason: 'CONVERSATION_HUMAN_MODE' };
       }
 
-      // Check 4: RESTRICTION - "only one message should send"
-      // If ANY outbound message has already been sent (AUTO, ADMIN, or AGENT), do NOT send another!
+      // Check previous messages in this conversation
       const previousMessages = conv.messages || [];
-      const hasAutoReplied = previousMessages.some(m => m.direction === 'OUTBOUND' && m.senderType === 'AUTO');
-      const hasAdminReplied = previousMessages.some(m => m.direction === 'OUTBOUND' && (m.senderType === 'ADMIN' || m.senderType === 'AGENT'));
-
-      if (config.onlyReplyOnce !== false && (hasAutoReplied || hasAdminReplied)) {
-        logger.info(`[WhatsAppAutoReply] Conversation ${conversationId} already received a reply. Auto-reply restricted to single reply.`);
-        return { replied: false, reason: 'ALREADY_REPLIED_ONCE' };
+      const inboundMessages = previousMessages.filter(m => m.direction === 'INBOUND');
+      
+      // Determine if this is a "new session" (either brand new, or last customer message was > 24 hours ago)
+      const previousInbound = inboundMessages.length > 1 ? inboundMessages[1] : null;
+      let isSessionNew = isNewConversation || inboundMessages.length <= 1;
+      
+      if (previousInbound) {
+        const hoursSinceLastMessage = (new Date().getTime() - previousInbound.createdAt.getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastMessage > 24) {
+          isSessionNew = true;
+        }
       }
+      
+      const isInitialCustomerMessage = isSessionNew;
 
-      // Check 5: RESTRICTION - "if hi or hello then only one message should send not other configuration needed"
+      // Check if we already auto-replied IN THIS SESSION (last 24 hours)
+      const recentAutoReplies = previousMessages.filter(m => 
+        m.direction === 'OUTBOUND' && 
+        m.senderType === 'AUTO' &&
+        (new Date().getTime() - m.createdAt.getTime()) / (1000 * 60 * 60) <= 24
+      );
+      const hasAutoRepliedInSession = recentAutoReplies.length > 0;
+
+      // Greeting match check
       const text = (inboundText || '').trim();
       const keywords = config.keywords && config.keywords.length > 0
         ? config.keywords
         : DEFAULT_CONFIG.keywords;
+      const isGreetingMatch = this.matchesKeywords(text, keywords);
 
-      const isGreeting = this.matchesKeywords(text, keywords);
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Automation trigger evaluated (initial: ${isInitialCustomerMessage}, keywordMatch: ${isGreetingMatch}, alreadyRepliedInSession: ${hasAutoRepliedInSession})`);
 
-      if (!isGreeting) {
-        logger.info(`[WhatsAppAutoReply] Inbound message '${text}' is not a greeting (hi/hello). Auto-reply skipped as per restriction.`);
-        return { replied: false, reason: 'NOT_A_GREETING' };
+      // Trigger condition:
+      // Must be initial customer message OR match trigger keywords
+      if (!isInitialCustomerMessage && !isGreetingMatch) {
+        logger.info(`[WhatsAppAutoReply] Inbound message '${text}' does not match initial contact or greeting keywords.`);
+        return { replied: false, reason: 'TRIGGER_NOT_MATCHED' };
       }
+
+      // Only-reply-once check:
+      // If customer has already received an auto-reply in this conversation session, do not duplicate
+      if (config.onlyReplyOnce !== false && hasAutoRepliedInSession) {
+        logger.info(`[WhatsAppAutoReply] Conversation ${conversationId} already received auto-reply recently. Auto-reply restricted.`);
+        return { replied: false, reason: 'ALREADY_REPLIED_ONCE' };
+      }
+
+      const ruleName = isInitialCustomerMessage ? 'Initial Welcome Automation' : 'Greeting Keyword Auto-Reply';
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Automation matched: ${ruleName}`);
 
       // Resolve customer name for placeholder replacement
       const customer = conv.customer;
@@ -269,20 +300,34 @@ export class WhatsAppAutoReplyService {
         return { replied: false, reason: 'EMPTY_REPLY_MESSAGE' };
       }
 
-      logger.info(`[WhatsAppAutoReply] GREETING_MATCHED: Sending single auto-reply to conversation ${conversationId}`);
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Reply generated`);
 
-      // Small delay (1000ms) for natural delivery
-      await new Promise(r => setTimeout(r, 1000));
+      // 1. Stage 1: Store outgoing message with status 'SENDING' (queued/sending) & broadcast to UI immediately
+      const outgoingMsg = await WhatsAppConversationService.recordOutboundMessage({
+        conversationId,
+        customerId: conv.customerId,
+        whatsappMessageId: null,
+        senderType: 'AUTO',
+        messageType: 'TEXT',
+        messageText: replyContent,
+        status: 'SENDING',
+        errorMessage: null
+      });
 
-      // Dispatch auto-reply through Meta WhatsApp Cloud API
+      // Natural delay (800ms) before dispatching to Meta API
+      await new Promise(r => setTimeout(r, 800));
+
+      // 2. Stage 2: Dispatch through Meta WhatsApp Cloud API
       const settings = await getWhatsappSettings();
       const phoneNumberId = settings.phoneNumberId || settings.apiUrl?.match(/\/(\d+)\/messages/)?.[1] || '1228371843697142';
-      const apiUrl = settings.apiUrl || `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`;
+      const apiUrl = settings.apiUrl || `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`;
       const accessToken = settings.apiKey || settings.accessToken;
 
+      logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API called`);
+
       let whatsappMessageId: string | null = null;
-      let status: 'SENT' | 'FAILED' = 'SENT';
-      let errorMessage: string | null = null;
+      let finalStatus: 'SENT' | 'FAILED' = 'SENT';
+      let errorReason: string | null = null;
 
       if (settings.apiEnabled && accessToken) {
         try {
@@ -300,35 +345,50 @@ export class WhatsAppAutoReplyService {
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${accessToken}`
-              }
+              },
+              timeout: 15000
             }
           );
           whatsappMessageId = metaRes.data?.messages?.[0]?.id || null;
+          logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API response received (ID: ${whatsappMessageId})`);
         } catch (apiErr: any) {
-          logger.error('[WhatsAppAutoReply] Failed to dispatch auto-reply via Meta API:', apiErr.response?.data || apiErr.message);
-          status = 'FAILED';
-          errorMessage = apiErr.response?.data?.error?.message || apiErr.message;
+          finalStatus = 'FAILED';
+          const errMsg = apiErr.response?.data?.error?.message || apiErr.message || 'Meta API call failed';
+          errorReason = errMsg;
+          logger.error(`[WHATSAPP WEBHOOK] ↓ WhatsApp API call failed: ${errMsg}`);
         }
       } else {
-        // Sandbox mock
+        // Sandbox mock dispatch
         whatsappMessageId = 'sim_auto_' + Math.random().toString(36).substring(7);
+        logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API response received (Sandbox ID: ${whatsappMessageId})`);
       }
 
-      // Record outbound AUTO message in database & broadcast real-time event
-      await WhatsAppConversationService.recordOutboundMessage({
-        conversationId,
-        customerId: conv.customerId,
-        whatsappMessageId,
-        senderType: 'AUTO',
-        messageText: replyContent,
-        status,
-        errorMessage
+      // 3. Stage 3: Update message to SENT or FAILED in database
+      const updatedMsg = await prisma.whatsappMessage.update({
+        where: { id: outgoingMsg.id },
+        data: {
+          status: finalStatus,
+          whatsappMessageId: whatsappMessageId || outgoingMsg.whatsappMessageId,
+          errorMessage: errorReason,
+          updatedAt: new Date()
+        }
       });
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Outgoing message saved: ${updatedMsg.id} (status: ${finalStatus})`);
 
-      logger.info(`[WhatsAppAutoReply] AUTO_REPLY_SENT: Dispatched single greeting reply to ${conv.phone}`);
+      // 4. Stage 4: Broadcast STATUS_CHANGED real-time event to Admin UI
+      const { ConversationEventService } = await import('./conversationEventService');
+      ConversationEventService.broadcast({
+        type: 'STATUS_CHANGED',
+        conversationId,
+        message: updatedMsg,
+        timestamp: new Date().toISOString()
+      });
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Realtime event emitted: STATUS_CHANGED (${finalStatus})`);
+      logger.info(`[WHATSAPP WEBHOOK] ↓ Frontend conversation updated`);
+
       return {
-        replied: true,
-        ruleName: 'Single Greeting Auto-Reply',
+        replied: finalStatus === 'SENT',
+        ruleName,
         replyText: replyContent
       };
     } catch (err: any) {
