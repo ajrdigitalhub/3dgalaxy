@@ -37,6 +37,15 @@ export const ENV = {
   ADMIN_APP_URL: (process.env.ADMIN_APP_URL || process.env.ADMIN_URL || 'https://admin.3dgalaxy.in').replace(/\/+$/, ''),
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@3dgalaxy.co.in',
   CLIENT_URL: (process.env.CLIENT_URL || 'http://localhost:4200').replace(/\/+$/, ''),
+  BACKUP_MODULE_ENABLED: process.env.BACKUP_MODULE_ENABLED !== 'false',
+  BACKUP_ENABLED: process.env.BACKUP_ENABLED !== 'true' || true,
+  BACKUP_SCHEDULE: process.env.BACKUP_SCHEDULE || 'weekly',
+  BACKUP_DAY: process.env.BACKUP_DAY || 'Sunday',
+  BACKUP_DAYS: process.env.BACKUP_DAYS || 'Wednesday,Sunday',
+  BACKUP_TIME: process.env.BACKUP_TIME || '02:00',
+  BACKUP_TIMEZONE: process.env.BACKUP_TIMEZONE || 'Asia/Kolkata',
+  BACKUP_RETENTION_COUNT: Number(process.env.BACKUP_RETENTION_COUNT || 8),
+  BACKUP_STORAGE_ROOT: (process.env.BACKUP_STORAGE_ROOT || 'db_backups').replace(/^\/+|\/+$/g, ''),
 };
 
 export const getDatabaseUrl = () => {

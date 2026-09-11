@@ -1452,3 +1452,26 @@ model SupportRequest {
 
   @@map("support_requests")
 }
+
+model DatabaseBackup {
+  id            String    @id @default(uuid()) @db.Uuid
+  backupName    String    @map("backup_name") @db.VarChar(255)
+  storagePath   String    @map("storage_path") @db.Text
+  fileSize      BigInt    @default(0) @map("file_size")
+  checksum      String    @db.VarChar(64)
+  tableCount    Int       @default(0) @map("table_count")
+  backupType    String    @map("backup_type") @db.VarChar(50) // MANUAL, SCHEDULED, PRE_RESTORE
+  status        String    @default("QUEUED") @db.VarChar(50)  // QUEUED, RUNNING, UPLOADING, VERIFYING, SUCCESS, FAILED, RESTORING, RESTORE_FAILED
+  durationMs    Int       @default(0) @map("duration_ms")
+  manifest      Json?
+  verification  Json?
+  errorMessage  String?   @map("error_message") @db.Text
+  createdBy     String    @default("SYSTEM") @map("created_by") @db.VarChar(100)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status])
+  @@index([backupType])
+  @@index([createdAt])
+  @@map("database_backups")
+}

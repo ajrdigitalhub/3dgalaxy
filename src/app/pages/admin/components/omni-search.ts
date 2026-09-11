@@ -46,7 +46,8 @@ const ADMIN_PAGES: PageItem[] = [
   { id: 'theme-settings', label: 'Theme Styles & Color Palettes', category: 'Pages', icon: 'palette', desc: 'Adjust primary variables, gradients, and custom typography.' },
   { id: 'payment-settings', label: 'Payment Gateway Credentials', category: 'Pages', icon: 'payment', desc: 'Configure Razorpay, Cashfree, or COD authorization details.' },
   { id: 'shipping-settings', label: 'Shipping Rates & Courier Rules', category: 'Pages', icon: 'local_shipping', desc: 'Establish weight rates, shipping regions, and zones.' },
-  { id: 'whatsapp-campaign', label: 'WhatsApp Broadcast Hub', category: 'Pages', icon: 'chat', desc: 'Dispatch bulk template marketing messages to users.' }
+  { id: 'whatsapp-campaign', label: 'WhatsApp Broadcast Hub', category: 'Pages', icon: 'chat', desc: 'Dispatch bulk template marketing messages to users.' },
+  { id: 'backups', label: 'Database Backups & Disaster Recovery', category: 'Pages', icon: 'cloud_sync', desc: 'Automated PostgreSQL snapshots, SHA-256 verification, and disaster recovery.' }
 ];
 
 const QUICK_ACTIONS: ActionItem[] = [

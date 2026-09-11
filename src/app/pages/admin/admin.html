@@ -542,6 +542,8 @@
       <app-admin-communication-tab [admin]="this" />
       } @if (activeTab() === 'system-logs') {
       <app-admin-logs-tab [admin]="this" />
+      } @if (activeTab() === 'backups') {
+      <app-backup-management />
       } }
     </div>
   </main>

@@ -11,6 +11,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { filter } from "rxjs/operators";
 import { AuthService } from "./shared/services/auth.service";
 import { SettingsService } from "./shared/services/settings.service";
+import { BackupService } from "./shared/services/backup.service";
 
 @Component({
   selector: "app-admin-shell",
@@ -22,6 +23,7 @@ import { SettingsService } from "./shared/services/settings.service";
 export class AdminComponent {
   public authService = inject(AuthService);
   public settingsService = inject(SettingsService);
+  public backupService = inject(BackupService);
   private router = inject(Router);
 
   activeTab = signal<string>("dashboard");
@@ -39,249 +41,262 @@ export class AdminComponent {
     Settings: true,
   });
 
-  sidebarMenu = [
-    {
-      group: "Overview",
-      items: [
-        {
-          id: "dashboard",
-          label: "Dashboard",
-          icon: "grid_view",
-          route: "dashboard",
-        },
-      ],
-    },
-    {
-      group: "Catalog",
-      items: [
-        {
-          id: "products",
-          label: "Products",
-          icon: "inventory_2",
-          route: "products",
-        },
-        {
-          id: "bulk-import",
-          label: "Bulk Import",
-          icon: "file_upload",
-          route: "products/import",
-        },
-        {
-          id: "bulk-export",
-          label: "Bulk Export",
-          icon: "download",
-          route: "products/export",
-        },
-        {
-          id: "import-history",
-          label: "Import History",
-          icon: "history",
-          route: "products/import-history",
-        },
-        {
-          id: "categories",
-          label: "Categories",
-          icon: "account_tree",
-          route: "categories",
-        },
-        { id: "brands", label: "Brands", icon: "label", route: "brands" },
-      ],
-    },
-    {
-      group: "Sales",
-      items: [
-        {
-          id: "orders",
-          label: "Orders",
-          icon: "shopping_bag",
-          route: "orders",
-        },
-        {
-          id: "draft-orders",
-          label: "Draft Orders",
-          icon: "note_add",
-          route: "orders/draft-orders",
-        },
-        {
-          id: "abandoned-carts",
-          label: "Abandoned Carts",
-          icon: "remove_shopping_cart",
-          route: "orders/abandoned-carts",
-        },
-        {
-          id: "quotes",
-          label: "Service Inquiries",
-          icon: "precision_manufacturing",
-          route: "orders/quotes",
-        },
-      ],
-    },
-    {
-      group: "Customers",
-      items: [
-        {
-          id: "customer-list",
-          label: "Customer List",
-          icon: "people",
-          route: "customers/list",
-        },
-        {
-          id: "customer-groups",
-          label: "Customer Groups",
-          icon: "groups",
-          route: "customers/groups",
-        },
-        {
-          id: "reviews",
-          label: "Reviews",
-          icon: "reviews",
-          route: "customers/reviews",
-        },
-      ],
-    },
-    {
-      group: "Content",
-      items: [
-        {
-          id: "pages",
-          label: "Pages",
-          icon: "article",
-          route: "content/pages",
-        },
-        { id: "blogs", label: "Blogs", icon: "feed", route: "content/blogs" },
-        { id: "faqs", label: "FAQs", icon: "quiz", route: "content/faqs" },
-        {
-          id: "banners",
-          label: "Banners",
-          icon: "view_carousel",
-          route: "content/banners",
-        },
-        {
-          id: "menu-builder",
-          label: "Menu Builder",
-          icon: "menu",
-          route: "content/menu-builder",
-        },
-        {
-          id: "homepage-builder",
-          label: "Homepage Builder",
-          icon: "design_services",
-          route: "marketing/homepage-builder",
-        },
-        {
-          id: "footer-builder",
-          label: "Footer Configuration",
-          icon: "settings_input_component",
-          route: "content/footer-settings",
-        },
-      ],
-    },
-    {
-      group: "Marketing",
-      items: [
-        {
-          id: "coupons",
-          label: "Coupons",
-          icon: "local_offer",
-          route: "marketing/coupons",
-        },
-        {
-          id: "promotions",
-          label: "Promotions",
-          icon: "ads_click",
-          route: "marketing/promotions",
-        },
-        {
-          id: "email-campaigns",
-          label: "Email Campaigns",
-          icon: "email",
-          route: "marketing/email-campaigns",
-        },
-        {
-          id: "newsletter",
-          label: "Newsletter Management",
-          icon: "mark_email_read",
-          route: "marketing/newsletter",
-        },
-        {
-          id: "push-notifications",
-          label: "Push Notification Campaigns",
-          icon: "notifications_active",
-          route: "marketing/push-notifications",
-        },
-      ],
-    },
-    {
-      group: "Analytics",
-      items: [
-        {
-          id: "sales-reports",
-          label: "Sales Reports",
-          icon: "analytics",
-          route: "analytics/sales-reports",
-        },
-      ],
-    },
-    {
-      group: "Settings",
-      items: [
-        {
-          id: "store-settings",
-          label: "Store Settings",
-          icon: "store",
-          route: "settings/store-settings",
-        },
-        {
-          id: "push-settings",
-          label: "Push Notifications",
-          icon: "notifications_active",
-          route: "settings/push-settings",
-        },
-        {
-          id: "theme-settings",
-          label: "Theme Settings",
-          icon: "brush",
-          route: "settings/theme-settings",
-        },
-        {
-          id: "payment-settings",
-          label: "Payment Settings",
-          icon: "payment",
-          route: "settings/payment-settings",
-        },
-        {
-          id: "shipping-settings",
-          label: "Shipping Settings",
-          icon: "local_shipping",
-          route: "settings/shipping-settings",
-        },
-        {
-          id: "tax-settings",
-          label: "Tax Settings",
-          icon: "percent",
-          route: "settings/tax-settings",
-        },
-        {
-          id: "print-settings",
-          label: "Printing Service",
-          icon: "print",
-          route: "settings/print-settings",
-        },
-        {
-          id: "user-management",
-          label: "User Management",
-          icon: "settings/user-management",
-          route: "settings/user-management",
-        },
-      ],
-    },
-  ];
+  get sidebarMenu() {
+    return [
+      {
+        group: "Overview",
+        items: [
+          {
+            id: "dashboard",
+            label: "Dashboard",
+            icon: "grid_view",
+            route: "dashboard",
+          },
+        ],
+      },
+      {
+        group: "Catalog",
+        items: [
+          {
+            id: "products",
+            label: "Products",
+            icon: "inventory_2",
+            route: "products",
+          },
+          {
+            id: "bulk-import",
+            label: "Bulk Import",
+            icon: "file_upload",
+            route: "products/import",
+          },
+          {
+            id: "bulk-export",
+            label: "Bulk Export",
+            icon: "download",
+            route: "products/export",
+          },
+          {
+            id: "import-history",
+            label: "Import History",
+            icon: "history",
+            route: "products/import-history",
+          },
+          {
+            id: "categories",
+            label: "Categories",
+            icon: "account_tree",
+            route: "categories",
+          },
+          { id: "brands", label: "Brands", icon: "label", route: "brands" },
+        ],
+      },
+      {
+        group: "Sales",
+        items: [
+          {
+            id: "orders",
+            label: "Orders",
+            icon: "shopping_bag",
+            route: "orders",
+          },
+          {
+            id: "draft-orders",
+            label: "Draft Orders",
+            icon: "note_add",
+            route: "orders/draft-orders",
+          },
+          {
+            id: "abandoned-carts",
+            label: "Abandoned Carts",
+            icon: "remove_shopping_cart",
+            route: "orders/abandoned-carts",
+          },
+          {
+            id: "quotes",
+            label: "Service Inquiries",
+            icon: "precision_manufacturing",
+            route: "orders/quotes",
+          },
+        ],
+      },
+      {
+        group: "Customers",
+        items: [
+          {
+            id: "customer-list",
+            label: "Customer List",
+            icon: "people",
+            route: "customers/list",
+          },
+          {
+            id: "customer-groups",
+            label: "Customer Groups",
+            icon: "groups",
+            route: "customers/groups",
+          },
+          {
+            id: "reviews",
+            label: "Reviews",
+            icon: "reviews",
+            route: "customers/reviews",
+          },
+        ],
+      },
+      {
+        group: "Content",
+        items: [
+          {
+            id: "pages",
+            label: "Pages",
+            icon: "article",
+            route: "content/pages",
+          },
+          { id: "blogs", label: "Blogs", icon: "feed", route: "content/blogs" },
+          { id: "faqs", label: "FAQs", icon: "quiz", route: "content/faqs" },
+          {
+            id: "banners",
+            label: "Banners",
+            icon: "view_carousel",
+            route: "content/banners",
+          },
+          {
+            id: "menu-builder",
+            label: "Menu Builder",
+            icon: "menu",
+            route: "content/menu-builder",
+          },
+          {
+            id: "homepage-builder",
+            label: "Homepage Builder",
+            icon: "design_services",
+            route: "marketing/homepage-builder",
+          },
+          {
+            id: "footer-builder",
+            label: "Footer Configuration",
+            icon: "settings_input_component",
+            route: "content/footer-settings",
+          },
+        ],
+      },
+      {
+        group: "Marketing",
+        items: [
+          {
+            id: "coupons",
+            label: "Coupons",
+            icon: "local_offer",
+            route: "marketing/coupons",
+          },
+          {
+            id: "promotions",
+            label: "Promotions",
+            icon: "ads_click",
+            route: "marketing/promotions",
+          },
+          {
+            id: "email-campaigns",
+            label: "Email Campaigns",
+            icon: "email",
+            route: "marketing/email-campaigns",
+          },
+          {
+            id: "newsletter",
+            label: "Newsletter Management",
+            icon: "mark_email_read",
+            route: "marketing/newsletter",
+          },
+          {
+            id: "push-notifications",
+            label: "Push Notification Campaigns",
+            icon: "notifications_active",
+            route: "marketing/push-notifications",
+          },
+        ],
+      },
+      {
+        group: "Analytics",
+        items: [
+          {
+            id: "sales-reports",
+            label: "Sales Reports",
+            icon: "analytics",
+            route: "analytics/sales-reports",
+          },
+        ],
+      },
+      {
+        group: "Settings",
+        items: [
+          {
+            id: "store-settings",
+            label: "Store Settings",
+            icon: "store",
+            route: "settings/store-settings",
+          },
+          {
+            id: "push-settings",
+            label: "Push Notifications",
+            icon: "notifications_active",
+            route: "settings/push-settings",
+          },
+          {
+            id: "theme-settings",
+            label: "Theme Settings",
+            icon: "brush",
+            route: "settings/theme-settings",
+          },
+          {
+            id: "payment-settings",
+            label: "Payment Settings",
+            icon: "payment",
+            route: "settings/payment-settings",
+          },
+          {
+            id: "shipping-settings",
+            label: "Shipping Settings",
+            icon: "local_shipping",
+            route: "settings/shipping-settings",
+          },
+          {
+            id: "tax-settings",
+            label: "Tax Settings",
+            icon: "percent",
+            route: "settings/tax-settings",
+          },
+          {
+            id: "print-settings",
+            label: "Printing Service",
+            icon: "print",
+            route: "settings/print-settings",
+          },
+          {
+            id: "user-management",
+            label: "User Management",
+            icon: "manage_accounts",
+            route: "settings/user-management",
+          },
+          // ...(this.backupService.backupModuleEnabled()
+          // ? [
+          {
+            id: "backups",
+            label: "Database Backups",
+            icon: "cloud_sync",
+            route: "settings/backups",
+          },
+          // ]
+          // : []),
+        ],
+      },
+    ];
+  }
 
   storeName = computed(
     () => this.settingsService.settings().appName || "3D Galaxy Store",
   );
 
   constructor() {
+    this.backupService.checkInitialModuleStatus();
     this.updateActiveTab(this.router.url);
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))

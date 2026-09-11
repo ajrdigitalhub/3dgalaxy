@@ -262,7 +262,8 @@ app.use("/api/support", supportRoutes);
 app.use("/api/services", serviceEnquiryRoutes);
 app.use("/api/admin/services", serviceEnquiryRoutes);
 app.use("/api/admin/fcm", adminFcmRoutes);
-app.use("/api/notifications/admin", adminFcmRoutes);
+import backupRoutes from "./routes/backup.routes";
+app.use("/api/admin/backups", backupRoutes);
 app.use("/api", logRoutes);
 
 // Raw OpenAPI/Swagger Specification Object

@@ -40,6 +40,11 @@ export type NotificationEventKey =
   | 'FAILED_NOTIFICATION'
   | 'FAILED_BACKGROUND_JOB'
   | 'WHATSAPP_MESSAGE_RECEIVED'
+  | 'BACKUP_SUCCESS'
+  | 'BACKUP_FAILED'
+  | 'BACKUP_OVERDUE'
+  | 'RESTORE_SUCCESS'
+  | 'RESTORE_FAILED'
   | 'SYSTEM_ALERT';
 
 export interface NotificationEventDefinition {
@@ -238,9 +243,68 @@ export const EVENT_DEFINITIONS: Record<NotificationEventKey, NotificationEventDe
     defaultWhatsapp: false,
     defaultEmail: false,
   },
+  BACKUP_SUCCESS: {
+    eventKey: 'BACKUP_SUCCESS',
+    eventLabel: 'Database Backup Completed',
+    category: 'system',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
+  BACKUP_FAILED: {
+    eventKey: 'BACKUP_FAILED',
+    eventLabel: 'Database Backup Failed',
+    category: 'system',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
+  BACKUP_OVERDUE: {
+    eventKey: 'BACKUP_OVERDUE',
+    eventLabel: 'Database Backup Overdue Warning',
+    category: 'system',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
+  RESTORE_SUCCESS: {
+    eventKey: 'RESTORE_SUCCESS',
+    eventLabel: 'Database Restored Successfully',
+    category: 'system',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
+  RESTORE_FAILED: {
+    eventKey: 'RESTORE_FAILED',
+    eventLabel: 'Database Restore Failed',
+    category: 'system',
+    defaultPush: true,
+    defaultWhatsapp: false,
+    defaultEmail: false,
+  },
 };
 
 export class NotificationService {
+  /**
+   * Convenience helper for system/backup notifications
+   */
+  static async createSystemNotification(data: {
+    eventKey: NotificationEventKey;
+    title: string;
+    body: string;
+    deepLink?: string;
+    metadata?: Record<string, any>;
+  }): Promise<{ success: boolean; pushSent: boolean; whatsappSent: boolean; notificationId?: string }> {
+    return this.dispatch({
+      eventKey: data.eventKey,
+      title: data.title,
+      body: data.body,
+      deepLink: data.deepLink,
+      metadata: data.metadata,
+    });
+  }
+
   /**
    * Main Centralized Event Dispatcher
    */

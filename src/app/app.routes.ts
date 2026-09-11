@@ -183,6 +183,26 @@ export const routes: Routes = [
     },
   },
   {
+    path: "admin/backups",
+    loadComponent: () =>
+      import("./pages/admin/admin").then((m) => m.AdminPanel),
+    canActivate: [roleGuard],
+    data: {
+      roles: ["Admin", "Manager", "Super Admin", "admin", "super-admin"],
+      defaultTab: "backups",
+    },
+  },
+  {
+    path: "admin/settings/backups",
+    loadComponent: () =>
+      import("./pages/admin/admin").then((m) => m.AdminPanel),
+    canActivate: [roleGuard],
+    data: {
+      roles: ["Admin", "Manager", "Super Admin", "admin", "super-admin"],
+      defaultTab: "backups",
+    },
+  },
+  {
     path: "admin/orders",
     loadComponent: () =>
       import("./pages/admin/admin").then((m) => m.AdminPanel),

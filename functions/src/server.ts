@@ -2,6 +2,7 @@ import './config/env';
 import app from './app';
 import { ENV } from './config/env';
 import { startScheduler } from './services/scheduler';
+import { backupScheduler } from './services/backupScheduler.service';
 import { loadFirebaseConfigFromDb } from './config/firebase';
 
 const PORT = ENV.PORT;
@@ -16,6 +17,7 @@ app.listen(PORT, async () => {
   // Load dynamic Firebase credentials from settings table
   await loadFirebaseConfigFromDb();
 
-  // Start background scheduler daemon
+  // Start background scheduler daemons
   startScheduler();
+  backupScheduler.init();
 });

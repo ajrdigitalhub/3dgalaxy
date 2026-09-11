@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sysCache } from '../config/cache';
+import { ENV } from '../config/env';
 
 export const clearSettingsCache = () => {
   sysCache.del('theme_settings');
@@ -231,7 +232,8 @@ export const getServiceConfig = async (req: Request, res: Response) => {
       infillStandards: config.infillStandards || defaultInfillStandards,
       gstTaxRate: config.gstTaxRate !== undefined ? config.gstTaxRate : 18,
       setupCost: config.setupCost !== undefined ? config.setupCost : 100,
-      machineFeePerHour: config.machineFeePerHour !== undefined ? config.machineFeePerHour : 150
+      machineFeePerHour: config.machineFeePerHour !== undefined ? config.machineFeePerHour : 150,
+      backupModuleEnabled: ENV.BACKUP_MODULE_ENABLED
     };
 
     sysCache.set('service_config', responseData, 5);

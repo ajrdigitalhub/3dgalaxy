@@ -100,11 +100,13 @@ export type AdminTab =
   | "whatsapp-conversations"
   | "whatsapp-logs"
   | "whatsapp-campaign"
-  | "system-logs";
+  | "system-logs"
+  | "backups";
 
 import { DeliveryEstimateService } from "../../core/services/delivery-estimate.service";
 import { AdminExploreConfigTabComponent } from "./components/admin-explore-config-tab";
 import { AdminLogsTab } from "./components/logs-tab";
+import { BackupManagementComponent } from "../../admin/settings/backup-management/backup-management.component";
 import { AdminWhatsappInboxComponent } from "./components/admin-whatsapp-inbox/admin-whatsapp-inbox.component";
 import { AdminWhatsAppService } from "../../core/services/admin-whatsapp.service";
 
@@ -134,6 +136,7 @@ import { AdminWhatsAppService } from "../../core/services/admin-whatsapp.service
     AdminExploreConfigTabComponent,
     PushSettingsTabComponent,
     AdminLogsTab,
+    BackupManagementComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./admin.html",
@@ -171,6 +174,8 @@ export class AdminPanel implements OnInit {
       this.activeTab.set(routeData["defaultTab"] as AdminTab);
     } else if (this.router.url.includes("/admin/orders")) {
       this.activeTab.set("orders");
+    } else if (this.router.url.includes("/backups")) {
+      this.activeTab.set("backups");
     }
   }
   selectedCustomerId = signal<string | null>(null);
@@ -218,6 +223,7 @@ export class AdminPanel implements OnInit {
     { label: 'Coupons & Deals', tab: 'coupons' as AdminTab, icon: 'local_offer', color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20', desc: 'Manage promotional promo codes' },
     { label: 'Store Theme Settings', tab: 'theme-settings' as AdminTab, icon: 'palette', color: 'text-orange-500 bg-orange-500/10 border-orange-500/20', desc: 'Customize store design & colors' },
     { label: 'System Settings', tab: 'store-settings' as AdminTab, icon: 'settings', color: 'text-zinc-500 bg-zinc-500/10 border-zinc-500/20', desc: 'General business & API settings' },
+    { label: 'Database Backups', tab: 'backups' as AdminTab, icon: 'cloud_sync', color: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20', desc: 'PostgreSQL snapshots & disaster recovery vault' },
   ];
 
   adminAccessList = computed(() => {
@@ -229,6 +235,7 @@ export class AdminPanel implements OnInit {
       { name: 'Customer Data & CRM Insights', detail: 'Inspect user profiles, reward points & address books', granted: true, badge: 'Full Clearance' },
       { name: 'Store Design & Content Editor', detail: 'Update homepage sections, banners & navigation menus', granted: true, badge: 'Full Clearance' },
       { name: 'System Settings & API Configuration', detail: 'Manage store parameters, tax, payment gateways & PWA', granted: true, badge: 'Full Clearance' },
+      { name: 'Database Backup & Disaster Recovery', detail: 'Manage automated snapshots, restore points and cryptographic verification', granted: isSuper, badge: isSuper ? 'Root Clearance' : 'Restricted' },
       { name: 'Financial & Audit Logs', detail: 'Access transaction history, revenue logs & webhook events', granted: isSuper, badge: isSuper ? 'Root Clearance' : 'View Only' },
       { name: 'Security Clearance & User Roles', detail: 'Manage admin roles, active sessions & security rules', granted: isSuper, badge: isSuper ? 'Root Clearance' : 'Restricted' },
     ];
@@ -361,6 +368,11 @@ export class AdminPanel implements OnInit {
             id: "system-logs",
             label: "System Telemetry Logs",
             icon: "monitor_heart",
+          },
+          {
+            id: "backups",
+            label: "Database Backups",
+            icon: "cloud_sync",
           },
           // { id: 'user-management', label: 'User Management', icon: 'badge' },
           // { id: 'active-sessions', label: 'Active Sessions', icon: 'security' },

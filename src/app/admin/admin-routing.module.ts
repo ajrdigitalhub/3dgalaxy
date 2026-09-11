@@ -58,6 +58,10 @@ const routes: Routes = [
         loadComponent: () => import('./settings/push-settings/push-settings.component').then(m => m.PushSettingsComponent)
       },
       {
+        path: 'settings/backups',
+        loadComponent: () => import('./settings/backup-management/backup-management.component').then(m => m.BackupManagementComponent)
+      },
+      {
         path: 'marketing/push-notifications',
         loadComponent: () => import('./marketing/push-notifications/push-notifications.component').then(m => m.PushNotificationsComponent)
       },

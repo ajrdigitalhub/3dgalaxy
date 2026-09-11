@@ -16,6 +16,7 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
 import { PwaSettingsTabComponent } from "./pwa-settings-tab";
 import { MarketingTrackingTabComponent } from "./marketing-tracking-tab";
 import { AdminDevicesTab } from "./admin-devices-tab";
+import { BackupManagementComponent } from "../../../admin/settings/backup-management/backup-management.component";
 import { TrackingService, CourierPartnerConfig } from "../../../core/services/tracking.service";
 import { environment } from "../../../../environments/environment";
 
@@ -30,7 +31,8 @@ import { environment } from "../../../../environments/environment";
     FormsModule,
     PwaSettingsTabComponent,
     MarketingTrackingTabComponent,
-    AdminDevicesTab
+    AdminDevicesTab,
+    BackupManagementComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -5190,6 +5192,13 @@ import { environment } from "../../../../environments/environment";
                 </div>
               </div>
             }
+
+            <!-- DATABASE BACKUPS -->
+            @if (activeSubTab() === "Database Backups") {
+              <div class="space-y-6 animate-fadeIn font-sans">
+                <app-backup-management />
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -5457,6 +5466,7 @@ export class AdminSettingsTab {
     { name: "FAQ", icon: "quiz" },
     { name: "Services", icon: "room_service" },
     { name: "3D Printing Service", icon: "print" },
+    { name: "Database Backups", icon: "cloud_sync" },
   ];
 
   constructor() {
@@ -5486,6 +5496,8 @@ export class AdminSettingsTab {
         this.activeSubTab.set("Marketing & Tracking");
       } else if ((active as string) === "admin-devices" || (active as string) === "devices") {
         this.activeSubTab.set("Admin Devices");
+      } else if (active === "backups") {
+        this.activeSubTab.set("Database Backups");
       }
     });
   }
