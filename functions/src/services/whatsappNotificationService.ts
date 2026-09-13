@@ -4,6 +4,8 @@ import { getSettingsService } from '../modules/settings/settings.service';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 import { NotificationTemplateResolver } from './notificationTemplateResolver';
 import { TrackingService } from './tracking.service';
+import { WhatsAppConversationService } from './whatsappConversationService';
+import { ConversationEventService } from './conversationEventService';
 
 export interface StatusContent {
   currentStatus: string;
@@ -387,6 +389,136 @@ export class WhatsAppNotificationService {
   }
 
   /**
+   * Helper to sync outgoing automated WhatsApp order notification to Customer WhatsApp Conversation
+   */
+  public static async syncAutomatedNotificationToConversation(params: {
+    order: any;
+    phone: string;
+    customerName: string;
+    statusKey: string;
+    currentStatus: string;
+    statusDescription: string;
+    additionalInformation: string;
+    templateName: string;
+    whatsappMessageId?: string | null;
+    status?: 'SENT' | 'FAILED';
+    errorMessage?: string | null;
+    orderLink?: string;
+    templateParameters?: any;
+  }): Promise<void> {
+    try {
+      const {
+        order,
+        phone,
+        customerName,
+        statusKey,
+        currentStatus,
+        statusDescription,
+        additionalInformation,
+        templateName,
+        whatsappMessageId,
+        status = 'SENT',
+        errorMessage,
+        orderLink,
+        templateParameters
+      } = params;
+
+      if (!phone) return;
+
+      // 1. Find or create customer
+      const { customer } = await WhatsAppConversationService.findOrCreateCustomer(phone, customerName);
+
+      // 2. Find or create conversation for customer/phone
+      const { conversation } = await WhatsAppConversationService.findOrCreateConversation(phone, customer, customerName);
+
+      if (!conversation) return;
+
+      const orderNumber = order?.orderNumber || order?.id || 'N/A';
+      const formattedLines = [
+        `🔔 ORDER STATUS UPDATE: ${currentStatus.toUpperCase()}`,
+        ``,
+        `Order #${orderNumber}`,
+        `Status: ${currentStatus}`,
+        ``,
+        statusDescription,
+        additionalInformation ? `Details: ${additionalInformation}` : '',
+        orderLink ? `Order Link: ${orderLink}` : ''
+      ].filter(Boolean);
+
+      const renderedText = formattedLines.join('\n');
+
+      // Deduplication check by whatsappMessageId if present
+      if (whatsappMessageId) {
+        const existing = await prisma.whatsappMessage.findUnique({
+          where: { whatsappMessageId }
+        });
+        if (existing) {
+          return;
+        }
+      }
+
+      const notificationMetadata = {
+        orderId: order?.id || null,
+        orderNumber: orderNumber,
+        statusKey: statusKey,
+        currentStatus: currentStatus,
+        statusDescription: statusDescription,
+        additionalInformation: additionalInformation,
+        templateName: templateName,
+        templateParameters: templateParameters || null,
+        orderLink: orderLink || null,
+        isAutomatedNotification: true,
+        whatsappMessageId: whatsappMessageId || null
+      };
+
+      const message = await prisma.whatsappMessage.create({
+        data: {
+          conversationId: conversation.id,
+          customerId: customer?.id || null,
+          whatsappMessageId: whatsappMessageId || null,
+          direction: 'OUTBOUND',
+          senderType: 'AUTO',
+          messageType: 'AUTOMATED_ORDER_NOTIFICATION',
+          messageText: renderedText,
+          status: status,
+          errorMessage: errorMessage || null,
+          mediaMetadata: notificationMetadata as any,
+          metadata: notificationMetadata as any,
+          createdAt: new Date()
+        }
+      });
+
+      // Update conversation lastMessage snippet without incrementing unreadCount
+      const previewText = `🔔 Order ${currentStatus}: #${orderNumber}`;
+      const updatedConv = await prisma.whatsappConversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessage: previewText,
+          lastMessageAt: new Date(),
+          lastDirection: 'OUTBOUND'
+        },
+        include: {
+          customer: { include: { user: true } },
+          assignedAdmin: { select: { id: true, firstName: true, lastName: true, email: true } }
+        }
+      });
+
+      // Broadcast Real-time SSE event to Admin Inbox
+      ConversationEventService.broadcast({
+        type: 'MESSAGE_SENT',
+        conversationId: conversation.id,
+        message,
+        conversation: updatedConv,
+        timestamp: new Date().toISOString()
+      });
+
+      console.log(`[WhatsAppNotificationService] Synced automated notification to conversation ${conversation.id} (messageId: ${message.id}, status: ${status})`);
+    } catch (err: any) {
+      console.error('[WhatsAppNotificationService] Failed to sync automated notification to conversation:', err);
+    }
+  }
+
+  /**
    * Centralized method to send Order Status WhatsApp Notification using template order_status_update_3dgal
    */
   public static async sendOrderStatusNotification(
@@ -527,13 +659,29 @@ export class WhatsAppNotificationService {
 
       if (!whatsappSettings.enabled || !whatsappSettings.apiEnabled || !accessToken) {
         // Simulated Sandbox dispatch
+        const simMessageId = 'sim_' + Math.random().toString(36).substring(7);
         await prisma.whatsappLog.update({
           where: { id: log.id },
           data: {
             status: 'Sent',
             responsePayload: { simulated: true, note: 'Sandbox dispatch. Configure Meta WhatsApp credentials for live dispatch.' },
-            messageId: 'sim_' + Math.random().toString(36).substring(7)
+            messageId: simMessageId
           }
+        });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey,
+          currentStatus: content.currentStatus,
+          statusDescription: content.statusDescription,
+          additionalInformation: content.additionalInformation,
+          templateName,
+          whatsappMessageId: simMessageId,
+          status: 'SENT',
+          orderLink,
+          templateParameters: components
         });
 
         return { success: true, logId: log.id, messageId: 'simulated' };
@@ -561,6 +709,22 @@ export class WhatsAppNotificationService {
             messageId: messageId
           }
         });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey,
+          currentStatus: content.currentStatus,
+          statusDescription: content.statusDescription,
+          additionalInformation: content.additionalInformation,
+          templateName,
+          whatsappMessageId: messageId,
+          status: 'SENT',
+          orderLink,
+          templateParameters: components
+        });
+
         return { success: true, logId: log.id, messageId: messageId || undefined };
       } else {
         const errMsg = resData?.error?.message || 'Meta WhatsApp API request failed';
@@ -572,6 +736,22 @@ export class WhatsAppNotificationService {
             responsePayload: resData
           }
         });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey,
+          currentStatus: content.currentStatus,
+          statusDescription: content.statusDescription,
+          additionalInformation: content.additionalInformation,
+          templateName,
+          status: 'FAILED',
+          errorMessage: errMsg,
+          orderLink,
+          templateParameters: components
+        });
+
         return { success: false, logId: log.id, error: errMsg };
       }
 
@@ -1028,14 +1208,31 @@ export class WhatsAppNotificationService {
       const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
 
       if (!whatsappSettings.enabled || !whatsappSettings.apiEnabled || !accessToken) {
+        const simMessageId = 'sim_conf_' + Math.random().toString(36).substring(7);
         await prisma.whatsappLog.update({
           where: { id: log.id },
           data: {
             status: 'Sent',
             responsePayload: { simulated: true, note: 'Sandbox customer confirmation dispatch with PDF attachment.' },
-            messageId: 'sim_conf_' + Math.random().toString(36).substring(7)
+            messageId: simMessageId
           }
         });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName: vars.customerName,
+          statusKey: 'Order Confirmed',
+          currentStatus: 'Order Confirmed',
+          statusDescription: 'Your order has been confirmed successfully and is now queued for processing.',
+          additionalInformation: `Amount: ₹${vars.orderAmount} | Payment: ${vars.paymentMethod} (${vars.paymentStatus})`,
+          templateName,
+          whatsappMessageId: simMessageId,
+          status: 'SENT',
+          orderLink: vars.orderUrl,
+          templateParameters: vars
+        });
+
         return { success: true, logId: log.id, messageId: 'simulated' };
       }
 
@@ -1060,6 +1257,22 @@ export class WhatsAppNotificationService {
             messageId: messageId
           }
         });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName: vars.customerName,
+          statusKey: 'Order Confirmed',
+          currentStatus: 'Order Confirmed',
+          statusDescription: 'Your order has been confirmed successfully and is now queued for processing.',
+          additionalInformation: `Amount: ₹${vars.orderAmount} | Payment: ${vars.paymentMethod} (${vars.paymentStatus})`,
+          templateName,
+          whatsappMessageId: messageId,
+          status: 'SENT',
+          orderLink: vars.orderUrl,
+          templateParameters: vars
+        });
+
         return { success: true, logId: log.id, messageId: messageId || undefined };
       } else {
         const errMsg = resData?.error?.message || 'Meta WhatsApp API customer order confirmation failed';
@@ -1076,6 +1289,21 @@ export class WhatsAppNotificationService {
           console.warn(`[WhatsAppNotificationService] Template ${templateName} not found in Meta (${errMsg}). Falling back to order_status_update_3dgal...`);
           return this.sendOrderStatusNotification(order, { ...extraParams, recipientNumber: formattedPhone, statusKey: 'Order Confirmed' });
         }
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName: vars.customerName,
+          statusKey: 'Order Confirmed',
+          currentStatus: 'Order Confirmed',
+          statusDescription: 'Your order has been confirmed successfully.',
+          additionalInformation: `Amount: ₹${vars.orderAmount} | Payment: ${vars.paymentMethod} (${vars.paymentStatus})`,
+          templateName,
+          status: 'FAILED',
+          errorMessage: errMsg,
+          orderLink: vars.orderUrl,
+          templateParameters: vars
+        });
 
         return { success: false, logId: log.id, error: errMsg };
       }
@@ -1262,15 +1490,32 @@ export class WhatsAppNotificationService {
       const accessToken = whatsappSettings.apiKey || whatsappSettings.accessToken;
 
       if (!whatsappSettings.enabled || !whatsappSettings.apiEnabled || !accessToken) {
+        const simMessageId = 'sim_shipped_' + Math.random().toString(36).substring(7);
         console.log(`[WhatsAppNotificationService] Sandbox/Simulated dispatch for order_shipped notification (Order: ${orderId}, Phone: ${formattedPhone})`);
         await prisma.whatsappLog.update({
           where: { id: log.id },
           data: {
             status: 'Sent',
             responsePayload: { simulated: true, note: 'Sandbox order_shipped notification dispatch. Configure Meta WhatsApp Cloud API credentials for live dispatch.' },
-            messageId: 'sim_shipped_' + Math.random().toString(36).substring(7)
+            messageId: simMessageId
           }
         });
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey: 'shipped',
+          currentStatus: 'Shipped',
+          statusDescription: 'Your order has been shipped and is on its way to your delivery address.',
+          additionalInformation: `Courier: ${courierPartner} | Tracking: ${trackingNumber} | Est: ${estimatedDate}`,
+          templateName,
+          whatsappMessageId: simMessageId,
+          status: 'SENT',
+          orderLink,
+          templateParameters: components
+        });
+
         return { success: true, logId: log.id, messageId: 'simulated' };
       }
 
@@ -1297,6 +1542,22 @@ export class WhatsAppNotificationService {
           }
         });
         console.log(`[WhatsAppNotificationService] WhatsApp order_shipped notification sent successfully for order ${orderId} (Message ID: ${messageId})`);
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey: 'shipped',
+          currentStatus: 'Shipped',
+          statusDescription: 'Your order has been shipped and is on its way to your delivery address.',
+          additionalInformation: `Courier: ${courierPartner} | Tracking: ${trackingNumber} | Est: ${estimatedDate}`,
+          templateName,
+          whatsappMessageId: messageId,
+          status: 'SENT',
+          orderLink,
+          templateParameters: components
+        });
+
         return { success: true, logId: log.id, messageId: messageId || undefined };
       } else {
         const errMsg = resData?.error?.message || 'Meta WhatsApp Cloud API request failed for order_shipped';
@@ -1314,6 +1575,21 @@ export class WhatsAppNotificationService {
           console.warn(`[WhatsAppNotificationService] Template ${templateName} not found in Meta (${errMsg}). Falling back to sendOrderStatusNotification...`);
           return this.sendOrderStatusNotification(order, { ...extraParams, recipientNumber: formattedPhone, statusKey: 'shipped', _isShippedFallback: true });
         }
+
+        await this.syncAutomatedNotificationToConversation({
+          order,
+          phone: formattedPhone,
+          customerName,
+          statusKey: 'shipped',
+          currentStatus: 'Shipped',
+          statusDescription: 'Your order has been shipped and is on its way to your delivery address.',
+          additionalInformation: `Courier: ${courierPartner} | Tracking: ${trackingNumber} | Est: ${estimatedDate}`,
+          templateName,
+          status: 'FAILED',
+          errorMessage: errMsg,
+          orderLink,
+          templateParameters: components
+        });
 
         return { success: false, logId: log.id, error: errMsg };
       }

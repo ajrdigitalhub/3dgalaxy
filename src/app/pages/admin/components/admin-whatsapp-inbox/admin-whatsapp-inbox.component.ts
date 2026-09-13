@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import {
   AdminWhatsAppService,
@@ -26,6 +26,7 @@ import {
 export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterViewChecked {
   public waService = inject(AdminWhatsAppService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
@@ -313,5 +314,11 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
     return name.slice(0, 2).toUpperCase();
+  }
+
+  viewOrder(orderIdOrNumber?: string | null) {
+    if (orderIdOrNumber) {
+      this.router.navigate(['/admin/orders', orderIdOrNumber]);
+    }
   }
 }

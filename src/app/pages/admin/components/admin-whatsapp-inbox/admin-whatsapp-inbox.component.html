@@ -45,13 +45,13 @@
         </span>
       }
 
-      <!-- Auto-Reply & Quick Replies Button -->
+      <!-- Greeting & Quick Replies Configuration Button -->
       <button
         (click)="openAutoReplySettings('AUTOREPLY')"
         class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm"
-        title="Configure single greeting auto-reply (hi/hello) and quick replies">
-        <mat-icon class="scale-75">smart_toy</mat-icon>
-        <span class="hidden sm:inline">Auto-Reply & Quick Replies</span>
+        title="Configure single greeting reply (hi/hello) and quick replies">
+        <mat-icon class="scale-75">waving_hand</mat-icon>
+        <span class="hidden sm:inline">Greeting & Quick Replies</span>
       </button>
 
       <!-- Manual Refresh Button -->
@@ -100,22 +100,22 @@
           <button
             (click)="setFilter('ALL')"
             [ngClass]="{
-              'bg-emerald-600 text-white': waService.statusFilter() === 'ALL' && !waService.unreadOnlyFilter(),
-              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'ALL' || waService.unreadOnlyFilter()
+              'bg-emerald-600 text-white shadow-xs font-semibold': waService.statusFilter() === 'ALL' && !waService.unreadOnlyFilter(),
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700': waService.statusFilter() !== 'ALL' || waService.unreadOnlyFilter()
             }"
-            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            class="px-3 py-1 rounded-xl font-medium cursor-pointer border-none transition-all whitespace-nowrap">
             All
           </button>
           <button
             (click)="toggleUnreadOnly()"
             [ngClass]="{
-              'bg-emerald-600 text-white': waService.unreadOnlyFilter(),
-              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': !waService.unreadOnlyFilter()
+              'bg-emerald-600 text-white shadow-xs font-semibold': waService.unreadOnlyFilter(),
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700': !waService.unreadOnlyFilter()
             }"
-            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap flex items-center gap-1">
+            class="px-3 py-1 rounded-xl font-medium cursor-pointer border-none transition-all whitespace-nowrap flex items-center gap-1">
             <span>Unread</span>
             @if (waService.unreadTotal() > 0) {
-              <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-white text-emerald-700 font-bold">
+              <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-white text-emerald-700 font-extrabold shadow-2xs">
                 {{ waService.unreadTotal() }}
               </span>
             }
@@ -123,27 +123,26 @@
           <button
             (click)="setFilter('OPEN')"
             [ngClass]="{
-              'bg-emerald-600 text-white': waService.statusFilter() === 'OPEN',
-              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'OPEN'
+              'bg-emerald-600 text-white shadow-xs font-semibold': waService.statusFilter() === 'OPEN',
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700': waService.statusFilter() !== 'OPEN'
             }"
-            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            class="px-3 py-1 rounded-xl font-medium cursor-pointer border-none transition-all whitespace-nowrap">
             Open
           </button>
           <button
             (click)="setFilter('RESOLVED')"
             [ngClass]="{
-              'bg-emerald-600 text-white': waService.statusFilter() === 'RESOLVED',
-              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300': waService.statusFilter() !== 'RESOLVED'
+              'bg-emerald-600 text-white shadow-xs font-semibold': waService.statusFilter() === 'RESOLVED',
+              'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700': waService.statusFilter() !== 'RESOLVED'
             }"
-            class="px-2.5 py-1 rounded-lg font-medium cursor-pointer border-none transition-colors whitespace-nowrap">
+            class="px-3 py-1 rounded-xl font-medium cursor-pointer border-none transition-all whitespace-nowrap">
             Resolved
           </button>
-          
         </div>
       </div>
 
       <!-- Conversations Scrollable Feed -->
-      <div class="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800">
+      <div class="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/80">
         @if (waService.filteredConversations().length === 0) {
           <div class="p-8 text-center text-neutral-400 space-y-2">
             <mat-icon class="text-4xl text-neutral-300 dark:text-neutral-700">forum</mat-icon>
@@ -156,12 +155,15 @@
           <div
             (click)="selectConversation(conv)"
             [ngClass]="{
-              'bg-emerald-50/80 dark:bg-emerald-950/30 border-l-4 border-emerald-500': waService.activeConversation()?.id === conv.id
+              'bg-emerald-50/90 dark:bg-emerald-950/40 border-l-4 border-emerald-500 shadow-2xs': waService.activeConversation()?.id === conv.id,
+              'hover:bg-neutral-50 dark:hover:bg-neutral-800/50': waService.activeConversation()?.id !== conv.id
             }"
-            class="p-3.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors flex items-start gap-3 relative">
+            class="p-3.5 cursor-pointer transition-all flex items-start gap-3 relative">
             
             <!-- Avatar -->
-            <div class="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 font-bold text-xs flex items-center justify-center shrink-0">
+            <div
+              [class.ring-2]="waService.activeConversation()?.id === conv.id"
+              class="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs border border-emerald-500/20 ring-emerald-500/50">
               {{ getInitials(conv.customerName) }}
             </div>
 
@@ -181,11 +183,11 @@
                   {{ conv.phone }}
                 </span>
                 @if (conv.aiMode === 'AI') {
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 shrink-0">
+                  <span class="px-1.5 py-0.2 rounded-md text-[9px] font-bold uppercase tracking-wider bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-500/20 shrink-0">
                     AI
                   </span>
                 } @else {
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 shrink-0">
+                  <span class="px-1.5 py-0.2 rounded-md text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
                     Human
                   </span>
                 }
@@ -194,7 +196,7 @@
               <!-- Message preview snippet -->
               <p class="text-xs text-neutral-600 dark:text-neutral-400 truncate leading-snug font-sans flex items-center gap-1">
                 @if (conv.lastDirection === 'OUTBOUND') {
-                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">You:</span>
+                  <span class="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">You:</span>
                 }
                 <span class="truncate">{{ conv.lastMessage || 'Conversation initiated' }}</span>
               </p>
@@ -202,7 +204,7 @@
 
             <!-- Unread badge pill -->
             @if (conv.unreadCount > 0) {
-              <span class="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+              <span class="h-5 min-w-5 px-1.5 rounded-full bg-emerald-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-xs animate-pulse">
                 {{ conv.unreadCount }}
               </span>
             }
@@ -328,7 +330,7 @@
         }
 
         <!-- Message History Feed with Auto-Scroll -->
-        <div #messagesContainer class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-neutral-50/50 dark:bg-neutral-950/50">
+        <div #messagesContainer class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#f0f2f5] dark:bg-[#0b141a] transition-colors">
           @if (waService.messages().length === 0) {
             <div class="text-center py-12 text-neutral-400">
               <mat-icon class="text-3xl text-neutral-300 dark:text-neutral-700">chat_bubble_outline</mat-icon>
@@ -344,135 +346,199 @@
               [class.items-end]="msg.direction === 'OUTBOUND'"
               [class.items-start]="msg.direction === 'INBOUND'">
               
-              <!-- Sender label for outbound messages -->
+              <!-- Sender label tag for outbound messages -->
               @if (msg.direction === 'OUTBOUND') {
-                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-neutral-400 mb-1">
-                  @if (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM' || msg.senderType === 'AI') {
-                    <span class="text-sky-600 dark:text-sky-400 flex items-center gap-0.5">
-                      <mat-icon class="scale-50">bolt</mat-icon> • 3D Galaxy Auto-Reply
+                <div class="flex items-center justify-end gap-1.5 mb-1 text-[10px]">
+                  @if (msg.messageType === 'AUTOMATED_ORDER_NOTIFICATION' || msg.mediaMetadata?.isAutomatedNotification) {
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30 flex items-center gap-1 shadow-2xs">
+                      <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">notifications_active</mat-icon>
+                      <span>🔔 Automated Order Update</span>
+                    </span>
+                  } @else if (msg.senderType === 'AI') {
+                    <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 font-bold border border-purple-500/20 flex items-center gap-1 shadow-2xs">
+                      <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">smart_toy</mat-icon>
+                      <span>AI Reply</span>
+                    </span>
+                  } @else if (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM') {
+                    <span class="px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/20 flex items-center gap-1 shadow-2xs">
+                      <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">bolt</mat-icon>
+                      <span>3D Galaxy Auto-Reply</span>
                     </span>
                   } @else {
-                    <span class="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                      <mat-icon class="scale-50">shield_person</mat-icon> Admin Reply
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20 flex items-center gap-1 shadow-2xs">
+                      <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">shield_person</mat-icon>
+                      <span>Admin Reply</span>
                     </span>
                   }
                 </div>
               }
 
-              <!-- Bubble Box with WhatsApp in-bubble footer -->
+              <!-- Speech Bubble Card with WhatsApp border-radius tail & layout -->
               <div
                 [ngClass]="{
-                  'bg-emerald-600 text-white rounded-2xl rounded-tr-xs shadow-sm': msg.direction === 'OUTBOUND' && msg.senderType === 'ADMIN',
-                  'bg-sky-600 text-white rounded-2xl rounded-tr-xs shadow-sm': msg.direction === 'OUTBOUND' && (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM' || msg.senderType === 'AI'),
-                  'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 shadow-xs rounded-2xl rounded-tl-xs': msg.direction === 'INBOUND'
+                  'bg-amber-50 dark:bg-amber-950/70 text-amber-950 dark:text-amber-100 border border-amber-300/80 dark:border-amber-700/80 rounded-[18px] rounded-br-[4px] shadow-md': msg.direction === 'OUTBOUND' && (msg.messageType === 'AUTOMATED_ORDER_NOTIFICATION' || msg.mediaMetadata?.isAutomatedNotification),
+                  'bg-emerald-600 dark:bg-emerald-700 text-white rounded-[18px] rounded-br-[4px] shadow-sm border border-emerald-500/20': msg.direction === 'OUTBOUND' && msg.senderType === 'ADMIN' && msg.messageType !== 'AUTOMATED_ORDER_NOTIFICATION' && !msg.mediaMetadata?.isAutomatedNotification,
+                  'bg-purple-600 dark:bg-purple-700 text-white rounded-[18px] rounded-br-[4px] shadow-sm border border-purple-500/20': msg.direction === 'OUTBOUND' && msg.senderType === 'AI' && msg.messageType !== 'AUTOMATED_ORDER_NOTIFICATION' && !msg.mediaMetadata?.isAutomatedNotification,
+                  'bg-sky-600 dark:bg-sky-700 text-white rounded-[18px] rounded-br-[4px] shadow-sm border border-sky-500/20': msg.direction === 'OUTBOUND' && (msg.senderType === 'AUTO' || msg.senderType === 'SYSTEM') && msg.messageType !== 'AUTOMATED_ORDER_NOTIFICATION' && !msg.mediaMetadata?.isAutomatedNotification,
+                  'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs rounded-[18px] rounded-bl-[4px]': msg.direction === 'INBOUND'
                 }"
-                class="px-3.5 py-2 text-xs font-sans leading-relaxed break-words min-w-[120px] overflow-hidden">
+                class="px-4 py-3 text-xs sm:text-[13px] font-sans leading-relaxed break-words min-w-[140px] transition-all hover:shadow">
                 
-                <!-- Media Attachment Preview -->
-                @if (msg.mediaUrl) {
-                  <div class="mb-2 rounded-xl overflow-hidden max-w-xs border border-white/20">
-                    <img [src]="msg.mediaUrl" alt="Media attachment" class="w-full object-cover max-h-56 cursor-pointer" />
+                <!-- Failure Banner if WhatsApp notification failed -->
+                @if (msg.status === 'FAILED') {
+                  <div class="mb-2 p-2 bg-rose-100 dark:bg-rose-950/80 border border-rose-400 text-rose-800 dark:text-rose-200 rounded-xl text-[11px] font-bold flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <mat-icon class="!text-[14px] !w-[14px] !h-[14px] text-rose-600 shrink-0">warning</mat-icon>
+                      <span class="truncate">⚠️ WhatsApp notification failed: {{ msg.errorMessage || 'Dispatch error' }}</span>
+                    </div>
                   </div>
                 }
 
-                <!-- Message text body -->
-                <span class="whitespace-pre-wrap">{{ msg.messageText }}</span>
+                <!-- Special Card for Automated Order Update -->
+                @if (msg.messageType === 'AUTOMATED_ORDER_NOTIFICATION' || msg.mediaMetadata?.isAutomatedNotification) {
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between gap-2 border-b border-amber-200/80 dark:border-amber-800/60 pb-1.5">
+                      <span class="font-extrabold text-[11px] uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">notifications_active</mat-icon>
+                        <span>Order Status Update</span>
+                      </span>
+                      @if (msg.mediaMetadata?.orderNumber || msg.mediaMetadata?.orderId) {
+                        <button
+                          (click)="viewOrder(msg.mediaMetadata?.orderNumber || msg.mediaMetadata?.orderId)"
+                          class="px-2 py-0.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] border-none cursor-pointer flex items-center gap-1 shadow-2xs">
+                          <span>View Order</span>
+                          <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">open_in_new</mat-icon>
+                        </button>
+                      }
+                    </div>
+
+                    <div class="whitespace-pre-wrap leading-relaxed select-text font-sans font-normal text-amber-950 dark:text-amber-100">
+                      {{ msg.messageText }}
+                    </div>
+
+                    <div class="text-[10px] text-amber-700/80 dark:text-amber-400/80 font-mono italic pt-1 border-t border-amber-200/40 dark:border-amber-800/30 flex items-center justify-between">
+                      <span>Automated WhatsApp Notification</span>
+                      @if (msg.mediaMetadata?.templateName) {
+                        <span class="font-mono">{{ msg.mediaMetadata.templateName }}</span>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <!-- Media Attachment Preview -->
+                  @if (msg.mediaUrl) {
+                    <div class="mb-2 rounded-xl overflow-hidden max-w-xs border border-white/20 shadow-xs">
+                      <img [src]="msg.mediaUrl" alt="Media attachment" class="w-full object-cover max-h-56 cursor-pointer hover:opacity-95 transition-opacity" />
+                    </div>
+                  }
+
+                  <!-- Standard Message Text -->
+                  <div class="whitespace-pre-wrap leading-relaxed select-text">{{ msg.messageText }}</div>
+                }
 
                 <!-- WhatsApp In-Bubble Timestamp & Status Checkmarks -->
-                @if (msg.direction === 'OUTBOUND') {
-                  <span class="float-right ml-3 -mb-0.5 mt-1 inline-flex items-center gap-1 text-[10px] text-white/80 select-none font-mono">
-                    <span>{{ formatTime(msg.createdAt) }}</span>
+                <div
+                  [ngClass]="{
+                    'text-amber-800/80 dark:text-amber-300/80': msg.direction === 'OUTBOUND' && (msg.messageType === 'AUTOMATED_ORDER_NOTIFICATION' || msg.mediaMetadata?.isAutomatedNotification),
+                    'text-white/80': msg.direction === 'OUTBOUND' && msg.messageType !== 'AUTOMATED_ORDER_NOTIFICATION' && !msg.mediaMetadata?.isAutomatedNotification,
+                    'text-neutral-400': msg.direction === 'INBOUND'
+                  }"
+                  class="flex items-center justify-end gap-1 text-[10px] select-none font-mono font-medium pt-1.5 self-end">
+                  <span>{{ formatTime(msg.createdAt) }}</span>
 
+                  @if (msg.direction === 'OUTBOUND') {
                     <!-- Double Blue Ticks: READ / SEEN -->
                     @if (msg.status === 'READ') {
-                      <span title="Read / Seen by customer" class="inline-flex items-center text-sky-200 font-bold">
-                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done_all</mat-icon>
+                      <span title="Read / Seen by customer" class="inline-flex items-center text-sky-500 dark:text-sky-300 font-bold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">done_all</mat-icon>
                       </span>
                     }
                     <!-- Double Grey Ticks: DELIVERED -->
                     @else if (msg.status === 'DELIVERED') {
-                      <span title="Delivered to customer's phone" class="inline-flex items-center text-white/75 font-semibold">
-                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done_all</mat-icon>
+                      <span title="Delivered to customer's phone" class="inline-flex items-center text-current font-semibold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">done_all</mat-icon>
                       </span>
                     }
                     <!-- Red Exclamation: FAILED -->
                     @else if (msg.status === 'FAILED') {
-                      <span [title]="msg.errorMessage || 'Failed to deliver'" class="inline-flex items-center text-rose-300 font-bold">
-                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px] inline-flex items-center justify-center">error_outline</mat-icon>
+                      <span [title]="msg.errorMessage || 'Failed to deliver'" class="inline-flex items-center text-rose-500 font-bold">
+                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px]">error_outline</mat-icon>
                       </span>
                     }
                     <!-- Clock: SENDING / QUEUED / PENDING -->
                     @else if (msg.status === 'PENDING' || msg.status === 'SENDING' || msg.status === 'QUEUED') {
-                      <span title="Sending message to WhatsApp..." class="inline-flex items-center text-white/70">
-                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px] inline-flex items-center justify-center animate-pulse">schedule</mat-icon>
+                      <span title="Sending message to WhatsApp..." class="inline-flex items-center text-current opacity-70">
+                        <mat-icon class="!text-[13px] !w-[13px] !h-[13px] animate-pulse">schedule</mat-icon>
                       </span>
                     }
                     <!-- Single Grey Tick: SENT -->
                     @else {
-                      <span title="Sent to WhatsApp server" class="inline-flex items-center text-white/75 font-semibold">
-                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px] inline-flex items-center justify-center">done</mat-icon>
+                      <span title="Sent to WhatsApp server" class="inline-flex items-center text-current font-semibold">
+                        <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">done</mat-icon>
                       </span>
                     }
-                  </span>
-                } @else {
-                  <span class="float-right ml-3 -mb-0.5 mt-1 inline-flex items-center gap-1 text-[10px] text-neutral-400 dark:text-neutral-400 select-none font-mono">
-                    <span>{{ formatTime(msg.createdAt) }}</span>
+                  } @else {
                     @if (msg.status === 'RECEIVED') {
                       <span title="Received from customer" class="inline-flex items-center text-emerald-500 font-bold">
-                        <mat-icon class="!text-[12px] !w-[12px] !h-[12px] inline-flex items-center justify-center">done</mat-icon>
+                        <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">done</mat-icon>
                       </span>
                     }
-                  </span>
-                }
+                  }
+                </div>
               </div>
             </div>
           }
         </div>
 
-        <!-- Quick Canned Replies Row (Zero native chunky scrollbar) -->
-        <div class="px-3 py-2 bg-neutral-100/80 dark:bg-neutral-900/80 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-1.5 overflow-x-auto shrink-0 text-[11px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <span class="text-[10px] text-neutral-400 font-bold uppercase shrink-0 font-mono pl-1">Quick Replies:</span>
+        <!-- Quick Canned Replies Row -->
+        <div class="px-4 py-2.5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-t border-neutral-200/80 dark:border-neutral-800 flex items-center gap-2 overflow-x-auto shrink-0 text-xs [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono text-[10px] font-bold shrink-0 border border-emerald-500/20">
+            <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">electric_bolt</mat-icon>
+            <span>QUICK REPLIES</span>
+          </div>
+
           @for (qr of quickRepliesList(); track qr.id || $index) {
             <button
               (click)="insertQuickReply(qr)"
-              class="px-2.5 py-1 bg-white dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs truncate max-w-[260px] border border-neutral-200 dark:border-neutral-700 cursor-pointer shrink-0 transition-colors shadow-2xs flex items-center gap-1.5"
+              class="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800/90 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-500/50 text-neutral-700 dark:text-neutral-200 rounded-xl text-xs max-w-[280px] border border-neutral-200 dark:border-neutral-700/80 cursor-pointer shrink-0 transition-all shadow-2xs flex items-center gap-2 font-medium hover:scale-[1.01] active:scale-95"
               [title]="qr.message">
               @if (qr.shortcut) {
-                <span class="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-[10px]">{{ qr.shortcut }}</span>
+                <span class="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white font-mono font-bold text-[10px] shadow-2xs">{{ qr.shortcut }}</span>
               }
               <span class="truncate">{{ qr.title || qr.message }}</span>
             </button>
           }
           <button
             (click)="openAutoReplySettings('QUICK_REPLIES')"
-            class="px-2 py-1 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-lg text-xs border-none cursor-pointer shrink-0 transition-colors font-medium flex items-center gap-1"
+            class="px-2.5 py-1.5 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs border border-neutral-200 dark:border-neutral-700 cursor-pointer shrink-0 transition-all font-semibold flex items-center gap-1 shadow-2xs"
             title="Manage Quick Replies">
-            <mat-icon class="!text-[12px] !w-[12px] !h-[12px] inline-flex items-center justify-center">edit</mat-icon>
+            <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">edit</mat-icon>
             <span>Manage</span>
           </button>
         </div>
 
         <!-- Reply Input Bar -->
-        <footer class="p-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-2 shrink-0">
+        <footer class="p-3.5 sm:p-4 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-2 shrink-0">
           @if (showMediaInput()) {
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 p-2 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
+              <mat-icon class="text-neutral-400 scale-90">link</mat-icon>
               <input
                 type="text"
                 [(ngModel)]="mediaUrlInput"
                 placeholder="Image/Media URL (e.g. https://storage.googleapis.com/...)"
-                class="flex-1 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-xs border border-neutral-200 dark:border-neutral-700 outline-none text-neutral-900 dark:text-white font-sans" />
+                class="flex-1 bg-transparent text-xs border-none outline-none text-neutral-900 dark:text-white font-sans" />
               <button
                 (click)="showMediaInput.set(false)"
-                class="text-neutral-400 hover:text-neutral-600 text-xs border-none bg-transparent cursor-pointer px-2">
+                class="text-neutral-400 hover:text-neutral-600 text-xs border-none bg-transparent cursor-pointer px-2 font-semibold">
                 Cancel
               </button>
             </div>
           }
 
-          <div class="flex items-end gap-2">
+          <div class="flex items-end gap-2.5">
             <button
               (click)="showMediaInput.set(!showMediaInput())"
-              class="p-2.5 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors border-none bg-transparent cursor-pointer shrink-0 mb-0.5"
+              [ngClass]="{ 'bg-emerald-50 text-emerald-600': showMediaInput() }"
+              class="p-2.5 rounded-2xl text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 cursor-pointer shrink-0 mb-0.5"
               title="Attach image or media URL">
               <mat-icon class="scale-90">attach_file</mat-icon>
             </button>
@@ -482,18 +548,18 @@
               (keydown.enter)="onEnterPress($event)"
               rows="1"
               placeholder="Type message to customer on WhatsApp (Enter to send, Shift+Enter for newline)..."
-              class="flex-1 min-h-[44px] max-h-32 px-3.5 py-2.5 bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-900 dark:text-white rounded-xl border-none outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none font-sans leading-relaxed"></textarea>
+              class="flex-1 min-h-[44px] max-h-32 px-4 py-3 bg-neutral-100/80 dark:bg-neutral-800/80 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs sm:text-[13px] text-neutral-900 dark:text-white rounded-2xl border border-neutral-200/60 dark:border-neutral-700/60 outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 transition-all resize-none font-sans leading-relaxed"></textarea>
 
             <button
               (click)="sendReply()"
               [disabled]="waService.isSending() || (!replyText().trim() && !mediaUrlInput().trim())"
-              class="px-4 sm:px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border-none shadow-sm shrink-0 mb-0.5">
+              class="px-5 sm:px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border-none shadow-md shadow-emerald-600/20 shrink-0 mb-0.5 active:scale-95">
               @if (waService.isSending()) {
-                <span class="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               } @else {
-                <mat-icon class="scale-80">send</mat-icon>
+                <mat-icon class="scale-90">send</mat-icon>
               }
-              <span>Send</span>
+              <span class="font-sans font-bold">Send</span>
             </button>
           </div>
         </footer>
@@ -520,66 +586,66 @@
       @if (showRightDrawer()) {
         <aside class="w-72 lg:w-80 border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 p-4 overflow-y-auto space-y-5 shrink-0 animate-fadeIn">
           <!-- Customer Profile Card -->
-          <div class="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 space-y-3">
+          <div class="p-4 bg-gradient-to-br from-neutral-50 to-emerald-50/40 dark:from-neutral-900 dark:to-neutral-900/90 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-xs space-y-3.5">
             <div class="flex items-center gap-3">
-              <div class="h-12 w-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-sm flex items-center justify-center shadow-md shrink-0">
+              <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-sm flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
                 {{ getInitials(active.customerName) }}
               </div>
               <div class="min-w-0 flex-1">
                 <h3 class="text-xs font-bold text-neutral-900 dark:text-white truncate">
                   {{ active.customerName || 'WhatsApp Customer' }}
                 </h3>
-                <p class="text-[11px] text-neutral-400 font-mono truncate">{{ active.phone }}</p>
-                <span class="inline-block mt-1 px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                <p class="text-[11px] text-neutral-400 font-mono truncate mt-0.5">{{ active.phone }}</p>
+                <span class="inline-block mt-1 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
                   {{ active.customer?.customerType || 'RETAIL CUSTOMER' }}
                 </span>
               </div>
             </div>
 
             <!-- Quick Action Buttons -->
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+            <div class="grid grid-cols-2 gap-2 pt-2.5 border-t border-neutral-200/80 dark:border-neutral-800">
               <button
                 (click)="openWhatsAppWeb(active.phone)"
-                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold flex items-center justify-center gap-1 border-none cursor-pointer transition-colors">
-                <mat-icon class="scale-75">open_in_new</mat-icon>
+                class="px-2.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold flex items-center justify-center gap-1 border border-emerald-500/20 cursor-pointer transition-all shadow-2xs hover:scale-[1.02] active:scale-95">
+                <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">open_in_new</mat-icon>
                 <span>WhatsApp Web</span>
               </button>
               <a
                 [href]="'tel:' + active.phone"
-                class="px-2.5 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-bold flex items-center justify-center gap-1 no-underline transition-colors">
-                <mat-icon class="scale-75">call</mat-icon>
+                class="px-2.5 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-bold flex items-center justify-center gap-1 no-underline border border-neutral-200 dark:border-neutral-700 transition-all shadow-2xs hover:scale-[1.02] active:scale-95">
+                <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">call</mat-icon>
                 <span>Call Phone</span>
               </a>
             </div>
           </div>
 
           <!-- Recent Customer Orders Section -->
-          <div class="space-y-2.5">
+          <div class="space-y-3">
             <div class="flex items-center justify-between">
               <h4 class="text-xs font-bold text-neutral-700 dark:text-neutral-300 font-mono uppercase tracking-wider flex items-center gap-1.5">
-                <mat-icon class="scale-75 text-emerald-500">shopping_bag</mat-icon>
+                <mat-icon class="!text-[14px] !w-[14px] !h-[14px] text-emerald-500">shopping_bag</mat-icon>
                 <span>Recent Orders ({{ active.customer?.orders?.length || 0 }})</span>
               </h4>
             </div>
 
             @if (!active.customer?.orders || active.customer?.orders?.length === 0) {
-              <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 text-center text-neutral-400 text-xs">
+              <div class="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 text-center text-neutral-400 text-xs">
                 No orders found for this customer.
               </div>
             } @else {
               <div class="space-y-2.5">
                 @for (ord of active.customer?.orders; track ord.id) {
-                  <div class="p-3 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
+                  <div class="p-3.5 bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 space-y-2 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all shadow-2xs">
                     <div class="flex items-center justify-between">
                       <span class="text-xs font-black font-mono text-neutral-900 dark:text-white">
                         {{ ord.orderNumber }}
                       </span>
                       <span
-                        class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border"
                         [ngClass]="{
-                          'bg-emerald-500/10 text-emerald-500': ord.status === 'Delivered' || ord.status === 'Completed',
-                          'bg-blue-500/10 text-blue-500': ord.status === 'Shipped' || ord.status === 'Confirmed',
-                          'bg-amber-500/10 text-amber-500': ord.status === 'Pending'
+                          'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': ord.status === 'Delivered' || ord.status === 'Completed',
+                          'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20': ord.status === 'Shipped' || ord.status === 'Confirmed',
+                          'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20': ord.status === 'Pending'
                         }">
                         {{ ord.status }}
                       </span>
@@ -587,14 +653,17 @@
 
                     <div class="flex items-center justify-between text-[11px] text-neutral-500">
                       <span>{{ ord.createdAt | date:'dd MMM yyyy' }}</span>
-                      <span class="font-bold text-neutral-900 dark:text-white font-mono">₹{{ ord.totalAmount }}</span>
+                      <span class="font-bold text-neutral-900 dark:text-white font-mono text-xs">₹{{ ord.totalAmount }}</span>
                     </div>
 
                     <!-- Items snippet -->
                     @if (ord.items && ord.items.length > 0) {
-                      <div class="pt-1.5 border-t border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-600 dark:text-neutral-400 space-y-0.5">
+                      <div class="pt-2 border-t border-neutral-200/80 dark:border-neutral-800 text-[10px] text-neutral-600 dark:text-neutral-400 space-y-1">
                         @for (it of ord.items; track it.id) {
-                          <p class="truncate">• {{ it.product?.name }} ({{ it.variant?.name || 'Standard' }}) x{{ it.quantity }}</p>
+                          <p class="truncate flex items-center gap-1">
+                            <span class="text-emerald-500 font-bold">•</span>
+                            <span>{{ it.product?.name }} ({{ it.variant?.name || 'Standard' }}) x{{ it.quantity }}</span>
+                          </p>
                         }
                       </div>
                     }
@@ -609,7 +678,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- AUTO-REPLY & QUICK REPLIES CONFIGURATION MODAL -->
+  <!-- GREETING REPLY & QUICK REPLIES CONFIGURATION MODAL -->
   <!-- ========================================================================= -->
   @if (showAutoReplyModal()) {
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -619,14 +688,14 @@
         <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/50">
           <div class="flex items-center gap-3">
             <div class="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <mat-icon class="scale-90">smart_toy</mat-icon>
+              <mat-icon class="scale-90">waving_hand</mat-icon>
             </div>
             <div>
               <h3 class="text-sm font-bold text-neutral-900 dark:text-white font-sans">
-                WhatsApp Auto-Reply & Quick Replies
+                WhatsApp Greeting & Quick Replies Configuration
               </h3>
               <p class="text-[11px] text-neutral-500">
-                Single greeting auto-reply for incoming customer messages and agent canned responses
+                Single greeting reply (Hi/Hello) for customer initial contact and agent quick reply shortcuts
               </p>
             </div>
           </div>
@@ -647,7 +716,7 @@
             }"
             class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
             <mat-icon class="scale-75">waving_hand</mat-icon>
-            <span>Auto-Reply (Hi / Hello)</span>
+            <span>Hi / Greeting Reply</span>
           </button>
           <button
             (click)="autoReplyTab.set('QUICK_REPLIES')"
@@ -657,7 +726,7 @@
             }"
             class="py-3 px-1 border-none bg-transparent cursor-pointer transition-colors flex items-center gap-1.5">
             <mat-icon class="scale-75">flash_on</mat-icon>
-            <span>Quick Replies</span>
+            <span>Quick Replies (Shortcuts)</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
               {{ quickRepliesList().length }}
             </span>
@@ -675,17 +744,17 @@
             </div>
           }
 
-          <!-- TAB 1: SINGLE GREETING AUTO-REPLY -->
+          <!-- TAB 1: SINGLE GREETING AUTO-REPLY ONLY -->
           @if (autoReplyTab() === 'AUTOREPLY' && autoReplyConfig(); as cfg) {
             <div class="space-y-4">
               <!-- Single-Reply Restriction Notice -->
               <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs space-y-1">
                 <div class="font-bold flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-200">
                   <mat-icon class="scale-75">verified_user</mat-icon>
-                  <span>Single-Reply Restriction Active</span>
+                  <span>Hi / Greetings Reply Only</span>
                 </div>
                 <p class="text-[11px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  The system will send <strong>only one greeting reply</strong> when a customer contacts with "hi", "hello", etc. No other automated messages or bot workflows will trigger, keeping the chat clean for your human support team.
+                  Only <strong>Hi / Greeting</strong> replies are active. The system will send a single welcome message when a customer sends "hi", "hello", "namaste", "vanakkam", etc. All other automated bot workflows and multi-rule auto replies are disabled.
                 </p>
               </div>
 
@@ -694,7 +763,7 @@
                 <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
                   <div class="flex items-center justify-between">
                     <div>
-                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Enable Auto Reply</h4>
+                      <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Enable Greeting Reply</h4>
                       <p class="text-[11px] text-neutral-500">Send greeting on initial customer contact</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -708,7 +777,7 @@
                   <div class="flex items-center justify-between">
                     <div>
                       <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Send Only Once</h4>
-                      <p class="text-[11px] text-neutral-500">Prevent sending again if already replied</p>
+                      <p class="text-[11px] text-neutral-500">Prevent sending again if already greeted</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" [(ngModel)]="cfg.onlyReplyOnce" class="sr-only peer">
@@ -723,7 +792,7 @@
                 <div class="flex items-center justify-between">
                   <div>
                     <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Greeting Trigger Keywords</h4>
-                    <p class="text-[11px] text-neutral-500">Comma-separated keywords that trigger the reply (matched as whole words)</p>
+                    <p class="text-[11px] text-neutral-500">Comma-separated keywords that trigger the single greeting reply</p>
                   </div>
                   <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600">Exact / Word Match</span>
                 </div>
@@ -734,7 +803,7 @@
                   placeholder="hi, hello, hey, start, vanakkam, namaste, greetings"
                   class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs font-mono text-neutral-900 dark:text-white focus:outline-none focus:border-emerald-500" />
                 <p class="text-[10px] text-neutral-400">
-                  Examples: <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>start</code>, <code>vanakkam</code>, <code>namaste</code>
+                  Examples: <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>start</code>, <code>vanakkam</code>, <code>namaste</code>, <code>greetings</code>
                 </p>
               </div>
 
@@ -742,14 +811,14 @@
               <div class="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-800 space-y-2">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Auto-Reply Greeting Message</h4>
-                    <p class="text-[11px] text-neutral-500">The single greeting message dispatched to the customer</p>
+                    <h4 class="font-bold text-xs text-neutral-900 dark:text-white">Greeting Message</h4>
+                    <p class="text-[11px] text-neutral-500">The single greeting message sent to the customer</p>
                   </div>
                   <span class="text-[10px] text-neutral-400 font-mono">&#123;customerName&#125; supported</span>
                 </div>
                 <textarea
                   [(ngModel)]="cfg.replyMessage"
-                  rows="5"
+                  rows="4"
                   placeholder="Hello {customerName}! 👋 Welcome to 3D Galaxy..."
                   class="w-full px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-white resize-none focus:outline-none focus:border-emerald-500 font-sans leading-relaxed"></textarea>
               </div>
