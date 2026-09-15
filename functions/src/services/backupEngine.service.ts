@@ -96,6 +96,14 @@ export class BackupEngineService {
   // CONCURRENCY LOCK
   // -------------------------------------------------------------------------
   public isBusy(): boolean {
+    if (this.activeJob) {
+      const updatedAt = new Date(this.activeJob.updatedAt || this.activeJob.startedAt).getTime();
+      if (Date.now() - updatedAt > 30 * 60 * 1000) {
+        console.warn(`[BACKUP ENGINE] Active job ${this.activeJob.jobId} is stale (no activity for 30m). Clearing lock.`);
+        this.activeJob = null;
+        return false;
+      }
+    }
     return this.activeJob !== null && !['COMPLETED', 'FAILED', 'RESTORE_COMPLETED', 'RESTORE_FAILED'].includes(this.activeJob.stage);
   }
 

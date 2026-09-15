@@ -32,12 +32,24 @@ class BackupSchedulerService {
   // Generate cron expression based on ENV configuration
   public getCronExpression(): { cronExpr: string; description: string } {
     const timeParts = (ENV.BACKUP_TIME || '02:00').split(':');
-    const hour = parseInt(timeParts[0] || '2', 10);
-    const minute = parseInt(timeParts[1] || '0', 10);
+    const hour = isNaN(parseInt(timeParts[0] || '2', 10)) ? 2 : parseInt(timeParts[0] || '2', 10);
+    const minute = isNaN(parseInt(timeParts[1] || '0', 10)) ? 0 : parseInt(timeParts[1] || '0', 10);
 
-    const isTwiceWeekly = ENV.BACKUP_SCHEDULE?.toLowerCase() === 'twice-weekly';
+    const scheduleType = (ENV.BACKUP_SCHEDULE || 'weekly').toLowerCase().trim();
 
-    if (isTwiceWeekly) {
+    if (scheduleType === 'hourly') {
+      const cronExpr = `${minute} * * * *`;
+      return {
+        cronExpr,
+        description: `Hourly at minute :${String(minute).padStart(2, '0')} (${ENV.BACKUP_TIMEZONE})`
+      };
+    } else if (scheduleType === 'daily') {
+      const cronExpr = `${minute} ${hour} * * *`;
+      return {
+        cronExpr,
+        description: `Daily at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
+      };
+    } else if (scheduleType === 'twice-weekly') {
       const days = (ENV.BACKUP_DAYS || 'Wednesday,Sunday')
         .split(',')
         .map((d) => this.dayNameToCron(d))
@@ -47,7 +59,14 @@ class BackupSchedulerService {
         cronExpr,
         description: `Twice-weekly on ${ENV.BACKUP_DAYS} at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
       };
+    } else if (scheduleType === 'monthly') {
+      const cronExpr = `${minute} ${hour} 1 * *`;
+      return {
+        cronExpr,
+        description: `Monthly on the 1st at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
+      };
     } else {
+      // Default: weekly
       const day = this.dayNameToCron(ENV.BACKUP_DAY || 'Sunday');
       const cronExpr = `${minute} ${hour} * * ${day}`;
       return {
@@ -58,6 +77,8 @@ class BackupSchedulerService {
   }
 
   public init() {
+    this.destroy();
+
     if (!ENV.BACKUP_MODULE_ENABLED) {
       console.log('[BACKUP SCHEDULER] Backup module is disabled (BACKUP_MODULE_ENABLED=false). Scheduler will not start.');
       return;
@@ -69,11 +90,17 @@ class BackupSchedulerService {
     }
 
     const { cronExpr, description } = this.getCronExpression();
-    console.log(`[BACKUP SCHEDULER] Initializing backup schedule: "${cronExpr}" -> ${description}`);
+
+    if (!cron.validate(cronExpr)) {
+      console.error(`[BACKUP SCHEDULER] Invalid cron expression calculated: "${cronExpr}". Falling back to daily 02:00.`);
+    }
+
+    const safeCronExpr = cron.validate(cronExpr) ? cronExpr : '0 2 * * *';
+    console.log(`[BACKUP SCHEDULER] Initializing backup schedule: "${safeCronExpr}" -> ${description}`);
 
     try {
       this.scheduledTask = cron.schedule(
-        cronExpr,
+        safeCronExpr,
         async () => {
           console.log('[BACKUP SCHEDULER] Scheduled backup trigger initiated...');
           await this.executeScheduledBackupWithRetry();

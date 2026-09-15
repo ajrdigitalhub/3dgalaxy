@@ -38,7 +38,7 @@ export const ENV = {
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@3dgalaxy.co.in',
   CLIENT_URL: (process.env.CLIENT_URL || 'http://localhost:4200').replace(/\/+$/, ''),
   BACKUP_MODULE_ENABLED: process.env.BACKUP_MODULE_ENABLED !== 'false',
-  BACKUP_ENABLED: process.env.BACKUP_ENABLED !== 'true' || true,
+  BACKUP_ENABLED: process.env.BACKUP_ENABLED !== 'false',
   BACKUP_SCHEDULE: process.env.BACKUP_SCHEDULE || 'weekly',
   BACKUP_DAY: process.env.BACKUP_DAY || 'Sunday',
   BACKUP_DAYS: process.env.BACKUP_DAYS || 'Wednesday,Sunday',
