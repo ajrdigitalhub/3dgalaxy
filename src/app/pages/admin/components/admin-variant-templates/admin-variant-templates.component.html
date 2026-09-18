@@ -1,0 +1,349 @@
+<div class="variant-templates-container">
+  <!-- Top Toggle Bar -->
+  <div class="templates-header-bar flex items-center justify-between p-3.5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/5 dark:from-indigo-950/40 dark:to-purple-950/40 rounded-xl border border-indigo-500/20 shadow-xs flex-wrap gap-2">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+        <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">auto_awesome</mat-icon>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black uppercase text-indigo-700 dark:text-indigo-300 tracking-wider">
+            Variant Templates
+          </span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+            Quick Setup
+          </span>
+        </div>
+        <p class="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium m-0">
+          Quickly configure common product variants (Filament Colors, Spool Weights, Bundles, Printers).
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      @if (successMessage()) {
+      <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold border border-emerald-500/30 flex items-center gap-1 animate-fadeIn">
+        <mat-icon class="!text-[14px] !w-[14px] !h-[14px]">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </span>
+      }
+
+      <button
+        type="button"
+        (click)="toggleExpanded()"
+        class="px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-neutral-100 dark:hover:bg-zinc-700 text-indigo-600 dark:text-indigo-300 rounded-lg text-xs font-bold cursor-pointer border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 shadow-2xs transition-all">
+        <span>{{ isExpanded() ? 'Hide Templates' : 'Choose Template' }}</span>
+        <mat-icon class="scale-75 transition-transform duration-200" [class.rotate-180]="isExpanded()">
+          expand_more
+        </mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Expanded Templates Drawer -->
+  @if (isExpanded()) {
+  <div class="templates-drawer mt-3 p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-indigo-200/80 dark:border-zinc-800 shadow-sm space-y-4 animate-fadeIn">
+    
+    <!-- Controls: Search & Category Filter Pills -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100 dark:border-zinc-800">
+      
+      <!-- Category Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] shrink-0">
+        @for (cat of categories; track cat.id) {
+        <button
+          type="button"
+          (click)="selectedCategory.set(cat.id)"
+          [class.active-cat]="selectedCategory() === cat.id"
+          class="cat-chip px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shrink-0">
+          {{ cat.label }}
+        </button>
+        }
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative min-w-[200px] sm:max-w-xs flex-1">
+        <mat-icon class="absolute left-2.5 top-2 !text-[16px] !w-[16px] !h-[16px] text-neutral-400">search</mat-icon>
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          placeholder="Search templates (e.g. Filament, Size, Bundle)..."
+          class="w-full pl-8 pr-3 py-1.5 bg-neutral-50 dark:bg-zinc-950 text-neutral-900 dark:text-neutral-100 text-xs rounded-xl border border-neutral-200 dark:border-zinc-800 outline-none focus:border-indigo-500 font-sans" />
+      </div>
+    </div>
+
+    <!-- Template Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      @for (tpl of filteredTemplates(); track tpl.id) {
+      <div class="tpl-card p-3.5 rounded-xl border border-neutral-200/90 dark:border-zinc-800 bg-neutral-50/50 dark:bg-zinc-950/40 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 transition-all flex flex-col justify-between space-y-3 group shadow-2xs">
+        
+        <div>
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <div class="flex items-center gap-2">
+              <div class="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">{{ tpl.icon }}</mat-icon>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-neutral-900 dark:text-white font-sans m-0 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {{ tpl.name }}
+                </h4>
+                <span class="text-[10px] text-neutral-400 font-mono">{{ tpl.category }}</span>
+              </div>
+            </div>
+
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-200/70 dark:bg-zinc-800 text-neutral-600 dark:text-neutral-300 shrink-0">
+              {{ tpl.groups.length }} {{ tpl.groups.length === 1 ? 'Group' : 'Groups' }}
+            </span>
+          </div>
+
+          <!-- Description -->
+          <p class="text-[11px] text-neutral-600 dark:text-neutral-400 leading-snug m-0 line-clamp-2">
+            {{ tpl.description }}
+          </p>
+
+          <!-- Values sample tags -->
+          <div class="flex flex-wrap gap-1 mt-2.5">
+            @for (val of tpl.groups[0].values.slice(0, 5); track val) {
+            <span class="px-1.5 py-0.5 rounded-md text-[9px] font-medium bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 text-neutral-700 dark:text-neutral-300">
+              {{ val }}
+            </span>
+            }
+            @if (tpl.groups[0].values.length > 5) {
+            <span class="text-[9px] text-neutral-400 self-center font-mono">+{{ tpl.groups[0].values.length - 5 }} more</span>
+            }
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-2 border-t border-neutral-200/60 dark:border-zinc-800/80 flex items-center justify-between">
+          <span class="text-[10px] text-neutral-400 font-mono uppercase">
+            {{ tpl.groups[0].displayType }}
+          </span>
+          <button
+            type="button"
+            (click)="openPreview(tpl)"
+            class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer border-none shadow-xs flex items-center gap-1 transition-all">
+            <span>Preview & Use</span>
+            <mat-icon class="scale-75">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+      } @empty {
+      <div class="col-span-full py-8 text-center text-neutral-400">
+        <mat-icon class="text-3xl text-neutral-300 dark:text-zinc-700">filter_alt_off</mat-icon>
+        <p class="text-xs font-semibold mt-1">No templates matched your search.</p>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: TEMPLATE PREVIEW & COLLISION RESOLUTION DIALOG                      -->
+  <!-- ========================================================================= -->
+  @if (activePreviewTemplate(); as tpl) {
+  <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn select-text"
+    (click)="closePreview()">
+    <div
+      class="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-2xl border border-neutral-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-neutral-200 dark:border-zinc-800 flex items-center justify-between bg-neutral-50 dark:bg-zinc-950/60">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <mat-icon>{{ tpl.icon }}</mat-icon>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-neutral-900 dark:text-white font-sans m-0 flex items-center gap-2">
+              <span>{{ tpl.name }}</span>
+              <span class="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 rounded border border-indigo-500/20">
+                v{{ tpl.version }}
+              </span>
+            </h3>
+            <p class="text-[11px] text-neutral-500 dark:text-neutral-400 m-0 mt-0.5">
+              {{ tpl.description }}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="closePreview()"
+          class="h-8 w-8 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-zinc-800 flex items-center justify-center border-none bg-transparent cursor-pointer transition-colors">
+          <mat-icon class="scale-90">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-5 overflow-y-auto space-y-4 text-xs font-sans">
+        
+        <!-- Pre-population Warning / Info Banner -->
+        <div class="p-3 rounded-xl bg-neutral-100 dark:bg-zinc-800/60 border border-neutral-200 dark:border-zinc-700 text-neutral-600 dark:text-neutral-300 text-[11px] flex items-start gap-2">
+          <mat-icon class="!text-[16px] !w-[16px] !h-[16px] text-indigo-500 shrink-0 mt-0.5">info</mat-icon>
+          <span>
+            Applying this template pre-fills the variant configuration editor. You can freely edit names, add/remove options, adjust prices, and link images before saving the product.
+          </span>
+        </div>
+
+        <!-- Collision / Duplicate Group Notice -->
+        @if (collisionState().duplicateGroupNames.length > 0) {
+        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[11px] space-y-1.5">
+          <div class="flex items-center gap-1.5 font-bold text-xs">
+            <mat-icon class="!text-[16px] !w-[16px] !h-[16px] text-amber-600 shrink-0">warning</mat-icon>
+            <span>Duplicate Group Detected</span>
+          </div>
+          <p class="m-0 leading-relaxed">
+            The group <strong>"{{ collisionState().duplicateGroupNames.join(', ') }}"</strong> already exists on this product.
+          </p>
+        </div>
+        }
+
+        <!-- Existing Variant Detected Notice -->
+        @if (collisionState().hasExisting) {
+        <div class="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 text-xs space-y-2">
+          <div class="flex items-center gap-1.5 font-bold">
+            <mat-icon class="!text-[16px] !w-[16px] !h-[16px] text-blue-600 shrink-0">content_copy</mat-icon>
+            <span>Existing Variant Configuration Detected</span>
+          </div>
+          <p class="text-[11px] m-0 text-blue-800 dark:text-blue-300">
+            How would you like to apply this template to the current product?
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-2 pt-1">
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-800 cursor-pointer flex-1">
+              <input type="radio" name="applyMode" value="APPEND" [checked]="applyMode() === 'APPEND'" (change)="applyMode.set('APPEND')" />
+              <div>
+                <div class="font-bold text-xs">Add as New Group(s)</div>
+                <div class="text-[10px] text-neutral-500">Keep current variants and append this template</div>
+              </div>
+            </label>
+
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-zinc-900 border border-blue-200 dark:border-blue-800 cursor-pointer flex-1">
+              <input type="radio" name="applyMode" value="REPLACE" [checked]="applyMode() === 'REPLACE'" (change)="applyMode.set('REPLACE')" />
+              <div>
+                <div class="font-bold text-xs text-rose-600 dark:text-rose-400">Replace Existing Groups</div>
+                <div class="text-[10px] text-neutral-500">Replaces current option groups with template</div>
+              </div>
+            </label>
+          </div>
+
+          @if (confirmReplaceOpen() && applyMode() === 'REPLACE') {
+          <div class="p-2.5 bg-rose-50 dark:bg-rose-950/60 rounded-lg border border-rose-300 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-[11px] font-bold flex items-center justify-between gap-2">
+            <span>Are you sure? This will replace your current variant groups.</span>
+            <button
+              type="button"
+              (click)="executeApply()"
+              class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-bold border-none cursor-pointer shrink-0">
+              Confirm Replace
+            </button>
+          </div>
+          }
+        </div>
+        }
+
+        <!-- Generated Groups Preview -->
+        <div class="space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-mono m-0">
+            Template Configuration ({{ tpl.groups.length }} {{ tpl.groups.length === 1 ? 'Group' : 'Groups' }})
+          </h4>
+
+          @for (grp of tpl.groups; track grp.variantName + $index; let idx = $index) {
+          <div class="p-3.5 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-neutral-50/70 dark:bg-zinc-950/50 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="h-5 w-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {{ idx + 1 }}
+                </span>
+                <span class="font-bold text-xs text-neutral-900 dark:text-white">
+                  {{ grp.displayName }}
+                </span>
+                <span class="text-[10px] text-neutral-400 font-mono">({{ grp.variantName }})</span>
+              </div>
+
+              <div class="flex items-center gap-1 text-[10px] font-mono">
+                <span class="px-2 py-0.5 rounded bg-neutral-200 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300 font-bold">
+                  {{ grp.displayType }}
+                </span>
+                <span class="px-2 py-0.5 rounded bg-neutral-200 dark:bg-zinc-800 text-neutral-700 dark:text-neutral-300">
+                  {{ grp.selectionMode }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Value Chips Preview -->
+            @if (grp.values && grp.values.length > 0) {
+            <div class="pt-1">
+              <span class="text-[10px] font-bold uppercase text-neutral-400 block mb-1">Default Values:</span>
+              <div class="flex flex-wrap gap-1.5">
+                @for (val of grp.values; track val) {
+                <span class="px-2 py-1 rounded-lg text-xs font-medium bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 shadow-2xs">
+                  @if (grp.displayType === 'color-chips' || grp.variantName === 'color') {
+                  <span class="h-2.5 w-2.5 rounded-full border border-black/10 shrink-0" [style.backgroundColor]="getColorHex(val)"></span>
+                  }
+                  <span>{{ val }}</span>
+                </span>
+                }
+              </div>
+            </div>
+            }
+
+            <!-- Bundle Tiers Preview (if applicable) -->
+            @if (grp.bundleTiers && grp.bundleTiers.length > 0) {
+            <div class="pt-1">
+              <span class="text-[10px] font-bold uppercase text-neutral-400 block mb-1">Preconfigured Tiers:</span>
+              <div class="space-y-1">
+                @for (t of grp.bundleTiers; track t.id || t.name) {
+                <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-zinc-900 border border-neutral-200/80 dark:border-zinc-800 text-xs">
+                  <span class="font-bold">{{ t.name }} (Qty: {{ t.count }})</span>
+                  <div class="flex items-center gap-2 text-[11px] font-mono">
+                    @if (t.savingsText) {
+                    <span class="text-emerald-600 dark:text-emerald-400 font-bold">{{ t.savingsText }}</span>
+                    }
+                    @if (t.badgeText) {
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold">{{ t.badgeText }}</span>
+                    }
+                    <span class="font-bold text-neutral-900 dark:text-white">₹{{ t.priceValue }}</span>
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Automatic Combinations Option -->
+        @if (tpl.suggestAutoCombinations) {
+        <label class="flex items-center gap-2 p-2.5 rounded-xl bg-neutral-50 dark:bg-zinc-950/60 border border-neutral-200 dark:border-zinc-800 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="autoGenerateCombos" class="rounded text-indigo-600" />
+          <span class="text-xs text-neutral-700 dark:text-neutral-300 font-medium">
+            Generate variant combinations into combination matrix immediately
+          </span>
+        </label>
+        }
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div class="px-5 py-3.5 border-t border-neutral-200 dark:border-zinc-800 flex items-center justify-between bg-neutral-50 dark:bg-zinc-950/60">
+        <button
+          type="button"
+          (click)="closePreview()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-zinc-800 border-none bg-transparent cursor-pointer transition-colors">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmAndApply(applyMode())"
+          class="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 cursor-pointer border-none shadow-md transition-colors">
+          <mat-icon class="scale-75">check</mat-icon>
+          <span>Apply Template</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+  }
+</div>

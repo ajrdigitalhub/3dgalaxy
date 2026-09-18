@@ -1,0 +1,57 @@
+.variant-templates-container {
+  font-family: inherit;
+  user-select: none;
+}
+
+.cat-chip {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+
+  &:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+  }
+
+  &.active-cat {
+    background-color: #4f46e5;
+    color: #ffffff;
+    border-color: #4f46e5;
+    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.25);
+  }
+}
+
+:host-context(.dark) .cat-chip,
+:host-context([data-theme='dark']) .cat-chip,
+.dark .cat-chip {
+  background-color: #18181b;
+  color: #a1a1aa;
+  border-color: #27272a;
+
+  &:hover {
+    background-color: #27272a;
+    color: #f4f4f5;
+  }
+
+  &.active-cat {
+    background-color: #6366f1;
+    color: #ffffff;
+    border-color: #6366f1;
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.4);
+  }
+}
+
+.tpl-card {
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+}
+
+:host-context(.dark) .tpl-card:hover,
+:host-context([data-theme='dark']) .tpl-card:hover,
+.dark .tpl-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}

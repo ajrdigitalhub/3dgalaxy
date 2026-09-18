@@ -22,6 +22,8 @@ import { ProductImportComponent } from "../../../admin/products/product-import/p
 import { ImagePickerComponent } from "../../../shared/components/image-picker/image-picker.component";
 import { AppButton } from "../../../shared/components/app-button/app-button";
 import { AdminVariantGroupConfigComponent } from "./admin-variant-group-config/admin-variant-group-config.component";
+import { AdminVariantTemplatesComponent } from "./admin-variant-templates/admin-variant-templates.component";
+import { TemplateApplyEvent } from "../../../core/models/variant-template.model";
 import { CategoryMultiSelectComponent } from "../../../shared/components/category-multi-select/category-multi-select.component";
 import { VariantTourGuideComponent } from "../../../shared/components/variant-tour-guide/variant-tour-guide.component";
 import { VariantTourService } from "../../../core/services/variant-tour.service";
@@ -39,6 +41,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
     AppButton,
     ProductImportComponent,
     AdminVariantGroupConfigComponent,
+    AdminVariantTemplatesComponent,
     CategoryMultiSelectComponent,
     VariantTourGuideComponent,
   ],
@@ -686,6 +689,12 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
 
                   <!-- Options Management -->
                   <div class="space-y-4">
+                    <!-- Variant Templates Convenience Selector -->
+                    <app-admin-variant-templates
+                      [existingGroups]="admin.pOptions()"
+                      [basePrice]="admin.pSale() || admin.pMrp() || 756"
+                      (templateApplied)="onVariantTemplateApplied($event)" />
+
                     <!-- Advanced Variant Group & Bundle Architecture Editor with Live Preview -->
                     <app-admin-variant-group-config
                       [variantGroups]="admin.pOptions()"
@@ -5258,5 +5267,52 @@ export class AdminCatalogTab {
     const raw = formVal !== undefined ? formVal : (v.stock ?? 0);
     const num = Number(raw);
     return isNaN(num) ? 0 : num;
+  }
+
+  onVariantTemplateApplied(event: TemplateApplyEvent) {
+    const formatGroup = (g: any, displayOrder?: number) => ({
+      id: g.id || `grp-${Date.now()}`,
+      name: g.displayName || g.variantName || g.name || 'Option',
+      variantName: g.variantName || g.name || 'Option',
+      displayName: g.displayName || g.name || 'Option',
+      displayType: g.displayType || 'chip',
+      selectionMode: g.selectionMode || 'single',
+      required: g.required !== false,
+      active: g.active !== false,
+      allowDuplicates: !!g.allowDuplicates,
+      values: Array.isArray(g.values) ? [...g.values] : [],
+      bundleTiers: Array.isArray(g.bundleTiers) ? [...g.bundleTiers] : [],
+      displayOrder: displayOrder !== undefined ? displayOrder : (g.displayOrder ?? 0)
+    });
+
+    const newGroups = event.groups.map((g, idx) => formatGroup(g, idx));
+
+    if (event.mode === 'REPLACE') {
+      this.admin.pOptions.set(newGroups);
+    } else {
+      // Append mode: merge new groups with existing
+      const current = [...this.admin.pOptions()];
+      // Check if current is empty or only has 1 blank default group without real values
+      const hasRealCurrent = current.some((g: any) => {
+        const hasVals = Array.isArray(g.values) ? g.values.length > 0 : !!g.values;
+        const hasTiers = Array.isArray(g.bundleTiers) && g.bundleTiers.length > 0;
+        return hasVals || hasTiers;
+      });
+
+      if (!hasRealCurrent) {
+        this.admin.pOptions.set(newGroups);
+      } else {
+        const offset = current.length;
+        const adjustedNew = event.groups.map((g, idx) => formatGroup(g, offset + idx));
+        this.admin.pOptions.set([...current, ...adjustedNew]);
+      }
+    }
+
+    // Auto-generate combination matrix if requested by the template
+    if (event.autoGenerateCombinations) {
+      setTimeout(() => {
+        this.admin.generateVariants();
+      }, 50);
+    }
   }
 }
