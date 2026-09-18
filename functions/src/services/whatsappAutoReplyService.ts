@@ -3,14 +3,15 @@ import prisma from '../config/database';
 import { logger } from '../utils/logger';
 import { WhatsAppConversationService } from './whatsappConversationService';
 import { getWhatsappSettings } from '../controllers/whatsapp';
+import {
+  WhatsAppRuleEngine,
+  AutoReplyConfig,
+  AutoReplyRule,
+  DEFAULT_CONFIG,
+  DEFAULT_RULES
+} from './whatsappRuleEngine';
 
-export interface AutoReplyConfig {
-  enabled: boolean;
-  replyMessage: string;
-  keywords: string[];
-  onlyReplyOnce: boolean;
-  humanTakeoverGlobal?: boolean;
-}
+export { AutoReplyConfig, AutoReplyRule } from './whatsappRuleEngine';
 
 export interface QuickReplyItem {
   id: string;
@@ -20,15 +21,6 @@ export interface QuickReplyItem {
   category?: string;
   isActive: boolean;
 }
-
-const DEFAULT_CONFIG: AutoReplyConfig = {
-  enabled: true,
-  replyMessage:
-    'Hi! 👋 Thank you for reaching out to AJR Digital HUB. Please tell us your questions about website development, and our team will assist you shortly.',
-  keywords: ['hi', 'hello', 'hey', 'start', 'vanakkam', 'namaste', 'greetings', 'website', 'service', 'info', 'information', 'enquiry', 'query'],
-  onlyReplyOnce: true,
-  humanTakeoverGlobal: false
-};
 
 const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
   {
@@ -59,7 +51,7 @@ const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
     id: 'qr_stl',
     shortcut: '/quote',
     title: 'Custom STL Upload Request',
-    message: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co.in/printing-service along with your preferred material.',
+    message: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co.in/services along with your preferred material.',
     category: 'Printing',
     isActive: true
   },
@@ -76,6 +68,7 @@ const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
 export class WhatsAppAutoReplyService {
   /**
    * Loads auto-reply configuration from database setting table.
+   * Ensures default greeting and default keyword rules are enabled by default.
    */
   public static async getConfig(): Promise<AutoReplyConfig> {
     try {
@@ -87,22 +80,19 @@ export class WhatsAppAutoReplyService {
           ? JSON.parse(record.settingData)
           : record.settingData;
 
-        // Gracefully migrate / extract reply message and keywords from legacy configs if present
-        const replyMsg = parsed.replyMessage ||
-          parsed.rules?.find((r: any) => r.triggerType === 'WELCOME')?.responseText ||
-          parsed.defaultReply ||
-          DEFAULT_CONFIG.replyMessage;
-
-        const kw = Array.isArray(parsed.keywords) && parsed.keywords.length > 0
-          ? parsed.keywords
-          : (parsed.rules?.find((r: any) => r.triggerType === 'WELCOME')?.conditions?.keywords || DEFAULT_CONFIG.keywords);
+        // Extract or migrate rules
+        let rules: AutoReplyRule[] = Array.isArray(parsed.rules) && parsed.rules.length > 0
+          ? parsed.rules
+          : DEFAULT_RULES;
 
         return {
-          ...DEFAULT_CONFIG,
-          ...parsed,
-          replyMessage: replyMsg,
-          keywords: kw,
-          onlyReplyOnce: parsed.onlyReplyOnce !== undefined ? parsed.onlyReplyOnce : true
+          defaultGreetingEnabled: parsed.defaultGreetingEnabled !== undefined ? !!parsed.defaultGreetingEnabled : true,
+          greetingMessage: parsed.greetingMessage || parsed.replyMessage || DEFAULT_CONFIG.greetingMessage,
+          keywordRepliesEnabled: parsed.keywordRepliesEnabled !== undefined ? !!parsed.keywordRepliesEnabled : true,
+          rules,
+          fallbackEnabled: parsed.fallbackEnabled !== undefined ? !!parsed.fallbackEnabled : true,
+          fallbackMessage: parsed.fallbackMessage || DEFAULT_CONFIG.fallbackMessage,
+          humanTakeoverGlobal: !!parsed.humanTakeoverGlobal
         };
       }
     } catch (e: any) {
@@ -114,12 +104,15 @@ export class WhatsAppAutoReplyService {
   /**
    * Persists auto-reply configuration to database setting table.
    */
-  public static async saveConfig(config: AutoReplyConfig): Promise<AutoReplyConfig> {
-    const payloadToSave = {
-      enabled: !!config.enabled,
-      replyMessage: config.replyMessage || DEFAULT_CONFIG.replyMessage,
-      keywords: Array.isArray(config.keywords) && config.keywords.length > 0 ? config.keywords : DEFAULT_CONFIG.keywords,
-      onlyReplyOnce: config.onlyReplyOnce !== undefined ? !!config.onlyReplyOnce : true,
+  public static async saveConfig(config: Partial<AutoReplyConfig>): Promise<AutoReplyConfig> {
+    const current = await this.getConfig();
+    const payloadToSave: AutoReplyConfig = {
+      defaultGreetingEnabled: config.defaultGreetingEnabled !== undefined ? !!config.defaultGreetingEnabled : current.defaultGreetingEnabled,
+      greetingMessage: config.greetingMessage || current.greetingMessage,
+      keywordRepliesEnabled: config.keywordRepliesEnabled !== undefined ? !!config.keywordRepliesEnabled : current.keywordRepliesEnabled,
+      rules: Array.isArray(config.rules) && config.rules.length > 0 ? config.rules : current.rules,
+      fallbackEnabled: config.fallbackEnabled !== undefined ? !!config.fallbackEnabled : current.fallbackEnabled,
+      fallbackMessage: config.fallbackMessage || current.fallbackMessage,
       humanTakeoverGlobal: !!config.humanTakeoverGlobal
     };
 
@@ -165,50 +158,29 @@ export class WhatsAppAutoReplyService {
   }
 
   /**
-   * Matches keyword conditions against incoming customer text.
-   */
-  public static matchesKeywords(
-    text: string,
-    keywords: string[]
-  ): boolean {
-    const normalized = (text || '').toLowerCase().trim();
-    if (!normalized || !keywords || keywords.length === 0) return false;
-
-    const lowerKeywords = keywords.map(k => k.toLowerCase().trim()).filter(Boolean);
-
-    return lowerKeywords.some(k => {
-      // Check exact match or word boundary (e.g. "hi!", "hello team", "hey")
-      const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(^|\\b|\\s)${escaped}(\\b|\\s|[!.,?]|$)`, 'i');
-      return regex.test(normalized) || normalized === k;
-    });
-  }
-
-  /**
-   * Primary entry point: Evaluates incoming customer message for automated welcome reply.
-   * Trigger conditions:
-   * 1. Customer sends their first message in this conversation (initial contact).
-   * 2. Or customer sends a greeting / trigger keyword.
-   * Outgoing message lifecycle:
-   * QUEUED / SENDING -> SENT (or FAILED) -> DELIVERED -> READ.
+   * Primary Entry Point: Evaluates incoming customer message using Deterministic Rule Engine.
+   *
+   * Flow:
+   * 1. Global / Conversation Human Takeover check
+   * 2. Inbound Message ID idempotency check (prevent duplicate replies)
+   * 3. Initial interaction check -> Default Greeting (only sent once on first contact)
+   * 4. Priority Keyword matching -> Deterministic Response (with live order status if applicable)
+   * 5. Fallback Response (if enabled and no keyword matched)
+   *
+   * ZERO AI / LLM dependencies.
    */
   public static async processCustomerMessage(
     conversationId: string,
     inboundText: string,
-    isNewConversation: boolean = false
+    isNewConversation: boolean = false,
+    inboundMessageId?: string
   ): Promise<{ replied: boolean; ruleName?: string; replyText?: string; reason?: string }> {
     try {
       const config = await this.getConfig();
 
-      // Check 1: Master auto-reply toggle
-      if (!config.enabled) {
-        logger.info(`[WhatsAppAutoReply] Auto-reply is disabled globally.`);
-        return { replied: false, reason: 'AUTO_REPLY_DISABLED' };
-      }
-
-      // Check 2: Global human takeover
+      // Check 1: Global human takeover
       if (config.humanTakeoverGlobal) {
-        logger.info(`[WhatsAppAutoReply] Global human takeover is active.`);
+        logger.info(`[WhatsAppAutomation] Global human takeover is active. Auto-reply skipped.`);
         return { replied: false, reason: 'GLOBAL_HUMAN_TAKEOVER_ACTIVE' };
       }
 
@@ -217,11 +189,18 @@ export class WhatsAppAutoReplyService {
         where: { id: conversationId },
         include: {
           customer: {
-            include: { user: true }
-          },
-          messages: {
-            orderBy: { createdAt: 'desc' },
-            take: 40
+            include: {
+              user: true,
+              orders: {
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                  items: {
+                    include: { product: { select: { name: true } } }
+                  }
+                }
+              }
+            }
           }
         }
       });
@@ -230,79 +209,111 @@ export class WhatsAppAutoReplyService {
         return { replied: false, reason: 'CONVERSATION_NOT_FOUND' };
       }
 
-      // Check 3: Conversation-level Human Takeover mode
+      // Check 2: Conversation-level Human Takeover mode
       if (conv.aiMode === 'HUMAN') {
-        logger.info(`[WhatsAppAutoReply] Conversation ${conversationId} is in HUMAN mode. Auto-reply skipped.`);
+        logger.info(`[WhatsAppAutomation] Conversation ${conversationId} is in HUMAN mode. Auto-reply skipped.`);
         return { replied: false, reason: 'CONVERSATION_HUMAN_MODE' };
       }
 
-      // Check previous messages in this conversation
-      const previousMessages = conv.messages || [];
-      const inboundMessages = previousMessages.filter(m => m.direction === 'INBOUND');
-      
-      // Determine if this is a "new session" (either brand new, or last customer message was > 24 hours ago)
-      const previousInbound = inboundMessages.length > 1 ? inboundMessages[1] : null;
-      let isSessionNew = isNewConversation || inboundMessages.length <= 1;
-      
-      if (previousInbound) {
-        const hoursSinceLastMessage = (new Date().getTime() - previousInbound.createdAt.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLastMessage > 24) {
-          isSessionNew = true;
+      // Check 3: Idempotency Protection (prevent duplicate reply execution for the same inbound message)
+      if (inboundMessageId) {
+        const alreadyReplied = await prisma.whatsappMessage.findFirst({
+          where: {
+            conversationId,
+            direction: 'OUTBOUND',
+            metadata: {
+              path: ['inboundMessageId'],
+              equals: inboundMessageId
+            }
+          }
+        });
+        if (alreadyReplied) {
+          logger.info(`[WhatsAppAutomation] Inbound message ${inboundMessageId} has already been replied to. Skipping.`);
+          return { replied: false, reason: 'ALREADY_REPLIED_TO_MESSAGE' };
         }
       }
-      
-      const isInitialCustomerMessage = isSessionNew;
 
-      // Check if we already auto-replied IN THIS SESSION (last 24 hours)
-      const recentAutoReplies = previousMessages.filter(m => 
-        m.direction === 'OUTBOUND' && 
-        m.senderType === 'AUTO' &&
-        (new Date().getTime() - m.createdAt.getTime()) / (1000 * 60 * 60) <= 24
-      );
-      const hasAutoRepliedInSession = recentAutoReplies.length > 0;
-
-      // Greeting match check
-      const text = (inboundText || '').trim();
-      const keywords = config.keywords && config.keywords.length > 0
-        ? config.keywords
-        : DEFAULT_CONFIG.keywords;
-      const isGreetingMatch = this.matchesKeywords(text, keywords);
-
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Automation trigger evaluated (initial: ${isInitialCustomerMessage}, keywordMatch: ${isGreetingMatch}, alreadyRepliedInSession: ${hasAutoRepliedInSession})`);
-
-      // Trigger condition:
-      // Must be initial customer message OR match trigger keywords
-      if (!isInitialCustomerMessage && !isGreetingMatch) {
-        logger.info(`[WhatsAppAutoReply] Inbound message '${text}' does not match initial contact or greeting keywords.`);
-        return { replied: false, reason: 'TRIGGER_NOT_MATCHED' };
-      }
-
-      // Only-reply-once check:
-      // If customer has already received an auto-reply in this conversation session, do not duplicate
-      if (config.onlyReplyOnce !== false && hasAutoRepliedInSession) {
-        logger.info(`[WhatsAppAutoReply] Conversation ${conversationId} already received auto-reply recently. Auto-reply restricted.`);
-        return { replied: false, reason: 'ALREADY_REPLIED_ONCE' };
-      }
-
-      const ruleName = isInitialCustomerMessage ? 'Initial Welcome Automation' : 'Greeting Keyword Auto-Reply';
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Automation matched: ${ruleName}`);
-
-      // Resolve customer name for placeholder replacement
+      const rawText = (inboundText || '').trim();
       const customer = conv.customer;
       const customerName = customer?.user
         ? `${customer.user.firstName || ''} ${customer.user.lastName || ''}`.trim()
         : (conv.customerName || 'Customer');
 
-      const rawReply = config.replyMessage || DEFAULT_CONFIG.replyMessage;
-      const replyContent = rawReply.replace(/{customerName}/g, customerName);
+      // Check 4: Determine if this is the customer's initial interaction in this conversation
+      const priorOutboundCount = await prisma.whatsappMessage.count({
+        where: {
+          conversationId,
+          direction: 'OUTBOUND'
+        }
+      });
+      const isFirstInteraction = isNewConversation || priorOutboundCount === 0;
+
+      let selectedRuleId = 'rule_default';
+      let selectedRuleName = '';
+      let replyContent = '';
+      let matchType: 'GREETING' | 'KEYWORD' | 'ORDER_LOOKUP' | 'FALLBACK' = 'KEYWORD';
+
+      // --- STEP A: First Interaction -> Default Greeting ---
+      if (isFirstInteraction && config.defaultGreetingEnabled) {
+        selectedRuleId = 'rule_greeting';
+        selectedRuleName = 'Default Initial Greeting';
+        matchType = 'GREETING';
+        replyContent = (config.greetingMessage || DEFAULT_CONFIG.greetingMessage)
+          .replace(/{customerName}/g, customerName);
+      } else {
+        // --- STEP B: Priority Keyword Rule Matching ---
+        let keywordResult = null;
+        if (config.keywordRepliesEnabled && config.rules && config.rules.length > 0) {
+          keywordResult = await WhatsAppRuleEngine.evaluateKeywords(
+            rawText,
+            config.rules,
+            customer?.orders || []
+          );
+        }
+
+        if (keywordResult && keywordResult.matched) {
+          selectedRuleId = keywordResult.ruleId || 'rule_keyword';
+          selectedRuleName = keywordResult.ruleName || 'Keyword Rule';
+          matchType = keywordResult.matchType || 'KEYWORD';
+          replyContent = keywordResult.replyText;
+        } else if (config.fallbackEnabled && config.fallbackMessage) {
+          // --- STEP C: Fallback Response (with cooldown) ---
+          // Prevent spamming fallback repeatedly if customer sends multiple unrecognized messages within 1 hour
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+          const recentFallback = await prisma.whatsappMessage.findFirst({
+            where: {
+              conversationId,
+              direction: 'OUTBOUND',
+              senderType: 'AUTO',
+              createdAt: { gte: oneHourAgo },
+              metadata: {
+                path: ['ruleId'],
+                equals: 'rule_fallback'
+              }
+            }
+          });
+
+          if (!recentFallback) {
+            selectedRuleId = 'rule_fallback';
+            selectedRuleName = 'Default Fallback';
+            matchType = 'FALLBACK';
+            replyContent = config.fallbackMessage;
+          } else {
+            logger.info(`[WhatsAppAutomation] Fallback response throttled (cooldown active) for conversation ${conversationId}`);
+            return { replied: false, reason: 'FALLBACK_COOLDOWN' };
+          }
+        } else {
+          logger.info(`[WhatsAppAutomation] No keyword match and fallback is disabled for message '${rawText}'`);
+          return { replied: false, reason: 'NO_MATCHING_RULE' };
+        }
+      }
 
       if (!replyContent || !replyContent.trim()) {
         return { replied: false, reason: 'EMPTY_REPLY_MESSAGE' };
       }
 
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Reply generated`);
-
-      // 1. Stage 1: Store outgoing message with status 'SENDING' (queued/sending) & broadcast to UI immediately
+      // --- DISPATCH OUTBOUND MESSAGE ---
+      // 1. Stage 1: Store outgoing message with status 'SENDING'
       const outgoingMsg = await WhatsAppConversationService.recordOutboundMessage({
         conversationId,
         customerId: conv.customerId,
@@ -311,19 +322,24 @@ export class WhatsAppAutoReplyService {
         messageType: 'TEXT',
         messageText: replyContent,
         status: 'SENDING',
-        errorMessage: null
+        errorMessage: null,
+        metadata: {
+          automated: true,
+          inboundMessageId: inboundMessageId || null,
+          ruleId: selectedRuleId,
+          ruleName: selectedRuleName,
+          matchType
+        }
       });
 
-      // Natural delay (800ms) before dispatching to Meta API
-      await new Promise(r => setTimeout(r, 800));
+      // Natural pause (600ms) before dispatching to Meta API
+      await new Promise(r => setTimeout(r, 600));
 
       // 2. Stage 2: Dispatch through Meta WhatsApp Cloud API
       const settings = await getWhatsappSettings();
       const phoneNumberId = settings.phoneNumberId || settings.apiUrl?.match(/\/(\d+)\/messages/)?.[1] || '1228371843697142';
       const apiUrl = settings.apiUrl || `https://graph.facebook.com/v25.0/${phoneNumberId}/messages`;
       const accessToken = settings.apiKey || settings.accessToken;
-
-      logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API called`);
 
       let whatsappMessageId: string | null = null;
       let finalStatus: 'SENT' | 'FAILED' = 'SENT';
@@ -350,17 +366,15 @@ export class WhatsAppAutoReplyService {
             }
           );
           whatsappMessageId = metaRes.data?.messages?.[0]?.id || null;
-          logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API response received (ID: ${whatsappMessageId})`);
         } catch (apiErr: any) {
           finalStatus = 'FAILED';
           const errMsg = apiErr.response?.data?.error?.message || apiErr.message || 'Meta API call failed';
           errorReason = errMsg;
-          logger.error(`[WHATSAPP WEBHOOK] ↓ WhatsApp API call failed: ${errMsg}`);
+          logger.error(`[WhatsAppAutomation] Meta WhatsApp API call failed: ${errMsg}`);
         }
       } else {
         // Sandbox mock dispatch
         whatsappMessageId = 'sim_auto_' + Math.random().toString(36).substring(7);
-        logger.info(`[WHATSAPP WEBHOOK] ↓ WhatsApp API response received (Sandbox ID: ${whatsappMessageId})`);
       }
 
       // 3. Stage 3: Update message to SENT or FAILED in database
@@ -373,7 +387,6 @@ export class WhatsAppAutoReplyService {
           updatedAt: new Date()
         }
       });
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Outgoing message saved: ${updatedMsg.id} (status: ${finalStatus})`);
 
       // 4. Stage 4: Broadcast STATUS_CHANGED real-time event to Admin UI
       const { ConversationEventService } = await import('./conversationEventService');
@@ -383,12 +396,15 @@ export class WhatsAppAutoReplyService {
         message: updatedMsg,
         timestamp: new Date().toISOString()
       });
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Realtime event emitted: STATUS_CHANGED (${finalStatus})`);
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Frontend conversation updated`);
+
+      // 5. Stage 5: Structured Audit Log
+      logger.info(
+        `[WhatsAppAutomation] Customer: ${customerName} (${conv.phone}) | MsgID: ${inboundMessageId || 'N/A'} | Rule: ${selectedRuleName} | Type: ${matchType} | Status: ${finalStatus}`
+      );
 
       return {
         replied: finalStatus === 'SENT',
-        ruleName,
+        ruleName: selectedRuleName,
         replyText: replyContent
       };
     } catch (err: any) {

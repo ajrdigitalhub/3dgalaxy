@@ -2,9 +2,13 @@ import { Response } from 'express';
 import { logger } from '../utils/logger';
 
 export interface ConversationEvent {
-  type: 'MESSAGE_RECEIVED' | 'MESSAGE_SENT' | 'CONVERSATION_UPDATED' | 'STATUS_CHANGED';
+  type: 'MESSAGE_RECEIVED' | 'MESSAGE_SENT' | 'CONVERSATION_UPDATED' | 'STATUS_CHANGED' | 'MESSAGE_REACTION';
   conversationId: string;
   message?: any;
+  messageId?: string;
+  whatsappMessageId?: string | null;
+  reactions?: any[];
+  reaction?: any;
   conversation?: any;
   timestamp: string;
 }

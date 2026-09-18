@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpEventType } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface WhatsAppConversation {
@@ -40,6 +40,7 @@ export interface WhatsAppMessage {
   mediaId?: string | null;
   mediaUrl?: string | null;
   mediaMetadata?: any;
+  metadata?: any;
   status: 'PENDING' | 'QUEUED' | 'SENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'RECEIVED';
   errorMessage?: string | null;
   createdAt: string;
@@ -315,6 +316,25 @@ export class AdminWhatsAppService {
         list.map((c) => (c.id === conversationId ? { ...c, ...conversation } : c))
       );
       this.activeConversation.update((c) => (c && c.id === conversationId ? { ...c, ...conversation } : c));
+    } else if (type === 'MESSAGE_REACTION') {
+      const active = this.activeConversation();
+      if (active && active.id === conversationId) {
+        this.messages.update((msgs) =>
+          msgs.map((m) => {
+            const isMatch = m.id === data.messageId || (data.whatsappMessageId && m.whatsappMessageId === data.whatsappMessageId);
+            if (!isMatch) return m;
+
+            const currentMeta = typeof m.metadata === 'object' && m.metadata !== null ? { ...m.metadata } : {};
+            return {
+              ...m,
+              metadata: {
+                ...currentMeta,
+                reactions: data.reactions || []
+              }
+            };
+          })
+        );
+      }
     }
   }
 
@@ -389,7 +409,7 @@ export class AdminWhatsAppService {
    * Reconciles message status changes (SENT -> DELIVERED -> READ) in place.
    */
   reloadActiveMessages(conversationId: string, silent = false): Promise<boolean> {
-    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${conversationId}/messages?limit=40`;
+    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${conversationId}/messages?limit=100`;
     return new Promise((resolve) => {
       this.http.get<any>(url, this.getHeaders()).subscribe({
         next: (res) => {
@@ -573,6 +593,206 @@ export class AdminWhatsAppService {
   }
 
   /**
+   * Uploads and sends a real file attachment (image, pdf, doc, video, audio) to the customer on WhatsApp.
+   * Dispatches via POST /admin/whatsapp/conversations/:id/attachments with progress reporting.
+   */
+  sendAttachment(file: File, caption?: string, onProgress?: (percent: number) => void): Promise<{ success: boolean; error?: string }> {
+    const active = this.activeConversation();
+    if (!active || !file) {
+      return Promise.resolve({ success: false, error: 'No active conversation or file selected' });
+    }
+
+    this.isSending.set(true);
+
+    const tempId = 'temp_att_' + Date.now();
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    const isAudio = file.type.startsWith('audio/');
+    let messageType = 'DOCUMENT';
+    if (isImage) messageType = 'IMAGE';
+    else if (isVideo) messageType = 'VIDEO';
+    else if (isAudio) messageType = 'AUDIO';
+
+    // Create a local blob preview URL for immediate display
+    let localPreviewUrl: string | undefined;
+    if (isImage || isVideo || isAudio) {
+      try {
+        localPreviewUrl = URL.createObjectURL(file);
+      } catch {}
+    }
+
+    const optimisticMsg: WhatsAppMessage = {
+      id: tempId,
+      conversationId: active.id,
+      direction: 'OUTBOUND',
+      senderType: 'ADMIN',
+      messageType,
+      messageText: caption || file.name,
+      mediaUrl: localPreviewUrl,
+      mediaMetadata: {
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type
+      },
+      status: 'SENDING',
+      createdAt: new Date().toISOString()
+    };
+
+    this.messages.update((msgs) => [...msgs, optimisticMsg]);
+
+    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${active.id}/attachments`;
+    const formData = new FormData();
+    formData.append('file', file);
+    if (caption && caption.trim()) {
+      formData.append('caption', caption.trim());
+    }
+
+    const token = this.getAuthToken();
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`
+    });
+
+    return new Promise((resolve) => {
+      this.http.post<any>(url, formData, {
+        headers,
+        reportProgress: true,
+        observe: 'events'
+      }).subscribe({
+        next: (event: any) => {
+          if (event.type === HttpEventType.UploadProgress && event.total) {
+            const percent = Math.round((100 * event.loaded) / event.total);
+            if (onProgress) onProgress(percent);
+          } else if (event.type === HttpEventType.Response) {
+            this.isSending.set(false);
+            const res = event.body;
+            if (res?.success && res?.message) {
+              this.messages.update((msgs) =>
+                msgs.map((m) => (m.id === tempId ? { ...res.message, status: res.message.status || 'SENT' } : m))
+              );
+
+              this.conversations.update((list) =>
+                list.map((c) =>
+                  c.id === active.id
+                    ? {
+                        ...c,
+                        lastMessage: caption || file.name,
+                        lastDirection: 'OUTBOUND',
+                        lastMessageAt: new Date().toISOString()
+                      }
+                    : c
+                )
+              );
+
+              // Fast follow-up sync to catch immediate delivery receipt
+              setTimeout(() => {
+                this.reloadActiveMessages(active.id, true);
+              }, 1200);
+
+              resolve({ success: true });
+            } else {
+              this.messages.update((msgs) =>
+                msgs.map((m) =>
+                  m.id === tempId ? { ...m, status: 'FAILED', errorMessage: res?.error || 'Failed to send attachment' } : m
+                )
+              );
+              resolve({ success: false, error: res?.error || 'Failed to send attachment' });
+            }
+          }
+        },
+        error: (err) => {
+          console.error('[AdminWhatsAppService] Attachment send error:', err);
+          this.isSending.set(false);
+          const errDetail = err.error?.details || err.error?.error || err.message || 'Failed to upload attachment';
+          this.messages.update((msgs) =>
+            msgs.map((m) => (m.id === tempId ? { ...m, status: 'FAILED', errorMessage: errDetail } : m))
+          );
+          resolve({ success: false, error: errDetail });
+        }
+      });
+    });
+  }
+
+  /**
+   * Helper method to reliably identify inbound/customer messages
+   */
+  isInbound(msg: WhatsAppMessage | null | undefined): boolean {
+    if (!msg) return false;
+    const dir = String(msg.direction || '').toUpperCase();
+    const sender = String(msg.senderType || '').toUpperCase();
+    return dir === 'INBOUND' || sender === 'CUSTOMER';
+  }
+
+  /**
+   * Sends an inbound message from the customer side directly in the conversation.
+   * Enables complete two-way testing and interaction for admin and user.
+   */
+  sendCustomerInboundReply(messageText: string, mediaUrl?: string): Promise<{ success: boolean; error?: string }> {
+    const active = this.activeConversation();
+    if (!active) return Promise.resolve({ success: false, error: 'No active conversation selected' });
+
+    this.isSending.set(true);
+
+    const tempId = 'temp_cust_' + Date.now();
+    const optimisticMsg: WhatsAppMessage = {
+      id: tempId,
+      conversationId: active.id,
+      direction: 'INBOUND',
+      senderType: 'CUSTOMER',
+      messageType: mediaUrl ? 'IMAGE' : 'TEXT',
+      messageText,
+      mediaUrl,
+      status: 'RECEIVED',
+      createdAt: new Date().toISOString()
+    };
+
+    this.messages.update((msgs) => [...msgs, optimisticMsg]);
+    this.newMessagesTrigger.update((n) => n + 1);
+
+    const url = `${environment.apiUrl}/admin/whatsapp/conversations/${active.id}/inbound`;
+    const payload = { messageText, mediaUrl };
+
+    return new Promise((resolve) => {
+      this.http.post<any>(url, payload, this.getHeaders()).subscribe({
+        next: (res) => {
+          this.isSending.set(false);
+          if (res.success && res.message) {
+            this.messages.update((msgs) =>
+              msgs.map((m) => (m.id === tempId ? { ...res.message, status: 'RECEIVED' } : m))
+            );
+
+            this.conversations.update((list) =>
+              list.map((c) =>
+                c.id === active.id
+                  ? {
+                      ...c,
+                      lastMessage: messageText || '[Media Attachment]',
+                      lastDirection: 'INBOUND',
+                      lastMessageAt: new Date().toISOString()
+                    }
+                  : c
+              )
+            );
+
+            // Fast reload after auto-reply processing
+            setTimeout(() => {
+              this.reloadActiveMessages(active.id, true);
+            }, 800);
+
+            resolve({ success: true });
+          } else {
+            resolve({ success: false, error: res.error || 'Failed to simulate customer message' });
+          }
+        },
+        error: (err) => {
+          this.isSending.set(false);
+          const errDetail = err.error?.details || err.error?.error || err.message || 'Failed to send customer message';
+          resolve({ success: false, error: errDetail });
+        }
+      });
+    });
+  }
+
+  /**
    * Updates conversation lifecycle status (OPEN, PENDING, RESOLVED, CLOSED)
    */
   updateConversationStatus(status: 'OPEN' | 'PENDING' | 'RESOLVED' | 'CLOSED'): Promise<boolean> {
@@ -717,6 +937,27 @@ export class AdminWhatsAppService {
       this.http.post<any>(url, {}, this.getHeaders()).subscribe({
         next: (res) => resolve(res.success || false),
         error: () => resolve(false)
+      });
+    });
+  }
+
+  /**
+   * Tests deterministic rule engine with a sample customer message.
+   */
+  testAutoReplyRule(messageText: string): Promise<{ success: boolean; result?: any; error?: string }> {
+    const url = `${environment.apiUrl}/admin/whatsapp/auto-replies/test`;
+    return new Promise((resolve) => {
+      this.http.post<any>(url, { messageText }, this.getHeaders()).subscribe({
+        next: (res) => {
+          if (res.success && res.result) {
+            resolve({ success: true, result: res.result });
+          } else {
+            resolve({ success: false, error: res.error || 'Failed to test rule' });
+          }
+        },
+        error: (err) => {
+          resolve({ success: false, error: err.error?.error || err.message || 'Rule test request failed' });
+        }
       });
     });
   }

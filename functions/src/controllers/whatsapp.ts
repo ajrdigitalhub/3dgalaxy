@@ -11,8 +11,10 @@ import { getSettingsService } from '../modules/settings/settings.service';
 import { WhatsAppNotificationService } from '../services/whatsappNotificationService';
 import { WhatsAppConversationService } from '../services/whatsappConversationService';
 import { WhatsAppAutoReplyService } from '../services/whatsappAutoReplyService';
+import { WhatsAppRuleEngine } from '../services/whatsappRuleEngine';
 import { NotificationService } from '../services/notification.service';
 import { ConversationEventService } from '../services/conversationEventService';
+import { uploadFileToStorage } from '../config/firebase';
 import { logger } from '../utils/logger';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 
@@ -536,8 +538,18 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
     }
 
     // Synchronously process event in request lifecycle to prevent Cloud Run serverless CPU freeze
-    const entries = req.body?.entry;
+    let payload = req.body;
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch {}
+    }
+
+    const entries = payload?.entry;
     if (Array.isArray(entries)) {
+      logger.info(`[WHATSAPP WEBHOOK] Webhook event received from Meta`, {
+        object: payload?.object,
+        entriesCount: entries.length
+      });
+
       for (const entry of entries) {
         const changes = entry?.changes;
         if (!Array.isArray(changes)) continue;
@@ -606,25 +618,101 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                 mediaMetadata = { filename: msg.document?.filename, mimeType: msg.document?.mime_type };
               } else if (msgType === 'audio') {
                 mediaId = msg.audio?.id;
+                textContent = msg.audio?.voice ? '🎤 Voice message' : '🎵 Audio message';
                 mediaMetadata = { mimeType: msg.audio?.mime_type, voice: msg.audio?.voice };
               } else if (msgType === 'video') {
                 mediaId = msg.video?.id;
-                textContent = msg.video?.caption || '';
+                textContent = msg.video?.caption || '🎥 Video message';
                 mediaMetadata = { mimeType: msg.video?.mime_type };
               } else if (msgType === 'location') {
-                textContent = `📍 Location: ${msg.location?.name || ''} (${msg.location?.latitude}, ${msg.location?.longitude})`;
+                textContent = msg.location?.name
+                  ? `📍 Location: ${msg.location.name} (${msg.location?.latitude}, ${msg.location?.longitude})`
+                  : `📍 Location: ${msg.location?.latitude}, ${msg.location?.longitude}`;
                 mediaMetadata = msg.location;
               } else if (msgType === 'interactive') {
-                textContent = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || msg.interactive?.button_reply?.id || '';
+                if (msg.interactive?.type === 'button_reply') {
+                  textContent = msg.interactive.button_reply?.title || msg.interactive.button_reply?.id || '';
+                } else if (msg.interactive?.type === 'list_reply') {
+                  textContent = msg.interactive.list_reply?.title || msg.interactive.list_reply?.id || '';
+                } else {
+                  textContent = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || msg.interactive?.button_reply?.id || '';
+                }
                 mediaMetadata = msg.interactive;
               } else if (msgType === 'button') {
-                textContent = msg.button?.text || '';
+                textContent = msg.button?.text || msg.button?.payload || '';
                 mediaMetadata = msg.button;
+              } else if (msgType === 'reaction') {
+                const emoji = msg.reaction?.emoji || '';
+                const reactionMessageId = msg.reaction?.message_id;
+
+                logger.info(`[WHATSAPP WEBHOOK] Inbound reaction received`, {
+                  reactionMessageId,
+                  emoji,
+                  fromPhone,
+                  whatsappMessageId: messageId
+                });
+
+                if (reactionMessageId) {
+                  await WhatsAppConversationService.processReaction({
+                    reactionMessageId,
+                    emoji,
+                    fromPhone,
+                    whatsappMessageId: messageId,
+                    timestamp
+                  });
+                }
+                // Important: Do not create a separate message bubble or trigger auto-replies for reactions
+                continue;
+              } else if (msgType === 'sticker') {
+                mediaId = msg.sticker?.id;
+                textContent = '✨ [Sticker]';
+                mediaMetadata = { mimeType: msg.sticker?.mime_type, animated: msg.sticker?.animated };
+              } else if (msgType === 'contacts') {
+                const sharedContacts = (msg.contacts || []).map((c: any) => `${c.name?.formatted_name || 'Contact'} (${c.phones?.[0]?.phone || ''})`).join(', ');
+                textContent = `👤 Contact: ${sharedContacts}`;
+                mediaMetadata = msg.contacts;
               } else {
                 textContent = `[${msgType.toUpperCase()} message]`;
               }
 
-              logger.info(`[WHATSAPP WEBHOOK] Incoming message received from ${fromPhone} (ID: ${messageId}, type: ${msgType})`);
+              // Resolve inbound mediaId from Meta into permanent storage URL if available
+              let mediaUrl: string | undefined;
+              if (mediaId && settings.apiEnabled && (settings.apiKey || settings.accessToken)) {
+                try {
+                  const accessToken = settings.apiKey || settings.accessToken;
+                  const metaMediaRes = await fetch(`https://graph.facebook.com/v22.0/${mediaId}`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                  });
+                  if (metaMediaRes.ok) {
+                    const mediaMetaJson = (await metaMediaRes.json()) as any;
+                    if (mediaMetaJson?.url) {
+                      const fileRes = await fetch(mediaMetaJson.url, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                      });
+                      if (fileRes.ok) {
+                        const buffer = Buffer.from(await fileRes.arrayBuffer());
+                        const mime = mediaMetaJson.mime_type || mediaMetadata?.mimeType || 'application/octet-stream';
+                        const ext = mime.split('/')[1]?.split(';')[0]?.replace(/[^a-z0-9]/gi, '') || 'bin';
+                        const storagePath = `whatsapp/inbound/${fromPhone}/${Date.now()}_${mediaId}.${ext}`;
+                        mediaUrl = await uploadFileToStorage(buffer, storagePath, mime);
+                        logger.info(`[WHATSAPP WEBHOOK] Successfully resolved and stored inbound media: ${mediaUrl}`);
+                      }
+                    }
+                  }
+                } catch (mediaErr: any) {
+                  logger.warn(`[WHATSAPP WEBHOOK] Inbound media resolution error for mediaId ${mediaId}:`, mediaErr.message);
+                }
+              }
+
+              logger.info(`[WHATSAPP WEBHOOK] Inbound message detected`, {
+                whatsappMessageId: messageId,
+                senderPhone: fromPhone,
+                messageType: msgType,
+                timestamp: timestamp.toISOString(),
+                hasMedia: !!mediaId,
+                mediaUrl: mediaUrl || 'none',
+                preview: textContent ? (textContent.length > 50 ? textContent.substring(0, 50) + '...' : textContent) : ''
+              });
 
               let processResult: any;
               try {
@@ -635,6 +723,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                   messageType: msgType,
                   messageText: textContent,
                   mediaId,
+                  mediaUrl,
                   mediaMetadata,
                   timestamp,
                   rawPayload: msg
@@ -678,7 +767,8 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                       const autoRes = await WhatsAppAutoReplyService.processCustomerMessage(
                         conversation.id,
                         textContent,
-                        !!processResult.isNewConversation
+                        !!processResult.isNewConversation,
+                        messageId
                       );
                       if (autoRes?.replied) {
                         logger.info(`[WHATSAPP WEBHOOK] Automation reply dispatched successfully for conversation ${conversation.id}`);
@@ -831,7 +921,7 @@ export const getAdminWhatsappConversationDetail = async (req: Request, res: Resp
           }
         },
         messages: {
-          take: 50,
+          take: 100,
           orderBy: { createdAt: 'desc' },
           include: {
             sender: { select: { id: true, firstName: true, lastName: true } }
@@ -866,9 +956,9 @@ export const getAdminWhatsappConversationDetail = async (req: Request, res: Resp
 export const getAdminWhatsappMessages = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { cursor, limit = '30' } = req.query;
+    const { cursor, limit = '100' } = req.query;
 
-    const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 30));
+    const limitNum = Math.min(200, Math.max(1, parseInt(String(limit), 10) || 100));
 
     const queryOptions: any = {
       where: { conversationId: id },
@@ -976,8 +1066,21 @@ export const handleAdminReply = async (req: AuthenticatedRequest, res: Response)
         };
 
         if (mediaUrl) {
-          payload.type = 'image';
-          payload.image = { link: mediaUrl, caption: messageText || undefined };
+          const lowerUrl = (mediaUrl || '').toLowerCase();
+          const upperType = String(messageType || '').toUpperCase();
+          if (upperType === 'DOCUMENT' || lowerUrl.endsWith('.pdf') || lowerUrl.endsWith('.doc') || lowerUrl.endsWith('.docx') || lowerUrl.endsWith('.zip') || lowerUrl.endsWith('.xlsx')) {
+            payload.type = 'document';
+            payload.document = { link: mediaUrl, caption: messageText || undefined };
+          } else if (upperType === 'VIDEO' || lowerUrl.endsWith('.mp4')) {
+            payload.type = 'video';
+            payload.video = { link: mediaUrl, caption: messageText || undefined };
+          } else if (upperType === 'AUDIO' || lowerUrl.endsWith('.mp3') || lowerUrl.endsWith('.ogg')) {
+            payload.type = 'audio';
+            payload.audio = { link: mediaUrl };
+          } else {
+            payload.type = 'image';
+            payload.image = { link: mediaUrl, caption: messageText || undefined };
+          }
         } else {
           payload.type = 'text';
           payload.text = { preview_url: false, body: messageText };
@@ -1015,7 +1118,7 @@ export const handleAdminReply = async (req: AuthenticatedRequest, res: Response)
       senderType: 'ADMIN',
       senderId: req.user?.id,
       messageType,
-      messageText: messageText || '[Attachment]',
+      messageText: messageText || `[${messageType}]`,
       mediaUrl,
       status,
       errorMessage
@@ -1030,6 +1133,222 @@ export const handleAdminReply = async (req: AuthenticatedRequest, res: Response)
   } catch (error: any) {
     logger.error('[handleAdminReply Error]:', error);
     return res.status(500).json({ error: 'Failed to send admin WhatsApp reply', details: error.message });
+  }
+};
+
+/**
+ * Uploads a real media file (Image, Document/PDF, Video, Audio) from the Admin Inbox,
+ * stores it permanently in Firebase Storage, and dispatches it directly to the customer
+ * on WhatsApp via Meta Cloud API with optional caption and metadata.
+ */
+export const handleAdminSendAttachment = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const file = req.file;
+    const caption = (req.body?.caption || req.body?.messageText || '').trim();
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file was uploaded.' });
+    }
+
+    const conversation = await prisma.whatsappConversation.findUnique({
+      where: { id }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    // 1. File size validation (default 50 MB)
+    const MAX_SIZE = parseInt(process.env.WHATSAPP_MAX_UPLOAD_SIZE || '52428800', 10);
+    if (file.size > MAX_SIZE) {
+      return res.status(400).json({
+        error: `File is too large to send through WhatsApp (${Math.round(MAX_SIZE / (1024 * 1024))}MB maximum).`
+      });
+    }
+
+    // 2. Dangerous file extensions security check
+    const originalname = file.originalname || 'attachment';
+    const ext = path.extname(originalname).toLowerCase();
+    const blockedExts = ['.exe', '.bat', '.cmd', '.ps1', '.scr', '.vbs', '.sh', '.msi', '.com', '.pif'];
+    if (blockedExts.includes(ext)) {
+      return res.status(400).json({
+        error: 'Unsupported file type. Executable and script files cannot be sent.'
+      });
+    }
+
+    // 3. Determine WhatsApp media type
+    const mimeType = file.mimetype || 'application/octet-stream';
+    let messageType = 'DOCUMENT';
+    let metaMediaType = 'document';
+
+    if (mimeType.startsWith('image/')) {
+      messageType = 'IMAGE';
+      metaMediaType = 'image';
+    } else if (mimeType.startsWith('video/')) {
+      messageType = 'VIDEO';
+      metaMediaType = 'video';
+    } else if (mimeType.startsWith('audio/')) {
+      messageType = 'AUDIO';
+      metaMediaType = 'audio';
+    }
+
+    // 4. Save file to Firebase Storage
+    const sanitizedFilename = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `whatsapp/attachments/${id}/${Date.now()}_${sanitizedFilename}`;
+    const mediaUrl = await uploadFileToStorage(file.buffer, storagePath, mimeType);
+
+    // 5. Send via WhatsApp Cloud API
+    const settings = await getWhatsappSettings();
+    const phoneNumberId = settings.phoneNumberId || settings.apiUrl?.match(/\/(\d+)\/messages/)?.[1] || '1228371843697142';
+    const apiUrl = settings.apiUrl || `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`;
+    const accessToken = settings.apiKey || settings.accessToken;
+
+    let whatsappMessageId: string | null = null;
+    let status: 'SENT' | 'FAILED' = 'SENT';
+    let errorMessage: string | null = null;
+
+    if (settings.apiEnabled && accessToken) {
+      try {
+        const rawPhone = conversation.phone.replace(/[^\d]/g, '');
+        const payload: any = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: rawPhone,
+          type: metaMediaType
+        };
+
+        if (metaMediaType === 'image') {
+          payload.image = { link: mediaUrl, caption: caption || undefined };
+        } else if (metaMediaType === 'document') {
+          payload.document = { link: mediaUrl, caption: caption || undefined, filename: originalname };
+        } else if (metaMediaType === 'video') {
+          payload.video = { link: mediaUrl, caption: caption || undefined };
+        } else if (metaMediaType === 'audio') {
+          payload.audio = { link: mediaUrl };
+        }
+
+        const metaResponse = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const metaData = (await metaResponse.json()) as any;
+        if (metaResponse.ok) {
+          whatsappMessageId = metaData?.messages?.[0]?.id || null;
+        } else {
+          status = 'FAILED';
+          errorMessage = metaData?.error?.message || 'Meta API returned error';
+        }
+      } catch (err: any) {
+        status = 'FAILED';
+        errorMessage = err.message || 'Network error communicating with Meta API';
+      }
+    } else {
+      whatsappMessageId = 'sim_admin_file_' + Math.random().toString(36).substring(7);
+    }
+
+    // 6. Record outbound message in DB
+    const mediaMetadata = {
+      fileName: originalname,
+      fileSize: file.size,
+      mimeType
+    };
+
+    const storedMessage = await WhatsAppConversationService.recordOutboundMessage({
+      conversationId: id,
+      customerId: conversation.customerId,
+      whatsappMessageId,
+      senderType: 'ADMIN',
+      senderId: req.user?.id,
+      messageType,
+      messageText: caption || originalname,
+      mediaUrl,
+      mediaMetadata,
+      status,
+      errorMessage
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: storedMessage,
+      deliveryStatus: status,
+      error: errorMessage
+    });
+  } catch (error: any) {
+    logger.error('[handleAdminSendAttachment Error]:', error);
+    return res.status(500).json({ error: 'Failed to send admin WhatsApp attachment', details: error.message });
+  }
+};
+
+/**
+ * Simulates / sends a message from the customer side within the admin inbox.
+ * Enables full functional testing of two-way conversations, auto-replies, and AI replies.
+ */
+export const handleSimulateCustomerMessage = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { messageText, mediaUrl, messageType = 'TEXT' } = req.body;
+
+    if (!messageText && !mediaUrl) {
+      return res.status(400).json({ error: 'messageText or mediaUrl is required for customer message.' });
+    }
+
+    const conversation = await prisma.whatsappConversation.findUnique({
+      where: { id },
+      include: {
+        customer: { include: { user: true } }
+      }
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const fromPhone = conversation.phone;
+    const customerName = conversation.customerName ||
+      (conversation.customer?.user
+        ? `${conversation.customer.user.firstName || ''} ${conversation.customer.user.lastName || ''}`.trim()
+        : 'WhatsApp Customer');
+    const simMessageId = 'sim_user_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+
+    const processResult = await WhatsAppConversationService.processInboundMessage({
+      whatsappMessageId: simMessageId,
+      fromPhone,
+      customerName,
+      messageType: String(messageType).toLowerCase(),
+      messageText: messageText || '',
+      mediaUrl: mediaUrl || undefined,
+      timestamp: new Date()
+    });
+
+    // Check Auto-Reply if conversation is not in HUMAN mode
+    let autoReplyResult: any = null;
+    if (processResult?.conversation && processResult.conversation.aiMode !== 'HUMAN' && messageText) {
+      try {
+        autoReplyResult = await WhatsAppAutoReplyService.processCustomerMessage(
+          conversation.id,
+          messageText,
+          !!processResult.isNewConversation
+        );
+      } catch (autoErr: any) {
+        logger.warn('[handleSimulateCustomerMessage] Auto reply error:', autoErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: processResult.message,
+      conversation: processResult.conversation,
+      autoReply: autoReplyResult
+    });
+  } catch (error: any) {
+    logger.error('[handleSimulateCustomerMessage Error]:', error);
+    return res.status(500).json({ error: 'Failed to process customer message', details: error.message });
   }
 };
 
@@ -1086,6 +1405,21 @@ export const handleUpdateConversationMode = async (req: Request, res: Response) 
     return res.status(200).json({ success: true, conversation: updated });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update conversation mode', details: error.message });
+  }
+};
+
+export const handleTestAutoReplyRule = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { messageText } = req.body || {};
+    const config = await WhatsAppAutoReplyService.getConfig();
+    const result = await WhatsAppRuleEngine.testEvaluate(messageText, config);
+    return res.status(200).json({
+      success: true,
+      result
+    });
+  } catch (error: any) {
+    logger.error('[handleTestAutoReplyRule Error]:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 

@@ -151,7 +151,13 @@ app.use('/api/payment/create-order', checkoutLimiter);
 app.use('/api/payment/verify-payment', checkoutLimiter);
 app.use('/api/checkout', checkoutLimiter);
 app.use('/api/support', uploadLimiter);
-app.use('/api', apiLimiter);
+app.use('/api', (req, res, next) => {
+  const p = req.path.toLowerCase();
+  if (p.includes('webhook') || p.includes('stream')) {
+    return next();
+  }
+  return apiLimiter(req, res, next);
+});
 
 // Response time benchmark header
 app.use((req: Request, res: Response, next: NextFunction) => {

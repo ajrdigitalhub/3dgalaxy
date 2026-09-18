@@ -295,12 +295,21 @@ export class WhatsAppConversationService {
 
     try {
       // 2. Identify or create customer
-      const { customer } = await this.findOrCreateCustomer(data.fromPhone, data.customerName);
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Customer identified: ${customer.id} (${customer.phone || data.fromPhone})`);
+      const { customer, isNew: isNewCustomer } = await this.findOrCreateCustomer(data.fromPhone, data.customerName);
+      logger.info(`[WHATSAPP INBOUND] Customer lookup result`, {
+        customerId: customer.id,
+        phone: customer.phone || data.fromPhone,
+        isNew: isNewCustomer
+      });
 
       // 3. Find or create active conversation
-      const { conversation, isNew } = await this.findOrCreateConversation(data.fromPhone, customer, data.customerName);
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Conversation identified/created: ${conversation.id} (new: ${isNew})`);
+      const { conversation, isNew: isNewConv } = await this.findOrCreateConversation(data.fromPhone, customer, data.customerName);
+      logger.info(`[WHATSAPP INBOUND] Conversation lookup result`, {
+        conversationId: conversation.id,
+        status: conversation.status,
+        unreadCount: conversation.unreadCount,
+        isNew: isNewConv
+      });
 
       // 4. Save inbound message with status: 'RECEIVED'
       const message = await prisma.whatsappMessage.create({
@@ -320,7 +329,14 @@ export class WhatsAppConversationService {
           createdAt: data.timestamp || new Date()
         }
       });
-      logger.info(`[WHATSAPP WEBHOOK] ↓ Incoming message saved: ${message.id} (status: RECEIVED)`);
+      logger.info(`[WHATSAPP INBOUND] Database message insert result`, {
+        messageId: message.id,
+        whatsappMessageId: message.whatsappMessageId,
+        conversationId: conversation.id,
+        direction: message.direction,
+        senderType: message.senderType,
+        status: message.status
+      });
 
       // 4b. When customer replies, all preceding outbound messages in this conversation have been seen/read
       await prisma.whatsappMessage.updateMany({
@@ -384,6 +400,119 @@ export class WhatsAppConversationService {
       if (whatsappMessageId) {
         this.processingMessageIds.delete(whatsappMessageId);
       }
+    }
+  }
+
+  /**
+   * Processes an inbound WhatsApp message reaction (e.g. 👍, ❤️, or empty string to remove).
+   * Matches reactionMessageId to the original message's whatsappMessageId,
+   * updates the reactions collection on that exact message, and broadcasts MESSAGE_REACTION via SSE.
+   */
+  public static async processReaction(data: {
+    reactionMessageId: string;
+    emoji: string;
+    fromPhone: string;
+    whatsappMessageId?: string;
+    timestamp?: Date;
+  }): Promise<{ success: boolean; targetMessage?: any; reactions?: any[] }> {
+    const { reactionMessageId, emoji, fromPhone, whatsappMessageId, timestamp = new Date() } = data;
+
+    if (!reactionMessageId) {
+      logger.warn('[WHATSAPP REACTION] Received reaction event without reaction.message_id.');
+      return { success: false };
+    }
+
+    try {
+      // 1. Find the exact message that was reacted to
+      let target = await prisma.whatsappMessage.findFirst({
+        where: { whatsappMessageId: reactionMessageId }
+      });
+
+      // Fallback lookup: check ID directly or mediaId
+      if (!target) {
+        target = await prisma.whatsappMessage.findFirst({
+          where: {
+            OR: [
+              { id: reactionMessageId },
+              { mediaId: reactionMessageId }
+            ]
+          }
+        });
+      }
+
+      if (!target) {
+        logger.warn(`[WHATSAPP REACTION] Target message ${reactionMessageId} not found in database.`);
+        return { success: false };
+      }
+
+      // 2. Read and parse current reactions from metadata
+      const currentMeta: any =
+        typeof target.metadata === 'object' && target.metadata !== null
+          ? { ...target.metadata }
+          : {};
+
+      let reactions: Array<{
+        emoji: string;
+        from: string;
+        senderType: string;
+        whatsappMessageId?: string;
+        timestamp: string;
+      }> = Array.isArray(currentMeta.reactions) ? [...currentMeta.reactions] : [];
+
+      if (!emoji || !emoji.trim()) {
+        // Customer removed their reaction
+        reactions = reactions.filter((r) => r.from !== fromPhone);
+        logger.info(`[WHATSAPP REACTION] Removed reaction from ${fromPhone} on message ${target.id}`);
+      } else {
+        // Customer added or modified their reaction
+        const cleanEmoji = emoji.trim();
+        const existingIdx = reactions.findIndex((r) => r.from === fromPhone);
+        const newReaction = {
+          emoji: cleanEmoji,
+          from: fromPhone,
+          senderType: 'CUSTOMER',
+          whatsappMessageId: whatsappMessageId || undefined,
+          timestamp: timestamp.toISOString()
+        };
+
+        if (existingIdx >= 0) {
+          reactions[existingIdx] = newReaction;
+        } else {
+          reactions.push(newReaction);
+        }
+        logger.info(`[WHATSAPP REACTION] Set reaction "${cleanEmoji}" from ${fromPhone} on message ${target.id}`);
+      }
+
+      // 3. Save updated reactions list into target message metadata
+      currentMeta.reactions = reactions;
+      const updatedMessage = await prisma.whatsappMessage.update({
+        where: { id: target.id },
+        data: {
+          metadata: currentMeta,
+          updatedAt: new Date()
+        }
+      });
+
+      // 4. Broadcast Real-time Server-Sent Event to Admin Inbox without creating a new message bubble
+      ConversationEventService.broadcast({
+        type: 'MESSAGE_REACTION',
+        conversationId: target.conversationId,
+        messageId: target.id,
+        whatsappMessageId: target.whatsappMessageId,
+        reactions,
+        reaction: {
+          emoji,
+          from: fromPhone,
+          senderType: 'CUSTOMER',
+          targetMessageId: target.id
+        },
+        timestamp: new Date().toISOString()
+      });
+
+      return { success: true, targetMessage: updatedMessage, reactions };
+    } catch (err: any) {
+      logger.error(`[WHATSAPP REACTION] Error processing reaction on ${reactionMessageId}:`, err);
+      return { success: false };
     }
   }
 
@@ -539,12 +668,15 @@ export class WhatsAppConversationService {
    * Reconciles message statuses in a conversation and returns latest messages.
    * If customer has replied, any earlier outbound messages are marked as READ.
    */
-  public static async syncConversationMessages(conversationId: string, limit = 40): Promise<any[]> {
+  public static async syncConversationMessages(conversationId: string, limit = 100): Promise<any[]> {
     // 1. Check if any inbound customer message exists
     const latestInbound = await prisma.whatsappMessage.findFirst({
       where: {
         conversationId,
-        direction: 'INBOUND'
+        OR: [
+          { direction: { in: ['INBOUND', 'inbound'] } },
+          { senderType: 'CUSTOMER' }
+        ]
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -554,7 +686,7 @@ export class WhatsAppConversationService {
       await prisma.whatsappMessage.updateMany({
         where: {
           conversationId,
-          direction: 'OUTBOUND',
+          direction: { in: ['OUTBOUND', 'outbound'] },
           status: { in: ['SENT', 'DELIVERED'] },
           createdAt: { lte: latestInbound.createdAt }
         },
