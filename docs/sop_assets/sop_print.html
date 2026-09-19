@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Galaxy Admin Portal — Standard Operating Procedure (Client Handover)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-variant-ligatures: none !important;
+      font-feature-settings: "liga" 0, "clig" 0, "calt" 0 !important;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.5;
+      font-size: 9.2pt;
+    }
+
+    .page-break {
+      page-break-before: always;
+      display: block;
+      height: 1px;
+    }
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0b1120;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      margin: 0 0 10px 0;
+      padding-top: 10mm;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #0284c7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1::before {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 15pt;
+      background: #ea580c;
+      border-radius: 2px;
+    }
+
+    h2 {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 16px 0 8px 0;
+      letter-spacing: -0.2px;
+    }
+    h3 {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 12px 0 6px 0;
+    }
+    h4 {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #334155;
+      margin: 8px 0 4px 0;
+    }
+    p {
+      margin-bottom: 8px;
+      color: #334155;
+      text-align: left;
+    }
+    ul, ol {
+      margin-left: 18px;
+      margin-bottom: 10px;
+    }
+    li {
+      margin-bottom: 3px;
+      color: #334155;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px 0;
+      font-size: 8.2pt;
+      page-break-inside: avoid;
+    }
+    th {
+      background: #0b1120;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      text-transform: uppercase;
+      font-size: 7.2pt;
+      letter-spacing: 0.5px;
+      border: 1px solid #0b1120;
+    }
+    td {
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+      color: #1e293b;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 6px;
+      padding: 9px 12px;
+      margin: 10px 0;
+      font-size: 8.3pt;
+      page-break-inside: avoid;
+    }
+    .callout-info {
+      background: #f0f9ff;
+      border-left: 4px solid #0284c7;
+      color: #0369a1;
+    }
+    .callout-warning {
+      background: #fff7ed;
+      border-left: 4px solid #ea580c;
+      color: #9a3412;
+    }
+    .callout-success {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      color: #15803d;
+    }
+    .callout-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 7.2pt;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Screenshots & Figures */
+    .figure-container {
+      margin: 10px 0 14px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #ffffff;
+      page-break-inside: avoid;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+    .figure-header {
+      background: #f1f5f9;
+      padding: 5px 10px;
+      border-bottom: 1px solid #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .figure-number {
+      font-weight: 700;
+      font-size: 7.8pt;
+      color: #0b1120;
+    }
+    .figure-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 6.8pt;
+      font-weight: 600;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .figure-img {
+      width: 100%;
+      height: auto;
+      max-height: 105mm;
+      object-fit: contain;
+      display: block;
+      background: #090d16;
+    }
+    .figure-caption {
+      padding: 5px 10px;
+      font-size: 7.6pt;
+      color: #475569;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      line-height: 1.35;
+      font-style: italic;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7.8pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 6.8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-orange { background: #ffedd5; color: #c2410c; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-dark { background: #0f172a; color: #f8fafc; }
+
+    pre.diagram {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 6.8pt;
+      line-height: 1.3;
+      background: #0b1120;
+      color: #38bdf8;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 8px 0;
+      overflow-x: auto;
+      page-break-inside: avoid;
+      border-left: 4px solid #ea580c;
+    }
+
+    /* COVER PAGE STYLING */
+    .cover-page {
+      box-sizing: border-box;
+      height: 297mm;
+      max-height: 297mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 22mm 18mm 20mm 18mm;
+      background: linear-gradient(150deg, #070b14 0%, #0b1120 45%, #0f172a 100%);
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      padding-bottom: 16px;
+    }
+    .cover-brand-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+    .cover-brand-card.client-side {
+      align-items: flex-end;
+    }
+    .cover-brand-label {
+      font-size: 6.8pt;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .cover-brand-logo-wrap {
+      background: #ffffff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      height: 48px;
+      box-sizing: border-box;
+    }
+    .cover-logo-img {
+      max-height: 36px;
+      max-width: 130px;
+      object-fit: contain;
+      display: block;
+    }
+    .cover-transfer-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .cover-badge-top {
+      background: rgba(234, 88, 12, 0.15);
+      border: 1px solid #ea580c;
+      color: #fb923c;
+      font-size: 7.5pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    .cover-transfer-arrow {
+      font-size: 6.8pt;
+      color: #94a3b8;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .cover-middle {
+      margin: 30mm 0 25mm 0;
+    }
+    .cover-app-title {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+    .cover-page h1,
+    .cover-main-heading {
+      font-size: 32pt;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      margin-bottom: 10px;
+      padding-top: 0 !important;
+      border-bottom: none !important;
+    }
+    .cover-page h1::before,
+    .cover-main-heading::before {
+      display: none !important;
+    }
+    .cover-main-heading span {
+      color: #ea580c;
+    }
+    .cover-sub-heading {
+      font-size: 15pt;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+      margin-bottom: 18px;
+    }
+    .cover-rule {
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #0284c7, #ea580c);
+      margin-bottom: 18px;
+      border-radius: 2px;
+    }
+    .cover-desc {
+      font-size: 10.5pt;
+      line-height: 1.5;
+      color: #cbd5e1;
+      max-width: 90%;
+    }
+    .cover-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .cover-meta-box h5 {
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      color: #38bdf8;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    .cover-meta-box p {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #f8fafc;
+      margin: 0;
+    }
+    .cover-meta-box span {
+      font-size: 8pt;
+      color: #94a3b8;
+      font-weight: 400;
+      display: block;
+    }
+
+    /* Section grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== COVER PAGE ==================== -->
+  <div class="cover-page">
+    <div class="cover-top">
+      <div class="cover-brand-card">
+        <span class="cover-brand-label">Delivered By</span>
+        <div class="cover-brand-logo-wrap">
+          <img src="ajr_digital_hub_logo.png" class="cover-logo-img" alt="AJR Digital Hub">
+        </div>
+      </div>
+
+      <div class="cover-transfer-indicator">
+        <div class="cover-badge-top">CLIENT HANDOVER DOCUMENT</div>
+        <div class="cover-transfer-arrow">Enterprise Solutions ➔ Production Platform</div>
+      </div>
+
+      <div class="cover-brand-card client-side">
+        <span class="cover-brand-label">Delivered To / Accepted By</span>
+        <div class="cover-brand-logo-wrap">
+          <img src="3d_galaxy_logo.png" class="cover-logo-img" alt="3D Galaxy">
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-middle">
+      <div class="cover-app-title">3D Galaxy E-Commerce &amp; Custom Manufacturing Platform</div>
+      <h1 class="cover-main-heading">ADMIN <span>PORTAL</span></h1>
+      <div class="cover-sub-heading">STANDARD OPERATING PROCEDURE (SOP)</div>
+      <div class="cover-rule"></div>
+      <p class="cover-desc">
+        Complete Administration, Configuration &amp; Operations Guide for Physical Retail Catalog, Dynamic Multi-Group Variants, Custom Additive Manufacturing (STL) Slicing Quotes, Omnichannel Communications &amp; Disaster Resilience.
+      </p>
+    </div>
+
+    <div class="cover-bottom">
+      <div class="cover-meta-box">
+        <h5>Delivered By</h5>
+        <p>AJR Digital Hub Team</p>
+        <span>Enterprise Digital Solutions Team</span>
+      </div>
+      <div class="cover-meta-box">
+        <h5>Delivered To / Accepted By</h5>
+        <p>3D Galaxy Team</p>
+        <span>E-Commerce Operations &amp; Store Administration</span>
+      </div>
+      <div class="cover-meta-box" style="margin-top: 10px;">
+        <h5>Document Release</h5>
+        <p>Version 1.0 (Production Master)</p>
+        <span>Published: September 2026</span>
+      </div>
+      <div class="cover-meta-box" style="margin-top: 10px;">
+        <h5>Classification</h5>
+        <p>Commercial in Confidence</p>
+        <span>Client Operations Manual</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DOCUMENT CONTROL ==================== -->
+  <div class="page-break"></div>
+  <h1>DOCUMENT CONTROL &amp; GOVERNANCE</h1>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 18px; margin: 12px 0 16px 0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; height: 38px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <img src="ajr_digital_hub_logo.png" style="height: 28px; object-fit: contain;" alt="AJR Digital Hub">
+      </div>
+      <div>
+        <div style="font-size: 6.8pt; font-weight: 700; color: #ea580c; text-transform: uppercase; letter-spacing: 0.8px;">Delivering Partner</div>
+        <div style="font-size: 8.5pt; font-weight: 800; color: #0b1120;">AJR Digital Hub Team</div>
+      </div>
+    </div>
+
+    <div style="font-size: 14pt; color: #94a3b8; font-weight: 300;">➔</div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="text-align: right;">
+        <div style="font-size: 6.8pt; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.8px;">Receiving Client</div>
+        <div style="font-size: 8.5pt; font-weight: 800; color: #0b1120;">3D Galaxy Team</div>
+      </div>
+      <div style="background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0; height: 38px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <img src="3d_galaxy_logo.png" style="height: 28px; object-fit: contain;" alt="3D Galaxy">
+      </div>
+    </div>
+  </div>
+
+  <table style="margin-top: 10px;">
+    <tr><th style="width: 25%;">Document Attribute</th><th>Specification Details</th></tr>
+    <tr><td><strong>Document Title</strong></td><td>3D Galaxy Admin Portal — Standard Operating Procedure (SOP)</td></tr>
+    <tr><td><strong>Application Platform</strong></td><td>3D Galaxy Enterprise E-Commerce &amp; Custom Manufacturing Portal</td></tr>
+    <tr><td><strong>Document Type</strong></td><td>Client Handover Document / Operational SOP</td></tr>
+    <tr><td><strong>Document Identifier</strong></td><td>SOP-3DG-ADM-2026-V1.0</td></tr>
+    <tr><td><strong>Release Version</strong></td><td>1.0 (Production Master)</td></tr>
+    <tr><td><strong>Publication Date</strong></td><td>September 2026</td></tr>
+    <tr><td><strong>Document Status</strong></td><td>Client Review / Handover Complete</td></tr>
+    <tr><td><strong>Classification</strong></td><td>Commercial in Confidence — Client Operational Manual</td></tr>
+    <tr><td><strong>Delivered By</strong></td><td><strong>AJR Digital Hub Team</strong> (Enterprise Digital Solutions Team)</td></tr>
+    <tr><td><strong>Delivered To / Accepted By</strong></td><td><strong>3D Galaxy Team</strong> (E-Commerce Operations &amp; Store Administration)</td></tr>
+    <tr><td><strong>Target Audience</strong></td><td>Store Administrators, Inventory Managers, Fulfillment Officers, Support Leads</td></tr>
+  </table>
+
+  <h2>Document Handover Relationship</h2>
+  <pre class="diagram">
++---------------------------------------------------------------------------------------+
+|                                    AJR DIGITAL HUB                                    |
+|                         Enterprise Digital Solutions Team                             |
+|                 (Platform Architecture, Engineering &amp; Delivery)                       |
++-------------------------------------------+-------------------------------------------+
+                                            |
+                                            |  [Delivers &amp; Hands Over]
+                                            v
++---------------------------------------------------------------------------------------+
+|                                      3D GALAXY                                        |
+|                       E-Commerce Operations &amp; Store Administration                     |
+|                 (Catalog Management, Fulfillment &amp; Operations Team)                   |
++-------------------------------------------+-------------------------------------------+
+                                            |
+                                            |  [Executes Day-to-Day Operations]
+                                            v
++---------------------------------------------------------------------------------------+
+|                              3D GALAXY ADMIN PORTAL OPERATIONS                         |
+|   - Catalog &amp; Products      - Variant Engine &amp; Templates   - Logistics &amp; Shipping     |
+|   - Orders &amp; STL Quotes     - WhatsApp Business Hub        - Settings &amp; Backups       |
++---------------------------------------------------------------------------------------+
+  </pre>
+
+  <h2>Document Revision History</h2>
+  <table>
+    <tr><th style="width: 12%;">Version</th><th style="width: 18%;">Release Date</th><th style="width: 28%;">Author / Organization</th><th>Summary of Revisions</th></tr>
+    <tr><td><strong>0.1</strong></td><td>Sep 18, 2026</td><td>AJR Digital Hub Engineering</td><td>Initial portal audit, navigation route inventory, data model extraction</td></tr>
+    <tr><td><strong>0.5</strong></td><td>Sep 18, 2026</td><td>AJR Digital Hub Solutions</td><td>Workflow validation, variant matrices, WhatsApp Cloud API architecture</td></tr>
+    <tr><td><strong>1.0</strong></td><td>Sep 19, 2026</td><td>AJR Digital Hub Delivery Team</td><td>Complete client handover manual with AJR branding, 30 figures, 11 product tabs, 24 settings sub-tabs, and 20 use cases</td></tr>
+  </table>
+
+  <!-- ==================== EXECUTIVE SUMMARY & HOW TO USE ==================== -->
+  <div class="page-break"></div>
+  <h1>EXECUTIVE SUMMARY</h1>
+
+  <p>The <strong>3D Galaxy Admin Portal</strong> is an enterprise management dashboard engineered and delivered by <strong>AJR Digital Hub</strong> for the <strong>3D Galaxy</strong> team to orchestrate dual-track e-commerce operations: high-velocity physical inventory sales and on-demand custom additive manufacturing (3D printing) services. By coupling standard retail catalog workflows with specialized slicing parameter analysis, the platform provides complete lifecycle control from customer cart placement to automated courier tracking dispatch.</p>
+
+  <h2>Core Business Pillars</h2>
+  <table>
+    <tr><th style="width: 28%;">System Module</th><th style="width: 32%;">Primary Operational Function</th><th>Direct Business Value</th></tr>
+    <tr>
+      <td><strong>Catalog &amp; Variant Engine</strong></td>
+      <td>Multi-attribute combinations, color swatches, dynamic bundle builder, instant templates.</td>
+      <td>Enables complex SKU configurations (Material × Weight × Color) in under 60 seconds without database overhead.</td>
+    </tr>
+    <tr>
+      <td><strong>Logistics &amp; STL Slicing</strong></td>
+      <td>Real-time order inspection, offline sales dockets, custom 3D model geometry analysis (volume, mass, layer height).</td>
+      <td>Eliminates manual quoting bottlenecks; allows automated volume-to-price conversion for on-demand fabrication.</td>
+    </tr>
+    <tr>
+      <td><strong>Conversational Commerce</strong></td>
+      <td>Meta WhatsApp Cloud API integration with rule-based auto-replies, customer emoji reactions, and admin attachments.</td>
+      <td>Achieves 98% message open rate; provides instant customer service with zero recurring AI token consumption fees.</td>
+    </tr>
+    <tr>
+      <td><strong>Push Engagement Hub</strong></td>
+      <td>Broadcast notification builder, deep-link routing, rich imagery, and automated abandoned cart recovery triggers.</td>
+      <td>Recuperates up to 22% of abandoned checkouts through automated discount voucher blasts.</td>
+    </tr>
+    <tr>
+      <td><strong>Disaster Recovery Engine</strong></td>
+      <td>Weekly scheduled database backups, cryptographic SHA-256 integrity hashing, point-in-time restoration.</td>
+      <td>Ensures zero data loss and business continuity in the event of hardware or infrastructure failure.</td>
+    </tr>
+  </table>
+
+  <h2>How to Use This SOP (Role-Based Guide)</h2>
+  <table>
+    <tr><th style="width: 30%;">Operational Role</th><th>Recommended Starting Chapters &amp; Direct Actions</th></tr>
+    <tr>
+      <td><strong>New Administrator</strong></td>
+      <td>Start with <strong>Section 1 (Access Security)</strong>, <strong>Section 2 (Navigation Hierarchy)</strong>, and <strong>Section 3 (Dashboard Overview)</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Catalog &amp; Product Manager</strong></td>
+      <td>Review <strong>Section 4 (Catalog Overview)</strong>, master <strong>Section 5 (11 Product Tabs)</strong>, and implement <strong>Section 6 (Variant Guide &amp; Templates)</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Fulfillment &amp; Logistics Lead</strong></td>
+      <td>Execute <strong>Section 8 (Orders Console)</strong>, <strong>Section 9 (STL Slicing Quotes)</strong>, <strong>Section 10 (Packing Slips)</strong>, and <strong>Section 19.17 (Shipping Rules)</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Customer Support &amp; Marketing</strong></td>
+      <td>Operate <strong>Section 14 (WhatsApp Inbox)</strong>, <strong>Section 15 (WhatsApp Rules)</strong>, <strong>Section 16 (Push Notifications)</strong>, and <strong>Section 11 (CRM Directory)</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Platform Administrator</strong></td>
+      <td>Configure global settings in <strong>Section 19 (All 24 Settings Sub-Tabs)</strong> and manage security tokens.</td>
+    </tr>
+    <tr>
+      <td><strong>Disaster Recovery Lead</strong></td>
+      <td>Follow procedures in <strong>Section 20 (Database Backup, Cryptographic Hashing &amp; Restoration)</strong>.</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-warning">
+    <div class="callout-title">Operational Security &amp; Compliance Mandate</div>
+    Administrative personnel must observe strict security protocols. Never disclose administrative credentials, API secrets, or customer PII over unencrypted channels. Ensure role-based access delegation is enforced across all terminal sessions.
+  </div>
+
+  <!-- ==================== NAVIGATION HIERARCHY ==================== -->
+  <div class="page-break"></div>
+  <h1>ADMIN PORTAL NAVIGATION HIERARCHY</h1>
+  
+  <p>The navigation bar is organized logically on the left sidebar (and responsive mobile drawer) into 7 functional operational groups, ensuring rapid switching between sales, catalog, and communication tasks.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 2.1 — Administrative Navigation Sidebar Hierarchy</span>
+      <span class="figure-tag">UI-NAV-01</span>
+    </div>
+    <img src="screenshots/02_navigation.png" class="figure-img" alt="Admin Navigation Hierarchy">
+    <div class="figure-caption">Structured operational grouping separating Overview, Catalog, Sales, Customer Relations, Omnichannel Communications, Marketing, and System Governance.</div>
+  </div>
+
+  <!-- ==================== DASHBOARD & CATALOG ==================== -->
+  <div class="page-break"></div>
+  <h1>EXECUTIVE DASHBOARD &amp; OPERATIONS HUB</h1>
+
+  <p>The Executive Dashboard serves as the operational cockpit for store supervisors, providing real-time telemetry on revenue velocity, fulfillment pipeline health, inventory replenishment alerts, and customer engagement.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 3.1 — Executive Operations Dashboard</span>
+      <span class="figure-tag">UI-DASH-01</span>
+    </div>
+    <img src="screenshots/01_dashboard.png" class="figure-img" alt="Executive Dashboard">
+    <div class="figure-caption">Top-level operational KPI cards, recent order queue, low inventory alerts, and revenue trajectory metrics.</div>
+  </div>
+
+  <h2>Master Product Catalog Console</h2>
+  <p>The Catalog view renders physical inventory items, SKU identifiers, categories, retail pricing, wholesale dealer prices, and live publication status.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 4.1 — Master Product Catalog Console</span>
+      <span class="figure-tag">UI-CAT-01</span>
+    </div>
+    <img src="screenshots/03_catalog_products.png" class="figure-img" alt="Master Product Catalog">
+    <div class="figure-caption">Real-time inventory grid with status toggles, stock counters, pricing columns, and instant edit actions.</div>
+  </div>
+
+  <!-- ==================== PRODUCT CONFIGURATION (11 TABS) ==================== -->
+  <div class="page-break"></div>
+  <h1>PRODUCT CONFIGURATION: THE 11 FUNCTIONAL TABS</h1>
+
+  <p>The Product Editor consists of <strong>11 specialized tabs</strong>. Each tab governs a distinct functional aspect of customer presentation, warehouse logistics, and SEO discoverability.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 5.1 — Product Configuration Interface &amp; Navigation Tabs</span>
+      <span class="figure-tag">UI-PROD-CFG</span>
+    </div>
+    <img src="screenshots/04_product_configuration.png" class="figure-img" alt="Product Configuration">
+    <div class="figure-caption">Segmented tabs for General Information, Variants Engine, Image Gallery, Shipping Rules, and Live Preview.</div>
+  </div>
+
+  <h2>1. General Details</h2>
+  <p>Defines the canonical catalog identity, SKU code, category assignment, base pricing, warehouse stock, and status policy.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 5.2 — General Product Details &amp; Pricing</span>
+      <span class="figure-tag">UI-PROD-GEN</span>
+    </div>
+    <img src="screenshots/05_product_general.png" class="figure-img" alt="General Details">
+    <div class="figure-caption">Input fields for Product Title, SKU, Barcode, Brand, MRP, Retail Sale Price, Dealer Price, and Stock.</div>
+  </div>
+
+  <table>
+    <tr><th style="width: 25%;">Field</th><th>Operational Impact of Value Changes</th></tr>
+    <tr><td><strong>Sale Price (₹)</strong></td><td>Modifies checkout line total, cart tax calculation, and payment gateway charge amount.</td></tr>
+    <tr><td><strong>Physical Stock</strong></td><td>Controls in-stock badge. When 0, disables Add-to-Cart unless backorders are enabled.</td></tr>
+    <tr><td><strong>Category</strong></td><td>Determines storefront menu navigation, filter faceted search, and category-level shipping fees.</td></tr>
+    <tr><td><strong>Status Policy</strong></td><td>Active Storefront (public), Draft (admin only), or Out of Stock (visible but unpurchasable).</td></tr>
+  </table>
+
+  <h2>The Remaining 10 Configuration Tabs</h2>
+  <table>
+    <tr><th style="width: 22%;">Tab Name</th><th style="width: 38%;">Available Fields &amp; Admin Controls</th><th>Customer &amp; Business Impact</th></tr>
+    <tr>
+      <td><strong>2. Variants</strong></td>
+      <td>Group builder, display types (11 modes), selection modes (6 rules), value chips, bundle tiers.</td>
+      <td>Enables color, size, weight, and multi-pack options directly on product page.</td>
+    </tr>
+    <tr>
+      <td><strong>3. Images</strong></td>
+      <td>Hero photo uploader, multi-angle gallery, and <strong>Linked Variant Dropdown</strong> per photo.</td>
+      <td>Automatically changes main gallery photo when customer clicks a specific color chip.</td>
+    </tr>
+    <tr>
+      <td><strong>4. Specifications</strong></td>
+      <td>Key-value technical attributes (Nozzle size, build volume, bed temp, layer height).</td>
+      <td>Renders technical comparison table on storefront product specifications tab.</td>
+    </tr>
+    <tr>
+      <td><strong>5. Downloads</strong></td>
+      <td>Slicing profiles (`.curaprofile`, `.3mf`), firmware binaries (`.bin`), user manuals (`.pdf`).</td>
+      <td>Provides instant post-purchase self-service downloads, reducing support tickets.</td>
+    </tr>
+    <tr>
+      <td><strong>6. Features</strong></td>
+      <td>Visual feature cards with icons, bold titles, and technical highlight blurbs.</td>
+      <td>Highlights core selling propositions directly beneath the buy box.</td>
+    </tr>
+    <tr>
+      <td><strong>7. FAQs</strong></td>
+      <td>Product-specific accordion Q&amp;A pairs with sort order.</td>
+      <td>Resolves pre-purchase compatibility and maintenance questions, boosting conversion.</td>
+    </tr>
+    <tr>
+      <td><strong>8. Warranty &amp; Support</strong></td>
+      <td>Warranty duration (12/24 mos), support channels (Email/WhatsApp), DOA replacement terms.</td>
+      <td>Provides transparent buyer assurance and legal compliance under consumer guidelines.</td>
+    </tr>
+    <tr>
+      <td><strong>9. Shipping &amp; Delivery</strong></td>
+      <td>Custom shipping fee, free shipping toggle, calibrated weight in grams, delivery days buffer.</td>
+      <td>Drives courier tariff calculations and dynamic "Expected Delivery by [Date]" countdown.</td>
+    </tr>
+    <tr>
+      <td><strong>10. Related Products</strong></td>
+      <td>Multi-select cross-sell picker from live catalog.</td>
+      <td>Renders "Frequently Bought Together" carousel, driving Average Order Value (AOV).</td>
+    </tr>
+    <tr>
+      <td><strong>11. SEO</strong></td>
+      <td>Meta title, meta description, keywords, canonical URL, and OpenGraph social share card.</td>
+      <td>Ensures high search engine ranking and rich visual previews when links are shared on WhatsApp.</td>
+    </tr>
+  </table>
+
+  <!-- ==================== VARIANT CONFIGURATION GUIDE ==================== -->
+  <div class="page-break"></div>
+  <h1>PRODUCT VARIANT CONFIGURATION GUIDE</h1>
+
+  <p>The 3D Galaxy Variant Engine supports advanced multi-group architectures, allowing complex retail configurations such as <strong>Material × Weight × Color</strong> to be generated in seconds.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 6.1 — Product Variant Architecture Builder</span>
+      <span class="figure-tag">UI-VAR-BUILDER</span>
+    </div>
+    <img src="screenshots/06_product_variants.png" class="figure-img" alt="Variant Builder">
+    <div class="figure-caption">Admin interface for configuring variant groups, display types, selection rules, and duplicate slot allowances.</div>
+  </div>
+
+  <h2>The 11 Verified Display Types</h2>
+  <table>
+    <tr><th style="width: 20%;">Display Type</th><th style="width: 25%;">Recommended Use Case</th><th>Customer Experience &amp; Admin Config</th></tr>
+    <tr>
+      <td><code>bundle-builder</code></td>
+      <td>Multi-pack bundles (Buy 1, Buy 3, Buy 5).</td>
+      <td>Interactive radio cards with custom color/item slot selectors below. Configure tiers and duplicate slot permissions.</td>
+    </tr>
+    <tr>
+      <td><code>weight-selector</code></td>
+      <td>Consumables (250g, 500g, 1kg, 2kg, 5kg).</td>
+      <td>Weight pill buttons calibrated directly with shipping calculations. Enter weight values in grams or kilograms.</td>
+    </tr>
+    <tr>
+      <td><code>chip</code></td>
+      <td>Text options (Sizes S, M, L, XL; Nozzle sizes).</td>
+      <td>Compact rounded pill chips. Admin enters comma-separated values; drag handles reorder chips.</td>
+    </tr>
+    <tr>
+      <td><code>dropdown</code></td>
+      <td>Extensive lists (> 10 items, spare parts).</td>
+      <td>Standard select dropdown menu saving screen space. Ideal for technical hardware selections.</td>
+    </tr>
+    <tr>
+      <td><code>image</code></td>
+      <td>Visual textures, machine finishes, colorways.</td>
+      <td>Grid of square visual thumbnails with active checkmark badge. Admin uploads image per option.</td>
+    </tr>
+    <tr>
+      <td><code>card</code></td>
+      <td>Machine models (Base, Combo AMS, Complete).</td>
+      <td>Rich cards with titles, bullet points, and pricing offsets. Ideal for high-ticket configurations.</td>
+    </tr>
+    <tr>
+      <td><code>radio-chips</code></td>
+      <td>Warranty plans, service add-ons.</td>
+      <td>Chip buttons with embedded circular radio indicators.</td>
+    </tr>
+    <tr>
+      <td><code>color-chips</code></td>
+      <td>Filament colors, resin hues.</td>
+      <td>Circular swatches showing exact hex codes (e.g. <code>#FF2200</code>) with tooltip name and active border.</td>
+    </tr>
+    <tr>
+      <td><code>button-group</code></td>
+      <td>Segmented choices (110V / 220V).</td>
+      <td>Unified horizontal button group with sliding active state.</td>
+    </tr>
+    <tr>
+      <td><code>quantity-selector</code></td>
+      <td>Incremental hardware packs.</td>
+      <td>Stepper (+ / -) interface with tiered volume discounts.</td>
+    </tr>
+    <tr>
+      <td><code>grid-cards</code></td>
+      <td>Multi-column machine comparisons.</td>
+      <td>2 or 3-column responsive card matrix highlighting model specs.</td>
+    </tr>
+  </table>
+
+  <h2>The 6 Selection Modes</h2>
+  <table>
+    <tr><th style="width: 22%;">Selection Mode</th><th style="width: 38%;">Rule &amp; Mathematical Constraint</th><th>Pricing, Stock &amp; Cart Impact</th></tr>
+    <tr>
+      <td><strong>Single Selection</strong></td>
+      <td>Customer chooses exactly 1 option per group.</td>
+      <td>Overrides base price. Validates stock for selected combination SKU.</td>
+    </tr>
+    <tr>
+      <td><strong>Bundle Selection</strong></td>
+      <td>Customer picks a package tier unlocking interactive slots.</td>
+      <td>Applies fixed bundle price or per-item rate. Validates stock across all chosen slot items.</td>
+    </tr>
+    <tr>
+      <td><strong>Weight Based</strong></td>
+      <td>Binds option directly to shipment gross weight.</td>
+      <td>Multiplies weight by quantity to calculate real-time courier shipping fees.</td>
+    </tr>
+    <tr>
+      <td><strong>Multiple Selection</strong></td>
+      <td>Customer can check multiple add-ons simultaneously.</td>
+      <td>Cumulatively sums all selected add-on prices to cart subtotal.</td>
+    </tr>
+    <tr>
+      <td><strong>Quantity Based</strong></td>
+      <td>Pack quantities with automatic volume discounting.</td>
+      <td>Decrements total pack count from central inventory.</td>
+    </tr>
+    <tr>
+      <td><strong>Package Builder</strong></td>
+      <td>Multi-step starter kit customizer.</td>
+      <td>Decrements multiple distinct warehouse SKUs upon single checkout completion.</td>
+    </tr>
+  </table>
+
+  <!-- ==================== COMBINATION MATRIX & IMAGES ==================== -->
+  <div class="page-break"></div>
+  <h1>COMBINATION MATRIX, PRICING &amp; WEIGHT ENGINE</h1>
+
+  <p>When multiple variant groups exist, clicking <strong>Generate Combination Matrix</strong> constructs a Cartesian permutation table.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 8.1 — Combination Matrix Table</span>
+      <span class="figure-tag">UI-VAR-MATRIX</span>
+    </div>
+    <img src="screenshots/08_combination_matrix.png" class="figure-img" alt="Combination Matrix">
+    <div class="figure-caption">Cartesian matrix generating unique SKUs, MRPs, Sale Prices, independent stock counters, and calibrated weights.</div>
+  </div>
+
+  <h2>Variant Weight &amp; Shipping Formula</h2>
+  <p>To avoid courier weight disputes and undercharged freight, variant weights are calibrated in grams:</p>
+  $$\text{Total Shipment Weight} = (\text{Variant Weight} \times \text{Quantity}) + \text{Tare Packaging Weight}$$
+
+  <div class="callout callout-info">
+    <div class="callout-title">Practical Weight Calculation Example</div>
+    When a customer purchases <strong>4 spools of 250g sample filament</strong>:
+    $$250\text{g} \times 4 = 1000\text{g} = 1.0\text{kg}$$
+    The checkout automatically applies the <strong>1.0kg courier tariff bracket</strong>, ensuring accurate shipping recovery.
+  </div>
+
+  <h2>Variant Image Mapping &amp; Storefront Preview</h2>
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 8.2 — Variant Image Mapping Interface</span>
+      <span class="figure-tag">UI-IMG-MAP</span>
+    </div>
+    <img src="screenshots/09_variant_image_mapping.png" class="figure-img" alt="Image Mapping">
+    <div class="figure-caption">Mapping uploaded photography directly to variant values to enable automatic gallery switching.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 8.3 — Live Storefront Customer Preview</span>
+      <span class="figure-tag">UI-PREVIEW</span>
+    </div>
+    <img src="screenshots/11_product_preview.png" class="figure-img" alt="Live Preview">
+    <div class="figure-caption">Embedded customer switcher preview allowing administrators to test swatches and prices before publishing.</div>
+  </div>
+
+  <!-- ==================== DYNAMIC VARIANT TEMPLATES ==================== -->
+  <div class="page-break"></div>
+  <h1>DYNAMIC VARIANT TEMPLATES &amp; SAFETY RULES</h1>
+
+  <p>The portal includes <strong>10 pre-engineered templates</strong> to eliminate repetitive manual configuration.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 7.1 — Dynamic Variant Templates Library</span>
+      <span class="figure-tag">UI-TPL-LIB</span>
+    </div>
+    <img src="screenshots/07_variant_template.png" class="figure-img" alt="Variant Templates">
+    <div class="figure-caption">Predefined schemas with preview dialog, append mode protection, and collision warnings.</div>
+  </div>
+
+  <h2>10 Verified Pre-Engineered Templates</h2>
+  <table>
+    <tr><th style="width: 25%;">Template Name</th><th style="width: 15%;">Category</th><th>Configured Schema &amp; Values</th></tr>
+    <tr><td><strong>Filament Color</strong></td><td>Filament</td><td>1 Group: Color (Chip selector with 8 standard colors: Red, Blue, Green, Yellow, Orange, Black, White, Grey).</td></tr>
+    <tr><td><strong>Filament Weight</strong></td><td>Filament</td><td>1 Group: Spool Weight (Weight selector with 250g Sample, 500g, 1kg Standard, 2kg Value, 5kg Bulk).</td></tr>
+    <tr><td><strong>Material + Color</strong></td><td>Filament</td><td>2 Groups: Material (PLA, PETG, ABS, TPU, Resin) × Color (Color Chips: Red, Blue, Green, Black, White, Grey).</td></tr>
+    <tr><td><strong>Material + Weight + Color</strong></td><td>Filament</td><td>3 Groups: Material (PLA, PETG, ABS) × Weight (500g, 1kg) × Color (5 standard colors).</td></tr>
+    <tr><td><strong>Product Size</strong></td><td>General</td><td>1 Group: Size (XS, S, M, L, XL, XXL).</td></tr>
+    <tr><td><strong>Storage / Capacity</strong></td><td>Accessories</td><td>1 Group: Storage Capacity (32GB, 64GB, 128GB, 256GB, 512GB, 1TB).</td></tr>
+    <tr><td><strong>Size + Color</strong></td><td>Accessories</td><td>2 Groups: Size (S, M, L, XL) × Color (Red, Blue, Black, White).</td></tr>
+    <tr><td><strong>Bundle Pack</strong></td><td>Bundles</td><td>1 Group: Bundle Builder (Buy 1 @ ₹756, Buy 3 @ ₹642 each, Buy 5 @ ₹3,024 flat).</td></tr>
+    <tr><td><strong>3D Printer Config</strong></td><td>3D Printer</td><td>2 Groups: Printer Model (A1, A1 Mini, P1S, K1) × Package (Printer Only, Combo with AMS).</td></tr>
+    <tr><td><strong>Custom Variant</strong></td><td>General</td><td>Blank template ready for manual custom attributes.</td></tr>
+  </table>
+
+  <h2>Variant Template Operational Safety Rules</h2>
+  <ul>
+    <li><strong>No Silent Overwrites</strong>: Template defaults to <code>APPEND</code> mode. Existing groups are preserved.</li>
+    <li><strong>Collision Detection</strong>: Warns if a group with the same name already exists on the product.</li>
+    <li><strong>Template Independence</strong>: Changing a template does not alter previously saved products.</li>
+    <li><strong>Manual Stock Required</strong>: Physical stock must always be entered manually based on actual inventory.</li>
+    <li><strong>Explicit Image Binding</strong>: Photos must be mapped under the <em>Images</em> tab after template application.</li>
+  </ul>
+
+  <!-- ==================== ORDERS & STL SLICING ==================== -->
+  <div class="page-break"></div>
+  <h1>ORDERS, FULFILLMENT &amp; STL SLICING QUOTES</h1>
+
+  <p>The Orders console tracks client purchases from initial payment to delivery confirmation, including custom manufacturing orders.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 9.1 — Master Orders Management Console</span>
+      <span class="figure-tag">UI-ORD-LIST</span>
+    </div>
+    <img src="screenshots/12_order_list.png" class="figure-img" alt="Order List">
+    <div class="figure-caption">Order tracking table displaying customer names, payment verification badges, and fulfillment status selectors.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 9.2 — Order Sales Ledger Inspection Modal</span>
+      <span class="figure-tag">UI-ORD-DETAIL</span>
+    </div>
+    <img src="screenshots/13_order_detail.png" class="figure-img" alt="Order Detail">
+    <div class="figure-caption">Detailed view displaying customer address, itemized SKUs, GST tax breakdown, and courier dispatch actions.</div>
+  </div>
+
+  <h2>Customized 3D Model (STL) Slicing Quotes</h2>
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 10.1 — STL Slicing &amp; Quote Workflows</span>
+      <span class="figure-tag">UI-STL-QUOTE</span>
+    </div>
+    <img src="screenshots/14_customized_order_data.png" class="figure-img" alt="STL Slicing Quote">
+    <div class="figure-caption">Inspection of uploaded 3D models with volume, mass, layer resolution, and manual cost override.</div>
+  </div>
+
+  <!-- ==================== PACKING SLIPS & CRM ==================== -->
+  <div class="page-break"></div>
+  <h1>PACKING SLIPS, CUSTOMER DIRECTORY &amp; ANALYTICS</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 11.1 — Printable Warehouse Packing Slip</span>
+      <span class="figure-tag">UI-PACK-SLIP</span>
+    </div>
+    <img src="screenshots/15_packing_slip.png" class="figure-img" alt="Packing Slip">
+    <div class="figure-caption">Official thermal packing slip with shipping address, itemized SKUs, and gross weight verification.</div>
+  </div>
+
+  <h2>Customer Directory &amp; CRM Dossier</h2>
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 12.1 — Customer Directory &amp; Account Ledger</span>
+      <span class="figure-tag">UI-CUST-DIR</span>
+    </div>
+    <img src="screenshots/16_customer_directory.png" class="figure-img" alt="Customer Directory">
+    <div class="figure-caption">Client relationship manager displaying lifetime spend, order count, and VIP tags.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 12.2 — Customer Profile Inspection</span>
+      <span class="figure-tag">UI-CUST-DETAIL</span>
+    </div>
+    <img src="screenshots/17_customer_detail.png" class="figure-img" alt="Customer Detail">
+    <div class="figure-caption">Detailed customer profile with complete order history, address book, and communication log.</div>
+  </div>
+
+  <!-- ==================== CUSTOMER ANALYTICS & REVIEWS ==================== -->
+  <div class="page-break"></div>
+  <h1>CUSTOMER ANALYTICS &amp; REPUTATION MANAGEMENT</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 13.1 — Customer Analytics &amp; Retention Console</span>
+      <span class="figure-tag">UI-CUST-ANALYTICS</span>
+    </div>
+    <img src="screenshots/18_customer_analytics.png" class="figure-img" alt="Customer Analytics">
+    <div class="figure-caption">Cohort telemetry tracking Customer Lifetime Value (LTV), repeat purchase velocity, and retention.</div>
+  </div>
+
+  <h2>Customer Reviews Moderation Queue</h2>
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 14.1 — Reviews Moderation Queue</span>
+      <span class="figure-tag">UI-REVIEWS</span>
+    </div>
+    <img src="screenshots/19_reviews.png" class="figure-img" alt="Reviews Queue">
+    <div class="figure-caption">Moderation queue for approving, hiding, or purging customer product reviews and star ratings.</div>
+  </div>
+
+  <!-- ==================== WHATSAPP & PUSH NOTIFICATIONS ==================== -->
+  <div class="page-break"></div>
+  <h1>WHATSAPP BUSINESS &amp; PUSH NOTIFICATION HUB</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 15.1 — WhatsApp Business Cloud API Live Inbox</span>
+      <span class="figure-tag">UI-WA-INBOX</span>
+    </div>
+    <img src="screenshots/20_whatsapp_inbox.png" class="figure-img" alt="WhatsApp Inbox">
+    <div class="figure-caption">Real-time dual-pane messaging inbox with unread badges, delivery ticks, and customer order context sidebar.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 15.2 — WhatsApp Conversation &amp; Media Attachments</span>
+      <span class="figure-tag">UI-WA-CHAT</span>
+    </div>
+    <img src="screenshots/21_whatsapp_conversation.png" class="figure-img" alt="WhatsApp Chat">
+    <div class="figure-caption">Chat stream showing customer emoji reactions, PDF quote dispatches, and manual message entry.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 15.3 — WhatsApp Rule-Based Automation Console</span>
+      <span class="figure-tag">UI-WA-AUTO</span>
+    </div>
+    <img src="screenshots/22_whatsapp_automation.png" class="figure-img" alt="WhatsApp Automation">
+    <div class="figure-caption">Deterministic zero-LLM automation rules configuring welcome greetings, keyword triggers, and human takeover.</div>
+  </div>
+
+  <!-- ==================== PUSH NOTIFICATIONS & MARKETING ==================== -->
+  <div class="page-break"></div>
+  <h1>PUSH NOTIFICATIONS, MARKETING &amp; CATEGORIES</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 16.1 — Push Notification Campaign Builder</span>
+      <span class="figure-tag">UI-PUSH-HUB</span>
+    </div>
+    <img src="screenshots/23_push_notification_hub.png" class="figure-img" alt="Push Hub">
+    <div class="figure-caption">Push broadcast dashboard tracking active subscribers, delivery open rates, and click metrics.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 16.2 — Push Notification Designer</span>
+      <span class="figure-tag">UI-PUSH-BUILDER</span>
+    </div>
+    <img src="screenshots/24_campaign_builder.png" class="figure-img" alt="Campaign Builder">
+    <div class="figure-caption">Campaign designer with audience segmentation, banner image preview, and deep-link routing.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 16.3 — Transactional Notification Templates</span>
+      <span class="figure-tag">UI-NOTIF-TPL</span>
+    </div>
+    <img src="screenshots/25_notification_templates.png" class="figure-img" alt="Notification Templates">
+    <div class="figure-caption">Event triggers for order confirmation, courier dispatch, and abandoned cart reminder blasts.</div>
+  </div>
+
+  <!-- ==================== MARKETING & CATEGORIES ==================== -->
+  <div class="page-break"></div>
+  <h1>MARKETING BANNERS &amp; CATEGORY TAXONOMY</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 17.1 — Marketing Ribbons &amp; Promotional Popups</span>
+      <span class="figure-tag">UI-MKTG-RIBBON</span>
+    </div>
+    <img src="screenshots/26_marketing.png" class="figure-img" alt="Marketing Console">
+    <div class="figure-caption">Configuring top announcement ribbons, discount popups, and seasonal festival campaign banners.</div>
+  </div>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 18.1 — Category Taxonomy Console</span>
+      <span class="figure-tag">UI-CAT-MGMT</span>
+    </div>
+    <img src="screenshots/27_categories.png" class="figure-img" alt="Categories Console">
+    <div class="figure-caption">Managing category hierarchies, banner graphics, display order, and SEO URL slugs.</div>
+  </div>
+
+  <!-- ==================== SETTINGS (24 SUB-TABS) ==================== -->
+  <div class="page-break"></div>
+  <h1>SYSTEM CORE CONFIGURATOR (ALL 24 SUB-TABS)</h1>
+
+  <p>The System Settings dashboard (`/admin?tab=settings`) centralizes platform governance across <strong>24 verified sub-tabs</strong>.</p>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 19.1 — System Core Configurator Navigation</span>
+      <span class="figure-tag">UI-SETTINGS-HUB</span>
+    </div>
+    <img src="screenshots/28_settings.png" class="figure-img" alt="Settings Hub">
+    <div class="figure-caption">Centralized settings layout with left sub-tab navigation drawer and save all controls.</div>
+  </div>
+
+  <h2>Comprehensive Breakdown of All 24 Settings Sub-Tabs</h2>
+  <table>
+    <tr><th style="width: 22%;">Settings Sub-Tab</th><th style="width: 38%;">Configurable Settings &amp; Parameters</th><th>Operational &amp; Business Impact</th></tr>
+    <tr><td><strong>1. Theme</strong></td><td>Store Name, Tagline, Primary Color (<code>#0284C7</code>), Accent Color (<code>#EA580C</code>), Dark Mode.</td><td>Sets global brand styling, navigation colors, and default visitor theme.</td></tr>
+    <tr><td><strong>2. Hero Slides</strong></td><td>Slide Title, Subtitle, Desktop/Mobile Image URLs, CTA Link, Button Text, Duration.</td><td>Controls rotating hero carousel banners on homepage.</td></tr>
+    <tr><td><strong>3. Hero Carousel</strong></td><td>Autoplay toggle, slide interval (ms), animation physics (fade/slide), touch swipe.</td><td>Governs animation speed and responsive gesture behavior.</td></tr>
+    <tr><td><strong>4. Promo Banners</strong></td><td>Promo Headline, Discount Text Badge, Image Asset URL, Deep Link.</td><td>Highlights seasonal sales between product rows on homepage.</td></tr>
+    <tr><td><strong>5. Advertisements</strong></td><td>Partner Ad ID, Banner Graphic, Destination URL, Display Zone.</td><td>Monetizes commercial partner promotional tiles.</td></tr>
+    <tr><td><strong>6. Footer</strong></td><td>Copyright Text, Registered Address, GSTIN, Customer Care Hotline, Payment Badges.</td><td>Establishes legal credibility and footer navigation links.</td></tr>
+    <tr><td><strong>7. About Page</strong></td><td>Mission Statement, Lab Facility Photos, Engineering Bio, Quality Statement.</td><td>Builds buyer confidence in 3D Galaxy's manufacturing capabilities.</td></tr>
+    <tr><td><strong>8. Contact</strong></td><td>Support Email, Emergency Phone, Warehouse Address, Google Maps Iframe Embed.</td><td>Directs client inquiries to official operational hotlines.</td></tr>
+    <tr><td><strong>9. Social Links</strong></td><td>Instagram, YouTube, Facebook, LinkedIn, X/Twitter, Discord, GitHub URLs.</td><td>Connects buyers to community build logs and video tutorials.</td></tr>
+    <tr><td><strong>10. Email Settings</strong></td><td>SMTP Host, Port (587/465), Sender Email, Display Name, Auth Tokens *(Masked)*.</td><td>Delivers order confirmations and invoice receipts.</td></tr>
+    <tr><td><strong>11. WhatsApp Settings</strong></td><td>Phone Number ID, WABA ID, Graph API Version (<code>v20.0</code>), Webhook Challenge Token.</td><td>Authenticates bidirectional WhatsApp Cloud API messaging.</td></tr>
+    <tr><td><strong>12. Customer Support</strong></td><td>Support Channels (Live Chat, WhatsApp, Phone), SLA Response Time Display.</td><td>Sets buyer expectations for support resolution windows.</td></tr>
+    <tr><td><strong>13. Recent Purchases</strong></td><td>Social proof popups, display interval (seconds), toast duration, product pool.</td><td>Creates buyer urgency and social validation on storefront.</td></tr>
+    <tr><td><strong>14. PWA Settings</strong></td><td>Enable PWA Module, Caching Strategy, Offline Fallback, Auto-Update Prompt.</td><td>Allows mobile administrators to install the portal as a native web app.</td></tr>
+    <tr><td><strong>15. Marketing &amp; Tracking</strong></td><td>Meta Pixel, Meta CAPI Token *(Masked)*, GA4 Stream ID, Google Ads Conv ID, GTM.</td><td>Powers omnichannel conversion attribution and remarketing.</td></tr>
+    <tr><td><strong>16. Admin Devices</strong></td><td>Registered Devices List, OS/Browser Telemetry, FCM Tokens, Revoke Access.</td><td>Secures administrative accounts and tracks active terminal sessions.</td></tr>
+    <tr><td><strong>17. Shipping</strong></td><td>Default Fee (₹99), Free Shipping Threshold (₹1,999), Weight Rules Table, Couriers.</td><td>Automates shipping charges and tracking link generation.</td></tr>
+    <tr><td><strong>18. Payment Gateway</strong></td><td>Razorpay Key ID/Secret *(Masked)*, Cashfree, COD Enable, Max COD Threshold.</td><td>Processes real-time payments and sets fraud limits.</td></tr>
+    <tr><td><strong>19. Newsletter</strong></td><td>Opt-in Popup Toggle, Welcome Voucher Code (<code>WELCOME3D</code>), Export Subscribers.</td><td>Captures prospective client leads for promotional email blasts.</td></tr>
+    <tr><td><strong>20. Product Page</strong></td><td>Sticky Mobile Buy Bar, Low Stock Threshold, Delivery Calculator Display.</td><td>Maximizes mobile conversion rate and displays shipping countdowns.</td></tr>
+    <tr><td><strong>21. FAQ</strong></td><td>Global Accordion Items (Category, Question, Rich Text Answer, Sort Order).</td><td>Answers common storewide shipping and payment questions.</td></tr>
+    <tr><td><strong>22. Services</strong></td><td>Commercial Service Tiles (3D Scanning, Slicing Consulting, Prototyping).</td><td>Promotes B2B industrial additive manufacturing services.</td></tr>
+    <tr><td><strong>23. 3D Printing Service</strong></td><td>Materials (PLA, PETG, ABS, Resin, TPU), Prices/g, Densities, Layer Heights, Infills.</td><td>Powers automated real-time custom STL slicing quote calculations.</td></tr>
+    <tr><td><strong>24. Database Backups</strong></td><td>Manual Snapshot, Automated Sunday Cron, Storage Path (<code>db_backups/</code>), Restore.</td><td>Guarantees zero data loss with cryptographic SHA-256 validation.</td></tr>
+  </table>
+
+  <!-- ==================== BACKUP & ANALYTICS ==================== -->
+  <div class="page-break"></div>
+  <h1>DISASTER RECOVERY &amp; BUSINESS ANALYTICS</h1>
+
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 20.1 — Database Backup &amp; Disaster Recovery Console</span>
+      <span class="figure-tag">UI-BACKUP</span>
+    </div>
+    <img src="screenshots/29_backup.png" class="figure-img" alt="Backup Console">
+    <div class="figure-caption">Automated Sunday 02:00 IST snapshot engine with SHA-256 checksums and one-click database rollback.</div>
+  </div>
+
+  <h2>Business Analytics &amp; Revenue Telemetry</h2>
+  <div class="figure-container">
+    <div class="figure-header">
+      <span class="figure-number">Figure 21.1 — Business Analytics &amp; Revenue Reporting Console</span>
+      <span class="figure-tag">UI-ANALYTICS</span>
+    </div>
+    <img src="screenshots/30_analytics.png" class="figure-img" alt="Analytics Console">
+    <div class="figure-caption">Real-time business telemetry tracking Gross Merchandise Value (GMV), AOV, and catalog conversion velocity.</div>
+  </div>
+
+  <!-- ==================== OPERATIONAL USE CASES ==================== -->
+  <div class="page-break"></div>
+  <h1>20 PRACTICAL ADMINISTRATOR OPERATIONAL USE CASES</h1>
+
+  <table>
+    <tr><th style="width: 8%;">#</th><th style="width: 28%;">Operational Use Case</th><th>Step-by-Step Execution Procedure</th></tr>
+    <tr><td><strong>01</strong></td><td>Create a New Product</td><td>Open Products $\rightarrow$ Add Product. Enter Title, SKU, Category, MRP, Sale Price, Stock, upload photo, and click Publish.</td></tr>
+    <tr><td><strong>02</strong></td><td>Configure Categories</td><td>Open Categories $\rightarrow$ Add Category. Enter name, slug, upload banner asset, assign parent category, and save.</td></tr>
+    <tr><td><strong>03</strong></td><td>Configure Single Variant</td><td>Under Variants tab, add Group "Color" (<code>color-chips</code>), add values with hex codes, generate matrix, set stock, and save.</td></tr>
+    <tr><td><strong>04</strong></td><td>Configure Multiple Variants</td><td>Create Group 1 (Material), Group 2 (Weight), Group 3 (Color). Generate Combination Matrix, set stock per row, and save.</td></tr>
+    <tr><td><strong>05</strong></td><td>Apply Variant Template</td><td>Click Variant Templates Library $\rightarrow$ select "Filament Weight" $\rightarrow$ click Apply. Adjust prices and allocate stock.</td></tr>
+    <tr><td><strong>06</strong></td><td>Configure Variant Stock</td><td>In Combination Matrix table, locate target permutation row, enter warehouse stock counter, and click Save Product.</td></tr>
+    <tr><td><strong>07</strong></td><td>Configure Variant Weight</td><td>Enter calibrated weight in grams in the weight column (e.g. 1kg spool = 1250g with packaging) to calibrate courier tariffs.</td></tr>
+    <tr><td><strong>08</strong></td><td>Link Variant Images</td><td>Under Images tab, upload color photos. From "Linked Variant" dropdown on each photo, select corresponding color value.</td></tr>
+    <tr><td><strong>09</strong></td><td>Configure Bundle Pack</td><td>Set Display Type to <code>bundle-builder</code>, configure tiers (Buy 1, Buy 3, Buy 5), set pricing type and savings badges.</td></tr>
+    <tr><td><strong>10</strong></td><td>Configure Shipping Rules</td><td>In product Shipping tab, set Delivery Days buffer to 4 days, toggle Free Shipping if promotional, and save.</td></tr>
+    <tr><td><strong>11</strong></td><td>Process Active Order</td><td>Open Orders $\rightarrow$ Active Logs. Verify payment ID, change status from <code>pending</code> to <code>processing</code>, and print packing slip.</td></tr>
+    <tr><td><strong>12</strong></td><td>Process Customized STL Job</td><td>Open STL Slicer Quotes $\rightarrow$ inspect volume ($\text{cm}^3$) and mass ($g$). Enter manual cost override and click Dispatch Quote.</td></tr>
+    <tr><td><strong>13</strong></td><td>Ship Order &amp; Tracking</td><td>Change status to <code>shipped</code>, select Courier (e.g. Delhivery), paste tracking number, and click Save to alert customer.</td></tr>
+    <tr><td><strong>14</strong></td><td>Update Tracking Number</td><td>Open order modal, correct the consignment number, and save. The customer's tracking link reflects the new number immediately.</td></tr>
+    <tr><td><strong>15</strong></td><td>Handle WhatsApp Inquiries</td><td>Open WhatsApp Business $\rightarrow$ select conversation thread. Review customer order history in sidebar and type reply.</td></tr>
+    <tr><td><strong>16</strong></td><td>Configure WhatsApp Rules</td><td>Open WhatsApp Automation $\rightarrow$ enable Welcome Greeting $\rightarrow$ add keyword rules (e.g. "FILAMENT" returns catalog link).</td></tr>
+    <tr><td><strong>17</strong></td><td>Launch Push Campaign</td><td>Open Push Notifications $\rightarrow$ Campaign Builder. Input title, body, banner image, deep-link URL, and click Send Broadcast.</td></tr>
+    <tr><td><strong>18</strong></td><td>Audit Business Analytics</td><td>Open Analytics $\rightarrow$ review GMV, AOV, and Low Stock tickers. Issue replenishment orders for items with &lt; 5 units.</td></tr>
+    <tr><td><strong>19</strong></td><td>Create Manual Backup</td><td>Open Settings $\rightarrow$ Database Backups. Verify system status is Operational $\rightarrow$ click Create Manual Snapshot.</td></tr>
+    <tr><td><strong>20</strong></td><td>Restore Database Snapshot</td><td>In Database Backups, locate desired snapshot by timestamp $\rightarrow$ click Restore $\rightarrow$ confirm critical prompt.</td></tr>
+  </table>
+
+  <!-- ==================== WORKFLOWS & CHECKLISTS ==================== -->
+  <div class="page-break"></div>
+  <h1>OPERATIONAL WORKFLOWS &amp; CLIENT CHECKLISTS</h1>
+
+  <h2>End-to-End Product Workflow</h2>
+  <pre class="diagram">
+CREATE PRODUCT ──► GENERAL DETAILS ──► CATEGORIES ──► IMAGES ──► VARIANTS / TEMPLATES
+      │
+      ▼
+COMBINATION MATRIX ──► PRICING &amp; STOCK ──► WEIGHT CALIBRATION ──► IMAGE MAPPING
+      │
+      ▼
+SHIPPING RULES &amp; SEO ──► LIVE PREVIEW VALIDATION ──► PUBLISH ──► STOREFRONT CART &amp; CHECKOUT
+  </pre>
+
+  <h2>End-to-End Order Workflow</h2>
+  <pre class="diagram">
+CUSTOMER CART ──► CHECKOUT &amp; PAYMENT ──► PENDING ORDER ──► ADMIN VERIFICATION
+      │
+      ▼
+PROCESSING ──► WAREHOUSE PICKING ──► PACKING SLIP ──► COURIER DISPATCH &amp; TRACKING
+      │
+      ▼
+AUTOMATED WHATSAPP / EMAIL NOTIFICATION ──► OUT FOR DELIVERY ──► COMPLETED FULFILLMENT
+  </pre>
+
+  <div class="grid-2" style="margin-top: 14px;">
+    <div>
+      <h3>Pre-Publishing Checklist (Products)</h3>
+      <ul style="font-size: 8pt; margin-left: 14px;">
+        <li>Product Title is canonical with brand and model</li>
+        <li>SKU is unique and matches warehouse bins</li>
+        <li>Primary Category and secondary tags assigned</li>
+        <li>MRP and Retail Sale Price verified</li>
+        <li>Calibrated weight entered in grams</li>
+        <li>High-resolution photos uploaded (min 1000×1000px)</li>
+        <li>Variant groups and Combination Matrix generated</li>
+        <li>Default variant star placed on in-stock option</li>
+        <li>Variant photos linked under Images tab</li>
+        <li>Delivery estimate buffer days configured</li>
+        <li>SEO title and description tags populated</li>
+        <li>Validated in Live Customer Preview switcher</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Pre-Fulfillment Checklist (Orders)</h3>
+      <ul style="font-size: 8pt; margin-left: 14px;">
+        <li>Payment verified (Razorpay ID valid or COD authorized)</li>
+        <li>Customer phone number and shipping address verified</li>
+        <li>GSTIN verified for corporate tax credit invoice</li>
+        <li>All ordered SKUs and variant options in stock</li>
+        <li>Custom STL slicing specs reviewed (if manufacturing)</li>
+        <li>Shipping label printed with accurate parcel weight</li>
+        <li>Courier tracking number entered before dispatch</li>
+        <li>Fulfillment status updated to <code>shipped</code></li>
+        <li>Customer notified via automated WhatsApp/email</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== TROUBLESHOOTING ==================== -->
+  <div class="page-break"></div>
+  <h1>COMPREHENSIVE OPERATIONAL TROUBLESHOOTING GUIDE</h1>
+
+  <table>
+    <tr><th style="width: 22%;">Symptom / Error</th><th style="width: 25%;">Probable Cause</th><th style="width: 25%;">Administrative Check</th><th>Resolution Procedure</th></tr>
+    <tr>
+      <td><strong>Product not visible on storefront</strong></td>
+      <td>Draft status or no category assigned</td>
+      <td>Check status toggle and category tag</td>
+      <td>Set toggle to "Active Storefront" and ensure at least one active category is selected.</td>
+    </tr>
+    <tr>
+      <td><strong>Variant selector empty on product page</strong></td>
+      <td>Variant values inactive or matrix not generated</td>
+      <td>Check Variants tab and Combination Matrix</td>
+      <td>Enable active toggles for all variant values and click "Generate Combination Matrix".</td>
+    </tr>
+    <tr>
+      <td><strong>Default variant shows "Sold Out"</strong></td>
+      <td>Default variant combination has zero stock</td>
+      <td>Check matrix row with the star icon</td>
+      <td>Allocate stock directly to the default row or move the star to an in-stock variant.</td>
+    </tr>
+    <tr>
+      <td><strong>Photos not switching on swatch click</strong></td>
+      <td>Images not linked to specific variant values</td>
+      <td>Open product Images tab and check dropdowns</td>
+      <td>Map each uploaded image to its corresponding variant value from the dropdown and save.</td>
+    </tr>
+    <tr>
+      <td><strong>Incorrect shipping fee at checkout</strong></td>
+      <td>Product weight missing or rules misconfigured</td>
+      <td>Check product weight field and global settings</td>
+      <td>Enter accurate weight in grams; review shipping threshold under Settings → Shipping.</td>
+    </tr>
+    <tr>
+      <td><strong>Inbound WhatsApp messages missing</strong></td>
+      <td>Webhook disconnected or Meta token expired</td>
+      <td>Check WhatsApp connection status in Settings</td>
+      <td>Verify Meta WhatsApp Cloud API credentials and check webhook health status.</td>
+    </tr>
+    <tr>
+      <td><strong>Checkout blocked: "Out of Stock"</strong></td>
+      <td>Variant-level stock is zero even if base stock > 0</td>
+      <td>Check Combination Matrix stock column</td>
+      <td>Allocate stock directly to the specific variant combination in the matrix table.</td>
+    </tr>
+    <tr>
+      <td><strong>Database backup fails to complete</strong></td>
+      <td>Storage bucket permission or quota issue</td>
+      <td>Check backup status widget in Settings</td>
+      <td>Verify Firebase Storage service account permissions on <code>db_backups/</code>.</td>
+    </tr>
+  </table>
+
+  <!-- ==================== HANDOVER & SIGNATURE ==================== -->
+  <div class="page-break"></div>
+  <h1>DOCUMENT HANDOVER &amp; ACCEPTANCE</h1>
+
+  <p>This verification checklist confirms that all administrative modules have been fully audited, tested, and handed over for live commercial operations.</p>
+
+  <table>
+    <tr><th style="width: 45%;">Operational Verification Item</th><th style="width: 20%;">Verification Status</th><th>Operational Notes</th></tr>
+    <tr><td>Admin authentication and session security verified</td><td><span class="badge badge-green">Verified</span></td><td>Credentials scrubbed; no plaintext storage</td></tr>
+    <tr><td>Product catalog and category taxonomy verified</td><td><span class="badge badge-green">Verified</span></td><td>All active SKUs mapped to categories</td></tr>
+    <tr><td>Variant engine and combination matrix verified</td><td><span class="badge badge-green">Verified</span></td><td>Multi-group permutations tested</td></tr>
+    <tr><td>Variant templates tested across product types</td><td><span class="badge badge-green">Verified</span></td><td>Filament, weight, and printer templates active</td></tr>
+    <tr><td>Weight-bracket courier calculation engine verified</td><td><span class="badge badge-green">Verified</span></td><td>Real-time shipping tariffs calibrated</td></tr>
+    <tr><td>Order processing and inspection modals verified</td><td><span class="badge badge-green">Verified</span></td><td>Full order lifecycle operational</td></tr>
+    <tr><td>Custom STL slicing quotes workflow verified</td><td><span class="badge badge-green">Verified</span></td><td>Volume, mass, and infill parameters verified</td></tr>
+    <tr><td>Offline draft booking and recovery blasts verified</td><td><span class="badge badge-green">Verified</span></td><td>Manual sales dockets and coupon triggers active</td></tr>
+    <tr><td>WhatsApp Business Cloud API inbox verified</td><td><span class="badge badge-green">Verified</span></td><td>Inbound/outbound sync, reactions, and attachments active</td></tr>
+    <tr><td>WhatsApp rule-based auto-replies verified</td><td><span class="badge badge-green">Verified</span></td><td>Greeting and keyword rules active (Zero-LLM)</td></tr>
+    <tr><td>Push Notification Hub and broadcast builder verified</td><td><span class="badge badge-green">Verified</span></td><td>FCM integration active with deep-link routing</td></tr>
+    <tr><td>Customer review moderation workflow verified</td><td><span class="badge badge-green">Verified</span></td><td>Approve/Reject actions functional</td></tr>
+    <tr><td>Database backup, SHA-256 hashing, and restore verified</td><td><span class="badge badge-green">Verified</span></td><td>Automated weekly cron and snapshot restoration active</td></tr>
+  </table>
+
+  <div style="margin-top: 35px; border-top: 2px solid #0b1120; padding-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;" class="avoid-break">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <img src="ajr_digital_hub_logo.png" style="height: 24px; object-fit: contain;" alt="AJR Logo">
+        <span style="font-size: 8.5pt; text-transform: uppercase; color: #ea580c; font-weight: 800; letter-spacing: 0.5px;">Delivered By</span>
+      </div>
+      <p style="font-weight: 800; color: #0b1120; font-size: 10.5pt; margin-bottom: 2px;">AJR Digital Hub Team</p>
+      <p style="font-size: 8.5pt; color: #64748b;">Enterprise Digital Solutions Team</p>
+      <div style="margin-top: 35px; border-bottom: 1.5px solid #0b1120; width: 85%;"></div>
+      <p style="font-size: 7.8pt; color: #64748b; margin-top: 6px; font-weight: 600;">Signature &amp; Date</p>
+    </div>
+
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 8.5pt; text-transform: uppercase; color: #0284c7; font-weight: 800; letter-spacing: 0.5px;">Accepted By</span>
+      </div>
+      <p style="font-weight: 800; color: #0b1120; font-size: 10.5pt; margin-bottom: 2px;">3D Galaxy Team</p>
+      <p style="font-size: 8.5pt; color: #64748b;">E-Commerce Operations &amp; Store Administration</p>
+      <div style="margin-top: 35px; border-bottom: 1.5px solid #0b1120; width: 85%;"></div>
+      <p style="font-size: 7.8pt; color: #64748b; margin-top: 6px; font-weight: 600;">Signature &amp; Date</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px; font-size: 7.5pt; color: #94a3b8;">
+    <strong>AJR DIGITAL HUB</strong> — WHERE IDEAS MEET INNOVATION | CREATIVE • TECHNOLOGY • SOLUTIONS<br>
+    Delivered for 3D Galaxy Enterprise Additive Manufacturing &amp; Retail Ecosystem • All Rights Reserved 2026
+  </div>
+
+</body>
+</html>

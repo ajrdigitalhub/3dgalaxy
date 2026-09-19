@@ -38,8 +38,10 @@
     "http-proxy-middleware": "^4.1.0",
     "motion": "^12.40.0",
     "node-cache": "^5.1.2",
+    "pdf-lib": "^1.17.1",
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
+    "puppeteer-core": "^25.11.0",
     "razorpay": "^2.9.6",
     "tailwindcss": "^4.0.0",
     "three": "^0.185.1"
