@@ -46,7 +46,7 @@
       text-transform: uppercase;
       letter-spacing: -0.2px;
       margin: 0 0 10px 0;
-      padding-top: 10mm;
+      padding-top: 2mm;
       padding-bottom: 6px;
       border-bottom: 2px solid #0284c7;
       display: flex;
@@ -63,45 +63,66 @@
     }
 
     h2 {
-      font-size: 12pt;
+      font-size: 11.5pt;
       font-weight: 800;
       color: #0f172a;
-      margin: 16px 0 8px 0;
+      margin: 14px 0 6px 0;
       letter-spacing: -0.2px;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
     h3 {
-      font-size: 10pt;
+      font-size: 9.8pt;
       font-weight: 700;
       color: #1e293b;
-      margin: 12px 0 6px 0;
+      margin: 10px 0 5px 0;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
     h4 {
-      font-size: 9pt;
+      font-size: 8.8pt;
       font-weight: 700;
       color: #334155;
       margin: 8px 0 4px 0;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
     p {
       margin-bottom: 8px;
       color: #334155;
       text-align: left;
+      line-height: 1.45;
     }
     ul, ol {
-      margin-left: 18px;
-      margin-bottom: 10px;
+      margin-left: 20px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      padding-left: 0;
     }
     li {
       margin-bottom: 3px;
       color: #334155;
+      line-height: 1.4;
+      padding-left: 2px;
     }
 
     /* Tables */
     table {
-      width: 100%;
+      width: 100% !important;
+      max-width: 100% !important;
       border-collapse: collapse;
-      margin: 10px 0 14px 0;
+      margin: 8px 0 12px 0;
       font-size: 8.2pt;
-      page-break-inside: avoid;
+      page-break-inside: auto;
+      box-sizing: border-box;
+      table-layout: auto;
+    }
+    tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    thead {
+      display: table-header-group;
     }
     th {
       background: #0b1120;
@@ -119,6 +140,8 @@
       border: 1px solid #cbd5e1;
       vertical-align: top;
       color: #1e293b;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
     tr:nth-child(even) td {
       background: #f8fafc;
@@ -127,10 +150,13 @@
     /* Callouts */
     .callout {
       border-radius: 6px;
-      padding: 9px 12px;
+      padding: 10px 14px;
       margin: 10px 0;
       font-size: 8.3pt;
-      page-break-inside: avoid;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      width: 100% !important;
+      box-sizing: border-box;
     }
     .callout-info {
       background: #f0f9ff;
@@ -150,12 +176,18 @@
     .callout-title {
       font-weight: 800;
       text-transform: uppercase;
-      font-size: 7.2pt;
+      font-size: 7.5pt;
       letter-spacing: 0.8px;
-      margin-bottom: 3px;
+      margin-bottom: 5px;
       display: flex;
       align-items: center;
       gap: 5px;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+    .callout ul {
+      margin: 4px 0 0 18px;
+      padding: 0;
     }
 
     /* Screenshots & Figures */
@@ -165,8 +197,11 @@
       border-radius: 6px;
       overflow: hidden;
       background: #ffffff;
-      page-break-inside: avoid;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      width: 100% !important;
+      box-sizing: border-box;
     }
     .figure-header {
       background: #f1f5f9;
@@ -175,6 +210,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
     .figure-number {
       font-weight: 700;
@@ -921,6 +958,8 @@
     <div class="figure-caption">Predefined schemas with preview dialog, append mode protection, and collision warnings.</div>
   </div>
 
+  <div class="page-break"></div>
+
   <h2>10 Verified Pre-Engineered Templates</h2>
   <table>
     <tr><th style="width: 25%;">Template Name</th><th style="width: 15%;">Category</th><th>Configured Schema &amp; Values</th></tr>
@@ -936,14 +975,16 @@
     <tr><td><strong>Custom Variant</strong></td><td>General</td><td>Blank template ready for manual custom attributes.</td></tr>
   </table>
 
-  <h2>Variant Template Operational Safety Rules</h2>
-  <ul>
-    <li><strong>No Silent Overwrites</strong>: Template defaults to <code>APPEND</code> mode. Existing groups are preserved.</li>
-    <li><strong>Collision Detection</strong>: Warns if a group with the same name already exists on the product.</li>
-    <li><strong>Template Independence</strong>: Changing a template does not alter previously saved products.</li>
-    <li><strong>Manual Stock Required</strong>: Physical stock must always be entered manually based on actual inventory.</li>
-    <li><strong>Explicit Image Binding</strong>: Photos must be mapped under the <em>Images</em> tab after template application.</li>
-  </ul>
+  <div class="callout callout-warning avoid-break" style="margin-top: 14px;">
+    <div class="callout-title" style="font-size: 8.5pt; margin-bottom: 6px;">Variant Template Operational Safety Rules</div>
+    <ul style="margin-left: 18px; margin-bottom: 0;">
+      <li style="margin-bottom: 4px;"><strong>No Silent Overwrites</strong>: Template defaults to <code>APPEND</code> mode. Existing groups are preserved.</li>
+      <li style="margin-bottom: 4px;"><strong>Collision Detection</strong>: Warns if a group with the same name already exists on the product.</li>
+      <li style="margin-bottom: 4px;"><strong>Template Independence</strong>: Changing a template does not alter previously saved products.</li>
+      <li style="margin-bottom: 4px;"><strong>Manual Stock Required</strong>: Physical stock must always be entered manually based on actual inventory.</li>
+      <li style="margin-bottom: 0;"><strong>Explicit Image Binding</strong>: Photos must be mapped under the <em>Images</em> tab after template application.</li>
+    </ul>
+  </div>
 
   <!-- ==================== ORDERS & STL SLICING ==================== -->
   <div class="page-break"></div>
@@ -1056,6 +1097,9 @@
     <div class="figure-caption">Chat stream showing customer emoji reactions, PDF quote dispatches, and manual message entry.</div>
   </div>
 
+  <div class="page-break"></div>
+
+  <h2>WhatsApp Rule-Based Automation Engine</h2>
   <div class="figure-container">
     <div class="figure-header">
       <span class="figure-number">Figure 15.3 — WhatsApp Rule-Based Automation Console</span>
@@ -1087,6 +1131,9 @@
     <div class="figure-caption">Campaign designer with audience segmentation, banner image preview, and deep-link routing.</div>
   </div>
 
+  <div class="page-break"></div>
+
+  <h2>Transactional Notification Templates &amp; Triggers</h2>
   <div class="figure-container">
     <div class="figure-header">
       <span class="figure-number">Figure 16.3 — Transactional Notification Templates</span>

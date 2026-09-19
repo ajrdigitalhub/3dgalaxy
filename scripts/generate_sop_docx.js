@@ -45,14 +45,14 @@ function createHeader() {
         children: [
           new TextRun({
             text: 'AJR DIGITAL HUB | 3D GALAXY ADMIN SOP',
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 16, // 8pt
             bold: true,
             color: COLOR_BLUE
           }),
           new TextRun({
             text: '  (Confidential Client Handover)',
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 14,
             color: '94A3B8'
           })
@@ -70,32 +70,32 @@ function createFooter() {
         children: [
           new TextRun({
             text: '3D Galaxy Admin Portal SOP — Delivered by AJR Digital Hub Team',
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 15, // 7.5pt
             color: '64748B'
           }),
           new TextRun({
             text: '\t\tPage ',
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 15,
             color: '64748B'
           }),
           new TextRun({
             children: [PageNumber.CURRENT],
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 15,
             bold: true,
             color: COLOR_BLUE
           }),
           new TextRun({
             text: ' of ',
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 15,
             color: '64748B'
           }),
           new TextRun({
             children: [PageNumber.TOTAL_PAGES],
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 15,
             bold: true,
             color: COLOR_BLUE
@@ -140,7 +140,7 @@ function parseMarkdownTable(tableLines) {
                 text: text.replace(/\*\*/g, ''),
                 bold: true,
                 color: 'FFFFFF',
-                font: 'Plus Jakarta Sans',
+                font: 'Segoe UI',
                 size: 16 // 8pt
               })
             ]
@@ -172,7 +172,7 @@ function parseMarkdownTable(tableLines) {
                 new TextRun({
                   text: text.replace(/\*\*/g, '').replace(/`/g, ''),
                   bold: text.includes('**'),
-                  font: 'Plus Jakarta Sans',
+                  font: 'Segoe UI',
                   size: 16, // 8pt
                   color: COLOR_TEXT
                 })
@@ -210,7 +210,7 @@ function processMarkdownToDocx(content) {
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: 'DELIVERED BY\n', bold: true, size: 14, color: COLOR_ORANGE, font: 'Plus Jakarta Sans' }),
+              new TextRun({ text: 'DELIVERED BY\n', bold: true, size: 14, color: COLOR_ORANGE, font: 'Segoe UI' }),
               new ImageRun({
                 data: ajrBuffer,
                 transformation: { width: 170, height: 113 }
@@ -236,7 +236,7 @@ function processMarkdownToDocx(content) {
           new Paragraph({
             alignment: AlignmentType.CENTER,
             children: [
-              new TextRun({ text: 'ACCEPTED BY / CLIENT\n', bold: true, size: 14, color: COLOR_BLUE, font: 'Plus Jakarta Sans' }),
+              new TextRun({ text: 'ACCEPTED BY / CLIENT\n', bold: true, size: 14, color: COLOR_BLUE, font: 'Segoe UI' }),
               new ImageRun({
                 data: galaxyBuffer,
                 transformation: { width: 113, height: 113 }
@@ -268,7 +268,7 @@ function processMarkdownToDocx(content) {
       children: [
         new TextRun({
           text: '3D GALAXY E-COMMERCE PLATFORM',
-          font: 'Plus Jakarta Sans',
+          font: 'Segoe UI',
           size: 24,
           bold: true,
           color: COLOR_BLUE
@@ -281,7 +281,7 @@ function processMarkdownToDocx(content) {
       children: [
         new TextRun({
           text: 'ADMIN PORTAL',
-          font: 'Plus Jakarta Sans',
+          font: 'Segoe UI',
           size: 48,
           bold: true,
           color: COLOR_NAVY
@@ -294,7 +294,7 @@ function processMarkdownToDocx(content) {
       children: [
         new TextRun({
           text: 'STANDARD OPERATING PROCEDURE (SOP)',
-          font: 'Plus Jakarta Sans',
+          font: 'Segoe UI',
           size: 28,
           bold: true,
           color: COLOR_ORANGE
@@ -307,7 +307,7 @@ function processMarkdownToDocx(content) {
       children: [
         new TextRun({
           text: 'Complete Administration, Configuration & Operations Guide',
-          font: 'Plus Jakarta Sans',
+          font: 'Segoe UI',
           size: 22,
           italics: true,
           color: '64748B'
@@ -334,9 +334,9 @@ function processMarkdownToDocx(content) {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: 'DELIVERED BY:\n', bold: true, size: 18, color: COLOR_ORANGE, font: 'Plus Jakarta Sans' }),
-                    new TextRun({ text: 'AJR Digital Hub Team\n', bold: true, size: 20, color: COLOR_NAVY, font: 'Plus Jakarta Sans' }),
-                    new TextRun({ text: 'Enterprise Digital Solutions Team\nAJR Digital Hub', size: 16, color: '64748B', font: 'Plus Jakarta Sans' })
+                    new TextRun({ text: 'DELIVERED BY:\n', bold: true, size: 18, color: COLOR_ORANGE, font: 'Segoe UI' }),
+                    new TextRun({ text: 'AJR Digital Hub Team\n', bold: true, size: 20, color: COLOR_NAVY, font: 'Segoe UI' }),
+                    new TextRun({ text: 'Enterprise Digital Solutions Team\nAJR Digital Hub', size: 16, color: '64748B', font: 'Segoe UI' })
                   ]
                 })
               ]
@@ -352,9 +352,9 @@ function processMarkdownToDocx(content) {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: 'ACCEPTED BY:\n', bold: true, size: 18, color: COLOR_BLUE, font: 'Plus Jakarta Sans' }),
-                    new TextRun({ text: '3D Galaxy Team\n', bold: true, size: 20, color: COLOR_NAVY, font: 'Plus Jakarta Sans' }),
-                    new TextRun({ text: 'E-Commerce Operations & Store Administration\n3D Galaxy India', size: 16, color: '64748B', font: 'Plus Jakarta Sans' })
+                    new TextRun({ text: 'ACCEPTED BY:\n', bold: true, size: 18, color: COLOR_BLUE, font: 'Segoe UI' }),
+                    new TextRun({ text: '3D Galaxy Team\n', bold: true, size: 20, color: COLOR_NAVY, font: 'Segoe UI' }),
+                    new TextRun({ text: 'E-Commerce Operations & Store Administration\n3D Galaxy India', size: 16, color: '64748B', font: 'Segoe UI' })
                   ]
                 })
               ]
@@ -372,7 +372,7 @@ function processMarkdownToDocx(content) {
       children: [
         new TextRun({
           text: 'Document Version: 1.0 (Production Master)  |  Release Date: September 2026  |  Classification: Client Handover Document',
-          font: 'Plus Jakarta Sans',
+          font: 'Segoe UI',
           size: 15,
           color: '94A3B8'
         })
@@ -470,7 +470,7 @@ function processMarkdownToDocx(content) {
               children: [
                 new TextRun({
                   text: altText || imgFileName,
-                  font: 'Plus Jakarta Sans',
+                  font: 'Segoe UI',
                   size: 15, // 7.5pt
                   italics: true,
                   color: '64748B'
@@ -527,7 +527,7 @@ function processMarkdownToDocx(content) {
               text: `  [${alertType}] `,
               bold: true,
               color: alertColor,
-              font: 'Plus Jakarta Sans',
+              font: 'Segoe UI',
               size: 17
             })
           ]
@@ -545,7 +545,7 @@ function processMarkdownToDocx(content) {
           children: [
             new TextRun({
               text: '  ' + line.replace('> ', '').replace(/\*\*/g, ''),
-              font: 'Plus Jakarta Sans',
+              font: 'Segoe UI',
               size: 16,
               color: COLOR_TEXT
             })
@@ -569,7 +569,7 @@ function processMarkdownToDocx(content) {
             }),
             new TextRun({
               text: line.replace(/- \[[ x]\]\s*/, '').replace(/\*\*/g, ''),
-              font: 'Plus Jakarta Sans',
+              font: 'Segoe UI',
               size: 16,
               color: COLOR_TEXT
             })
@@ -585,7 +585,7 @@ function processMarkdownToDocx(content) {
           children: [
             new TextRun({
               text: line.replace(/^[\s*-]+/, '').replace(/\*\*/g, ''),
-              font: 'Plus Jakarta Sans',
+              font: 'Segoe UI',
               size: 16,
               color: COLOR_TEXT
             })
@@ -600,7 +600,7 @@ function processMarkdownToDocx(content) {
           children: [
             new TextRun({
               text: line.replace(/\*\*/g, ''),
-              font: 'Plus Jakarta Sans',
+              font: 'Segoe UI',
               size: 17, // ~8.5pt
               color: COLOR_TEXT
             })
@@ -626,14 +626,14 @@ async function run() {
       default: {
         document: {
           run: {
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             color: COLOR_TEXT,
             size: 17
           }
         },
         heading1: {
           run: {
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 32, // 16pt
             bold: true,
             color: COLOR_NAVY
@@ -641,7 +641,7 @@ async function run() {
         },
         heading2: {
           run: {
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 26, // 13pt
             bold: true,
             color: COLOR_BLUE
@@ -649,7 +649,7 @@ async function run() {
         },
         heading3: {
           run: {
-            font: 'Plus Jakarta Sans',
+            font: 'Segoe UI',
             size: 22, // 11pt
             bold: true,
             color: COLOR_NAVY
