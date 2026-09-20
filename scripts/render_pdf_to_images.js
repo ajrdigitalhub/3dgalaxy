@@ -7,7 +7,7 @@ const TARGET_PDF = process.argv[2]
   ? path.resolve(process.argv[2]) 
   : path.resolve(__dirname, '..', 'docs', '3D_Galaxy_Admin_Portal_SOP.pdf');
 
-const ARTIFACT_DIR = 'C:\\Users\\arunj\\.gemini\\antigravity-ide\\brain\\f7e0694d-b631-435e-b14a-1ab3bcc7745a\\.tempmediaStorage';
+const ARTIFACT_DIR = 'C:\\Users\\arunj\\.gemini\\antigravity-ide\\brain\\3c6c7e1d-8a8d-4973-b055-ca4e722fa6d2\\.tempmediaStorage';
 
 async function renderPdfPages(pageNumbers = [1, 2, 3, 4]) {
   if (!fs.existsSync(TARGET_PDF)) {

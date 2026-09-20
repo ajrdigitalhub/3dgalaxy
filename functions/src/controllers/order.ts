@@ -1293,3 +1293,46 @@ export const resendOrderNotification = async (req: any, res: Response) => {
     return res.status(500).json({ error: 'Failed to resend notification', details: error.message });
   }
 };
+
+export const getOrdersByCustomerId = async (req: Request, res: Response) => {
+  const { customerId } = req.params;
+  try {
+    const orders = await prisma.order.findMany({
+      where: { customerId },
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          }
+        },
+        payments: true,
+        shipments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const formatted = orders.map((o) => {
+      const payment = o.payments?.[0];
+      const shipment = o.shipments?.[0];
+      return {
+        id: o.id,
+        orderId: o.id,
+        orderNumber: o.orderNumber,
+        createdAt: o.createdAt,
+        orderDate: o.createdAt,
+        totalAmount: o.totalAmount,
+        paymentMethod: payment?.paymentMethod || 'Razorpay',
+        paymentStatus: payment?.status || 'PENDING',
+        status: o.status,
+        deliveryStatus: o.status,
+        trackingStatus: shipment?.status || 'UNSHIPPED',
+      };
+    });
+
+    return res.status(200).json({ success: true, data: formatted });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: 'Failed to query customer orders', details: error.message });
+  }
+};
+

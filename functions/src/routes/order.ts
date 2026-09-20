@@ -9,7 +9,8 @@ import {
   getMyOrders,
   addOrderNotes,
   resendOrderNotification,
-  trackOrder
+  trackOrder,
+  getOrdersByCustomerId
 } from '../controllers/order';
 import { getPackagingSlipPDF } from '../controllers/packagingSlip';
 import { authenticateToken, optionalAuthenticateToken, requireRole } from '../middleware/auth';
@@ -21,6 +22,9 @@ router.post('/track', trackOrder);
 
 // Authenticated customer my-orders
 router.get('/my-orders', authenticateToken, getMyOrders);
+
+// Orders by customer ID (order history for admin and customer account views)
+router.get('/customer/:customerId', optionalAuthenticateToken, getOrdersByCustomerId);
 
 // Admin packaging slip PDF download (Admin, Manager, Staff)
 router.get('/:id/packaging-slip', authenticateToken, requireRole(['Admin', 'Manager', 'Staff', 'Super Admin', 'admin', 'super-admin']), getPackagingSlipPDF);

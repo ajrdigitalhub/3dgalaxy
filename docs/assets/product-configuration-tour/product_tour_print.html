@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Galaxy — Product Configuration Administration Guide</title>
+  <style>
+    @page {
+      size: A4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-variant-ligatures: none !important;
+      font-feature-settings: "liga" 0, "clig" 0, "calt" 0 !important;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.45;
+      font-size: 8.8pt;
+    }
+
+    .page-break {
+      page-break-before: always;
+      display: block;
+      height: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+
+    /* Headings */
+    h1 {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0b1120;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      margin: 0 0 8px 0;
+      padding-top: 1mm;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #0284c7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1::before {
+      content: "";
+      display: inline-block;
+      width: 5px;
+      height: 13pt;
+      background: #ea580c;
+      border-radius: 2px;
+    }
+    h2 {
+      font-size: 10.8pt;
+      font-weight: 700;
+      color: #0b1120;
+      margin: 11px 0 5px 0;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .tab-header {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #0284c7;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+    h3 {
+      font-size: 9.4pt;
+      font-weight: 700;
+      color: #0284c7;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin: 9px 0 4px 0;
+    }
+    h4 {
+      font-size: 8.8pt;
+      font-weight: 700;
+      color: #334155;
+      margin: 7px 0 3px 0;
+      text-transform: uppercase;
+    }
+    .figure-title-badge {
+      font-size: 9pt;
+      font-weight: 800;
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 4px 8px;
+      border-left: 3px solid #ea580c;
+      border-radius: 0 4px 4px 0;
+      margin: 10px 0 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    p {
+      margin: 0 0 6px 0;
+      color: #334155;
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 0 0 7px 18px;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 3px;
+    }
+    strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+    em {
+      font-style: italic;
+      color: #1e293b;
+    }
+
+    /* Math & Diagrams */
+    .math-block {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #0284c7;
+      padding: 7px 12px;
+      margin: 7px 0 9px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 8.2pt;
+      font-weight: 600;
+      color: #0f172a;
+      border-radius: 0 4px 4px 0;
+      text-align: center;
+    }
+    pre.diagram {
+      background: #0b1120;
+      color: #38bdf8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 7.2pt;
+      line-height: 1.35;
+      padding: 9px 12px;
+      border-radius: 5px;
+      border: 1px solid #1e293b;
+      margin: 7px 0 10px 0;
+      overflow: hidden;
+      white-space: pre;
+    }
+
+    /* Tables */
+    .table-container {
+      margin: 7px 0 10px 0;
+      width: 100% !important;
+      page-break-inside: avoid;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.6pt;
+      line-height: 1.35;
+    }
+    tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    thead {
+      display: table-header-group;
+    }
+    th {
+      background: #0b1120;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: left;
+      padding: 5px 7px;
+      text-transform: uppercase;
+      font-size: 6.8pt;
+      letter-spacing: 0.4px;
+      border: 1px solid #0b1120;
+    }
+    td {
+      padding: 4.5px 7px;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+
+    /* Clean Application Screenshot Figure Styling */
+    .figure-container {
+      margin: 8px 0 6px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #090d16;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .figure-header {
+      background: #0b1120;
+      color: #ffffff;
+      padding: 5px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid #0284c7;
+    }
+    .figure-number {
+      font-size: 7.4pt;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      color: #f8fafc;
+      text-transform: uppercase;
+    }
+    .figure-tag {
+      font-size: 6.5pt;
+      font-weight: 700;
+      background: rgba(2, 132, 199, 0.25);
+      color: #38bdf8;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .figure-img {
+      width: 100%;
+      max-height: 250px;
+      object-fit: contain;
+      background: #090d16;
+      display: block;
+    }
+    .figure-caption {
+      font-size: 7.5pt;
+      font-style: italic;
+      color: #475569;
+      background: #f8fafc;
+      border-left: 3px solid #0284c7;
+      padding: 4px 9px;
+      margin: 0 0 8px 0;
+      border-radius: 0 3px 3px 0;
+    }
+
+    /* Callout Boxes (Outside Screenshots) */
+    .callout {
+      margin: 8px 0 10px 0;
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .callout-title {
+      font-size: 7.4pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 4px;
+    }
+    .callout-info {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      border-left: 4px solid #0284c7;
+      color: #0369a1;
+    }
+    .callout-info .callout-title { color: #0284c7; }
+    .callout-warning {
+      background: #fffbeb;
+      border-color: #fde68a;
+      border-left: 4px solid #d97706;
+      color: #92400e;
+    }
+    .callout-warning .callout-title { color: #b45309; }
+    .callout-success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      border-left: 4px solid #16a34a;
+      color: #166534;
+    }
+    .callout-success .callout-title { color: #15803d; }
+    .callout p {
+      margin: 0 0 3px 0;
+      color: inherit;
+      font-size: 7.8pt;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 7.6pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* COVER PAGE DESIGN (PAGE 1) */
+    .cover-page {
+      height: 297mm;
+      width: 210mm;
+      box-sizing: border-box;
+      padding: 18mm 20mm;
+      background: linear-gradient(145deg, #070a12 0%, #0c1527 50%, #08111e 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      position: relative;
+    }
+    .cover-page::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #ea580c 0%, #0284c7 100%);
+    }
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .cover-brand-card {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .cover-brand-label {
+      font-size: 6.5pt;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 1.2px;
+      font-weight: 700;
+    }
+    .cover-brand-logo-wrap {
+      background: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+    .cover-logo-img {
+      height: 30px;
+      width: auto;
+      object-fit: contain;
+    }
+    .cover-transfer-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .cover-badge-top {
+      background: rgba(234, 88, 12, 0.15);
+      border: 1px solid #ea580c;
+      color: #fb923c;
+      font-size: 7pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      padding: 3px 9px;
+      border-radius: 4px;
+    }
+    .cover-transfer-arrow {
+      font-size: 7.2pt;
+      color: #94a3b8;
+      letter-spacing: 0.8px;
+    }
+    .cover-middle {
+      margin: 14mm 0;
+    }
+    .cover-kicker {
+      font-size: 8.5pt;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .cover-title {
+      font-size: 24pt;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.15;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .cover-title span {
+      color: #ea580c;
+    }
+    .cover-subtitle {
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      letter-spacing: 0.4px;
+    }
+    .cover-divider {
+      width: 70px;
+      height: 3.5px;
+      background: linear-gradient(90deg, #ea580c 0%, #0284c7 100%);
+      border-radius: 2px;
+      margin-bottom: 14px;
+    }
+    .cover-desc {
+      font-size: 8.5pt;
+      color: #94a3b8;
+      line-height: 1.5;
+      max-width: 580px;
+    }
+    .cover-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .meta-group-title {
+      font-size: 6.8pt;
+      text-transform: uppercase;
+      color: #38bdf8;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    .meta-value-primary {
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .meta-value-secondary {
+      font-size: 7.4pt;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER PAGE (PAGE 1) -->
+  <div class="cover-page">
+    <div class="cover-top">
+      <div class="cover-brand-card">
+        <span class="cover-brand-label">Delivered By</span>
+        <div class="cover-brand-logo-wrap">
+          <img class="cover-logo-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/ajr_digital_hub_logo.png" alt="AJR Digital Hub" />
+        </div>
+      </div>
+      <div class="cover-transfer-indicator">
+        <span class="cover-badge-top">PRODUCT CONFIGURATION ADMINISTRATION GUIDE</span>
+        <span class="cover-transfer-arrow">ENTERPRISE SOLUTIONS ➔ STORE ADMINISTRATION</span>
+      </div>
+      <div class="cover-brand-card client-side">
+        <span class="cover-brand-label">Delivered To / Accepted By</span>
+        <div class="cover-brand-logo-wrap">
+          <img class="cover-logo-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/3d_galaxy_logo.png" alt="3D Galaxy" />
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-middle">
+      <div class="cover-kicker">3D Galaxy E-Commerce & Custom Manufacturing Platform</div>
+      <h1 class="cover-title">PRODUCT <span>CONFIGURATION</span> GUIDE</h1>
+      <div class="cover-subtitle">COMPLETE OPERATIONAL REFERENCE, ARCHITECTURE & FIELD SPECIFICATION MANUAL</div>
+      <div class="cover-divider"></div>
+      <p class="cover-desc">
+        Professional Client-Facing Manual featuring Clean Native Application Screenshots, 
+        Exhaustive Field References, Category Architecture, Cartesian Variant Combination Matrix, 
+        Bundle Builder, Dynamic IST Delivery Date Engine, and Pre-Publish Validation Gates.
+      </p>
+    </div>
+
+    <div class="cover-bottom">
+      <div class="meta-item">
+        <div class="meta-group-title">Delivered By</div>
+        <div class="meta-value-primary">AJR Digital Hub Team</div>
+        <div class="meta-value-secondary">Enterprise Digital Solutions & Architecture</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-group-title">Delivered To / Accepted By</div>
+        <div class="meta-value-primary">3D Galaxy Team</div>
+        <div class="meta-value-secondary">Catalog Operations & Store Administration</div>
+      </div>
+      <div class="meta-item" style="margin-top: 6px;">
+        <div class="meta-group-title">Document Identifier & Release</div>
+        <div class="meta-value-primary">DOC-3DG-PRD-ADMIN-2026-V2.0 • Version 2.0</div>
+        <div class="meta-value-secondary">Published: September 2026</div>
+      </div>
+      <div class="meta-item" style="margin-top: 6px;">
+        <div class="meta-group-title">Classification & Quality Standard</div>
+        <div class="meta-value-primary">Commercial in Confidence</div>
+        <div class="meta-value-secondary">Clean Application Visuals (Zero Tour Annotations)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT PAGES (PAGE 2+) -->
+  <div class="content-body" style="padding: 0 1mm;">
+    <h2>Complete Operational Reference, Architecture & Field Specification Manual</h2>
+<p>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>---</p>
+<h3>DOCUMENT CONTROL & GOVERNANCE</h3>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Document Attribute</th>
+  <th>Specification Details</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Document Title</strong></td>
+  <td>3D Galaxy — Product Configuration Administration Guide</td>
+</tr>
+<tr>
+  <td><strong>Application Platform</strong></td>
+  <td>3D Galaxy Enterprise E-Commerce & Custom 3D Manufacturing Admin Portal</td>
+</tr>
+<tr>
+  <td><strong>Document Identifier</strong></td>
+  <td><code>DOC-3DG-PRD-ADMIN-2026-V2.0</code></td>
+</tr>
+<tr>
+  <td><strong>Release Version</strong></td>
+  <td>2.0 (Production Clean Master)</td>
+</tr>
+<tr>
+  <td><strong>Publication Date</strong></td>
+  <td>September 2026</td>
+</tr>
+<tr>
+  <td><strong>Delivered By</strong></td>
+  <td><strong>AJR Digital Hub Team</strong> (Enterprise Digital Solutions & Architecture)</td>
+</tr>
+<tr>
+  <td><strong>Delivered To / Accepted By</strong></td>
+  <td><strong>3D Galaxy Team</strong> (E-Commerce Operations & Catalog Administration)</td>
+</tr>
+<tr>
+  <td><strong>Classification</strong></td>
+  <td>Commercial in Confidence — Operational Administration Reference Manual</td>
+</tr>
+<tr>
+  <td><strong>Document Scope</strong></td>
+  <td>Clean Application Screenshots, 11 Configuration Tabs, 11 Display Types, 6 Selection Modes, Cartesian Combination Matrix, Pricing, Inventory, Weight, Shipping Tariffs, Dynamic Delivery Dates, Validation Gates</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<h3>Document Revision History</h3>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Version</th>
+  <th>Release Date</th>
+  <th>Author / Entity</th>
+  <th>Summary of Operational Scope</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>1.0</strong></td>
+  <td>Sep 18, 2026</td>
+  <td>AJR Digital Hub Engineering</td>
+  <td>Initial extraction of data models, Angular signals, reactive form controls, and validation rules.</td>
+</tr>
+<tr>
+  <td><strong>1.5</strong></td>
+  <td>Sep 20, 2026</td>
+  <td>AJR Digital Hub Solutions</td>
+  <td>Dropdown documentation, Cartesian matrix permutations, and dynamic delivery date formulas.</td>
+</tr>
+<tr>
+  <td><strong>2.0</strong></td>
+  <td>Sep 21, 2026</td>
+  <td>AJR Digital Hub Delivery Team</td>
+  <td><strong>Complete Clean Screenshot Edition</strong>: Removed all tour callouts, numbered circles, arrows, and overlay boxes. Replaced with pristine, native application screenshots and comprehensive field reference tables, option matrices, and outside operational callout boxes.</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>1. DOCUMENT PURPOSE & EXECUTIVE SUMMARY</h1>
+<p>The <strong>3D Galaxy Product Configuration Administration Guide</strong> is an exhaustive, professional operational manual created specifically for the 3D Galaxy catalog administration and fulfillment team. </p>
+<p>Unlike a temporary interactive tour or walkthrough, this document serves as a permanent reference manual. Every visual element inside this guide represents the <strong>authentic, clean application user interface</strong> exactly as experienced inside the 3D Galaxy Admin Portal—with zero overlay graphics, zero tour markers, and zero obscuring callout boxes.</p>
+<h3>Core Documentation Paradigm</h3>
+<p>1. <strong>Clean Application Visuals:</strong> Every screenshot provides an unadulterated, high-resolution view of the application UI.</p>
+<p>2. <strong>Exhaustive Field References:</strong> Every control, input box, toggle, and dropdown is tabulated and explained directly below the corresponding figure.</p>
+<p>3. <strong>Verified Option Catalogs:</strong> All dropdown menus, display types, and selection modes reflect the exact code specifications within the platform.</p>
+<p>4. <strong>Storefront Impact Analysis:</strong> Clear explanations of how administrative inputs alter customer product detail pages (PDP), cart subtotals, weight-based freight charges, and invoice generation.</p>
+<p>5. <strong>Quality Gates & Operational Safeguards:</strong> Actionable validation checklists and callout boxes placed safely outside screenshots to prevent administrative misconfiguration.</p>
+<pre class="diagram"><code>+---------------------------------------------------------------------------------------------------+
+|                                  ADMIN CONFIGURATION INPUT                                        |
+|        (Title, Slug, Categories, Pricing, Cartesian Variants, Weight, Shipping, SEO)             |
++-------------------------------------------------+-------------------------------------------------+
+                                                  |
+                                                  v
++---------------------------------------------------------------------------------------------------+
+|                                 CORE CATALOG DATA ENGINE                                          |
+|        (SKU Registry, Permutations, Inventory Allocations, Price Rules, Image Mapping)            |
++-------------------------------------------------+-------------------------------------------------+
+                                                  |
+                                                  v
++---------------------------------------------------------------------------------------------------+
+|                                  CUSTOMER STOREFRONT (PDP)                                        |
+|        (Live Swatches, Dynamic Pricing, Stock Badges, Gallery Zoom, Delivery Date Engine)         |
++-------------------------------------------------+-------------------------------------------------+
+                                                  |
+                                                  v
++---------------------------------------------------------------------------------------------------+
+|                                     CHECKOUT & FULFILLMENT                                        |
+|        (Cart Subtotal, Weight Aggregate, Courier Shipping Tariffs, GST Invoicing, Shipping Label) |
++---------------------------------------------------------------------------------------------------+</code></pre>
+<p>---</p>
+<div class="page-break"></div>
+<h1>2. CATALOG ARCHITECTURE & REGISTRY CONSOLE</h1>
+<p>The Catalog Registry console is the operational headquarters where all products, SKUs, inventory counts, dealer rates, and catalog lifecycle actions are monitored, filtered, and initiated.</p>
+<div class="figure-title-badge">FIGURE 1.1 — CATALOG REGISTRY CONSOLE</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 1.1 — Catalog Registry Console</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-1.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_01_catalog_registry.png" alt="Figure 1.1 — Catalog Registry Console" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Catalog Registry Console showing active product listings, SKU codes, category assignments, stock status badges, pricing columns, and top-level action controls.</div>
+<h4>CONTROL REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Control / Column</th>
+  <th>Purpose</th>
+  <th>Admin Action</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>+ Add Product</strong></td>
+  <td>Initiates new product creation workflow</td>
+  <td>Click to launch blank product configuration editor</td>
+</tr>
+<tr>
+  <td><strong>Search Input</strong></td>
+  <td>Real-time filtering across titles and SKUs</td>
+  <td>Type keywords, part numbers, or unique SKUs to isolate records</td>
+</tr>
+<tr>
+  <td><strong>Category Filter</strong></td>
+  <td>Multi-taxonomy drill-down</td>
+  <td>Filter list by specific product category or department</td>
+</tr>
+<tr>
+  <td><strong>Stock Status Badge</strong></td>
+  <td>Real-time stock state indicator</td>
+  <td>Evaluates physical inventory (<code>In Stock</code>, <code>Low Stock</code>, <code>Out of Stock</code>)</td>
+</tr>
+<tr>
+  <td><strong>Base Price / MRP</strong></td>
+  <td>Retail and discounted price display</td>
+  <td>Quickly audit consumer selling prices across the catalog</td>
+</tr>
+<tr>
+  <td><strong>Action Menu (•••)</strong></td>
+  <td>Row-level operational commands</td>
+  <td>Edit product, view live preview, duplicate SKU, or deactivate item</td>
+</tr>
+</tbody></table></div>
+<div class="callout callout-success">
+<div class="callout-title">ADMINISTRATOR TIP</div>
+<p>ADMIN TIP</p>
+<p>Use the Catalog Search filter to audit existing SKUs before creating new products. Maintaining a strict, standardized SKU syntax (e.g., <code>FIL-PLA-BLK-1KG</code>) ensures clean inventory tracking and prevents accidental duplicates across the catalog.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>3. GENERAL PRODUCT IDENTITY & CLASSIFICATION</h1>
+<p>The General tab establishes the core data attributes, search identifiers, and public marketing copy for the product.</p>
+<div class="figure-title-badge">FIGURE 2.1 — GENERAL PRODUCT IDENTITY</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 2.1 — General Product Identity</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-2.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_02_general_identity.png" alt="Figure 2.1 — General Product Identity" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> General product configuration screen used to configure the core product title, URL slug, SKU, category associations, and descriptive marketing copy.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Product Title</strong></td>
+  <td>Primary customer-facing product name</td>
+  <td>Enter clear, keyword-rich title (max 255 chars)</td>
+</tr>
+<tr>
+  <td><strong>URL Slug</strong></td>
+  <td>Clean, SEO-friendly URI path identifier</td>
+  <td>Auto-generated from title or custom kebab-case slug</td>
+</tr>
+<tr>
+  <td><strong>SKU / Barcode</strong></td>
+  <td>Unique master product stock keeping unit & EAN</td>
+  <td>Enter alphanumeric internal SKU and scannable barcode</td>
+</tr>
+<tr>
+  <td><strong>Categories</strong></td>
+  <td>Hierarchical taxonomy classification</td>
+  <td>Select one or more relevant category nodes</td>
+</tr>
+<tr>
+  <td><strong>Short Description</strong></td>
+  <td>Concise summary displayed on product cards & top PDP</td>
+  <td>Enter 1–2 high-impact sentences summarizing key benefits</td>
+</tr>
+<tr>
+  <td><strong>Full Description</strong></td>
+  <td>Comprehensive technical and marketing overview</td>
+  <td>Rich text formatting with specifications, benefits, and usage</td>
+</tr>
+</tbody></table></div>
+<h3>Detailed Field Explanations</h3>
+<p>1. <strong>Product Title:</strong> The customer-facing identity of the item. It is automatically propagated to the HTML <code>&lt;title&gt;</code> tag, OpenGraph social cards, breadcrumbs, search index tokens, and order line items.</p>
+<p>2. <strong>URL Slug:</strong> The clean URI path appended to <code>https://3dgalaxy.in/product/</code>. Must contain only lowercase alphanumeric characters and hyphens (e.g., <code>creality-ender-3-v3-ke</code>). Changing the slug on published products breaks legacy search links unless a 301 redirect is provisioned.</p>
+<p>3. <strong>SKU / Barcode:</strong> Internal warehouse inventory identifier and scannable GS1/EAN barcode. If the product has Cartesian variants, this serves as the parent base SKU.</p>
+<p>4. <strong>Short Description:</strong> Rendered immediately below the product title and star rating on the storefront PDP. It also forms the default fallback for search engine meta descriptions.</p>
+<p>5. <strong>Full Description:</strong> Fully featured rich text HTML editor supporting headings, bullet points, technical comparison tables, and embedded diagrams.</p>
+<div class="callout callout-info">
+<div class="callout-title">CRITICAL SPECIFICATION</div>
+<p>IMPORTANT</p>
+<p>The URL slug must be strictly unique across the entire database. If a duplicate slug is submitted, the system will reject the update to prevent URL collision and 404 routing conflicts.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>4. CATEGORY CONFIGURATION & ARCHITECTURE</h1>
+<p>Categorization governs how products are discovered through main navigation menus, category pages, breadcrumbs, and multi-faceted search filters.</p>
+<div class="figure-title-badge">FIGURE 3.1 — CATEGORY SELECTOR & ARCHITECTURE</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 3.1 — Category Architecture</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-3.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_03_category_selector.png" alt="Figure 3.1 — Category Architecture" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Category selector showing category search bar, category tree checkboxes, bulk selection controls, and selected category tag chips.</div>
+<h3>Category Architecture</h3>
+<p>The 3D Galaxy taxonomy engine utilizes a multi-category hierarchical structure allowing a product to belong to multiple catalog categories simultaneously while maintaining a single <strong>Primary Category</strong> for canonical URL routing and breadcrumb navigation.</p>
+<ul>
+  <li><strong>Category Search:</strong> Instantly narrows large category trees by filtering matching parent and child nodes in real time.</li>
+  <li><strong>Category Selection:</strong> Administrators click individual checkboxes to assign products to specific catalog nodes.</li>
+  <li><strong>Multi-Category Selection:</strong> Allows cross-listing items across diverse catalog branches (e.g., listing a 3D printing filament under both *Filaments &gt; PLA* and *Materials &gt; Engineering Consumables*).</li>
+  <li><strong>Select All:</strong> Bulk selects all categories currently visible within the filtered search view.</li>
+  <li><strong>Clear All:</strong> Instantly deselects all active categories, returning the selector to a clean slate.</li>
+  <li><strong>Primary Category:</strong> The definitive parent category used to construct canonical breadcrumb trails (<code>Home &gt; 3D Printers &gt; FDM Printers &gt; [Product]</code>) and Google Structured Data.</li>
+  <li><strong>Selected Category Tags:</strong> Visual chip badges rendering selected categories with instant removal (x) capability.</li>
+  <li><strong>Category Synchronization:</strong> Real-time synchronization ensuring products instantly appear or disappear from storefront category listings upon saving.</li>
+  <li><strong>Category Hierarchy:</strong> Parent-child relationships ensuring that filtering by a parent node automatically surfaces items assigned to its sub-categories.</li>
+</ul>
+<h4>CONTROL REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Control</th>
+  <th>Purpose</th>
+  <th>Admin Action</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Search</strong></td>
+  <td>Find categories quickly in dense taxonomy trees</td>
+  <td>Search by category name or keyword</td>
+</tr>
+<tr>
+  <td><strong>Checkbox</strong></td>
+  <td>Select or deselect individual category node</td>
+  <td>Enable checkbox to associate product</td>
+</tr>
+<tr>
+  <td><strong>Select All</strong></td>
+  <td>Select all currently filtered categories in bulk</td>
+  <td>Click to bulk assign visible categories</td>
+</tr>
+<tr>
+  <td><strong>Clear All</strong></td>
+  <td>Remove all selected category assignments</td>
+  <td>Click to wipe category associations</td>
+</tr>
+<tr>
+  <td><strong>Primary</strong></td>
+  <td>Define primary category for canonical routing</td>
+  <td>Click star or radio icon to designate primary node</td>
+</tr>
+<tr>
+  <td><strong>Selected Tags</strong></td>
+  <td>Review and manage active selections</td>
+  <td>Click 'x' on any chip to remove that category</td>
+</tr>
+</tbody></table></div>
+<div class="callout callout-warning">
+<div class="callout-title">OPERATIONAL SAFEGUARD</div>
+<p>CUSTOMER IMPACT</p>
+<p>Failing to assign at least one category will cause the product to become an "orphan item." It will be completely invisible on storefront category browsing pages, mega-menus, and faceted navigation filters, discoverable only by direct URL.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>5. BRAND ALLIANCE & TAXONOMY TAGS</h1>
+<div class="figure-title-badge">FIGURE 4.1 — BRAND ALLIANCE & TAXONOMY</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 4.1 — Brand Alliance & Taxonomy</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-4.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_04_brand_alliance.png" alt="Figure 4.1 — Brand Alliance & Taxonomy" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Brand alliance dropdown and searchable taxonomy tag interface for manufacturer association and storefront filtering.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Brand Alliance</strong></td>
+  <td>Manufacturer or partner brand association</td>
+  <td>Select registered brand from dropdown</td>
+</tr>
+<tr>
+  <td><strong>Taxonomy Tags</strong></td>
+  <td>Free-form semantic search keywords</td>
+  <td>Add comma-separated search terms and tags</td>
+</tr>
+<tr>
+  <td><strong>Model / Series</strong></td>
+  <td>Hardware revision or filament series</td>
+  <td>Enter specific manufacturer hardware generation</td>
+</tr>
+<tr>
+  <td><strong>Compatibility Flags</strong></td>
+  <td>Associated printer hardware ecosystems</td>
+  <td>Select supported 3D printer platforms</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>6. CORE PRICING ARCHITECTURE</h1>
+<p>Pricing directly controls storefront retail presentation, strike-through promotional displays, dealer rate cards, and cart tax computations.</p>
+<div class="figure-title-badge">FIGURE 5.1 — CORE PRODUCT PRICING</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 5.1 — Core Product Pricing</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-5.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_05_pricing.png" alt="Figure 5.1 — Core Product Pricing" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Core product pricing configuration interface displaying MRP, Retail Sale Price, Authorized Dealer Price, and GST tax settings.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>MRP (Maximum Retail Price)</strong></td>
+  <td>Manufacturer reference price (strike-through)</td>
+  <td>Enter statutory maximum retail price</td>
+</tr>
+<tr>
+  <td><strong>Retail Sale Price</strong></td>
+  <td>Actual selling price charged to standard B2C customers</td>
+  <td>Enter active selling price (must be <em>le</em> MRP)</td>
+</tr>
+<tr>
+  <td><strong>Dealer Price (B2B)</strong></td>
+  <td>Discounted rate for verified B2B/wholesale accounts</td>
+  <td>Enter wholesale rate unlocked upon B2B login</td>
+</tr>
+<tr>
+  <td><strong>Tax Rate (GST)</strong></td>
+  <td>Applicable Goods and Services Tax percentage</td>
+  <td>Select statutory GST slab (e.g., 18%)</td>
+</tr>
+<tr>
+  <td><strong>Tax Inclusive Toggle</strong></td>
+  <td>Determines if entered prices include GST</td>
+  <td>Toggle ON if price includes tax; OFF for net + tax</td>
+</tr>
+</tbody></table></div>
+<div class="callout callout-info">
+<div class="callout-title">CRITICAL SPECIFICATION</div>
+<p>VALIDATION RULE</p>
+<p>The <strong>Retail Sale Price</strong> must always be less than or equal to the <strong>MRP</strong>. If the Sale Price exceeds MRP, the platform blocks saving with a validation error to comply with consumer protection regulations.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>7. BASE INVENTORY MANAGEMENT & STOCK</h1>
+<div class="figure-title-badge">FIGURE 6.1 — BASE INVENTORY & STOCK</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 6.1 — Base Inventory & Stock</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-6.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_06_inventory.png" alt="Figure 6.1 — Base Inventory & Stock" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Base inventory management showing master stock counters, low stock warning thresholds, backorder toggles, and inventory tracking flags.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Track Inventory</strong></td>
+  <td>Enables automated real-time stock deduction</td>
+  <td>Toggle ON to track quantities against sales</td>
+</tr>
+<tr>
+  <td><strong>Current Stock Quantity</strong></td>
+  <td>Physical units available in fulfillment warehouse</td>
+  <td>Enter verified on-hand inventory count</td>
+</tr>
+<tr>
+  <td><strong>Low Stock Threshold</strong></td>
+  <td>Threshold triggering automated restock alerts</td>
+  <td>Enter warning number (e.g., 5 units)</td>
+</tr>
+<tr>
+  <td><strong>Allow Backorders</strong></td>
+  <td>Enables customer purchases when stock reaches zero</td>
+  <td>Select <code>Do not allow</code>, <code>Allow</code>, or <code>Notify customer</code></td>
+</tr>
+<tr>
+  <td><strong>Stock Status Override</strong></td>
+  <td>Manual state override for catalog display</td>
+  <td>Select <code>In Stock</code>, <code>Out of Stock</code>, or <code>On Backorder</code></td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>8. VARIANT CONFIGURATION ENGINE</h1>
+<p>The 3D Galaxy Variant Engine transforms complex, multi-option items (such as filaments with multiple colors, spool weights, and bundle packs) into streamlined customer selection interfaces.</p>
+<div class="figure-title-badge">FIGURE 7.1 — VARIANT GROUP CONFIGURATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 7.1 — Variant Group Configuration</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-7.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_07_variant_group_header.png" alt="Figure 7.1 — Variant Group Configuration" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Variant group header configuration showing group naming, display name, display type selector, selection mode, and operational toggles.</div>
+<h3>Variant Group</h3>
+<p>Every variant dimension (e.g., "Color", "Weight", "Nozzle Size") is governed by a dedicated <strong>Variant Group</strong>:</p>
+<ul>
+  <li><strong>Variant Name:</strong> Internal technical identifier used in database keys and Cartesian matrix generation (e.g., <code>filament_color</code>).</li>
+  <li><strong>Display Name:</strong> Customer-facing label rendered on the storefront PDP (e.g., *"Select Filament Color"*).</li>
+  <li><strong>Variant Type:</strong> Classification of variant attributes (Attribute, Material, Dimension, Pack Size).</li>
+  <li><strong>Display Mode:</strong> Visual styling employed to render option selectors on the storefront (Chips, Dropdown, Swatches).</li>
+  <li><strong>Selection Mode:</strong> Logical rules governing how customers make selections (Single, Bundle, Weight-based, Multiple).</li>
+  <li><strong>Required Field:</strong> When enabled, customers must select an option from this group before clicking "Add to Cart".</li>
+  <li><strong>Active:</strong> Master toggle enabling or disabling this variant group without deleting configured data.</li>
+  <li><strong>Duplicate Selection:</strong> In multi-selection modes, governs whether a customer can select the same variant item multiple times.</li>
+</ul>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Variant Group Name</strong></td>
+  <td>Internal technical reference identifier</td>
+  <td>Enter concise identifier (e.g., <code>spool_weight</code>)</td>
+</tr>
+<tr>
+  <td><strong>Display Name</strong></td>
+  <td>Storefront customer-facing label</td>
+  <td>Enter clear user prompt (e.g., <code>Choose Spool Weight</code>)</td>
+</tr>
+<tr>
+  <td><strong>Display Type</strong></td>
+  <td>Visual presentation UI component</td>
+  <td>Select one of 11 verified display components</td>
+</tr>
+<tr>
+  <td><strong>Selection Mode</strong></td>
+  <td>Cart selection and pricing logic</td>
+  <td>Select one of 6 verified operational modes</td>
+</tr>
+<tr>
+  <td><strong>Required</strong></td>
+  <td>Mandates selection before cart addition</td>
+  <td>Toggle ON to enforce required choice</td>
+</tr>
+<tr>
+  <td><strong>Active</strong></td>
+  <td>Enables or suspends group in live storefront</td>
+  <td>Toggle ON to publish; OFF to draft/hide</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>9. VARIANT DISPLAY TYPES</h1>
+<p>The 3D Galaxy platform supports <strong>11 verified display types</strong> implemented directly within the storefront presentation engine.</p>
+<div class="figure-title-badge">FIGURE 8.1 — VARIANT DISPLAY TYPES</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 8.1 — Variant Display Types</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-8.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_08_display_types_dropdown.png" alt="Figure 8.1 — Variant Display Types" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Clean application screenshot showing the Variant Display Types dropdown menu displaying all 11 supported storefront presentation modes.</div>
+<h3>Available Options Reference Table</h3>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Display Type</th>
+  <th>Description</th>
+  <th>Storefront UI Behavior</th>
+  <th>Recommended Use Case</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Bundle Builder</strong></td>
+  <td>Interactive tier cards with customizable variant slots</td>
+  <td>Renders multi-item slot selector with bundle discounts</td>
+  <td>"Buy 2 Save 10%", "Build 4-Spool Pack"</td>
+</tr>
+<tr>
+  <td><strong>Weight Selector</strong></td>
+  <td>Presets and custom weight inputs</td>
+  <td>Displays weight chips with numeric kg/g custom entry</td>
+  <td>Bulk materials, resin bottles, filament spools</td>
+</tr>
+<tr>
+  <td><strong>Chip Selector</strong></td>
+  <td>Clean horizontal pill buttons</td>
+  <td>Compact clickable pills highlighting selected state</td>
+  <td>Clothing sizes, technical specs, nozzle diameters</td>
+</tr>
+<tr>
+  <td><strong>Dropdown Menu</strong></td>
+  <td>Standard HTML select box</td>
+  <td>Compact menu expanding on click</td>
+  <td>Dense option catalogs (50+ printer models)</td>
+</tr>
+<tr>
+  <td><strong>Image Selector</strong></td>
+  <td>Visual photo thumbnail chips</td>
+  <td>Renders mini preview images with active borders</td>
+  <td>Filament spool swatches, patterned PEI sheets</td>
+</tr>
+<tr>
+  <td><strong>Card Selector</strong></td>
+  <td>Rich detailed cards with descriptions</td>
+  <td>Cards displaying badges, pricing, and specs</td>
+  <td>Extended warranty tiers, complete printer bundles</td>
+</tr>
+<tr>
+  <td><strong>Radio Chips</strong></td>
+  <td>Circular radio buttons with text</td>
+  <td>Classic radio selector with visible circular target</td>
+  <td>Exclusive single-choice binary configurations</td>
+</tr>
+<tr>
+  <td><strong>Color Chips</strong></td>
+  <td>Circular/square color hex swatches</td>
+  <td>Vibrant color discs with tooltips and checkmarks</td>
+  <td>Filament colors, resin dyes, hardware finishes</td>
+</tr>
+<tr>
+  <td><strong>Button Group</strong></td>
+  <td>Segmented inline toggle buttons</td>
+  <td>Connected button bar with instant tab switching</td>
+  <td>Fast switching between 2–4 primary modes</td>
+</tr>
+<tr>
+  <td><strong>Quantity Selector</strong></td>
+  <td>Stepper counter with tiered bulk discounts</td>
+  <td>[-] [Qty] [+] controls with volume discount alerts</td>
+  <td>Consumable spare parts, nozzles, screws</td>
+</tr>
+<tr>
+  <td><strong>Grid Cards</strong></td>
+  <td>Multi-column visual grid cards</td>
+  <td>2-column or 3-column photo cards with subtext</td>
+  <td>Starter kit builders, modular accessory upgrades</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>10. VARIANT SELECTION MODES</h1>
+<p>The selection mode defines the mathematical and cart rules used to evaluate customer selections.</p>
+<div class="figure-title-badge">FIGURE 9.1 — SELECTION MODE CONFIGURATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 9.1 — Selection Modes</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-9.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_09_selection_modes_dropdown.png" alt="Figure 9.1 — Selection Modes" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Clean application screenshot showing the Selection Mode dropdown menu displaying all 6 operational selection modes.</div>
+<h3>Available Selection Modes Reference Table</h3>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Selection Mode</th>
+  <th>Purpose</th>
+  <th>Customer Behavior</th>
+  <th>Recommended Use</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Single Selection</strong></td>
+  <td>Standard e-commerce choice</td>
+  <td>Customer selects exactly 1 variant option before cart addition</td>
+  <td>Single filament color, specific machine model</td>
+</tr>
+<tr>
+  <td><strong>Bundle Selection</strong></td>
+  <td>Multi-item tiered pack builder</td>
+  <td>Customer fills N predetermined slots with individual variant choices</td>
+  <td>4-spool filament variety bundles</td>
+</tr>
+<tr>
+  <td><strong>Weight Based</strong></td>
+  <td>Continuous or stepped mass pricing</td>
+  <td>Customer selects weight preset or types custom weight in kg/g</td>
+  <td>Industrial resin, bulk plastic pellets</td>
+</tr>
+<tr>
+  <td><strong>Multiple Selection</strong></td>
+  <td>Optional add-on accessory check</td>
+  <td>Customer checks 0, 1, or multiple optional items</td>
+  <td>Adding extra nozzles, build plates, or tools</td>
+</tr>
+<tr>
+  <td><strong>Quantity Based</strong></td>
+  <td>Tiered volume pack discounts</td>
+  <td>Selecting a pack size automatically updates pricing rules</td>
+  <td>"Pack of 5", "Pack of 10", "Box of 50"</td>
+</tr>
+<tr>
+  <td><strong>Package / Starter Kit</strong></td>
+  <td>Fixed-slot multi-category kit</td>
+  <td>Customer configures required components across distinct groups</td>
+  <td>"Complete 3D Printing Starter Kit"</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>11. VARIANT VALUE REGISTRY & OPTION MODIFIERS</h1>
+<div class="figure-title-badge">FIGURE 10.1 — VARIANT VALUES REGISTRY</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 10.1 — Variant Values</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-10.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_10_variant_values.png" alt="Figure 10.1 — Variant Values" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Variant value registry showing configured options, color hex swatches, price adjustments, and weight overrides.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Option Value Name</strong></td>
+  <td>Public name of variant option</td>
+  <td>Enter descriptive name (e.g., <code>Matte Black</code>, <code>1.75mm</code>)</td>
+</tr>
+<tr>
+  <td><strong>Hex Color Code</strong></td>
+  <td>Visual swatch color (for color chips)</td>
+  <td>Enter 6-digit hex code (e.g., <code>#1A1A1A</code>) or use color picker</td>
+</tr>
+<tr>
+  <td><strong>Price Adjustment</strong></td>
+  <td>Differential price added to base price</td>
+  <td>Enter positive or negative delta (e.g., <code>+250.00</code>)</td>
+</tr>
+<tr>
+  <td><strong>Weight Override</strong></td>
+  <td>Specific physical mass for this option</td>
+  <td>Enter tare/gross weight in grams (e.g., <code>1000</code>)</td>
+</tr>
+<tr>
+  <td><strong>Display Order</strong></td>
+  <td>Sequence of option display on PDP</td>
+  <td>Enter sort index (1, 2, 3...)</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>12. VARIANT-SPECIFIC PRICING ARCHITECTURE</h1>
+<p>When variants have distinct manufacturing costs, the administrator overrides baseline prices directly at the permutation level.</p>
+<div class="figure-title-badge">FIGURE 11.1 — VARIANT SPECIFIC PRICING</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 11.1 — Variant Pricing</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-11.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_11_variant_pricing.png" alt="Figure 11.1 — Variant Pricing" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Combination matrix pricing columns displaying MRP, Sale Price, and Dealer Price configurations for each distinct variant permutation.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Permutation MRP</strong></td>
+  <td>Maximum Retail Price for this specific variant</td>
+  <td>Enter statutory MRP for variant (e.g., <code>₹1,499.00</code>)</td>
+</tr>
+<tr>
+  <td><strong>Permutation Sale Price</strong></td>
+  <td>Actual retail price charged for this variant</td>
+  <td>Enter active selling price (e.g., <code>₹999.00</code>)</td>
+</tr>
+<tr>
+  <td><strong>Permutation Dealer Price</strong></td>
+  <td>Wholesale rate for verified B2B accounts</td>
+  <td>Enter special wholesale rate (e.g., <code>₹799.00</code>)</td>
+</tr>
+<tr>
+  <td><strong>Margin / Discount Badge</strong></td>
+  <td>Auto-calculated percentage discount</td>
+  <td>System computes: <code>((MRP - Sale) / MRP) * 100</code></td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>13. INVENTORY & STOCK GOVERNANCE</h1>
+<p>Stock can be managed either globally at the parent product level or granularly at the variant permutation level.</p>
+<div class="figure-title-badge">FIGURE 12.1 — VARIANT-LEVEL STOCK INVENTORY</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 12.1 — Variant Stock</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-12.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_12_variant_stock.png" alt="Figure 12.1 — Variant Stock" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Combination matrix stock inventory interface showing individual warehouse SKU counts, status indicators, and stock management controls.</div>
+<h3>Operational Stock Governance</h3>
+<ul>
+  <li><strong>Product-Level Stock:</strong> Applied when a product has no variants. A single inventory counter governs the entire product availability.</li>
+  <li><strong>Variant-Level Stock:</strong> In products with variant groups, each permutation possesses its own isolated physical stock counter. Selling a "Matte Black / 1kg" spool deducts stock only from that specific variant, leaving "Silk White / 1kg" unaffected.</li>
+  <li><strong>Stock Availability Statuses:</strong></li>
+  <li><code>In Stock</code>: Available quantity is greater than zero. Customer can add to cart immediately.</li>
+  <li><code>Low Stock</code>: Available quantity is at or below the low stock threshold. Storefront displays an urgent "Only X left!" badge.</li>
+  <li><code>Out of Stock</code>: Quantity is zero. Storefront disables the Add to Cart button and presents an out-of-stock badge.</li>
+  <li><strong>Out-of-Stock Behavior:</strong> When a customer selects an out-of-stock swatch, the Add to Cart button transitions to *"Out of Stock"*, blocking purchase while keeping other available variants selectable.</li>
+  <li><strong>Cart Validation:</strong> The shopping cart continuously polls the real-time stock API. If a customer attempts to increase cart quantity beyond available stock, the system caps the increment and alerts the customer.</li>
+  <li><strong>Checkout Validation:</strong> During final payment submission, the backend locks inventory. If another user checked out the last unit seconds earlier, the transaction cleanly aborts with an inventory reallocation notice.</li>
+  <li><strong>Customer-Facing Stock State:</strong> Visual indication on swatches (e.g., strike-through line or reduced opacity on out-of-stock color chips).</li>
+</ul>
+<div class="callout callout-info">
+<div class="callout-title">CRITICAL SPECIFICATION</div>
+<p>IMPORTANT: INVENTORY ACCURACY</p>
+<p>Variant stock must strictly mirror physical warehouse counts. Never inflate variant inventory numbers to artificially induce sales, as backorders on multi-variant items lead to severe fulfillment delays and customer disputes.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>14. WEIGHT CONFIGURATION & LOGISTICS TARIFFS</h1>
+<p>Accurate weight configuration is critical for dynamic shipping freight calculations, carrier manifest generation, and multi-unit checkout calculations.</p>
+<div class="figure-title-badge">FIGURE 13.1 — VARIANT WEIGHT CONFIGURATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 13.1 — Variant Weight</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-13.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_13_variant_weight.png" alt="Figure 13.1 — Variant Weight" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Combination matrix weight column showing physical gross mass in grams, weight unit toggles, and tare source indicators.</div>
+<h3>Weight Calculation Architecture</h3>
+<ul>
+  <li><strong>Product Weight:</strong> Master baseline weight assigned to the parent product, utilized when no variant-specific weight is defined.</li>
+  <li><strong>Variant-Specific Weight:</strong> Individual gross weight assigned to a specific variant permutation (e.g., 250g spool vs. 1000g spool vs. 5000g industrial drum).</li>
+  <li><strong>Weight Unit:</strong> Standard unit of measurement. While the admin portal displays weight in grams (<code>g</code>) or kilograms (<code>kg</code>), the underlying database stores all values normalized in <strong>grams</strong>.</li>
+  <li><strong>Quantity <em>	imes</em> Weight Formula:</strong> When a customer purchases multiple units, the cart aggregate weight multiplies dynamically:</li>
+</ul>
+<div class="math-block">ext{Total Shipment Mass} = sum (	ext{Variant Weight in Grams} 	imes 	ext{Quantity})</div>
+<ul>
+  <li><strong>Gram to Kilogram Conversion:</strong> Automated conversion used for courier freight brackets:</li>
+</ul>
+<div class="math-block">ext{Weight in Kilograms} = rac{	ext{Weight in Grams}}{1000}</div>
+<h4>Concrete Operational Example:</h4>
+<div class="math-block">ext{250g Spool} 	imes 4 	ext{ Units} = 1000	ext{g} = 1.0	ext{kg}</div>
+<div class="math-block">ext{Result: Shifts shipment into the 1kg courier freight bracket ($₹120$ instead of $₹60$).}</div>
+<ul>
+  <li><strong>Checkout Weight Summary:</strong> The checkout shipping calculation engine evaluates total cart weight against registered courier rate cards (e.g., Delhivery, Shiprocket, BlueDart).</li>
+  <li><strong>Shipping Calculation Relationship:</strong> If variant weight is omitted (set to 0), the system defaults to baseline shipping, causing the merchant to absorb undercharged courier charges on heavy consignments.</li>
+</ul>
+<p>---</p>
+<div class="page-break"></div>
+<h1>15. VARIANT IMAGE LINKING & GALLERY SYNCHRONIZATION</h1>
+<p>Variant image mapping creates a seamless connection between selection swatches and the primary product gallery.</p>
+<div class="figure-title-badge">FIGURE 14.1 — VARIANT IMAGE LINKING</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 14.1 — Variant Image Linking</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-14.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_14_variant_image_mapping.png" alt="Figure 14.1 — Variant Image Linking" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Variant image mapping interface linking gallery photos to specific variant options with primary badge indicators.</div>
+<h3>Image Linking Architecture</h3>
+<ul>
+  <li><strong>Product Images:</strong> The master photo gallery uploaded in Tab 3 (Images), containing general lifestyle shots, dimension diagrams, and packaging visuals.</li>
+  <li><strong>Variant-Specific Images:</strong> Photos specifically depicting a particular color, material, or hardware finish.</li>
+  <li><strong>Image-to-Variant Mapping:</strong> Administrators assign uploaded gallery images directly to corresponding variant values (e.g., assigning <code>pla_red_front.jpg</code> to <code>Red</code>).</li>
+  <li><strong>Primary Image:</strong> The designated lead thumbnail for each variant. When a customer clicks the "Red" swatch on the PDP, the main hero gallery image instantly swaps to this primary image.</li>
+  <li><strong>Customer Image Behavior:</strong></li>
+</ul>
+<p>  1. Customer views product page: Default variant image is displayed in hero view.</p>
+<p>  2. Customer clicks "Neon Green" swatch: Gallery smoothly animates to show the Neon Green spool.</p>
+<p>  3. Customer clicks thumbnail image in gallery: The variant dropdown/chips automatically synchronize to select "Neon Green".</p>
+<ul>
+  <li><strong>Fallback Behavior (No Linked Variant):</strong> If an image has no linked variant, clicking it displays the photo normally in the gallery zoom viewer without altering active variant selections. Conversely, if a selected variant has no linked image, the gallery maintains the parent product's primary hero image.</li>
+</ul>
+<div class="callout callout-success">
+<div class="callout-title">ADMINISTRATOR TIP</div>
+<p>ADMIN TIP: OPTIMAL IMAGE RESOLUTION</p>
+<p>Upload crisp, square product photos at <strong>1600 × 1600 pixels</strong> (WebP or JPG format under 350 KB). Square imagery guarantees perfect alignment across product cards, mobile swatches, and zoom lenses.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>16. DEFAULT VARIANT DESIGNATION</h1>
+<p>The default variant establishes the initial presentation of a configurable product when a customer first visits the product detail page.</p>
+<div class="figure-title-badge">FIGURE 15.1 — DEFAULT VARIANT DESIGNATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 15.1 — Default Variant</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-15.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_15_default_variant.png" alt="Figure 15.1 — Default Variant" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Combination matrix showing default variant radio selection column, active status toggles, and base pre-selection state.</div>
+<h3>Default Variant Architecture</h3>
+<ul>
+  <li><strong>What is the Default Variant?</strong> The specific permutation pre-selected automatically when a customer loads the storefront PDP.</li>
+  <li><strong>How is it Configured?</strong> In the Combination Matrix (Tab 2), the administrator clicks the <strong>Radio Button</strong> or <strong>Star Icon</strong> in the "Default" column corresponding to the desired permutation.</li>
+  <li><strong>Initial Customer Experience:</strong> Prevents empty selection states and avoids confusing "Select options to view price" placeholders.</li>
+  <li><strong>Storefront Impacts:</strong></li>
+  <li><strong>Initial Image:</strong> The hero gallery immediately showcases the photo linked to the default variant.</li>
+  <li><strong>Initial Price:</strong> The PDP price tag displays the exact Sale Price and MRP of the default variant.</li>
+  <li><strong>Initial Stock:</strong> The stock counter displays the inventory count of the default variant.</li>
+  <li><strong>Initial Weight:</strong> Shipping estimates and weight badges populate based on the default variant's mass.</li>
+  <li><strong>Initial Variant Selection:</strong> The corresponding chips, color swatches, or dropdown options appear highlighted in their active selected state.</li>
+</ul>
+<div class="callout callout-warning">
+<div class="callout-title">OPERATIONAL SAFEGUARD</div>
+<p>CRITICAL RULE: ALWAYS ASSIGN AN IN-STOCK DEFAULT VARIANT</p>
+<p>Never designate an out-of-stock permutation as the default variant. If a customer lands on a PDP defaulting to an out-of-stock item, they may immediately assume the entire product line is unavailable and bounce.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>17. CARTESIAN COMBINATION MATRIX</h1>
+<p>The Combination Matrix represents the mathematical Cartesian product of all active variant groups (<em>G_1 	imes G_2 	imes dots 	imes G_n</em>).</p>
+<div class="figure-title-badge">FIGURE 16.1 — CARTESIAN COMBINATION MATRIX</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 16.1 — Combination Matrix</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-16.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_16_combination_matrix.png" alt="Figure 16.1 — Combination Matrix" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Full Cartesian combination matrix table displaying generated permutations, individual SKUs, pricing, stock levels, tare weights, and management actions.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Column / Control</th>
+  <th>Purpose</th>
+  <th>Configuration / Admin Action</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Default (Radio)</strong></td>
+  <td>Designates primary pre-selected SKU</td>
+  <td>Select 1 radio button to establish default variant</td>
+</tr>
+<tr>
+  <td><strong>Status (Toggle)</strong></td>
+  <td>Enables or disables individual permutation</td>
+  <td>Toggle ON to activate; OFF to temporarily suppress SKU</td>
+</tr>
+<tr>
+  <td><strong>Variant Name</strong></td>
+  <td>Composite human-readable permutation name</td>
+  <td>Auto-generated (e.g., <code>1.75mm / Matte Black / 1kg</code>)</td>
+</tr>
+<tr>
+  <td><strong>SKU</strong></td>
+  <td>Unique warehouse stock code for permutation</td>
+  <td>Configure unique identifier (e.g., <code>3DG-PLA-BLK-1KG</code>)</td>
+</tr>
+<tr>
+  <td><strong>MRP</strong></td>
+  <td>Statutory reference price for permutation</td>
+  <td>Enter variant-level MRP in INR</td>
+</tr>
+<tr>
+  <td><strong>Sale Price</strong></td>
+  <td>Active retail selling price for permutation</td>
+  <td>Enter active retail price in INR</td>
+</tr>
+<tr>
+  <td><strong>Stock</strong></td>
+  <td>Dedicated physical stock counter</td>
+  <td>Enter verified warehouse stock quantity</td>
+</tr>
+<tr>
+  <td><strong>Weight</strong></td>
+  <td>Gross mass in grams for shipping calculations</td>
+  <td>Enter weight in grams (e.g., <code>1250</code> with spool)</td>
+</tr>
+<tr>
+  <td><strong>Weight Source</strong></td>
+  <td>Indicates source of weight value</td>
+  <td>Displays <code>Variant</code>, <code>Group Preset</code>, or <code>Product Default</code></td>
+</tr>
+<tr>
+  <td><strong>Manage (Button)</strong></td>
+  <td>Opens advanced modal for dimensions/EAN</td>
+  <td>Configure custom barcode, packaging dims, or B2B rates</td>
+</tr>
+<tr>
+  <td><strong>Delete (Trash)</strong></td>
+  <td>Removes impossible or discontinued permutation</td>
+  <td>Click to delete specific permutation from catalog</td>
+</tr>
+</tbody></table></div>
+<h3>Storefront & Checkout Lifecycle Impacts</h3>
+<ul>
+  <li><strong>Product Detail Page (PDP):</strong> When a user switches options, the matrix supplies the reactive parameters to instantly update URL query params, hero images, and stock badges.</li>
+  <li><strong>Pricing:</strong> Dynamic price calculations ensure discounts and volume tiers reflect the active matrix row.</li>
+  <li><strong>Inventory:</strong> Prevents overselling by binding checkout locks to the specific permutation SKU.</li>
+  <li><strong>Cart & Checkout:</strong> Line items in the cart display full variant attributes, ensuring warehouse packing slips specify the exact color, size, and weight requested.</li>
+</ul>
+<p>---</p>
+<div class="page-break"></div>
+<h1>18. BUNDLE BUILDER & QUANTITY TIER ENGINE</h1>
+<p>The Bundle Builder drives higher Average Order Value (AOV) by empowering customers to build custom packs with volume-based savings.</p>
+<div class="figure-title-badge">FIGURE 17.1 — BUNDLE BUILDER CONFIGURATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 17.1 — Bundle Builder</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-17.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_17_bundle_builder.png" alt="Figure 17.1 — Bundle Builder" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Bundle builder tier configuration interface displaying tier counts, pricing modes, bundle prices, savings badges, and slot labels.</div>
+<h4>FIELD REFERENCE</h4>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Field / Control</th>
+  <th>Description</th>
+  <th>Configuration</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Tier Name</strong></td>
+  <td>Marketing headline for the bundle tier</td>
+  <td>Enter compelling label (e.g., <code>Duo Pack</code>, <code>Maker Bundle</code>)</td>
+</tr>
+<tr>
+  <td><strong>Quantity (Count)</strong></td>
+  <td>Number of items customer must select</td>
+  <td>Specify exact integer count (e.g., <code>2</code>, <code>4</code>, <code>10</code>)</td>
+</tr>
+<tr>
+  <td><strong>Pricing Mode</strong></td>
+  <td>Mathematical formula applied to calculate price</td>
+  <td>Select <code>Fixed Bundle Price</code>, <code>Per Variant Price</code>, <code>Percentage Discount</code>, or <code>Custom</code></td>
+</tr>
+<tr>
+  <td><strong>Fixed Bundle Price</strong></td>
+  <td>Total package price for the complete bundle</td>
+  <td>Enter flat bundle price in INR (e.g., <code>₹3,499.00</code>)</td>
+</tr>
+<tr>
+  <td><strong>Per Variant Price</strong></td>
+  <td>Effective unit price charged per selected item</td>
+  <td>Enter unit rate applied to each slot (e.g., <code>₹874.75</code>)</td>
+</tr>
+<tr>
+  <td><strong>Savings Label</strong></td>
+  <td>Customer-facing savings message</td>
+  <td>Enter badge text (e.g., <code>Save 15%</code>, <code>Save ₹500</code>)</td>
+</tr>
+<tr>
+  <td><strong>Badge Text</strong></td>
+  <td>Promotional ribbon highlighting the tier</td>
+  <td>Enter visual tag (e.g., <code>Most Popular</code>, <code>Best Value</code>)</td>
+</tr>
+<tr>
+  <td><strong>Popular (Flag)</strong></td>
+  <td>Marks tier with highlighted border on PDP</td>
+  <td>Toggle ON to default highlight this tier</td>
+</tr>
+<tr>
+  <td><strong>Weight Override</strong></td>
+  <td>Combined shipping weight for the entire bundle</td>
+  <td>Enter total bundle mass in grams or kilograms</td>
+</tr>
+<tr>
+  <td><strong>Add Tier (+)</strong></td>
+  <td>Appends a new volume discount level</td>
+  <td>Click to add another bundle discount tier</td>
+</tr>
+<tr>
+  <td><strong>Remove Tier (x)</strong></td>
+  <td>Deletes an obsolete bundle tier</td>
+  <td>Click to remove tier configuration</td>
+</tr>
+</tbody></table></div>
+<h3>Complete Operational Flow: Bundle to Checkout</h3>
+<div class="math-block">ext{Bundle Configuration} longrightarrow 	ext{Customer Variant Slot Selection} longrightarrow 	ext{Effective Price Calculation} longrightarrow 	ext{Cart Line Item} longrightarrow 	ext{Checkout Manifest}</div>
+<p>1. <strong>Bundle Setup:</strong> Admin creates a "Buy 4 Filaments Pack" with a fixed price of ₹3,200 (saving ₹800 off ₹4,000 retail).</p>
+<p>2. <strong>Variant Selection:</strong> On the PDP, customer is presented with 4 distinct selector slots. Customer selects Slot 1: <em>Black</em>, Slot 2: <em>White</em>, Slot 3: <em>Red</em>, Slot 4: <em>Silk Silver</em>.</p>
+<p>3. <strong>Price Calculation:</strong> The frontend validates that all 4 slots are filled. Subtotal calculates as ₹3,200 with an explicit savings badge <em>"You saved ₹800!"</em>.</p>
+<p>4. <strong>Cart & Checkout:</strong> Cart contains a single parent bundle line item with 4 child variant allocations. Warehouse packing slips print all 4 individual SKUs, deducting 1 unit from each variant's inventory counter.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h1>19. ALL 11 CONFIGURATION TABS REFERENCE MANUAL</h1>
+<p>This section details all 11 configuration tabs in the 3D Galaxy Admin Portal. For every tab, administrators must follow the standardized 8-point operational framework:</p>
+<p>1. <strong>Purpose:</strong> Strategic catalog objective of the tab.</p>
+<p>2. <strong>Fields:</strong> Complete inventory of inputs and toggles.</p>
+<p>3. <strong>Available Options:</strong> Permitted choices and data formats.</p>
+<p>4. <strong>Admin Usage:</strong> Exact procedure for entering data.</p>
+<p>5. <strong>Customer Impact:</strong> Storefront visual and functional change.</p>
+<p>6. <strong>Validation:</strong> Automated checks and format rules.</p>
+<p>7. <strong>Dependencies:</strong> Downstream modules affected.</p>
+<p>8. <strong>Common Mistakes:</strong> Misconfigurations to avoid.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 1: GENERAL CONFIGURATION</h2>
+<p><em>(Refer to Figure 2.1 through Figure 6.1)</em></p>
+<p>1. <strong>Purpose:</strong> Establishes master catalog identity, search slugs, category taxonomy, manufacturer brand, retail/dealer pricing, and baseline stock policies.</p>
+<p>2. <strong>Fields:</strong> Product Title, URL Slug, SKU, Barcode, Categories Tree, Short Description, Full Description (WYSIWYG), Brand Alliance, Tags, MRP, Sale Price, Dealer Price, GST Tax Rate, Tax Inclusive Toggle, Physical Stock, Low Stock Threshold, Allow Backorders.</p>
+<p>3. <strong>Available Options:</strong></p>
+<ul>
+  <li>Tax Slabs: 0%, 5%, 12%, 18%, 28%.</li>
+  <li>Backorder Modes: Do not allow, Allow but notify, Allow freely.</li>
+  <li>Stock Status: In Stock, Out of Stock, On Backorder.</li>
+</ul>
+<p>4. <strong>Admin Usage:</strong> Input title, verify auto-slug, assign primary and secondary categories, set MRP and Sale Price, input physical warehouse stock.</p>
+<p>5. <strong>Customer Impact:</strong> Dictates how the item appears on Google search, category listings, search bars, and the header section of the PDP.</p>
+<p>6. <strong>Validation:</strong> Title and SKU required; Sale Price <em>le</em> MRP; URL slug must be globally unique alphanumeric kebab-case; stock must be integer <em>ge 0</em>.</p>
+<p>7. <strong>Dependencies:</strong> Feeds product search engine, category browsing, cart subtotal calculations, and B2B dealer login pricing.</p>
+<p>8. <strong>Common Mistakes:</strong> Forgetting to assign categories (orphan product); entering Sale Price higher than MRP; typing uppercase or special characters in URL slug.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 2: VARIANTS & COMBINATION MATRIX</h2>
+<p><em>(Refer to Figure 7.1 through Figure 17.1)</em></p>
+<p>1. <strong>Purpose:</strong> Generates multi-dimensional product variations (Color, Size, Material, Weight, Packs), configures individual prices, stocks, weights, and bundle builder tiers.</p>
+<p>2. <strong>Fields:</strong> Variant Group Name, Display Name, Display Type, Selection Mode, Required Flag, Variant Values, Option Modifiers, Combination Matrix Table (SKU, MRP, Sale Price, Stock, Weight, Default Variant Radio, Manage, Delete), Bundle Tiers.</p>
+<p>3. <strong>Available Options:</strong></p>
+<ul>
+  <li>11 Display Types: Bundle Builder, Weight Selector, Chip Selector, Dropdown Menu, Image Selector, Card Selector, Radio Chips, Color Chips, Button Group, Quantity Selector, Grid Cards.</li>
+  <li>6 Selection Modes: Single, Bundle, Weight, Multiple, Quantity, Pack.</li>
+  <li>4 Bundle Pricing Types: Fixed, Percentage, Per Variant, Custom.</li>
+</ul>
+<p>4. <strong>Admin Usage:</strong> Create variant groups, add option values, verify Cartesian matrix rows, set distinct SKUs, prices, stock levels, and designate 1 default variant.</p>
+<p>5. <strong>Customer Impact:</strong> Renders reactive selector swatches on PDP; updates gallery images and prices dynamically upon swatch clicks.</p>
+<p>6. <strong>Validation:</strong> At least one default variant must be selected; variant SKUs must be unique; stock and prices must be valid numbers.</p>
+<p>7. <strong>Dependencies:</strong> Cart line items, inventory deduction services, courier weight aggregators, and warehouse picking slips.</p>
+<p>8. <strong>Common Mistakes:</strong> Generating Cartesian matrices with hundreds of combinations without setting stock; selecting an out-of-stock variant as default; forgetting to assign tare weights.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 3: MEDIA & PRODUCT GALLERY</h2>
+<div class="figure-title-badge">FIGURE 18.1 — IMAGES TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 18.1 — Images Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-18.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_18_images_tab.png" alt="Figure 18.1 — Images Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Images configuration tab displaying uploaded gallery media, drag-and-drop reordering, primary hero badge, and variant mapping tags.</div>
+<p>1. <strong>Purpose:</strong> Manages the visual presentation of the product through hero images, multi-angle gallery photos, technical diagrams, and variant-linked swatches.</p>
+<p>2. <strong>Fields:</strong> Drag-and-drop upload zone, Image Card, Primary Hero Badge, Variant Mapping Dropdown, Alt Text Input, Display Order Handle, Delete Button.</p>
+<p>3. <strong>Available Options:</strong> Supported file types: WebP (recommended), JPG, PNG. Maximum file size: 2 MB per image. Recommended resolution: <em>1600 	imes 1600</em> px (1:1 aspect ratio).</p>
+<p>4. <strong>Admin Usage:</strong> Drag images into upload zone; click star icon to designate master hero photo; enter SEO alt text; link specific photos to corresponding variant values.</p>
+<p>5. <strong>Customer Impact:</strong> Determines customer first impressions; enables interactive gallery zoom, thumbnail navigation, and reactive swatch-to-photo updates.</p>
+<p>6. <strong>Validation:</strong> Minimum 1 photo required to publish; files over 5 MB or invalid MIME types are automatically rejected.</p>
+<p>7. <strong>Dependencies:</strong> Feeds storefront PDP carousel, category grid cards, cart thumbnails, and social sharing OpenGraph previews.</p>
+<p>8. <strong>Common Mistakes:</strong> Uploading heavy uncompressed images (&gt;3 MB) slowing page load; failing to provide descriptive alt text for SEO; uploading non-square images causing layout shifts.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 4: TECHNICAL SPECIFICATIONS</h2>
+<div class="figure-title-badge">FIGURE 19.1 — SPECIFICATIONS TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 19.1 — Specifications Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-19.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_19_specifications.png" alt="Figure 19.1 — Specifications Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Technical specifications tab showing structured key-value specification groups, engineering parameters, and reordering handles.</div>
+<p>1. <strong>Purpose:</strong> Provides structured, machine-readable technical parameters displayed in an organized tabular format on the storefront.</p>
+<p>2. <strong>Fields:</strong> Specification Group (e.g., <em>Print Properties</em>, <em>Mechanical Specifications</em>), Attribute Name (e.g., <em>Nozzle Temperature</em>, <em>Tensile Strength</em>), Attribute Value (e.g., <em>210°C - 230°C</em>, <em>50 MPa</em>), Display Order.</p>
+<p>3. <strong>Available Options:</strong> Custom groups, standard industry presets, multi-row specification entries.</p>
+<p>4. <strong>Admin Usage:</strong> Select or type specification group; add individual rows specifying technical parameter name and value; reorder rows using drag handles.</p>
+<p>5. <strong>Customer Impact:</strong> Empowers technical buyers and engineers to compare filament properties, printer dimensions, and operating tolerances.</p>
+<p>6. <strong>Validation:</strong> Key and Value fields cannot be blank; duplicate attributes within the same group are highlighted.</p>
+<p>7. <strong>Dependencies:</strong> Storefront Specifications tab, Google Structured Data (<code>TechnicalArticle</code> / <code>Product</code> schema).</p>
+<p>8. <strong>Common Mistakes:</strong> Entering unstructured text paragraphs instead of clean key-value rows; mixing units of measurement (e.g., mixing Celsius and Fahrenheit).</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 5: DATASHEETS & DOWNLOADS</h2>
+<div class="figure-title-badge">FIGURE 20.1 — DOWNLOADS TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 20.1 — Downloads Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-20.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_20_downloads.png" alt="Figure 20.1 — Downloads Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Downloads tab showing downloadable PDF technical datasheets, SDS safety sheets, Cura/PrusaSlicer print profiles, and firmware binaries.</div>
+<p>1. <strong>Purpose:</strong> Distributes essential customer documents including Material Safety Data Sheets (MSDS/SDS), Technical Data Sheets (TDS), 3D print slicer profiles (<code>.curaprofile</code>), and firmware updates.</p>
+<p>2. <strong>Fields:</strong> Document Title, File Type Tag, Document Category, File Upload / URL, Version String, File Size Badge, Access Restriction (Public / Registered Customers).</p>
+<p>3. <strong>Available Options:</strong> PDF, ZIP, GCODE, CURAPROFILE, INI, BIN. File size cap: 25 MB per document.</p>
+<p>4. <strong>Admin Usage:</strong> Upload document; specify customer-facing label (e.g., <em>"PLA Technical Data Sheet v2.1"</em>); assign category; set access permissions.</p>
+<p>5. <strong>Customer Impact:</strong> Customers can review safety certifications, verify mechanical properties before buying, and download tested slicer profiles immediately.</p>
+<p>6. <strong>Validation:</strong> Files are virus-scanned on upload; URL paths must return valid HTTP 200 responses.</p>
+<p>7. <strong>Dependencies:</strong> Storefront Downloads section, customer account order library.</p>
+<p>8. <strong>Common Mistakes:</strong> Uploading outdated firmware revisions without version labels; broken external links.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 6: KEY HIGHLIGHTS & BULLET FEATURES</h2>
+<div class="figure-title-badge">FIGURE 21.1 — FEATURES TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 21.1 — Features Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-21.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_21_features.png" alt="Figure 21.1 — Features Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Features tab showing bullet feature entries, icon pickers, headline text, and detailed benefit descriptions.</div>
+<p>1. <strong>Purpose:</strong> Communicates the top value propositions and unique selling points (USPs) of the product in scannable bullet points with visual icons.</p>
+<p>2. <strong>Fields:</strong> Feature Headline, Feature Description, Icon Selector (Material, Speed, Precision, Temperature, Quality), Display Order.</p>
+<p>3. <strong>Available Options:</strong> 50+ vector iconography presets; custom SVG upload; highlight card formatting.</p>
+<p>4. <strong>Admin Usage:</strong> Add 4–6 high-impact features summarizing why a customer should buy this item; select matching vector icons.</p>
+<p>5. <strong>Customer Impact:</strong> Renders prominent visual cards right beside or below the product hero image, driving immediate engagement.</p>
+<p>6. <strong>Validation:</strong> Maximum 10 features permitted; headline limited to 80 characters.</p>
+<p>7. <strong>Dependencies:</strong> Storefront Feature Grid component.</p>
+<p>8. <strong>Common Mistakes:</strong> Writing massive essays inside feature headlines; omitting visual icons.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 7: FREQUENTLY ASKED QUESTIONS (FAQS)</h2>
+<div class="figure-title-badge">FIGURE 22.1 — FAQS TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 22.1 — FAQs Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-22.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_22_faqs.png" alt="Figure 22.1 — FAQs Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> FAQs tab showing accordion Q&A pairs, category tagging, and customer support deflection fields.</div>
+<p>1. <strong>Purpose:</strong> Addresses common pre-purchase questions, troubleshooting tips, and maintenance guidance, dramatically reducing support tickets.</p>
+<p>2. <strong>Fields:</strong> Question Text, Answer Rich Text, FAQ Category Tag, Sort Order, Active Toggle.</p>
+<p>3. <strong>Available Options:</strong> Rich text answers supporting hyperlinks, bullet points, and maintenance steps.</p>
+<p>4. <strong>Admin Usage:</strong> Enter common questions received by support; provide authoritative, clear answers; organize logically.</p>
+<p>5. <strong>Customer Impact:</strong> Rendered in an interactive accordion format on the PDP; indexed by search engines as <code>FAQPage</code> Schema.</p>
+<p>6. <strong>Validation:</strong> Question and Answer fields cannot be blank.</p>
+<p>7. <strong>Dependencies:</strong> Storefront FAQ accordion, Google Rich Snippets search results.</p>
+<p>8. <strong>Common Mistakes:</strong> Neglecting to answer common compatibility questions (e.g., <em>"Is this filament compatible with Bambu Lab AMS?"</em>).</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 8: WARRANTY, CARE & SUPPORT</h2>
+<div class="figure-title-badge">FIGURE 23.1 — WARRANTY & SUPPORT TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 23.1 — Warranty & Support</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-23.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_23_warranty_support.png" alt="Figure 23.1 — Warranty & Support" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Warranty and support tab showing warranty duration, terms, storage conditions, and support contact channels.</div>
+<p>1. <strong>Purpose:</strong> Outlines statutory warranty coverage, replacement policies, manufacturer support contacts, and material storage recommendations.</p>
+<p>2. <strong>Fields:</strong> Warranty Duration (e.g., <em>1 Year Manufacturer Warranty</em>), Warranty Scope (e.g., <em>Covers manufacturing defects; excludes consumable nozzle wear</em>), Storage Conditions (e.g., <em>Store in vacuum-sealed bag with desiccant below 50°C</em>), Support Email / Phone.</p>
+<p>3. <strong>Available Options:</strong> Standard warranty presets (No Warranty, 30-Day Replacement, 6-Month Limited, 1-Year On-Site, 2-Year Enterprise).</p>
+<p>4. <strong>Admin Usage:</strong> Select warranty duration preset; specify exclusions and claims procedure; provide official care instructions.</p>
+<p>5. <strong>Customer Impact:</strong> Instills buyer confidence and educates customers on preventing filament moisture degradation or printer jam damage.</p>
+<p>6. <strong>Validation:</strong> Claims email must follow valid email regex format.</p>
+<p>7. <strong>Dependencies:</strong> Storefront Warranty badge, automated invoice terms, customer support claim portal.</p>
+<p>8. <strong>Common Mistakes:</strong> Omitting clear moisture-protection instructions on hygroscopic consumables like Nylon/PVA.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 9: SHIPPING & LOGISTICS ENGINE</h2>
+<div class="figure-title-badge">FIGURE 24.1 — SHIPPING CONFIGURATION</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 24.1 — Shipping Configuration</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-24.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_24_shipping_configuration.png" alt="Figure 24.1 — Shipping Configuration" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Shipping configuration tab displaying shipping rate mode hierarchy, delivery days string, free shipping overrides, and freight charges.</div>
+<div class="figure-title-badge">FIGURE 25.1 — DYNAMIC DELIVERY ESTIMATE ENGINE</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 25.1 — Delivery Estimate Engine</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-25.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_25_delivery_estimate.png" alt="Figure 25.1 — Delivery Estimate Engine" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Delivery date preview engine calculating dynamic arrival windows adjusted to Asia/Kolkata (IST) timezone.</div>
+<p>1. <strong>Purpose:</strong> Governs courier shipping fees, rate-calculation hierarchy, freight thresholds, and dynamic customer-facing delivery date estimation.</p>
+<p>2. <strong>Fields:</strong> Shipping Mode, Fixed Shipping Fee, Free Shipping Override Flag, Delivery Days Configuration String (<code>deliveryDays</code>), Fragile Packaging Fee.</p>
+<p>3. <strong>Available Options:</strong></p>
+<ul>
+  <li>Shipping Hierarchy Modes: <code>PRODUCT_SPECIFIC</code> (Priority 1), <code>CATEGORY_BASED</code> (Priority 2), <code>DEFAULT_GLOBAL</code> (Priority 3).</li>
+  <li>Delivery Days Formats: Single integer (e.g., <code>5</code>), hyphenated range (e.g., <code>5-6</code> or <code>3-5</code>).</li>
+</ul>
+<p>4. <strong>Admin Usage:</strong></p>
+<ul>
+  <li>Configure product-specific flat fee or allow category/global rate inheritance.</li>
+  <li>Enter standard transit days string (e.g., enter <code>5-6</code> for 5 to 6 business days).</li>
+</ul>
+<p>5. <strong>Customer Impact:</strong> Storefront renders dynamic delivery dates relative to the customer's current calendar date (e.g., <em>"Order now for delivery by 26 Sep – 27 Sep"</em>).</p>
+<p>6. <strong>Validation:</strong> Delivery days string must match <code>/^d+<em>/</code> or <code>/^d+s<em>-s</em>d+</em>/</code> where <em>	ext{min} &lt; 	ext{max}</em>.</p>
+<p>7. <strong>Dependencies:</strong> Cart shipping service, checkout payment total, courier manifest booking API.</p>
+<p>8. <strong>Common Mistakes:</strong> Entering arbitrary text like <em>"Fast Delivery"</em> into the delivery days field, which breaks the dynamic IST date arithmetic engine.</p>
+<h4>Dynamic Delivery Date Arithmetic (IST Timezone)</h4>
+<p>The 3D Galaxy <code>DeliveryEstimateService</code> processes delivery strings using exact calendar arithmetic synchronized to Asia/Kolkata:</p>
+<ul>
+  <li><strong>Single Delivery Estimate Configuration:</strong></li>
+  <li>Input Value: <code>5</code> (or <code>"5 days"</code>)</li>
+  <li>Calculated Date: <em>	ext{Current Date} + 5 	ext{ Calendar Days}</em></li>
+  <li>Example: If ordered on *21 September*, storefront displays: <strong>Delivery by 26 Sep</strong></li>
+</ul>
+<ul>
+  <li><strong>Range Delivery Estimate Configuration:</strong></li>
+  <li>Input Value: <code>5-6</code> (or <code>"5 to 6 days"</code>)</li>
+  <li>Calculated Range: <em>	ext{Current Date} + 5 	ext{ Days}</em> to <em>	ext{Current Date} + 6 	ext{ Days}</em></li>
+  <li>Example: If ordered on *21 September*, storefront displays: <strong>Delivery between 26 Sep – 27 Sep</strong></li>
+</ul>
+<h4>Shipping Rate Calculation Priority Hierarchy</h4>
+<p>When calculating checkout shipping fees, the system evaluates rules in strict order of precedence:</p>
+<div class="math-block">ext{1. Free Shipping Threshold Check} longrightarrow 	ext{2. Product-Specific Rule} longrightarrow 	ext{3. Category-Based Rule} longrightarrow 	ext{4. Global Default Rate}</div>
+<ul>
+  <li><strong>Priority 1: Free Shipping Threshold:</strong> If total cart order value exceeds the global free shipping threshold (e.g., <em>ge ₹1,999</em>), shipping is automatically set to <strong>₹0.00 (Free Shipping)</strong> regardless of lower rules.</li>
+  <li><strong>Priority 2: Product-Specific Shipping:</strong> If the product has a dedicated fixed shipping charge or free shipping flag enabled, that charge applies directly.</li>
+  <li><strong>Priority 3: Category-Based Shipping:</strong> If product shipping is set to default, the system applies the parent category's flat or weight-bracket tariff.</li>
+  <li><strong>Priority 4: Global Default Shipping:</strong> If neither product nor category defines a rate, the store-wide default shipping charge (e.g., ₹99.00 flat) is charged.</li>
+</ul>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 10: RELATED & CROSS-SELL PRODUCTS</h2>
+<div class="figure-title-badge">FIGURE 26.1 — RELATED PRODUCTS TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 26.1 — Related Products</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-26.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_26_related_products.png" alt="Figure 26.1 — Related Products" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Related products configuration tab showing cross-sell item selection, upsell bundles, and compatible hardware attachments.</div>
+<p>1. <strong>Purpose:</strong> Drives cross-selling and up-selling by recommending compatible accessories, replacement parts, or alternative items directly on the PDP.</p>
+<p>2. <strong>Fields:</strong> Relationship Type (Cross-sell, Up-sell, Compatible Spare, Alternative), Search & Add Products Selector, Selected Items Table, Reorder Handles.</p>
+<p>3. <strong>Available Options:</strong> Manual curation, category-based auto-fill, bidirectional relation toggle.</p>
+<p>4. <strong>Admin Usage:</strong> Search for compatible items (e.g., associating hardened steel nozzles and textured PEI sheets with a high-temperature 3D printer); select relation type.</p>
+<p>5. <strong>Customer Impact:</strong> Renders <em>"Frequently Bought Together"</em> and <em>"You May Also Like"</em> carousels on the storefront, prompting multi-item cart additions.</p>
+<p>6. <strong>Validation:</strong> Products cannot relate to themselves; maximum 12 related items per product.</p>
+<p>7. <strong>Dependencies:</strong> Storefront cross-sell recommendation carousel.</p>
+<p>8. <strong>Common Mistakes:</strong> Linking incompatible accessories (e.g., linking a 2.85mm filament to a 1.75mm direct-drive printer).</p>
+<p>---</p>
+<div class="page-break"></div>
+<h2 class="tab-header">TAB 11: SEO & DISCOVERABILITY</h2>
+<div class="figure-title-badge">FIGURE 27.1 — SEO TAB</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 27.1 — SEO Tab</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-27.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_27_seo.png" alt="Figure 27.1 — SEO Tab" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> SEO tab showing custom meta title, meta description, canonical URL override, OpenGraph image preview, and Google SERP simulator.</div>
+<p>1. <strong>Purpose:</strong> Maximizes organic search engine rankings, controls how links appear on social media platforms, and prevents duplicate content penalties.</p>
+<p>2. <strong>Fields:</strong> Meta Title, Meta Description, Meta Keywords, Canonical URL, OpenGraph Social Image, Robots Meta Indexing Directives (index/noindex, follow/nofollow).</p>
+<p>3. <strong>Available Options:</strong> Custom titles, SERP preview toggle, auto-fill from general tab.</p>
+<p>4. <strong>Admin Usage:</strong> Enter compelling meta title (under 60 characters); write persuasive meta description (150–160 characters); verify Google search snippet preview.</p>
+<p>5. <strong>Customer Impact:</strong> Determines whether searchers click the link on Google; governs appearance when links are shared on WhatsApp, Facebook, or LinkedIn.</p>
+<p>6. <strong>Validation:</strong> Meta title capped at 70 chars; meta description capped at 165 chars; canonical URL must be valid URI.</p>
+<p>7. <strong>Dependencies:</strong> Server-side rendering (SSR) meta tags, Googlebot crawler index.</p>
+<p>8. <strong>Common Mistakes:</strong> Leaving meta descriptions blank; keyword stuffing; allowing staging URLs to remain indexed.</p>
+<p>---</p>
+<div class="page-break"></div>
+<h1>20. INTERACTIVE LIVE STOREFRONT SIMULATOR</h1>
+<p>Before saving or publishing changes to a live product, administrators validate their configuration in real time using the built-in simulator.</p>
+<div class="figure-title-badge">FIGURE 28.1 — LIVE STOREFRONT SIMULATOR</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 28.1 — Live Storefront Preview</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-28.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_28_live_preview.png" alt="Figure 28.1 — Live Storefront Preview" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Live storefront simulation previewing the customer experience, variant selector swatches, dynamic subtotal calculations, and Add to Cart readiness.</div>
+<h3>Admin Validation Workflow</h3>
+<p>The <strong>Live Storefront Preview</strong> renders a faithful, real-time replica of the customer-facing Product Detail Page:</p>
+<ul>
+  <li><strong>Variant Selection Preview:</strong> Test clicking every color chip, dropdown item, or weight button to confirm responsive UI updates.</li>
+  <li><strong>Product Image:</strong> Verify that selecting a swatch instantly swaps the hero image to the correct color photo.</li>
+  <li><strong>Product Title & Breadcrumbs:</strong> Confirm title formatting and verify canonical category breadcrumb paths.</li>
+  <li><strong>Price & Discount Verification:</strong> Confirm that the MRP strike-through, selling price, and volume tier discounts compute correctly.</li>
+  <li><strong>Stock Confirmation:</strong> Verify that out-of-stock variants correctly show unavailable badges and block the Add to Cart button.</li>
+  <li><strong>Bundle Selection:</strong> Test multi-slot selection in bundle builder configurations.</li>
+  <li><strong>Quantity Stepper:</strong> Test quantity increments and verify subtotal calculations.</li>
+  <li><strong>Subtotal & Add to Cart Readiness:</strong> Confirm that the simulated Add to Cart action succeeds with no validation errors.</li>
+</ul>
+<div class="callout callout-info">
+<div class="callout-title">CRITICAL SPECIFICATION</div>
+<p>PRE-PUBLISHING MANDATE</p>
+<p>Always conduct a full functional dry run on the Live Preview tab before setting a product to "Active" status. Catching pricing typos or unmapped swatches here prevents embarrassing live customer errors.</p>
+</div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>21. RAPID CONFIGURATION QUALITY GATE & CHECKLIST</h1>
+<div class="figure-title-badge">FIGURE 29.1 — RAPID CONFIGURATION CHECKLIST</div>
+
+        <div class="figure-container">
+          <div class="figure-header">
+            <span class="figure-number">Figure 29.1 — Quick Tour Card</span>
+            <span class="figure-tag">CLEAN APPLICATION SCREENSHOT • FIG-29.1</span>
+          </div>
+          <img class="figure-img" src="file:///D:/WEB Projects/3dgalaxy/docs/assets/product-configuration-tour/tour_29_quick_tour_card.png" alt="Figure 29.1 — Quick Tour Card" />
+        </div>
+      <div class="figure-caption"><strong>Figure Description:</strong> Rapid configuration checklist summarizing all 10 mandatory pre-flight verification steps before publishing.</div>
+<h3>10-Point Pre-Flight Verification Gate</h3>
+<p>Before setting any product to <strong>Active (Published)</strong> status in the Catalog Registry, administrators must complete this verification checklist:</p>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Step #</th>
+  <th>Verification Item</th>
+  <th>Inspection Criteria</th>
+  <th>Passed?</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>01</strong></td>
+  <td><strong>Product Identity</strong></td>
+  <td>Title is descriptive; URL slug is unique lowercase kebab-case.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>02</strong></td>
+  <td><strong>Category Mapping</strong></td>
+  <td>At least one category assigned; 1 Primary Category designated.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>03</strong></td>
+  <td><strong>Pricing Audit</strong></td>
+  <td>Sale Price <em>le</em> MRP; Dealer Price configured if wholesale item.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>04</strong></td>
+  <td><strong>Inventory Counter</strong></td>
+  <td>Warehouse physical stock accurately entered; track inventory enabled.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>05</strong></td>
+  <td><strong>Variant Integrity</strong></td>
+  <td>Display Type matches option count; 1 in-stock variant set as Default.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>06</strong></td>
+  <td><strong>Matrix SKUs</strong></td>
+  <td>Every combination matrix row has a unique SKU and gross weight.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>07</strong></td>
+  <td><strong>Image Mapping</strong></td>
+  <td>Every variant swatch is mapped to a high-resolution square photo.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>08</strong></td>
+  <td><strong>Weight & Shipping</strong></td>
+  <td>Gross mass entered in grams; delivery days string formatted correctly.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>09</strong></td>
+  <td><strong>SEO & Metadata</strong></td>
+  <td>Meta title (&lt;60 chars) and meta description (&lt;160 chars) complete.</td>
+  <td>[ ]</td>
+</tr>
+<tr>
+  <td><strong>10</strong></td>
+  <td><strong>Live Preview Dry Run</strong></td>
+  <td>Simulated swatch clicks, price updates, and Add-to-Cart all pass.</td>
+  <td>[ ]</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>22. MASTER TROUBLESHOOTING & RECOVERY DIRECTORY</h1>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Symptom / Error</th>
+  <th>Root Cause</th>
+  <th>Immediate Admin Remediation</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Product missing from category pages</strong></td>
+  <td>No category assigned or category inactive</td>
+  <td>Open Tab 1; search and check relevant category; designate primary node; save.</td>
+</tr>
+<tr>
+  <td><strong>PDP displays blank price or "NaN"</strong></td>
+  <td>Combination matrix has empty sale price</td>
+  <td>Open Tab 2; audit Combination Matrix; populate missing price cells.</td>
+</tr>
+<tr>
+  <td><strong>Clicking swatch does not update photo</strong></td>
+  <td>Gallery image not mapped to variant value</td>
+  <td>Open Tab 3; select photo; assign matching variant value from dropdown.</td>
+</tr>
+<tr>
+  <td><strong>Delivery date shows fallback or error</strong></td>
+  <td>Invalid text in <code>deliveryDays</code> field</td>
+  <td>Open Tab 9; replace text with clean format like <code>5</code> or <code>5-6</code>.</td>
+</tr>
+<tr>
+  <td><strong>Shipping undercharged on multi-item orders</strong></td>
+  <td>Variant weight left blank (0 grams)</td>
+  <td>Open Tab 2; enter verified gross weight in grams on every matrix row.</td>
+</tr>
+<tr>
+  <td><strong>PDP loads with "Out of Stock" button</strong></td>
+  <td>Default variant has 0 stock</td>
+  <td>Open Tab 2; change the Default radio button to an in-stock variant.</td>
+</tr>
+<tr>
+  <td><strong>"Duplicate URL Slug" error on save</strong></td>
+  <td>Another product already uses this slug</td>
+  <td>Open Tab 1; modify URL slug by appending model number or series code.</td>
+</tr>
+</tbody></table></div>
+<p>---</p>
+<div class="page-break"></div>
+<h1>23. DOCUMENT ACCEPTANCE & SIGN-OFF</h1>
+<p>This <strong>3D Galaxy Product Configuration Administration Guide</strong> has been authored, verified against production code models, and delivered by the <strong>AJR Digital Hub Engineering Team</strong> for the operational management of the <strong>3D Galaxy E-Commerce Platform</strong>.</p>
+<div class="table-container"><table>
+<thead><tr>
+  <th>Authority</th>
+  <th>Representative Name</th>
+  <th>Title / Organization</th>
+  <th>Signature & Date</th>
+</tr></thead><tbody>
+<tr>
+  <td><strong>Delivered By</strong></td>
+  <td>AJR Digital Hub Team</td>
+  <td>Lead Enterprise Solutions Architect, AJR Digital Hub</td>
+  <td>____________________</td>
+</tr>
+<tr>
+  <td><strong>Accepted By</strong></td>
+  <td>3D Galaxy Team</td>
+  <td>Operations & Catalog Administration Lead, 3D Galaxy</td>
+  <td>____________________</td>
+</tr>
+</tbody></table></div>
+<p><em>Document Reference: <code>DOC-3DG-PRD-ADMIN-2026-V2.0</code> • 3D Galaxy Enterprise Admin Portal • September 2026</em></p>
+
+  </div>
+
+</body>
+</html>

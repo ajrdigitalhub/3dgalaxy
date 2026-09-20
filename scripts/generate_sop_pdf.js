@@ -44,12 +44,24 @@ async function run() {
   });
 
   // 2. Render Content Pages (Pages 2+) with crisp running header and running footer
+  console.log('Preparing DOM for Content Pages...');
+  await page.evaluate(() => {
+    const cover = document.querySelector('.cover-page');
+    if (cover) {
+      cover.style.height = 'auto';
+      cover.style.maxHeight = '180mm';
+      cover.style.padding = '8mm 18mm';
+      const middle = cover.querySelector('.cover-middle');
+      if (middle) middle.style.margin = '8mm 0';
+    }
+  });
+
   console.log('Generating Content Pages (Pages 2+)...');
   const headerHtml = `
     <style>
       #header { padding: 0 !important; margin: 0 !important; width: 100% !important; }
     </style>
-    <div style="width: 100%; font-size: 7.2pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 0 18mm 4px 18mm; border-bottom: 1.5px solid #cbd5e1; margin-bottom: 8mm; box-sizing: border-box;">
+    <div style="width: 100%; font-size: 7.2pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 7mm 18mm 4px 18mm; border-bottom: 1.5px solid #cbd5e1; box-sizing: border-box;">
       <span><span style="color: #ea580c; font-weight: 800;">AJR DIGITAL HUB</span> <span style="color: #94a3b8; font-weight: 400;">|</span> <span style="color: #0f172a; font-weight: 800;">3D GALAXY ADMIN PORTAL SOP</span></span>
       <span style="color: #0284c7; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800;">Client Handover Manual</span>
     </div>
@@ -59,7 +71,7 @@ async function run() {
     <style>
       #footer { padding: 0 !important; margin: 0 !important; width: 100% !important; }
     </style>
-    <div style="width: 100%; font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; justify-content: space-between; align-items: center; padding: 4px 18mm 0 18mm; border-top: 1px solid #cbd5e1; margin-top: 6mm; box-sizing: border-box; color: #64748b;">
+    <div style="width: 100%; font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; display: flex; justify-content: space-between; align-items: center; padding: 4px 18mm 7mm 18mm; border-top: 1px solid #cbd5e1; box-sizing: border-box; color: #64748b;">
       <span>SOP-3DG-ADM-2026-V1.0 • Delivered by AJR Digital Hub Team ➔ Accepted by 3D Galaxy Team</span>
       <span style="font-weight: 700; color: #0f172a;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
     </div>
@@ -73,8 +85,8 @@ async function run() {
     headerTemplate: headerHtml,
     footerTemplate: footerHtml,
     margin: {
-      top: '26mm',
-      bottom: '24mm',
+      top: '25mm',
+      bottom: '22mm',
       left: '18mm',
       right: '18mm'
     }

@@ -1,5 +1,5 @@
 // 3D Galaxy Admin Portal Service Worker
-const CACHE_VERSION = 'v1.4.2';
+const CACHE_VERSION = 'v1.4.3';
 const STATIC_CACHE_NAME = `3dgalaxy-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `3dgalaxy-api-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `3dgalaxy-images-${CACHE_VERSION}`;
@@ -10,7 +10,10 @@ const PRECACHE_ASSETS = [
   '/manifest.webmanifest',
   '/3d-logo.png',
   '/logo.svg',
-  '/favicon.ico'
+  '/favicon.ico',
+  '/favicon.svg',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png'
 ];
 
 // Install Event - Pre-cache core shell

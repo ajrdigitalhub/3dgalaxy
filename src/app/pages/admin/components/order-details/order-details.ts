@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { WeightPipe } from '../../../../shared/pipes/weight.pipe';
@@ -283,12 +283,39 @@ export class OrderDetailsComponent implements OnInit {
 
   fetchCustomerHistory(customerId: string) {
     this.loadingHistory.set(true);
-    this.http.get<any[]>(`${environment.apiUrl}/orders/customer/${customerId}`, this.getHeaders()).pipe(
-      catchError(() => of([]))
-    ).subscribe(res => {
-      if (res) {
-        this.previousOrders.set(res.filter(o => o.id !== this.order()?.id));
-      }
+    this.http.get<any>(`${environment.apiUrl}/admin/customers/${customerId}/orders`, this.getHeaders()).pipe(
+      map(res => {
+        if (res && Array.isArray(res.data)) {
+          return res.data;
+        }
+        return Array.isArray(res) ? res : [];
+      }),
+      catchError(() => {
+        return this.http.get<any>(`${environment.apiUrl}/orders/customer/${customerId}`, this.getHeaders()).pipe(
+          map(res => {
+            if (res && Array.isArray(res.data)) {
+              return res.data;
+            }
+            return Array.isArray(res) ? res : [];
+          }),
+          catchError(() => of([]))
+        );
+      })
+    ).subscribe((rawOrders: any[]) => {
+      const mappedOrders = (rawOrders || []).map((o: any) => ({
+        id: o.orderId || o.id,
+        orderNumber: o.orderNumber,
+        createdAt: o.orderDate || o.createdAt,
+        totalAmount: o.totalAmount,
+        status: o.deliveryStatus || o.status || 'Confirmed'
+      }));
+
+      const currentOrderId = this.order()?.id;
+      const currentOrderNumber = this.order()?.orderNumber;
+
+      this.previousOrders.set(
+        mappedOrders.filter((o: any) => o.id !== currentOrderId && o.orderNumber !== currentOrderNumber)
+      );
       this.loadingHistory.set(false);
     });
   }
