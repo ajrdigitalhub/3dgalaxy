@@ -128,7 +128,24 @@ export const updateFirebaseSettings = async (req: Request, res: Response) => {
 // 3. Validate Firebase Config / Connection
 export const validateFirebaseConfig = async (req: Request, res: Response) => {
   try {
-    const { serviceAccount, storageBucket } = req.body;
+    let { serviceAccount, storageBucket } = req.body;
+
+    // If masked or not provided in body, fallback to existing saved credentials in database
+    if (!serviceAccount || serviceAccount === '********') {
+      const existingRecord = await prisma.setting.findUnique({
+        where: { settingKey: 'firebase-settings' }
+      });
+      if (existingRecord) {
+        const currentSettings = parseJSON(existingRecord.settingData, {});
+        if (currentSettings?.serviceAccount && currentSettings.serviceAccount !== '********') {
+          serviceAccount = currentSettings.serviceAccount;
+          if (!storageBucket && currentSettings.storageBucket) {
+            storageBucket = currentSettings.storageBucket;
+          }
+        }
+      }
+    }
+
     if (!serviceAccount || serviceAccount === '********') {
       return res.status(400).json({ success: false, message: 'Raw Service Account credentials required for validation.' });
     }

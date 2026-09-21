@@ -333,11 +333,24 @@ export const updateCategory = async (req: Request, res: Response) => {
 
 export const deleteCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ error: 'Category ID is required' });
+  }
   try {
+    const existing = await prisma.category.findUnique({ where: { id } });
+    if (!existing) {
+      clearCategoryCache();
+      return res.status(200).json({ message: 'Category structure permanently purged' });
+    }
     await prisma.category.delete({ where: { id } });
     clearCategoryCache();
     return res.status(200).json({ message: 'Category structure permanently purged' });
   } catch (error: any) {
+    if (error?.code === 'P2025') {
+      clearCategoryCache();
+      return res.status(200).json({ message: 'Category structure permanently purged' });
+    }
     return res.status(500).json({ error: 'Category purge command failed', details: error.message });
   }
 };
+

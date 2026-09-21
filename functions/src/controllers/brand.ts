@@ -142,12 +142,35 @@ export const updateBrand = async (req: Request, res: Response) => {
 
 export const deleteBrand = async (req: Request, res: Response) => {
   const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Brand ID is required' });
+  }
+
   try {
+    const existing = await prisma.brand.findUnique({ where: { id } });
+    if (!existing) {
+      clearBrandCache();
+      return res.status(200).json({ message: 'Brand registration completely deleted' });
+    }
+
+    // Safely unlink any products referencing this brand before deletion
+    await prisma.product.updateMany({
+      where: { brandId: id },
+      data: { brandId: null },
+    }).catch((err) => console.warn('Product brandId unlink warning:', err?.message));
+
     await prisma.brand.delete({ where: { id } });
     clearBrandCache();
     return res.status(200).json({ message: 'Brand registration completely deleted' });
   } catch (error: any) {
+    // If the record was already deleted or not found (P2025), treat as successful deletion
+    if (error?.code === 'P2025') {
+      clearBrandCache();
+      return res.status(200).json({ message: 'Brand registration completely deleted' });
+    }
     console.error("Failed to delete brand:", error);
     return res.status(500).json({ error: 'Brand deletion operation halted', details: error.message });
   }
 };
+
