@@ -13,6 +13,29 @@ const router = Router();
 // Ensure roles: Admin, Super Admin and Manager have full access
 const adminGuard = [authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager'])];
 
+// Consolidated Lightweight Admin Startup Endpoint
+router.get('/dashboard-init', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    const [pendingOrders, unreadLogs, activeCampaigns] = await Promise.all([
+      prisma.order.count({ where: { status: 'PENDING' } }).catch(() => 0),
+      prisma.pushLog.count({ where: { status: 'FAILED' } }).catch(() => 0),
+      prisma.pushCampaign.count({ where: { status: 'Sending' } }).catch(() => 0),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: { id: user?.id, email: user?.email, role: user?.role },
+        counts: { pendingOrders, unreadLogs, activeCampaigns },
+        serverTime: new Date().toISOString(),
+      },
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Real-Time Sales & Product Analytics Endpoints
 router.get('/analytics/sales', adminGuard, getSalesAnalytics);
 router.get('/analytics/filters', adminGuard, getAnalyticsFilterOptions);

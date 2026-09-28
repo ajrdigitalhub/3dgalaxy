@@ -63,7 +63,10 @@ export class ApiService {
       '/api/home',
       '/api/homepage',
       '/api/public/instagram-feed',
-      '/api/service-config'
+      '/api/service-config',
+      '/api/explore-navigation',
+      '/api/menus',
+      '/api/header-menu'
     ];
 
     const isCacheable = !bypassCache && cacheableEndpoints.some(e => normalizedEndpoint.startsWith(e));

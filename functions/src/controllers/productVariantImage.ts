@@ -41,8 +41,23 @@ export const uploadVariantImages = async (req: Request, res: Response) => {
 
 export const deleteVariantImage = async (req: Request, res: Response) => {
   const { imageId } = req.params;
+  const variantId = (req.query.variantId || req.body?.variantId) as string | undefined;
+
   try {
-    const variants = await prisma.productVariant.findMany();
+    let variants: any[] = [];
+    if (variantId) {
+      const single = await prisma.productVariant.findUnique({
+        where: { id: variantId },
+        select: { id: true, variantImages: true }
+      });
+      if (single) variants = [single];
+    } else {
+      variants = await prisma.productVariant.findMany({
+        take: 200,
+        select: { id: true, variantImages: true }
+      });
+    }
+
     let foundVariant = null;
     let updatedImages: any[] = [];
 
@@ -71,7 +86,7 @@ export const deleteVariantImage = async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, message: 'Image deleted' });
     }
 
-    return res.status(404).json({ error: 'Image not found in any product variant' });
+    return res.status(404).json({ error: 'Image not found in product variant' });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to delete variant image', details: error.message });
   }

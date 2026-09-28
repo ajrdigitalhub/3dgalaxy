@@ -111,15 +111,6 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
         }
       };
       document.addEventListener('visibilitychange', this.visibilityHandler);
-
-      this.activeSyncInterval = setInterval(() => {
-        if (!document.hidden) {
-          const active = this.waService.activeConversation();
-          if (active) {
-            this.waService.reloadActiveMessages(active.id, true);
-          }
-        }
-      }, 12000);
     }
   }
 

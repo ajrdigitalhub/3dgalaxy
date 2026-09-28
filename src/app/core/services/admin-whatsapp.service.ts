@@ -122,65 +122,36 @@ export class AdminWhatsAppService {
   }
 
   /**
-   * Connects to the real-time SSE stream on Cloud Run backend.
-   * Pushes incoming messages, AI replies, admin replies, and status updates instantly.
+   * Connects to controlled 15s adaptive polling stream (replaces SSE long-polling loop).
+   * Pushes incoming messages, AI replies, admin replies, and status updates reliably.
    */
   connectToRealtimeStream() {
-    if (typeof window === 'undefined' || !window.EventSource) return;
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (typeof window === 'undefined') return;
+    this.isConnected.set(true);
+    this.connectionStatus.set('LIVE');
+
+    if (this.reconnectTimer) {
+      clearInterval(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
 
-    const token = this.getAuthToken();
-    const streamUrl = `${environment.apiUrl}/admin/whatsapp/stream?token=${encodeURIComponent(token)}`;
-    const es = new EventSource(streamUrl);
-    this.eventSource = es;
-
-    es.onopen = () => {
-      this.isConnected.set(true);
-      this.connectionStatus.set('LIVE');
-      if (this.reconnectTimer) {
-        clearTimeout(this.reconnectTimer);
-        this.reconnectTimer = null;
+    // Adaptive 15s polling timer active ONLY when document tab is visible
+    this.reconnectTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        const active = this.activeConversation();
+        if (active) {
+          this.reloadActiveMessages(active.id, true);
+        }
       }
-      // If a conversation is already open, reload messages silently to catch any missed messages
-      const active = this.activeConversation();
-      if (active) {
-        this.reloadActiveMessages(active.id, true);
-      }
-    };
-
-    es.onmessage = (event) => {
-      try {
-        if (!event.data) return;
-        const data = JSON.parse(event.data);
-        this.handleRealtimeEvent(data);
-      } catch (e) {
-        console.warn('[AdminWhatsAppService] Error parsing SSE event:', e);
-      }
-    };
-
-    es.onerror = () => {
-      this.isConnected.set(false);
-      this.connectionStatus.set('RECONNECTING');
-
-      // Schedule automatic reconnection in 3 seconds
-      if (!this.reconnectTimer) {
-        this.reconnectTimer = setTimeout(() => {
-          this.reconnectTimer = null;
-          this.connectToRealtimeStream();
-        }, 3000);
-      }
-    };
+    }, 15000);
   }
 
   /**
-   * Disconnects the real-time SSE stream when tab is hidden or component destroyed.
+   * Disconnects polling timer when tab is hidden or component destroyed.
    */
   disconnectRealtimeStream() {
     if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
+      clearInterval(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     if (this.eventSource) {

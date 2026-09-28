@@ -80,9 +80,23 @@ export const uploadProductImages = async (req: Request, res: Response) => {
 
 export const deleteProductImage = async (req: Request, res: Response) => {
   const { imageId } = req.params;
+  const productId = (req.query.productId || req.body?.productId) as string | undefined;
+
   try {
-    // Find any product containing this image id or url
-    const products = await prisma.product.findMany();
+    let products: any[] = [];
+    if (productId) {
+      const single = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, images: true }
+      });
+      if (single) products = [single];
+    } else {
+      products = await prisma.product.findMany({
+        take: 200,
+        select: { id: true, images: true }
+      });
+    }
+
     let foundProduct = null;
     let updatedImages: any[] = [];
     
@@ -112,9 +126,23 @@ export const deleteProductImage = async (req: Request, res: Response) => {
 
 export const setPrimaryImage = async (req: Request, res: Response) => {
   const { imageId } = req.params;
+  const productId = (req.query.productId || req.body?.productId) as string | undefined;
 
   try {
-    const products = await prisma.product.findMany();
+    let products: any[] = [];
+    if (productId) {
+      const single = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, images: true }
+      });
+      if (single) products = [single];
+    } else {
+      products = await prisma.product.findMany({
+        take: 200,
+        select: { id: true, images: true }
+      });
+    }
+
     let foundProduct = null;
     let updatedImages: any[] = [];
     let updatedTarget: any = null;

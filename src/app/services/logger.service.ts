@@ -110,6 +110,11 @@ export class LoggerService {
    */
   public reportError(message: string, error?: any, metadata: any = {}, feature: string = 'FRONTEND') {
     try {
+      const status = metadata?.status || metadata?.statusCode || (error && typeof error === 'object' ? error.status : undefined);
+      if (status === 401 || status === 403 || status === 404) {
+        return; // Suppress client error log reporting for expected auth/navigation status codes
+      }
+
       const errStack = error instanceof Error ? error.stack : (typeof error === 'string' ? error : JSON.stringify(error || {}));
 
       const payload = {

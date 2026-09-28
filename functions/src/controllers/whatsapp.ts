@@ -2035,42 +2035,54 @@ export const getCustomerNotificationDetail = async (req: AuthenticatedRequest, r
   }
 };
 
-// Start background retry worker
-export const startRetryWorker = () => {
-  setInterval(async () => {
-    try {
-      const settings = await getWhatsappSettings();
-      if (!settings.enabled) return;
+// Process retriable WhatsApp messages idempotently
+export const processWhatsAppRetries = async () => {
+  let count = 0;
+  try {
+    const settings = await getWhatsappSettings();
+    if (!settings.enabled) return { count: 0 };
 
-      const maxRetry = settings.sendRetryCount || 3;
-      const intervalMinutes = settings.retryInterval || 5;
-      const intervalMs = intervalMinutes * 60 * 1000;
+    const maxRetry = settings.sendRetryCount || 3;
+    const intervalMinutes = settings.retryInterval || 5;
+    const intervalMs = intervalMinutes * 60 * 1000;
 
-      const retriableLogs = await prisma.whatsappLog.findMany({
-        where: {
-          status: 'Retrying',
-          retryCount: { lt: maxRetry },
-        },
-      });
+    const retriableLogs = await prisma.whatsappLog.findMany({
+      where: {
+        status: 'Retrying',
+        retryCount: { lt: maxRetry },
+      },
+      take: 100, // Batch limit per execution tick
+    });
 
-      for (const log of retriableLogs) {
-        if (Date.now() - log.updatedAt.getTime() >= intervalMs) {
-          // Increment retryCount, reset status to Queued
-          await prisma.whatsappLog.update({
-            where: { id: log.id },
-            data: {
-              retryCount: log.retryCount + 1,
-              status: 'Queued',
-            },
-          });
+    for (const log of retriableLogs) {
+      if (Date.now() - log.updatedAt.getTime() >= intervalMs) {
+        // Increment retryCount, reset status to Queued
+        await prisma.whatsappLog.update({
+          where: { id: log.id },
+          data: {
+            retryCount: log.retryCount + 1,
+            status: 'Queued',
+          },
+        });
 
-          await dispatchMetaNotification(log.id, settings, log.requestPayload);
-        }
+        await dispatchMetaNotification(log.id, settings, log.requestPayload);
+        count++;
       }
-    } catch (e) {
-      console.error('Error in background WhatsApp retry worker:', e);
     }
-  }, 60000); // Check every minute
+  } catch (e: any) {
+    console.error('Error in WhatsApp retry worker:', e);
+    return { count, error: e.message };
+  }
+  return { count };
+};
+
+// Legacy startRetryWorker maintained for backwards compatibility (no longer runs un-controlled setInterval in serverless)
+export const startRetryWorker = () => {
+  if (process.env.ENABLE_IN_PROCESS_SCHEDULER === 'true') {
+    setInterval(async () => {
+      await processWhatsAppRetries();
+    }, 60000);
+  }
 };
 
 // ==========================================

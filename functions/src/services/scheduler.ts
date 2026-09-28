@@ -718,26 +718,85 @@ export const runDailyAdminDeviceCleanup = async () => {
 let consecutiveDbFailures = 0;
 
 /**
- * Initialize background scheduler daemon
+ * Centralized, idempotent scheduled maintenance execution method
+ * Designed to be invoked safely by Cloud Scheduler or internal endpoints
+ */
+export const runScheduledMaintenance = async (jobType: string = 'full') => {
+  console.log(`[SCHEDULER] Running scheduled maintenance job (Type: ${jobType})...`);
+  const results: any = {
+    timestamp: new Date().toISOString(),
+    jobType,
+    jobsExecuted: []
+  };
+
+  try {
+    // 1. Process scheduled push campaigns
+    await checkScheduledCampaigns();
+    results.jobsExecuted.push('checkScheduledCampaigns');
+
+    // 2. Process pending notification queue
+    await processNotificationQueue();
+    results.jobsExecuted.push('processNotificationQueue');
+
+    // 3. Process WhatsApp retries
+    const { processWhatsAppRetries } = require('../controllers/whatsapp');
+    if (typeof processWhatsAppRetries === 'function') {
+      const waRes = await processWhatsAppRetries();
+      results.jobsExecuted.push({ name: 'processWhatsAppRetries', result: waRes });
+    }
+
+    // 4. Daily Admin device token cleanup
+    if (jobType === 'full' || jobType === 'daily_cleanup' || jobType === 'morning_run') {
+      await runDailyAdminDeviceCleanup();
+      results.jobsExecuted.push('runDailyAdminDeviceCleanup');
+    }
+
+    // 5. Daily offer job (runs during evening cycle or when explicitly requested)
+    if (jobType === 'daily_offer' || jobType === 'evening_run' || jobType === 'full') {
+      await runDailyOfferJob();
+      results.jobsExecuted.push('runDailyOfferJob');
+    }
+
+    // 6. Database backup overdue health monitor check
+    const { backupScheduler } = require('./backupScheduler.service');
+    if (backupScheduler && typeof backupScheduler.checkBackupOverdueAndNotify === 'function') {
+      await backupScheduler.checkBackupOverdueAndNotify();
+      results.jobsExecuted.push('checkBackupOverdueAndNotify');
+    }
+
+    results.success = true;
+  } catch (error: any) {
+    console.error('[SCHEDULER] Scheduled maintenance error:', error);
+    results.success = false;
+    results.error = error.message || 'Unknown scheduled maintenance exception';
+  }
+
+  return results;
+};
+
+/**
+ * Initialize background scheduler daemon (only enabled when ENABLE_IN_PROCESS_SCHEDULER is true)
  */
 export const startScheduler = () => {
+  if (process.env.ENABLE_IN_PROCESS_SCHEDULER !== 'true') {
+    console.log('⚡ Cloud Scheduler HTTP Mode Active: In-process setInterval daemon disabled for Cloud Functions.');
+    return;
+  }
+
   if (schedulerIntervalId) return;
 
-  console.log('⚡ Push Notification Campaign Scheduler initialized.');
+  console.log('⚡ Push Notification Campaign Scheduler initialized (In-process mode).');
   
   // Run every 20 seconds
   schedulerIntervalId = setInterval(async () => {
-    // Health-check the pool before hitting DB — skip this tick if unreachable
     const healthy = await isPoolHealthy();
     if (!healthy) {
       consecutiveDbFailures++;
-      // Log on first failure, then every 30th failure (~10 min) to avoid log spam
       if (consecutiveDbFailures === 1 || consecutiveDbFailures % 30 === 0) {
         console.warn(`⚠️ Database unreachable (${consecutiveDbFailures} consecutive failures). Skipping scheduler tick.`);
       }
       return;
     }
-    // Reset counter on successful connection
     if (consecutiveDbFailures > 0) {
       console.log(`✅ Database connection restored after ${consecutiveDbFailures} failures.`);
       consecutiveDbFailures = 0;
@@ -747,21 +806,17 @@ export const startScheduler = () => {
     await processNotificationQueue();
   }, 20000);
 
-  // Daily Offer Cron - runs every day at 5:00 PM IST (17:00 Asia/Kolkata)
   dailyOfferCronTask = cron.schedule('0 17 * * *', async () => {
     await runDailyOfferJob();
   }, {
     timezone: "Asia/Kolkata"
   });
 
-  // Daily Admin Device Token Cleanup - runs every day at 2:00 AM IST
   cron.schedule('0 2 * * *', async () => {
     await runDailyAdminDeviceCleanup();
   }, {
     timezone: "Asia/Kolkata"
   });
-
-  console.log('⏰ Daily Offer Auto Cron scheduled at 5:00 PM IST & Device Cleanup scheduled at 2:00 AM IST.');
 };
 
 /**

@@ -270,6 +270,8 @@ app.use("/api/admin/services", serviceEnquiryRoutes);
 app.use("/api/admin/fcm", adminFcmRoutes);
 import backupRoutes from "./routes/backup.routes";
 app.use("/api/admin/backups", backupRoutes);
+import schedulerRoutes from "./routes/schedulerRoutes";
+app.use("/api", schedulerRoutes);
 app.use("/api", logRoutes);
 
 // Raw OpenAPI/Swagger Specification Object

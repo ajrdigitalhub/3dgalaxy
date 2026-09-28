@@ -445,26 +445,16 @@ export class SalesAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   private initRealtimeStream(): void {
-    if (typeof window === 'undefined' || !window.EventSource) return;
-    try {
-      this.sseSource = new EventSource(`${this.apiBase}/admin/analytics/sales/stream`);
-      this.sseSource.onmessage = (evt) => {
-        try {
-          const payload = JSON.parse(evt.data);
-          if (payload?.type === 'sales_update') {
-            this.fetchSalesAnalytics(false);
-          }
-          this.isLive.set(true);
-        } catch (e) {
-          // ignore
-        }
-      };
-      this.sseSource.onerror = () => {
-        this.isLive.set(false);
-      };
-    } catch (e) {
-      this.isLive.set(false);
-    }
+    if (typeof window === 'undefined') return;
+    this.isLive.set(true);
+
+    // Efficient 30s polling active ONLY when tab is visible (replaces 60s SSE reconnect loop)
+    if (this.pollingTimer) clearInterval(this.pollingTimer);
+    this.pollingTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        this.fetchSalesAnalytics(false);
+      }
+    }, 30000);
   }
 
   // Visual View Switching Helpers
