@@ -1454,14 +1454,29 @@ export class AdminPanel implements OnInit {
     }
   }
 
-  async deleteCategory(id: string) {
-    if (this.isDeletingCategory()) return;
-    if (!confirm("Are you sure you want to delete this category?")) return;
+  async deleteCategory(id: string): Promise<boolean> {
+    if (this.isDeletingCategory()) return false;
+    const cat = this.ds.categories().find((c) => c.id === id);
+    const catName = cat?.name || "this category";
+    if (!confirm(`Are you sure you want to delete "${catName}"? This action cannot be undone.`)) return false;
     this.isDeletingCategory.set(true);
     try {
       await this.ds.deleteCategory(id);
-    } catch {
-      this.toastService.error("Access Denied: Action restricted.");
+      this.toastService.success(`Category "${catName}" deleted successfully.`);
+      if (this.editingCategory()?.id === id) {
+        this.cancelCategoryEdit();
+      }
+      return true;
+    } catch (err: any) {
+      console.error('Failed to delete category:', err);
+      const errMsg =
+        err?.error?.details ||
+        err?.error?.message ||
+        err?.error?.error ||
+        err?.message ||
+        "Failed to delete category. Action restricted.";
+      this.toastService.error(errMsg);
+      return false;
     } finally {
       this.isDeletingCategory.set(false);
     }

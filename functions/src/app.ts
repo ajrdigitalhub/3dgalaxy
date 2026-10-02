@@ -221,6 +221,7 @@ app.post(
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/admin/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", variantImageRoutes); // Since some endpoints start with /variants or /product-variant-images
 app.use("/api/brands", brandRoutes);

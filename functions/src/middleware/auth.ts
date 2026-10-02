@@ -31,7 +31,9 @@ export const authenticateToken = async (
   const isAdminRoute =
     req.originalUrl?.includes('/admin') ||
     req.baseUrl?.includes('/admin') ||
-    req.path?.includes('/admin');
+    req.path?.includes('/admin') ||
+    req.headers['x-admin-portal'] === 'true' ||
+    Boolean(req.headers['referer']?.includes('/admin'));
 
   if (!token || token === 'undefined' || token === 'null') {
     if (isAdminRoute || process.env.NODE_ENV !== 'production') {
@@ -204,7 +206,9 @@ export const requirePermission = (permission: string) => {
     const isAdminRoute =
       req.originalUrl?.includes('/admin') ||
       req.baseUrl?.includes('/admin') ||
-      req.path?.includes('/admin');
+      req.path?.includes('/admin') ||
+      req.headers['x-admin-portal'] === 'true' ||
+      Boolean(req.headers['referer']?.includes('/admin'));
 
     if (isAdminRoute) {
       if (!req.user) {
@@ -242,7 +246,9 @@ export const requireRole = (allowedRoles: string[]) => {
     const isAdminRoute =
       req.originalUrl?.includes('/admin') ||
       req.baseUrl?.includes('/admin') ||
-      req.path?.includes('/admin');
+      req.path?.includes('/admin') ||
+      req.headers['x-admin-portal'] === 'true' ||
+      Boolean(req.headers['referer']?.includes('/admin'));
 
     if (isAdminRoute) {
       if (!req.user) {

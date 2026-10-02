@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../../services/api.service';
 import { ToastService } from '../../../shared/components/toast/toast.service';
+import { DatastoreService } from '../../../services/datastore';
+import { NotificationService } from '../../../services/notification.service';
 
 @Component({
   selector: 'app-admin-push-settings-tab',
@@ -303,7 +305,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
                 <input type="number" [(ngModel)]="popupConfig.reshowDays" name="reshowDays" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
               </div>
 
-              <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mt-2">
+              <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mt-2">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="pop-sync-theme" [(ngModel)]="popupConfig.syncWithTheme" name="syncWithTheme" class="w-3.5 h-3.5 text-orange-600 rounded">
+                  <label for="pop-sync-theme" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Sync Theme</label>
+                </div>
                 <div class="flex items-center gap-2">
                   <input type="checkbox" id="pop-once" [(ngModel)]="popupConfig.showOnce" name="showOnce" class="w-3.5 h-3.5 text-orange-600 rounded">
                   <label for="pop-once" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Show Once</label>
@@ -330,11 +336,18 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
           <!-- Interactive Live Preview -->
           <div class="space-y-4">
-            <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800/40 p-4 rounded-2xl">
-              <span class="text-xs font-black uppercase text-zinc-500">Live Preview Sandbox</span>
-              <div class="flex gap-2">
-                <button (click)="previewDevice.set('desktop')" [class]="previewDevice() === 'desktop' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Desktop</button>
-                <button (click)="previewDevice.set('mobile')" [class]="previewDevice() === 'mobile' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Mobile</button>
+            <div class="flex flex-wrap justify-between items-center gap-3 bg-zinc-100 dark:bg-zinc-800/40 p-4 rounded-2xl">
+              <div>
+                <span class="text-xs font-black uppercase text-zinc-500">Live Preview Sandbox</span>
+                <p class="text-[10px] text-zinc-400 mt-0.5">Accurate preview matching active theme and responsive design.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" (click)="triggerLivePreview()" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-xs">
+                  <mat-icon class="!text-xs !w-3.5 !h-3.5">play_arrow</mat-icon> Test Live Popup
+                </button>
+                <div class="h-4 w-px bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+                <button type="button" (click)="previewDevice.set('desktop')" [class]="previewDevice() === 'desktop' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Desktop</button>
+                <button type="button" (click)="previewDevice.set('mobile')" [class]="previewDevice() === 'mobile' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Mobile</button>
               </div>
             </div>
 
@@ -343,36 +356,33 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
               
               <!-- Desktop Frame -->
               @if (previewDevice() === 'desktop') {
-                <div class="w-full max-w-md border border-neutral-200 dark:border-neutral-800 shadow-2xl p-8 text-center relative overflow-hidden transition-all duration-300"
-                     [style.backgroundColor]="popupConfig.backgroundColor || '#1e293b'"
-                     [style.color]="popupConfig.textColor || '#ffffff'"
+                <div class="w-full max-w-md border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-8 text-center relative overflow-hidden transition-all duration-300"
+                     [style.backgroundColor]="getPreviewBgColor()"
+                     [style.color]="getPreviewTextColor()"
                      [style.borderRadius.px]="popupConfig.borderRadius || 24">
                   
                   @if (popupConfig.bannerUrl) {
-                    <div class="-mt-8 -mx-8 mb-6 h-28 overflow-hidden relative">
+                    <div class="-mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-5 sm:mb-6 h-28 sm:h-36 overflow-hidden relative">
                       <img [src]="popupConfig.bannerUrl" class="w-full h-full object-cover" alt="Banner" />
                     </div>
                   }
 
-                  <div class="flex justify-center mb-4">
-                    @if (popupConfig.logoUrl) {
-                      <img [src]="popupConfig.logoUrl" class="w-12 h-12 object-contain rounded-lg" alt="Logo" />
-                    } @else {
-                      <div class="w-12 h-12 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center">
-                        <mat-icon>notifications_active</mat-icon>
-                      </div>
-                    }
+                  <div class="flex justify-center mb-3 sm:mb-4">
+                    <div class="p-2 rounded-2xl" [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800/80 border border-zinc-700/60 shadow-md' : 'bg-white/95 border border-zinc-200/90 shadow-sm'">
+                      <img [src]="getPreviewLogoUrl()" class="w-12 h-12 sm:w-14 sm:h-14 object-contain" alt="Logo" />
+                    </div>
                   </div>
 
-                  <h3 class="text-lg font-bold tracking-tight mb-2">{{ popupConfig.title || 'Never Miss Amazing Deals!' }}</h3>
-                  <p class="opacity-80 text-xs leading-relaxed mb-6 whitespace-pre-line">{{ popupConfig.description || 'Enable notifications for deals, offers and status tracking.' }}</p>
+                  <h3 class="text-lg sm:text-xl font-extrabold tracking-tight mb-2">{{ popupConfig.title || '🚀 Welcome to 3D Galaxy!' }}</h3>
+                  <p class="text-xs sm:text-sm leading-relaxed mb-6 whitespace-pre-line" [style.color]="getPreviewSubtextColor()">{{ popupConfig.description || 'Stay ahead with exclusive deals, custom print launches, premium merchandise, flash sales and limited-time offers.' }}</p>
 
                   <div class="flex gap-3 justify-center">
-                    <button [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-10 px-5 text-white rounded-lg font-bold text-[10px] uppercase tracking-wider cursor-pointer border-none flex-1">
-                      {{ popupConfig.allowText || 'Allow' }}
+                    <button type="button" class="h-10 sm:h-11 px-5 rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer border"
+                            [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800 text-zinc-200 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'">
+                      {{ popupConfig.cancelText || 'Maybe Later' }}
                     </button>
-                    <button class="h-10 px-5 bg-white/10 text-current rounded-lg font-bold text-[10px] uppercase tracking-wider cursor-pointer border border-white/20">
-                      {{ popupConfig.cancelText || 'Cancel' }}
+                    <button type="button" [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-10 sm:h-11 px-5 text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer border-none flex-1 shadow-md shadow-orange-500/20">
+                      {{ popupConfig.allowText || 'Keep Me Updated 🔔' }}
                     </button>
                   </div>
                 </div>
@@ -380,36 +390,34 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 
               <!-- Mobile Frame -->
               @if (previewDevice() === 'mobile') {
-                <div class="w-64 h-[400px] bg-zinc-800 dark:bg-black rounded-[2.5rem] border-[6px] border-zinc-700 relative overflow-hidden flex flex-col justify-end p-2 shadow-xl">
+                <div class="w-72 h-[440px] bg-zinc-800 dark:bg-black rounded-[2.5rem] border-[6px] border-zinc-700 relative overflow-hidden flex flex-col justify-end p-3 shadow-xl">
                   <!-- Notch -->
                   <div class="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-zinc-700 rounded-full"></div>
                   
                   <!-- Floating bottom popup -->
-                  <div class="w-full shadow-2xl p-4 text-center relative overflow-hidden transition-all duration-300 mb-2 border border-white/10"
-                       [style.backgroundColor]="popupConfig.backgroundColor || '#1e293b'"
-                       [style.color]="popupConfig.textColor || '#ffffff'"
-                       [style.borderRadius.px]="(popupConfig.borderRadius || 24) * 0.8">
+                  <div class="w-full shadow-2xl p-4 text-center relative overflow-hidden transition-all duration-300 mb-2 border"
+                       [style.backgroundColor]="getPreviewBgColor()"
+                       [style.color]="getPreviewTextColor()"
+                       [style.borderColor]="ds.theme() === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'"
+                       [style.borderRadius.px]="(popupConfig.borderRadius || 24) * 0.75">
                     
-                    <div class="flex items-center gap-2 mb-2 text-left">
-                      @if (popupConfig.logoUrl) {
-                        <img [src]="popupConfig.logoUrl" class="w-8 h-8 object-contain rounded-xs" alt="Logo" />
-                      } @else {
-                        <div class="w-8 h-8 bg-orange-500/10 text-orange-500 rounded flex items-center justify-center">
-                          <mat-icon class="scale-75">notifications</mat-icon>
-                        </div>
-                      }
-                      <div>
-                        <h3 class="text-[9px] font-bold tracking-tight">{{ popupConfig.title || 'Never Miss Amazing Deals!' }}</h3>
-                        <p class="opacity-80 text-[7px] leading-tight line-clamp-2">{{ popupConfig.description || 'Enable notifications.' }}</p>
+                    <div class="flex items-center gap-2.5 mb-2.5 text-left">
+                      <div class="p-1.5 rounded-xl" [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800' : 'bg-white border border-zinc-200'">
+                        <img [src]="getPreviewLogoUrl()" class="w-8 h-8 object-contain" alt="Logo" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h3 class="text-[11px] font-bold tracking-tight truncate">{{ popupConfig.title || '🚀 Welcome to 3D Galaxy!' }}</h3>
+                        <p class="text-[9px] leading-tight line-clamp-2" [style.color]="getPreviewSubtextColor()">{{ popupConfig.description || 'Enable notifications for deals.' }}</p>
                       </div>
                     </div>
 
-                    <div class="flex gap-1.5 justify-center mt-3">
-                      <button [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-6 px-3 text-white rounded-md font-bold text-[8px] uppercase tracking-wider cursor-pointer border-none flex-1">
-                        {{ popupConfig.allowText || 'Allow' }}
+                    <div class="flex gap-2 justify-center mt-2">
+                      <button type="button" class="h-7 px-2.5 rounded-lg font-bold text-[9px] uppercase tracking-wider cursor-pointer border flex-1"
+                              [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800 text-zinc-200 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'">
+                        {{ popupConfig.cancelText || 'Later' }}
                       </button>
-                      <button class="h-6 px-3 bg-white/10 text-current rounded-md font-bold text-[8px] uppercase tracking-wider cursor-pointer border border-white/10">
-                        {{ popupConfig.cancelText || 'Cancel' }}
+                      <button type="button" [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-7 px-3 text-white rounded-lg font-bold text-[9px] uppercase tracking-wider cursor-pointer border-none flex-1">
+                        {{ popupConfig.allowText || 'Update 🔔' }}
                       </button>
                     </div>
                   </div>
@@ -1190,6 +1198,38 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 export class PushSettingsTabComponent {
   public api = inject(ApiService);
   public toast = inject(ToastService);
+  public ds = inject(DatastoreService);
+  public notif = inject(NotificationService);
+
+  getPreviewBgColor(): string {
+    if (this.popupConfig.syncWithTheme || this.popupConfig.backgroundColor === 'theme' || !this.popupConfig.backgroundColor) {
+      return this.ds.theme() === 'dark' ? '#18181b' : '#ffffff';
+    }
+    return this.popupConfig.backgroundColor;
+  }
+
+  getPreviewTextColor(): string {
+    if (this.popupConfig.syncWithTheme || this.popupConfig.textColor === 'theme' || !this.popupConfig.textColor) {
+      return this.ds.theme() === 'dark' ? '#f8fafc' : '#09090b';
+    }
+    return this.popupConfig.textColor;
+  }
+
+  getPreviewSubtextColor(): string {
+    return this.ds.theme() === 'dark' ? 'rgba(244, 244, 245, 0.75)' : 'rgba(24, 24, 27, 0.7)';
+  }
+
+  getPreviewLogoUrl(): string {
+    if (this.popupConfig.logoUrl && this.popupConfig.logoUrl.trim() !== '') {
+      return this.popupConfig.logoUrl.trim();
+    }
+    return '/3d-logo.png';
+  }
+
+  triggerLivePreview() {
+    this.notif.testTriggerPopup();
+    this.toast.info('Live notification popup preview triggered!');
+  }
 
   activeSubTab = signal<string>('analytics');
   previewDevice = signal<string>('desktop');
@@ -1439,18 +1479,19 @@ export class PushSettingsTabComponent {
     defaultClickUrl: '/'
   };
 
-  popupConfig = {
+  popupConfig: any = {
     enabled: true,
     title: '',
     description: '',
     allowText: '',
     cancelText: '',
-    logoUrl: '',
+    logoUrl: '/3d-logo.png',
     bannerUrl: '',
-    backgroundColor: '#1e293b',
-    textColor: '#ffffff',
+    backgroundColor: 'theme',
+    textColor: 'theme',
+    syncWithTheme: true,
     buttonColor: '#f97316',
-    borderRadius: 12,
+    borderRadius: 24,
     animation: 'scale-in',
     delayShow: 5,
     scrollShow: 30,

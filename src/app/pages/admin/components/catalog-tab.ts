@@ -2455,18 +2455,21 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                         </span>
                       }
 
-                      <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
                         <button
+                          type="button"
                           (click)="$event.stopPropagation(); openEditCategoryModal(c)"
                           title="Edit Category Details"
-                          class="p-1 hover:bg-blue-500/10 text-blue-500 rounded-lg border-none bg-transparent cursor-pointer"
+                          class="p-1 hover:bg-blue-500/10 text-blue-500 rounded-lg border-none bg-transparent cursor-pointer flex items-center justify-center transition-colors"
                         >
                           <mat-icon class="text-xs">edit</mat-icon>
                         </button>
                         <button
-                          (click)="$event.stopPropagation(); admin.deleteCategory(c.id)"
+                          type="button"
+                          (click)="deleteCategory(c.id, $event)"
+                          [disabled]="admin.isDeletingCategory()"
                           title="Delete Category"
-                          class="p-1 hover:bg-rose-500/10 text-rose-500 rounded-lg border-none bg-transparent cursor-pointer"
+                          class="p-1 hover:bg-rose-500/10 text-rose-500 rounded-lg border-none bg-transparent cursor-pointer flex items-center justify-center transition-colors disabled:opacity-40"
                         >
                           <mat-icon class="text-xs">delete</mat-icon>
                         </button>
@@ -2537,8 +2540,9 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                       <button
+                        type="button"
                         (click)="openEditCategoryModal(cat)"
                         class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
                       >
@@ -2547,11 +2551,23 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                       </button>
 
                       <button
+                        type="button"
                         (click)="isAssignProductsModalOpen.set(true)"
                         class="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-sm"
                       >
                         <mat-icon class="text-sm">add_link</mat-icon>
                         <span>Assign Products</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        (click)="deleteCategory(cat.id)"
+                        [disabled]="admin.isDeletingCategory()"
+                        class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border-none shadow-sm disabled:opacity-50"
+                        title="Delete this category"
+                      >
+                        <mat-icon class="text-sm">delete</mat-icon>
+                        <span>Delete Category</span>
                       </button>
                     </div>
                   </div>
@@ -3170,10 +3186,29 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
 
                 <!-- Modal Footer -->
                 <div class="flex items-center justify-between px-6 py-4 border-t dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-                  <button (click)="isCategoryModalOpen.set(false); admin.cancelCategoryEdit()" class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-800 uppercase border-none bg-transparent cursor-pointer">
-                    Cancel
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      (click)="isCategoryModalOpen.set(false); admin.cancelCategoryEdit()"
+                      class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 uppercase border-none bg-transparent cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    @if (admin.editingCategory()) {
+                      <button
+                        type="button"
+                        (click)="deleteCategory(admin.editingCategory().id)"
+                        [disabled]="admin.isDeletingCategory()"
+                        class="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold uppercase transition-all border-none cursor-pointer flex items-center gap-1 disabled:opacity-40"
+                        title="Delete this category"
+                      >
+                        <mat-icon class="text-sm">delete</mat-icon>
+                        <span>Delete Category</span>
+                      </button>
+                    }
+                  </div>
                   <button
+                    type="button"
                     (click)="admin.saveCategory(); isCategoryModalOpen.set(false)"
                     [disabled]="admin.isSavingCategory()"
                     class="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border-none cursor-pointer shadow-md disabled:opacity-50"
@@ -4440,6 +4475,21 @@ export class AdminCatalogTab {
     this.selectedCategoryId.set(cat.id);
     this.categoryModalTab.set('general');
     this.isCategoryModalOpen.set(true);
+  }
+
+  async deleteCategory(catId: string, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    const success = await this.admin.deleteCategory(catId);
+    if (success) {
+      if (this.selectedCategoryId() === catId) {
+        this.selectedCategoryId.set(null);
+      }
+      if (this.isCategoryModalOpen()) {
+        this.isCategoryModalOpen.set(false);
+      }
+    }
   }
 
   productsInSelectedCategory = computed(() => {

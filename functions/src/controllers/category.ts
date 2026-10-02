@@ -53,6 +53,7 @@ export const getCategoriesTree = async (req: Request, res: Response) => {
     let tree = sysCache.get('categories_tree') as CategoryNode[];
     if (!tree) {
       const all = await withDbRetry(() => prisma.category.findMany({
+        where: { deletedAt: null },
         orderBy: { name: 'asc' },
       }));
       tree = buildCategoryTree(all, null);
@@ -218,6 +219,7 @@ export const getCategories = async (req: Request, res: Response) => {
     let list = sysCache.get('categories_flat');
     if (!list) {
       list = await withDbRetry(() => prisma.category.findMany({
+        where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
       }));
       sysCache.set('categories_flat', list, 1800);
@@ -334,23 +336,58 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const deleteCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
   if (!id) {
-    return res.status(400).json({ error: 'Category ID is required' });
+    return res.status(400).json({ success: false, error: 'Category ID is required' });
   }
   try {
-    const existing = await prisma.category.findUnique({ where: { id } });
+    const existing = await prisma.category.findUnique({
+      where: { id },
+      include: {
+        children: { select: { id: true } }
+      }
+    });
     if (!existing) {
       clearCategoryCache();
-      return res.status(200).json({ message: 'Category structure permanently purged' });
+      return res.status(200).json({ success: true, message: 'Category structure permanently purged' });
     }
-    await prisma.category.delete({ where: { id } });
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Re-parent direct child subcategories to this category's parent (or root/null)
+      await tx.category.updateMany({
+        where: { parentId: id },
+        data: { parentId: existing.parentId || null }
+      });
+
+      // 2. Unlink junction product-categories mappings
+      await tx.productCategory.deleteMany({
+        where: { categoryId: id }
+      });
+
+      // 3. Unlink direct products categoryId
+      await tx.product.updateMany({
+        where: { categoryId: id },
+        data: { categoryId: null }
+      });
+
+      // 4. Unlink homepage section items
+      await tx.homepageSectionItem.deleteMany({
+        where: { categoryId: id }
+      });
+
+      // 5. Delete category permanently
+      await tx.category.delete({
+        where: { id }
+      });
+    });
+
     clearCategoryCache();
-    return res.status(200).json({ message: 'Category structure permanently purged' });
+    return res.status(200).json({ success: true, message: 'Category deleted successfully' });
   } catch (error: any) {
     if (error?.code === 'P2025') {
       clearCategoryCache();
-      return res.status(200).json({ message: 'Category structure permanently purged' });
+      return res.status(200).json({ success: true, message: 'Category deleted successfully' });
     }
-    return res.status(500).json({ error: 'Category purge command failed', details: error.message });
+    console.error('[CATEGORY DELETE ERROR]', error);
+    return res.status(500).json({ success: false, error: 'Category purge command failed', details: error.message });
   }
 };
 

@@ -162,8 +162,9 @@ export class NotificationService {
       return;
     }
 
-    // Check checkout & payment page rules
+    // Check admin, checkout & payment page rules
     const pathname = window.location.pathname;
+    if (pathname.includes('/admin')) return;
     if (config.hideCheckout && (pathname.includes('/checkout') || pathname.includes('/cart'))) return;
     if (config.hidePayment && (pathname.includes('/payment') || pathname.includes('/pay') || pathname.includes('/returns'))) return;
 
@@ -249,6 +250,11 @@ export class NotificationService {
   dismissPrompt() {
     localStorage.setItem("fcm_prompt_dismissed_time", Date.now().toString());
     this.showPromptSubject.next(false);
+  }
+
+  // Force show popup for live preview or testing
+  testTriggerPopup() {
+    this.showPromptSubject.next(true);
   }
 
   // Retrieve FCM Token from SDK

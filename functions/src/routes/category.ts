@@ -22,8 +22,8 @@ router.get('/breadcrumbs/slug/:slug', cacheMiddleware(1800), getBreadcrumbsBySlu
 router.get('/breadcrumbs/:id', cacheMiddleware(1800), getBreadcrumbs);
 router.get('/children/:parentId', cacheMiddleware(1800), getDirectChildren);
 
-router.post('/', authenticateToken, requireRole(['Admin', 'Manager']), createCategory);
-router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager']), updateCategory);
-router.delete('/:id', authenticateToken, requireRole(['Admin', 'Manager']), deleteCategory);
+router.post('/', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), createCategory);
+router.put('/:id', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), updateCategory);
+router.delete('/:id', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), deleteCategory);
 
 export default router;

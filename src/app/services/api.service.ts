@@ -168,6 +168,10 @@ export class ApiService {
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+
+      if (window.location && window.location.pathname.includes('/admin')) {
+        headers['X-Admin-Portal'] = 'true';
+      }
     }
     return headers;
   }

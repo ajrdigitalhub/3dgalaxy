@@ -1688,10 +1688,22 @@ export class DatastoreService {
   }
 
   async deleteCategory(id: string) {
+    const prevCategories = this.categories();
+    // Optimistically update list for instantaneous UI feedback
+    this.categories.update(cats => cats.filter(c => c.id !== id));
+
     return new Promise((resolve, reject) => {
       this.api.delete(`/categories/${id}`).subscribe({
-        next: (res) => { this.reloadCategories(true); resolve(res); },
-        error: (err) => reject(err)
+        next: (res) => {
+          this.api.clearCache('categor');
+          this.reloadCategories(true);
+          resolve(res);
+        },
+        error: (err) => {
+          // Revert optimistic removal on error
+          this.categories.set(prevCategories);
+          reject(err);
+        }
       });
     });
   }

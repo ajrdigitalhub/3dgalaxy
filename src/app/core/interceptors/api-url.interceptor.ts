@@ -9,10 +9,15 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
     url = url.replace('/api/', `${environment.apiUrl}/`);
     
     // Auto-inject authorization if available in localStorage and not already set
-    if (typeof window !== 'undefined' && !headers.has('Authorization')) {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        headers = headers.set('Authorization', `Bearer ${token}`);
+    if (typeof window !== 'undefined') {
+      if (!headers.has('Authorization')) {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          headers = headers.set('Authorization', `Bearer ${token}`);
+        }
+      }
+      if (window.location && window.location.pathname.includes('/admin') && !headers.has('X-Admin-Portal')) {
+        headers = headers.set('X-Admin-Portal', 'true');
       }
     }
     
