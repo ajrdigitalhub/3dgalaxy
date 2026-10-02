@@ -153,7 +153,7 @@ app.use('/api/checkout', checkoutLimiter);
 app.use('/api/support', uploadLimiter);
 app.use('/api', (req, res, next) => {
   const p = req.path.toLowerCase();
-  if (p.includes('webhook') || p.includes('stream')) {
+  if (p.includes('webhook') || p.includes('stream') || p.includes('integration')) {
     return next();
   }
   return apiLimiter(req, res, next);
@@ -273,6 +273,8 @@ app.use("/api/admin/backups", backupRoutes);
 import schedulerRoutes from "./routes/schedulerRoutes";
 app.use("/api", schedulerRoutes);
 app.use("/api", logRoutes);
+import integrationRoutes from "./modules/integration/integration.routes";
+app.use("/api/integration/v1/admin", integrationRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {
