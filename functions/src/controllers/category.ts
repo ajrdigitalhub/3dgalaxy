@@ -465,3 +465,56 @@ export const deleteCategory = async (req: Request, res: Response) => {
   }
 };
 
+export const toggleCategoryProductFeatured = async (req: Request, res: Response) => {
+  const categoryId = req.params['categoryId'] || req.params['id'];
+  const productId = req.params['productId'];
+  const body = req.body || {};
+  const featured = body.featured !== undefined ? !!body.featured : (body.isFeatured !== undefined ? !!body.isFeatured : true);
+
+  if (!categoryId || !productId) {
+    return res.status(400).json({ success: false, error: 'Category ID and Product ID are mandatory' });
+  }
+
+  try {
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (!category) {
+      return res.status(404).json({ success: false, error: 'Category not found' });
+    }
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+
+    const updatedLink = await (prisma.productCategory as any).upsert({
+      where: {
+        productId_categoryId: {
+          productId,
+          categoryId
+        }
+      },
+      update: {
+        isFeatured: featured
+      },
+      create: {
+        productId,
+        categoryId,
+        isFeatured: featured,
+        isPrimary: false
+      }
+    });
+
+    clearCategoryCache();
+
+    return res.status(200).json({
+      success: true,
+      categoryId,
+      productId,
+      featured: updatedLink.isFeatured !== undefined ? updatedLink.isFeatured : featured
+    });
+  } catch (error: any) {
+    console.error('[TOGGLE CATEGORY PRODUCT FEATURED ERROR]', error);
+    return res.status(500).json({ success: false, error: 'Failed to update category product featured status', details: error.message });
+  }
+};
+

@@ -2615,7 +2615,17 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                       <span class="text-[11px] text-zinc-500">Live products belonging to {{ cat.name }}</span>
                     </div>
 
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                      <select
+                        [value]="categoryProductFilter()"
+                        (change)="categoryProductFilter.set($any($event.target).value)"
+                        title="Filter products by featured state"
+                        class="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white shrink-0 cursor-pointer"
+                      >
+                        <option value="all">All Products</option>
+                        <option value="featured">Featured Only (★)</option>
+                        <option value="not_featured">Not Featured (☆)</option>
+                      </select>
                       <div class="relative flex-1 sm:w-64">
                         <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
                         <input
@@ -2647,6 +2657,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                           <th class="py-2.5">Price</th>
                           <th class="py-2.5 text-center">Stock</th>
                           <th class="py-2.5 text-center">Status</th>
+                          <th class="py-2.5 text-center">Featured</th>
                           <th class="py-2.5 text-right pr-3">Actions</th>
                         </tr>
                       </thead>
@@ -2711,6 +2722,28 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                               </span>
                             </td>
 
+                            <td class="py-3 text-center">
+                              <button
+                                (click)="toggleProductCategoryFeatured(cat.id, p)"
+                                [disabled]="isUpdatingFeatured(cat.id, p.id)"
+                                [attr.aria-label]="'Feature product on home page'"
+                                [attr.aria-pressed]="isProductCategoryFeatured(cat.id, p)"
+                                [title]="isProductCategoryFeatured(cat.id, p) ? 'Featured on Home Page' : 'Show on Home Page'"
+                                class="p-1.5 rounded-lg border-none bg-transparent cursor-pointer transition-transform hover:scale-125 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                @if (isUpdatingFeatured(cat.id, p.id)) {
+                                  <mat-icon class="text-xs animate-spin text-amber-500">sync</mat-icon>
+                                } @else {
+                                  <mat-icon
+                                    [class]="isProductCategoryFeatured(cat.id, p) ? 'text-amber-500 font-bold scale-110' : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400'"
+                                    class="text-sm transition-colors"
+                                  >
+                                    {{ isProductCategoryFeatured(cat.id, p) ? 'star' : 'star_border' }}
+                                  </mat-icon>
+                                }
+                              </button>
+                            </td>
+
                             <td class="py-3 text-right pr-3">
                               <div class="inline-flex items-center gap-1">
                                 <button
@@ -2733,7 +2766,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                         }
                         @if (productsInSelectedCategory().length === 0) {
                           <tr>
-                            <td colspan="7" class="py-12 text-center text-zinc-400 font-bold text-xs space-y-2">
+                            <td colspan="8" class="py-12 text-center text-zinc-400 font-bold text-xs space-y-2">
                               <mat-icon class="text-2xl text-zinc-300">inventory_2</mat-icon>
                               <p class="block">No products currently assigned to this category.</p>
                               <button
@@ -4492,6 +4525,82 @@ export class AdminCatalogTab {
     }
   }
 
+  categoryProductFilter = signal<'all' | 'featured' | 'not_featured'>('all');
+  updatingFeaturedMap = signal<Record<string, boolean>>({});
+
+  isProductCategoryFeatured(catId: string, product: any): boolean {
+    if (!catId || !product) return false;
+    const targetCatId = String(catId).toLowerCase();
+    const pcs = product.productCategories || product.product_categories || [];
+    if (Array.isArray(pcs) && pcs.length > 0) {
+      const match = pcs.find((pc: any) => String(pc.categoryId || pc.category_id || '').toLowerCase() === targetCatId);
+      if (match) {
+        return match.isFeatured === true || match.featured === true || match.is_featured === true;
+      }
+    }
+    const pDirectCatId = String(product.categoryId || product.category_id || '').toLowerCase();
+    if (pDirectCatId === targetCatId) {
+      return product.isFeatured === true || product.featured === true;
+    }
+    return false;
+  }
+
+  isUpdatingFeatured(catId: string, prodId: string): boolean {
+    const key = `${catId}_${prodId}`;
+    return !!this.updatingFeaturedMap()[key];
+  }
+
+  async toggleProductCategoryFeatured(catId: string, product: any) {
+    if (!catId || !product) return;
+    const prodId = product.id;
+    const key = `${catId}_${prodId}`;
+    if (this.updatingFeaturedMap()[key]) return; // prevent double click
+
+    const currentStatus = this.isProductCategoryFeatured(catId, product);
+    const newStatus = !currentStatus;
+
+    this.updatingFeaturedMap.update(m => ({ ...m, [key]: true }));
+
+    // Optimistically update local state in DatastoreService
+    this.updateLocalProductCategoryFeaturedState(catId, prodId, newStatus);
+
+    try {
+      await firstValueFrom(
+        this.api.patch(`/categories/${catId}/products/${prodId}/featured`, { featured: newStatus })
+      );
+      this.toastService.success(newStatus ? 'Product featured on Home Page for this category!' : 'Product removed from featured list.');
+    } catch (err: any) {
+      // Rollback state on error
+      this.updateLocalProductCategoryFeaturedState(catId, prodId, currentStatus);
+      this.toastService.error(err?.error?.error || 'Failed to update featured status.');
+    } finally {
+      this.updatingFeaturedMap.update(m => {
+        const next = { ...m };
+        delete next[key];
+        return next;
+      });
+    }
+  }
+
+  private updateLocalProductCategoryFeaturedState(catId: string, prodId: string, isFeatured: boolean) {
+    const prods = [...this.admin.ds.products()];
+    const idx = prods.findIndex(p => p.id === prodId);
+    if (idx >= 0) {
+      const targetCatId = String(catId).toLowerCase();
+      const updatedP = { ...prods[idx] } as any;
+      let pcs = Array.isArray(updatedP.productCategories) ? [...updatedP.productCategories] : [];
+      const pcIdx = pcs.findIndex((pc: any) => String(pc.categoryId || pc.category_id || '').toLowerCase() === targetCatId);
+      if (pcIdx >= 0) {
+        pcs[pcIdx] = { ...pcs[pcIdx], isFeatured, featured: isFeatured };
+      } else {
+        pcs.push({ categoryId: catId, isFeatured, featured: isFeatured, isPrimary: false });
+      }
+      updatedP.productCategories = pcs;
+      prods[idx] = updatedP;
+      this.admin.ds.products.set(prods);
+    }
+  }
+
   productsInSelectedCategory = computed(() => {
     const cat = this.selectedCategory();
     if (!cat) return [];
@@ -4515,16 +4624,24 @@ export class AdminCatalogTab {
       );
     }
 
+    if (this.categoryProductFilter() === 'featured') {
+      list = list.filter(p => this.isProductCategoryFeatured(catId, p));
+    } else if (this.categoryProductFilter() === 'not_featured') {
+      list = list.filter(p => !this.isProductCategoryFeatured(catId, p));
+    }
+
     return list;
   });
 
   collectionMetrics = computed(() => {
+    const cat = this.selectedCategory();
+    const catId = cat?.id || '';
     const prods = this.productsInSelectedCategory();
     const total = prods.length;
     const active = prods.filter((p) => p.isActive !== false).length;
     const outOfStock = prods.filter((p) => p.stock === 0 || (p as any).stockStatus === 'OUT_OF_STOCK').length;
     const draft = prods.filter((p) => p.isActive === false).length;
-    const featured = prods.filter((p) => p.featured || p.isFeatured).length;
+    const featured = prods.filter((p) => this.isProductCategoryFeatured(catId, p)).length;
 
     let totalRating = 0;
     let ratingCount = 0;

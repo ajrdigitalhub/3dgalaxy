@@ -10,8 +10,8 @@ export const environment = {
         return 'https://3dgalaxy.co';
     },
     get apiUrl() {
-        return "https://api-kcrj5xgpxa-uc.a.run.app/api";
-        // return "http://localhost:4000/api";
+        // return "https://api-kcrj5xgpxa-uc.a.run.app/api";
+        return "http://localhost:4000/api";
     },
 };
 

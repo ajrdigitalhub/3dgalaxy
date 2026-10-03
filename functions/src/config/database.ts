@@ -25,6 +25,15 @@ pool.on('error', (err: Error) => {
   console.warn('⚠️ Idle database client connection closed/reset by server:', err.message);
 });
 
+// Self-healing database schema check: Ensures mandatory columns like `is_featured` exist on live database
+pool.query(`
+  ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+  ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
+  ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+`).catch(err => {
+  console.warn('⚠️ Auto-schema check notice:', err.message);
+});
+
 /**
  * Executes a database operation with automatic retry on transient connection drops or timeouts.
  */
@@ -74,13 +83,16 @@ export const initProductCategoriesTable = async () => {
         category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
         sort_order INT NOT NULL DEFAULT 0,
         is_primary BOOLEAN NOT NULL DEFAULT false,
+        is_featured BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY (product_id, category_id)
       );
+      ALTER TABLE product_categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false;
       CREATE INDEX IF NOT EXISTS idx_product_categories_product_id ON product_categories(product_id);
       CREATE INDEX IF NOT EXISTS idx_product_categories_category_id ON product_categories(category_id);
       CREATE INDEX IF NOT EXISTS idx_product_categories_is_primary ON product_categories(is_primary);
+      CREATE INDEX IF NOT EXISTS idx_product_categories_is_featured ON product_categories(is_featured);
     `);
   } catch (err: any) {
     console.error('⚠️ Could not initialize product_categories table:', err.message);

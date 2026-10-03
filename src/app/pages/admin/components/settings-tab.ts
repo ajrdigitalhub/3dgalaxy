@@ -1555,81 +1555,945 @@ import { environment } from "../../../../environments/environment";
               </div>
             }
 
-            <!-- 8. ADVERTISEMENTS -->
+            <!-- 8. ADVERTISEMENTS & PROMOTIONAL CAMPAIGNS -->
             @if (activeSubTab() === "Advertisements") {
-              <div class="space-y-5">
-                <p class="text-xs text-zinc-500">
-                  Provide third-party/internal advertisements for secondary grid
-                  placeholders.
-                </p>
-                <div class="space-y-4">
-                  @for (ad of draft().advertisements || []; track $index) {
-                    <div
-                      class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 relative"
-                    >
-                      <div class="absolute top-2 right-2">
-                        <button
-                          (click)="removeArrayItem('advertisements', $index)"
-                          class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl cursor-pointer flex items-center justify-center"
-                        >
-                          <mat-icon class="text-base">delete</mat-icon>
-                        </button>
-                      </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Ad Headline</span
-                          >
-                          <input
-                            type="text"
-                            [value]="ad.title || ''"
-                            (input)="
-                              updateAdField(
-                                $index,
-                                'title',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Ad Clickthrough URL</span
-                          >
-                          <input
-                            type="text"
-                            [value]="ad.linkUrl || ''"
-                            (input)="
-                              updateAdField(
-                                $index,
-                                'linkUrl',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
-                        </div>
-                      </div>
-                      <app-image-picker
-                        label="Ad Visual Banner asset"
-                        [value]="ad.imageUrl || ''"
-                        (valueChange)="
-                          updateAdField($index, 'imageUrl', $event)
-                        "
-                      ></app-image-picker>
+              <div class="space-y-6">
+                <!-- SUB-TAB HEADER -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                  <div>
+                    <h2 class="text-base font-black text-zinc-900 dark:text-white flex items-center gap-2">
+                      <mat-icon class="text-orange-500">campaign</mat-icon>
+                      Advertisement & Promotional Campaign Manager
+                    </h2>
+                    <p class="text-xs text-zinc-500 mt-0.5">
+                      Configure promotional campaigns, flash sale popups, countdown timers, page targeting, device caps, and live performance metrics.
+                    </p>
+                  </div>
+
+                  @if (editingAdIndex() === null) {
+                    <div class="flex items-center gap-2">
+                      <button
+                        (click)="addAd()"
+                        class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black uppercase shadow-md hover:shadow-orange-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <mat-icon class="text-sm">add_circle</mat-icon> Create Campaign
+                      </button>
                     </div>
+                  } @else {
+                    <button
+                      (click)="editingAdIndex.set(null)"
+                      class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer w-fit"
+                    >
+                      <mat-icon class="text-sm">arrow_back</mat-icon> Back to All Campaigns
+                    </button>
                   }
                 </div>
-                <button
-                  (click)="addAd()"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"
-                >
-                  <mat-icon class="text-sm">add</mat-icon> Insert Advertisement
-                  frame
-                </button>
+
+                <!-- VIEW 1: CAMPAIGN OVERVIEW LIST TABLE -->
+                @if (editingAdIndex() === null) {
+                  <!-- FILTERS AND SEARCH BAR -->
+                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-zinc-50 dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <!-- STATUS TABS -->
+                    <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                      @for (statusOpt of ['all', 'active', 'scheduled', 'paused', 'expired', 'draft']; track statusOpt) {
+                        <button
+                          (click)="adStatusFilter.set(statusOpt)"
+                          [class]="adStatusFilter() === statusOpt
+                            ? 'px-3 py-1.5 bg-orange-500 text-white text-[10px] font-black uppercase rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap'
+                            : 'px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[10px] font-bold uppercase rounded-xl transition-all cursor-pointer whitespace-nowrap border border-zinc-200 dark:border-zinc-800'"
+                        >
+                          {{ statusOpt }}
+                        </button>
+                      }
+                    </div>
+
+                    <!-- SEARCH INPUT -->
+                    <div class="relative w-full md:w-64">
+                      <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                      <input
+                        type="text"
+                        [value]="adSearchQuery()"
+                        (input)="adSearchQuery.set($any($event.target).value)"
+                        placeholder="Search campaign by name..."
+                        class="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- CAMPAIGNS TABLE / CARDS LIST -->
+                  <div class="space-y-3">
+                    @for (ad of draft().advertisements || []; track $index) {
+                      @if (
+                        (adStatusFilter() === 'all' || calculateCampaignStatus(ad).toLowerCase() === adStatusFilter().toLowerCase()) &&
+                        (!adSearchQuery() || (ad.name || ad.title || '').toLowerCase().includes(adSearchQuery().toLowerCase()))
+                      ) {
+                        <div class="p-5 bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xs hover:border-orange-500/50 transition-all space-y-4">
+                          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <!-- CAMPAIGN TITLE & METADATA -->
+                            <div class="flex items-start gap-3">
+                              <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold shrink-0 mt-0.5">
+                                <mat-icon class="text-xl">{{ ad.isPopup || ad.type === 'popup' ? 'picture_in_picture' : 'view_carousel' }}</mat-icon>
+                              </div>
+                              <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                  <h3 class="text-sm font-black text-zinc-900 dark:text-white">
+                                    {{ ad.name || ad.title || 'Untitled Campaign' }}
+                                  </h3>
+
+                                  <!-- CALCULATED STATUS BADGE -->
+                                  @let calcStatus = calculateCampaignStatus(ad);
+                                  <span
+                                    [ngClass]="{
+                                      'bg-emerald-500/10 text-emerald-600 border-emerald-500/30': calcStatus === 'ACTIVE',
+                                      'bg-blue-500/10 text-blue-600 border-blue-500/30': calcStatus === 'SCHEDULED',
+                                      'bg-amber-500/10 text-amber-600 border-amber-500/30': calcStatus === 'EXPIRED',
+                                      'bg-orange-500/10 text-orange-600 border-orange-500/30': calcStatus === 'PAUSED',
+                                      'bg-zinc-500/10 text-zinc-500 border-zinc-500/30': calcStatus === 'DRAFT',
+                                      'bg-purple-500/10 text-purple-600 border-purple-500/30': calcStatus === 'ARCHIVED'
+                                    }"
+                                    class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border flex items-center gap-1"
+                                  >
+                                    <span
+                                      class="w-1.5 h-1.5 rounded-full"
+                                      [ngClass]="{
+                                        'bg-emerald-500 animate-pulse': calcStatus === 'ACTIVE',
+                                        'bg-blue-500': calcStatus === 'SCHEDULED',
+                                        'bg-amber-500': calcStatus === 'EXPIRED',
+                                        'bg-orange-500': calcStatus === 'PAUSED',
+                                        'bg-zinc-400': calcStatus === 'DRAFT',
+                                        'bg-purple-500': calcStatus === 'ARCHIVED'
+                                      }"
+                                    ></span>
+                                    {{ calcStatus }}
+                                  </span>
+
+                                  <!-- TYPE PILL -->
+                                  @if (ad.type) {
+                                    <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-md text-[9px] font-bold uppercase">
+                                      {{ ad.type.replace('_', ' ') }}
+                                    </span>
+                                  }
+
+                                  <!-- PLACEMENT PILL -->
+                                  @if (ad.placement || ad.position) {
+                                    <span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-md text-[9px] font-mono">
+                                      {{ ad.placement || ad.position }}
+                                    </span>
+                                  }
+                                </div>
+
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-1">
+                                  {{ ad.headline || ad.subheadline || ad.linkUrl || 'No headline set' }}
+                                </p>
+                              </div>
+                            </div>
+
+                            <!-- QUICK PERFORMANCE STATS -->
+                            <div class="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-950 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0">
+                              <div class="text-center px-2">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">Impressions</span>
+                                <span class="text-xs font-black font-mono text-zinc-800 dark:text-zinc-200">{{ ad.impressions || 0 }}</span>
+                              </div>
+                              <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800"></div>
+                              <div class="text-center px-2">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">Clicks</span>
+                                <span class="text-xs font-black font-mono text-blue-600 dark:text-blue-400">{{ ad.clicks || 0 }}</span>
+                              </div>
+                              <div class="h-6 w-[1px] bg-zinc-200 dark:bg-zinc-800"></div>
+                              <div class="text-center px-2">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">CTR</span>
+                                <span class="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">
+                                  {{ (ad.impressions && ad.impressions > 0) ? ((ad.clicks / ad.impressions) * 100).toFixed(1) + '%' : '0%' }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- SECONDARY ROW: TIMELINE & ACTION BUTTONS -->
+                          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 text-xs">
+                            <div class="flex items-center gap-4 text-zinc-500 text-[11px]">
+                              @if (ad.startDate || ad.endDate) {
+                                <div class="flex items-center gap-1 font-mono">
+                                  <mat-icon class="text-sm text-zinc-400">schedule</mat-icon>
+                                  <span>{{ ad.startDate || 'Immediate' }} {{ ad.startTime }} → {{ ad.endDate || 'No expiration' }} {{ ad.endTime }}</span>
+                                </div>
+                              } @else {
+                                <span class="text-zinc-400 italic">Always Active (No timeline cap)</span>
+                              }
+
+                              @if (ad.enableCountdown) {
+                                <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[9px] font-black uppercase flex items-center gap-1">
+                                  <mat-icon class="text-xs">timer</mat-icon> Countdown Enabled
+                                </span>
+                              }
+                            </div>
+
+                            <!-- ACTION BUTTONS -->
+                            <div class="flex items-center gap-2">
+                              <button
+                                (click)="editingAdIndex.set($index)"
+                                class="px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <mat-icon class="text-sm">edit</mat-icon> Edit Campaign
+                              </button>
+
+                              <button
+                                (click)="duplicateCampaign($index)"
+                                title="Duplicate Campaign"
+                                class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                <mat-icon class="text-base">content_copy</mat-icon>
+                              </button>
+
+                              <button
+                                (click)="toggleCampaignStatus($index)"
+                                [title]="(ad.status || 'active') === 'active' ? 'Pause Campaign' : 'Activate Campaign'"
+                                class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                <mat-icon class="text-base">{{ (ad.status || 'active') === 'active' ? 'pause' : 'play_arrow' }}</mat-icon>
+                              </button>
+
+                              <button
+                                (click)="archiveCampaign($index)"
+                                title="Archive Campaign"
+                                class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-amber-500 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                <mat-icon class="text-base">archive</mat-icon>
+                              </button>
+
+                              <button
+                                (click)="removeArrayItem('advertisements', $index)"
+                                title="Delete Campaign"
+                                class="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                <mat-icon class="text-base">delete</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- VIEW 2: CAMPAIGN EDITOR & LIVE PREVIEW PANEL -->
+                @if (editingAdIndex() !== null && draft().advertisements?.[editingAdIndex()!]; as ad) {
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- LEFT COLUMN: EDITOR SECTIONS (7 COLS) -->
+                    <div class="lg:col-span-7 space-y-6">
+                      <!-- EDITOR TAB SELECTOR -->
+                      <div class="flex items-center gap-1 overflow-x-auto p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 scrollbar-none">
+                        @for (tab of [
+                          { id: 'basic', name: 'Basic Info', icon: 'info' },
+                          { id: 'content', name: 'Content & Media', icon: 'image' },
+                          { id: 'schedule', name: 'Timeline & Timer', icon: 'schedule' },
+                          { id: 'popup', name: 'Popup Config', icon: 'picture_in_picture' },
+                          { id: 'triggers', name: 'Triggers & Freq', icon: 'bolt' },
+                          { id: 'targeting', name: 'Targeting', icon: 'ads_click' },
+                          { id: 'promotion', name: 'Promotions', icon: 'local_offer' }
+                        ]; track tab.id) {
+                          <button
+                            (click)="adEditorTab.set(tab.id)"
+                            [class]="adEditorTab() === tab.id
+                              ? 'px-3 py-2 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 shadow-sm rounded-xl text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap'
+                              : 'px-3 py-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap'"
+                          >
+                            <mat-icon class="text-sm">{{ tab.icon }}</mat-icon> {{ tab.name }}
+                          </button>
+                        }
+                      </div>
+
+                      <!-- TAB 1: BASIC INFORMATION -->
+                      @if (adEditorTab() === 'basic') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Basic Information</h3>
+                          
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Campaign Name (Internal)</span>
+                            <input
+                              type="text"
+                              [value]="ad.name || ad.title || ''"
+                              (input)="updateAdField(editingAdIndex()!, 'name', $any($event.target).value)"
+                              placeholder="e.g. Diwali Mega Sale Campaign"
+                              class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Internal Description</span>
+                            <textarea
+                              rows="2"
+                              [value]="ad.description || ''"
+                              (input)="updateAdField(editingAdIndex()!, 'description', $any($event.target).value)"
+                              placeholder="Internal administrative notes or strategy summary..."
+                              class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white resize-none"
+                            ></textarea>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Campaign Type</span>
+                              <select
+                                [value]="ad.type || 'banner'"
+                                (change)="updateAdField(editingAdIndex()!, 'type', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="banner">Banner</option>
+                                <option value="popup">Popup</option>
+                                <option value="flash_sale">Flash Sale</option>
+                                <option value="product">Product Promotion</option>
+                                <option value="category">Category Promotion</option>
+                                <option value="coupon">Coupon Promotion</option>
+                                <option value="announcement">Announcement</option>
+                                <option value="seasonal">Seasonal Campaign</option>
+                                <option value="new_product">New Product</option>
+                                <option value="clearance">Clearance Sale</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Status</span>
+                              <select
+                                [value]="ad.status || 'active'"
+                                (change)="updateAdField(editingAdIndex()!, 'status', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="draft">Draft</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="active">Active</option>
+                                <option value="paused">Paused</option>
+                                <option value="expired">Expired</option>
+                                <option value="archived">Archived</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Display Priority</span>
+                              <select
+                                [value]="ad.priority || 1"
+                                (change)="updateAdField(editingAdIndex()!, 'priority', +$any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option [value]="1">1 - Normal Priority</option>
+                                <option [value]="2">2 - Medium Priority</option>
+                                <option [value]="3">3 - High Priority</option>
+                                <option [value]="4">4 - Urgent Priority</option>
+                                <option [value]="5">5 - Max Priority (Exclusive)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- TAB 2: CONTENT & MEDIA -->
+                      @if (adEditorTab() === 'content') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Content & Visual Assets</h3>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Ad Headline</span>
+                            <input
+                              type="text"
+                              [value]="ad.headline || ad.title || ''"
+                              (input)="updateAdField(editingAdIndex()!, 'headline', $any($event.target).value)"
+                              placeholder="e.g. FESTIVE DIWALI SALE - UP TO 40% OFF"
+                              class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Ad Subheadline / Secondary Text</span>
+                            <input
+                              type="text"
+                              [value]="ad.subheadline || ''"
+                              (input)="updateAdField(editingAdIndex()!, 'subheadline', $any($event.target).value)"
+                              placeholder="e.g. Upgrade your 3D printer with premium PLA Pro filaments."
+                              class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">CTA Button Text</span>
+                              <input
+                                type="text"
+                                [value]="ad.ctaText || 'Shop Now'"
+                                (input)="updateAdField(editingAdIndex()!, 'ctaText', $any($event.target).value)"
+                                placeholder="Shop Now"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">CTA Action</span>
+                              <select
+                                [value]="ad.ctaAction || 'open_url'"
+                                (change)="updateAdField(editingAdIndex()!, 'ctaAction', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="open_url">Open URL / Route</option>
+                                <option value="open_product">Open Product</option>
+                                <option value="open_category">Open Category</option>
+                                <option value="open_coupon">Copy Coupon Code</option>
+                                <option value="open_cart">Open Cart</option>
+                                <option value="open_whatsapp">Open WhatsApp Support</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Ad Clickthrough URL</span>
+                            <input
+                              type="text"
+                              [value]="ad.ctaUrl || ad.linkUrl || ''"
+                              (input)="updateAdField(editingAdIndex()!, 'ctaUrl', $any($event.target).value)"
+                              placeholder="e.g. /products/pla-pro-filament or https://..."
+                              class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none font-mono text-zinc-900 dark:text-white"
+                            />
+                          </div>
+
+                          <div class="flex items-center gap-2 pt-1">
+                            <input
+                              type="checkbox"
+                              [checked]="ad.openInNewTab"
+                              (change)="updateAdField(editingAdIndex()!, 'openInNewTab', $any($event.target).checked)"
+                              class="w-4 h-4 text-orange-500 rounded cursor-pointer"
+                            />
+                            <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Open link in new browser tab</span>
+                          </div>
+
+                          <!-- DESKTOP IMAGE PICKER -->
+                          <div class="pt-2">
+                            <app-image-picker
+                              label="Desktop Visual Asset (1200x600 recommended)"
+                              [value]="ad.imageUrl || ''"
+                              (valueChange)="updateAdField(editingAdIndex()!, 'imageUrl', $event)"
+                            ></app-image-picker>
+                          </div>
+
+                          <!-- MOBILE IMAGE PICKER -->
+                          <div class="pt-2">
+                            <app-image-picker
+                              label="Mobile Visual Asset (800x1000 recommended)"
+                              [value]="ad.mobileImageUrl || ''"
+                              (valueChange)="updateAdField(editingAdIndex()!, 'mobileImageUrl', $event)"
+                            ></app-image-picker>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- TAB 3: TIMELINE & COUNTDOWN -->
+                      @if (adEditorTab() === 'schedule') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Timeline & Scheduling</h3>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Start Date</span>
+                              <input
+                                type="date"
+                                [value]="ad.startDate || ''"
+                                (input)="updateAdField(editingAdIndex()!, 'startDate', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Start Time</span>
+                              <input
+                                type="time"
+                                [value]="ad.startTime || '09:00'"
+                                (input)="updateAdField(editingAdIndex()!, 'startTime', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">End Date</span>
+                              <input
+                                type="date"
+                                [value]="ad.endDate || ''"
+                                (input)="updateAdField(editingAdIndex()!, 'endDate', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">End Time</span>
+                              <input
+                                type="time"
+                                [value]="ad.endTime || '23:59'"
+                                (input)="updateAdField(editingAdIndex()!, 'endTime', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Schedule Timezone</span>
+                            <select
+                              [value]="ad.timezone || 'Asia/Kolkata'"
+                              (change)="updateAdField(editingAdIndex()!, 'timezone', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                            >
+                              <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30)</option>
+                              <option value="UTC">UTC (Coordinated Universal Time)</option>
+                              <option value="America/New_York">America/New_York (EST)</option>
+                              <option value="Europe/London">Europe/London (GMT)</option>
+                            </select>
+                          </div>
+
+                          <!-- COUNTDOWN TIMER SECTION -->
+                          <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
+                            <div class="flex items-center justify-between">
+                              <div>
+                                <span class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200 block">Enable Countdown Timer</span>
+                                <p class="text-[10px] text-zinc-400">Renders a ticking Days/Hours/Mins/Secs timer locally on the client without API polling</p>
+                              </div>
+                              <input
+                                type="checkbox"
+                                [checked]="ad.enableCountdown"
+                                (change)="updateAdField(editingAdIndex()!, 'enableCountdown', $any($event.target).checked)"
+                                class="w-5 h-5 text-orange-500 rounded cursor-pointer"
+                              />
+                            </div>
+
+                            @if (ad.enableCountdown) {
+                              <div class="space-y-2 pt-2">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Countdown Target Type</span>
+                                <select
+                                  [value]="ad.countdownType || 'campaign_end'"
+                                  (change)="updateAdField(editingAdIndex()!, 'countdownType', $any($event.target).value)"
+                                  class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                                >
+                                  <option value="campaign_end">Use Campaign End Timestamp</option>
+                                  <option value="custom_end">Custom End Date & Time</option>
+                                </select>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      <!-- TAB 4: POPUP CONFIGURATION -->
+                      @if (adEditorTab() === 'popup') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Popup & Overlay Styling</h3>
+
+                          <div class="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                            <div>
+                              <span class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200 block">Enable Floating Popup Mode</span>
+                              <p class="text-[10px] text-zinc-400">Renders ad as a floating popover or modal on the website</p>
+                            </div>
+                            <input
+                              type="checkbox"
+                              [checked]="ad.isPopup || ad.type === 'popup'"
+                              (change)="updateAdField(editingAdIndex()!, 'isPopup', $any($event.target).checked)"
+                              class="w-5 h-5 text-orange-500 rounded cursor-pointer"
+                            />
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Placement Target</span>
+                              <select
+                                [value]="ad.placement || 'homepage'"
+                                (change)="updateAdField(editingAdIndex()!, 'placement', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="homepage">Homepage</option>
+                                <option value="header">Header Banner</option>
+                                <option value="hero">Hero Slide Placeholder</option>
+                                <option value="category_page">Category Page</option>
+                                <option value="product_page">Product Page</option>
+                                <option value="cart">Cart Viewport</option>
+                                <option value="checkout">Checkout Viewport</option>
+                                <option value="floating_popup">Floating Popup</option>
+                                <option value="bottom_banner">Bottom Fixed Banner</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Popup Position</span>
+                              <select
+                                [value]="ad.popupPosition || 'center'"
+                                (change)="updateAdField(editingAdIndex()!, 'popupPosition', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="center">Center Modal</option>
+                                <option value="bottom_right">Bottom Right Corner</option>
+                                <option value="bottom_left">Bottom Left Corner</option>
+                                <option value="top_right">Top Right Corner</option>
+                                <option value="top_left">Top Left Corner</option>
+                                <option value="fullscreen">Full Screen Takeover</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Popup Size</span>
+                              <select
+                                [value]="ad.popupSize || 'medium'"
+                                (change)="updateAdField(editingAdIndex()!, 'popupSize', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="small">Small (320px)</option>
+                                <option value="medium">Medium (480px)</option>
+                                <option value="large">Large (640px)</option>
+                                <option value="full_width">Full Width Banner (800px)</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Backdrop Overlay</span>
+                              <select
+                                [value]="ad.overlay || 'dark'"
+                                (change)="updateAdField(editingAdIndex()!, 'overlay', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="none">None (Transparent)</option>
+                                <option value="light">Light Backdrop</option>
+                                <option value="dark">Dark Dim Backdrop</option>
+                                <option value="blur">Blur Backdrop</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Animation Style</span>
+                              <select
+                                [value]="ad.animation || 'zoom'"
+                                (change)="updateAdField(editingAdIndex()!, 'animation', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="zoom">Zoom Scale In</option>
+                                <option value="fade">Smooth Fade In</option>
+                                <option value="slide_up">Slide Up</option>
+                                <option value="slide_down">Slide Down</option>
+                                <option value="none">No Animation</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                [checked]="ad.showCloseButton !== false"
+                                (change)="updateAdField(editingAdIndex()!, 'showCloseButton', $any($event.target).checked)"
+                                class="w-4 h-4 text-orange-500 rounded cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Show Close (X) button in top-right corner</span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                [checked]="ad.allowEscClose !== false"
+                                (change)="updateAdField(editingAdIndex()!, 'allowEscClose', $any($event.target).checked)"
+                                class="w-4 h-4 text-orange-500 rounded cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Allow ESC key to close popup</span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                [checked]="ad.allowOutsideClickClose !== false"
+                                (change)="updateAdField(editingAdIndex()!, 'allowOutsideClickClose', $any($event.target).checked)"
+                                class="w-4 h-4 text-orange-500 rounded cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Allow clicking outside backdrop to close</span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- TAB 5: TRIGGERS & FREQUENCY -->
+                      @if (adEditorTab() === 'triggers') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Popup Triggers & Frequency Caps</h3>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Trigger Event</span>
+                              <select
+                                [value]="ad.trigger || 'immediate'"
+                                (change)="updateAdField(editingAdIndex()!, 'trigger', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="immediate">Immediately on page load</option>
+                                <option value="delay">After X seconds delay</option>
+                                <option value="scroll">After X% page scroll</option>
+                                <option value="exit_intent">Exit Intent (Mouse Leave)</option>
+                              </select>
+                            </div>
+
+                            @if (ad.trigger === 'delay') {
+                              <div class="space-y-1">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Delay Seconds</span>
+                                <input
+                                  type="number"
+                                  [value]="ad.delaySeconds || 3"
+                                  (input)="updateAdField(editingAdIndex()!, 'delaySeconds', +$any($event.target).value)"
+                                  class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                                />
+                              </div>
+                            }
+
+                            @if (ad.trigger === 'scroll') {
+                              <div class="space-y-1">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Scroll Percentage (%)</span>
+                                <input
+                                  type="number"
+                                  [value]="ad.scrollPercent || 50"
+                                  (input)="updateAdField(editingAdIndex()!, 'scrollPercent', +$any($event.target).value)"
+                                  class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                                />
+                              </div>
+                            }
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Display Frequency</span>
+                              <select
+                                [value]="ad.frequency || 'always'"
+                                (change)="updateAdField(editingAdIndex()!, 'frequency', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="always">Show Every Time (No cap)</option>
+                                <option value="session">Show Once Per Session</option>
+                                <option value="daily">Show Once Per Day</option>
+                                <option value="campaign">Show Once Per Campaign</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Max Impressions Per User</span>
+                              <input
+                                type="number"
+                                [value]="ad.maxImpressionsPerUser || 0"
+                                (input)="updateAdField(editingAdIndex()!, 'maxImpressionsPerUser', +$any($event.target).value)"
+                                placeholder="0 = unlimited"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- TAB 6: TARGETING -->
+                      @if (adEditorTab() === 'targeting') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Audience & Page Targeting</h3>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Audience Target</span>
+                              <select
+                                [value]="ad.audience || 'all'"
+                                (change)="updateAdField(editingAdIndex()!, 'audience', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="all">All Visitors</option>
+                                <option value="guests_only">Guests Only (Not logged in)</option>
+                                <option value="logged_in">Logged-in Customers Only</option>
+                              </select>
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Device Target</span>
+                              <select
+                                [value]="ad.deviceTargeting || 'all'"
+                                (change)="updateAdField(editingAdIndex()!, 'deviceTargeting', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                              >
+                                <option value="all">All Devices</option>
+                                <option value="desktop">Desktop Only</option>
+                                <option value="mobile">Mobile Only</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Page Targeting</span>
+                            <select
+                              [value]="ad.pageTargeting || 'all'"
+                              (change)="updateAdField(editingAdIndex()!, 'pageTargeting', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                            >
+                              <option value="all">All Pages</option>
+                              <option value="homepage">Homepage Only</option>
+                              <option value="product_page">Product Pages</option>
+                              <option value="category_page">Category Pages</option>
+                              <option value="cart">Cart Page</option>
+                              <option value="checkout">Checkout Page</option>
+                              <option value="specific_url">Specific Route Path</option>
+                            </select>
+                          </div>
+
+                          @if (ad.pageTargeting === 'specific_url') {
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Target Route Path</span>
+                              <input
+                                type="text"
+                                [value]="ad.targetUrlPath || ''"
+                                (input)="updateAdField(editingAdIndex()!, 'targetUrlPath', $any($event.target).value)"
+                                placeholder="e.g. /products/pla-pro-filament"
+                                class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                              />
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      <!-- TAB 7: PROMOTIONS -->
+                      @if (adEditorTab() === 'promotion') {
+                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Coupon & Product Reference</h3>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Coupon Code Reference</span>
+                              <input
+                                type="text"
+                                [value]="ad.couponCode || ''"
+                                (input)="updateAdField(editingAdIndex()!, 'couponCode', $any($event.target).value)"
+                                placeholder="e.g. DIWALI3D"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold uppercase outline-none text-zinc-900 dark:text-white"
+                              />
+                            </div>
+
+                            <div class="space-y-1">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Discount Tag Text</span>
+                              <input
+                                type="text"
+                                [value]="ad.discountText || ''"
+                                (input)="updateAdField(editingAdIndex()!, 'discountText', $any($event.target).value)"
+                                placeholder="e.g. FLAT 20% OFF"
+                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div class="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[11px] text-zinc-500 space-y-1">
+                            <span class="font-bold text-zinc-700 dark:text-zinc-300 block">Dynamic Content Placeholders:</span>
+                            <p>You can use these tags in Headline or Subheadline to resolve dynamically at render time:</p>
+                            <div class="flex items-center gap-2 flex-wrap font-mono text-[10px] text-orange-500 pt-1">
+                              <span ngNonBindable class="px-2 py-0.5 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800">{{couponCode}}</span>
+                              <span ngNonBindable class="px-2 py-0.5 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800">{{discount}}</span>
+                              <span ngNonBindable class="px-2 py-0.5 bg-white dark:bg-zinc-900 rounded border border-zinc-200 dark:border-zinc-800">{{endDate}}</span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- RIGHT COLUMN: INTERACTIVE LIVE PREVIEW PANEL (5 COLS) -->
+                    <div class="lg:col-span-5 space-y-4">
+                      <div class="p-5 bg-zinc-950 text-white rounded-3xl shadow-xl space-y-4 border border-zinc-800 sticky top-4">
+                        <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-200">Live Campaign Preview</h3>
+                          </div>
+
+                          <!-- VIEWPORT TOGGLE -->
+                          <div class="flex items-center bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+                            <button
+                              (click)="previewViewport.set('desktop')"
+                              [class]="previewViewport() === 'desktop' ? 'p-1 bg-orange-500 text-white rounded-lg' : 'p-1 text-zinc-400 hover:text-white'"
+                              title="Desktop View"
+                            >
+                              <mat-icon class="text-sm">desktop_windows</mat-icon>
+                            </button>
+                            <button
+                              (click)="previewViewport.set('mobile')"
+                              [class]="previewViewport() === 'mobile' ? 'p-1 bg-orange-500 text-white rounded-lg' : 'p-1 text-zinc-400 hover:text-white'"
+                              title="Mobile View"
+                            >
+                              <mat-icon class="text-sm">smartphone</mat-icon>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- LIVE PREVIEW CANVAS -->
+                        <div
+                          class="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 overflow-hidden relative"
+                          [class.max-w-xs]="previewViewport() === 'mobile'"
+                          [class.mx-auto]="previewViewport() === 'mobile'"
+                        >
+                          <div class="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 text-zinc-900 dark:text-white relative group">
+                            <!-- PREVIEW CLOSE BUTTON -->
+                            @if (ad.showCloseButton !== false) {
+                              <div class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center text-xs">
+                                <mat-icon class="text-sm">close</mat-icon>
+                              </div>
+                            }
+
+                            <!-- PREVIEW IMAGE -->
+                            @let imgPath = (previewViewport() === 'mobile' && ad.mobileImageUrl) ? ad.mobileImageUrl : (ad.imageUrl || ad.mediaUrl);
+                            @if (imgPath) {
+                              <div class="relative w-full h-36 bg-zinc-900 overflow-hidden">
+                                <img [src]="imgPath" alt="Preview" class="w-full h-full object-cover" />
+                                @if (ad.discountText) {
+                                  <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
+                                    {{ ad.discountText }}
+                                  </div>
+                                }
+                              </div>
+                            }
+
+                            <!-- PREVIEW CONTENT -->
+                            <div class="p-4 space-y-3">
+                              <div>
+                                <span class="text-[8px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                                  {{ ad.type || 'BANNER' }}
+                                </span>
+                                <h4 class="text-sm font-black mt-1 leading-tight text-zinc-900 dark:text-white">
+                                  {{ ad.headline || ad.title || 'Your Campaign Headline Here' }}
+                                </h4>
+                                @if (ad.subheadline) {
+                                  <p class="text-[10px] text-zinc-400 mt-0.5 line-clamp-2">{{ ad.subheadline }}</p>
+                                }
+                              </div>
+
+                              <!-- PREVIEW TIMER -->
+                              @if (ad.enableCountdown) {
+                                <div class="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-800 text-center">
+                                  <span class="text-[8px] font-black uppercase text-zinc-400 block mb-1">Offer Ends In</span>
+                                  <div class="grid grid-cols-4 gap-1 text-[10px] font-mono font-black">
+                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded text-orange-500">02d</div>
+                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">14h</div>
+                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">35m</div>
+                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">42s</div>
+                                  </div>
+                                </div>
+                              }
+
+                              <!-- PREVIEW COUPON -->
+                              @if (ad.couponCode) {
+                                <div class="flex items-center justify-between p-2 bg-orange-500/10 rounded-lg border border-dashed border-orange-500/40 text-[10px]">
+                                  <span class="font-mono font-black uppercase text-orange-500">{{ ad.couponCode }}</span>
+                                  <span class="text-[8px] font-black uppercase bg-orange-500 text-white px-2 py-0.5 rounded">Copy</span>
+                                </div>
+                              }
+
+                              <!-- PREVIEW CTA BUTTON -->
+                              <button class="w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase rounded-xl shadow-md flex items-center justify-center gap-1 cursor-pointer">
+                                <span>{{ ad.ctaText || 'Shop Now' }}</span>
+                                <mat-icon class="text-xs">arrow_forward</mat-icon>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             }
 
@@ -5443,7 +6307,7 @@ export class AdminSettingsTab {
     { name: "Hero Slides", icon: "slideshow" },
     { name: "Hero Carousel", icon: "view_carousel" },
     { name: "Promo Banners", icon: "campaign" },
-    // { name: "Advertisements", icon: "ad_units" },
+    { name: "Advertisements", icon: "ad_units" },
     // { name: "Homepage Sections", icon: "view_quilt" },
     { name: "Footer", icon: "vertical_align_bottom" },
     { name: "About Page", icon: "info" },
@@ -5676,21 +6540,131 @@ export class AdminSettingsTab {
     });
   }
 
+  // Campaign Manager Signals
+  public adSearchQuery = signal<string>('');
+  public adStatusFilter = signal<string>('all');
+  public editingAdIndex = signal<number | null>(null);
+  public adEditorTab = signal<string>('basic');
+  public previewViewport = signal<string>('desktop');
+
   addAd() {
+    const newId = "ad_" + Date.now();
     this.appendArrayItem("advertisements", {
-      id: "ad_" + Date.now(),
-      title: "",
+      id: newId,
+      name: "New Promotional Campaign",
+      title: "Special Offer Headline",
+      headline: "Special Offer Headline",
+      subheadline: "Get up to 30% off on all 3D printing filaments and accessories.",
+      ctaText: "Shop Now",
+      linkUrl: "/products",
+      ctaUrl: "/products",
+      ctaAction: "open_url",
+      openInNewTab: false,
       imageUrl: "",
-      linkUrl: "",
+      mobileImageUrl: "",
+      type: "banner",
+      status: "active",
+      placement: "homepage",
+      priority: 1,
+      startDate: "",
+      startTime: "09:00",
+      endDate: "",
+      endTime: "23:59",
+      timezone: "Asia/Kolkata",
+      enableCountdown: false,
+      countdownType: "campaign_end",
+      customEndDate: "",
+      customDuration: "",
+      isPopup: false,
+      popupPosition: "center",
+      popupSize: "medium",
+      overlay: "dark",
+      showCloseButton: true,
+      allowEscClose: true,
+      allowOutsideClickClose: true,
+      animation: "zoom",
+      trigger: "immediate",
+      delaySeconds: 3,
+      scrollPercent: 50,
+      pageViewsCount: 1,
+      frequency: "always",
+      frequencyHours: 24,
+      frequencyDays: 1,
+      maxImpressionsPerUser: 0,
+      audience: "all",
+      pageTargeting: "all",
+      targetUrlPath: "",
+      deviceTargeting: "all",
+      couponCode: "",
+      productId: "",
+      categoryId: "",
+      discountText: "LIMITED TIME",
+      impressions: 0,
+      clicks: 0
     });
+    this.editingAdIndex.set((this.draft().advertisements?.length || 1) - 1);
   }
 
   updateAdField(index: number, field: string, value: any) {
     this.draft.update((d) => {
       const list = [...(d.advertisements || [])];
-      list[index] = { ...list[index], [field]: value };
+      const updated = { ...list[index], [field]: value };
+      if (field === 'title') updated.headline = value;
+      if (field === 'headline') updated.title = value;
+      if (field === 'linkUrl') updated.ctaUrl = value;
+      if (field === 'ctaUrl') updated.linkUrl = value;
+      if (field === 'imageUrl') updated.mediaUrl = value;
+      if (field === 'name') updated.title = updated.title || value;
+      list[index] = updated;
       return { ...d, advertisements: list };
     });
+  }
+
+  duplicateCampaign(index: number) {
+    const list = this.draft().advertisements || [];
+    const orig = list[index];
+    if (!orig) return;
+    const copy = JSON.parse(JSON.stringify(orig));
+    copy.id = 'ad_' + Date.now();
+    copy.name = (copy.name || copy.title || 'Campaign') + ' (Copy)';
+    copy.title = copy.name;
+    copy.headline = copy.name;
+    copy.status = 'draft';
+    copy.impressions = 0;
+    copy.clicks = 0;
+    this.appendArrayItem('advertisements', copy);
+    this.editingAdIndex.set((this.draft().advertisements?.length || 1) - 1);
+  }
+
+  calculateCampaignStatus(ad: any): string {
+    if (!ad) return 'DRAFT';
+    const status = (ad.status || 'active').toLowerCase();
+    if (status === 'draft') return 'DRAFT';
+    if (status === 'paused') return 'PAUSED';
+    if (status === 'archived') return 'ARCHIVED';
+
+    const now = new Date().getTime();
+    if (ad.startDate) {
+      const startMs = Date.parse(`${ad.startDate}T${ad.startTime || '00:00'}:00`);
+      if (!isNaN(startMs) && now < startMs) return 'SCHEDULED';
+    }
+    if (ad.endDate) {
+      const endMs = Date.parse(`${ad.endDate}T${ad.endTime || '23:59'}:59`);
+      if (!isNaN(endMs) && now > endMs) return 'EXPIRED';
+    }
+    return 'ACTIVE';
+  }
+
+  toggleCampaignStatus(index: number) {
+    const list = [...(this.draft().advertisements || [])];
+    const curr = list[index];
+    if (!curr) return;
+    const nextStatus = (curr.status || 'active') === 'active' ? 'paused' : 'active';
+    this.updateAdField(index, 'status', nextStatus);
+  }
+
+  archiveCampaign(index: number) {
+    this.updateAdField(index, 'status', 'archived');
   }
 
   addFaq() {

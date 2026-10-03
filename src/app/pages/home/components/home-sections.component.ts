@@ -913,30 +913,53 @@ export class HomeShopByCategoryComponent {
           if (primaryCategoryId) allProdCatKeys.add(String(primaryCategoryId).toLowerCase());
 
           return targetArray.some((targetKey) => targetKey && allProdCatKeys.has(targetKey));
-        })
-        .sort((a, b) => {
-          const { primaryCategoryId: aPrimary } = extractNormalizedCategoryIds(a, categories);
-          const { primaryCategoryId: bPrimary } = extractNormalizedCategoryIds(b, categories);
-
-          const aIsPrimary = aPrimary && targetKeys.has(String(aPrimary).toLowerCase());
-          const bIsPrimary = bPrimary && targetKeys.has(String(bPrimary).toLowerCase());
-
-          if (aIsPrimary && !bIsPrimary) return -1;
-          if (!aIsPrimary && bIsPrimary) return 1;
-
-          const aScore =
-            ((a as any).salesCount || 0) +
-            (a.reviewCount || a.reviews?.length || 0) +
-            (a.avgRating || 0);
-          const bScore =
-            ((b as any).salesCount || 0) +
-            (b.reviewCount || b.reviews?.length || 0) +
-            (b.avgRating || 0);
-          return (
-            bScore - aScore ||
-            String(a.name || "").localeCompare(String(b.name || ""))
-          );
         });
+
+      const isProductCategoryFeatured = (p: any) => {
+        const pcs = p.productCategories || p.product_categories || [];
+        if (Array.isArray(pcs)) {
+          return pcs.some((pc: any) => {
+            const pcCatId = String(pc.categoryId || pc.category_id || '').toLowerCase();
+            return (pc.isFeatured === true || pc.featured === true || (pc as any).is_featured === true) && targetKeys.has(pcCatId);
+          });
+        }
+        return false;
+      };
+
+      const hasFeaturedForCategory = catProducts.some(isProductCategoryFeatured);
+      if (hasFeaturedForCategory) {
+        catProducts = catProducts.filter(isProductCategoryFeatured);
+      }
+
+      catProducts.sort((a, b) => {
+        const aFeatured = isProductCategoryFeatured(a);
+        const bFeatured = isProductCategoryFeatured(b);
+
+        if (aFeatured && !bFeatured) return -1;
+        if (!aFeatured && bFeatured) return 1;
+
+        const { primaryCategoryId: aPrimary } = extractNormalizedCategoryIds(a, categories);
+        const { primaryCategoryId: bPrimary } = extractNormalizedCategoryIds(b, categories);
+
+        const aIsPrimary = aPrimary && targetKeys.has(String(aPrimary).toLowerCase());
+        const bIsPrimary = bPrimary && targetKeys.has(String(bPrimary).toLowerCase());
+
+        if (aIsPrimary && !bIsPrimary) return -1;
+        if (!aIsPrimary && bIsPrimary) return 1;
+
+        const aScore =
+          ((a as any).salesCount || 0) +
+          (a.reviewCount || a.reviews?.length || 0) +
+          (a.avgRating || 0);
+        const bScore =
+          ((b as any).salesCount || 0) +
+          (b.reviewCount || b.reviews?.length || 0) +
+          (b.avgRating || 0);
+        return (
+          bScore - aScore ||
+          String(a.name || "").localeCompare(String(b.name || ""))
+        );
+      });
 
       catProducts = catProducts.slice(0, 4);
 

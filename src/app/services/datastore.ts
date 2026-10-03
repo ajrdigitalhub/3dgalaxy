@@ -366,13 +366,59 @@ export interface QuoteRequest {
 export interface Advertisement {
   id: string;
   title: string;
+  name?: string;
+  headline?: string;
+  subheadline?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  ctaAction?: string;
+  openInNewTab?: boolean;
   imageUrl: string;
+  mediaUrl?: string;
+  mobileImageUrl?: string;
   targetUrl: string;
-  position: 'top-banner' | 'sidebar' | 'footer' | 'sticky';
+  linkUrl?: string;
+  position?: 'top-banner' | 'sidebar' | 'footer' | 'sticky' | string;
+  placement?: string;
   impressions: number;
   clicks: number;
-  status: 'active' | 'paused';
-  revenuePerClick: number; // mock ad-rev
+  status: 'active' | 'paused' | 'draft' | 'scheduled' | 'expired' | 'archived' | string;
+  priority?: number;
+  type?: string;
+  revenuePerClick?: number; // mock ad-rev
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  timezone?: string;
+  enableCountdown?: boolean;
+  countdownType?: string;
+  customEndDate?: string;
+  customDuration?: string;
+  isPopup?: boolean;
+  popupPosition?: string;
+  popupSize?: string;
+  overlay?: string;
+  showCloseButton?: boolean;
+  allowEscClose?: boolean;
+  allowOutsideClickClose?: boolean;
+  animation?: string;
+  trigger?: string;
+  delaySeconds?: number;
+  scrollPercent?: number;
+  pageViewsCount?: number;
+  frequency?: string;
+  frequencyHours?: number;
+  frequencyDays?: number;
+  maxImpressionsPerUser?: number;
+  audience?: string;
+  pageTargeting?: string;
+  targetUrlPath?: string;
+  deviceTargeting?: string;
+  couponCode?: string;
+  productId?: string;
+  categoryId?: string;
+  discountText?: string;
 }
 
 export interface SocialPost {
@@ -2928,11 +2974,19 @@ export class DatastoreService {
     });
   }
 
+  async trackAdClick(id: string) {
+    return this.recordAdClick(id);
+  }
+
   async recordAdImpression(id: string) {
     this.api.put(`/admin/advertisements/${id}/impression`, {}).subscribe({
       next: () => this.reloadAdvertisements(),
       error: (e) => console.error('Error tracking impression:', e)
     });
+  }
+
+  async trackAdImpression(id: string) {
+    return this.recordAdImpression(id);
   }
 
   http = inject(HttpClient);

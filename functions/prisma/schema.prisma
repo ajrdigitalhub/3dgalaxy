@@ -266,6 +266,7 @@ model ProductCategory {
   categoryId        String   @map("category_id") @db.Uuid
   sortOrder         Int      @default(0) @map("sort_order")
   isPrimary         Boolean  @default(false) @map("is_primary")
+  isFeatured        Boolean  @default(false) @map("is_featured")
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -276,6 +277,7 @@ model ProductCategory {
   @@index([productId])
   @@index([categoryId])
   @@index([isPrimary])
+  @@index([isFeatured])
   @@map("product_categories")
 }
 

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../config/database';
+import prisma, { pool } from '../config/database';
 import { sysCache } from '../config/cache';
 import { sendPushNotificationInternal } from './notification';
 import { clearCache } from '../middleware/cache';
@@ -158,29 +158,73 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
 
   pendingMappedProductsPromise = (async () => {
     try {
-      const items = await prisma.product.findMany({
-        where: { deletedAt: null, isActive: true },
-        include: {
-          brand: true,
-          category: true,
-          productCategories: {
-            include: { category: true }
-          },
-          variants: {
-            where: { isActive: true }
-          },
-          reviews: {
-            include: { user: true }
-          },
-          customerReviews: {
-            include: {
-              customer: {
-                include: { user: true }
+      let items: any[];
+      try {
+        items = await prisma.product.findMany({
+          where: { deletedAt: null, isActive: true },
+          include: {
+            brand: true,
+            category: true,
+            productCategories: {
+              include: { category: true }
+            },
+            variants: {
+              where: { isActive: true }
+            },
+            reviews: {
+              include: { user: true }
+            },
+            customerReviews: {
+              include: {
+                customer: {
+                  include: { user: true }
+                }
               }
             }
           }
+        });
+      } catch (firstErr: any) {
+        console.warn('⚠️ Product findMany error, running self-healing schema query:', firstErr.message);
+        await pool.query(`
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+        `).catch(() => {});
+
+        try {
+          items = await prisma.product.findMany({
+            where: { deletedAt: null, isActive: true },
+            include: {
+              brand: true,
+              category: true,
+              productCategories: {
+                include: { category: true }
+              },
+              variants: {
+                where: { isActive: true }
+              },
+              reviews: {
+                include: { user: true }
+              }
+            }
+          });
+        } catch (secondErr: any) {
+          console.warn('⚠️ Fallback product query without productCategories:', secondErr.message);
+          items = await prisma.product.findMany({
+            where: { deletedAt: null, isActive: true },
+            include: {
+              brand: true,
+              category: true,
+              variants: {
+                where: { isActive: true }
+              },
+              reviews: {
+                include: { user: true }
+              }
+            }
+          });
         }
-      });
+      }
 
       const getSpecsArray = (specsJson: any): any[] => {
         if (!specsJson) return [];

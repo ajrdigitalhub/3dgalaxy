@@ -19,6 +19,7 @@ import { NotificationBellComponent } from '../shared/components/notification-bel
 import { NotificationPopupComponent } from '../shared/components/notification-popup/notification-popup';
 import { HeaderMegaMenuComponent } from '../shared/components/header-mega-menu/header-mega-menu.component';
 import { HeaderAnnouncementBarComponent } from '../shared/components/header-announcement-bar/header-announcement-bar.component';
+import { PromoPopupComponent } from '../shared/components/promo-popup/promo-popup';
 import { fromEvent } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -38,7 +39,8 @@ import { buildWhatsAppUrl } from '../shared/utils/phone.utils';
     NotificationBellComponent,
     NotificationPopupComponent,
     HeaderMegaMenuComponent,
-    HeaderAnnouncementBarComponent
+    HeaderAnnouncementBarComponent,
+    PromoPopupComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

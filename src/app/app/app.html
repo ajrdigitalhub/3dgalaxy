@@ -1418,6 +1418,11 @@
 
   <app-notification-popup></app-notification-popup>
 
+  <!-- Promotional Campaign Popup Renderer -->
+  @if (!isAdminRoute()) {
+  <app-promo-popup></app-promo-popup>
+  }
+
   <!-- Floating WhatsApp 3D Action Button -->
   @if (!isAuthRoute() && !isAdminRoute()) {
   <a [href]="whatsappUrl" target="_blank" rel="noopener noreferrer" class="whatsapp-fab" title="Chat on WhatsApp" aria-label="Chat with 3D Galaxy support on WhatsApp">

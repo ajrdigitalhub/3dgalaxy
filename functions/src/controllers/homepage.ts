@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../config/database';
+import prisma, { pool } from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sysCache } from '../config/cache';
@@ -308,6 +308,117 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
     }
 
     // 1. Fetch core database entities concurrently
+    const fetchHomepageProducts = async () => {
+      try {
+        return await prisma.product.findMany({
+          where: { isActive: true, deletedAt: null },
+          select: {
+            id: true,
+            brandId: true,
+            categoryId: true,
+            name: true,
+            slug: true,
+            sku: true,
+            basePrice: true,
+            salePrice: true,
+            dealerPrice: true,
+            stock: true,
+            images: true,
+            isFeatured: true,
+            isExclusive: true,
+            codAvailable: true,
+            productCategories: {
+              select: {
+                categoryId: true,
+                isPrimary: true,
+                isFeatured: true
+              }
+            },
+            variants: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                salePrice: true,
+                price: true
+              }
+            }
+          }
+        });
+      } catch (firstErr: any) {
+        console.warn('⚠️ Homepage product query error, running self-healing schema query:', firstErr.message);
+        await pool.query(`
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
+          ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+        `).catch(() => {});
+
+        try {
+          return await prisma.product.findMany({
+            where: { isActive: true, deletedAt: null },
+            select: {
+              id: true,
+              brandId: true,
+              categoryId: true,
+              name: true,
+              slug: true,
+              sku: true,
+              basePrice: true,
+              salePrice: true,
+              dealerPrice: true,
+              stock: true,
+              images: true,
+              isFeatured: true,
+              isExclusive: true,
+              codAvailable: true,
+              productCategories: {
+                select: {
+                  categoryId: true,
+                  isPrimary: true
+                }
+              },
+              variants: {
+                where: { isActive: true },
+                select: {
+                  id: true,
+                  salePrice: true,
+                  price: true
+                }
+              }
+            }
+          });
+        } catch (secondErr: any) {
+          console.warn('⚠️ Fallback homepage product query without productCategories:', secondErr.message);
+          return await prisma.product.findMany({
+            where: { isActive: true, deletedAt: null },
+            select: {
+              id: true,
+              brandId: true,
+              categoryId: true,
+              name: true,
+              slug: true,
+              sku: true,
+              basePrice: true,
+              salePrice: true,
+              dealerPrice: true,
+              stock: true,
+              images: true,
+              isFeatured: true,
+              isExclusive: true,
+              codAvailable: true,
+              variants: {
+                where: { isActive: true },
+                select: {
+                  id: true,
+                  salePrice: true,
+                  price: true
+                }
+              }
+            }
+          });
+        }
+      }
+    };
+
     const [
       settingsData,
       categories,
@@ -329,39 +440,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
         take: 3,
         orderBy: { publishedAt: 'desc' }
       }),
-      prisma.product.findMany({
-        where: { isActive: true, deletedAt: null },
-        select: {
-          id: true,
-          brandId: true,
-          categoryId: true,
-          name: true,
-          slug: true,
-          sku: true,
-          basePrice: true,
-          salePrice: true,
-          dealerPrice: true,
-          stock: true,
-          images: true,
-          isFeatured: true,
-          isExclusive: true,
-          codAvailable: true,
-          productCategories: {
-            select: {
-              categoryId: true,
-              isPrimary: true
-            }
-          },
-          variants: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              salePrice: true,
-              price: true
-            }
-          }
-        }
-      }),
+      fetchHomepageProducts(),
       prisma.customerReview.findMany({
         take: 6,
         orderBy: { createdAt: 'desc' },
