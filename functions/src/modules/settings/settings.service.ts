@@ -444,6 +444,28 @@ export const getSettingsService = async () => {
       console.error("Error loading homepage sections into config:", sectionError);
     }
 
+    // 4. Merge Advertisements from prisma.advertisement & settings
+    try {
+      let settingsAds = (settingsObj.advertisements && Array.isArray(settingsObj.advertisements))
+        ? settingsObj.advertisements
+        : [];
+      const dbAds = await prisma.advertisement.findMany({
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (dbAds.length > 0) {
+        const mergedMap = new Map();
+        for (const ad of settingsAds) mergedMap.set(ad.id, ad);
+        for (const dbAd of dbAds) {
+          if (!mergedMap.has(dbAd.id)) mergedMap.set(dbAd.id, dbAd);
+        }
+        settingsAds = Array.from(mergedMap.values());
+      }
+      settingsObj.advertisements = settingsAds;
+    } catch (adError) {
+      console.error("Error loading advertisements into config:", adError);
+    }
+
     // CENTRAL CACHE: 300 seconds (5 mins cache to prevent DB load while updating instantaneously on save)
     sysCache.set("app_settings", settingsObj, 300);
     return settingsObj;

@@ -29,6 +29,13 @@ export function globalErrorHandler(err: any, req: Request, res: Response, _next:
     errorCode
   });
 
+  // Ensure CORS response headers are set so browser doesn't obscure server errors as CORS violations
+  const origin = req.headers.origin;
+  if (origin && !res.headersSent) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   // Return clean, safe customer-facing error response
   return res.status(statusCode).json({
     success: false,

@@ -395,7 +395,7 @@ export class WhatsAppConversationService {
         logger.warn(`[WHATSAPP WEBHOOK] Failed to dispatch admin push notification: ${err.message}`);
       });
 
-      return { message, conversation: updatedConv, isDuplicate: false, isNewConversation: isNew };
+      return { message, conversation: updatedConv, isDuplicate: false, isNewConversation: isNewConv };
     } finally {
       if (whatsappMessageId) {
         this.processingMessageIds.delete(whatsappMessageId);

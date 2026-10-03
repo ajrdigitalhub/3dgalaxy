@@ -5,6 +5,7 @@ import {
   inject,
   signal,
   effect,
+  OnDestroy,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -1594,7 +1595,7 @@ import { environment } from "../../../../environments/environment";
                   <!-- FILTERS AND SEARCH BAR -->
                   <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-zinc-50 dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800">
                     <!-- STATUS TABS -->
-                    <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                    <div (wheel)="onAdTabWheel($event)" class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 no-scrollbar touch-pan-x">
                       @for (statusOpt of ['all', 'active', 'scheduled', 'paused', 'expired', 'draft']; track statusOpt) {
                         <button
                           (click)="adStatusFilter.set(statusOpt)"
@@ -1622,7 +1623,7 @@ import { environment } from "../../../../environments/environment";
 
                   <!-- CAMPAIGNS TABLE / CARDS LIST -->
                   <div class="space-y-3">
-                    @for (ad of draft().advertisements || []; track $index) {
+                    @for (ad of advertisementsList; track $index) {
                       @if (
                         (adStatusFilter() === 'all' || calculateCampaignStatus(ad).toLowerCase() === adStatusFilter().toLowerCase()) &&
                         (!adSearchQuery() || (ad.name || ad.title || '').toLowerCase().includes(adSearchQuery().toLowerCase()))
@@ -1731,7 +1732,7 @@ import { environment } from "../../../../environments/environment";
                             <!-- ACTION BUTTONS -->
                             <div class="flex items-center gap-2">
                               <button
-                                (click)="editingAdIndex.set($index)"
+                                (click)="startEditingAd($index)"
                                 class="px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                               >
                                 <mat-icon class="text-sm">edit</mat-icon> Edit Campaign
@@ -1762,7 +1763,7 @@ import { environment } from "../../../../environments/environment";
                               </button>
 
                               <button
-                                (click)="removeArrayItem('advertisements', $index)"
+                                (click)="deleteCampaign($index)"
                                 title="Delete Campaign"
                                 class="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all cursor-pointer flex items-center justify-center"
                               >
@@ -1773,16 +1774,110 @@ import { environment } from "../../../../environments/environment";
                         </div>
                       }
                     }
+                    @if (advertisementsList.length === 0) {
+                      <div class="p-8 text-center bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 space-y-3">
+                        <div class="w-12 h-12 mx-auto rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                          <mat-icon class="text-2xl">campaign</mat-icon>
+                        </div>
+                        <div>
+                          <h4 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">No Advertisement Campaigns Found</h4>
+                          <p class="text-[11px] text-zinc-400 mt-0.5">Get started by creating your first promotional banner or popup campaign.</p>
+                        </div>
+                        <button
+                          type="button"
+                          (click)="addAd()"
+                          class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black uppercase shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <mat-icon class="text-sm">add_circle</mat-icon> Create First Campaign
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
 
                 <!-- VIEW 2: CAMPAIGN EDITOR & LIVE PREVIEW PANEL -->
-                @if (editingAdIndex() !== null && draft().advertisements?.[editingAdIndex()!]; as ad) {
-                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- LEFT COLUMN: EDITOR SECTIONS (7 COLS) -->
-                    <div class="lg:col-span-7 space-y-6">
-                      <!-- EDITOR TAB SELECTOR -->
-                      <div class="flex items-center gap-1 overflow-x-auto p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 scrollbar-none">
+                @if (editingAdIndex() !== null && (draft().advertisements?.[editingAdIndex()!] || advertisementsList[editingAdIndex()!]); as ad) {
+                  <!-- READ-ONLY CAMPAIGN SUMMARY CARD -->
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3 mb-4">
+                    <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
+                      <h4 class="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                        <mat-icon class="text-orange-500 text-sm">summarize</mat-icon> Campaign Live Summary
+                      </h4>
+                      <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                        {{ calculateCampaignStatus(ad) }}
+                      </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Audience</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200">
+                          {{ (ad.audience || 'all') === 'guests_only' ? 'Guest Users Only' : (ad.audience === 'logged_in' ? 'Logged-in Users Only' : (ad.audience === 'new_users_only' ? 'New Users Only' : (ad.audience === 'returning_users_only' ? 'Returning Users Only' : 'Everyone'))) }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Display Mode</span>
+                        <span class="font-bold text-orange-600 dark:text-orange-400">
+                          {{ isImageOnlyMode(ad) ? 'Image Only' : 'Full Promotional' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Trigger</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200">
+                          {{ ad.trigger === 'delay' ? ('After ' + (ad.delaySeconds || 3) + 's') : (ad.trigger === 'scroll' ? ('Scroll ' + (ad.scrollPercent || 50) + '%') : (ad.trigger === 'exit_intent' ? 'Exit Intent' : 'Immediate')) }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Frequency</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200">
+                          {{ ad.frequency === 'session' ? 'Once Per Session' : (ad.frequency === 'daily' ? 'Once Per Day' : (ad.frequency === 'campaign' ? 'Once Per Campaign' : 'Every Time')) }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Schedule</span>
+                        <span class="font-mono text-[11px] text-zinc-800 dark:text-zinc-200">
+                          {{ ad.startDate || 'Immediate' }} → {{ ad.endDate || 'No expiration' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Placement</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200 capitalize">
+                          {{ ad.placement || 'Homepage' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Device Target</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200 capitalize">
+                          {{ ad.deviceTargeting || 'All Devices' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-[9px] font-black text-zinc-400 uppercase">Priority</span>
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200">
+                          Level {{ ad.priority || 1 }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- STICKY TOP TAB & SCROLL NAVIGATION BAR INTEGRATED WITH SCREEN -->
+                  <div class="sticky top-16 z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6 transition-all">
+                    <!-- TABS SCROLLER WITH LEFT/RIGHT CHEVRONS -->
+                    <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                      <button
+                        type="button"
+                        (click)="scrollAdTabs('left')"
+                        class="h-8 w-8 shrink-0 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition-all cursor-pointer border-none"
+                        title="Scroll tabs left"
+                      >
+                        <mat-icon class="text-base">chevron_left</mat-icon>
+                      </button>
+
+                      <div
+                        id="ad-editor-tabs-container"
+                        (wheel)="onAdTabWheel($event)"
+                        class="flex items-center gap-1.5 overflow-x-auto p-1 bg-zinc-100/80 dark:bg-zinc-950/60 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 scroll-smooth no-scrollbar touch-pan-x flex-1 min-w-0"
+                      >
                         @for (tab of [
                           { id: 'basic', name: 'Basic Info', icon: 'info' },
                           { id: 'content', name: 'Content & Media', icon: 'image' },
@@ -1793,19 +1888,73 @@ import { environment } from "../../../../environments/environment";
                           { id: 'promotion', name: 'Promotions', icon: 'local_offer' }
                         ]; track tab.id) {
                           <button
-                            (click)="adEditorTab.set(tab.id)"
+                            type="button"
+                            [id]="'ad-tab-btn-' + tab.id"
+                            (click)="scrollToAdSection(tab.id)"
                             [class]="adEditorTab() === tab.id
-                              ? 'px-3 py-2 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 shadow-sm rounded-xl text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap'
-                              : 'px-3 py-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold uppercase flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap'"
+                              ? 'px-3 py-1.5 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 shadow-xs rounded-lg text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 border border-orange-500/30'
+                              : 'px-3 py-1.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 hover:bg-white/50 dark:hover:bg-zinc-800/50 rounded-lg'"
                           >
-                            <mat-icon class="text-sm">{{ tab.icon }}</mat-icon> {{ tab.name }}
+                            <mat-icon class="text-sm shrink-0">{{ tab.icon }}</mat-icon>
+                            <span>{{ tab.name }}</span>
                           </button>
                         }
                       </div>
 
+                      <button
+                        type="button"
+                        (click)="scrollAdTabs('right')"
+                        class="h-8 w-8 shrink-0 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 flex items-center justify-center transition-all cursor-pointer border-none"
+                        title="Scroll tabs right"
+                      >
+                        <mat-icon class="text-base">chevron_right</mat-icon>
+                      </button>
+                    </div>
+
+                    <!-- VIEW MODE & QUICK ACTIONS -->
+                    <div class="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                      <div class="flex items-center bg-zinc-100 dark:bg-zinc-950 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[10px]">
+                        <button
+                          type="button"
+                          (click)="adEditorViewMode.set('scroll'); setupAdScrollSpy()"
+                          [class]="adEditorViewMode() === 'scroll'
+                            ? 'px-2.5 py-1 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 rounded-lg font-black shadow-xs flex items-center gap-1 cursor-pointer'
+                            : 'px-2.5 py-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-bold flex items-center gap-1 cursor-pointer'"
+                          title="Continuous Screen Scroll Mode"
+                        >
+                          <mat-icon class="text-xs">view_stream</mat-icon> Screen Scroll
+                        </button>
+                        <button
+                          type="button"
+                          (click)="adEditorViewMode.set('tab')"
+                          [class]="adEditorViewMode() === 'tab'
+                            ? 'px-2.5 py-1 bg-white dark:bg-zinc-800 text-orange-600 dark:text-orange-400 rounded-lg font-black shadow-xs flex items-center gap-1 cursor-pointer'
+                            : 'px-2.5 py-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-bold flex items-center gap-1 cursor-pointer'"
+                          title="Single Tab Mode"
+                        >
+                          <mat-icon class="text-xs">tab</mat-icon> Tabbed
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        (click)="saveAllSettings()"
+                        [disabled]="isSaving()"
+                        class="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl text-xs font-black uppercase shadow-xs flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                        title="Save Configurations"
+                      >
+                        <mat-icon class="text-sm">{{ isSaving() ? 'rotate_right' : 'save' }}</mat-icon>
+                        <span class="hidden sm:inline">{{ isSaving() ? 'Saving...' : 'Save' }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- LEFT COLUMN: EDITOR SECTIONS (7 COLS) -->
+                    <div class="lg:col-span-7 space-y-6">
                       <!-- TAB 1: BASIC INFORMATION -->
-                      @if (adEditorTab() === 'basic') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'basic') {
+                        <div id="ad-sec-basic" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Basic Information</h3>
                           
                           <div class="space-y-1">
@@ -1886,11 +2035,63 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 2: CONTENT & MEDIA -->
-                      @if (adEditorTab() === 'content') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'content') {
+                        <div id="ad-sec-content" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Content & Visual Assets</h3>
 
-                          <div class="space-y-1">
+                          <!-- CONTENT DISPLAY MODE SELECTOR -->
+                          <div class="space-y-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-wider">Content Display Mode</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              @for (modeOpt of [
+                                { id: 'FULL', label: 'Full Promotional Popup', icon: 'auto_awesome', desc: 'Full shell with headline, text, timer & CTA' },
+                                { id: 'IMAGE_ONLY', label: 'Image Only', icon: 'image', desc: 'Graphic image + close button only' },
+                                { id: 'IMAGE_CLOSE', label: 'Image + Close Button', icon: 'crop_original', desc: 'Clean graphic image with floating close (X)' }
+                              ]; track modeOpt.id) {
+                                <button
+                                  type="button"
+                                  (click)="
+                                    updateAdField(editingAdIndex()!, 'contentMode', modeOpt.id);
+                                    updateAdField(editingAdIndex()!, 'showImageOnly', modeOpt.id !== 'FULL');
+                                  "
+                                  class="p-3 rounded-xl border text-left transition-all cursor-pointer"
+                                  [class]="(ad.contentMode || (ad.showImageOnly ? 'IMAGE_ONLY' : 'FULL')) === modeOpt.id
+                                    ? 'bg-orange-500/10 border-orange-500/50 text-orange-600 dark:text-orange-400 font-bold shadow-xs'
+                                    : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300'"
+                                >
+                                  <div class="flex items-center gap-1.5 mb-1">
+                                    <mat-icon class="text-base">{{ modeOpt.icon }}</mat-icon>
+                                    <span class="text-xs font-black">{{ modeOpt.label }}</span>
+                                  </div>
+                                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">{{ modeOpt.desc }}</p>
+                                </button>
+                              }
+                            </div>
+                          </div>
+
+                          <!-- IMAGE CLICK ACTION SELECTOR -->
+                          <div class="space-y-1 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Image Click Action</span>
+                            <select
+                              [value]="ad.imageClickAction || 'no_action'"
+                              (change)="updateAdField(editingAdIndex()!, 'imageClickAction', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                            >
+                              <option value="no_action">No Action (Clicking image does nothing)</option>
+                              <option value="open_url">Open URL / Route</option>
+                              <option value="open_product">Open Product</option>
+                              <option value="open_category">Open Category</option>
+                            </select>
+                          </div>
+
+                          @if (isImageOnlyMode(ad)) {
+                            <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                              <mat-icon class="text-amber-500 text-base">info</mat-icon>
+                              <span>Image Only mode is active. Headline, secondary text, countdown timer and CTA button containers are hidden from storefront rendering.</span>
+                            </div>
+                          }
+
+                          <div class="space-y-1" [class.opacity-50]="isImageOnlyMode(ad)">
                             <span class="block text-[9px] font-black text-zinc-400 uppercase">Ad Headline</span>
                             <input
                               type="text"
@@ -1901,7 +2102,7 @@ import { environment } from "../../../../environments/environment";
                             />
                           </div>
 
-                          <div class="space-y-1">
+                          <div class="space-y-1" [class.opacity-50]="isImageOnlyMode(ad)">
                             <span class="block text-[9px] font-black text-zinc-400 uppercase">Ad Subheadline / Secondary Text</span>
                             <input
                               type="text"
@@ -1912,7 +2113,7 @@ import { environment } from "../../../../environments/environment";
                             />
                           </div>
 
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" [class.opacity-50]="isImageOnlyMode(ad)">
                             <div class="space-y-1">
                               <span class="block text-[9px] font-black text-zinc-400 uppercase">CTA Button Text</span>
                               <input
@@ -1983,8 +2184,8 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 3: TIMELINE & COUNTDOWN -->
-                      @if (adEditorTab() === 'schedule') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'schedule') {
+                        <div id="ad-sec-schedule" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Timeline & Scheduling</h3>
 
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2076,8 +2277,8 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 4: POPUP CONFIGURATION -->
-                      @if (adEditorTab() === 'popup') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'popup') {
+                        <div id="ad-sec-popup" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Popup & Overlay Styling</h3>
 
                           <div class="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
@@ -2089,6 +2290,19 @@ import { environment } from "../../../../environments/environment";
                               type="checkbox"
                               [checked]="ad.isPopup || ad.type === 'popup'"
                               (change)="updateAdField(editingAdIndex()!, 'isPopup', $any($event.target).checked)"
+                              class="w-5 h-5 text-orange-500 rounded cursor-pointer"
+                            />
+                          </div>
+
+                          <div class="flex items-center justify-between py-2 border-b border-zinc-100 dark:border-zinc-800">
+                            <div>
+                              <span class="text-xs font-black uppercase text-orange-600 dark:text-orange-400 block">Show Image Only (Hide Header & Text Content)</span>
+                              <p class="text-[10px] text-zinc-400">Displays full graphic image without text padding or title header. Popup resizes dynamically for portrait or landscape orientation.</p>
+                            </div>
+                            <input
+                              type="checkbox"
+                              [checked]="ad.showImageOnly"
+                              (change)="updateAdField(editingAdIndex()!, 'showImageOnly', $any($event.target).checked)"
                               class="w-5 h-5 text-orange-500 rounded cursor-pointer"
                             />
                           </div>
@@ -2134,10 +2348,11 @@ import { environment } from "../../../../environments/environment";
                             <div class="space-y-1">
                               <span class="block text-[9px] font-black text-zinc-400 uppercase">Popup Size</span>
                               <select
-                                [value]="ad.popupSize || 'medium'"
+                                [value]="ad.popupSize || 'auto'"
                                 (change)="updateAdField(editingAdIndex()!, 'popupSize', $any($event.target).value)"
                                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
                               >
+                                <option value="auto">Dynamic Auto (Fit Image Proportions)</option>
                                 <option value="small">Small (320px)</option>
                                 <option value="medium">Medium (480px)</option>
                                 <option value="large">Large (640px)</option>
@@ -2212,8 +2427,8 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 5: TRIGGERS & FREQUENCY -->
-                      @if (adEditorTab() === 'triggers') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'triggers') {
+                        <div id="ad-sec-triggers" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Popup Triggers & Frequency Caps</h3>
 
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2286,24 +2501,45 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 6: TARGETING -->
-                      @if (adEditorTab() === 'targeting') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'targeting') {
+                        <div id="ad-sec-targeting" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Audience & Page Targeting</h3>
 
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="space-y-1">
-                              <span class="block text-[9px] font-black text-zinc-400 uppercase">Audience Target</span>
-                              <select
-                                [value]="ad.audience || 'all'"
-                                (change)="updateAdField(editingAdIndex()!, 'audience', $any($event.target).value)"
-                                class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
-                              >
-                                <option value="all">All Visitors</option>
-                                <option value="guests_only">Guests Only (Not logged in)</option>
-                                <option value="logged_in">Logged-in Customers Only</option>
-                              </select>
+                          <!-- AUDIENCE & VISIBILITY SECTION -->
+                          <div class="space-y-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase tracking-wider">Display To (Audience Target)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              @for (opt of [
+                                { id: 'all', label: 'Everyone', desc: 'Default — Displays to all visitors & users' },
+                                { id: 'guests_only', label: 'Guest Users Only', desc: 'Only unauthenticated guest visitors' },
+                                { id: 'logged_in', label: 'Logged-in Users Only', desc: 'Only authenticated logged-in accounts' },
+                                { id: 'new_users_only', label: 'New Users Only', desc: 'First eligible visit where no returning marker exists' },
+                                { id: 'returning_users_only', label: 'Returning Users Only', desc: 'Visitors with existing visit/session history' }
+                              ]; track opt.id) {
+                                <label
+                                  class="flex items-start gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none"
+                                  [class]="(ad.audience || 'all') === opt.id
+                                    ? 'bg-orange-500/10 border-orange-500/50 text-orange-600 dark:text-orange-400'
+                                    : 'bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'"
+                                >
+                                  <input
+                                    type="radio"
+                                    name="adAudience"
+                                    [value]="opt.id"
+                                    [checked]="(ad.audience || 'all') === opt.id"
+                                    (change)="updateAdField(editingAdIndex()!, 'audience', opt.id)"
+                                    class="mt-0.5 text-orange-500 focus:ring-orange-500"
+                                  />
+                                  <div>
+                                    <span class="block text-xs font-black">{{ opt.label }}</span>
+                                    <span class="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug block">{{ opt.desc }}</span>
+                                  </div>
+                                </label>
+                              }
                             </div>
+                          </div>
 
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="space-y-1">
                               <span class="block text-[9px] font-black text-zinc-400 uppercase">Device Target</span>
                               <select
@@ -2351,8 +2587,8 @@ import { environment } from "../../../../environments/environment";
                       }
 
                       <!-- TAB 7: PROMOTIONS -->
-                      @if (adEditorTab() === 'promotion') {
-                        <div class="p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4">
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'promotion') {
+                        <div id="ad-sec-promotion" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
                           <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Coupon & Product Reference</h3>
 
                           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2394,7 +2630,7 @@ import { environment } from "../../../../environments/environment";
 
                     <!-- RIGHT COLUMN: INTERACTIVE LIVE PREVIEW PANEL (5 COLS) -->
                     <div class="lg:col-span-5 space-y-4">
-                      <div class="p-5 bg-zinc-950 text-white rounded-3xl shadow-xl space-y-4 border border-zinc-800 sticky top-4">
+                      <div class="p-5 bg-zinc-950 text-white rounded-3xl shadow-xl space-y-4 border border-zinc-800 sticky top-32 self-start max-h-[calc(100vh-9rem)] overflow-y-auto no-scrollbar">
                         <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
                           <div class="flex items-center gap-2">
                             <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
@@ -2427,67 +2663,86 @@ import { environment } from "../../../../environments/environment";
                           [class.mx-auto]="previewViewport() === 'mobile'"
                         >
                           <div class="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 text-zinc-900 dark:text-white relative group">
-                            <!-- PREVIEW CLOSE BUTTON -->
-                            @if (ad.showCloseButton !== false) {
-                              <div class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center text-xs">
-                                <mat-icon class="text-sm">close</mat-icon>
-                              </div>
-                            }
-
-                            <!-- PREVIEW IMAGE -->
+                            @let isImgOnly = isImageOnlyMode(ad);
                             @let imgPath = (previewViewport() === 'mobile' && ad.mobileImageUrl) ? ad.mobileImageUrl : (ad.imageUrl || ad.mediaUrl);
-                            @if (imgPath) {
-                              <div class="relative w-full h-36 bg-zinc-900 overflow-hidden">
-                                <img [src]="imgPath" alt="Preview" class="w-full h-full object-cover" />
-                                @if (ad.discountText) {
-                                  <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
-                                    {{ ad.discountText }}
+
+                            @if (isImgOnly) {
+                              <!-- IMAGE ONLY LIVE PREVIEW -->
+                              <div class="relative w-full overflow-hidden rounded-2xl bg-zinc-950 flex items-center justify-center p-1">
+                                @if (imgPath) {
+                                  <img [src]="imgPath" alt="Preview" class="max-w-full max-h-[65vh] w-auto h-auto object-contain rounded-xl block shadow-xl" />
+                                } @else {
+                                  <div class="w-full h-48 bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 text-xs font-mono">
+                                    [ No Visual Asset Uploaded ]
                                   </div>
                                 }
+                                @if (ad.showCloseButton !== false) {
+                                  <div class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20">
+                                    <mat-icon class="text-sm">close</mat-icon>
+                                  </div>
+                                }
+                              </div>
+                            } @else {
+                              <!-- FULL PROMOTIONAL LIVE PREVIEW -->
+                              @if (ad.showCloseButton !== false) {
+                                <div class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center text-xs">
+                                  <mat-icon class="text-sm">close</mat-icon>
+                                </div>
+                              }
+
+                              @if (imgPath) {
+                                <div class="relative w-full h-36 bg-zinc-900 overflow-hidden">
+                                  <img [src]="imgPath" alt="Preview" class="w-full h-full object-cover" />
+                                  @if (ad.discountText) {
+                                    <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
+                                      {{ ad.discountText }}
+                                    </div>
+                                  }
+                                </div>
+                              }
+
+                              <!-- PREVIEW CONTENT -->
+                              <div class="p-4 space-y-3">
+                                <div>
+                                  <span class="text-[8px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
+                                    {{ ad.type || 'BANNER' }}
+                                  </span>
+                                  <h4 class="text-sm font-black mt-1 leading-tight text-zinc-900 dark:text-white">
+                                    {{ ad.headline || ad.title || 'Your Campaign Headline Here' }}
+                                  </h4>
+                                  @if (ad.subheadline) {
+                                    <p class="text-[10px] text-zinc-400 mt-0.5 line-clamp-2">{{ ad.subheadline }}</p>
+                                  }
+                                </div>
+
+                                <!-- PREVIEW TIMER -->
+                                @if (ad.enableCountdown) {
+                                  <div class="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-800 text-center">
+                                    <span class="text-[8px] font-black uppercase text-zinc-400 block mb-1">Offer Ends In</span>
+                                    <div class="grid grid-cols-4 gap-1 text-[10px] font-mono font-black">
+                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded text-orange-500">02d</div>
+                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">14h</div>
+                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">35m</div>
+                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">42s</div>
+                                    </div>
+                                  </div>
+                                }
+
+                                <!-- PREVIEW COUPON -->
+                                @if (ad.couponCode) {
+                                  <div class="flex items-center justify-between p-2 bg-orange-500/10 rounded-lg border border-dashed border-orange-500/40 text-[10px]">
+                                    <span class="font-mono font-black uppercase text-orange-500">{{ ad.couponCode }}</span>
+                                    <span class="text-[8px] font-black uppercase bg-orange-500 text-white px-2 py-0.5 rounded">Copy</span>
+                                  </div>
+                                }
+
+                                <!-- PREVIEW CTA BUTTON -->
+                                <button class="w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase rounded-xl shadow-md flex items-center justify-center gap-1 cursor-pointer">
+                                  <span>{{ ad.ctaText || 'Shop Now' }}</span>
+                                  <mat-icon class="text-xs">arrow_forward</mat-icon>
+                                </button>
                               </div>
                             }
-
-                            <!-- PREVIEW CONTENT -->
-                            <div class="p-4 space-y-3">
-                              <div>
-                                <span class="text-[8px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                                  {{ ad.type || 'BANNER' }}
-                                </span>
-                                <h4 class="text-sm font-black mt-1 leading-tight text-zinc-900 dark:text-white">
-                                  {{ ad.headline || ad.title || 'Your Campaign Headline Here' }}
-                                </h4>
-                                @if (ad.subheadline) {
-                                  <p class="text-[10px] text-zinc-400 mt-0.5 line-clamp-2">{{ ad.subheadline }}</p>
-                                }
-                              </div>
-
-                              <!-- PREVIEW TIMER -->
-                              @if (ad.enableCountdown) {
-                                <div class="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-800 text-center">
-                                  <span class="text-[8px] font-black uppercase text-zinc-400 block mb-1">Offer Ends In</span>
-                                  <div class="grid grid-cols-4 gap-1 text-[10px] font-mono font-black">
-                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded text-orange-500">02d</div>
-                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">14h</div>
-                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">35m</div>
-                                    <div class="bg-white dark:bg-zinc-900 p-1 rounded">42s</div>
-                                  </div>
-                                </div>
-                              }
-
-                              <!-- PREVIEW COUPON -->
-                              @if (ad.couponCode) {
-                                <div class="flex items-center justify-between p-2 bg-orange-500/10 rounded-lg border border-dashed border-orange-500/40 text-[10px]">
-                                  <span class="font-mono font-black uppercase text-orange-500">{{ ad.couponCode }}</span>
-                                  <span class="text-[8px] font-black uppercase bg-orange-500 text-white px-2 py-0.5 rounded">Copy</span>
-                                </div>
-                              }
-
-                              <!-- PREVIEW CTA BUTTON -->
-                              <button class="w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase rounded-xl shadow-md flex items-center justify-center gap-1 cursor-pointer">
-                                <span>{{ ad.ctaText || 'Shop Now' }}</span>
-                                <mat-icon class="text-xs">arrow_forward</mat-icon>
-                              </button>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -6074,7 +6329,7 @@ import { environment } from "../../../../environments/environment";
     ".scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.2); border-radius: 2px; }",
   ],
 })
-export class AdminSettingsTab {
+export class AdminSettingsTab implements OnDestroy {
   @Input({ required: true }) admin!: AdminPanel;
   private themeService = inject(ThemeService);
   private toastService = inject(ToastService);
@@ -6364,6 +6619,36 @@ export class AdminSettingsTab {
         this.activeSubTab.set("Database Backups");
       }
     });
+
+    effect(() => {
+      const tab = this.activeSubTab();
+      if (tab === "Advertisements") {
+        this.admin.ds.reloadAdvertisements(true);
+      }
+    });
+
+    effect(() => {
+      const liveAds = this.admin.ds.advertisements();
+      if (liveAds && liveAds.length > 0) {
+        this.draft.update(d => {
+          if (!d.advertisements || d.advertisements.length === 0) {
+            return { ...d, advertisements: JSON.parse(JSON.stringify(liveAds)) };
+          }
+          return d;
+        });
+      }
+    });
+
+    effect(() => {
+      const idx = this.editingAdIndex();
+      const mode = this.adEditorViewMode();
+      if (idx !== null && mode === 'scroll') {
+        this.setupAdScrollSpy();
+      } else if (this.adIntersectionObserver) {
+        this.adIntersectionObserver.disconnect();
+        this.adIntersectionObserver = null;
+      }
+    });
   }
 
   setVal(key: string, value: any) {
@@ -6545,9 +6830,142 @@ export class AdminSettingsTab {
   public adStatusFilter = signal<string>('all');
   public editingAdIndex = signal<number | null>(null);
   public adEditorTab = signal<string>('basic');
+  public adEditorViewMode = signal<'scroll' | 'tab'>('scroll');
   public previewViewport = signal<string>('desktop');
+  private adIntersectionObserver: IntersectionObserver | null = null;
+
+  ngOnDestroy() {
+    if (this.adIntersectionObserver) {
+      this.adIntersectionObserver.disconnect();
+      this.adIntersectionObserver = null;
+    }
+  }
+
+  scrollToAdSection(sectionId: string) {
+    this.adEditorTab.set(sectionId);
+    if (this.adEditorViewMode() === 'scroll') {
+      const el = document.getElementById('ad-sec-' + sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    setTimeout(() => {
+      const tabBtn = document.getElementById('ad-tab-btn-' + sectionId);
+      if (tabBtn) {
+        tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 50);
+  }
+
+  onAdTabWheel(event: WheelEvent) {
+    const container = event.currentTarget as HTMLElement;
+    if (container && event.deltaY !== 0) {
+      container.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }
+  }
+
+  scrollAdTabs(direction: 'left' | 'right') {
+    const container = document.getElementById('ad-editor-tabs-container');
+    if (container) {
+      const scrollAmount = direction === 'left' ? -220 : 220;
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  }
+
+  setupAdScrollSpy() {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+
+    if (this.adIntersectionObserver) {
+      this.adIntersectionObserver.disconnect();
+      this.adIntersectionObserver = null;
+    }
+
+    setTimeout(() => {
+      const sectionIds = ['basic', 'content', 'schedule', 'popup', 'triggers', 'targeting', 'promotion'];
+      const targets = sectionIds
+        .map(id => document.getElementById('ad-sec-' + id))
+        .filter((el): el is HTMLElement => !!el);
+
+      if (!targets.length) return;
+
+      this.adIntersectionObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length > 0) {
+          const id = visible[0].target.id.replace('ad-sec-', '');
+          if (id && this.adEditorTab() !== id) {
+            this.adEditorTab.set(id);
+            const tabBtn = document.getElementById('ad-tab-btn-' + id);
+            if (tabBtn) {
+              tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+          }
+        }
+      }, {
+        rootMargin: '-100px 0px -50% 0px',
+        threshold: [0, 0.2]
+      });
+
+      targets.forEach(target => this.adIntersectionObserver?.observe(target));
+    }, 200);
+  }
+
+  isImageOnlyMode(ad: any): boolean {
+    if (!ad) return false;
+    if (ad.contentMode === 'IMAGE_ONLY' || ad.contentMode === 'IMAGE_CLOSE' || ad.showImageOnly || ad.hideHeader) return true;
+    const hasHeadline = !!(ad.headline && String(ad.headline).trim());
+    const hasTitle = !!(ad.title && String(ad.title).trim());
+    const hasSubheadline = !!(ad.subheadline && String(ad.subheadline).trim());
+    return !hasHeadline && !hasTitle && !hasSubheadline;
+  }
+
+  ensureDraftAdvertisements(): any[] {
+    const d = this.draft();
+    if (Array.isArray(d.advertisements) && d.advertisements.length > 0) {
+      return d.advertisements;
+    }
+    const liveAds = this.admin.ds.advertisements() || [];
+    if (liveAds.length > 0) {
+      const copy = JSON.parse(JSON.stringify(liveAds));
+      this.draft.update(curr => ({ ...curr, advertisements: copy }));
+      return copy;
+    }
+    return d.advertisements || [];
+  }
+
+  get advertisementsList(): any[] {
+    const draftAds = this.draft()?.advertisements;
+    if (Array.isArray(draftAds) && draftAds.length > 0) {
+      return draftAds;
+    }
+    const liveAds = this.admin.ds.advertisements() || [];
+    if (liveAds.length > 0) {
+      this.draft.update(curr => {
+        if (!curr.advertisements || curr.advertisements.length === 0) {
+          return { ...curr, advertisements: JSON.parse(JSON.stringify(liveAds)) };
+        }
+        return curr;
+      });
+      return liveAds;
+    }
+    return [];
+  }
+
+  startEditingAd(index: number) {
+    this.ensureDraftAdvertisements();
+    this.editingAdIndex.set(index);
+  }
+
+  deleteCampaign(index: number) {
+    this.ensureDraftAdvertisements();
+    this.removeArrayItem('advertisements', index);
+  }
 
   addAd() {
+    this.ensureDraftAdvertisements();
     const newId = "ad_" + Date.now();
     this.appendArrayItem("advertisements", {
       id: newId,
@@ -6621,6 +7039,7 @@ export class AdminSettingsTab {
   }
 
   duplicateCampaign(index: number) {
+    this.ensureDraftAdvertisements();
     const list = this.draft().advertisements || [];
     const orig = list[index];
     if (!orig) return;
@@ -6656,6 +7075,7 @@ export class AdminSettingsTab {
   }
 
   toggleCampaignStatus(index: number) {
+    this.ensureDraftAdvertisements();
     const list = [...(this.draft().advertisements || [])];
     const curr = list[index];
     if (!curr) return;
@@ -6664,6 +7084,7 @@ export class AdminSettingsTab {
   }
 
   archiveCampaign(index: number) {
+    this.ensureDraftAdvertisements();
     this.updateAdField(index, 'status', 'archived');
   }
 

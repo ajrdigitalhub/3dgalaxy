@@ -8,7 +8,8 @@
       <button class="btn btn-secondary" (click)="openEditModal()">
         <mat-icon>edit</mat-icon> Edit Profile
       </button>
-      <button class="btn" [class.btn-warning]="c.status === 'Active'" [class.btn-success]="c.status === 'Blocked'" (click)="toggleBlockStatus()">
+      <button class="btn" [class.btn-warning]="c.status === 'Active'" [class.btn-success]="c.status === 'Blocked'"
+        (click)="toggleBlockStatus()">
         <mat-icon>{{ c.status === 'Active' ? 'block' : 'lock_open' }}</mat-icon>
         {{ c.status === 'Active' ? 'Block Account' : 'Unblock Account' }}
       </button>
@@ -18,17 +19,15 @@
   <!-- Profile Overview Header Card -->
   <div class="profile-header-card">
     <div class="profile-main-info">
-      <img 
-        [src]="c.profileImage || 'assets/images/user-placeholder.png'" 
-        (error)="handleImageError($event, 'https://picsum.photos/seed/' + c.id + '/120/120')"
-        alt="Profile" 
-      />
+      <img [src]="c.profileImage || 'assets/images/user-placeholder.png'"
+        (error)="handleImageError($event, 'https://picsum.photos/seed/' + c.id + '/120/120')" alt="Profile" />
       <div class="name-section">
         <h2>{{ c.name }}</h2>
         <span class="customer-id">Customer ID: {{ c.id }}</span>
         <div class="badges-row">
           <span class="badge-type" [class]="c.customerType">{{ c.customerType | titlecase }}</span>
-          <span class="badge-status" [class.active]="c.status === 'Active'" [class.blocked]="c.status === 'Blocked'">{{ c.status }}</span>
+          <span class="badge-status" [class.active]="c.status === 'Active'" [class.blocked]="c.status === 'Blocked'">{{
+            c.status }}</span>
         </div>
       </div>
     </div>
@@ -47,10 +46,10 @@
         <span class="label">Avg Order Value</span>
         <span class="value">₹{{ c.stats.averageOrderValue | number:'1.2-2' }}</span>
       </div>
-      <div class="stat-card">
+      <!-- <div class="stat-card">
         <span class="label">Reward Points</span>
         <span class="value points">{{ c.rewardPoints }} pts</span>
-      </div>
+      </div> -->
     </div>
   </div>
 
@@ -166,7 +165,8 @@
               <td>
                 <div class="order-items-cell">
                   <div class="item-mini" *ngFor="let item of o.items">
-                    <img [src]="item.productImage" alt="" (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.sku + '/40/40')" />
+                    <img [src]="item.productImage" alt=""
+                      (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.sku + '/40/40')" />
                     <div class="item-desc">
                       <span class="name">{{ item.productName }}</span>
                       <span class="qty">Qty: {{ item.quantity }} × ₹{{ item.unitPrice | number:'1.2-2' }}</span>
@@ -176,12 +176,14 @@
               </td>
               <td class="text-right font-semibold">₹{{ o.totalAmount | number:'1.2-2' }}</td>
               <td>
-                <span class="badge-status-sm" [class.success]="o.paymentStatus === 'PAID'" [class.pending]="o.paymentStatus === 'PENDING'">
+                <span class="badge-status-sm" [class.success]="o.paymentStatus === 'PAID'"
+                  [class.pending]="o.paymentStatus === 'PENDING'">
                   {{ o.paymentStatus }}
                 </span>
               </td>
               <td>
-                <span class="badge-status-sm" [class.success]="o.deliveryStatus === 'DELIVERED'" [class.pending]="o.deliveryStatus === 'PROCESSING' || o.deliveryStatus === 'PENDING'">
+                <span class="badge-status-sm" [class.success]="o.deliveryStatus === 'DELIVERED'"
+                  [class.pending]="o.deliveryStatus === 'PROCESSING' || o.deliveryStatus === 'PENDING'">
                   {{ o.deliveryStatus }}
                 </span>
               </td>
@@ -237,7 +239,8 @@
 
       <div class="wishlist-grid" *ngIf="wishlist().length > 0">
         <div class="wishlist-card" *ngFor="let item of wishlist()">
-          <img [src]="item.image" alt="Product" (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.productId + '/150/150')" />
+          <img [src]="item.image" alt="Product"
+            (error)="handleImageError($event, 'https://picsum.photos/seed/' + item.productId + '/150/150')" />
           <div class="wishlist-info">
             <span class="category">{{ item.category }}</span>
             <h4 class="name">{{ item.name }}</h4>
@@ -260,9 +263,10 @@
         <div class="review-card" *ngFor="let r of reviews()">
           <div class="review-header">
             <div class="item-info">
-              <img [src]="r.product.image" alt="" (error)="handleImageError($event, 'https://picsum.photos/seed/' + r.id + '/40/40')" />
+              <img [src]="r.product?.image || 'assets/images/user-placeholder.png'" alt=""
+                (error)="handleImageError($event, 'https://picsum.photos/seed/' + r.id + '/40/40')" />
               <div class="desc">
-                <span class="product-name font-semibold">{{ r.product.name }}</span>
+                <span class="product-name font-semibold">{{ r.product?.name || 'Product' }}</span>
                 <span class="date">{{ r.createdAt | date:'mediumDate' }}</span>
               </div>
             </div>
@@ -271,7 +275,13 @@
             </div>
           </div>
           <div class="review-body">
+            <h5 *ngIf="r.title && r.title !== 'Customer Review' && r.title !== 'Verified Review'" class="review-title">{{ r.title }}</h5>
             <p>{{ r.comment || '— No comment provided —' }}</p>
+            <div class="review-images" *ngIf="r.images && r.images.length > 0">
+              <a *ngFor="let img of r.images" [href]="img" target="_blank" rel="noopener">
+                <img [src]="img" class="review-thumb" alt="Review photo" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -289,12 +299,12 @@
         <div class="timeline-item" *ngFor="let act of activity()">
           <div class="timeline-badge" [class]="act.action">
             <mat-icon>
-              {{ 
-                act.action === 'ACCOUNT_CREATED' ? 'person_add' :
-                act.action === 'PROFILE_UPDATED' ? 'manage_accounts' :
-                act.action === 'ACCOUNT_BLOCKED' ? 'lock' :
-                act.action === 'ACCOUNT_UNBLOCKED' ? 'lock_open' :
-                act.action === 'ORDER_PLACED' ? 'shopping_bag' : 'bolt'
+              {{
+              act.action === 'ACCOUNT_CREATED' ? 'person_add' :
+              act.action === 'PROFILE_UPDATED' ? 'manage_accounts' :
+              act.action === 'ACCOUNT_BLOCKED' ? 'lock' :
+              act.action === 'ACCOUNT_UNBLOCKED' ? 'lock_open' :
+              act.action === 'ORDER_PLACED' ? 'shopping_bag' : 'bolt'
               }}
             </mat-icon>
           </div>
@@ -316,10 +326,8 @@
       <div class="add-note-card">
         <h3>Create Admin Note</h3>
         <div class="form-group">
-          <textarea 
-            [(ngModel)]="newNoteText" 
-            placeholder="Type confidential note about customer (B2B terms, disputes, credit records)..."
-            rows="3">
+          <textarea [(ngModel)]="newNoteText"
+            placeholder="Type confidential note about customer (B2B terms, disputes, credit records)..." rows="3">
           </textarea>
         </div>
         <div class="card-footer">

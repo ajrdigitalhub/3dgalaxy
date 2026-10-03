@@ -4613,7 +4613,10 @@ export class AdminCatalogTab {
       const pCatId = p.categoryId || p.category_id || p.category?.id || p.primaryCategory?.id;
       const inPrimary = pCatId === catId;
       const inCategories = p.categories?.some((c: any) => c.id === catId);
-      return inPrimary || inCategories;
+      const inProductCategories = (p.productCategories || (p as any).product_categories)?.some(
+        (pc: any) => (pc.categoryId || pc.category_id) === catId
+      );
+      return inPrimary || inCategories || inProductCategories;
     });
 
     if (q) {
@@ -4669,7 +4672,10 @@ export class AdminCatalogTab {
       const pCatId = p.categoryId || p.category_id || p.category?.id || p.primaryCategory?.id;
       const inPrimary = pCatId === catId;
       const inCategories = p.categories?.some((c: any) => c.id === catId);
-      return !inPrimary && !inCategories;
+      const inProductCategories = (p.productCategories || (p as any).product_categories)?.some(
+        (pc: any) => (pc.categoryId || pc.category_id) === catId
+      );
+      return !inPrimary && !inCategories && !inProductCategories;
     });
 
     if (q) {

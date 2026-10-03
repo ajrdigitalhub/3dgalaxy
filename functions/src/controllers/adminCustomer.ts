@@ -64,10 +64,14 @@ export const getCustomers = async (req: Request, res: Response) => {
 
     const skip = (page - 1) * limit;
 
-    // Build Prisma query condition
+    // Build Prisma query condition - only include website users, exclude synthetic WhatsApp users
     const where: any = {
       user: {
-        deletedAt: null // Soft-delete check
+        deletedAt: null, // Soft-delete check
+        NOT: [
+          { email: { endsWith: '@3dgalaxy.customer', mode: 'insensitive' } },
+          { email: { startsWith: 'wa-', mode: 'insensitive' } }
+        ]
       }
     };
 
@@ -693,17 +697,69 @@ export const getCustomerReviews = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    const formatted = reviews.map((r) => ({
-      id: r.id,
-      rating: r.rating,
-      comment: r.reviewText,
-      reviewText: r.reviewText,
-      createdAt: r.createdAt,
-      product: {
-        name: r.product.name,
-        image: r.product.images ? (JSON.parse(JSON.stringify(r.product.images))[0] || '') : '',
+    const formatted = reviews.map((r) => {
+      let title = '';
+      let comment = r.reviewText || '';
+      let images: string[] = [];
+
+      const rawText = (r.reviewText || '').trim();
+      if (rawText.startsWith('{') || rawText.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed && typeof parsed === 'object') {
+            title = parsed.title || '';
+            comment = parsed.comment || parsed.review || parsed.text || '';
+            images = Array.isArray(parsed.images) ? parsed.images : [];
+          }
+        } catch (e) {}
       }
-    }));
+
+      // Check if comment itself is still a JSON string
+      if (typeof comment === 'string' && comment.trim().startsWith('{')) {
+        try {
+          const reParsed = JSON.parse(comment.trim());
+          if (reParsed && typeof reParsed === 'object') {
+            title = reParsed.title || title;
+            comment = reParsed.comment || reParsed.review || reParsed.text || '';
+            if (Array.isArray(reParsed.images) && reParsed.images.length > 0 && images.length === 0) {
+              images = reParsed.images;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Resolve product image string from array or object
+      let productImage = '';
+      if (r.product?.images) {
+        try {
+          const imgs = typeof r.product.images === 'string'
+            ? JSON.parse(r.product.images)
+            : JSON.parse(JSON.stringify(r.product.images));
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            const first = imgs[0];
+            productImage = typeof first === 'string' ? first : (first?.url || '');
+          } else if (typeof imgs === 'string') {
+            productImage = imgs;
+          }
+        } catch (e) {
+          productImage = '';
+        }
+      }
+
+      return {
+        id: r.id,
+        rating: r.rating,
+        title: title || '',
+        comment: comment || '',
+        reviewText: comment || '',
+        images,
+        createdAt: r.createdAt,
+        product: {
+          name: r.product?.name || 'Product',
+          image: productImage,
+        }
+      };
+    });
 
     return res.status(200).json({ success: true, data: formatted });
   } catch (error: any) {
@@ -855,6 +911,15 @@ export const getCustomerAnalytics = async (req: Request, res: Response) => {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+    // Base condition to only include website users, excluding synthetic WhatsApp users
+    const websiteUserCondition: any = {
+      deletedAt: null,
+      NOT: [
+        { email: { endsWith: '@3dgalaxy.customer', mode: 'insensitive' } },
+        { email: { startsWith: 'wa-', mode: 'insensitive' } }
+      ]
+    };
+
     // Parallel metric counts
     const [
       totalCustomers,
@@ -864,40 +929,40 @@ export const getCustomerAnalytics = async (req: Request, res: Response) => {
       registeredCustomers,
       allCustomersForLeaderboard,
     ] = await Promise.all([
-      // Total customers count
+      // Total website customers count
       prisma.customer.count({
-        where: { user: { deletedAt: null } },
+        where: { user: websiteUserCondition },
       }),
-      // New customers in last 30 days
+      // New website customers in last 30 days
       prisma.customer.count({
         where: {
-          user: { deletedAt: null },
+          user: websiteUserCondition,
           createdAt: { gte: thirtyDaysAgo },
         },
       }),
-      // Active customers
+      // Active website customers
       prisma.customer.count({
         where: {
-          user: { deletedAt: null, isActive: true },
+          user: { ...websiteUserCondition, isActive: true },
         },
       }),
-      // Guest customers (customerType === 'guest')
+      // Guest website customers (customerType === 'guest')
       prisma.customer.count({
         where: {
-          user: { deletedAt: null },
+          user: websiteUserCondition,
           customerType: 'guest',
         },
       }),
-      // Registered customers (customerType !== 'guest')
+      // Registered website customers (customerType !== 'guest')
       prisma.customer.count({
         where: {
-          user: { deletedAt: null },
+          user: websiteUserCondition,
           customerType: { not: 'guest' },
         },
       }),
-      // Fetch customers for leaderboard calculations
+      // Fetch website customers for leaderboard calculations
       prisma.customer.findMany({
-        where: { user: { deletedAt: null } },
+        where: { user: websiteUserCondition },
         include: {
           user: true,
           orders: { select: { totalAmount: true } },

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma, { pool } from '../config/database';
+import prisma, { pool, withDbRetry } from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sysCache } from '../config/cache';
@@ -312,6 +312,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       try {
         return await prisma.product.findMany({
           where: { isActive: true, deletedAt: null },
+          orderBy: { createdAt: 'desc' },
           select: {
             id: true,
             brandId: true,
@@ -327,11 +328,13 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
             isFeatured: true,
             isExclusive: true,
             codAvailable: true,
+            createdAt: true,
             productCategories: {
               select: {
                 categoryId: true,
                 isPrimary: true,
-                isFeatured: true
+                isFeatured: true,
+                sortOrder: true
               }
             },
             variants: {
@@ -355,6 +358,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
         try {
           return await prisma.product.findMany({
             where: { isActive: true, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
             select: {
               id: true,
               brandId: true,
@@ -370,10 +374,13 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
               isFeatured: true,
               isExclusive: true,
               codAvailable: true,
+              createdAt: true,
               productCategories: {
                 select: {
                   categoryId: true,
-                  isPrimary: true
+                  isPrimary: true,
+                  isFeatured: true,
+                  sortOrder: true
                 }
               },
               variants: {
@@ -390,6 +397,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
           console.warn('⚠️ Fallback homepage product query without productCategories:', secondErr.message);
           return await prisma.product.findMany({
             where: { isActive: true, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
             select: {
               id: true,
               brandId: true,
@@ -405,6 +413,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
               isFeatured: true,
               isExclusive: true,
               codAvailable: true,
+              createdAt: true,
               variants: {
                 where: { isActive: true },
                 select: {
@@ -419,6 +428,15 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       }
     };
 
+    const safeQuery = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+      try {
+        return await withDbRetry(fn, 2, 400);
+      } catch (err: any) {
+        console.warn('⚠️ Non-critical homepage subquery fallback:', err?.message);
+        return fallback;
+      }
+    };
+
     const [
       settingsData,
       categories,
@@ -427,21 +445,21 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       products,
       reviews
     ] = await Promise.all([
-      getSettingsService(),
-      prisma.category.findMany({
+      safeQuery(() => getSettingsService(), {}),
+      withDbRetry(() => prisma.category.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
-      }),
-      prisma.brand.findMany({
+      }), 3, 500),
+      safeQuery(() => prisma.brand.findMany({
         orderBy: { name: 'asc' },
-      }),
-      prisma.blog.findMany({
+      }), []),
+      safeQuery(() => prisma.blog.findMany({
         where: { isPublished: true },
         take: 3,
         orderBy: { publishedAt: 'desc' }
-      }),
-      fetchHomepageProducts(),
-      prisma.customerReview.findMany({
+      }), []),
+      withDbRetry(() => fetchHomepageProducts(), 3, 500),
+      safeQuery(() => prisma.customerReview.findMany({
         take: 6,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -460,7 +478,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
             }
           }
         }
-      })
+      }), [])
     ]);
 
     // 2. Process lists and sections
@@ -484,6 +502,8 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       isFeatured: p.isFeatured,
       isExclusive: p.isExclusive,
       codAvailable: p.codAvailable,
+      createdAt: p.createdAt,
+      created_at: p.createdAt,
       rating: 4.5, // fallback
       reviewCount: 12
     });
@@ -495,19 +515,53 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       ? settingsData.heroSlides
       : (settingsData.banners || []).filter((b: any) => b.position === 'HERO' || b.position === 'slider');
 
+    // Compute category product counts dynamically across direct and subcategories
+    const catDirectCount = new Map<string, number>();
+    mappedProducts.forEach(p => {
+      const catIds = new Set<string>();
+      if (p.categoryId) catIds.add(String(p.categoryId));
+      if (p.category_id) catIds.add(String(p.category_id));
+      if (Array.isArray(p.productCategories)) {
+        p.productCategories.forEach((pc: any) => {
+          const cId = typeof pc === 'string' ? pc : (pc?.categoryId || pc?.category_id || pc?.id);
+          if (cId) catIds.add(String(cId));
+        });
+      }
+      catIds.forEach(cId => {
+        catDirectCount.set(cId, (catDirectCount.get(cId) || 0) + 1);
+      });
+    });
+
+    const getCatTotalProductCount = (catId: string, visited = new Set<string>()): number => {
+      if (visited.has(catId)) return 0;
+      visited.add(catId);
+      let count = catDirectCount.get(catId) || 0;
+      categories.forEach(sub => {
+        const parentId = sub.parentId || (sub as any).parent_id;
+        if (parentId === catId) {
+          count += getCatTotalProductCount(sub.id, visited);
+        }
+      });
+      return count;
+    };
+
+    // Mapped Categories with accurate productCount
+    const mappedCategories = categories.map(c => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      description: c.description || '',
+      icon: c.icon || '',
+      image: c.image || '',
+      banner: c.banner || '',
+      sortOrder: c.sortOrder,
+      parentId: c.parentId || (c as any).parent_id || null,
+      isFeatured: c.isFeatured,
+      productCount: getCatTotalProductCount(c.id)
+    }));
+
     // Featured categories
-    const featuredCategories = categories
-      .filter(c => c.isFeatured)
-      .map(c => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        description: c.description || '',
-        icon: c.icon || '',
-        image: c.image || '',
-        banner: c.banner || '',
-        sortOrder: c.sortOrder
-      }));
+    const featuredCategories = mappedCategories.filter(c => c.isFeatured);
 
     // Flash deals (active discount and stock left)
     const flashDeals = mappedProducts
@@ -584,6 +638,7 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       success: true,
       data: {
         heroSlides,
+        categories: mappedCategories,
         featuredCategories,
         flashDeals,
         bestSellers,
@@ -619,8 +674,14 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
     };
 
     sysCache.set(cacheKey, responsePayload, 1800);
+    sysCache.set('stale_' + cacheKey, responsePayload, 86400); // 24h backup
     return res.status(200).json(responsePayload);
   } catch (error: any) {
+    const stale = sysCache.get('stale_consolidated_dynamic_homepage_payload');
+    if (stale) {
+      console.warn('⚠️ Remote database connection timeout; gracefully serving cached homepage data');
+      return res.status(200).json(stale);
+    }
     return res.status(500).json({ error: 'Failed to aggregate dynamic homepage data', details: error.message });
   }
 };

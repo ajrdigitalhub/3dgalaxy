@@ -64,6 +64,72 @@ const isMultipartRequest = (req: Request) => {
 
 // Application Observability Middlewares
 app.use(requestCorrelationMiddleware);
+
+// Universal Environment-Based CORS & Preflight Middleware (Must run BEFORE rate limiters and route handlers)
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : [
+    'http://localhost:4200',
+    'http://localhost:4201',
+    'http://localhost:4202',
+    'http://localhost:3000',
+    'http://127.0.0.1:4200',
+    'http://127.0.0.1:4201',
+    'http://127.0.0.1:4202',
+    'http://127.0.0.1:3000',
+    ENV.CLIENT_URL,
+    ENV.SITE_URL,
+    ENV.ADMIN_APP_URL,
+    'https://3dgalaxy.co.in',
+    'https://3dgalaxy.co',
+    'https://www.3dgalaxy.co.in',
+    'https://ajr3dgalaxy.web.app'
+  ].filter(Boolean);
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin;
+
+  const isLocalOrigin = origin && (
+    origin.startsWith('http://localhost') ||
+    origin.startsWith('https://localhost') ||
+    origin.startsWith('http://127.0.0.1') ||
+    origin.startsWith('https://127.0.0.1')
+  );
+
+  if (origin) {
+    if (isLocalOrigin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+
+  const reqHeaders = req.headers['access-control-request-headers'];
+  if (reqHeaders) {
+    res.setHeader('Access-Control-Allow-Headers', reqHeaders);
+  } else {
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, X-Request-ID, Accept, X-Requested-With, x-guest-session-id, X-Guest-Session-ID, Cache-Control, Pragma, Origin, Accept-Language, X-Client-Platform, X-Integration-Key, X-Integration-Token, *'
+    );
+  }
+
+  res.setHeader('Access-Control-Private-Network', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  next();
+});
+
 app.use(httpLoggerMiddleware);
 
 // Security Response Headers Middleware
@@ -80,64 +146,8 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://api.razorpay.com https://*.razorpay.com https://*.firebaseio.com https://*.googleapis.com http://localhost:*; font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'self';"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://*.firebaseio.com https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; connect-src 'self' https://api.razorpay.com https://*.razorpay.com https://*.firebaseio.com https://*.googleapis.com http://localhost:* http://127.0.0.1:*; font-src 'self' https://fonts.gstatic.com; object-src 'none'; frame-ancestors 'self';"
   );
-  next();
-});
-
-// Strict Environment-Based CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:4200', 'http://localhost:3000', ENV.CLIENT_URL, ENV.SITE_URL, ENV.ADMIN_APP_URL, 'https://3dgalaxy.co.in', 'https://www.3dgalaxy.co.in', 'https://ajr3dgalaxy.web.app'].filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production' || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-        return callback(null, true);
-      }
-      return callback(null, true);
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Request-ID',
-      'Accept',
-      'X-Requested-With',
-      'x-guest-session-id',
-      'X-Guest-Session-ID',
-      'Cache-Control',
-      'Pragma',
-      'Origin',
-      'Accept-Language',
-      'X-Client-Platform'
-    ],
-    credentials: true,
-    maxAge: 86400, // 24 hours preflight cache
-  })
-);
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  const reqHeaders = req.headers['access-control-request-headers'];
-  if (reqHeaders) {
-    res.setHeader('Access-Control-Allow-Headers', reqHeaders);
-  } else {
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID, Accept, X-Requested-With, x-guest-session-id, X-Guest-Session-ID, Cache-Control, Pragma, Origin, Accept-Language, X-Client-Platform, *');
-  }
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
   next();
 });
 

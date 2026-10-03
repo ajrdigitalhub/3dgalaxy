@@ -69,7 +69,7 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
                                    ? 'text-theme-primary font-extrabold' 
                                    : 'text-neutral-800 dark:text-neutral-100 group-hover:text-theme-primary')">{{ item.name }}</span>
                   <span class="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wide">
-                    {{ ds.productCountMap()[item.id] || 0 }} Items
+                    {{ ds.productCountMap()[item.id] !== undefined ? ds.productCountMap()[item.id] : (item.productCount || item.product_count || 0) }} ITEMS
                   </span>
                 </div>
               </button>

@@ -120,6 +120,8 @@ export interface Category {
   shipping_rules?: any[];
   freeShippingThreshold?: number | null;
   free_shipping_threshold?: number | null;
+  productCount?: number;
+  product_count?: number;
 }
 
 export interface Brand {
@@ -199,6 +201,8 @@ export interface Product {
   category?: any;
   categories?: Array<Category & { isPrimary?: boolean }>;
   categoryIds?: string[];
+  productCategories?: Array<{ categoryId: string; isPrimary?: boolean; isFeatured?: boolean; [key: string]: any }>;
+  product_categories?: Array<{ categoryId: string; isPrimary?: boolean; isFeatured?: boolean; [key: string]: any }>;
   primaryCategory?: Category;
   subcategory_id?: string;
   brand: string;
@@ -396,6 +400,10 @@ export interface Advertisement {
   customEndDate?: string;
   customDuration?: string;
   isPopup?: boolean;
+  contentMode?: 'FULL' | 'IMAGE_ONLY' | 'IMAGE_CLOSE' | string;
+  imageClickAction?: 'no_action' | 'open_url' | 'open_product' | 'open_category' | string;
+  showImageOnly?: boolean;
+  hideHeader?: boolean;
   popupPosition?: string;
   popupSize?: string;
   overlay?: string;
@@ -411,7 +419,7 @@ export interface Advertisement {
   frequencyHours?: number;
   frequencyDays?: number;
   maxImpressionsPerUser?: number;
-  audience?: string;
+  audience?: 'all' | 'guests_only' | 'logged_in' | 'new_users_only' | 'returning_users_only' | string;
   pageTargeting?: string;
   targetUrlPath?: string;
   deviceTargeting?: string;
@@ -419,6 +427,7 @@ export interface Advertisement {
   productId?: string;
   categoryId?: string;
   discountText?: string;
+  description?: string;
 }
 
 export interface SocialPost {
@@ -986,30 +995,108 @@ export class DatastoreService {
   // Pre-computed map: categoryId -> product count (only recomputes when products/categories change)
   productCountMap = computed(() => {
     const map: Record<string, number> = {};
-    const products = this.products();
-    const subcatMap = this.subcategoriesMap();
-    const cats = this.categories();
+    const products = this.products() || [];
+    const subcatMap = this.subcategoriesMap() || {};
+    const cats = this.categories() || [];
 
-    // Count products per direct category
-    const directCount: Record<string, number> = {};
-    for (const p of products) {
-      const catId = p.category_id || p.categoryId || '';
-      if (catId) {
-        directCount[catId] = (directCount[catId] || 0) + 1;
-      }
+    if (cats.length === 0) return map;
+
+    // Helper: Map category slug to ID for fast lookup
+    const catSlugToIdMap = new Map<string, string>();
+    for (const c of cats) {
+      if (c.id) catSlugToIdMap.set(String(c.id).toLowerCase(), c.id);
+      if (c.slug) catSlugToIdMap.set(String(c.slug).toLowerCase(), c.id);
     }
 
-    // For each category, sum its own count + all subcategory counts
-    for (const cat of cats) {
-      let count = directCount[cat.id] || 0;
-      const subs = subcatMap[cat.id];
-      if (subs) {
-        for (const sub of subs) {
-          count += directCount[sub.id] || 0;
+    // Helper: Recursively get all descendant category IDs for a category
+    const getAllDescendantCatIds = (catId: string, visited = new Set<string>()): Set<string> => {
+      const result = new Set<string>();
+      result.add(catId);
+      visited.add(catId);
+
+      const children = subcatMap[catId] || [];
+      for (const child of children) {
+        if (child && child.id && !visited.has(child.id)) {
+          const childDescendants = getAllDescendantCatIds(child.id, visited);
+          childDescendants.forEach(id => result.add(id));
         }
       }
+      return result;
+    };
+
+    // Helper: Extract all associated Category IDs for a product
+    const getProductCategoryIds = (p: any): Set<string> => {
+      const catIds = new Set<string>();
+      
+      // 1. Direct single category ID
+      const mainCatId = p.category_id || p.categoryId;
+      if (mainCatId) catIds.add(String(mainCatId));
+
+      // 2. Main category slug
+      const mainCatSlug = p.category_slug || p.categorySlug || (typeof p.category === 'string' ? p.category : p.category?.slug || p.category?.id);
+      if (mainCatSlug && catSlugToIdMap.has(String(mainCatSlug).toLowerCase())) {
+        catIds.add(catSlugToIdMap.get(String(mainCatSlug).toLowerCase())!);
+      }
+
+      // 3. Junction / Multi-category mappings (productCategories or product_categories)
+      const pcs = p.productCategories || p.product_categories;
+      if (Array.isArray(pcs)) {
+        for (const item of pcs) {
+          if (!item) continue;
+          const cId = typeof item === 'string' ? item : (item.categoryId || item.category_id || item.id || item.category?.id);
+          if (cId) catIds.add(String(cId));
+        }
+      }
+
+      // 4. Array of category IDs / objects (categoryIds or categories)
+      const cArr = p.categoryIds || p.categories;
+      if (Array.isArray(cArr)) {
+        for (const item of cArr) {
+          if (!item) continue;
+          const cId = typeof item === 'string' ? item : (item.id || item.categoryId || item.category_id);
+          if (cId) catIds.add(String(cId));
+        }
+      }
+
+      return catIds;
+    };
+
+    // Build map of categoryId -> Set of Product IDs directly belonging to that category
+    const categoryToDirectProductIds = new Map<string, Set<string>>();
+    for (const p of products) {
+      if (!p || !p.id) continue;
+      const associatedCatIds = getProductCategoryIds(p);
+      for (const catId of associatedCatIds) {
+        if (!categoryToDirectProductIds.has(catId)) {
+          categoryToDirectProductIds.set(catId, new Set<string>());
+        }
+        categoryToDirectProductIds.get(catId)!.add(String(p.id));
+      }
+    }
+
+    // For each category, count total unique products across itself + all descendant categories
+    for (const cat of cats) {
+      const allCatIds = getAllDescendantCatIds(cat.id);
+      const uniqueProductIds = new Set<string>();
+
+      allCatIds.forEach(cId => {
+        const pIds = categoryToDirectProductIds.get(cId);
+        if (pIds) {
+          pIds.forEach(pId => uniqueProductIds.add(pId));
+        }
+      });
+
+      let count = uniqueProductIds.size;
+
+      // Fallback: If computed count from current client products list is 0 or less, check API productCount on cat object
+      const apiCount = Number(cat.productCount !== undefined ? cat.productCount : (cat.product_count !== undefined ? cat.product_count : (cat as any)._count?.products));
+      if (count === 0 && !isNaN(apiCount) && apiCount > 0) {
+        count = apiCount;
+      }
+
       map[cat.id] = count;
     }
+
     return map;
   });
 
@@ -1917,6 +2004,8 @@ export class DatastoreService {
       weightInGrams: p.weightInGrams !== undefined && p.weightInGrams !== null ? Number(p.weightInGrams) : (p.weight_in_grams !== undefined && p.weight_in_grams !== null ? Number(p.weight_in_grams) : (p.weight !== undefined && p.weight !== null ? Number(p.weight) : 0)),
       weightUnit: p.weightUnit || p.weight_unit || 'g',
       variants: p.variants || [],
+      productCategories: p.productCategories || p.product_categories || [],
+      product_categories: p.productCategories || p.product_categories || [],
       tags: []
     };
   }
@@ -2968,9 +3057,10 @@ export class DatastoreService {
   });
 
   async recordAdClick(id: string) {
-    this.api.put(`/admin/advertisements/${id}/click`, {}).subscribe({
-      next: () => this.reloadAdvertisements(),
-      error: (e) => console.error('Error tracking click:', e)
+    if (!id) return;
+    this.api.post(`/admin/advertisements/${id}/click`, {}).subscribe({
+      next: () => {},
+      error: () => {}
     });
   }
 
@@ -2979,9 +3069,10 @@ export class DatastoreService {
   }
 
   async recordAdImpression(id: string) {
-    this.api.put(`/admin/advertisements/${id}/impression`, {}).subscribe({
-      next: () => this.reloadAdvertisements(),
-      error: (e) => console.error('Error tracking impression:', e)
+    if (!id) return;
+    this.api.post(`/admin/advertisements/${id}/impression`, {}).subscribe({
+      next: () => {},
+      error: () => {}
     });
   }
 

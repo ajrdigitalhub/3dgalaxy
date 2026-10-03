@@ -273,7 +273,7 @@
 
   <!-- MAIN SCROLLABLE DASHBOARD PANEL -->
   @if (ds.authReady() && (ds.userRole() === 'admin' || ds.userRole() === 'super-admin')) {
-  <main class="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto bg-zinc-50 dark:bg-zinc-950 w-full">
+  <main id="admin-main-scroll" class="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto bg-zinc-50 dark:bg-zinc-950 w-full scroll-smooth">
     <!-- TOP STATUS BAR -->
     <header
       class="h-16 px-3 sm:px-6 lg:px-8 border-b border-zinc-200 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-2 max-w-full overflow-hidden shrink-0">

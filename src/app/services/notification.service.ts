@@ -50,6 +50,10 @@ export class NotificationService {
   private serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
   showPrompt$ = this.showPromptSubject.asObservable();
 
+  get isPromptVisible(): boolean {
+    return this.showPromptSubject.value;
+  }
+
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       // Sync permission state from browser API

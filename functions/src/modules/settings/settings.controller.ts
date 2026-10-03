@@ -110,7 +110,11 @@ export const getActiveAdvertisements = async (req: Request, res: Response) => {
       couponCode: ad.couponCode || '',
       productId: ad.productId || '',
       categoryId: ad.categoryId || '',
-      discountText: ad.discountText || ''
+      discountText: ad.discountText || '',
+      showImageOnly: !!ad.showImageOnly,
+      hideHeader: !!ad.hideHeader,
+      contentMode: ad.contentMode || (ad.showImageOnly ? 'IMAGE_ONLY' : 'FULL'),
+      imageClickAction: ad.imageClickAction || 'no_action'
     }));
 
     return res.status(200).json({ success: true, data: active, campaigns: active });

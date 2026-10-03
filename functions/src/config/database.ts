@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ENV } from './env';
 
-// PostgreSQL connection pool module configured for high concurrency and serverless Cloud Functions stability
+// PostgreSQL connection pool — tuned for Cloud Run serverless stability with Supabase PgBouncer Transaction Mode
 export const pool = new Pool({
   user: ENV.PG_USER,
   host: ENV.PG_HOST,
@@ -11,13 +11,19 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: Math.min(10, Math.max(2, ENV.PG_POOL_MAX || 5)), // Serverless pool size (default 5, max 10) to prevent exhausting Supabase connection limit
-  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS || 3000, // Close idle sockets fast (3s) to prevent suspended Cloud Functions reusing dead sockets
-  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS || 5000, // Fast connection timeout (5s) to fail fast and retry instead of hanging 25s
-  maxUses: 100, // Frequently recycle pooled sockets to prevent stale TCP socket accumulation in Cloud Run
-  keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
-  keepAliveInitialDelayMillis: 1000,
-  allowExitOnIdle: true, // Allow Node process to exit when idle (critical for Cloud Functions inspection)
+  // Allow adequate concurrent connections for homepage and multi-query requests
+  max: Math.min(20, Math.max(5, ENV.PG_POOL_MAX || 10)),
+  // Give PgBouncer and Supabase enough time to assign a backend on cold starts and remote latency (20s)
+  connectionTimeoutMillis: Math.max(15000, ENV.PG_CONN_TIMEOUT_MS || 20000),
+  // Keep idle connections alive for 30s before recycling. PgBouncer will reuse them
+  // within a request burst, preventing repeated TCP handshake overhead.
+  idleTimeoutMillis: Math.max(10000, ENV.PG_IDLE_TIMEOUT_MS || 30000),
+  maxUses: 200, // Recycle sockets periodically to prevent stale TCP accumulation
+  keepAlive: true, // TCP keepalive to prevent cloud NAT from silently dropping idle connections
+  keepAliveInitialDelayMillis: 10000,
+  // IMPORTANT: Do NOT set allowExitOnIdle on Cloud Run — it destroys the pool
+  // after idleTimeoutMillis of zero connections, forcing a cold TCP reconnect on every burst.
+  allowExitOnIdle: false,
 });
 
 // Automatic reconnect handling and error logging
@@ -37,7 +43,7 @@ pool.query(`
 /**
  * Executes a database operation with automatic retry on transient connection drops or timeouts.
  */
-export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 150): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 300): Promise<T> {
   let lastError: any;
   for (let attempt = 1; attempt <= retries + 1; attempt++) {
     try {
@@ -55,13 +61,16 @@ export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs 
         msg.includes('epipe') ||
         msg.includes('closed') ||
         msg.includes('unexpectedly') ||
+        msg.includes('connection pool timed out') ||
+        msg.includes('server has closed the connection') ||
         code === 'P1001' ||
         code === 'P1017' ||
         code === 'P2024';
 
       if (isConnError && attempt <= retries) {
-        console.warn(`⚠️ DB connection drop/timeout detected (attempt ${attempt}/${retries + 1}). Retrying query in ${delayMs * attempt}ms...`);
-        await new Promise(r => setTimeout(r, delayMs * attempt));
+        const wait = delayMs * attempt;
+        console.warn(`⚠️ DB connection drop/timeout (attempt ${attempt}/${retries + 1}). Retrying in ${wait}ms... [${code || msg.slice(0, 60)}]`);
+        await new Promise(r => setTimeout(r, wait));
         continue;
       }
       throw err;
@@ -127,7 +136,8 @@ export const prisma = basePrisma.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
-        return withDbRetry(() => query(args), 2, 200);
+        // Retry all Prisma operations on transient connection errors (cold-start, PgBouncer eviction)
+        return withDbRetry(() => query(args), 3, 300);
       }
     }
   }

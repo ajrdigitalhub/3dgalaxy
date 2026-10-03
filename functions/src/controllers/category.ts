@@ -500,7 +500,7 @@ export const toggleCategoryProductFeatured = async (req: Request, res: Response)
         productId,
         categoryId,
         isFeatured: featured,
-        isPrimary: false
+        isPrimary: product.categoryId === categoryId
       }
     });
 

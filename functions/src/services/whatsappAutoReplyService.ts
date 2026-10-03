@@ -323,7 +323,7 @@ export class WhatsAppAutoReplyService {
         messageText: replyContent,
         status: 'SENDING',
         errorMessage: null,
-        metadata: {
+        mediaMetadata: {
           automated: true,
           inboundMessageId: inboundMessageId || null,
           ruleId: selectedRuleId,

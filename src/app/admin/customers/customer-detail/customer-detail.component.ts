@@ -113,7 +113,40 @@ export class CustomerDetailComponent implements OnInit {
       });
     } else if (tab === 'reviews') {
       this.customerService.getCustomerReviews(this.customerId).subscribe({
-        next: (res) => { if (res.success) this.reviews.set(res.data); }
+        next: (res) => {
+          if (res.success && Array.isArray(res.data)) {
+            const parsed = res.data.map((r: any) => {
+              let title = r.title || '';
+              let comment = r.comment || r.reviewText || '';
+              let images: string[] = Array.isArray(r.images) ? r.images : [];
+
+              if (typeof comment === 'string' && (comment.trim().startsWith('{') || comment.trim().startsWith('['))) {
+                try {
+                  const p = JSON.parse(comment.trim());
+                  if (p && typeof p === 'object') {
+                    title = p.title || title;
+                    comment = p.comment || p.review || p.text || '';
+                    if (Array.isArray(p.images) && p.images.length > 0 && images.length === 0) {
+                      images = p.images;
+                    }
+                  }
+                } catch (e) {}
+              }
+
+              return {
+                ...r,
+                title,
+                comment,
+                images,
+                product: {
+                  ...r.product,
+                  image: typeof r.product?.image === 'string' ? r.product.image : (r.product?.image?.url || '')
+                }
+              };
+            });
+            this.reviews.set(parsed);
+          }
+        }
       });
     } else if (tab === 'activity') {
       this.customerService.getCustomerActivity(this.customerId).subscribe({

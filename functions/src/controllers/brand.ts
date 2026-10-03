@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../config/database';
+import prisma, { withDbRetry } from '../config/database';
 import { clearCache } from '../middleware/cache';
 import { sysCache } from '../config/cache';
 import { clearProductCache } from './product';
@@ -17,9 +17,9 @@ export const getBrands = async (req: Request, res: Response) => {
   try {
     let list = sysCache.get('brands_list');
     if (!list) {
-      list = await prisma.brand.findMany({
+      list = await withDbRetry(() => prisma.brand.findMany({
         orderBy: { name: 'asc' },
-      });
+      }));
       sysCache.set('brands_list', list, 1800); // 30 minutes cache
     }
     return res.status(200).json(list);

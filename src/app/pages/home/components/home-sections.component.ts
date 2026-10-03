@@ -726,12 +726,15 @@ export class HomeNewsletterComponent {
               class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 lg:gap-6"
               [class.lg:order-1]="idx % 2 !== 0"
             >
-              @for (p of group.products; track p.id) {
+              @for (p of group.products; track p.id; let pIdx = $index) {
                 <a
                   [routerLink]="['/product', p.slug]"
                   appTilt
                   [tiltMax]="5"
-                  class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-4 sm:p-5 flex items-center gap-3.5 sm:gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item"
+                  class="bg-white dark:bg-neutral-900/50 rounded-3xl p-4 sm:p-5 flex items-center gap-3.5 sm:gap-5 hover:-translate-y-1 transition-all duration-300 group/item"
+                  [ngClass]="pIdx === 0
+                    ? 'border-2 border-orange-500/80 dark:border-orange-500 shadow-[0_4px_25px_rgba(234,88,12,0.14)] hover:shadow-[0_12px_40px_rgba(234,88,12,0.22)] ring-1 ring-orange-500/20'
+                    : 'border border-neutral-100 dark:border-neutral-800/60 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30'"
                 >
                   <div
                     class="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-2 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
@@ -762,6 +765,12 @@ export class HomeNewsletterComponent {
                   <div
                     class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 sm:space-y-2 text-left"
                   >
+                    @if (p.isCategoryFeatured) {
+                      <div class="flex items-center gap-1 text-[9px] font-black uppercase text-amber-500 tracking-wider">
+                        <mat-icon class="!text-[12px] !w-3 !h-3">star</mat-icon>
+                        <span>Featured</span>
+                      </div>
+                    }
                     <h5
                       class="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors"
                     >
@@ -912,24 +921,42 @@ export class HomeShopByCategoryComponent {
           ]);
           if (primaryCategoryId) allProdCatKeys.add(String(primaryCategoryId).toLowerCase());
 
+          const pcs = p.productCategories || (p as any).product_categories || [];
+          if (Array.isArray(pcs)) {
+            for (const pc of pcs) {
+              const pcId = String(pc.categoryId || pc.category_id || pc.category?.id || "").toLowerCase();
+              if (pcId) allProdCatKeys.add(pcId);
+            }
+          }
+          const pCats = p.categories;
+          if (Array.isArray(pCats)) {
+            for (const c of pCats) {
+              if (typeof c === "string") allProdCatKeys.add(c.toLowerCase());
+              else if (c && typeof c === "object") {
+                if (c.id) allProdCatKeys.add(String(c.id).toLowerCase());
+                if (c.slug) allProdCatKeys.add(String(c.slug).toLowerCase());
+              }
+            }
+          }
+
           return targetArray.some((targetKey) => targetKey && allProdCatKeys.has(targetKey));
         });
 
       const isProductCategoryFeatured = (p: any) => {
         const pcs = p.productCategories || p.product_categories || [];
-        if (Array.isArray(pcs)) {
-          return pcs.some((pc: any) => {
+        if (Array.isArray(pcs) && pcs.length > 0) {
+          const match = pcs.some((pc: any) => {
             const pcCatId = String(pc.categoryId || pc.category_id || '').toLowerCase();
             return (pc.isFeatured === true || pc.featured === true || (pc as any).is_featured === true) && targetKeys.has(pcCatId);
           });
+          if (match) return true;
+        }
+        const pDirectCatId = String(p.categoryId || p.category_id || p.category?.id || '').toLowerCase();
+        if (pDirectCatId && targetKeys.has(pDirectCatId)) {
+          return p.isFeatured === true || p.featured === true || (p as any).is_featured === true;
         }
         return false;
       };
-
-      const hasFeaturedForCategory = catProducts.some(isProductCategoryFeatured);
-      if (hasFeaturedForCategory) {
-        catProducts = catProducts.filter(isProductCategoryFeatured);
-      }
 
       catProducts.sort((a, b) => {
         const aFeatured = isProductCategoryFeatured(a);
@@ -938,15 +965,29 @@ export class HomeShopByCategoryComponent {
         if (aFeatured && !bFeatured) return -1;
         if (!aFeatured && bFeatured) return 1;
 
-        const { primaryCategoryId: aPrimary } = extractNormalizedCategoryIds(a, categories);
-        const { primaryCategoryId: bPrimary } = extractNormalizedCategoryIds(b, categories);
+        // Junction sort order
+        const getSortOrder = (item: any) => {
+          const pcs = item.productCategories || item.product_categories || [];
+          if (Array.isArray(pcs)) {
+            const matched = pcs.find((pc: any) => targetKeys.has(String(pc.categoryId || pc.category_id || '').toLowerCase()));
+            if (matched && typeof matched.sortOrder === 'number' && matched.sortOrder > 0) return matched.sortOrder;
+          }
+          return 0;
+        };
+        const aOrder = getSortOrder(a);
+        const bOrder = getSortOrder(b);
+        if (aOrder > 0 && bOrder > 0 && aOrder !== bOrder) return aOrder - bOrder;
+        if (aOrder > 0 && bOrder === 0) return -1;
+        if (aOrder === 0 && bOrder > 0) return 1;
 
-        const aIsPrimary = aPrimary && targetKeys.has(String(aPrimary).toLowerCase());
-        const bIsPrimary = bPrimary && targetKeys.has(String(bPrimary).toLowerCase());
+        // Recency / creation time (newest products first)
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
+        if (aTime !== bTime && aTime > 0 && bTime > 0) {
+          return bTime - aTime;
+        }
 
-        if (aIsPrimary && !bIsPrimary) return -1;
-        if (!aIsPrimary && bIsPrimary) return 1;
-
+        // Popularity / rating score
         const aScore =
           ((a as any).salesCount || 0) +
           (a.reviewCount || a.reviews?.length || 0) +
@@ -955,10 +996,12 @@ export class HomeShopByCategoryComponent {
           ((b as any).salesCount || 0) +
           (b.reviewCount || b.reviews?.length || 0) +
           (b.avgRating || 0);
-        return (
-          bScore - aScore ||
-          String(a.name || "").localeCompare(String(b.name || ""))
-        );
+        if (bScore !== aScore && (bScore > 0 || aScore > 0)) {
+          return bScore - aScore;
+        }
+
+        // Preserve database / catalog order
+        return products.indexOf(a) - products.indexOf(b);
       });
 
       catProducts = catProducts.slice(0, 4);
@@ -980,6 +1023,7 @@ export class HomeShopByCategoryComponent {
 
         return {
           ...p,
+          isCategoryFeatured: isProductCategoryFeatured(p),
           primaryImage: prim,
           secondaryImage: sec && sec !== prim ? sec : null,
           activePrice: isDealer

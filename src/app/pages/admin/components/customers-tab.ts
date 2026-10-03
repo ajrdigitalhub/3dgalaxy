@@ -758,10 +758,7 @@ export interface CustomerDetailProfile {
                           <span class="text-zinc-500">Gender</span>
                           <span class="font-bold text-zinc-900 dark:text-white uppercase">{{ cust.gender || 'Not specified' }}</span>
                         </div>
-                        <div class="flex justify-between py-1 border-b dark:border-zinc-800">
-                          <span class="text-zinc-500">Reward Points</span>
-                          <span class="font-bold text-amber-500">{{ cust.rewardPoints || 0 }} pts</span>
-                        </div>
+                    
                       </div>
                     </div>
 
@@ -949,18 +946,51 @@ export interface CustomerDetailProfile {
               <!-- TAB 5: REVIEWS -->
               @if (detailTab() === 'reviews') {
                 <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl space-y-4 animate-fadeIn">
-                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Customer Product Reviews ({{ customerReviews().length }})</h3>
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400">Customer Product Reviews ({{ customerReviews().length }})</h3>
+                  </div>
                   <div class="space-y-4">
                     @for (r of customerReviews(); track r.id) {
-                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-2 border border-zinc-100 dark:border-zinc-800">
-                        <div class="flex items-center justify-between">
-                          <h4 class="text-xs font-bold text-zinc-900 dark:text-white">{{ r.product?.name }}</h4>
-                          <div class="flex items-center text-amber-500 font-bold text-xs">
-                            <mat-icon class="text-sm">star</mat-icon> {{ r.rating }} / 5
+                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl space-y-3 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                        <div class="flex items-center justify-between gap-4">
+                          <div class="flex items-center gap-3 min-w-0">
+                            @if (r.product?.image) {
+                              <img [src]="r.product.image" alt="" class="w-10 h-10 object-cover rounded-lg border border-zinc-200 dark:border-zinc-800 flex-shrink-0 bg-white" />
+                            } @else {
+                              <div class="w-10 h-10 rounded-lg bg-zinc-200/70 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 text-zinc-400">
+                                <mat-icon class="text-base">inventory_2</mat-icon>
+                              </div>
+                            }
+                            <div class="min-w-0">
+                              <h4 class="text-xs font-bold text-zinc-900 dark:text-white truncate">{{ r.product?.name || 'Product' }}</h4>
+                              <span class="text-[9px] text-zinc-400 font-mono block">{{ r.createdAt | date:'mediumDate' }}</span>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-1 text-amber-500 font-bold text-xs flex-shrink-0 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                            <mat-icon class="text-sm !w-4 !h-4 !text-[16px]">star</mat-icon>
+                            <span>{{ r.rating }}/5</span>
                           </div>
                         </div>
-                        <p class="text-xs italic text-zinc-600 dark:text-zinc-300">"{{ r.comment }}"</p>
-                        <span class="text-[9px] text-zinc-400 font-mono block">{{ r.createdAt | date:'mediumDate' }}</span>
+
+                        <!-- Review Title & Comment -->
+                        <div class="space-y-1 sm:pl-[52px]">
+                          @if (r.title && r.title !== 'Customer Review' && r.title !== 'Verified Review') {
+                            <h5 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ r.title }}</h5>
+                          }
+                          <p class="text-xs italic text-zinc-600 dark:text-zinc-300 leading-relaxed">"{{ r.comment || 'No written feedback provided.' }}"</p>
+                        </div>
+
+                        <!-- Customer Attached Photos -->
+                        @if (r.images && r.images.length > 0) {
+                          <div class="flex flex-wrap gap-2 pt-1 sm:pl-[52px]">
+                            @for (img of r.images; track img) {
+                              <a [href]="img" target="_blank" rel="noopener" class="group relative block overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xs hover:border-blue-500 transition-all">
+                                <img [src]="img" alt="Review photo" class="w-14 h-14 object-cover group-hover:scale-105 transition-transform duration-200" />
+                              </a>
+                            }
+                          </div>
+                        }
                       </div>
                     } @empty {
                       <div class="p-8 text-center text-zinc-400 text-xs">
@@ -1487,7 +1517,13 @@ export class AdminCustomersTab implements OnInit {
     this.api.get<any>('/admin/customers', params).subscribe({
       next: (res: any) => {
         if (res?.success && Array.isArray(res.data)) {
-          const mappedData: CustomerListItem[] = res.data.map((c: any) => ({
+          // Client-side guard: filter out synthetic WhatsApp users to show website users only
+          const websiteUsers = res.data.filter((c: any) => {
+            const email = (c.email || '').toLowerCase();
+            return !email.endsWith('@3dgalaxy.customer') && !email.startsWith('wa-');
+          });
+
+          const mappedData: CustomerListItem[] = websiteUsers.map((c: any) => ({
             id: c.id || '',
             userId: c.userId || '',
             name: c.name || 'CUSTOMER',
@@ -1502,7 +1538,7 @@ export class AdminCustomersTab implements OnInit {
             profileImage: c.profileImage || '',
           }));
           this.customers.set(mappedData);
-          const total = res.meta?.total ?? res.pagination?.total ?? res.data.length;
+          const total = res.meta?.total ?? res.pagination?.total ?? mappedData.length;
           const totalPages = res.meta?.totalPages ?? res.pagination?.totalPages ?? 1;
           this.totalCustomers.set(total);
           this.totalPages.set(totalPages);
@@ -1618,7 +1654,7 @@ export class AdminCustomersTab implements OnInit {
   }
 
   exportToCsv(onlySelected = false) {
-    const dataToExport = onlySelected 
+    const dataToExport = onlySelected
       ? this.customers().filter(c => this.selectedCustomerIds().has(c.id))
       : this.customers();
 
@@ -1721,7 +1757,47 @@ export class AdminCustomersTab implements OnInit {
     this.api.get<any>(`/admin/customers/${id}/reviews`).subscribe({
       next: (res) => {
         if (res?.success && Array.isArray(res.data)) {
-          this.customerReviews.set(res.data);
+          const parsed = res.data.map((r: any) => {
+            let title = r.title || '';
+            let comment = r.comment || r.reviewText || '';
+            let images: string[] = Array.isArray(r.images) ? r.images : [];
+
+            // If comment is still a JSON string, parse it
+            if (typeof comment === 'string' && (comment.trim().startsWith('{') || comment.trim().startsWith('['))) {
+              try {
+                const p = JSON.parse(comment.trim());
+                if (p && typeof p === 'object') {
+                  title = p.title || title;
+                  comment = p.comment || p.review || p.text || '';
+                  if (Array.isArray(p.images) && p.images.length > 0 && images.length === 0) {
+                    images = p.images;
+                  }
+                }
+              } catch (e) {}
+            }
+
+            // Resolve product image string
+            let prodImage = '';
+            if (r.product?.image) {
+              if (typeof r.product.image === 'string') {
+                prodImage = r.product.image;
+              } else if (typeof r.product.image === 'object' && r.product.image.url) {
+                prodImage = r.product.image.url;
+              }
+            }
+
+            return {
+              ...r,
+              title,
+              comment,
+              images,
+              product: {
+                ...r.product,
+                image: prodImage
+              }
+            };
+          });
+          this.customerReviews.set(parsed);
         }
       }
     });
