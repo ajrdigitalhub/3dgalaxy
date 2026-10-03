@@ -10,13 +10,17 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error) => {
-      const errorMessage = getFriendlyErrorMessage(error);
-      
-      // Let unauthorized and forbidden errors be handled, but don't show duplicate toasts for login failures
-      // because the login component already catches and shows it.
-      // But for global errors like 500, 404, 0, show the toast immediately.
-      toastService.error(errorMessage);
-      
+      // Avoid showing duplicate global toasts for mutating operations (POST, PUT, DELETE, PATCH),
+      // auth failures (401, 403), or requests with custom error handling in components.
+      const isMutatingMethod = req.method !== 'GET';
+      const isAuthStatus = error?.status === 401 || error?.status === 403;
+      const isExplicitlyHandled = req.headers.has('X-Skip-Global-Error-Toast');
+
+      if (!isMutatingMethod && !isAuthStatus && !isExplicitlyHandled) {
+        const errorMessage = getFriendlyErrorMessage(error);
+        toastService.error(errorMessage);
+      }
+
       return throwError(() => error);
     })
   );

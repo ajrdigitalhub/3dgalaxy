@@ -21,6 +21,7 @@ import { SettingsService } from "../../../core/services/settings.service";
 import { CustomerService } from "../../../admin/shared/services/customer.service";
 import { ScrollRevealDirective } from "../../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../../shared/directives/tilt.directive";
+import { extractNormalizedCategoryIds } from "../../../shared/components/category-multi-select/category-selection.utils";
 
 // Helper function for converting value to number
 function asNumber(value: unknown): number {
@@ -722,25 +723,24 @@ export class HomeNewsletterComponent {
 
             <!-- Medium Products Cards Grid -->
             <div
-              class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6"
+              class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 lg:gap-6"
               [class.lg:order-1]="idx % 2 !== 0"
-              appScrollReveal="fade"
             >
-              @for (p of group.products; track p.id; let subIdx = $index) {
+              @for (p of group.products; track p.id) {
                 <a
                   [routerLink]="['/product', p.slug]"
-                  appScrollReveal="slide-up"
-                  [delay]="subIdx * 100"
                   appTilt
                   [tiltMax]="5"
-                  class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-5 flex items-center gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item"
+                  class="bg-white dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/60 rounded-3xl p-4 sm:p-5 flex items-center gap-3.5 sm:gap-5 hover:shadow-[0_12px_40px_rgba(214,81,8,0.08)] hover:border-orange-500/30 hover:-translate-y-1 transition-all duration-300 group/item"
                 >
                   <div
-                    class="w-32 h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-2 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
+                    class="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 bg-neutral-50 dark:bg-neutral-950/40 rounded-2xl flex items-center justify-center p-2 shrink-0 overflow-hidden border border-neutral-100 dark:border-neutral-800/30 product-card-image-container relative"
                   >
                     <img
                       [src]="p.primaryImage"
                       [alt]="p.name"
+                      width="144"
+                      height="144"
                       class="max-w-full max-h-full object-contain primary-image absolute inset-0 m-auto transform group-hover/item:scale-110 transition-transform duration-700 ease-out"
                       referrerpolicy="no-referrer"
                       loading="lazy"
@@ -750,6 +750,8 @@ export class HomeNewsletterComponent {
                       <img
                         [src]="p.secondaryImage"
                         [alt]="p.name"
+                        width="144"
+                        height="144"
                         class="max-w-full max-h-full object-contain secondary-image absolute inset-0 m-auto transform group-hover/item:scale-105 transition-transform duration-700 ease-out"
                         referrerpolicy="no-referrer"
                         loading="lazy"
@@ -758,23 +760,20 @@ export class HomeNewsletterComponent {
                     }
                   </div>
                   <div
-                    class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 text-left"
+                    class="flex-1 min-w-0 flex flex-col justify-center space-y-1.5 sm:space-y-2 text-left"
                   >
-                    <span
-                      class="text-[9px] font-extrabold uppercase tracking-widest text-[#d65108] truncate"
-                      >{{ p.brandName || p.brand || '3D GALAXY' }}</span
-                    >
                     <h5
-                      class="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors"
+                      class="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover/item:text-[#d65108] transition-colors"
                     >
                       {{ p.name }}
                     </h5>
-                    <div class="pt-2 flex items-center justify-between">
-                      <span class="text-sm font-black dark:text-white">{{
+                    <div class="pt-1 flex items-center justify-between">
+                      <span class="text-xs sm:text-sm font-black dark:text-white">{{
                         p.activePrice | currency: "INR" : "symbol" : "1.0-0"
                       }}</span>
                       <div
-                        class="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 group-hover/item:bg-[#d65108] group-hover/item:text-white transition-colors duration-300"
+                        class="h-7 w-7 sm:h-8 sm:w-8 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center text-neutral-400 group-hover/item:bg-[#d65108] group-hover/item:text-white transition-colors duration-300 shrink-0"
+                        aria-label="View Product"
                       >
                         <mat-icon class="scale-75">arrow_forward</mat-icon>
                       </div>
@@ -873,31 +872,58 @@ export class HomeShopByCategoryComponent {
     const groups = [];
 
     for (const category of featuredCats) {
-      const getDescendantIds = (parentId: string): string[] => {
-        const children = categories.filter(
-          (c) => (c.parentId || c.parent_id) === parentId
-        );
-        let ids: string[] = [parentId];
+      const targetKeys = new Set<string>();
+      if (category.id) targetKeys.add(String(category.id).toLowerCase());
+      if (category.slug) targetKeys.add(String(category.slug).toLowerCase());
+      if (category.name) targetKeys.add(String(category.name).toLowerCase());
+
+      const collectDescendants = (catIdOrSlug: string) => {
+        const children = categories.filter((c) => {
+          const pId = String(c.parentId || c.parent_id || "").toLowerCase();
+          return pId && (pId === catIdOrSlug.toLowerCase() || targetKeys.has(pId));
+        });
         for (const child of children) {
-          ids = ids.concat(getDescendantIds(child.id));
+          if (child.id && !targetKeys.has(String(child.id).toLowerCase())) {
+            targetKeys.add(String(child.id).toLowerCase());
+            collectDescendants(String(child.id));
+          }
+          if (child.slug && !targetKeys.has(String(child.slug).toLowerCase())) {
+            targetKeys.add(String(child.slug).toLowerCase());
+            collectDescendants(String(child.slug));
+          }
         }
-        return ids;
       };
 
-      const targetIds = getDescendantIds(category.id);
+      if (category.id) collectDescendants(String(category.id));
+      if (category.slug) collectDescendants(String(category.slug));
+
+      const targetArray = Array.from(targetKeys);
 
       let catProducts = products
         .filter((p) => {
-          const pCatId = p.categoryId || p.category_id || p.category?.id || "";
-          const pCatSlug = p.category?.slug || "";
-          return (
-            targetIds.includes(pCatId) ||
-            targetIds.includes(pCatSlug) ||
-            pCatSlug === category.slug ||
-            pCatId === category.id
-          );
+          const { categoryIds, primaryCategoryId } = extractNormalizedCategoryIds(p, categories);
+          const pCatId = String(p.categoryId || p.category_id || p.category?.id || "").toLowerCase();
+          const pCatSlug = String(p.category?.slug || (p as any).category_slug || "").toLowerCase();
+
+          const allProdCatKeys = new Set([
+            ...categoryIds.map((id) => String(id).toLowerCase()),
+            pCatId,
+            pCatSlug,
+          ]);
+          if (primaryCategoryId) allProdCatKeys.add(String(primaryCategoryId).toLowerCase());
+
+          return targetArray.some((targetKey) => targetKey && allProdCatKeys.has(targetKey));
         })
         .sort((a, b) => {
+          const { primaryCategoryId: aPrimary } = extractNormalizedCategoryIds(a, categories);
+          const { primaryCategoryId: bPrimary } = extractNormalizedCategoryIds(b, categories);
+
+          const aIsPrimary = aPrimary && targetKeys.has(String(aPrimary).toLowerCase());
+          const bIsPrimary = bPrimary && targetKeys.has(String(bPrimary).toLowerCase());
+
+          if (aIsPrimary && !bIsPrimary) return -1;
+          if (!aIsPrimary && bIsPrimary) return 1;
+
           const aScore =
             ((a as any).salesCount || 0) +
             (a.reviewCount || a.reviews?.length || 0) +
@@ -912,11 +938,9 @@ export class HomeShopByCategoryComponent {
           );
         });
 
-      if (catProducts.length === 0 && products.length > 0) {
-        catProducts = products.slice(0, 4);
-      } else {
-        catProducts = catProducts.slice(0, 4);
-      }
+      catProducts = catProducts.slice(0, 4);
+
+      if (catProducts.length === 0) continue;
 
       const formattedProducts = catProducts.map((p) => {
         const prim =
@@ -935,7 +959,6 @@ export class HomeShopByCategoryComponent {
           ...p,
           primaryImage: prim,
           secondaryImage: sec && sec !== prim ? sec : null,
-          brandName: typeof p.brand === "object" ? (p.brand as any)?.name : p.brand,
           activePrice: isDealer
             ? p.dealerPrice || p.dealer_price || p.salePrice || p.sale_price || p.basePrice || (p as any).price || p.mrp || 0
             : p.salePrice || p.sale_price || p.basePrice || (p as any).price || p.mrp || 0,
@@ -1823,15 +1846,48 @@ export class HomeCategoryShowcaseRowComponent {
     if (!cat) return [];
 
     const categories = this.ds.categories();
-    const childIds = categories
-      .filter((c) => c.parentId === cat.id || c.parent_id === cat.id)
-      .map((c) => c.id);
-    const targetIds = [cat.id, ...childIds];
+    const allProducts = this.ds.products();
 
-    return this.ds.products()
-      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
-      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
-      .slice(0, 5);
+    const targetSet = new Set<string>();
+    if (cat.id) targetSet.add(String(cat.id).toLowerCase());
+    if (cat.slug) targetSet.add(String(cat.slug).toLowerCase());
+
+    const collectDescendants = (parentId: string) => {
+      const children = categories.filter(
+        (c) =>
+          c.parentId === parentId ||
+          c.parent_id === parentId ||
+          (c as any).parent_id === parentId
+      );
+      for (const child of children) {
+        if (child.id) targetSet.add(String(child.id).toLowerCase());
+        if (child.slug) targetSet.add(String(child.slug).toLowerCase());
+        collectDescendants(child.id);
+      }
+    };
+    if (cat.id) collectDescendants(cat.id);
+
+    const targetArray = Array.from(targetSet);
+
+    let matched = allProducts
+      .filter((p) => {
+        const { categoryIds } = extractNormalizedCategoryIds(p, categories);
+        const pCatId = String(p.categoryId || p.category_id || p.category?.id || "").toLowerCase();
+        const pCatSlug = String(p.category?.slug || (p as any).category_slug || "").toLowerCase();
+
+        const allProdCatKeys = new Set([
+          ...categoryIds.map((id) => String(id).toLowerCase()),
+          pCatId,
+          pCatSlug,
+        ]);
+
+        return targetArray.some((targetKey) => targetKey && allProdCatKeys.has(targetKey));
+      })
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    matched = matched.slice(0, 5);
+
+    return matched;
   });
 
   formatPrice(p: any): string {

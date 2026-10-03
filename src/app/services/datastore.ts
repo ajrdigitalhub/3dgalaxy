@@ -1477,15 +1477,18 @@ export class DatastoreService {
             this.menuItems.set(d.navigation);
           }
 
-          // 4. Featured Products & Initial Products
+          // 4. Featured Products & Full Homepage Products List
+          if (d.products && Array.isArray(d.products) && d.products.length > 0) {
+            const mappedProducts = d.products.map((p: any) => this.mapProductFromServer(p));
+            this.products.set(mappedProducts);
+          }
+
           if (d.featuredProducts && Array.isArray(d.featuredProducts)) {
             const mappedFeatured = d.featuredProducts.map((p: any) => this.mapProductFromServer(p));
             this.featuredProducts.set(mappedFeatured);
             if (this.products().length === 0) {
               this.products.set(mappedFeatured);
             }
-          } else if (d.products && Array.isArray(d.products) && d.products.length > 0) {
-            this.products.set(d.products.map((p: any) => this.mapProductFromServer(p)));
           }
 
           // 5. Store consolidated dynamic payload
@@ -1669,7 +1672,12 @@ export class DatastoreService {
   async addCategory(cat: Omit<Category, 'id'>) {
     return new Promise((resolve, reject) => {
       this.api.post('/categories', cat).subscribe({
-        next: (res) => { this.reloadCategories(true); resolve(res); },
+        next: (res) => {
+          this.api.clearCache();
+          this.reloadCategories(true);
+          this.loadConsolidatedHome(true);
+          resolve(res);
+        },
         error: (err) => reject(err)
       });
     });
@@ -1679,7 +1687,9 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.put(`/categories/${id}`, updated).subscribe({
         next: (res: any) => {
+          this.api.clearCache();
           this.reloadCategories(true);
+          this.loadConsolidatedHome(true);
           resolve(res);
         },
         error: (err) => reject(err)
@@ -1695,8 +1705,9 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.delete(`/categories/${id}`).subscribe({
         next: (res) => {
-          this.api.clearCache('categor');
+          this.api.clearCache();
           this.reloadCategories(true);
+          this.loadConsolidatedHome(true);
           resolve(res);
         },
         error: (err) => {

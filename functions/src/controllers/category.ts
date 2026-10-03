@@ -34,6 +34,8 @@ const buildCategoryTree = (
 
 import { invalidateHeaderMenuCache } from './headerMenu';
 import { invalidateExploreCache } from './exploreConfig';
+import { clearHomepageCache } from './homepage';
+import { clearProductCache } from './product';
 
 export const clearCategoryCache = () => {
   sysCache.del('categories_tree');
@@ -43,8 +45,9 @@ export const clearCategoryCache = () => {
   sysCache.clearPattern('category_slug_');
   sysCache.clearPattern('category_id_');
   invalidateHeaderMenuCache();
-  // Invalidate explore-navigation cache so Admin category changes take effect immediately
   invalidateExploreCache();
+  clearHomepageCache();
+  clearProductCache();
   clearCache();
 };
 
@@ -231,34 +234,56 @@ export const getCategories = async (req: Request, res: Response) => {
 };
 
 export const createCategory = async (req: Request, res: Response) => {
-  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription, shippingCharge, estimatedDeliveryDays, freeShippingEligible, shippingRegion, shippingMode, shippingRules, freeShippingThreshold } = req.body;
+  const body = req.body || {};
+  const name = body.name ? String(body.name).trim() : '';
+  const rawSlug = body.slug ? String(body.slug).trim() : '';
+  const slug = rawSlug || (name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : '');
+
   if (!name || !slug) {
     return res.status(400).json({ error: 'Category name and slug represent mandatory specifications' });
   }
+
+  const parentId = body.parentId !== undefined ? body.parentId : body.parent_id;
+  const description = body.description;
+  const image = body.image;
+  const banner = body.banner;
+  const icon = body.icon;
+  const sortOrder = body.sortOrder !== undefined ? body.sortOrder : body.sort_order;
+  const isActive = body.isActive !== undefined ? body.isActive : body.is_active;
+  const isFeatured = body.isFeatured !== undefined ? body.isFeatured : body.is_featured;
+  const seoTitle = body.seoTitle !== undefined ? body.seoTitle : body.seo_title;
+  const seoDescription = body.seoDescription !== undefined ? body.seoDescription : body.seo_description;
+  const shippingCharge = body.shippingCharge !== undefined ? body.shippingCharge : body.shipping_charge;
+  const estimatedDeliveryDays = body.estimatedDeliveryDays !== undefined ? body.estimatedDeliveryDays : body.estimated_delivery_days;
+  const freeShippingEligible = body.freeShippingEligible !== undefined ? body.freeShippingEligible : body.free_shipping_eligible;
+  const shippingRegion = body.shippingRegion !== undefined ? body.shippingRegion : body.shipping_region;
+  const shippingMode = body.shippingMode !== undefined ? body.shippingMode : body.shipping_mode;
+  const shippingRules = body.shippingRules !== undefined ? body.shippingRules : (body.shipping_rules || body.weightRules || body.weight_rules);
+  const freeShippingThreshold = body.freeShippingThreshold !== undefined ? body.freeShippingThreshold : body.free_shipping_threshold;
 
   try {
     const createData: any = {
       name,
       slug,
-      description,
-      image,
-      banner,
-      icon,
-      sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
-      isActive: isActive !== undefined ? !!isActive : undefined,
-      isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
-      seoTitle,
-      seoDescription,
+      description: description !== undefined ? description : null,
+      image: image !== undefined ? image : null,
+      banner: banner !== undefined ? banner : null,
+      icon: icon !== undefined ? icon : null,
+      sortOrder: sortOrder !== undefined && sortOrder !== null && sortOrder !== '' ? Number(sortOrder) : 0,
+      isActive: isActive !== undefined ? !!isActive : true,
+      isFeatured: isFeatured !== undefined ? !!isFeatured : false,
+      seoTitle: seoTitle !== undefined ? seoTitle : null,
+      seoDescription: seoDescription !== undefined ? seoDescription : null,
       shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
-      estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
-      freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
+      estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : null,
+      freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : false,
       shippingRegion: shippingRegion || null,
       shippingMode: shippingMode || 'default',
-      shippingRules: Array.isArray(shippingRules) ? shippingRules : typeof shippingRules === 'string' ? JSON.parse(shippingRules) : [],
+      shippingRules: Array.isArray(shippingRules) ? shippingRules : (typeof shippingRules === 'string' && shippingRules.trim() ? JSON.parse(shippingRules) : []),
       freeShippingThreshold: freeShippingThreshold !== undefined && freeShippingThreshold !== null && freeShippingThreshold !== '' ? Number(freeShippingThreshold) : null,
     };
 
-    if (parentId && parentId !== 'null') {
+    if (parentId && parentId !== 'null' && parentId !== 'undefined') {
       createData.parent = { connect: { id: parentId } };
     }
 
@@ -274,41 +299,88 @@ export const createCategory = async (req: Request, res: Response) => {
 
 export const updateCategory = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, slug, parentId, description, image, banner, icon, sortOrder, isActive, isFeatured, seoTitle, seoDescription, shippingCharge, estimatedDeliveryDays, freeShippingEligible, shippingRegion, shippingMode, shippingRules, freeShippingThreshold } = req.body;
+  const body = req.body || {};
 
   try {
-    const updateData: any = {
-      name,
-      slug,
-      description,
-      image,
-      banner,
-      icon,
-      sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
-      isActive: isActive !== undefined ? !!isActive : undefined,
-      isFeatured: isFeatured !== undefined ? !!isFeatured : undefined,
-      seoTitle,
-      seoDescription,
-      shippingCharge: shippingCharge !== undefined && shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null,
-      estimatedDeliveryDays: estimatedDeliveryDays !== undefined && estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : undefined,
-      freeShippingEligible: freeShippingEligible !== undefined ? !!freeShippingEligible : undefined,
-      shippingRegion: shippingRegion || null,
-    };
+    const existing = await prisma.category.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
 
+    const updateData: any = {};
+
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    if (name !== undefined && name !== '') {
+      updateData.name = name;
+    }
+
+    if (body.slug !== undefined) {
+      const rawSlug = String(body.slug).trim();
+      if (rawSlug !== '') {
+        updateData.slug = rawSlug;
+      } else {
+        const targetName = name || existing.name;
+        updateData.slug = targetName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      }
+    }
+
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.image !== undefined) updateData.image = body.image;
+    if (body.banner !== undefined) updateData.banner = body.banner;
+    if (body.icon !== undefined) updateData.icon = body.icon;
+
+    const sortOrder = body.sortOrder !== undefined ? body.sortOrder : body.sort_order;
+    if (sortOrder !== undefined && sortOrder !== null && sortOrder !== '') {
+      updateData.sortOrder = Number(sortOrder);
+    }
+
+    const isActive = body.isActive !== undefined ? body.isActive : body.is_active;
+    if (isActive !== undefined) updateData.isActive = !!isActive;
+
+    const isFeatured = body.isFeatured !== undefined ? body.isFeatured : body.is_featured;
+    if (isFeatured !== undefined) updateData.isFeatured = !!isFeatured;
+
+    const seoTitle = body.seoTitle !== undefined ? body.seoTitle : body.seo_title;
+    if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
+
+    const seoDescription = body.seoDescription !== undefined ? body.seoDescription : body.seo_description;
+    if (seoDescription !== undefined) updateData.seoDescription = seoDescription;
+
+    const parentId = body.parentId !== undefined ? body.parentId : body.parent_id;
     if (parentId !== undefined) {
-      if (parentId && parentId !== 'null') {
+      if (parentId && parentId !== 'null' && parentId !== 'undefined') {
         updateData.parent = { connect: { id: parentId } };
       } else {
         updateData.parent = { disconnect: true };
       }
     }
 
-    const rawMode = shippingMode || req.body.shipping_mode;
-    if (rawMode !== undefined) {
-      updateData.shippingMode = rawMode;
+    const shippingCharge = body.shippingCharge !== undefined ? body.shippingCharge : body.shipping_charge;
+    if (shippingCharge !== undefined) {
+      updateData.shippingCharge = shippingCharge !== null && shippingCharge !== '' ? Number(shippingCharge) : null;
     }
 
-    const rawRules = shippingRules !== undefined ? shippingRules : (req.body.shipping_rules || req.body.weightRules || req.body.weight_rules);
+    const estimatedDeliveryDays = body.estimatedDeliveryDays !== undefined ? body.estimatedDeliveryDays : body.estimated_delivery_days;
+    if (estimatedDeliveryDays !== undefined) {
+      updateData.estimatedDeliveryDays = estimatedDeliveryDays !== null && estimatedDeliveryDays !== '' ? encodeDays(estimatedDeliveryDays) : null;
+    }
+
+    const freeShippingEligible = body.freeShippingEligible !== undefined ? body.freeShippingEligible : body.free_shipping_eligible;
+    if (freeShippingEligible !== undefined) {
+      updateData.freeShippingEligible = !!freeShippingEligible;
+    }
+
+    const shippingRegion = body.shippingRegion !== undefined ? body.shippingRegion : body.shipping_region;
+    if (shippingRegion !== undefined) {
+      updateData.shippingRegion = shippingRegion || null;
+    }
+
+    const shippingMode = body.shippingMode !== undefined ? body.shippingMode : body.shipping_mode;
+    if (shippingMode !== undefined) {
+      updateData.shippingMode = shippingMode;
+    }
+
+    const rawRules = body.shippingRules !== undefined ? body.shippingRules : (body.shipping_rules || body.weightRules || body.weight_rules);
     if (rawRules !== undefined) {
       let parsedRules = Array.isArray(rawRules) ? rawRules : (typeof rawRules === 'string' && rawRules.trim() ? JSON.parse(rawRules) : []);
       if (!Array.isArray(parsedRules)) parsedRules = [];
@@ -318,6 +390,8 @@ export const updateCategory = async (req: Request, res: Response) => {
         charge: Number(r.charge !== undefined ? r.charge : r.fee) || 0
       }));
     }
+
+    const freeShippingThreshold = body.freeShippingThreshold !== undefined ? body.freeShippingThreshold : body.free_shipping_threshold;
     if (freeShippingThreshold !== undefined) {
       updateData.freeShippingThreshold = freeShippingThreshold !== null && freeShippingThreshold !== '' ? Number(freeShippingThreshold) : null;
     }

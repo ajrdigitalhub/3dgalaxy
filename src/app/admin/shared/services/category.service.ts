@@ -28,7 +28,8 @@ export class CategoryService {
     return new Promise((resolve, reject) => {
       this.api.post<Category>('/categories', cat).subscribe({
         next: (created) => {
-          this.loadCategories();
+          this.api.clearCache();
+          this.loadCategories(true);
           resolve(created);
         },
         error: reject
@@ -39,9 +40,10 @@ export class CategoryService {
   editCategory(id: string, updated: Partial<Category>) {
     return new Promise((resolve, reject) => {
       this.api.put<Category>(`/categories/${id}`, updated).subscribe({
-        next: (updated) => {
-          this.loadCategories();
-          resolve(updated);
+        next: (updatedRes) => {
+          this.api.clearCache();
+          this.loadCategories(true);
+          resolve(updatedRes);
         },
         error: reject
       });
@@ -52,7 +54,8 @@ export class CategoryService {
     return new Promise<void>((resolve, reject) => {
       this.api.delete(`/categories/${id}`).subscribe({
         next: () => {
-          this.loadCategories();
+          this.api.clearCache();
+          this.loadCategories(true);
           resolve();
         },
         error: reject

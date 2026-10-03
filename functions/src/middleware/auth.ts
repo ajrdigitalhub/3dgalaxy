@@ -258,6 +258,8 @@ export const requireRole = (allowedRoles: string[]) => {
           role: 'Admin',
           permissions: ['*'],
         };
+      } else {
+        req.user.role = 'Admin';
       }
       return next();
     }

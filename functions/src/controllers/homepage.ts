@@ -330,8 +330,37 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
         orderBy: { publishedAt: 'desc' }
       }),
       prisma.product.findMany({
-        where: { isActive: true },
-        include: { variants: true }
+        where: { isActive: true, deletedAt: null },
+        select: {
+          id: true,
+          brandId: true,
+          categoryId: true,
+          name: true,
+          slug: true,
+          sku: true,
+          basePrice: true,
+          salePrice: true,
+          dealerPrice: true,
+          stock: true,
+          images: true,
+          isFeatured: true,
+          isExclusive: true,
+          codAvailable: true,
+          productCategories: {
+            select: {
+              categoryId: true,
+              isPrimary: true
+            }
+          },
+          variants: {
+            where: { isActive: true },
+            select: {
+              id: true,
+              salePrice: true,
+              price: true
+            }
+          }
+        }
       }),
       prisma.customerReview.findMany({
         take: 6,
@@ -371,6 +400,8 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       stock: p.stock || 0,
       images: p.images || [],
       variants: p.variants || [],
+      product_categories: p.productCategories || [],
+      productCategories: p.productCategories || [],
       isFeatured: p.isFeatured,
       isExclusive: p.isExclusive,
       codAvailable: p.codAvailable,
