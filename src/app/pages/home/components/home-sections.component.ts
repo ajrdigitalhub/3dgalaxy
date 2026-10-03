@@ -931,10 +931,11 @@ export class HomeShopByCategoryComponent {
           const pCats = p.categories;
           if (Array.isArray(pCats)) {
             for (const c of pCats) {
-              if (typeof c === "string") allProdCatKeys.add(c.toLowerCase());
-              else if (c && typeof c === "object") {
-                if (c.id) allProdCatKeys.add(String(c.id).toLowerCase());
-                if (c.slug) allProdCatKeys.add(String(c.slug).toLowerCase());
+              const catItem = c as any;
+              if (typeof catItem === "string") allProdCatKeys.add(catItem.toLowerCase());
+              else if (catItem && typeof catItem === "object") {
+                if (catItem.id) allProdCatKeys.add(String(catItem.id).toLowerCase());
+                if (catItem.slug) allProdCatKeys.add(String(catItem.slug).toLowerCase());
               }
             }
           }
@@ -981,8 +982,8 @@ export class HomeShopByCategoryComponent {
         if (aOrder === 0 && bOrder > 0) return 1;
 
         // Recency / creation time (newest products first)
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0);
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0);
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : ((a as any).created_at ? new Date((a as any).created_at).getTime() : 0);
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : ((b as any).created_at ? new Date((b as any).created_at).getTime() : 0);
         if (aTime !== bTime && aTime > 0 && bTime > 0) {
           return bTime - aTime;
         }
