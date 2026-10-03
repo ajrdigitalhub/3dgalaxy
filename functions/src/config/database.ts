@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ENV } from './env';
 
-// PostgreSQL connection pool module configured for high concurrency and cloud pooler stability
+// PostgreSQL connection pool module configured for high concurrency and serverless Cloud Functions stability
 export const pool = new Pool({
   user: ENV.PG_USER,
   host: ENV.PG_HOST,
@@ -11,12 +11,12 @@ export const pool = new Pool({
   password: ENV.PG_PASSWORD,
   port: ENV.PG_PORT,
   ssl: ENV.PG_SSL ? { rejectUnauthorized: false } : false,
-  max: Math.max(20, ENV.PG_POOL_MAX || 20),
-  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS || 30000,
-  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS || 25000,
-  maxUses: 7500, // Recycle pooled sockets to prevent stale TCP socket accumulation
+  max: Math.min(10, Math.max(2, ENV.PG_POOL_MAX || 5)), // Serverless pool size (default 5, max 10) to prevent exhausting Supabase connection limit
+  idleTimeoutMillis: ENV.PG_IDLE_TIMEOUT_MS || 3000, // Close idle sockets fast (3s) to prevent suspended Cloud Functions reusing dead sockets
+  connectionTimeoutMillis: ENV.PG_CONN_TIMEOUT_MS || 5000, // Fast connection timeout (5s) to fail fast and retry instead of hanging 25s
+  maxUses: 100, // Frequently recycle pooled sockets to prevent stale TCP socket accumulation in Cloud Run
   keepAlive: true, // Send TCP keepalive probes to prevent cloud poolers from dropping idle connections
-  keepAliveInitialDelayMillis: 2000,
+  keepAliveInitialDelayMillis: 1000,
   allowExitOnIdle: true, // Allow Node process to exit when idle (critical for Cloud Functions inspection)
 });
 
@@ -28,7 +28,7 @@ pool.on('error', (err: Error) => {
 /**
  * Executes a database operation with automatic retry on transient connection drops or timeouts.
  */
-export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 200): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 150): Promise<T> {
   let lastError: any;
   for (let attempt = 1; attempt <= retries + 1; attempt++) {
     try {
@@ -41,6 +41,7 @@ export async function withDbRetry<T>(fn: () => Promise<T>, retries = 2, delayMs 
         msg.includes('connection terminated') ||
         msg.includes('connection timeout') ||
         msg.includes('timeout exceeded') ||
+        msg.includes('etimedout') ||
         msg.includes('econnreset') ||
         msg.includes('epipe') ||
         msg.includes('closed') ||

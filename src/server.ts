@@ -1,5 +1,5 @@
 import express from 'express';
-import {join} from 'node:path';
+import { join } from 'node:path';
 import axios from 'axios';
 import { insertWhatsAppLog, fetchWhatsAppLogs, TemplateParams } from './server/queries';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -172,7 +172,7 @@ app.get('*', (req, res) => {
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 const port = process.env['PORT'] || 4000;
-app.listen(port, () => {
-  console.log(`Node Express server listening on http://0.0.0.0:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Node Express server listening on http://0.0.0.0:${port}`);
+// });
 

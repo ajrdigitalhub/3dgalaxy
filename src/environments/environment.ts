@@ -7,10 +7,11 @@ export const environment = {
         if (typeof window !== 'undefined' && window.location.origin) {
             return window.location.origin;
         }
-        return 'https://3dgalaxy.co.in';
+        return 'https://3dgalaxy.co';
     },
     get apiUrl() {
         return "https://api-kcrj5xgpxa-uc.a.run.app/api";
+        // return "http://localhost:4000/api";
     },
 };
 
