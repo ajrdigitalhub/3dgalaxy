@@ -357,6 +357,48 @@ export class ProductDetail {
       }
     });
 
+    // Check option1, option2, option3 attributes if available
+    const product = this.product();
+    const productOptions = Array.isArray(product?.options) ? product.options : [];
+    ['option1', 'option2', 'option3', 'option_1', 'option_2', 'option_3'].forEach((optKey, idx) => {
+      const val = variant?.[optKey];
+      if (val && typeof val === 'string') {
+        const groupName = productOptions[idx % 3]?.name || productOptions[idx % 3]?.displayName || `option${(idx % 3) + 1}`;
+        const normKey = this.normalizeOptionKey(groupName);
+        if (!values[normKey]) {
+          values[normKey] = this.normalizeOptionValue(val);
+        }
+      }
+    });
+
+    // Fallback: If still empty, match option values from product.options against variant title/name/sku
+    if (Object.keys(values).length === 0 && variant) {
+      const targetText = `${variant.name || ''} ${variant.title || ''} ${variant.sku || ''}`.toLowerCase();
+      const rawOptions = Array.isArray(product?.options) ? product.options : [];
+      rawOptions.forEach((opt: any) => {
+        const groupName = this.getOptionValueStr(opt?.displayName || opt?.name || opt?.variantName || opt);
+        if (!groupName) return;
+        const normKey = this.normalizeOptionKey(groupName);
+        let rawVals = opt.values;
+        if (typeof rawVals === 'string') {
+          rawVals = rawVals.split(',').map((s: string) => s.trim()).filter(Boolean);
+        } else if (!rawVals && typeof opt.valuesString === 'string') {
+          rawVals = opt.valuesString.split(',').map((s: string) => s.trim()).filter(Boolean);
+        }
+        if (Array.isArray(rawVals)) {
+          for (const val of rawVals) {
+            const valStr = this.getOptionValueStr(val);
+            const cleanVal = this.normalizeOptionKey(valStr);
+            const cleanTarget = targetText.replace(/[^a-z0-9]+/g, '');
+            if (cleanVal && cleanTarget.includes(cleanVal)) {
+              values[normKey] = valStr;
+              break;
+            }
+          }
+        }
+      });
+    }
+
     return values;
   }
 
@@ -401,10 +443,36 @@ export class ProductDetail {
   private extractVariantImages(variant: any): any[] {
     const images: any[] = [];
     if (!variant) return images;
-    if (Array.isArray(variant.images)) images.push(...variant.images);
-    if (Array.isArray(variant.variantImages))
-      images.push(...variant.variantImages);
-    return images.filter(Boolean);
+
+    const rawList = Array.isArray(variant.variantImages) && variant.variantImages.length > 0
+      ? variant.variantImages
+      : (Array.isArray(variant.images) ? variant.images : []);
+
+    if (!rawList || rawList.length === 0) return [];
+
+    rawList.forEach((img: any) => {
+      if (!img) return;
+      if (typeof img === 'string') {
+        images.push({ url: img, isPrimary: false, sortOrder: 0 });
+      } else if (typeof img === 'object') {
+        const url = img.url || img.imageUrl || '';
+        if (url) {
+          images.push({
+            url,
+            mediaId: img.mediaId || img.id,
+            isPrimary: !!img.isPrimary,
+            sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
+          });
+        }
+      }
+    });
+
+    images.sort((a, b) => {
+      if (a.isPrimary !== b.isPrimary) return b.isPrimary ? -1 : 1;
+      return a.sortOrder - b.sortOrder;
+    });
+
+    return images;
   }
 
   private findBestVariantForOptions(product: any, opts: Record<string, string>) {
@@ -479,7 +547,18 @@ export class ProductDetail {
   isDefaultVariantName(name: string): boolean {
     if (!name) return true;
     const n = String(name).trim().toLowerCase();
-    return n === 'default title' || n === 'default' || n === 'default variant' || n === 'standard' || n === 'title';
+    return (
+      n === 'default title' ||
+      n === 'default' ||
+      n === 'default variant' ||
+      n === 'standard' ||
+      n === 'title' ||
+      n === 'variant' ||
+      n === 'variant name' ||
+      n === 'variant title' ||
+      n === 'undefined' ||
+      n === 'null'
+    );
   }
 
   getProductTitle(p: any): string {
@@ -522,14 +601,17 @@ export class ProductDetail {
   private syncActiveImageFromVariant(variant: any, product?: any) {
     const variantImages = this.extractVariantImages(variant);
     if (variantImages.length > 0) {
-      this.activeImage.set(this.getImageUrl(variantImages[0]));
+      const primaryVarImg = variantImages.find((i: any) => i.isPrimary) || variantImages[0];
+      this.activeImage.set(this.getImageUrl(primaryVarImg.url || primaryVarImg));
       this.is360Active.set(false);
       return;
     }
 
     const fallbackProduct = product || this.product();
     if (fallbackProduct?.images?.length) {
-      this.activeImage.set(this.getImageUrl(fallbackProduct.images[0]));
+      const pImages = fallbackProduct.images;
+      const primaryPImg = pImages.find((i: any) => typeof i === 'object' && i.isPrimary) || pImages[0];
+      this.activeImage.set(this.getImageUrl(typeof primaryPImg === 'object' ? primaryPImg.url : primaryPImg));
       this.is360Active.set(false);
     }
   }
@@ -550,20 +632,7 @@ export class ProductDetail {
   selectedVariant = computed(() => {
     const p = this.product();
     if (!p?.variants?.length) return null;
-
-    const opts = this.selectedOptions();
-    const optionNames = Array.isArray(p.options)
-      ? p.options.map((option: any) => this.getOptionValueStr(option.name))
-      : [];
-
-    if (
-      optionNames.length > 0 &&
-      !optionNames.every((name: string) => Boolean(opts[name]))
-    ) {
-      return null;
-    }
-
-    return this.findBestVariantForOptions(p, opts);
+    return this.findBestVariantForOptions(p, this.selectedOptions());
   });
 
   galleryVariant = computed(() => {
@@ -1350,13 +1419,13 @@ export class ProductDetail {
 
     const variant = this.selectedVariant();
     const dealerPrice = variant
-      ? variant.price
-      : p?.dealerPrice || p?.dealer_price; // dealer fallback or variant price
+      ? (variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price)
+      : (p?.dealerPrice || p?.dealer_price || p?.salePrice || p?.basePrice);
     const salePrice = variant
-      ? variant.salePrice || variant.price
-      : p?.salePrice || p?.sale_price;
+      ? (variant.salePrice ?? variant.price)
+      : (p?.salePrice || p?.sale_price || p?.basePrice);
 
-    return this.isDealerActive() ? dealerPrice : salePrice;
+    return this.isDealerActive() ? Number(dealerPrice) : Number(salePrice);
   }
 
   mrpDiscountPercent(p: any): number {
@@ -1383,8 +1452,8 @@ export class ProductDetail {
       }
     }
     const variant = this.selectedVariant();
-    if (variant) return variant.price;
-    return p?.mrp || p?.basePrice || p?.sale_price || 0;
+    if (variant) return Number(variant.mrp || variant.price || p?.mrp || p?.basePrice || 0);
+    return Number(p?.mrp || p?.basePrice || p?.sale_price || 0);
   }
 
   getImageUrl(img: any): string {
@@ -1793,28 +1862,9 @@ export class ProductDetail {
       calculatedPrice: wData.totalPrice
     } : undefined;
 
-    // Check if variant build is active
-    if (this.variantEngine.activeBundleGroup()) {
-      const bundleResult = this.variantEngine.bundleResult();
-      if (!bundleResult.isComplete) {
-        const msg = bundleResult.errorMessages[0] || "Please select options for all slots in the bundle.";
-        this.toastService.error(msg);
-        return;
-      }
-      const bundleDetails = this.variantEngine.buildCartBundleDetails();
-      if (bundleDetails) {
-        this.isAddingToCart.set(true);
-        this.ds.addBundleToCart(p, bundleDetails, this.quantity());
-        setTimeout(() => {
-          this.isAddingToCart.set(false);
-          this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
-        }, 600);
-        return;
-      }
-    }
-
+    // 1. Standard Product Variants take precedence if variants are present
     if (p.variants && p.variants.length > 0) {
-      const selected = this.selectedVariant();
+      let selected = this.selectedVariant() || this.galleryVariant() || p.variants.find((v: any) => v.isDefault || v.isActive !== false) || p.variants[0];
       if (!selected) {
         this.showVariantValidation.set(true);
         const missing = this.computedOptionGroups()
@@ -1831,9 +1881,50 @@ export class ProductDetail {
         this.toastService.error("Selected variant is out of stock.");
         return;
       }
+
+      const selOpts = this.selectedOptions();
+      const selOptVals = Object.values(selOpts).filter(v => v && typeof v === 'string' && !v.startsWith('{'));
+      let resolvedName = this.ds.getVariantDisplayName(selected, p.sku);
+      if ((!resolvedName || this.ds.isDefaultVariantName(resolvedName)) && selOptVals.length > 0) {
+        resolvedName = selOptVals.join(' - ');
+      }
+      if (!resolvedName || this.ds.isDefaultVariantName(resolvedName)) {
+        resolvedName = selected.name && !this.ds.isDefaultVariantName(selected.name) ? selected.name : 'Standard';
+      }
+
+      const enrichedVariant = {
+        ...selected,
+        name: resolvedName,
+        optionValues: {
+          ...(selected.optionValues || {}),
+          ...(selOpts || {})
+        }
+      };
+
       this.isAddingToCart.set(true);
-      this.ds.addToCart(p, this.quantity(), selected, weightPayload);
-    } else {
+      this.ds.addToCart(p, this.quantity(), enrichedVariant, weightPayload);
+    } 
+    // 2. Custom Bundle Builder mode
+    else if (this.variantEngine.activeBundleGroup() && this.variantEngine.selectedBundleTier()) {
+      const bundleResult = this.variantEngine.bundleResult();
+      if (!bundleResult.isComplete) {
+        const msg = bundleResult.errorMessages[0] || "Please select options for all slots in the bundle.";
+        this.toastService.error(msg);
+        return;
+      }
+      const bundleDetails = this.variantEngine.buildCartBundleDetails();
+      if (bundleDetails) {
+        this.isAddingToCart.set(true);
+        this.ds.addBundleToCart(p, bundleDetails, this.quantity());
+        setTimeout(() => {
+          this.isAddingToCart.set(false);
+          this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
+        }, 600);
+        return;
+      }
+    } 
+    // 3. Standard Product without variants
+    else {
       if (p.stock <= 0) {
         this.toastService.error("Product is out of stock.");
         return;
@@ -1969,7 +2060,7 @@ export class ProductDetail {
 
     let selected: ProductVariant | null = null;
     if (p.variants && p.variants.length > 0) {
-      selected = this.selectedVariant();
+      selected = this.selectedVariant() || this.galleryVariant() || p.variants.find((v: any) => v.isDefault || v.isActive !== false) || p.variants[0];
       if (!selected) {
         this.showVariantValidation.set(true);
         const missing = this.computedOptionGroups()
@@ -1986,6 +2077,25 @@ export class ProductDetail {
         this.toastService.error("Selected variant is out of stock.");
         return;
       }
+
+      const selOpts = this.selectedOptions();
+      const selOptVals = Object.values(selOpts).filter(v => v && typeof v === 'string' && !v.startsWith('{'));
+      let resolvedName = this.ds.getVariantDisplayName(selected, p.sku);
+      if ((!resolvedName || this.ds.isDefaultVariantName(resolvedName)) && selOptVals.length > 0) {
+        resolvedName = selOptVals.join(' - ');
+      }
+      if (!resolvedName || this.ds.isDefaultVariantName(resolvedName)) {
+        resolvedName = selected.name && !this.ds.isDefaultVariantName(selected.name) ? selected.name : 'Standard';
+      }
+
+      selected = {
+        ...selected,
+        name: resolvedName,
+        optionValues: {
+          ...(selected.optionValues || {}),
+          ...(selOpts || {})
+        }
+      };
     } else {
       if (p.stock <= 0) {
         this.toastService.error("Product is out of stock.");

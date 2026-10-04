@@ -567,7 +567,7 @@ export class AdminPanel implements OnInit {
   pLongDesc = signal<string>("");
   pSeoTitle = signal<string>("");
   pSeoDescription = signal<string>("");
-  pImages = signal<{ url: string; isPrimary: boolean }[]>([]);
+  pImages = signal<{ id?: string; url: string; isPrimary: boolean; fileName?: string; altText?: string; storagePath?: string; sortOrder?: number; usedCount?: number; usedByVariants?: string[] }[]>([]);
   pOptions = signal<{ id?: string; name: string; values: string[] }[]>([]);
   pVariants = signal<any[]>([]);
   pSpecs = signal<{ name: string; value: string }[]>([]);
@@ -2102,11 +2102,187 @@ export class AdminPanel implements OnInit {
     );
   }
 
-  // Image management
+  // Image management & Centralized Product Media Library
   setPrimaryImage(index: number) {
     const imgs = [...this.pImages()];
-    imgs.forEach((i) => (i.isPrimary = false));
+    if (!imgs[index]) return;
+    imgs.forEach((i: any) => (i.isPrimary = false));
     imgs[index].isPrimary = true;
+    this.pImages.set(imgs);
+  }
+
+  updateMediaAltText(index: number, altText: string) {
+    const imgs = [...this.pImages()];
+    if (!imgs[index]) return;
+    imgs[index].altText = altText;
+    this.pImages.set(imgs);
+  }
+
+  assignMediaToVariant(mediaIdOrObj: any, variantIndex: number) {
+    const variants = [...this.pVariants()];
+    const targetVariant = variants[variantIndex];
+    if (!targetVariant) return;
+
+    let mediaItem: any = null;
+    if (typeof mediaIdOrObj === 'string') {
+      mediaItem = this.pImages().find((m: any) => m.id === mediaIdOrObj || m.url === mediaIdOrObj);
+    } else {
+      mediaItem = mediaIdOrObj;
+    }
+
+    if (!mediaItem) return;
+
+    const currentImages = Array.isArray(targetVariant.variantImages || targetVariant.images)
+      ? [...(targetVariant.variantImages || targetVariant.images)]
+      : [];
+
+    const exists = currentImages.some((m: any) =>
+      typeof m === 'string'
+        ? m === mediaItem.url || m === mediaItem.id
+        : (m.mediaId === mediaItem.id || m.id === mediaItem.id || m.url === mediaItem.url)
+    );
+
+    if (exists) return; // Prevent duplicate mapping
+
+    const newMapping = {
+      mediaId: mediaItem.id || `media-${Date.now()}`,
+      id: mediaItem.id || `media-${Date.now()}`,
+      url: mediaItem.url,
+      fileName: mediaItem.fileName || 'image.jpg',
+      isPrimary: currentImages.length === 0,
+      sortOrder: currentImages.length
+    };
+
+    targetVariant.variantImages = [...currentImages, newMapping];
+    targetVariant.images = targetVariant.variantImages;
+
+    this.pVariants.set(variants);
+    this.recalculateMediaUsage();
+  }
+
+  removeMediaFromVariant(variantIndex: number, imageIdOrUrl: string) {
+    const variants = [...this.pVariants()];
+    const targetVariant = variants[variantIndex];
+    if (!targetVariant) return;
+
+    const currentImages = Array.isArray(targetVariant.variantImages || targetVariant.images)
+      ? [...(targetVariant.variantImages || targetVariant.images)]
+      : [];
+
+    const updatedImages = currentImages.filter((m: any) => {
+      if (typeof m === 'string') return m !== imageIdOrUrl;
+      return m.mediaId !== imageIdOrUrl && m.id !== imageIdOrUrl && m.url !== imageIdOrUrl;
+    });
+
+    // Ensure first image remains primary if primary was removed
+    if (updatedImages.length > 0 && !updatedImages.some((m: any) => typeof m === 'object' && m.isPrimary)) {
+      if (typeof updatedImages[0] === 'object') {
+        updatedImages[0].isPrimary = true;
+      }
+    }
+
+    targetVariant.variantImages = updatedImages;
+    targetVariant.images = updatedImages;
+
+    this.pVariants.set(variants);
+    this.recalculateMediaUsage();
+  }
+
+  setVariantPrimaryImage(variantIndex: number, imageIdOrUrl: string) {
+    const variants = [...this.pVariants()];
+    const targetVariant = variants[variantIndex];
+    if (!targetVariant) return;
+
+    const currentImages = Array.isArray(targetVariant.variantImages || targetVariant.images)
+      ? [...(targetVariant.variantImages || targetVariant.images)]
+      : [];
+
+    const updatedImages = currentImages.map((m: any) => {
+      const isTarget = typeof m === 'string'
+        ? m === imageIdOrUrl
+        : (m.mediaId === imageIdOrUrl || m.id === imageIdOrUrl || m.url === imageIdOrUrl);
+      if (typeof m === 'string') {
+        return { url: m, isPrimary: isTarget, sortOrder: isTarget ? 0 : 1 };
+      }
+      return { ...m, isPrimary: isTarget };
+    });
+
+    targetVariant.variantImages = updatedImages;
+    targetVariant.images = updatedImages;
+
+    this.pVariants.set(variants);
+  }
+
+  deleteProductMedia(index: number) {
+    const imgs = [...this.pImages()];
+    const target = imgs[index];
+    if (!target) return;
+
+    // Check usage across variants
+    const usage = this.getMediaUsageInfo(target);
+    if (usage.usedCount > 0) {
+      const confirmDelete = confirm(
+        `Warning: This image is currently assigned to ${usage.usedCount} variant(s):\n- ${usage.usedByVariants.join('\n- ')}\n\nDeleting it will remove it from all variants. Are you sure?`
+      );
+      if (!confirmDelete) return;
+    }
+
+    const removed = imgs.splice(index, 1)[0];
+
+    // Remove references from all variants
+    const variants = this.pVariants().map((v: any) => {
+      const vImgs = Array.isArray(v.variantImages || v.images) ? [...(v.variantImages || v.images)] : [];
+      const filtered = vImgs.filter((m: any) => {
+        if (typeof m === 'string') return m !== removed.url && m !== removed.id;
+        return m.mediaId !== removed.id && m.id !== removed.id && m.url !== removed.url;
+      });
+      return { ...v, variantImages: filtered, images: filtered };
+    });
+
+    if (removed.isPrimary && imgs.length > 0) {
+      imgs[0].isPrimary = true;
+    }
+
+    this.pImages.set(imgs);
+    this.pVariants.set(variants);
+  }
+
+  getMediaUsageInfo(mediaItem: any): { usedCount: number; usedByVariants: string[] } {
+    if (!mediaItem) return { usedCount: 0, usedByVariants: [] };
+    const url = typeof mediaItem === 'string' ? mediaItem : mediaItem.url;
+    const mediaId = typeof mediaItem === 'object' ? mediaItem.id : undefined;
+
+    let usedCount = 0;
+    const usedByVariants: string[] = [];
+
+    this.pVariants().forEach((v: any) => {
+      const vImgs = Array.isArray(v.variantImages || v.images) ? (v.variantImages || v.images) : [];
+      const isUsed = vImgs.some((m: any) => {
+        if (typeof m === 'string') return m === url || m === mediaId;
+        return (mediaId && (m.mediaId === mediaId || m.id === mediaId)) || (url && m.url === url);
+      });
+
+      if (isUsed) {
+        usedCount++;
+        const vName = v.name || v.sku || 'Variant';
+        if (!usedByVariants.includes(vName)) {
+          usedByVariants.push(vName);
+        }
+      }
+    });
+
+    return { usedCount, usedByVariants };
+  }
+
+  recalculateMediaUsage() {
+    const imgs = this.pImages().map((m: any) => {
+      const usage = this.getMediaUsageInfo(m);
+      return {
+        ...m,
+        usedCount: usage.usedCount,
+        usedByVariants: usage.usedByVariants
+      };
+    });
     this.pImages.set(imgs);
   }
 
@@ -2275,13 +2451,28 @@ export class AdminPanel implements OnInit {
 
     const isEdit = this.editingProduct() && this.editingProduct()?.id !== "new";
 
-    // Parse images array
-    let imagesArr = ["https://picsum.photos/seed/" + Date.now() + "/800/800"];
+    // Parse images array into rich ProductMedia objects
     const currentImgs = this.pImages();
+    let imagesArr: any[] = [];
     if (currentImgs && currentImgs.length > 0) {
-      imagesArr = currentImgs.map((i) => i.url);
+      imagesArr = currentImgs.map((i: any, idx: number) => ({
+        id: i.id || `media-${idx}-${Date.now()}`,
+        url: i.url,
+        storagePath: i.storagePath || '',
+        fileName: i.fileName || i.url.split('/').pop()?.split('?')[0] || 'image.jpg',
+        altText: i.altText || '',
+        sortOrder: idx,
+        isPrimary: i.isPrimary !== undefined ? !!i.isPrimary : (idx === 0)
+      }));
     } else if (isEdit && this.editingProduct()?.images) {
       imagesArr = this.editingProduct()!.images;
+    } else {
+      imagesArr = [{
+        id: `media-${Date.now()}`,
+        url: "https://picsum.photos/seed/" + Date.now() + "/800/800",
+        isPrimary: true,
+        sortOrder: 0
+      }];
     }
 
     // Parse variants & options safely

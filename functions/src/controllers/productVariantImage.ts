@@ -24,16 +24,56 @@ export const uploadVariantImages = async (req: Request, res: Response) => {
     const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
     if (!variant) return res.status(404).json({ error: 'Variant not found' });
 
-    const currentImages = Array.isArray(variant.variantImages) ? [...variant.variantImages] : [];
-    const addedImages = images.map((img: any) => img.imageUrl || img.url || img);
+    const product = await prisma.product.findUnique({ where: { id: variant.productId } });
+    if (!product) return res.status(404).json({ error: 'Parent product not found' });
 
-    const updatedImages = [...currentImages, ...addedImages];
-    const updated = await prisma.productVariant.update({
-      where: { id: variantId },
-      data: { variantImages: updatedImages }
+    const currentProductImages = Array.isArray(product.images) ? [...product.images] : [];
+    const currentVariantImages = Array.isArray(variant.variantImages) ? [...variant.variantImages] : [];
+
+    const newMediaItems: any[] = [];
+    const newVariantMappings: any[] = [];
+
+    images.forEach((imgInput: any, idx: number) => {
+      const url = typeof imgInput === 'string' ? imgInput : (imgInput.url || imgInput.imageUrl || '');
+      if (!url) return;
+
+      const mediaId = imgInput.id || `media-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const fileName = imgInput.fileName || url.split('/').pop()?.split('?')[0] || 'variant-image.jpg';
+
+      const mediaObj = {
+        id: mediaId,
+        url,
+        fileName,
+        altText: imgInput.altText || '',
+        sortOrder: currentProductImages.length + idx,
+        isPrimary: currentProductImages.length === 0,
+        createdAt: new Date().toISOString()
+      };
+
+      newMediaItems.push(mediaObj);
+      newVariantMappings.push({
+        mediaId,
+        id: mediaId,
+        url,
+        fileName,
+        isPrimary: currentVariantImages.length === 0 && idx === 0,
+        sortOrder: currentVariantImages.length + idx
+      });
     });
 
-    return res.status(201).json({ success: true, data: addedImages });
+    // Save to product media library and variant
+    await prisma.$transaction([
+      prisma.product.update({
+        where: { id: product.id },
+        data: { images: [...currentProductImages, ...newMediaItems] }
+      }),
+      prisma.productVariant.update({
+        where: { id: variantId },
+        data: { variantImages: [...currentVariantImages, ...newVariantMappings] }
+      })
+    ]);
+
+    return res.status(201).json({ success: true, data: newVariantMappings, mediaItems: newMediaItems });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to upload variant images', details: error.message });
   }
@@ -65,14 +105,14 @@ export const deleteVariantImage = async (req: Request, res: Response) => {
       const imgs = Array.isArray(v.variantImages) ? v.variantImages : [];
       const hasImage = imgs.some((img: any) => {
         if (typeof img === 'string') return img === imageId;
-        return img?.id === imageId || img?.url === imageId || img?.imageUrl === imageId;
+        return img?.id === imageId || img?.mediaId === imageId || img?.url === imageId || img?.imageUrl === imageId;
       });
 
       if (hasImage) {
         foundVariant = v;
         updatedImages = imgs.filter((img: any) => {
           if (typeof img === 'string') return img !== imageId;
-          return img?.id !== imageId && img?.url !== imageId && img?.imageUrl !== imageId;
+          return img?.id !== imageId && img?.mediaId !== imageId && img?.url !== imageId && img?.imageUrl !== imageId;
         });
         break;
       }
@@ -83,21 +123,44 @@ export const deleteVariantImage = async (req: Request, res: Response) => {
         where: { id: foundVariant.id },
         data: { variantImages: updatedImages }
       });
-      return res.status(200).json({ success: true, message: 'Image deleted' });
+      return res.status(200).json({ success: true, message: 'Variant mapping removed successfully (central media preserved)' });
     }
 
-    return res.status(404).json({ error: 'Image not found in product variant' });
+    return res.status(404).json({ error: 'Image mapping not found in variant' });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to delete variant image', details: error.message });
+    return res.status(500).json({ error: 'Failed to remove variant image mapping', details: error.message });
   }
 };
 
 export const setPrimaryVariantImage = async (req: Request, res: Response) => {
   const { imageId } = req.params;
+  const variantId = (req.query.variantId || req.body?.variantId) as string | undefined;
+
+  if (!variantId) {
+    return res.status(400).json({ error: 'variantId is required' });
+  }
+
   try {
-    // With dynamic JSON lists, we can just return success or let client update ordering if array elements represent primary first
-    return res.status(200).json({ success: true, message: 'Primary set' });
+    const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
+    if (!variant) return res.status(404).json({ error: 'Variant not found' });
+
+    const currentImages = Array.isArray(variant.variantImages) ? [...variant.variantImages] : [];
+    const updatedImages = currentImages.map((img: any) => {
+      const isTarget = typeof img === 'string'
+        ? img === imageId
+        : (img.id === imageId || img.mediaId === imageId || img.url === imageId);
+      return typeof img === 'string'
+        ? { url: img, isPrimary: isTarget, sortOrder: isTarget ? 0 : 1 }
+        : { ...img, isPrimary: isTarget };
+    });
+
+    await prisma.productVariant.update({
+      where: { id: variantId },
+      data: { variantImages: updatedImages }
+    });
+
+    return res.status(200).json({ success: true, message: 'Variant primary image updated' });
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to set primary', details: error.message });
+    return res.status(500).json({ error: 'Failed to set primary variant image', details: error.message });
   }
 };

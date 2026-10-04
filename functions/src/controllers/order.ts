@@ -64,7 +64,8 @@ const mapOrderWithVariantDetails = (order: any) => {
           const variantImages = safeParseArray(item.variant.variantImages || item.variant.images);
           let firstImg = '';
           if (variantImages && variantImages.length > 0) {
-            firstImg = typeof variantImages[0] === 'string' ? variantImages[0] : (variantImages[0]?.url || '');
+            const primaryObj = variantImages.find((x: any) => typeof x === 'object' && x && x.isPrimary) || variantImages[0];
+            firstImg = typeof primaryObj === 'string' ? primaryObj : (primaryObj?.url || primaryObj?.imageUrl || '');
           }
           
           item.variant = {

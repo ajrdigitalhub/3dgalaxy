@@ -663,7 +663,7 @@
                       </div>
                     </div>
                   } @else if (item.variant) {
-                  <span class="text-[10px] text-neutral-400 font-medium uppercase">{{ item.variant.name }}</span>
+                  <span class="text-[10px] text-neutral-400 font-medium uppercase">{{ ds.getVariantDisplayName(item.variant, item.product?.sku) || item.variant?.name }}</span>
                   }
                   <div class="text-[10px] text-neutral-550 dark:text-neutral-400 font-bold flex items-center gap-1.5 mt-0.5">
                     <span>Delivery:</span>

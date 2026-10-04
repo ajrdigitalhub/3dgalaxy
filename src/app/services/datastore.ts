@@ -173,11 +173,15 @@ export interface ProductVariant {
   sku: string;
   price: number;
   salePrice?: number | null;
+  dealerPrice?: number | null;
+  dealer_price?: number | null;
   stock: number;
   weight?: number | null;
   isDefault: boolean;
   isActive: boolean;
   name: string;
+  title?: string;
+  optionValues?: Record<string, any>;
   images?: any[];
   options?: any[];
   variantImages?: any[];
@@ -188,6 +192,7 @@ export interface ProductVariant {
   codAvailable?: boolean;
   codCharge?: number;
   codMessage?: string;
+  [key: string]: any;
 }
 
 export interface Product {
@@ -882,9 +887,19 @@ export class DatastoreService {
       const found = allProds.find(p => p.id === item.product.id);
       if (found) {
         let refreshedVariant = item.variant;
-        if (item.variant && found.variants) {
-          const vFound = found.variants.find(v => v.id === item.variant?.id);
-          if (vFound) refreshedVariant = vFound;
+        if (item.variant && found.variants && found.variants.length > 0) {
+          const vFound = found.variants.find(v => String(v.id) === String(item.variant?.id) || (v.sku && item.variant?.sku && v.sku === item.variant?.sku));
+          if (vFound) {
+            const dispName = this.getVariantDisplayName(vFound, found.sku) || (item.variant ? this.getVariantDisplayName(item.variant, found.sku) : '');
+            const finalName = dispName && !this.isDefaultVariantName(dispName)
+              ? dispName
+              : (item.variant?.name && !this.isDefaultVariantName(item.variant.name) ? item.variant.name : (vFound.name && !this.isDefaultVariantName(vFound.name) ? vFound.name : 'Standard'));
+            refreshedVariant = {
+              ...vFound,
+              ...item.variant,
+              name: finalName
+            };
+          }
         }
         return { ...item, product: found, variant: refreshedVariant };
       }
@@ -2003,7 +2018,14 @@ export class DatastoreService {
       is360Supported: p.is360Supported || false,
       weightInGrams: p.weightInGrams !== undefined && p.weightInGrams !== null ? Number(p.weightInGrams) : (p.weight_in_grams !== undefined && p.weight_in_grams !== null ? Number(p.weight_in_grams) : (p.weight !== undefined && p.weight !== null ? Number(p.weight) : 0)),
       weightUnit: p.weightUnit || p.weight_unit || 'g',
-      variants: p.variants || [],
+      variants: Array.isArray(p.variants) ? p.variants.map((v: any) => {
+        const dName = this.getVariantDisplayName(v, p.sku);
+        return {
+          ...v,
+          sku: v.sku || v.variantSku || v.variant_sku || p.sku,
+          name: dName && !this.isDefaultVariantName(dName) ? dName : (v.name && !this.isDefaultVariantName(v.name) ? v.name : 'Standard')
+        };
+      }) : [],
       productCategories: p.productCategories || p.product_categories || [],
       product_categories: p.productCategories || p.product_categories || [],
       tags: []
@@ -2476,29 +2498,48 @@ export class DatastoreService {
     calculatedPrice?: number;
   }) {
     this.clearBuyNowItem();
+
+    // Auto-resolve variant if product has variants and no variant was explicitly specified
+    let selectedVariant = variant;
+    if (!selectedVariant && product && (product as any).variants && Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
+      const vars = (product as any).variants;
+      selectedVariant = vars.find((v: any) => v.isDefault || v.isActive !== false) || vars[0];
+    }
+
+    if (selectedVariant) {
+      const dispName = this.getVariantDisplayName(selectedVariant, product?.sku);
+      const finalName = dispName && !this.isDefaultVariantName(dispName)
+        ? dispName
+        : (selectedVariant.name && !this.isDefaultVariantName(selectedVariant.name) ? selectedVariant.name : 'Standard');
+      selectedVariant = {
+        ...selectedVariant,
+        name: finalName
+      };
+    }
+
     this.cart.update(items => {
       const isWeightMatch = (i: CartItem) => {
         if (weightConfig && weightConfig.selectedWeightValue !== undefined) {
           return i.product.id === product.id &&
-                 (variant ? i.variant?.id === variant.id : !i.variant) &&
+                 (selectedVariant ? (String(i.variant?.id) === String(selectedVariant.id) || i.variant?.sku === selectedVariant.sku) : !i.variant) &&
                  i.selectedWeightValue === weightConfig.selectedWeightValue &&
                  i.selectedWeightUnit === weightConfig.selectedWeightUnit;
         }
-        if (variant && i.variant) return i.product.id === product.id && i.variant.id === variant.id;
-        if (!variant && !i.variant) return i.product.id === product.id;
+        if (selectedVariant && i.variant) return i.product.id === product.id && (String(i.variant.id) === String(selectedVariant.id) || i.variant.sku === selectedVariant.sku);
+        if (!selectedVariant && !i.variant) return i.product.id === product.id;
         return false;
       };
 
       const existing = items.find(isWeightMatch);
       if (existing) {
-        return items.map(i => isWeightMatch(i) ? { ...i, quantity: i.quantity + quantity } : i);
+        return items.map(i => isWeightMatch(i) ? { ...i, quantity: i.quantity + quantity, variant: selectedVariant || i.variant } : i);
       }
       const role = this.userRole();
       const priceType = (role === 'admin' || role === 'super-admin') ? 'dealer' : 'sale';
       
       const newItem: CartItem = {
         product,
-        variant,
+        variant: selectedVariant,
         quantity,
         selectedPriceType: priceType,
         weightInGrams: weightConfig?.weightInGrams,
@@ -2514,7 +2555,7 @@ export class DatastoreService {
       return [...items, newItem];
     });
     this.recalcDiscount();
-    this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name} to cart.`);
+    this.logCartActivity('Added to Cart', `Added ${quantity}x ${product.name}${selectedVariant ? ' (' + (selectedVariant.name || 'Variant') + ')' : ''} to cart.`);
   }
 
   addBundleToCart(product: Product, bundleDetails: CartBundleDetails, quantity: number = 1) {
@@ -2555,18 +2596,98 @@ export class DatastoreService {
 
     if (qty <= 0) {
       this.cart.update(items => items.filter(i => {
-           if (variantId) return !(i.product.id === productId && i.variant?.id === variantId);
+           if (variantId) return !(i.product.id === productId && String(i.variant?.id) === String(variantId));
            return i.product.id !== productId;
       }));
       this.logCartActivity('Removed from Cart', `Removed product from cart.`);
     } else {
       this.cart.update(items => items.map(i => {
-           const match = variantId ? (i.product.id === productId && i.variant?.id === variantId) : (i.product.id === productId);
+           const match = variantId ? (i.product.id === productId && String(i.variant?.id) === String(variantId)) : (i.product.id === productId);
            return match ? { ...i, quantity: qty } : i;
       }));
       this.logCartActivity('Quantity Changed', `Updated product quantity from ${prevQty} to ${qty}.`);
     }
     this.recalcDiscount();
+  }
+
+  isDefaultVariantName(name: string): boolean {
+    if (!name) return true;
+    const n = String(name).trim().toLowerCase();
+    return (
+      n === 'default title' ||
+      n === 'default' ||
+      n === 'default variant' ||
+      n === 'standard' ||
+      n === 'title' ||
+      n === 'variant' ||
+      n === 'variant name' ||
+      n === 'variant title' ||
+      n === 'undefined' ||
+      n === 'null'
+    );
+  }
+
+  getVariantDisplayName(variant: any, productSku?: string): string {
+    if (!variant) return '';
+
+    if (typeof variant === 'string' && !this.isDefaultVariantName(variant)) {
+      return variant.trim();
+    }
+
+    // 1. Check explicit name if not a generic default name
+    if (variant.name && !this.isDefaultVariantName(variant.name)) {
+      return String(variant.name).trim();
+    }
+    // 2. Check title if not default
+    if (variant.title && !this.isDefaultVariantName(variant.title)) {
+      return String(variant.title).trim();
+    }
+    // 3. Check variantName if not default
+    if (variant.variantName && !this.isDefaultVariantName(variant.variantName)) {
+      return String(variant.variantName).trim();
+    }
+
+    // 4. Construct from optionValues object
+    const optVals = variant.optionValues;
+    if (optVals && typeof optVals === 'object') {
+      const vals = Object.values(optVals)
+        .map(v => typeof v === 'string' ? v.trim() : (typeof v === 'number' ? String(v) : ''))
+        .filter(v => v && !v.startsWith('{') && !this.isDefaultVariantName(v));
+      if (vals.length > 0) return vals.join(' - ');
+    }
+
+    // 5. Construct from options array
+    if (Array.isArray(variant.options) && variant.options.length > 0) {
+      const vals = variant.options
+        .map((o: any) => o?.optionValue?.value || o?.value || o?.label || o?.name)
+        .filter((v: any) => v && !this.isDefaultVariantName(v));
+      if (vals.length > 0) return vals.join(' - ');
+    }
+
+    // 6. Check option1, option2, option3 fields
+    const optFields = [variant.option1, variant.option2, variant.option3, variant.option_1, variant.option_2, variant.option_3];
+    const validOptFields = optFields
+      .map(v => typeof v === 'string' ? v.trim() : (typeof v === 'number' ? String(v) : ''))
+      .filter(v => v && !this.isDefaultVariantName(v));
+    if (validOptFields.length > 0) {
+      return validOptFields.join(' - ');
+    }
+
+    // 7. Extract option descriptors from SKU if SKU has variant suffix
+    if (variant.sku && typeof variant.sku === 'string') {
+      let rawSku = variant.sku.trim();
+      if (productSku && rawSku.toLowerCase().startsWith(productSku.toLowerCase())) {
+        rawSku = rawSku.slice(productSku.length).replace(/^[-_]+/, '');
+      }
+      if (rawSku && !this.isDefaultVariantName(rawSku)) {
+        const parts = rawSku.split(/[-_]+/).filter((p: any) => p && !this.isDefaultVariantName(p));
+        if (parts.length > 0) {
+          return parts.map((p: any) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        }
+      }
+    }
+
+    return '';
   }
 
   getItemPrice(item: any): number {
@@ -2595,11 +2716,17 @@ export class DatastoreService {
     const p = item.product || item;
     const variant = item.variant;
     const role = this.userRole();
-    let price = role === 'admin' || role === 'super-admin' || (this.activeUser()?.rewardPoints || 0) > 300
+    const isDealer = role === 'admin' || role === 'super-admin' || (this.activeUser()?.rewardPoints || 0) > 300;
+    let price = isDealer
       ? (p.dealerPrice || p.dealer_price || p.basePrice || 0)
       : (p.salePrice || p.sale_price || p.basePrice || 0);
     if (variant) {
-      price = variant.salePrice || variant.price || price;
+      const vDealer = variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price;
+      const vSale = variant.salePrice ?? variant.price;
+      const vPrice = isDealer ? vDealer : vSale;
+      if (vPrice !== undefined && vPrice !== null && !isNaN(Number(vPrice)) && Number(vPrice) > 0) {
+        price = Number(vPrice);
+      }
     }
     return price;
   }
@@ -3203,32 +3330,41 @@ export class DatastoreService {
   getProductImage(item: any): string {
     if (!item) return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
     
-    // Check variant first
+    // 1. Check variant first
     const variant = item.variant;
-    if (variant && variant.images && variant.images.length > 0) {
-      const vImg = variant.images[0];
-      if (typeof vImg === 'string') {
-        try {
-          if (vImg.trim().startsWith('[') || vImg.trim().startsWith('{')) {
-            const parsed = JSON.parse(vImg);
+    if (variant) {
+      if (typeof variant.imageUrl === 'string' && variant.imageUrl) return variant.imageUrl;
+      if (typeof variant.primaryImage === 'string' && variant.primaryImage) return variant.primaryImage;
+      
+      const vImgList = Array.isArray(variant.variantImages) && variant.variantImages.length > 0
+        ? variant.variantImages
+        : (Array.isArray(variant.images) && variant.images.length > 0 ? variant.images : []);
+
+      if (vImgList && vImgList.length > 0) {
+        // Find variant primary or first
+        const primaryObj = vImgList.find((x: any) => typeof x === 'object' && x && x.isPrimary) || vImgList[0];
+        let url = typeof primaryObj === 'string' ? primaryObj : (primaryObj?.url || primaryObj?.imageUrl || '');
+        if (typeof url === 'string' && (url.startsWith('{') || url.startsWith('['))) {
+          try {
+            const parsed = JSON.parse(url);
             if (Array.isArray(parsed) && parsed.length > 0) {
               const sub = parsed[0];
-              return typeof sub === 'object' && sub ? (sub.url || sub) : sub;
+              url = typeof sub === 'object' && sub ? (sub.url || sub.imageUrl || sub) : sub;
+            } else if (parsed && typeof parsed === 'object') {
+              url = parsed.url || parsed.imageUrl || url;
             }
-            if (parsed && typeof parsed === 'object') return parsed.url || parsed;
-          }
-        } catch {}
-        return vImg;
+          } catch {}
+        }
+        if (url) return url;
       }
-      if (typeof vImg === 'object' && vImg) {
-        return vImg.url || vImg;
-      }
+      if (typeof variant.image === 'string' && variant.image) return variant.image;
     }
 
+    // 2. Fall back to product main images
     const p = item.product || item;
     if (!p) return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
 
-    let imgs = p.images;
+    let imgs = p.images || p.mediaLibrary;
     if (typeof imgs === 'string') {
       try {
         const parsed = JSON.parse(imgs);
@@ -3244,24 +3380,25 @@ export class DatastoreService {
     }
 
     if (Array.isArray(imgs) && imgs.length > 0) {
-      const first = imgs[0];
-      if (typeof first === 'string') {
+      const primaryObj = imgs.find((x: any) => typeof x === 'object' && x && x.isPrimary) || imgs[0];
+      let url = typeof primaryObj === 'string' ? primaryObj : (primaryObj?.url || primaryObj?.imageUrl || '');
+      if (typeof url === 'string' && (url.startsWith('{') || url.startsWith('['))) {
         try {
-          if (first.trim().startsWith('[') || first.trim().startsWith('{')) {
-            const parsedSub = JSON.parse(first);
-            if (Array.isArray(parsedSub) && parsedSub.length > 0) {
-              const sub = parsedSub[0];
-              return typeof sub === 'object' && sub ? (sub.url || sub) : sub;
-            }
-            if (parsedSub && typeof parsedSub === 'object') return parsedSub.url || parsedSub;
+          const parsedSub = JSON.parse(url);
+          if (Array.isArray(parsedSub) && parsedSub.length > 0) {
+            const sub = parsedSub[0];
+            url = typeof sub === 'object' && sub ? (sub.url || sub.imageUrl || sub) : sub;
+          } else if (parsedSub && typeof parsedSub === 'object') {
+            url = parsedSub.url || parsedSub.imageUrl || url;
           }
         } catch {}
-        return first;
       }
-      if (typeof first === 'object' && first) {
-        return first.url || first;
-      }
+      if (url) return url;
     }
+
+    if (typeof p.primaryImage === 'string' && p.primaryImage) return p.primaryImage;
+    if (typeof p.thumbnail === 'string' && p.thumbnail) return p.thumbnail;
+    if (typeof p.image === 'string' && p.image) return p.image;
 
     return this.settings().defaultPlaceholderUrl || 'https://picsum.photos/seed/placeholder/400/400';
   }

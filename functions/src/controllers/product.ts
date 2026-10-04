@@ -524,83 +524,173 @@ const safeParseObject = (val: any): any => {
   return val;
 };
 
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+function getFileNameFromUrl(url: string): string {
+  try {
+    const cleanUrl = url.split('?')[0];
+    const parts = cleanUrl.split('/');
+    const last = parts[parts.length - 1];
+    return decodeURIComponent(last || 'product-image.jpg');
+  } catch {
+    return 'product-image.jpg';
+  }
+}
+
+export const normalizeProductMediaList = (rawImages: any[], rawVariants: any[] = []) => {
+  const mediaMap = new Map<string, any>();
+  const mediaByUrl = new Map<string, any>();
+
+  const safeImgs = safeParseArray(rawImages);
+  const safeVars = safeParseArray(rawVariants);
+
+  // 1. Register product images
+  safeImgs.forEach((img: any, idx: number) => {
+    if (!img) return;
+    const url = typeof img === 'string' ? img : (img.url || img.imageUrl || '');
+    if (!url || typeof url !== 'string' || !url.trim()) return;
+
+    const cleanUrl = url.trim();
+    const id = (typeof img === 'object' && img.id)
+      ? String(img.id)
+      : `media-${Math.abs(hashString(cleanUrl))}-${idx}`;
+
+    const mediaObj = {
+      id,
+      url: cleanUrl,
+      storagePath: typeof img === 'object' ? (img.storagePath || '') : '',
+      fileName: typeof img === 'object' ? (img.fileName || getFileNameFromUrl(cleanUrl)) : getFileNameFromUrl(cleanUrl),
+      mimeType: typeof img === 'object' ? (img.mimeType || '') : '',
+      fileSize: typeof img === 'object' ? (img.fileSize || 0) : 0,
+      altText: typeof img === 'object' ? (img.altText || '') : '',
+      mediaType: typeof img === 'object' ? (img.mediaType || 'image') : 'image',
+      sortOrder: (typeof img === 'object' && typeof img.sortOrder === 'number') ? img.sortOrder : idx,
+      isPrimary: (typeof img === 'object' && img.isPrimary !== undefined) ? !!img.isPrimary : (idx === 0),
+      createdAt: typeof img === 'object' ? (img.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      usedCount: 0,
+      usedByVariants: [] as string[]
+    };
+
+    mediaMap.set(id, mediaObj);
+    mediaByUrl.set(cleanUrl, mediaObj);
+  });
+
+  // 2. Process variant images and link to central media library
+  const mappedVariants = safeVars.map((v: any) => {
+    const rawVImgs = safeParseArray(v.variantImages || v.images || v.mediaMappings);
+    const variantMediaList: any[] = [];
+    const vName = v.name || v.sku || 'Variant';
+
+    rawVImgs.forEach((vImg: any, vIdx: number) => {
+      if (!vImg) return;
+
+      let targetMedia: any = null;
+      let isPrimary = false;
+      let sortOrder = vIdx;
+
+      if (typeof vImg === 'string') {
+        const cleanUrl = vImg.trim();
+        targetMedia = mediaByUrl.get(cleanUrl);
+        if (!targetMedia && cleanUrl) {
+          const autoId = `media-${Math.abs(hashString(cleanUrl))}-${mediaMap.size}`;
+          targetMedia = {
+            id: autoId,
+            url: cleanUrl,
+            fileName: getFileNameFromUrl(cleanUrl),
+            sortOrder: mediaMap.size,
+            isPrimary: mediaMap.size === 0,
+            usedCount: 0,
+            usedByVariants: []
+          };
+          mediaMap.set(autoId, targetMedia);
+          mediaByUrl.set(cleanUrl, targetMedia);
+        }
+      } else if (typeof vImg === 'object') {
+        isPrimary = !!vImg.isPrimary;
+        sortOrder = typeof vImg.sortOrder === 'number' ? vImg.sortOrder : vIdx;
+
+        if (vImg.mediaId && mediaMap.has(String(vImg.mediaId))) {
+          targetMedia = mediaMap.get(String(vImg.mediaId));
+        } else if (vImg.id && mediaMap.has(String(vImg.id))) {
+          targetMedia = mediaMap.get(String(vImg.id));
+        } else {
+          const url = (vImg.url || vImg.imageUrl || '').trim();
+          if (url) {
+            targetMedia = mediaByUrl.get(url);
+            if (!targetMedia) {
+              const autoId = `media-${Math.abs(hashString(url))}-${mediaMap.size}`;
+              targetMedia = {
+                id: autoId,
+                url,
+                fileName: vImg.fileName || getFileNameFromUrl(url),
+                altText: vImg.altText || '',
+                sortOrder: mediaMap.size,
+                isPrimary: mediaMap.size === 0,
+                usedCount: 0,
+                usedByVariants: []
+              };
+              mediaMap.set(autoId, targetMedia);
+              mediaByUrl.set(url, targetMedia);
+            }
+          }
+        }
+      }
+
+      if (targetMedia) {
+        targetMedia.usedCount = (targetMedia.usedCount || 0) + 1;
+        if (!targetMedia.usedByVariants.includes(vName)) {
+          targetMedia.usedByVariants.push(vName);
+        }
+
+        variantMediaList.push({
+          mediaId: targetMedia.id,
+          id: targetMedia.id,
+          url: targetMedia.url,
+          fileName: targetMedia.fileName,
+          isPrimary: isPrimary || (vIdx === 0 && !rawVImgs.some((x: any) => x && typeof x === 'object' && x.isPrimary)),
+          sortOrder
+        });
+      }
+    });
+
+    const vPrimaryObj = variantMediaList.find((img: any) => img.isPrimary) || variantMediaList[0];
+    const vPrimary = vPrimaryObj?.url || '';
+
+    return {
+      ...v,
+      images: variantMediaList,
+      variantImages: variantMediaList,
+      primaryImage: vPrimary,
+      galleryImages: variantMediaList.map((img: any) => img.url).filter(Boolean)
+    };
+  });
+
+  const mediaList = Array.from(mediaMap.values()).sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return b.isPrimary ? 1 : -1;
+    return a.sortOrder - b.sortOrder;
+  });
+
+  return { mediaList, mappedVariants };
+};
+
 export const mapProductFields = (p: any): any => {
   if (!p) return p;
 
-  const imgs = safeParseArray(p.images).map((img: any) => {
-    if (!img) return null;
-    if (typeof img === 'string') {
-      return { url: img, isPrimary: false, isSecondary: false, sortOrder: 0 };
-    }
-    return {
-      url: img.url || img.imageUrl || '',
-      isPrimary: !!img.isPrimary,
-      isSecondary: !!img.isSecondary,
-      sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
-    };
-  }).filter((img: any) => img && img.url.trim().length > 0);
+  const { mediaList, mappedVariants } = normalizeProductMediaList(p.images, p.variants);
 
-  // Calculate product primary and secondary images
-  let primaryImage = '';
-  let secondaryImage = '';
-
-  const primaryObj = imgs.find((img: any) => img.isPrimary) || imgs[0];
-  primaryImage = primaryObj?.url || '';
-
-  // Secondary Image: isSecondary flag, or first image that is not the primary image, fallback to primary image
-  const secondaryObj = imgs.find((img: any) => img.isSecondary) || imgs.find((img: any) => img.url !== primaryImage) || imgs[0];
-  secondaryImage = secondaryObj?.url || primaryImage;
-
-  const galleryImages = imgs.map((img: any) => img.url).filter(Boolean);
-
-  // Map variants if they exist
-  let mappedVariants = p.variants;
-  let variantImages: string[] = [];
-  let variantSecondaryImages: string[] = [];
-
-  if (p.variants && Array.isArray(p.variants)) {
-    mappedVariants = p.variants.map((v: any) => {
-      const vImgs = safeParseArray(v.variantImages || v.images || []).map((img: any) => {
-        if (!img) return null;
-        if (typeof img === 'string') {
-          return { url: img, isPrimary: false, isSecondary: false, sortOrder: 0 };
-        }
-        return {
-          url: img.url || img.imageUrl || '',
-          isPrimary: !!img.isPrimary,
-          isSecondary: !!img.isSecondary,
-          sortOrder: typeof img.sortOrder === 'number' ? img.sortOrder : 0
-        };
-      }).filter((img: any) => img && img.url.trim().length > 0);
-
-      let vPrimary = '';
-      let vSecondary = '';
-
-      const vPrimaryObj = vImgs.find((img: any) => img.isPrimary) || vImgs[0];
-      // Priority for variant: Selected Variant Primary Image -> Selected Variant Secondary Image -> Product Primary
-      vPrimary = vPrimaryObj?.url || primaryImage;
-
-      const vSecondaryObj = vImgs.find((img: any) => img.isSecondary) || vImgs.find((img: any) => img.url !== vPrimary) || vImgs[0];
-      // Priority: Variant Secondary -> Variant Primary -> Product Secondary -> Product Primary
-      vSecondary = vSecondaryObj?.url || vPrimary || secondaryImage;
-
-      if (vPrimary) variantImages.push(vPrimary);
-      if (vSecondary) variantSecondaryImages.push(vSecondary);
-
-      return {
-        ...v,
-        images: vImgs,
-        variantImages: vImgs,
-        primaryImage: vPrimary,
-        secondaryImage: vSecondary,
-        galleryImages: vImgs.map((img: any) => img.url).filter(Boolean)
-      };
-    });
-  }
-
-  // Remove duplicates
-  variantImages = Array.from(new Set(variantImages));
-  variantSecondaryImages = Array.from(new Set(variantSecondaryImages));
+  const primaryObj = mediaList.find((img: any) => img.isPrimary) || mediaList[0];
+  const primaryImage = primaryObj?.url || '';
+  const secondaryObj = mediaList.find((img: any) => img.isSecondary) || mediaList.find((img: any) => img.url !== primaryImage) || mediaList[0];
+  const secondaryImage = secondaryObj?.url || primaryImage;
+  const galleryImages = mediaList.map((img: any) => img.url).filter(Boolean);
 
   const rawReviews = Array.isArray(p.reviews) ? p.reviews : (Array.isArray(p.customerReviews) ? p.customerReviews : []);
   
@@ -694,6 +784,8 @@ export const mapProductFields = (p: any): any => {
   const primaryCategoryId = primaryCategory?.id || p.categoryId || null;
   const categoryIds = categoriesList.map((c: any) => c.id);
 
+  const variantSecondaryImages = mediaList.filter((m: any) => m.usedCount > 0 && !m.isPrimary).map((m: any) => m.url);
+
   return {
     ...p,
     categoryId: primaryCategoryId,
@@ -703,13 +795,14 @@ export const mapProductFields = (p: any): any => {
     weightInGrams,
     weightUnit,
     reviews: approvedReviews,
-    images: imgs,
+    images: mediaList,
+    mediaLibrary: mediaList,
     primaryImage,
     secondaryImage,
     galleryImages,
     variants: mappedVariants,
     hasVariants: Array.isArray(mappedVariants) && mappedVariants.length > 0,
-    variantImages,
+    variantImages: mediaList.filter(m => m.usedCount > 0).map(m => m.url),
     variantSecondaryImages,
     thumbnail: primaryImage,
     averageRating: avgRating,

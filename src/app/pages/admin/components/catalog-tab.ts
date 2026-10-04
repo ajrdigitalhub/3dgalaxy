@@ -527,132 +527,370 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                   class="space-y-4 animate-fadeIn"
                 >
                   <!-- Image List Block -->
-                  <div
-                    class="space-y-3 bg-zinc-50 dark:bg-zinc-950 p-6 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800"
-                  >
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <mat-icon class="text-blue-500 scale-90"
-                          >collections</mat-icon
-                        >
-                        <h4
-                          class="text-xs font-black uppercase tracking-widest text-zinc-900 dark:text-white"
-                        >
-                          Product Gallery
-                        </h4>
+                  <!-- Centralized Product Media Library & Variant Mapping Workspace -->
+                  <div class="space-y-6">
+                    <!-- SECTION 1: CENTRAL PRODUCT MEDIA LIBRARY -->
+                    <div class="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+                      <!-- Header Bar -->
+                      <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                            <mat-icon class="scale-90">photo_library</mat-icon>
+                          </div>
+                          <div>
+                            <h4 class="text-sm font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
+                              Product Media Library
+                              <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-full border border-blue-500/20">
+                                {{ admin.pImages().length }} Media Assets
+                              </span>
+                            </h4>
+                            <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium m-0">Upload product images once and reuse them across variants. Drag images to assign.</p>
+                          </div>
+                        </div>
+
+                        <!-- Action Controls -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <label class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase rounded-xl cursor-pointer flex items-center gap-1.5 shadow-sm transition-all">
+                            <mat-icon class="scale-75">add_photo_alternate</mat-icon>
+                            <span>+ Upload Product Media</span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/jpeg, image/png, image/webp"
+                              class="hidden"
+                              (change)="handleImageUpload($event)"
+                            />
+                          </label>
+                        </div>
                       </div>
-                      <span class="text-[10px] font-bold text-zinc-500"
-                        >Supports JPG, PNG, WEBP. Max 2MB per file.</span
-                      >
-                    </div>
 
-                    <div
-                      class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"
-                    >
-                      <!-- Images Loop -->
-                      @for (
-                        img of admin.pImages();
-                        track img.url;
-                        let i = $index
-                      ) {
-                        <div
-                          class="relative group aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
-                        >
-                          <img
-                            [src]="img.url"
-                            class="w-full h-full object-contain"
+                      <!-- Search & Filter Controls Bar -->
+                      <div class="flex items-center justify-between gap-3 flex-wrap bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs">
+                        <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+                          <mat-icon class="text-zinc-400 scale-75">search</mat-icon>
+                          <input
+                            type="text"
+                            [ngModel]="mediaSearchQuery()"
+                            (ngModelChange)="mediaSearchQuery.set($event)"
+                            placeholder="Search media by name or alt text..."
+                            class="w-full bg-transparent border-none outline-none text-xs text-zinc-800 dark:text-zinc-200"
                           />
+                        </div>
 
-                          <!-- Hover Actions -->
-                          <div
-                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2"
-                          >
-                            <div
-                              class="flex items-center justify-between w-full"
-                            >
-                              <button
-                                (click)="admin.setPrimaryImage(i)"
-                                title="Make Primary"
-                                [class]="
-                                  img.isPrimary
-                                    ? 'text-amber-400'
-                                    : 'text-white hover:text-amber-400'
-                                "
-                              >
-                                <mat-icon class="scale-75">star</mat-icon>
-                              </button>
-                              <button
-                                (click)="admin.removeImage(i)"
-                                title="Remove"
-                                class="text-white hover:text-red-500"
-                              >
-                                <mat-icon class="scale-75">delete</mat-icon>
-                              </button>
-                            </div>
-                            <div class="flex items-center justify-center gap-2">
-                              <button
-                                *ngIf="i > 0"
-                                (click)="admin.moveImage(i, -1)"
-                                class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40"
-                              >
-                                <mat-icon class="scale-75 -ml-[3px] -mt-[3px]"
-                                  >chevron_left</mat-icon
-                                >
-                              </button>
-                              <button
-                                *ngIf="i < admin.pImages().length - 1"
-                                (click)="admin.moveImage(i, 1)"
-                                class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40"
-                              >
-                                <mat-icon class="scale-75 -ml-[3px] -mt-[3px]"
-                                  >chevron_right</mat-icon
-                                >
-                              </button>
-                            </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <!-- Filter dropdown -->
+                          <select
+                            [ngModel]="mediaFilterType()"
+                            (ngModelChange)="mediaFilterType.set($event)"
+                            class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer">
+                            <option value="all">All Media ({{ admin.pImages().length }})</option>
+                            <option value="primary">Primary Image</option>
+                            <option value="assigned">Variant Assigned</option>
+                            <option value="unassigned">Unassigned</option>
+                          </select>
+
+                          <!-- Sort dropdown -->
+                          <select
+                            [ngModel]="mediaSortBy()"
+                            (ngModelChange)="mediaSortBy.set($event)"
+                            class="px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer">
+                            <option value="order">Sort by Gallery Order</option>
+                            <option value="name">Sort by File Name</option>
+                            <option value="newest">Newest Uploads</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Bulk Assignment Bar (shows when items selected) -->
+                      @if (selectedMediaIds().size > 0) {
+                        <div class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 animate-fadeIn flex-wrap gap-2">
+                          <div class="flex items-center gap-2 text-xs font-bold text-blue-700 dark:text-blue-300">
+                            <mat-icon class="scale-75">check_box</mat-icon>
+                            <span>{{ selectedMediaIds().size }} image(s) selected</span>
                           </div>
 
-                          <!-- Primary Badge -->
-                          @if (img.isPrimary) {
+                          <div class="flex items-center gap-2">
+                            <label class="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">Assign to Variant:</label>
+                            <select
+                              [ngModel]="targetVariantForBulk()"
+                              (ngModelChange)="targetVariantForBulk.set($event)"
+                              class="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-blue-300 dark:border-blue-700 rounded-lg text-xs font-bold outline-none cursor-pointer">
+                              <option [ngValue]="null">Select Variant...</option>
+                              @for (v of admin.pVariants(); track $index; let vIdx = $index) {
+                                <option [ngValue]="vIdx">{{ v.name || ('Variant ' + (vIdx + 1)) }}</option>
+                              }
+                            </select>
+
+                            <button
+                              type="button"
+                              [disabled]="targetVariantForBulk() === null"
+                              (click)="bulkAssignSelectedToVariant()"
+                              class="px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-black uppercase cursor-pointer border-none shadow-xs">
+                              Assign Selected
+                            </button>
+
+                            <button
+                              type="button"
+                              (click)="clearSelectedMedia()"
+                              class="px-2 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-bold rounded-lg border-none cursor-pointer">
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+                      }
+
+                      <!-- Media Library Grid -->
+                      @if (filteredProductMedia().length === 0) {
+                        <div class="p-10 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 font-bold text-xs space-y-2">
+                          <mat-icon class="scale-125 text-zinc-400">collections</mat-icon>
+                          <div>No product media found matching your filter criteria.</div>
+                          <label class="inline-block px-4 py-2 bg-blue-600 text-white text-xs font-black uppercase rounded-xl cursor-pointer shadow-xs mt-2">
+                            + Upload Product Images
+                            <input type="file" multiple accept="image/*" class="hidden" (change)="handleImageUpload($event)" />
+                          </label>
+                        </div>
+                      } @else {
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          @for (img of filteredProductMedia(); track img.id || img.url; let i = $index) {
+                            @let usage = admin.getMediaUsageInfo(img);
+                            @let isSelected = selectedMediaIds().has(img.id || img.url);
+
                             <div
-                              class="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-bl-lg shadow-sm"
-                            >
-                              Primary
+                              draggable="true"
+                              (dragstart)="onMediaDragStart($event, img)"
+                              [class.ring-2]="isSelected"
+                              [class.ring-blue-500]="isSelected"
+                              class="relative group rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs hover:shadow-md transition-all flex flex-col cursor-grab active:cursor-grabbing">
+                              
+                              <!-- Selection Checkbox -->
+                              <div class="absolute top-2 left-2 z-20">
+                                <input
+                                  type="checkbox"
+                                  [checked]="isSelected"
+                                  (change)="toggleSelectMedia(img.id || img.url)"
+                                  class="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer shadow-xs"
+                                />
+                              </div>
+
+                              <!-- Image Aspect Container -->
+                              <div class="aspect-square w-full relative bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center overflow-hidden">
+                                <img [src]="img.url" class="w-full h-full object-contain pointer-events-none" />
+
+                                <!-- Hover Quick Overlay Actions -->
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                                  <div class="flex items-center justify-between w-full">
+                                    <button
+                                      type="button"
+                                      (click)="admin.setPrimaryImage(i)"
+                                      [title]="img.isPrimary ? 'Product Primary Image' : 'Make Product Primary'"
+                                      [class]="img.isPrimary ? 'text-amber-400' : 'text-white hover:text-amber-400'"
+                                      class="p-1 rounded bg-black/30 hover:bg-black/50 border-none cursor-pointer">
+                                      <mat-icon class="scale-75">star</mat-icon>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      (click)="promptEditAltText(i)"
+                                      title="Edit Alt Text"
+                                      class="p-1 text-white hover:text-blue-400 rounded bg-black/30 hover:bg-black/50 border-none cursor-pointer">
+                                      <mat-icon class="scale-75">short_text</mat-icon>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      (click)="admin.deleteProductMedia(i)"
+                                      title="Delete Media"
+                                      class="p-1 text-white hover:text-red-500 rounded bg-black/30 hover:bg-black/50 border-none cursor-pointer">
+                                      <mat-icon class="scale-75">delete</mat-icon>
+                                    </button>
+                                  </div>
+
+                                  <div class="flex items-center justify-center gap-1.5">
+                                    <button
+                                      *ngIf="i > 0"
+                                      type="button"
+                                      (click)="admin.moveImage(i, -1)"
+                                      title="Move Left"
+                                      class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40 border-none cursor-pointer">
+                                      <mat-icon class="scale-75">chevron_left</mat-icon>
+                                    </button>
+                                    <button
+                                      *ngIf="i < admin.pImages().length - 1"
+                                      type="button"
+                                      (click)="admin.moveImage(i, 1)"
+                                      title="Move Right"
+                                      class="w-6 h-6 rounded bg-white/20 text-white flex items-center justify-center hover:bg-white/40 border-none cursor-pointer">
+                                      <mat-icon class="scale-75">chevron_right</mat-icon>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <!-- Badges -->
+                                @if (img.isPrimary) {
+                                  <div class="absolute top-2 right-2 bg-amber-500 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow-xs z-10">
+                                    PRIMARY
+                                  </div>
+                                }
+                              </div>
+
+                              <!-- Card Footer Info & Variant Usage Badge -->
+                              <div class="p-2.5 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 space-y-1">
+                                <div class="text-[10px] font-mono text-zinc-600 dark:text-zinc-300 truncate" [title]="img.fileName || img.url">
+                                  {{ img.fileName || 'product-image.jpg' }}
+                                </div>
+
+                                <div class="flex items-center justify-between gap-1 flex-wrap">
+                                  <!-- Usage indicator badge -->
+                                  <span
+                                    [title]="usage.usedByVariants.length > 0 ? 'Used by: ' + usage.usedByVariants.join(', ') : 'Not assigned to any variant'"
+                                    [class]="usage.usedCount > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'"
+                                    class="px-1.5 py-0.5 rounded text-[8px] font-black border uppercase block truncate max-w-[120px]">
+                                    {{ usage.usedCount > 0 ? ('Used by ' + usage.usedCount + ' variant' + (usage.usedCount > 1 ? 's' : '')) : 'Unassigned' }}
+                                  </span>
+
+                                  <!-- Quick Assign button -->
+                                  @if (admin.pVariants().length > 0) {
+                                    <div class="relative group/opt">
+                                      <button
+                                        type="button"
+                                        class="px-1.5 py-0.5 text-[8px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded border border-blue-500/20 cursor-pointer">
+                                        Assign +
+                                      </button>
+                                      <div class="absolute right-0 bottom-full mb-1 hidden group-hover/opt:block w-44 p-1.5 bg-zinc-900 text-white rounded-lg shadow-xl z-50 border border-zinc-700 max-h-40 overflow-y-auto">
+                                        <div class="text-[8px] font-black uppercase text-zinc-400 mb-1 px-1">Assign to Variant:</div>
+                                        @for (v of admin.pVariants(); track $index; let vIdx = $index) {
+                                          <button
+                                            type="button"
+                                            (click)="admin.assignMediaToVariant(img.id || img.url, vIdx); toastService.success('Assigned to ' + (v.name || 'Variant'))"
+                                            class="w-full text-left px-2 py-1 text-[9px] font-bold text-zinc-200 hover:bg-blue-600 rounded cursor-pointer border-none truncate">
+                                            + {{ v.name || ('Variant ' + (vIdx + 1)) }}
+                                          </button>
+                                        }
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
                             </div>
                           }
                         </div>
                       }
 
-                      <!-- Drag & Drop / File Input Box -->
-                      <label
-                        class="aspect-square rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors group"
-                      >
-                        <mat-icon
-                          class="text-zinc-400 group-hover:text-blue-500 mb-2"
-                          >add_photo_alternate</mat-icon
-                        >
-                        <span
-                          class="text-[10px] font-bold text-zinc-500 text-center px-2 leading-tight"
-                          >Drag &amp; Drop<br />or Click</span
-                        >
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/jpeg, image/png, image/webp"
-                          class="hidden"
-                          (change)="handleImageUpload($event)"
-                        />
-                      </label>
+                      @if (uploadProgress > 0 && uploadProgress < 100) {
+                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 mt-4 overflow-hidden">
+                          <div class="bg-blue-500 h-full rounded-full transition-all duration-300" [style.width.%]="uploadProgress"></div>
+                        </div>
+                      }
                     </div>
-                    @if (uploadProgress > 0 && uploadProgress < 100) {
-                      <div
-                        class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1 mt-4 overflow-hidden"
-                      >
-                        <div
-                          class="bg-blue-500 h-full rounded-full transition-all duration-300"
-                          [style.width]="uploadProgress + '%'"
-                        ></div>
+
+                    <!-- SECTION 2: DRAG & DROP VARIANT IMAGE ASSIGNMENT WORKSPACE -->
+                    <div class="p-6 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+                      <div class="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-sm">
+                            <mat-icon class="scale-85">style</mat-icon>
+                          </div>
+                          <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">
+                              Variant Image Assignment Workspace
+                            </h4>
+                            <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium m-0">
+                              Drag images from Product Media Library above onto any variant drop zone below, or use tap-to-assign on mobile.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    }
+
+                      @if (admin.pVariants().length === 0) {
+                        <div class="p-8 text-center text-zinc-400 font-bold text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                          No variants generated yet. Configure option keys & generate matrix first.
+                        </div>
+                      } @else {
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          @for (v of admin.pVariants(); track v.id || $index; let vIdx = $index) {
+                            @let vAssigned = v.variantImages || v.images || [];
+
+                            <div
+                              (dragover)="$event.preventDefault()"
+                              (drop)="onMediaDropOnVariant($event, vIdx)"
+                              class="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2 hover:border-blue-400 transition-colors flex flex-col justify-between">
+                              
+                              <!-- Variant Header Info -->
+                              <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                  <span class="w-5 h-5 rounded-md bg-blue-600/10 text-blue-600 text-[9px] font-black flex items-center justify-center shrink-0">
+                                    #{{ vIdx + 1 }}
+                                  </span>
+                                  <div class="min-w-0">
+                                    <h5 class="text-xs font-black text-zinc-900 dark:text-white truncate" [title]="v.name">{{ v.name || ('Variant ' + (vIdx + 1)) }}</h5>
+                                    <span class="text-[9px] font-mono text-zinc-400 block truncate">
+                                      {{ v.sku || 'No SKU' }} &middot; ₹{{ v.salePrice || v.price }} &middot; Stock: {{ v.stock }}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                  <span class="text-[8px] font-black text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                                    {{ vAssigned.length }} img
+                                  </span>
+                                  <button
+                                    type="button"
+                                    (click)="openVariantImageModal(vIdx)"
+                                    class="p-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] font-black uppercase cursor-pointer border border-blue-500/20 flex items-center gap-0.5">
+                                    <mat-icon class="scale-75">settings</mat-icon>
+                                  </button>
+                                </div>
+                              </div>
+
+                              <!-- Assigned Images Drop Target Container -->
+                              <div class="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-lg border-2 border-dashed border-zinc-200 dark:border-zinc-800 min-h-[72px] flex items-center gap-2 overflow-x-auto">
+                                @if (vAssigned.length === 0) {
+                                  <div class="w-full text-center py-1 text-zinc-400 text-[10px] font-bold flex items-center justify-center gap-1">
+                                    <mat-icon class="scale-75">drag_indicator</mat-icon>
+                                    <span>Drop media here</span>
+                                  </div>
+                                } @else {
+                                  @for (vImg of vAssigned; track $index; let imgIdx = $index) {
+                                    @let vImgUrl = typeof vImg === 'string' ? vImg : (vImg.url || vImg.imageUrl);
+                                    @let isVarPrimary = typeof vImg === 'object' ? !!vImg.isPrimary : (imgIdx === 0);
+                                    @let imgId = typeof vImg === 'object' ? (vImg.mediaId || vImg.id || vImgUrl) : vImgUrl;
+
+                                    <div class="relative group shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xs">
+                                      <img [src]="vImgUrl" class="w-full h-full object-contain" />
+
+                                      <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-0.5">
+                                        <button
+                                          type="button"
+                                          (click)="admin.setVariantPrimaryImage(vIdx, imgId)"
+                                          [title]="isVarPrimary ? 'Variant Primary Image' : 'Set as Variant Primary'"
+                                          [class]="isVarPrimary ? 'text-amber-400' : 'text-white hover:text-amber-400'"
+                                          class="p-0.5 rounded bg-black/40 border-none cursor-pointer">
+                                          <mat-icon class="scale-75">star</mat-icon>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          (click)="admin.removeMediaFromVariant(vIdx, imgId); toastService.info('Removed mapping from variant')"
+                                          title="Remove from Variant"
+                                          class="p-0.5 text-white hover:text-red-400 rounded bg-black/40 border-none cursor-pointer">
+                                          <mat-icon class="scale-75">close</mat-icon>
+                                        </button>
+                                      </div>
+
+                                      @if (isVarPrimary) {
+                                        <span class="absolute top-0.5 left-0.5 px-1 py-0.2 bg-blue-600 text-white text-[6px] font-black uppercase rounded shadow-xs">
+                                          Primary
+                                        </span>
+                                      }
+                                    </div>
+                                  }
+                                }
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
                   </div>
                 </div>
 
@@ -4038,7 +4276,116 @@ export class AdminCatalogTab {
   tourService = inject(VariantTourService);
   @Input({ required: true }) admin!: AdminPanel;
 
-  // --- INLINE QUICK EDIT SIGNALS ---
+  // --- CENTRALIZED PRODUCT MEDIA LIBRARY SIGNALS ---
+  mediaSearchQuery = signal<string>('');
+  mediaFilterType = signal<'all' | 'primary' | 'assigned' | 'unassigned'>('all');
+  mediaSortBy = signal<'order' | 'name' | 'newest'>('order');
+  selectedMediaIds = signal<Set<string>>(new Set());
+  targetVariantForBulk = signal<number | null>(null);
+
+  filteredProductMedia = computed(() => {
+    let list = this.admin.pImages() || [];
+    const q = this.mediaSearchQuery().toLowerCase().trim();
+    const filter = this.mediaFilterType();
+    const sort = this.mediaSortBy();
+
+    if (q) {
+      list = list.filter((m: any) =>
+        (m.fileName || '').toLowerCase().includes(q) ||
+        (m.altText || '').toLowerCase().includes(q) ||
+        (m.url || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (filter === 'primary') {
+      list = list.filter((m: any) => m.isPrimary);
+    } else if (filter === 'assigned') {
+      list = list.filter((m: any) => {
+        const usage = this.admin.getMediaUsageInfo(m);
+        return usage.usedCount > 0;
+      });
+    } else if (filter === 'unassigned') {
+      list = list.filter((m: any) => {
+        const usage = this.admin.getMediaUsageInfo(m);
+        return usage.usedCount === 0;
+      });
+    }
+
+    if (sort === 'name') {
+      list = [...list].sort((a: any, b: any) => (a.fileName || a.url).localeCompare(b.fileName || b.url));
+    } else if (sort === 'newest') {
+      list = [...list].slice().reverse();
+    }
+
+    return list;
+  });
+
+  onMediaDragStart(event: DragEvent, mediaItem: any) {
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('text/plain', JSON.stringify({ mediaId: mediaItem.id || mediaItem.url, url: mediaItem.url }));
+      event.dataTransfer.effectAllowed = 'copy';
+    }
+  }
+
+  onMediaDropOnVariant(event: DragEvent, variantIdx: number) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      const dataStr = event.dataTransfer.getData('text/plain');
+      if (dataStr) {
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.mediaId || parsed.url) {
+            this.admin.assignMediaToVariant(parsed.mediaId || parsed.url, variantIdx);
+            const vName = this.admin.pVariants()[variantIdx]?.name || 'Variant';
+            this.toastService.success(`Assigned image to ${vName}`);
+          }
+        } catch (e) {
+          console.error('Failed to parse drag drop media data', e);
+        }
+      }
+    }
+  }
+
+  toggleSelectMedia(mediaId: string) {
+    const current = new Set(this.selectedMediaIds());
+    if (current.has(mediaId)) current.delete(mediaId);
+    else current.add(mediaId);
+    this.selectedMediaIds.set(current);
+  }
+
+  selectAllMedia() {
+    const allIds = this.filteredProductMedia().map((m: any) => m.id || m.url);
+    if (this.selectedMediaIds().size === allIds.length) {
+      this.selectedMediaIds.set(new Set());
+    } else {
+      this.selectedMediaIds.set(new Set(allIds));
+    }
+  }
+
+  bulkAssignSelectedToVariant() {
+    const vIdx = this.targetVariantForBulk();
+    const selected = Array.from(this.selectedMediaIds());
+    if (vIdx === null || selected.length === 0) return;
+
+    selected.forEach(mediaId => {
+      this.admin.assignMediaToVariant(mediaId, vIdx);
+    });
+
+    const vName = this.admin.pVariants()[vIdx]?.name || 'Variant';
+    this.toastService.success(`Assigned ${selected.length} image(s) to ${vName}`);
+    this.selectedMediaIds.set(new Set());
+  }
+
+  promptEditAltText(mediaIdx: number) {
+    const imgs = this.admin.pImages();
+    const target = imgs[mediaIdx];
+    if (!target) return;
+    const newAlt = prompt("Edit Image Alt Text / Caption (for SEO & Accessibility):", target.altText || "");
+    if (newAlt !== null) {
+      this.admin.updateMediaAltText(mediaIdx, newAlt.trim());
+      this.toastService.success("Alt text updated!");
+    }
+  }
   quickEditingProductId = signal<string | null>(null);
   quickEditForm = signal<{ salePrice: number | string; dealerPrice: number | string; stock: number | string; isActive: boolean }>({
     salePrice: 0,
@@ -5303,11 +5650,18 @@ export class AdminCatalogTab {
           this.http.post<any>("/api/admin/upload-image", formData),
         );
         if (res && res.success && res.url) {
-          images.push({
+          const mediaObj = {
+            id: `media-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             url: res.url,
+            fileName: file.name,
+            altText: '',
+            sortOrder: images.length,
             isPrimary: images.length === 0,
-          });
-          this.toastService.success("Image Uploaded Successfully");
+            usedCount: 0,
+            usedByVariants: []
+          };
+          images.push(mediaObj);
+          this.toastService.success("Image Uploaded to Product Media Library");
         } else {
           this.toastService.error("Upload Failed");
         }
@@ -5487,5 +5841,9 @@ export class AdminCatalogTab {
         this.admin.generateVariants();
       }, 50);
     }
+  }
+
+  clearSelectedMedia() {
+    this.selectedMediaIds.set(new Set());
   }
 }
