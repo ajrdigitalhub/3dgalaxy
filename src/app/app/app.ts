@@ -426,6 +426,35 @@ export class App {
     return classes;
   });
 
+  // Pre-computed developer credit info for footer branding
+  developerCredit = computed(() => {
+    const cp = this.ds.footerData()?.copyright;
+    const rawText = (cp?.developedByText || '').trim();
+    const url = (cp?.brandUrl || '').trim() || 'https://ajrdigitalhub.in/';
+
+    if (rawText) {
+      const match = rawText.match(/^(developed\s+by\s*:?\s*)(.*)$/i);
+      if (match) {
+        return {
+          prefix: match[1].trim() || 'Developed by',
+          brand: match[2].trim() || 'AJR DIGITAL HUB',
+          url
+        };
+      }
+      return {
+        prefix: 'Developed by',
+        brand: rawText,
+        url
+      };
+    }
+
+    return {
+      prefix: 'Developed by',
+      brand: (cp?.brandName || '').trim() || 'AJR DIGITAL HUB',
+      url
+    };
+  });
+
   // Pre-computed mobile footer links (only recomputes when footer data changes)
   mobileFooterLinks = computed(() => {
     const links = this.ds.footerData()?.mobile?.mobileFooterLinks;

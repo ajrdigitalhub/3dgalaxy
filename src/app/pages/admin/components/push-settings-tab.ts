@@ -28,9 +28,9 @@ import { NotificationService } from '../../../services/notification.service';
           <button (click)="activeSubTab.set('analytics')" [class]="activeSubTab() === 'analytics' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Dashboard</button>
           <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">FCM Credentials</button>
           <button (click)="activeSubTab.set('popup-designer')" [class]="activeSubTab() === 'popup-designer' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Popup Designer</button>
-          <button (click)="activeSubTab.set('manual-send')" [class]="activeSubTab() === 'manual-send' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Campaign Builder</button>
+          <!-- <button (click)="activeSubTab.set('manual-send')" [class]="activeSubTab() === 'manual-send' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Campaign Builder</button> 
           <button (click)="activeSubTab.set('rules')" [class]="activeSubTab() === 'rules' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Auto Rules</button>
-          <button (click)="activeSubTab.set('templates')" [class]="activeSubTab() === 'templates' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Templates</button>
+          <button (click)="activeSubTab.set('templates')" [class]="activeSubTab() === 'templates' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Templates</button> -->
         </div>
       </div>
 
@@ -1238,7 +1238,7 @@ export class PushSettingsTabComponent {
   nestedMarketingTab = signal<'dashboard' | 'builder' | 'flows' | 'history'>('dashboard');
   wizardStep = signal<number>(1);
   selectedChannel = signal<'push' | 'whatsapp' | 'both'>('push');
-  
+
   whatsappTemplates = signal<any[]>([
     {
       name: 'order_status_update',
@@ -1405,7 +1405,7 @@ export class PushSettingsTabComponent {
     if (this.audienceSegmentFilters.platforms.ios) platformMultiplier += 0.25;
     if (this.audienceSegmentFilters.platforms.web) platformMultiplier += 0.15;
     if (this.audienceSegmentFilters.platforms.pwa) platformMultiplier += 0.1;
-    
+
     return Math.round(base * (platformMultiplier || 1));
   }
 
@@ -1443,7 +1443,7 @@ export class PushSettingsTabComponent {
   exportCampaign(camp: any) {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(camp, null, 2));
     const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href",     dataStr);
+    downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `${camp.name.replace(/\s+/g, '_')}_campaign.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
@@ -1598,7 +1598,7 @@ export class PushSettingsTabComponent {
           this.pastCampaigns.set(past);
         }
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -1830,13 +1830,13 @@ export class PushSettingsTabComponent {
     };
 
     const endpoint = this.campaignForm.scheduleMode === 'now' ? '/admin/push/campaign' : '/admin/push/schedule';
-    
+
     // First save campaign
     this.api.post<any>('/admin/push/campaign', payload).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           const campaignId = res.data.id;
-          
+
           if (payload.scheduleMode === 'now') {
             // Trigger send immediately
             this.api.post<any>('/admin/push/send', { campaignId }).subscribe({

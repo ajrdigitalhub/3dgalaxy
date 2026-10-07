@@ -91,7 +91,7 @@ export class FooterSettingsComponent implements OnInit {
       websiteUrl: [''],
       enableBranding: [true],
       brandName: [''],
-      brandUrl: [''],
+      brandUrl: ['https://ajrdigitalhub.in/'],
       glowEffect: [true],
       animationType: ['Glow']
     });
@@ -136,7 +136,7 @@ export class FooterSettingsComponent implements OnInit {
             websiteUrl: data.copyright?.websiteUrl || '',
             enableBranding: data.copyright?.enableBranding ?? true,
             brandName: data.copyright?.brandName || '',
-            brandUrl: data.copyright?.brandUrl || '',
+            brandUrl: data.copyright?.brandUrl || 'https://ajrdigitalhub.in/',
             glowEffect: data.copyright?.glowEffect ?? true,
             animationType: data.copyright?.animationType || 'Glow'
           });
