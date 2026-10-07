@@ -35,7 +35,7 @@ class BackupSchedulerService {
     const hour = isNaN(parseInt(timeParts[0] || '2', 10)) ? 2 : parseInt(timeParts[0] || '2', 10);
     const minute = isNaN(parseInt(timeParts[1] || '0', 10)) ? 0 : parseInt(timeParts[1] || '0', 10);
 
-    const scheduleType = (ENV.BACKUP_SCHEDULE || 'weekly').toLowerCase().trim();
+    const scheduleType = (ENV.BACKUP_SCHEDULE || 'twice-weekly').toLowerCase().trim();
 
     if (scheduleType === 'hourly') {
       const cronExpr = `${minute} * * * *`;
@@ -66,12 +66,15 @@ class BackupSchedulerService {
         description: `Monthly on the 1st at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
       };
     } else {
-      // Default: weekly
-      const day = this.dayNameToCron(ENV.BACKUP_DAY || 'Sunday');
-      const cronExpr = `${minute} ${hour} * * ${day}`;
+      // Default: twice-weekly
+      const days = (ENV.BACKUP_DAYS || 'Wednesday,Sunday')
+        .split(',')
+        .map((d) => this.dayNameToCron(d))
+        .join(',');
+      const cronExpr = `${minute} ${hour} * * ${days}`;
       return {
         cronExpr,
-        description: `Weekly on ${ENV.BACKUP_DAY} at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
+        description: `Twice-weekly on ${ENV.BACKUP_DAYS} at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
       };
     }
   }
@@ -92,13 +95,14 @@ class BackupSchedulerService {
     const { cronExpr, description } = this.getCronExpression();
 
     if (!cron.validate(cronExpr)) {
-      console.error(`[BACKUP SCHEDULER] Invalid cron expression calculated: "${cronExpr}". Falling back to daily 02:00.`);
+      console.error(`[BACKUP SCHEDULER] Invalid cron expression calculated: "${cronExpr}". Falling back to twice-weekly 02:00.`);
     }
 
-    const safeCronExpr = cron.validate(cronExpr) ? cronExpr : '0 2 * * *';
+    const safeCronExpr = cron.validate(cronExpr) ? cronExpr : '0 2 * * 3,0';
     console.log(`[BACKUP SCHEDULER] Initializing backup schedule: "${safeCronExpr}" -> ${description}`);
 
     try {
+      // Active: Automated Twice-Weekly Database Backup
       this.scheduledTask = cron.schedule(
         safeCronExpr,
         async () => {
@@ -110,18 +114,18 @@ class BackupSchedulerService {
         }
       );
 
-      // Initialize daily overdue reminder check (runs daily at 10:00 AM)
-      this.reminderTask = cron.schedule(
-        '0 10 * * *',
-        async () => {
-          await this.checkBackupOverdueAndNotify();
-        },
-        {
-          timezone: ENV.BACKUP_TIMEZONE
-        }
-      );
+      // CRON ACTIVITY DISABLED: Daily Overdue Reminder Check (runs daily at 10:00 AM)
+      // this.reminderTask = cron.schedule(
+      //   '0 10 * * *',
+      //   async () => {
+      //     await this.checkBackupOverdueAndNotify();
+      //   },
+      //   {
+      //     timezone: ENV.BACKUP_TIMEZONE
+      //   }
+      // );
 
-      console.log('[BACKUP SCHEDULER] Scheduled backup and health monitors active.');
+      console.log(`[BACKUP SCHEDULER] Automated twice-weekly backup active (${safeCronExpr}: ${description}).`);
     } catch (err) {
       console.error('[BACKUP SCHEDULER] Failed to initialize cron task:', err);
     }

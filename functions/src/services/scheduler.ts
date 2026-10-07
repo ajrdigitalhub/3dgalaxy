@@ -806,17 +806,19 @@ export const startScheduler = () => {
     await processNotificationQueue();
   }, 20000);
 
-  dailyOfferCronTask = cron.schedule('0 17 * * *', async () => {
-    await runDailyOfferJob();
-  }, {
-    timezone: "Asia/Kolkata"
-  });
+  // CRON ACTIVITY DISABLED: Daily Offer Auto Notification (5:00 PM IST)
+  // dailyOfferCronTask = cron.schedule('0 17 * * *', async () => {
+  //   await runDailyOfferJob();
+  // }, {
+  //   timezone: "Asia/Kolkata"
+  // });
 
-  cron.schedule('0 2 * * *', async () => {
-    await runDailyAdminDeviceCleanup();
-  }, {
-    timezone: "Asia/Kolkata"
-  });
+  // CRON ACTIVITY DISABLED: Daily Admin Device Cleanup (2:00 AM IST)
+  // cron.schedule('0 2 * * *', async () => {
+  //   await runDailyAdminDeviceCleanup();
+  // }, {
+  //   timezone: "Asia/Kolkata"
+  // });
 };
 
 /**

@@ -39,7 +39,7 @@ export const ENV = {
   CLIENT_URL: (process.env.CLIENT_URL || 'http://localhost:4200').replace(/\/+$/, ''),
   BACKUP_MODULE_ENABLED: process.env.BACKUP_MODULE_ENABLED !== 'false',
   BACKUP_ENABLED: process.env.BACKUP_ENABLED !== 'false',
-  BACKUP_SCHEDULE: process.env.BACKUP_SCHEDULE || 'weekly',
+  BACKUP_SCHEDULE: process.env.BACKUP_SCHEDULE || 'twice-weekly',
   BACKUP_DAY: process.env.BACKUP_DAY || 'Sunday',
   BACKUP_DAYS: process.env.BACKUP_DAYS || 'Wednesday,Sunday',
   BACKUP_TIME: process.env.BACKUP_TIME || '02:00',
