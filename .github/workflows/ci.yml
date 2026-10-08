@@ -1,0 +1,48 @@
+name: CI Regression & Deployment Validation Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-and-test:
+    name: Regression Testing & Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Functions Dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Master Regression Test Suite (Levels 1-4)
+        run: npm test
+
+      - name: Build Angular Application & Server Bundle
+        run: npm run build
+
+      - name: Build Firebase Functions
+        working-directory: functions
+        run: npm run build
+
+      - name: Deploy to Firebase (Conditional on Main Branch & Secrets)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.FIREBASE_TOKEN != ''
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx firebase-tools deploy --only hosting,functions

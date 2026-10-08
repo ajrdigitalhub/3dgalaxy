@@ -1,5 +1,36 @@
 [
   {
+    "id": "8ebcca41-10d6-4ba9-bad6-cafdf00d9596",
+    "title": "WhatsApp from Tester User",
+    "body": "Hi",
+    "type": "customers",
+    "eventKey": "WHATSAPP_MESSAGE_RECEIVED",
+    "deepLink": "/admin?tab=whatsapp-conversations&conversationId=68381bd1-3704-4794-b2c9-0788d2150e53",
+    "data": {
+      "phone": "+919876543210",
+      "messageId": "7835257d-3769-430f-bc85-a8d050fa4214",
+      "conversationId": "68381bd1-3704-4794-b2c9-0788d2150e53"
+    },
+    "sentAt": "2026-10-07T21:46:15.505Z",
+    "isRead": false
+  },
+  {
+    "id": "12c06ade-dad6-4f34-a491-ac770a7c000b",
+    "title": "WhatsApp: Tester User",
+    "body": "Hi",
+    "type": "customers",
+    "eventKey": "WHATSAPP_MESSAGE_RECEIVED",
+    "deepLink": "/admin/whatsapp-conversations?id=68381bd1-3704-4794-b2c9-0788d2150e53",
+    "data": {
+      "phone": "+919876543210",
+      "sender": "919876543210",
+      "customerName": "Tester User",
+      "conversationId": "68381bd1-3704-4794-b2c9-0788d2150e53"
+    },
+    "sentAt": "2026-10-07T21:46:15.260Z",
+    "isRead": false
+  },
+  {
     "id": "5e2cf5a6-a3a0-4320-8cbb-491e176412ec",
     "title": "🛒 Order Confirmed",
     "body": "admin123 R placed Order #3DX0051 for ₹1150.00. Payment Pending (COD)",
