@@ -1,8 +1,8 @@
 # 3D Galaxy — Automated Regression & CI Validation Report
 
-**Generated:** 2026-10-07T21:56:42.552Z  
+**Generated:** 2026-10-12T18:15:19.284Z  
 **Status:** PASSED (CI APPROVED)  
-**Total Duration:** 10.45s  
+**Total Duration:** 13.08s  
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Test Level | Total Cases | Passed | Failed | Skipped | Pass Rate |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Level 1 — Unit Tests** | 29 | 29 | 0 | 0 | 100% |
+| **Level 1 — Unit Tests** | 79 | 79 | 0 | 0 | 100% |
 | **Level 2 — API Tests** | 28 | 28 | 0 | 0 | 100% |
 | **Level 3 — Integration Tests** | 1 | 1 | 0 | 0 | 100% |
 | **Level 4 — Smoke Tests (Section 41)** | 14 | 14 | 0 | 0 | 100% |
-| **TOTAL OVERALL** | **72** | **72** | **0** | **0** | **100.0%** |
+| **TOTAL OVERALL** | **122** | **122** | **0** | **0** | **100.0%** |
 
 ---
 
@@ -23,61 +23,67 @@
 ### Cart, Pricing, COD & Variants Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 10 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 1ms
 
 
 ### Auth, Interceptors & Deduplication Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 6 | **Failed:** 0
-- **Duration:** 2ms
+- **Duration:** 0ms
 
 
 ### Media Preservation, Reviews & Backups Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 8 | **Failed:** 0
-- **Duration:** 2ms
+- **Duration:** 1ms
 
 
 ### Security Sanitization & Responsive Layout Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 2ms
+- **Duration:** 1ms
+
+
+### Add to Cart Flow for Variant Products (50 Tests) (UNIT)
+- **Status:** ✅ PASSED
+- **Passed:** 50 | **Failed:** 0
+- **Duration:** 11ms
 
 
 ### Public Storefront & Guest Experience API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 11 | **Failed:** 0
-- **Duration:** 7597ms
+- **Duration:** 8547ms
 
 
 ### Checkout, COD Validation & Payment API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 72ms
+- **Duration:** 56ms
 
 
 ### Admin Route Authorization & Security API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 8 | **Failed:** 0
-- **Duration:** 749ms
+- **Duration:** 921ms
 
 
 ### WhatsApp Webhooks & Automation API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 4 | **Failed:** 0
-- **Duration:** 748ms
+- **Duration:** 759ms
 
 
 ### Customer Checkout Lifecycle Pipeline Test (INTEGRATION)
 - **Status:** ✅ PASSED
 - **Passed:** 1 | **Failed:** 0
-- **Duration:** 1029ms
+- **Duration:** 2530ms
 
 
 ### Pre-Deployment Critical Smoke Tests (SMOKE)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 197ms
+- **Duration:** 206ms
 
 
 

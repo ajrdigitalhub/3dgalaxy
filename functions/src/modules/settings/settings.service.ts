@@ -306,55 +306,91 @@ export const getSettingsService = async () => {
 
       if (banners.length > 0) {
         const storedHeroSlides = (settingsObj.heroSlides && Array.isArray(settingsObj.heroSlides)) ? settingsObj.heroSlides : [];
-        const heroBanners = banners.filter(b => b.position === "HERO" || b.position === "slider");
+        const heroBanners = banners.filter(b => b.position === "HERO" || b.position === "slider" || b.position === "hero_main" || b.position === "hero");
         
         if (storedHeroSlides.length > 0) {
           settingsObj.heroSlides = storedHeroSlides.map((slide: any, idx: number) => {
-            const matchingBanner = heroBanners.find(b => b.id === slide.id || b.title === slide.title) || heroBanners[idx];
+            const matchingBanner = heroBanners.find(b => b.id === slide.id || (slide.title && b.title === slide.title)) || heroBanners[idx];
+            const resolvedImg = slide.bgImageUrl || slide.imageUrl || matchingBanner?.imageUrl || "";
+            const resolvedVideo = slide.bgVideoUrl || slide.videoUrl || "";
+            const resolvedTitle = slide.title !== undefined ? slide.title : (matchingBanner?.title || "");
+            const resolvedSubtitle = slide.subtitle || slide.subheading || "";
+            const resolvedActive = slide.active !== undefined ? slide.active : (slide.isActive !== undefined ? slide.isActive : (matchingBanner?.isActive !== undefined ? matchingBanner.isActive : true));
             return {
               ...slide,
-              id: matchingBanner?.id || slide.id || `slide_${idx + 1}`,
-              title: slide.title !== undefined ? slide.title : (matchingBanner?.title || ""),
-              imageUrl: slide.imageUrl || slide.bgImageUrl || matchingBanner?.imageUrl || "",
+              id: slide.id || matchingBanner?.id || `slide_${idx + 1}`,
+              title: resolvedTitle,
+              subtitle: resolvedSubtitle,
+              subheading: resolvedSubtitle,
+              imageUrl: slide.imageUrl || "",
+              bgImageUrl: slide.bgImageUrl || resolvedImg,
+              videoUrl: resolvedVideo,
+              bgVideoUrl: resolvedVideo,
               linkUrl: slide.linkUrl !== undefined ? slide.linkUrl : (matchingBanner?.linkUrl || ""),
               position: "HERO",
-              isActive: matchingBanner?.isActive !== undefined ? matchingBanner.isActive : (slide.active !== undefined ? slide.active : true)
+              active: resolvedActive,
+              isActive: resolvedActive
             };
           });
         } else if (heroBanners.length > 0) {
-          settingsObj.heroSlides = heroBanners.map(b => ({
-            id: b.id,
+          settingsObj.heroSlides = heroBanners.map((b, idx) => ({
+            id: b.id || `slide_${idx + 1}`,
             title: b.title || "",
-            imageUrl: b.imageUrl,
+            subtitle: "",
+            subheading: "",
+            imageUrl: b.imageUrl || "",
+            bgImageUrl: b.imageUrl || "",
+            videoUrl: "",
+            bgVideoUrl: "",
             linkUrl: b.linkUrl || "",
-            position: b.position || "HERO",
-            isActive: b.isActive
+            position: "HERO",
+            badge: "Featured",
+            badgeIcon: "bolt",
+            btnText: "Buy Now",
+            secBtnText: "View Details",
+            price: "",
+            oldPrice: "",
+            discountText: "",
+            productTag: "",
+            bgColor: "#09090b",
+            animationType: "fade",
+            overlayOpacity: 0.4,
+            textAlignment: "left",
+            darkOverlay: true,
+            btnTheme: "primary",
+            slideOrder: idx,
+            slideDuration: 3000,
+            active: b.isActive !== false,
+            isActive: b.isActive !== false,
+            hideOnMobile: false,
+            hideOnDesktop: false
           }));
         }
 
         const storedPromoBanners = (settingsObj.promoBanners && Array.isArray(settingsObj.promoBanners)) ? settingsObj.promoBanners : [];
-        const promoBannersDb = banners.filter(b => b.position === "PROMO" || b.position === "banner");
+        const promoBannersDb = banners.filter(b => b.position === "PROMO" || b.position === "banner" || b.position === "promo_strip" || b.position === "promo");
         if (storedPromoBanners.length > 0) {
           settingsObj.promoBanners = storedPromoBanners.map((banner: any, idx: number) => {
-            const matchingBanner = promoBannersDb.find(b => b.id === banner.id || b.title === banner.title) || promoBannersDb[idx];
+            const matchingBanner = promoBannersDb.find(b => b.id === banner.id || (banner.title && b.title === banner.title)) || promoBannersDb[idx];
+            const resolvedImg = banner.imageUrl || matchingBanner?.imageUrl || "";
             return {
               ...banner,
-              id: matchingBanner?.id || banner.id || `banner_${idx + 1}`,
+              id: banner.id || matchingBanner?.id || `banner_${idx + 1}`,
               title: banner.title !== undefined ? banner.title : (matchingBanner?.title || ""),
-              imageUrl: banner.imageUrl || matchingBanner?.imageUrl || "",
+              imageUrl: resolvedImg,
               linkUrl: banner.linkUrl !== undefined ? banner.linkUrl : (matchingBanner?.linkUrl || ""),
               position: "PROMO",
-              isActive: matchingBanner?.isActive !== undefined ? matchingBanner.isActive : true
+              isActive: matchingBanner?.isActive !== undefined ? matchingBanner.isActive : (banner.isActive !== undefined ? banner.isActive : true)
             };
           });
         } else if (promoBannersDb.length > 0) {
-          settingsObj.promoBanners = promoBannersDb.map(b => ({
-            id: b.id,
+          settingsObj.promoBanners = promoBannersDb.map((b, idx) => ({
+            id: b.id || `banner_${idx + 1}`,
             title: b.title || "",
-            imageUrl: b.imageUrl,
+            imageUrl: b.imageUrl || "",
             linkUrl: b.linkUrl || "",
             position: b.position || "PROMO",
-            isActive: b.isActive
+            isActive: b.isActive !== false
           }));
         }
 
@@ -523,48 +559,78 @@ export const updateSettingsService = async (payload: any) => {
 
     // 2. Sync Banners (heroSlides and promoBanners) if updated
     if (payload.heroSlides !== undefined || payload.promoBanners !== undefined || payload.resetToDefault) {
+      if (newSettings.heroSlides && Array.isArray(newSettings.heroSlides)) {
+        newSettings.heroSlides = newSettings.heroSlides.map((slide: any, idx: number) => {
+          const img = slide.bgImageUrl || slide.imageUrl || "";
+          const vid = slide.bgVideoUrl || slide.videoUrl || "";
+          const sub = slide.subtitle || slide.subheading || "";
+          const act = slide.active !== undefined ? slide.active : (slide.isActive !== undefined ? slide.isActive : true);
+          return {
+            ...slide,
+            id: slide.id || `slide_${idx + 1}`,
+            title: slide.title || "",
+            subtitle: sub,
+            subheading: sub,
+            imageUrl: slide.imageUrl || "",
+            bgImageUrl: slide.bgImageUrl || img,
+            videoUrl: vid,
+            bgVideoUrl: vid,
+            active: act,
+            isActive: act,
+            slideOrder: slide.slideOrder !== undefined ? slide.slideOrder : idx,
+            slideDuration: slide.slideDuration !== undefined ? slide.slideDuration : 3000,
+          };
+        });
+      }
+
       const updatedHeroSlides = newSettings.heroSlides;
       const updatedPromoBanners = newSettings.promoBanners;
 
-      await prisma.$transaction(async (tx) => {
-        // Delete all current banners in HERO/PROMO positions
-        await tx.banner.deleteMany({
-          where: {
-            position: { in: ["HERO", "PROMO", "slider", "banner"] }
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Delete all current banners in HERO/PROMO positions
+          await tx.banner.deleteMany({
+            where: {
+              position: { in: ["HERO", "PROMO", "slider", "banner", "hero_main", "promo_strip", "hero", "promo"] }
+            }
+          });
+
+          // Insert new ones
+          const bannersToCreate = [];
+          if (updatedHeroSlides && Array.isArray(updatedHeroSlides)) {
+            for (const slide of updatedHeroSlides) {
+              const img = slide.imageUrl || slide.bgImageUrl || "";
+              bannersToCreate.push({
+                title: (slide.title || "").substring(0, 255),
+                imageUrl: img.substring(0, 255),
+                linkUrl: (slide.linkUrl || "").substring(0, 255),
+                position: "HERO",
+                isActive: (slide.active !== undefined ? slide.active : slide.isActive) !== false
+              });
+            }
+          }
+          if (updatedPromoBanners && Array.isArray(updatedPromoBanners)) {
+            for (const banner of updatedPromoBanners) {
+              const img = banner.imageUrl || "";
+              bannersToCreate.push({
+                title: (banner.title || "").substring(0, 255),
+                imageUrl: img.substring(0, 255),
+                linkUrl: (banner.linkUrl || "").substring(0, 255),
+                position: "PROMO",
+                isActive: (banner.active !== undefined ? banner.active : banner.isActive) !== false
+              });
+            }
+          }
+
+          if (bannersToCreate.length > 0) {
+            await tx.banner.createMany({
+              data: bannersToCreate
+            });
           }
         });
-
-        // Insert new ones
-        const bannersToCreate = [];
-        if (updatedHeroSlides && Array.isArray(updatedHeroSlides)) {
-          for (const slide of updatedHeroSlides) {
-            bannersToCreate.push({
-              title: slide.title || "",
-              imageUrl: slide.imageUrl || "",
-              linkUrl: slide.linkUrl || "",
-              position: "HERO",
-              isActive: slide.isActive !== undefined ? slide.isActive : true
-            });
-          }
-        }
-        if (updatedPromoBanners && Array.isArray(updatedPromoBanners)) {
-          for (const banner of updatedPromoBanners) {
-            bannersToCreate.push({
-              title: banner.title || "",
-              imageUrl: banner.imageUrl || "",
-              linkUrl: banner.linkUrl || "",
-              position: "PROMO",
-              isActive: banner.isActive !== undefined ? banner.isActive : true
-            });
-          }
-        }
-
-        if (bannersToCreate.length > 0) {
-          await tx.banner.createMany({
-            data: bannersToCreate
-          });
-        }
-      });
+      } catch (bannerSyncErr) {
+        console.warn("Non-fatal: Error syncing banners table during settings update:", bannerSyncErr);
+      }
     }
 
     // 3. Sync Homepage Sections if updated

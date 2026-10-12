@@ -10,9 +10,11 @@
     "test-backend": "cd server && BACKEND_PORT=4000 npx ts-node --transpile-only src/server.ts",
     "build:server": "npx -y esbuild src/server.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/applet/server/server.mjs --external:express --external:axios --external:firebase/* --external:firebase-admin",
     "build": "ng build && npm run build:server",
-    "deploy": "npm run test && npm run build && npm run build --prefix functions && firebase deploy",
-    "deploy:safe": "npm run test && npm run build && npm run build --prefix functions && firebase deploy",
-    "deploy:functions": "npm run test && npm run build --prefix functions && firebase deploy --only functions",
+    "deploy": "npm run test:deployment && npm run test && npm run build && npm run build --prefix functions && firebase deploy",
+    "deploy:safe": "npm run test:deployment && npm run test && npm run build && npm run build --prefix functions && firebase deploy",
+    "deploy:functions": "npm run test:deployment && npm run test && npm run build --prefix functions && firebase deploy --only functions",
+    "test:deployment": "npx tsx tests/deployment/deployment-e2e-suite.ts",
+    "predeploy": "npm run test:deployment",
     "test": "npx tsx tests/helpers/test-runner.ts",
     "test:regression": "npx tsx tests/helpers/test-runner.ts"
   },
@@ -56,6 +58,7 @@
     "@types/node": "^20.11.24",
     "concurrently": "^10.0.3",
     "tsx": "^4.22.4",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "xlsx": "^0.18.5"
   }
 }

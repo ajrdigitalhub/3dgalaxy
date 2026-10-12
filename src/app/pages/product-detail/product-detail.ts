@@ -1638,6 +1638,7 @@ export class ProductDetail {
             this.rotationAngle.set(0);
 
             this.initializeDefaultVariant(matched);
+            this.saveToRecentlyViewed(matched);
 
             // Update SEO
             const pageTitle =
@@ -1706,6 +1707,7 @@ export class ProductDetail {
           };
           this.fetchedProduct.set(merged);
           this.initializeDefaultVariant(merged);
+          this.saveToRecentlyViewed(merged);
           void this.loadRelatedProducts(
             merged,
             detailedProd.relatedProducts || merged.relatedProducts || [],
@@ -2406,6 +2408,59 @@ export class ProductDetail {
       this.alreadyReviewed.set(false);
     } finally {
       this.isCheckingReviewEligibility.set(false);
+    }
+  }
+
+  saveToRecentlyViewed(prod: any) {
+    if (!prod || (!prod.id && !prod.slug)) return;
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      const storageKey = 'account_recently_viewed';
+      const raw = localStorage.getItem(storageKey);
+      let list: any[] = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+
+      const prodId = prod.id || prod.productId;
+      list = list.filter((item: any) => {
+        const itemId = item.id || item.productId;
+        if (prodId && itemId && prodId === itemId) return false;
+        if (prod.slug && item.slug && prod.slug === item.slug) return false;
+        return true;
+      });
+
+      const firstImage = prod.primaryImage || (prod.images && prod.images.length > 0
+        ? (typeof prod.images[0] === 'string' ? prod.images[0] : prod.images[0]?.url)
+        : '');
+
+      const itemToSave = {
+        id: prod.id,
+        productId: prod.productId || prod.id,
+        name: prod.name,
+        slug: prod.slug,
+        brand: typeof prod.brand === 'object' ? prod.brand?.name : prod.brand,
+        brandName: prod.brandName || (typeof prod.brand === 'object' ? prod.brand?.name : undefined),
+        primaryImage: firstImage,
+        images: prod.images,
+        salePrice: prod.salePrice || prod.sale_price || prod.activePrice || prod.price || (prod.variants?.[0]?.salePrice || prod.variants?.[0]?.price),
+        mrp: prod.mrp || prod.basePrice,
+        price: prod.price || prod.activePrice,
+        activePrice: prod.activePrice,
+        discountPercent: prod.discountPercent,
+        stock: prod.stock,
+        rating: prod.rating || prod.averageRating || prod.avgRating,
+        reviewCount: prod.reviewCount || prod.totalReviews || prod.ratingCount,
+        hasVariants: Boolean(prod.variants && prod.variants.length > 0),
+        variants: prod.variants,
+        estimatedDeliveryDays: prod.estimatedDeliveryDays
+      };
+
+      list.unshift(itemToSave);
+      if (list.length > 12) {
+        list = list.slice(0, 12);
+      }
+      localStorage.setItem(storageKey, JSON.stringify(list));
+    } catch (e) {
+      // Non-fatal if localStorage is restricted
     }
   }
 }

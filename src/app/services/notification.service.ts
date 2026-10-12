@@ -24,6 +24,9 @@ export interface InboxNotification {
   actionUrl?: string | null;
   isRead: boolean;
   createdAt: string;
+  category?: 'offer' | 'order' | 'system' | 'announcement';
+  icon?: string;
+  badge?: string;
 }
 
 @Injectable({
@@ -84,11 +87,13 @@ export class NotificationService {
         }
       });
 
+      // Load inbox immediately on browser load
+      this.fetchInbox();
+
       // Defer non-critical notification background work to idle time away from initial paint
       const initNotifications = () => {
         this.fetchPopupConfig();
         this.fetchFcmConfig();
-        this.fetchInbox();
         this.setupForegroundListener();
       };
 
@@ -441,74 +446,265 @@ export class NotificationService {
       });
   }
 
+  private getStoredReadIds(): Set<string> {
+    if (!isPlatformBrowser(this.platformId)) return new Set();
+    try {
+      const raw = localStorage.getItem("3dgalaxy_read_notif_ids");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveStoredReadIds(ids: Set<string>): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem("3dgalaxy_read_notif_ids", JSON.stringify(Array.from(ids)));
+    } catch {}
+  }
+
+  private getStoredDeletedIds(): Set<string> {
+    if (!isPlatformBrowser(this.platformId)) return new Set();
+    try {
+      const raw = localStorage.getItem("3dgalaxy_deleted_notif_ids");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveStoredDeletedIds(ids: Set<string>): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem("3dgalaxy_deleted_notif_ids", JSON.stringify(Array.from(ids)));
+    } catch {}
+  }
+
+  getDefaultStoreNotifications(): InboxNotification[] {
+    const readIds = this.getStoredReadIds();
+    const deletedIds = this.getStoredDeletedIds();
+    const list: InboxNotification[] = [];
+
+    // 1. Pull from active store announcements configured in settings
+    const announcements = this.settingsService.headerAnnouncements() || [];
+    announcements.filter((a: any) => a.isActive !== false).forEach((ann: any) => {
+      const id = `ann_${ann.id || ann.title}`;
+      if (!deletedIds.has(id)) {
+        list.push({
+          id,
+          title: ann.title || "Store Announcement",
+          body: ann.shortMessage || ann.description || "Special offer from 3D Galaxy store.",
+          actionUrl: ann.ctaUrl || "/products",
+          isRead: readIds.has(id),
+          createdAt: ann.updatedAt || ann.createdAt || new Date().toISOString(),
+          category: ann.title?.toLowerCase().includes("sale") || ann.title?.toLowerCase().includes("offer") ? "offer" : "announcement",
+          icon: ann.icon || "campaign",
+          badge: ann.ctaText || "Store Offer",
+        });
+      }
+    });
+
+    // 2. High-value default notifications ensuring real content is always present
+    const baseItems: Array<Partial<InboxNotification>> = [
+      {
+        id: "notif_welcome",
+        title: "Welcome to 3D Galaxy! ✨",
+        body: "Discover high-precision 3D printers, premium filaments (PLA, PETG, ABS, TPU) & genuine spare parts.",
+        actionUrl: "/products",
+        category: "offer",
+        icon: "celebration",
+        badge: "Welcome",
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "notif_free_shipping",
+        title: "Free Shipping on Orders Above ₹3,500 🚚",
+        body: "Enjoy free standard delivery across India on all eligible cart orders over ₹3,500.",
+        actionUrl: "/products",
+        category: "offer",
+        icon: "local_shipping",
+        badge: "Delivery",
+        createdAt: new Date(Date.now() - 14400000).toISOString(),
+      },
+      {
+        id: "notif_stl_slicer",
+        title: "Instant 3D Printing Price Quotes 🖨️",
+        body: "Have an STL file ready? Upload your 3D models for automated slicing, material choice & instant quotes.",
+        actionUrl: "/slicer",
+        category: "system",
+        icon: "print",
+        badge: "Service",
+        createdAt: new Date(Date.now() - 43200000).toISOString(),
+      },
+      {
+        id: "notif_cod_available",
+        title: "Cash On Delivery Available 📦",
+        body: "COD is available on orders up to ₹2,500 for eligible locations with express courier dispatch.",
+        actionUrl: "/products",
+        category: "announcement",
+        icon: "payments",
+        badge: "Payment",
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ];
+
+    baseItems.forEach((item) => {
+      if (!deletedIds.has(item.id!)) {
+        list.push({
+          id: item.id!,
+          title: item.title!,
+          body: item.body!,
+          actionUrl: item.actionUrl || "/products",
+          isRead: readIds.has(item.id!),
+          createdAt: item.createdAt!,
+          category: item.category as any,
+          icon: item.icon,
+          badge: item.badge,
+        });
+      }
+    });
+
+    return list;
+  }
+
   // Retrieve user inbox notifications list
   fetchInbox() {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const user = this.ds.currentUser();
+    const readIds = this.getStoredReadIds();
+    const storeDefaults = this.getDefaultStoreNotifications();
+
+    // Initialize immediately with store defaults if inbox is currently empty
+    if (this.inbox().length === 0) {
+      this.inbox.set(storeDefaults);
+    }
+
+    const user: any = this.ds.currentUser();
     const guestId = this.ds.guestSessionId();
+    const isAdmin = user?.role === "Admin" || user?.role === "Super Admin";
 
     const params: any = {};
     if (user?.uid) {
       params.userId = user.uid;
     } else if (guestId) {
       params.guestId = guestId;
-    } else {
-      return;
     }
 
-    this.api
-      .get<{
-        success: boolean;
-        data: InboxNotification[];
-      }>("/notifications", params)
-      .subscribe({
+    // 1. Fetch user notifications from /notifications
+    if (params.userId || params.guestId) {
+      this.api
+        .get<{
+          success: boolean;
+          data: InboxNotification[];
+        }>("/notifications", params)
+        .subscribe({
+          next: (res) => {
+            const isSuccess = res && (res.success || (res as any).status === "success");
+            const backendNotifs = isSuccess && Array.isArray(res.data) ? res.data : [];
+            this.mergeNotifications(backendNotifs, storeDefaults);
+          },
+          error: () => {
+            this.mergeNotifications([], storeDefaults);
+          },
+        });
+    }
+
+    // 2. If logged in as Admin, also fetch admin notifications from /admin/notifications
+    if (isAdmin) {
+      this.api.get<any>("/admin/notifications").subscribe({
         next: (res) => {
-          const isSuccess =
-            res && (res.success || (res as any).status === "success");
-          if (isSuccess && res.data) {
-            this.inbox.set(res.data);
+          if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+            const adminNotifs: InboxNotification[] = res.data.map((item: any) => ({
+              id: `admin_${item.id}`,
+              title: item.title || "Admin Alert",
+              body: item.body || item.message || "New admin notification",
+              actionUrl: item.actionUrl || "/admin?tab=notification-center",
+              isRead: item.isRead || readIds.has(`admin_${item.id}`),
+              createdAt: item.createdAt || new Date().toISOString(),
+              category: "order",
+              icon: item.type === "WHATSAPP_MESSAGE_RECEIVED" ? "chat" : "admin_panel_settings",
+              badge: "Admin",
+            }));
+            this.mergeNotifications(adminNotifs, this.inbox());
           }
         },
-        error: (err) =>
-          console.error("Failed to fetch notification inbox:", err),
+        error: () => {},
       });
+    }
+  }
+
+  private mergeNotifications(incoming: InboxNotification[], base: InboxNotification[]) {
+    const deletedIds = this.getStoredDeletedIds();
+    const readIds = this.getStoredReadIds();
+    const map = new Map<string, InboxNotification>();
+
+    // Process incoming
+    incoming.forEach((n) => {
+      if (!deletedIds.has(n.id)) {
+        map.set(n.id, {
+          ...n,
+          isRead: n.isRead || readIds.has(n.id),
+        });
+      }
+    });
+
+    // Process base items
+    base.forEach((n) => {
+      if (!deletedIds.has(n.id) && !map.has(n.id)) {
+        map.set(n.id, {
+          ...n,
+          isRead: n.isRead || readIds.has(n.id),
+        });
+      }
+    });
+
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    this.inbox.set(merged);
   }
 
   // Mark single/multiple notification(s) as read
   markAsRead(notificationId?: string) {
-    const payload = notificationId
-      ? { id: notificationId }
-      : {
-          ids: this.inbox()
-            .filter((n) => !n.isRead)
-            .map((n) => n.id),
-        };
-
-    this.api.put<any>("/notifications/read", payload).subscribe({
-      next: () => {
-        this.inbox.update((list) =>
-          list.map((n) => {
-            if (!notificationId || n.id === notificationId) {
-              return { ...n, isRead: true };
-            }
-            return n;
-          }),
-        );
-      },
-      error: (err) =>
-        console.error("Failed to mark notification as read:", err),
-    });
+    const readIds = this.getStoredReadIds();
+    if (notificationId) {
+      readIds.add(notificationId);
+      this.saveStoredReadIds(readIds);
+      this.inbox.update((list) =>
+        list.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+      );
+      this.api.put<any>("/notifications/read", { id: notificationId }).subscribe({
+        error: () => {},
+      });
+    } else {
+      this.inbox().forEach((n) => readIds.add(n.id));
+      this.saveStoredReadIds(readIds);
+      this.inbox.update((list) => list.map((n) => ({ ...n, isRead: true })));
+      this.api.put<any>("/notifications/read", {
+        ids: this.inbox().map((n) => n.id),
+      }).subscribe({
+        error: () => {},
+      });
+    }
   }
 
   // Delete notification
   deleteNotification(id: string) {
+    const deletedIds = this.getStoredDeletedIds();
+    deletedIds.add(id);
+    this.saveStoredDeletedIds(deletedIds);
+    this.inbox.update((list) => list.filter((n) => n.id !== id));
     this.api.delete<any>(`/notifications/${id}`).subscribe({
-      next: () => {
-        this.inbox.update((list) => list.filter((n) => n.id !== id));
-      },
-      error: (err) => console.error("Failed to delete notification:", err),
+      error: () => {},
     });
+  }
+
+  // Clear all notifications
+  clearAllNotifications() {
+    const deletedIds = this.getStoredDeletedIds();
+    this.inbox().forEach((n) => deletedIds.add(n.id));
+    this.saveStoredDeletedIds(deletedIds);
+    this.inbox.set([]);
   }
 
   // Setup foreground listener for real-time notifications

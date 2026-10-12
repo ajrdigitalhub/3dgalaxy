@@ -5,6 +5,8 @@ import {
   inject,
   signal,
   effect,
+  ViewChild,
+  ElementRef,
 } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, ActivatedRoute, RouterModule } from "@angular/router";
@@ -439,19 +441,73 @@ export class Account {
     this.toastService.success(`Moved ${product.name} to cart`);
   }
 
+  @ViewChild('recentlyViewedContainer') recentlyViewedContainer?: ElementRef<HTMLElement>;
+
   // Recently Viewed helpers
   loadRecentlyViewed() {
     try {
       const stored = localStorage.getItem("account_recently_viewed");
       if (stored) {
-        this.recentlyViewedItems.set(JSON.parse(stored));
-      } else {
-        // Fallback default sample items if empty
-        const sampleProducts = (this.ds.products() || []).slice(0, 6);
-        this.recentlyViewedItems.set(sampleProducts);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.recentlyViewedItems.set(parsed);
+          return;
+        }
       }
+      // Fallback default sample items if empty
+      const sampleProducts = (this.ds.products() || []).slice(0, 10);
+      this.recentlyViewedItems.set(sampleProducts);
     } catch (e) {
       this.recentlyViewedItems.set([]);
+    }
+  }
+
+  scrollRecentlyViewed(direction: 'left' | 'right') {
+    const el = this.recentlyViewedContainer?.nativeElement;
+    if (el) {
+      const scrollAmount = 300;
+      el.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  clearRecentlyViewed() {
+    try {
+      localStorage.removeItem("account_recently_viewed");
+    } catch (e) {}
+    this.recentlyViewedItems.set([]);
+    this.toastService.info("Recently viewed history cleared");
+  }
+
+  isProductWishlisted(prod: any): boolean {
+    const id = prod?.id || prod?.productId;
+    if (!id) return false;
+    return this.wishlist().some((item: any) => item.productId === id || item.product?.id === id);
+  }
+
+  async toggleWishlistFromCard(prod: any) {
+    const productId = prod.id || prod.productId;
+    if (!productId) return;
+    if (this.ds.userRole() === "guest") {
+      this.toastService.info("Please log in to manage your wishlist");
+      this.router.navigate(["/login"]);
+      return;
+    }
+    const isCurrentlyWishlisted = this.isProductWishlisted(prod);
+    try {
+      if (isCurrentlyWishlisted) {
+        await this.removeFromWishlist(productId);
+      } else {
+        const resp: any = await this.api.post('/wishlist', { productId }).toPromise();
+        if (resp?.success) {
+          await this.fetchWishlist();
+          this.toastService.success(`Added ${prod.name || 'product'} to wishlist`);
+        }
+      }
+    } catch (e) {
+      this.toastService.error("Wishlist action failed");
     }
   }
 

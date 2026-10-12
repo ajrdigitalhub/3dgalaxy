@@ -255,6 +255,7 @@ export class SettingsService {
   public currency = signal<string>("₹");
   public theme = signal<any>({});
   public heroSlides = signal<any[]>([]);
+  public heroCarousel = signal<any>({});
   public promoBanners = signal<any[]>([]);
   public advertisements = signal<any[]>([]);
   public banners = signal<any[]>([]);
@@ -392,7 +393,14 @@ export class SettingsService {
     this.theme.set(themeData);
     this.applyTheme(themeData);
 
-    if (d.heroSlides) this.heroSlides.set(d.heroSlides);
+    if (d.heroSlides && Array.isArray(d.heroSlides)) {
+      const normalizedSlides = d.heroSlides.map((s: any, idx: number) => this.normalizeHeroSlide(s, idx));
+      this.heroSlides.set(normalizedSlides);
+      d.heroSlides = normalizedSlides;
+    } else if (d.heroSlides) {
+      this.heroSlides.set(d.heroSlides);
+    }
+    if (d.heroCarousel) this.heroCarousel.set(d.heroCarousel);
     if (d.promoBanners) this.promoBanners.set(d.promoBanners);
     if (d.advertisements) this.advertisements.set(d.advertisements);
     if (d.headerAnnouncements && Array.isArray(d.headerAnnouncements) && d.headerAnnouncements.length > 0) {
@@ -441,8 +449,10 @@ export class SettingsService {
     this.isLoaded.set(true);
   }
 
+  private hasSyncedWithServer = false;
+
   async loadSettings(force = false) {
-    if (!force && this.isLoaded()) return this.settingsData();
+    if (!force && this.hasSyncedWithServer && this.isLoaded()) return this.settingsData();
     if (this.loadPromise && !force) return this.loadPromise;
 
     // Immediately hydrate from localStorage if available for fast initial rendering
@@ -450,13 +460,14 @@ export class SettingsService {
       this.loadFromLocalStorage();
     }
 
-    // Always fetch dynamic settings from Settings API to apply latest theme
+    // Always fetch dynamic settings from Settings API to apply latest theme and slides
     const url = force ? `${environment.apiUrl}/settings?t=${Date.now()}` : `${environment.apiUrl}/settings`;
     this.loadPromise = firstValueFrom(this.http.get<any>(url))
       .then((resp) => {
         if (resp) {
           const d = resp.data !== undefined ? resp.data : resp;
           this.hydrateSettings(d);
+          this.hasSyncedWithServer = true;
           if (typeof window !== "undefined") {
             try {
               localStorage.setItem("3d_galaxy_settings", JSON.stringify(d));
@@ -484,8 +495,82 @@ export class SettingsService {
     return this.loadPromise;
   }
 
+  private normalizeHeroSlide(s: any, idx: number): any {
+    const rawBg = s.bgImageUrl || "";
+    const rawImg = s.imageUrl || s.overlayImageUrl || s.image || "";
+    const resolvedBg = rawBg || rawImg || "";
+
+    const resolvedShowOverlay = s.showOverlayCard !== undefined
+      ? Boolean(s.showOverlayCard)
+      : (s.layoutMode === "showcase" && Boolean(s.overlayImageUrl || (rawImg && rawImg !== resolvedBg)));
+
+    const resolvedOverlayImg = s.overlayImageUrl || (resolvedShowOverlay ? rawImg : "");
+    const sub = s.subtitle || s.subheading || "";
+    const vid = s.bgVideoUrl || s.videoUrl || "";
+    const act = s.active !== undefined ? s.active : (s.isActive !== undefined ? s.isActive : true);
+    const mode = s.layoutMode || (resolvedShowOverlay ? "showcase" : "banner_only");
+
+    return {
+      ...s,
+      id: s.id || `slide_${idx + 1}`,
+      title: s.title || "",
+      subtitle: sub,
+      subheading: sub,
+      layoutMode: mode,
+      showOverlayCard: resolvedShowOverlay,
+      overlayImageUrl: resolvedOverlayImg,
+      imageUrl: resolvedOverlayImg || resolvedBg,
+      bgImageUrl: resolvedBg,
+      overlayCardSize: s.overlayCardSize || "medium",
+      overlayCardStyle: s.overlayCardStyle || "glass",
+      enableTilt: s.enableTilt !== undefined ? s.enableTilt : true,
+      showPrimaryBtn: s.showPrimaryBtn !== undefined ? s.showPrimaryBtn : (mode !== "banner_only" && Boolean(s.btnText)),
+      btnText: s.btnText || "",
+      linkUrl: s.linkUrl || "",
+      btnIcon: s.btnIcon || "shopping_cart",
+      btnTheme: s.btnTheme || "primary",
+      showSecondaryBtn: s.showSecondaryBtn !== undefined ? s.showSecondaryBtn : (mode !== "banner_only" && Boolean(s.secBtnText)),
+      secBtnText: s.secBtnText || "",
+      secBtnUrl: s.secBtnUrl || s.secLinkUrl || "",
+      secBtnIcon: s.secBtnIcon || "explore",
+      secBtnTheme: s.secBtnTheme || "secondary",
+      isEntireSlideClickable: s.isEntireSlideClickable !== undefined ? s.isEntireSlideClickable : (mode === "banner_only"),
+      showBadge: s.showBadge !== undefined ? s.showBadge : (mode !== "banner_only" && Boolean(s.badge)),
+      badge: s.badge || "",
+      badgeIcon: s.badgeIcon || "bolt",
+      showSubtitle: s.showSubtitle !== undefined ? s.showSubtitle : (mode !== "banner_only" && Boolean(sub)),
+      showTitle: s.showTitle !== undefined ? s.showTitle : (mode !== "banner_only" && Boolean(s.title)),
+      showDesc: s.showDesc !== undefined ? s.showDesc : (mode !== "banner_only" && Boolean(s.desc || s.description)),
+      desc: s.desc || s.description || "",
+      showPrice: s.showPrice !== undefined ? s.showPrice : (mode !== "banner_only" && Boolean(s.price)),
+      price: s.price || "",
+      oldPrice: s.oldPrice || "",
+      discountText: s.discountText || "",
+      showProductTag: s.showProductTag !== undefined ? s.showProductTag : (mode !== "banner_only" && Boolean(s.productTag)),
+      productTag: s.productTag || "",
+      videoUrl: vid,
+      bgVideoUrl: vid,
+      bgGradient: s.bgGradient || "",
+      bgColor: s.bgColor || "#09090b",
+      textColorMode: s.textColorMode || "light",
+      textAlignment: s.textAlignment || "left",
+      darkOverlay: s.darkOverlay !== undefined ? s.darkOverlay : true,
+      overlayOpacity: s.overlayOpacity !== undefined ? s.overlayOpacity : 0.4,
+      animationType: s.animationType || "fade",
+      slideDuration: s.slideDuration !== undefined ? s.slideDuration : 4000,
+      slideOrder: s.slideOrder !== undefined ? s.slideOrder : idx,
+      active: act,
+      isActive: act,
+      hideOnMobile: s.hideOnMobile || false,
+      hideOnDesktop: s.hideOnDesktop || false,
+    };
+  }
+
   async saveSettings(payload: any) {
     try {
+      if (payload && payload.heroSlides && Array.isArray(payload.heroSlides)) {
+        payload.heroSlides = payload.heroSlides.map((s: any, idx: number) => this.normalizeHeroSlide(s, idx));
+      }
       const resp = await firstValueFrom(
         this.http.put<any>(environment.apiUrl + "/admin/settings", payload),
       );
@@ -678,6 +763,10 @@ export class SettingsService {
 
   getHeroSlides() {
     return this.heroSlides();
+  }
+
+  getHeroCarousel() {
+    return this.heroCarousel();
   }
 
   getHomepage() {

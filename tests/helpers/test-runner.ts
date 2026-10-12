@@ -8,6 +8,7 @@ import { runCartAndCodUnitTests } from '../unit/cart-pricing-cod.test';
 import { runAuthAndInterceptorUnitTests } from '../unit/auth-interceptors-guards.test';
 import { runMediaPreservationAndFeaturesUnitTests } from '../unit/media-preservation-variants.test';
 import { runResponsiveAndSecurityUnitTests } from '../unit/responsive-and-security.test';
+import { runVariantCartFlowTests } from '../unit/variant-cart-flow.test';
 import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
@@ -64,6 +65,12 @@ async function main() {
     const dSec = Date.now() - sSec;
     suites.push({ name: 'Security Sanitization & Responsive Layout Unit Tests', category: 'UNIT', ...rSec, durationMs: dSec });
     console.log(`  ✓ Security & Responsive Layout: ${rSec.passed} passed, ${rSec.failed} failed (${dSec}ms)`);
+
+    const sVar = Date.now();
+    const rVar = await runVariantCartFlowTests();
+    const dVar = Date.now() - sVar;
+    suites.push({ name: 'Add to Cart Flow for Variant Products (50 Tests)', category: 'UNIT', ...rVar, durationMs: dVar });
+    console.log(`  ✓ Variant Products Add to Cart Flow (50 Test Cases): ${rVar.passed} passed, ${rVar.failed} failed (${dVar}ms)`);
   }
 
   // LEVEL 2: API TESTS

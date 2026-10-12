@@ -588,357 +588,721 @@ import { environment } from "../../../../environments/environment";
 
             <!-- 6. HERO SLIDES -->
             @if (activeSubTab() === "Hero Slides") {
-              <div class="space-y-5">
-                <p class="text-xs text-zinc-500">
-                  Provide high-contrast sliders for your central hero carousel.
-                </p>
-                <div class="space-y-4">
-                  @for (slide of draft().heroSlides || []; track $index) {
-                    <div
-                      class="p-5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4 relative"
+              <div class="space-y-6">
+                <!-- Top Action Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b dark:border-zinc-800 gap-3">
+                  <div>
+                    <h3 class="text-sm font-black uppercase text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                      <mat-icon class="text-blue-500 text-base">view_carousel</mat-icon>
+                      Hero Slides Studio
+                    </h3>
+                    <p class="text-xs text-zinc-500">
+                      Configure high-impact hero banners, floating product cards, button visibility, and typography.
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 self-start sm:self-auto">
+                    <button
+                      type="button"
+                      (click)="addHeroSlide()"
+                      class="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer flex items-center gap-1.5 active:scale-95"
                     >
-                      <div class="absolute top-2 right-2">
-                        <button
-                          (click)="removeArrayItem('heroSlides', $index)"
-                          class="text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 p-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                        >
-                          <mat-icon class="text-base">delete</mat-icon>
-                        </button>
-                      </div>
+                      <mat-icon class="text-sm">add_to_photos</mat-icon>
+                      <span>New Slide</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="saveAllSettings()"
+                      [disabled]="isSaving()"
+                      class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase transition-all duration-300 cursor-pointer shadow-sm shadow-blue-500/20 disabled:opacity-50 active:scale-95 flex items-center gap-1.5"
+                      id="save-hero-slides-top-btn"
+                    >
+                      <mat-icon class="text-sm">{{ isSaving() ? 'rotate_right' : 'save' }}</mat-icon>
+                      <span>{{ isSaving() ? 'Saving...' : 'Save Slides' }}</span>
+                    </button>
+                  </div>
+                </div>
 
-                      <!-- Row 1: Title, Subheading, Redirect Link -->
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Slide Title</span
+                <!-- Slide Cards List -->
+                <div class="space-y-6">
+                  @for (slide of draft().heroSlides || []; track slide.id || $index) {
+                    <div
+                      class="p-5 sm:p-6 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-5 relative shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700"
+                    >
+                      <!-- Card Header Bar -->
+                      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                        <div class="flex items-center gap-2.5">
+                          <span class="px-2.5 py-1 bg-blue-600/10 text-blue-500 border border-blue-500/20 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                            Slide #{{ $index + 1 }}
+                          </span>
+                          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate max-w-[200px] sm:max-w-[320px]">
+                            {{ slide.title || 'Untitled Banner Slide' }}
+                          </span>
+                          <!-- Layout Preset Badge -->
+                          <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
+                            [ngClass]="{
+                              'bg-purple-500/10 text-purple-400 border border-purple-500/20': slide.layoutMode === 'showcase',
+                              'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20': slide.layoutMode === 'banner_only',
+                              'bg-amber-500/10 text-amber-400 border border-amber-500/20': slide.layoutMode === 'text_banner',
+                              'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20': slide.layoutMode === 'minimal'
+                            }"
                           >
-                          <input
-                            type="text"
-                            [value]="slide.title || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'title',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
+                            {{ slide.layoutMode === 'banner_only' ? '🖼️ Graphic Banner' : (slide.layoutMode === 'showcase' ? '✨ Split Showcase' : (slide.layoutMode === 'text_banner' ? '📝 Text & CTA' : '🎯 Centered')) }}
+                          </span>
                         </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Slide Subheading</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.subtitle || slide.subheading || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'subtitle',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Target Redirect Link URL</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.linkUrl || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'linkUrl',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
-                        </div>
-                      </div>
 
-                      <!-- Row 2: Badge, Badge Icon, Button CTA, Secondary Button Text -->
-                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Badge Label</span
+                        <!-- Header Controls -->
+                        <div class="flex items-center gap-1">
+                          <button
+                            type="button"
+                            (click)="moveSlideUp($index)"
+                            [disabled]="$index === 0"
+                            title="Move Slide Up"
+                            class="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-all disabled:opacity-30 cursor-pointer"
                           >
-                          <input
-                            type="text"
-                            [value]="slide.badge || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'badge',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. Featured"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Badge Icon (Material)</span
+                            <mat-icon class="text-base">arrow_upward</mat-icon>
+                          </button>
+                          <button
+                            type="button"
+                            (click)="moveSlideDown($index)"
+                            [disabled]="$index === ((draft().heroSlides || []).length - 1)"
+                            title="Move Slide Down"
+                            class="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-all disabled:opacity-30 cursor-pointer"
                           >
-                          <input
-                            type="text"
-                            [value]="slide.badgeIcon || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'badgeIcon',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. bolt"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Button CTA Text</span
+                            <mat-icon class="text-base">arrow_downward</mat-icon>
+                          </button>
+                          <button
+                            type="button"
+                            (click)="duplicateSlide($index)"
+                            title="Duplicate Slide"
+                            class="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer"
                           >
-                          <input
-                            type="text"
-                            [value]="slide.btnText || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'btnText',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. Buy Now"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Secondary Button Text</span
+                            <mat-icon class="text-base">content_copy</mat-icon>
+                          </button>
+                          <button
+                            type="button"
+                            (click)="removeArrayItem('heroSlides', $index)"
+                            title="Delete Slide"
+                            class="p-1.5 text-red-400 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all cursor-pointer"
                           >
-                          <input
-                            type="text"
-                            [value]="slide.secBtnText || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'secBtnText',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. View Details"
-                          />
+                            <mat-icon class="text-base">delete</mat-icon>
+                          </button>
                         </div>
                       </div>
 
-                      <!-- Row 3: Pricing and tags: Price, Old Price, Discount Text, Product Tag -->
-                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Price (Current)</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.price || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'price',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. 48999"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Old Price (Strike)</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.oldPrice || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'oldPrice',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. 55000"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Discount Text</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.discountText || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'discountText',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. 11% OFF"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Product Tag</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.productTag || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'productTag',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. Hot"
-                          />
-                        </div>
-                      </div>
+                      <!-- 1. LAYOUT PRESET & REDIRECT ACTION -->
+                      <div class="p-4 bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/80 rounded-xl space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                          <div class="md:col-span-5 space-y-1">
+                            <span class="block text-[9px] font-black uppercase text-zinc-400 tracking-wider">
+                              Slide Layout Preset
+                            </span>
+                            <select
+                              [value]="slide.layoutMode || 'banner_only'"
+                              (change)="updateSlideField($index, 'layoutMode', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none cursor-pointer"
+                            >
+                              <option value="banner_only">🖼️ Full Graphic Banner (Clean Image, No Overlay Card / Text)</option>
+                              <option value="showcase">✨ Product Showcase (Floating Tilt Card + Headline & CTA)</option>
+                              <option value="text_banner">📝 Headline & CTA Banner (Background Banner + Text & Buttons)</option>
+                              <option value="minimal">🎯 Centered Minimal (Centered Text & CTA)</option>
+                            </select>
+                          </div>
 
-                      <!-- Row 4: Background Video/Image/Gradient/Color -->
-                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Background Video URL</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.bgVideoUrl || slide.videoUrl || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'bgVideoUrl',
-                                $any($event.target).value
-                              );
-                              updateSlideField(
-                                $index,
-                                'videoUrl',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. https://...mp4"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Background Image URL</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.bgImageUrl || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'bgImageUrl',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. https://...jpg"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Background Gradient</span
-                          >
-                          <input
-                            type="text"
-                            [value]="slide.bgGradient || ''"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'bgGradient',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                            placeholder="e.g. linear-gradient(...)"
-                          />
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Background Color</span
-                          >
-                          <div class="flex items-center gap-2">
-                            <input
-                              type="color"
-                              [value]="slide.bgColor || '#09090b'"
-                              (input)="
-                                updateSlideField(
-                                  $index,
-                                  'bgColor',
-                                  $any($event.target).value
-                                )
-                              "
-                              class="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
-                            />
+                          <div class="md:col-span-4 space-y-1">
+                            <span class="block text-[9px] font-black uppercase text-zinc-400 tracking-wider">
+                              Target Redirect Link URL
+                            </span>
                             <input
                               type="text"
-                              [value]="slide.bgColor || '#09090b'"
-                              (input)="
-                                updateSlideField(
-                                  $index,
-                                  'bgColor',
-                                  $any($event.target).value
-                                )
-                              "
-                              class="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                              [value]="slide.linkUrl || ''"
+                              (input)="updateSlideField($index, 'linkUrl', $any($event.target).value)"
+                              placeholder="e.g. /products or https://..."
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                             />
+                          </div>
+
+                          <div class="md:col-span-3 pt-3 sm:pt-4 flex items-center gap-2">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                [checked]="slide.isEntireSlideClickable ?? true"
+                                (change)="updateSlideField($index, 'isEntireSlideClickable', $any($event.target).checked)"
+                                class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                                Clickable Banner
+                              </span>
+                            </label>
                           </div>
                         </div>
                       </div>
 
-                      <!-- Row 5: Animation, Overlay, Alignment, Button Theme -->
-                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <!-- 2. BANNER BACKGROUND & MEDIA -->
+                      <div class="space-y-3">
+                        <div class="flex items-center gap-1.5 text-xs font-black uppercase text-zinc-400 tracking-wider">
+                          <mat-icon class="text-sm">wallpaper</mat-icon>
+                          <span>Hero Background Media</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div class="space-y-1.5">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">
+                              Desktop Background Banner URL
+                            </span>
+                            <input
+                              type="text"
+                              [value]="slide.bgImageUrl || ''"
+                              (input)="updateSlideField($index, 'bgImageUrl', $any($event.target).value)"
+                              placeholder="e.g. https://storage.googleapis.com/...jpg"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                            <app-image-picker
+                              label="Upload / Pick Desktop Background"
+                              [value]="slide.bgImageUrl || ''"
+                              (valueChange)="updateSlideField($index, 'bgImageUrl', $event)"
+                            ></app-image-picker>
+                          </div>
+
+                          <div class="space-y-1.5">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">
+                              Mobile Background Banner URL (Optional)
+                            </span>
+                            <input
+                              type="text"
+                              [value]="slide.mobileImageUrl || ''"
+                              (input)="updateSlideField($index, 'mobileImageUrl', $any($event.target).value)"
+                              placeholder="e.g. https://...mobile.jpg"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                            <app-image-picker
+                              label="Upload / Pick Mobile Background"
+                              [value]="slide.mobileImageUrl || ''"
+                              (valueChange)="updateSlideField($index, 'mobileImageUrl', $event)"
+                            ></app-image-picker>
+                          </div>
+                        </div>
+
+                        <!-- Video, Gradient, Color, Overlay Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Background Video URL</span>
+                            <input
+                              type="text"
+                              [value]="slide.bgVideoUrl || slide.videoUrl || ''"
+                              (input)="updateSlideField($index, 'bgVideoUrl', $any($event.target).value); updateSlideField($index, 'videoUrl', $any($event.target).value)"
+                              placeholder="e.g. https://...mp4"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Background Color</span>
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="color"
+                                [value]="slide.bgColor || '#09090b'"
+                                (input)="updateSlideField($index, 'bgColor', $any($event.target).value)"
+                                class="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
+                              />
+                              <input
+                                type="text"
+                                [value]="slide.bgColor || '#09090b'"
+                                (input)="updateSlideField($index, 'bgColor', $any($event.target).value)"
+                                class="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                              />
+                            </div>
+                          </div>
+                          <div class="space-y-1">
+                            <span class="block text-[9px] font-black text-zinc-400 uppercase">Dimming Overlay Opacity (0.0 - 1.0)</span>
+                            <div class="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.05"
+                                [value]="slide.overlayOpacity ?? 0.4"
+                                (input)="updateSlideField($index, 'overlayOpacity', +$any($event.target).value)"
+                                class="flex-1 cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-400 w-8 text-right">{{ slide.overlayOpacity ?? 0.4 }}</span>
+                            </div>
+                          </div>
+                          <div class="flex items-center gap-2 pt-4">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                [checked]="slide.darkOverlay ?? true"
+                                (change)="updateSlideField($index, 'darkOverlay', $any($event.target).checked)"
+                                class="w-4 h-4 cursor-pointer"
+                              />
+                              <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase">Dark Dimming Overlay</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 3. BANNER OVERLAY SMALL CARD (THE USER'S CORE REQUEST) -->
+                      <div class="p-4 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-blue-200/60 dark:border-blue-900/40">
+                          <div class="flex items-center gap-2">
+                            <mat-icon class="text-blue-500 text-lg">layers</mat-icon>
+                            <div>
+                              <span class="block text-xs font-black uppercase text-blue-900 dark:text-blue-200">
+                                Banner Overlay Small Card (Product Showcase)
+                              </span>
+                              <p class="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                Floating 3D showcase card in front of your banner. Disable this if your banner already has all graphic details.
+                              </p>
+                            </div>
+                          </div>
+                          <label class="flex items-center gap-2 cursor-pointer select-none self-start sm:self-auto bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-blue-300 dark:border-blue-800">
+                            <input
+                              type="checkbox"
+                              [checked]="slide.showOverlayCard ?? false"
+                              (change)="updateSlideField($index, 'showOverlayCard', $any($event.target).checked)"
+                              class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                            />
+                            <span class="text-xs font-black uppercase text-zinc-900 dark:text-zinc-100">
+                              Show Small Overlay Card
+                            </span>
+                          </label>
+                        </div>
+
+                        @if (slide.showOverlayCard) {
+                          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start pt-1">
+                            <div class="md:col-span-6 space-y-2">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">
+                                Small Overlay Image URL (Transparent Product PNG / Model Render)
+                              </span>
+                              <input
+                                type="text"
+                                [value]="slide.overlayImageUrl || slide.imageUrl || ''"
+                                (input)="updateSlideField($index, 'overlayImageUrl', $any($event.target).value); updateSlideField($index, 'imageUrl', $any($event.target).value)"
+                                placeholder="e.g. https://...product-cutout.png"
+                                class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                              />
+                              <app-image-picker
+                                label="Pick / Upload Small Card Image"
+                                [value]="slide.overlayImageUrl || slide.imageUrl || ''"
+                                (valueChange)="updateSlideField($index, 'overlayImageUrl', $event); updateSlideField($index, 'imageUrl', $event)"
+                              ></app-image-picker>
+                            </div>
+
+                            <div class="md:col-span-3 space-y-2">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">
+                                Card Dimensions / Size
+                              </span>
+                              <select
+                                [value]="slide.overlayCardSize || 'medium'"
+                                (change)="updateSlideField($index, 'overlayCardSize', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none cursor-pointer"
+                              >
+                                <option value="small">Small (Compact 280px)</option>
+                                <option value="medium">Medium (Standard 360px)</option>
+                                <option value="large">Large (Showcase 460px)</option>
+                              </select>
+
+                              <label class="flex items-center gap-2 pt-2 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.enableTilt ?? true"
+                                  (change)="updateSlideField($index, 'enableTilt', $any($event.target).checked)"
+                                  class="w-4 h-4 cursor-pointer"
+                                />
+                                <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                                  Enable 3D Interactive Tilt
+                                </span>
+                              </label>
+                            </div>
+
+                            <div class="md:col-span-3 space-y-2">
+                              <span class="block text-[9px] font-black text-zinc-400 uppercase">
+                                Overlay Card Styling
+                              </span>
+                              <select
+                                [value]="slide.overlayCardStyle || 'glass'"
+                                (change)="updateSlideField($index, 'overlayCardStyle', $any($event.target).value)"
+                                class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-bold outline-none cursor-pointer"
+                              >
+                                <option value="glass">Frosted Glassmorphism (Glass backdrop + 3D reflection)</option>
+                                <option value="clean">Clean Floating (No frame box, pure floating cutout)</option>
+                                <option value="solid">Dark Solid Card (Bordered dark frame)</option>
+                              </select>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- 4. BUTTON VISIBILITY & CONFIGURATION (THE USER'S CORE REQUEST) -->
+                      <div class="p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/40 rounded-xl space-y-4">
+                        <div class="flex items-center gap-2 pb-2 border-b border-orange-200/60 dark:border-orange-900/40">
+                          <mat-icon class="text-orange-500 text-lg">smart_button</mat-icon>
+                          <div>
+                            <span class="block text-xs font-black uppercase text-orange-900 dark:text-orange-200">
+                              Hero Call-To-Action (CTA) Buttons Configuration
+                            </span>
+                            <p class="text-[10px] text-zinc-500 dark:text-zinc-400">
+                              Turn buttons on or off independently and customize text, targets, icons, and themes.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <!-- Primary Button Box -->
+                          <div class="p-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b dark:border-zinc-800">
+                              <span class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                                Primary CTA Button
+                              </span>
+                              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showPrimaryBtn ?? false"
+                                  (change)="updateSlideField($index, 'showPrimaryBtn', $any($event.target).checked)"
+                                  class="w-4 h-4 text-orange-600 rounded cursor-pointer"
+                                />
+                                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Visible</span>
+                              </label>
+                            </div>
+
+                            @if (slide.showPrimaryBtn) {
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Button Label</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.btnText || ''"
+                                    (input)="updateSlideField($index, 'btnText', $any($event.target).value)"
+                                    placeholder="e.g. Buy Now"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Target Link URL</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.linkUrl || ''"
+                                    (input)="updateSlideField($index, 'linkUrl', $any($event.target).value)"
+                                    placeholder="e.g. /products"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Icon (Material)</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.btnIcon || 'shopping_cart'"
+                                    (input)="updateSlideField($index, 'btnIcon', $any($event.target).value)"
+                                    placeholder="e.g. shopping_cart or none"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Button Styling</span>
+                                  <select
+                                    [value]="slide.btnTheme || 'primary'"
+                                    (change)="updateSlideField($index, 'btnTheme', $any($event.target).value)"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer"
+                                  >
+                                    <option value="primary">Primary Accent Gradient</option>
+                                    <option value="secondary">Dark Neutral Solid</option>
+                                    <option value="accent">Frosted Glass / Bordered</option>
+                                    <option value="outline">Clean Outline</option>
+                                  </select>
+                                </div>
+                              </div>
+                            }
+                          </div>
+
+                          <!-- Secondary Button Box -->
+                          <div class="p-3.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3">
+                            <div class="flex items-center justify-between pb-2 border-b dark:border-zinc-800">
+                              <span class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">
+                                Secondary CTA Button
+                              </span>
+                              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showSecondaryBtn ?? false"
+                                  (change)="updateSlideField($index, 'showSecondaryBtn', $any($event.target).checked)"
+                                  class="w-4 h-4 text-orange-600 rounded cursor-pointer"
+                                />
+                                <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Visible</span>
+                              </label>
+                            </div>
+
+                            @if (slide.showSecondaryBtn) {
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Button Label</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.secBtnText || ''"
+                                    (input)="updateSlideField($index, 'secBtnText', $any($event.target).value)"
+                                    placeholder="e.g. View Details"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Target Link URL</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.secBtnUrl || slide.secLinkUrl || slide.linkUrl || ''"
+                                    (input)="updateSlideField($index, 'secBtnUrl', $any($event.target).value); updateSlideField($index, 'secLinkUrl', $any($event.target).value)"
+                                    placeholder="e.g. /products or /categories"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Icon (Material)</span>
+                                  <input
+                                    type="text"
+                                    [value]="slide.secBtnIcon || 'explore'"
+                                    (input)="updateSlideField($index, 'secBtnIcon', $any($event.target).value)"
+                                    placeholder="e.g. explore or none"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                  />
+                                </div>
+                                <div class="space-y-1">
+                                  <span class="block text-[8px] font-black text-zinc-400 uppercase">Button Styling</span>
+                                  <select
+                                    [value]="slide.secBtnTheme || 'secondary'"
+                                    (change)="updateSlideField($index, 'secBtnTheme', $any($event.target).value)"
+                                    class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer"
+                                  >
+                                    <option value="secondary">Glassmorphism Frosted</option>
+                                    <option value="dark">Dark Solid</option>
+                                    <option value="outline">Clean Outline</option>
+                                    <option value="primary">Primary Gradient</option>
+                                  </select>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 5. SLIDE CONTENT & TYPOGRAPHY ("ALL THE THINGS IN HEROSLIDE") -->
+                      <div class="p-4 bg-zinc-100/60 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+                        <div class="flex items-center gap-1.5 text-xs font-black uppercase text-zinc-400 tracking-wider">
+                          <mat-icon class="text-sm">title</mat-icon>
+                          <span>Text Content, Pricing & Badges</span>
+                        </div>
+
+                        <!-- Row: Title & Subheading -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[8px] font-black text-zinc-400 uppercase">Slide Headline</span>
+                              <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showTitle ?? (slide.layoutMode !== 'banner_only')"
+                                  (change)="updateSlideField($index, 'showTitle', $any($event.target).checked)"
+                                  class="w-3.5 h-3.5 rounded cursor-pointer"
+                                />
+                                <span class="text-[10px] font-bold text-zinc-500">Show</span>
+                              </label>
+                            </div>
+                            <input
+                              type="text"
+                              [value]="slide.title || ''"
+                              (input)="updateSlideField($index, 'title', $any($event.target).value)"
+                              placeholder="e.g. Print Without Limits."
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[8px] font-black text-zinc-400 uppercase">Slide Subheading / Subtitle</span>
+                              <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showSubtitle ?? (slide.layoutMode !== 'banner_only')"
+                                  (change)="updateSlideField($index, 'showSubtitle', $any($event.target).checked)"
+                                  class="w-3.5 h-3.5 rounded cursor-pointer"
+                                />
+                                <span class="text-[10px] font-bold text-zinc-500">Show</span>
+                              </label>
+                            </div>
+                            <input
+                              type="text"
+                              [value]="slide.subtitle || slide.subheading || ''"
+                              (input)="updateSlideField($index, 'subtitle', $any($event.target).value)"
+                              placeholder="e.g. Next-Gen High Performance 3D Solutions"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <!-- Row: Badge & Product Tag -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[8px] font-black text-zinc-400 uppercase">Badge Label</span>
+                              <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showBadge ?? false"
+                                  (change)="updateSlideField($index, 'showBadge', $any($event.target).checked)"
+                                  class="w-3.5 h-3.5 rounded cursor-pointer"
+                                />
+                                <span class="text-[10px] font-bold text-zinc-500">Show</span>
+                              </label>
+                            </div>
+                            <input
+                              type="text"
+                              [value]="slide.badge || ''"
+                              (input)="updateSlideField($index, 'badge', $any($event.target).value)"
+                              placeholder="e.g. Featured"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Badge Icon (Material)</span>
+                            <input
+                              type="text"
+                              [value]="slide.badgeIcon || 'bolt'"
+                              (input)="updateSlideField($index, 'badgeIcon', $any($event.target).value)"
+                              placeholder="e.g. bolt"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[8px] font-black text-zinc-400 uppercase">Product Tag</span>
+                              <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showProductTag ?? false"
+                                  (change)="updateSlideField($index, 'showProductTag', $any($event.target).checked)"
+                                  class="w-3.5 h-3.5 rounded cursor-pointer"
+                                />
+                                <span class="text-[10px] font-bold text-zinc-500">Show</span>
+                              </label>
+                            </div>
+                            <input
+                              type="text"
+                              [value]="slide.productTag || ''"
+                              (input)="updateSlideField($index, 'productTag', $any($event.target).value)"
+                              placeholder="e.g. Hot or Best Seller"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            />
+                          </div>
+
+                          <div class="space-y-1">
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Text Color Theme</span>
+                            <select
+                              [value]="slide.textColorMode || 'light'"
+                              (change)="updateSlideField($index, 'textColorMode', $any($event.target).value)"
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer"
+                            >
+                              <option value="light">Light (White text for dark banners)</option>
+                              <option value="dark">Dark (Dark text for white banners)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Row: Pricing -->
+                        <div class="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200">Price Display</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                [checked]="slide.showPrice ?? false"
+                                (change)="updateSlideField($index, 'showPrice', $any($event.target).checked)"
+                                class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                              />
+                              <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">Show Price Tag</span>
+                            </label>
+                          </div>
+
+                          @if (slide.showPrice) {
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                              <div class="space-y-1">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">Current Price</span>
+                                <input
+                                  type="text"
+                                  [value]="slide.price || ''"
+                                  (input)="updateSlideField($index, 'price', $any($event.target).value)"
+                                  placeholder="e.g. 48999"
+                                  class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                />
+                              </div>
+                              <div class="space-y-1">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">Original Price (Strike)</span>
+                                <input
+                                  type="text"
+                                  [value]="slide.oldPrice || ''"
+                                  (input)="updateSlideField($index, 'oldPrice', $any($event.target).value)"
+                                  placeholder="e.g. 55000"
+                                  class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                />
+                              </div>
+                              <div class="space-y-1">
+                                <span class="block text-[8px] font-black text-zinc-400 uppercase">Discount Text</span>
+                                <input
+                                  type="text"
+                                  [value]="slide.discountText || ''"
+                                  (input)="updateSlideField($index, 'discountText', $any($event.target).value)"
+                                  placeholder="e.g. 11% OFF"
+                                  class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                                />
+                              </div>
+                            </div>
+                          }
+                        </div>
+
+                        <!-- Row: Description & Text Alignment -->
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                          <div class="md:col-span-9 space-y-1">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[8px] font-black text-zinc-400 uppercase">Description Paragraph</span>
+                              <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  [checked]="slide.showDesc ?? false"
+                                  (change)="updateSlideField($index, 'showDesc', $any($event.target).checked)"
+                                  class="w-3.5 h-3.5 rounded cursor-pointer"
+                                />
+                                <span class="text-[10px] font-bold text-zinc-500">Show</span>
+                              </label>
+                            </div>
+                            <textarea
+                              rows="2"
+                              [value]="slide.desc || ''"
+                              (input)="updateSlideField($index, 'desc', $any($event.target).value)"
+                              placeholder="Provide slide details paragraph..."
+                              class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            ></textarea>
+                          </div>
+
+                          <div class="md:col-span-3 space-y-1">
+                            <span class="block text-[8px] font-black text-zinc-400 uppercase">Text Alignment</span>
+                            <select
+                              [value]="slide.textAlignment || 'left'"
+                              (change)="updateSlideField($index, 'textAlignment', $any($event.target).value)"
+                              class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer"
+                            >
+                              <option value="left">Left</option>
+                              <option value="center">Center</option>
+                              <option value="right">Right</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 6. TIMING, ANIMATION & DEVICE RULES -->
+                      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 items-center pt-1">
                         <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Animation Type</span
-                          >
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Animation Type</span>
                           <select
                             [value]="slide.animationType || 'fade'"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'animationType',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            (change)="updateSlideField($index, 'animationType', $any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer"
                           >
                             <option value="fade">Fade</option>
                             <option value="slide-left">Slide Left</option>
@@ -948,240 +1312,90 @@ import { environment } from "../../../../environments/environment";
                             <option value="blur-reveal">Blur Reveal</option>
                           </select>
                         </div>
+
                         <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Overlay Opacity (0.0 to 1.0)</span
-                          >
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Duration (ms)</span>
                           <input
                             type="number"
-                            step="0.1"
-                            min="0"
-                            max="1"
-                            [value]="slide.overlayOpacity ?? 0.4"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'overlayOpacity',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            step="500"
+                            [value]="slide.slideDuration ?? 4000"
+                            (input)="updateSlideField($index, 'slideDuration', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                           />
                         </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Text Alignment</span
-                          >
-                          <select
-                            [value]="slide.textAlignment || 'left'"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'textAlignment',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </select>
-                        </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Button Theme</span
-                          >
-                          <select
-                            [value]="slide.btnTheme || 'primary'"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'btnTheme',
-                                $any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          >
-                            <option value="primary">
-                              Primary (Theme Accent)
-                            </option>
-                            <option value="secondary">
-                              Secondary (Theme Secondary)
-                            </option>
-                            <option value="accent">
-                              Accent (Glassmorphism / Bordered)
-                            </option>
-                          </select>
-                        </div>
-                      </div>
 
-                      <!-- Row 6: Duration, Slide Order, Boolean switches -->
-                      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Slide Duration (ms)</span
-                          >
+                          <span class="block text-[8px] font-black text-zinc-400 uppercase">Sort Order</span>
                           <input
                             type="number"
-                            [value]="slide.slideDuration ?? 3000"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'slideDuration',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
+                            [value]="slide.slideOrder ?? $index"
+                            (input)="updateSlideField($index, 'slideOrder', +$any($event.target).value)"
+                            class="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
                           />
                         </div>
-                        <div class="space-y-1">
-                          <span
-                            class="block text-[8px] font-black text-zinc-400 uppercase"
-                            >Slide Order</span
-                          >
-                          <input
-                            type="number"
-                            [value]="slide.slideOrder ?? 0"
-                            (input)="
-                              updateSlideField(
-                                $index,
-                                'slideOrder',
-                                +$any($event.target).value
-                              )
-                            "
-                            class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          />
-                        </div>
-                        <div class="flex items-center gap-2 pt-4">
-                          <input
-                            type="checkbox"
-                            [checked]="slide.active ?? true"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'active',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 cursor-pointer"
-                          />
-                          <span
-                            class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none"
-                            >Active</span
-                          >
-                        </div>
-                        <div class="flex items-center gap-2 pt-4">
-                          <input
-                            type="checkbox"
-                            [checked]="slide.darkOverlay ?? true"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'darkOverlay',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 cursor-pointer"
-                          />
-                          <span
-                            class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none"
-                            >Dark Overlay</span
-                          >
-                        </div>
-                      </div>
 
-                      <!-- Row 7: Device Visibility switches -->
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div class="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            [checked]="slide.hideOnMobile ?? false"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'hideOnMobile',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 cursor-pointer"
-                          />
-                          <span
-                            class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none text-[10px]"
-                            >Hide on Mobile</span
-                          >
+                        <div class="flex items-center gap-2 pt-3">
+                          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              [checked]="slide.active ?? true"
+                              (change)="updateSlideField($index, 'active', $any($event.target).checked)"
+                              class="w-4 h-4 cursor-pointer"
+                            />
+                            <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase">Active</span>
+                          </label>
                         </div>
-                        <div class="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            [checked]="slide.hideOnDesktop ?? false"
-                            (change)="
-                              updateSlideField(
-                                $index,
-                                'hideOnDesktop',
-                                $any($event.target).checked
-                              )
-                            "
-                            class="w-4 h-4 cursor-pointer"
-                          />
-                          <span
-                            class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase select-none text-[10px]"
-                            >Hide on Desktop</span
-                          >
+
+                        <div class="flex items-center gap-2 pt-3">
+                          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              [checked]="slide.hideOnMobile ?? false"
+                              (change)="updateSlideField($index, 'hideOnMobile', $any($event.target).checked)"
+                              class="w-4 h-4 cursor-pointer"
+                            />
+                            <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase text-[10px]">Hide Mobile</span>
+                          </label>
                         </div>
-                      </div>
 
-                      <!-- Row 8: Image Resources -->
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <app-image-picker
-                          label="Desktop Image Resource"
-                          [value]="slide.imageUrl"
-                          (valueChange)="
-                            updateSlideField($index, 'imageUrl', $event)
-                          "
-                        ></app-image-picker>
-                        <app-image-picker
-                          label="Mobile Image Resource"
-                          [value]="slide.mobileImageUrl || ''"
-                          (valueChange)="
-                            updateSlideField($index, 'mobileImageUrl', $event)
-                          "
-                        ></app-image-picker>
-                      </div>
-
-                      <div class="space-y-1">
-                        <span
-                          class="block text-[8px] font-black text-zinc-400 uppercase"
-                          >Slide Description</span
-                        >
-                        <textarea
-                          rows="2"
-                          [value]="slide.desc || ''"
-                          (input)="
-                            updateSlideField(
-                              $index,
-                              'desc',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none"
-                          placeholder="Provide slide details paragraph..."
-                        ></textarea>
+                        <div class="flex items-center gap-2 pt-3">
+                          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              [checked]="slide.hideOnDesktop ?? false"
+                              (change)="updateSlideField($index, 'hideOnDesktop', $any($event.target).checked)"
+                              class="w-4 h-4 cursor-pointer"
+                            />
+                            <span class="text-xs text-zinc-700 dark:text-zinc-300 font-bold uppercase text-[10px]">Hide Desktop</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   }
                 </div>
-                <button
-                  (click)="addHeroSlide()"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1 cursor-pointer w-fit"
-                >
-                  <mat-icon class="text-sm">add_to_photos</mat-icon> Insert
-                  Slide Frame
-                </button>
+
+                <!-- Bottom Action Controls -->
+                <div class="flex flex-wrap items-center gap-3 pt-3 border-t dark:border-zinc-800">
+                  <button
+                    type="button"
+                    (click)="addHeroSlide()"
+                    class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    id="add-hero-slide-btn"
+                  >
+                    <mat-icon class="text-sm">add_to_photos</mat-icon>
+                    <span>Insert Slide Frame</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="saveAllSettings()"
+                    [disabled]="isSaving()"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+                    id="save-hero-slides-bottom-btn"
+                  >
+                    <mat-icon class="text-sm">{{ isSaving() ? 'rotate_right' : 'save' }}</mat-icon>
+                    <span>{{ isSaving() ? 'Saving Configuration...' : 'Save Slides' }}</span>
+                  </button>
+                </div>
               </div>
             }
 
@@ -6759,34 +6973,58 @@ export class AdminSettingsTab implements OnDestroy {
 
   // Specialized array helpers
   addHeroSlide() {
+    const nextIdx = (this.draft().heroSlides || []).length;
     this.appendArrayItem("heroSlides", {
-      imageUrl: "",
+      id: "slide_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       title: "",
       subtitle: "",
+      subheading: "",
       linkUrl: "",
-      badge: "",
-      badgeIcon: "",
-      btnText: "",
-      videoUrl: "",
-      desc: "",
+      layoutMode: "banner_only",
+      showOverlayCard: false,
+      overlayImageUrl: "",
+      imageUrl: "",
+      overlayCardSize: "medium",
+      overlayCardStyle: "glass",
+      enableTilt: true,
+      showPrimaryBtn: false,
+      btnText: "Buy Now",
+      btnIcon: "shopping_cart",
+      btnTheme: "primary",
+      showSecondaryBtn: false,
       secBtnText: "View Details",
-      mobileImageUrl: "",
-      bgImageUrl: "",
-      bgVideoUrl: "",
-      bgGradient: "",
-      bgColor: "#09090b",
+      secBtnUrl: "",
+      secBtnIcon: "explore",
+      secBtnTheme: "secondary",
+      isEntireSlideClickable: true,
+      showBadge: false,
+      badge: "Featured",
+      badgeIcon: "bolt",
+      showSubtitle: false,
+      showTitle: false,
+      showDesc: false,
+      desc: "",
+      showPrice: false,
       price: "",
       oldPrice: "",
       discountText: "",
+      showProductTag: false,
       productTag: "",
+      bgImageUrl: "",
+      mobileImageUrl: "",
+      bgVideoUrl: "",
+      videoUrl: "",
+      bgGradient: "",
+      bgColor: "#09090b",
+      textColorMode: "light",
       animationType: "fade",
       overlayOpacity: 0.4,
       textAlignment: "left",
       darkOverlay: true,
-      btnTheme: "primary",
-      slideOrder: 0,
-      slideDuration: 3000,
+      slideOrder: nextIdx,
+      slideDuration: 4000,
       active: true,
+      isActive: true,
       hideOnMobile: false,
       hideOnDesktop: false,
     });
@@ -6800,9 +7038,81 @@ export class AdminSettingsTab implements OnDestroy {
       if (field === 'subheading') updatedItem.subtitle = value;
       if (field === 'bgVideoUrl') updatedItem.videoUrl = value;
       if (field === 'videoUrl') updatedItem.bgVideoUrl = value;
+      if (field === 'overlayImageUrl') updatedItem.imageUrl = value;
+      if (field === 'imageUrl') updatedItem.overlayImageUrl = value;
       if (field === 'active') updatedItem.isActive = value;
       if (field === 'isActive') updatedItem.active = value;
+
+      if (field === 'layoutMode') {
+        if (value === 'banner_only') {
+          updatedItem.showOverlayCard = false;
+          updatedItem.showPrimaryBtn = false;
+          updatedItem.showSecondaryBtn = false;
+          updatedItem.showBadge = false;
+          updatedItem.showTitle = false;
+          updatedItem.showSubtitle = false;
+          updatedItem.showDesc = false;
+          updatedItem.showPrice = false;
+          updatedItem.showProductTag = false;
+          updatedItem.isEntireSlideClickable = true;
+        } else if (value === 'showcase') {
+          updatedItem.showOverlayCard = true;
+          updatedItem.showPrimaryBtn = true;
+          updatedItem.showTitle = true;
+        } else if (value === 'text_banner') {
+          updatedItem.showOverlayCard = false;
+          updatedItem.showPrimaryBtn = true;
+          updatedItem.showTitle = true;
+        } else if (value === 'minimal') {
+          updatedItem.showOverlayCard = false;
+          updatedItem.showPrimaryBtn = true;
+          updatedItem.showTitle = true;
+          updatedItem.textAlignment = 'center';
+        }
+      }
+
       list[index] = updatedItem;
+      return { ...d, heroSlides: list };
+    });
+  }
+
+  moveSlideUp(index: number) {
+    if (index <= 0) return;
+    this.draft.update((d) => {
+      const list = [...(d.heroSlides || [])];
+      const temp = list[index];
+      list[index] = list[index - 1];
+      list[index - 1] = temp;
+      list.forEach((s, idx) => s.slideOrder = idx);
+      return { ...d, heroSlides: list };
+    });
+  }
+
+  moveSlideDown(index: number) {
+    this.draft.update((d) => {
+      const list = [...(d.heroSlides || [])];
+      if (index >= list.length - 1) return d;
+      const temp = list[index];
+      list[index] = list[index + 1];
+      list[index + 1] = temp;
+      list.forEach((s, idx) => s.slideOrder = idx);
+      return { ...d, heroSlides: list };
+    });
+  }
+
+  duplicateSlide(index: number) {
+    this.draft.update((d) => {
+      const list = [...(d.heroSlides || [])];
+      const source = list[index];
+      if (!source) return d;
+      const clone = {
+        ...JSON.parse(JSON.stringify(source)),
+        id: "slide_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+        title: (source.title ? source.title + " (Copy)" : "New Slide Copy"),
+        slideOrder: list.length
+      };
+      list.splice(index + 1, 0, clone);
+      list.forEach((s, idx) => s.slideOrder = idx);
       return { ...d, heroSlides: list };
     });
   }
@@ -7314,6 +7624,10 @@ export class AdminSettingsTab implements OnDestroy {
       this.toastService.success(
         "Centralized configuration serialized successfully.",
       );
+      const latest = this.admin.settingsService.settingsData();
+      if (latest && Object.keys(latest).length > 0) {
+        this.draft.set(JSON.parse(JSON.stringify(latest)));
+      }
     } catch (e: any) {
       this.toastService.error(
         e.message || "Error synchronization system schema.",
