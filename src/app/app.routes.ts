@@ -144,7 +144,18 @@ export const routes: Routes = [
       import("./pages/orders/components/order-details/order-details").then(
         (m) => m.CustomerOrderDetailsComponent,
       ),
-    canActivate: [authGuard],
+  },
+  {
+    path: "account/orders/:orderNumber",
+    loadComponent: () =>
+      import("./pages/orders/components/order-details/order-details").then(
+        (m) => m.CustomerOrderDetailsComponent,
+      ),
+  },
+  {
+    path: "order/:orderNumber",
+    redirectTo: "orders/:orderNumber",
+    pathMatch: "full",
   },
   {
     path: "account",

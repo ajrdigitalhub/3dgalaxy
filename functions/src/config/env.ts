@@ -47,6 +47,10 @@ export const ENV = {
   BACKUP_RETENTION_COUNT: Number(process.env.BACKUP_RETENTION_COUNT || 8),
   BACKUP_STORAGE_ROOT: (process.env.BACKUP_STORAGE_ROOT || 'db_backups').replace(/^\/+|\/+$/g, ''),
   CRON_SECRET: process.env.CRON_SECRET || '3dgalaxy_cron_secret_key_2026',
+  APP_ENV: (process.env.APP_ENV || process.env.NODE_ENV || 'development').toLowerCase(),
+  APP_ORIGIN: (process.env.APP_ORIGIN || process.env.APP_URL || process.env.SITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, ''),
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'ajr3dgalaxy',
+  FCM_NOTIFICATIONS_ENABLED: process.env.FCM_NOTIFICATIONS_ENABLED !== 'false',
 };
 
 export const getDatabaseUrl = () => {

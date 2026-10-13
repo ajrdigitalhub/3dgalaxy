@@ -4,6 +4,15 @@ import { getFirebaseAdmin } from "../config/firebase";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  getAllowedOriginsForEnv,
+  resolveClientOrigin,
+  isFcmNotificationsEnabled,
+} from "../config/notificationEnv";
+import { NotificationDiagnostics } from "../services/notificationDiagnostics.service";
 
 export interface AdminDeviceRecord {
   id: string;
@@ -23,6 +32,10 @@ export interface AdminDeviceRecord {
   isOnline?: boolean;
   notificationEnabled?: boolean;
   notificationPermission?: string;
+  environment?: string;
+  appOrigin?: string;
+  firebaseProjectId?: string;
+  tokenStatus?: string;
   lastNotificationSentAt?: string;
   notificationCount?: number;
   lastUsedAt: string;
@@ -202,6 +215,21 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
       return;
     }
 
+    // Strictly validate client origin against active environment allowlist
+    const clientOriginInfo = resolveClientOrigin(req);
+    if (!clientOriginInfo.isValid) {
+      res.status(400).json({
+        error: `Origin is not allowed for environment '${clientOriginInfo.environment}'. Registration rejected.`,
+        environment: clientOriginInfo.environment,
+        providedOrigin: clientOriginInfo.rawOrigin,
+      });
+      return;
+    }
+
+    const environment = clientOriginInfo.environment;
+    const appOrigin = clientOriginInfo.normalizedOrigin;
+    const projectId = clientOriginInfo.projectId;
+
     const meta = parseClientMetadata(req);
     const now = new Date();
     const nowIso = now.toISOString();
@@ -220,7 +248,7 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
     let savedRecord: AdminDeviceRecord | null = null;
 
     try {
-      // Upsert record in AdminFcmToken database model
+      // Upsert record in AdminFcmToken database model with environment association
       const dbDevice = await (prisma as any).adminFcmToken.upsert({
         where: { fcmToken },
         update: {
@@ -235,6 +263,10 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
           deviceType,
           ipAddress,
           userAgent,
+          environment,
+          appOrigin,
+          firebaseProjectId: projectId,
+          tokenStatus: "ACTIVE",
           isActive: true,
           isOnline: true,
           notificationEnabled: true,
@@ -253,6 +285,10 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
           fcmToken,
           ipAddress,
           userAgent,
+          environment,
+          appOrigin,
+          firebaseProjectId: projectId,
+          tokenStatus: "ACTIVE",
           isActive: true,
           isOnline: true,
           notificationEnabled: true,
@@ -310,6 +346,10 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
         isOnline: true,
         notificationEnabled: true,
         notificationPermission,
+        environment,
+        appOrigin: appOrigin || undefined,
+        firebaseProjectId: projectId,
+        tokenStatus: "ACTIVE",
         lastUsedAt: nowIso,
         updatedAt: nowIso,
       };
@@ -333,6 +373,10 @@ export async function registerAdminDevice(req: Request, res: Response): Promise<
         isOnline: true,
         notificationEnabled: true,
         notificationPermission,
+        environment,
+        appOrigin: appOrigin || undefined,
+        firebaseProjectId: projectId,
+        tokenStatus: "ACTIVE",
         notificationCount: 0,
         lastUsedAt: nowIso,
         createdAt: nowIso,
@@ -373,8 +417,10 @@ export async function getAdminDevices(req: Request, res: Response): Promise<void
     let offlineCount = 0;
     let totalAdminUsers = 0;
 
+    const currentEnv = getAppEnv();
+
     try {
-      const where: any = {};
+      const where: any = { environment: currentEnv };
       if (status === "active") where.isActive = true;
       if (status === "inactive") where.isActive = false;
       if (online === "true" || online === "1") where.isOnline = true;
@@ -450,9 +496,11 @@ export async function getAdminDevices(req: Request, res: Response): Promise<void
       console.warn("[getAdminDevices] DB query fallback to JSON file:", dbErr);
     }
 
-    // Merge/Fallback with JSON file storage
+    // Merge/Fallback with JSON file storage strictly scoped to active environment
     if (dbRecords.length === 0) {
-      let fileDevices = loadFallbackDevices();
+      let fileDevices = loadFallbackDevices().filter(
+        (d) => d.environment === currentEnv || (!d.environment && currentEnv === "production")
+      );
 
       if (status === "active") fileDevices = fileDevices.filter((d) => d.isActive);
       if (status === "inactive") fileDevices = fileDevices.filter((d) => !d.isActive);
@@ -666,9 +714,11 @@ export async function forceRefreshToken(req: Request, res: Response): Promise<vo
  */
 export async function exportAdminDevicesCsv(req: Request, res: Response): Promise<void> {
   try {
+    const currentEnv = getAppEnv();
     let records: AdminDeviceRecord[] = [];
     try {
       const items = await (prisma as any).adminFcmToken.findMany({
+        where: { environment: currentEnv },
         orderBy: { lastUsedAt: "desc" },
       });
       records = items.map((i: any) => ({
@@ -692,7 +742,9 @@ export async function exportAdminDevicesCsv(req: Request, res: Response): Promis
         updatedAt: i.updatedAt ? i.updatedAt.toISOString() : new Date().toISOString(),
       }));
     } catch (e) {
-      records = loadFallbackDevices();
+      records = loadFallbackDevices().filter(
+        (d) => d.environment === currentEnv || (!d.environment && currentEnv === "production")
+      );
     }
 
     const headers = [
@@ -846,11 +898,31 @@ export async function broadcastAdminNotification(req: Request, res: Response): P
       return;
     }
 
-    // 1. Fetch all active FCM devices across DB and Fallback JSON
+    const currentEnv = getAppEnv();
+
+    // Validate that notifications are enabled for this environment
+    if (!isFcmNotificationsEnabled()) {
+      res.status(200).json({
+        success: false,
+        message: `Push notifications are disabled for environment '${currentEnv}'.`,
+        tokensSent: 0,
+        successCount: 0,
+        failureCount: 0,
+        environment: currentEnv,
+      });
+      return;
+    }
+
+    // 1. Fetch active FCM devices strictly restricted to active application environment
     let dbDevices: AdminDeviceRecord[] = [];
     try {
       const items = await (prisma as any).adminFcmToken.findMany({
-        where: { isActive: true, notificationEnabled: true },
+        where: {
+          isActive: true,
+          notificationEnabled: true,
+          environment: currentEnv,
+          tokenStatus: { not: "INVALID" },
+        },
         select: { id: true, fcmToken: true, adminId: true, adminEmail: true, deviceName: true },
       });
       dbDevices = items.map((i: any) => ({
@@ -864,6 +936,7 @@ export async function broadcastAdminNotification(req: Request, res: Response): P
         browser: "Chrome",
         operatingSystem: "Windows",
         isActive: true,
+        environment: currentEnv,
         lastUsedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -872,17 +945,34 @@ export async function broadcastAdminNotification(req: Request, res: Response): P
       console.warn("[broadcastAdminNotification] DB query fallback:", e);
     }
 
-    const fallbackDevices = loadFallbackDevices().filter((d) => d.isActive && d.notificationEnabled !== false);
+    const fallbackDevices = loadFallbackDevices().filter((d) =>
+      d.isActive &&
+      d.notificationEnabled !== false &&
+      (d.environment === currentEnv || (!d.environment && currentEnv === "production")) &&
+      d.tokenStatus !== "INVALID"
+    );
     const allDevices = [...dbDevices, ...fallbackDevices];
     const uniqueTokens = Array.from(new Set(allDevices.map((d) => d.fcmToken).filter(Boolean)));
 
     if (uniqueTokens.length === 0) {
+      await NotificationDiagnostics.recordAttempt({
+        category: type,
+        recipientType: "BROADCAST",
+        eligibleTokenCount: 0,
+        environment: currentEnv,
+        success: false,
+        failureReason: "NO_ELIGIBLE_TOKENS",
+        title,
+        bodySnippet: body,
+      });
+
       res.status(200).json({
         success: false,
-        message: "No active admin devices registered for push notification broadcast.",
+        message: `No active admin devices registered in environment '${currentEnv}' for push broadcast.`,
         tokensSent: 0,
         successCount: 0,
         failureCount: 0,
+        environment: currentEnv,
       });
       return;
     }
@@ -907,6 +997,9 @@ export async function broadcastAdminNotification(req: Request, res: Response): P
             title,
             body,
             click_action: deepLink,
+            environment: currentEnv,
+            appOrigin: getAppOrigin(),
+            firebaseProjectId: getFirebaseProjectId(),
             ...(data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : {}),
           },
           webpush: {
@@ -953,14 +1046,16 @@ export async function broadcastAdminNotification(req: Request, res: Response): P
       try {
         await (prisma as any).adminFcmToken.updateMany({
           where: { fcmToken: { in: invalidTokens } },
-          data: { isActive: false },
+          data: { isActive: false, tokenStatus: "INVALID" },
         });
       } catch (e) {
         console.warn("[broadcastAdminNotification] DB token deactivation error:", e);
       }
 
       const fileDevices = loadFallbackDevices();
-      const updatedFileDevices = fileDevices.map((d) => (invalidTokens.includes(d.fcmToken) ? { ...d, isActive: false } : d));
+      const updatedFileDevices = fileDevices.map((d) =>
+        invalidTokens.includes(d.fcmToken) ? { ...d, isActive: false, tokenStatus: "INVALID" } : d
+      );
       saveFallbackDevices(updatedFileDevices);
     }
 
@@ -1055,10 +1150,31 @@ export const sendTestNotification = async (req: Request, res: Response): Promise
   try {
     const { fcmToken, deviceName } = req.body || {};
     const nowIso = new Date().toISOString();
+    const currentEnv = getAppEnv();
+
+    if (fcmToken) {
+      // Check if token belongs to another environment
+      let devRecord: any = null;
+      try {
+        devRecord = await (prisma as any).adminFcmToken.findUnique({ where: { fcmToken } });
+      } catch {
+        devRecord = loadFallbackDevices().find((d) => d.fcmToken === fcmToken);
+      }
+
+      if (devRecord && devRecord.environment && devRecord.environment !== currentEnv) {
+        res.status(400).json({
+          success: false,
+          error: `Target device is registered to '${devRecord.environment}', cannot send test notification from '${currentEnv}'.`,
+          environment: currentEnv,
+          deviceEnvironment: devRecord.environment,
+        });
+        return;
+      }
+    }
 
     const logEntry: AdminDeliveryLogRecord = {
       id: `NOTIF-LOG-${Date.now()}`,
-      title: "🚀 3DGalaxy Admin Push Test",
+      title: `🚀 3DGalaxy Admin Push Test [${currentEnv.toUpperCase()}]`,
       body: `Push notifications are active on ${deviceName || "your admin device"}.`,
       category: "System Alert",
       tokensSent: 1,
@@ -1074,8 +1190,9 @@ export const sendTestNotification = async (req: Request, res: Response): Promise
 
     res.json({
       success: true,
-      message: "Test push notification dispatched successfully.",
+      message: `Test push notification dispatched successfully for environment '${currentEnv}'.`,
       data: logEntry,
+      environment: currentEnv,
       fcmToken,
     });
   } catch (err: any) {
@@ -1083,12 +1200,86 @@ export const sendTestNotification = async (req: Request, res: Response): Promise
   }
 };
 
+/**
+ * Get Environment Status & Diagnostic Metadata for Admin Push Hub
+ * GET /api/admin/push/environment-status
+ */
+export const getEnvironmentStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const currentEnv = getAppEnv();
+    const currentOrigin = getAppOrigin();
+    const projectId = getFirebaseProjectId();
+    const isEnabled = isFcmNotificationsEnabled();
+    const allowedOrigins = getAllowedOriginsForEnv(currentEnv);
+
+    let registeredCount = 0;
+    let activeCount = 0;
+    let invalidCount = 0;
+
+    try {
+      registeredCount = await (prisma as any).adminFcmToken.count({
+        where: { environment: currentEnv }
+      });
+      activeCount = await (prisma as any).adminFcmToken.count({
+        where: { environment: currentEnv, isActive: true, tokenStatus: "ACTIVE" }
+      });
+      invalidCount = await (prisma as any).adminFcmToken.count({
+        where: { environment: currentEnv, tokenStatus: "INVALID" }
+      });
+    } catch {
+      const fallback = loadFallbackDevices().filter((d) => (d.environment === currentEnv || (!d.environment && currentEnv === "production")));
+      registeredCount = fallback.length;
+      activeCount = fallback.filter((d) => d.isActive && d.tokenStatus !== "INVALID").length;
+      invalidCount = fallback.filter((d) => d.tokenStatus === "INVALID").length;
+    }
+
+    let lastSuccessfulSend: string | null = null;
+    let failedNotificationCount = 0;
+
+    try {
+      const lastSuccess = await (prisma as any).adminNotificationDeliveryLog.findFirst({
+        where: { status: "DELIVERED" },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true }
+      });
+      if (lastSuccess) lastSuccessfulSend = lastSuccess.createdAt.toISOString();
+      failedNotificationCount = await (prisma as any).adminNotificationDeliveryLog.count({
+        where: { status: "FAILED" }
+      });
+    } catch {
+      const fallbackLogs = loadFallbackLogs();
+      const lastSuccess = fallbackLogs.find(l => l.status === "DELIVERED");
+      if (lastSuccess) lastSuccessfulSend = lastSuccess.sentAt;
+      failedNotificationCount = fallbackLogs.filter(l => l.status === "FAILED").length;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        environment: currentEnv,
+        configuredOrigin: currentOrigin,
+        allowedOrigins,
+        firebaseProjectId: projectId,
+        fcmNotificationsEnabled: isEnabled,
+        registeredDevicesCount: registeredCount,
+        activeDevicesCount: activeCount,
+        invalidTokensCount: invalidCount,
+        lastSuccessfulSend,
+        failedNotificationCount,
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 export const getActiveAdminDevices = async (req: Request, res: Response): Promise<void> => {
   try {
+    const currentEnv = getAppEnv();
     let activeDevices: AdminDeviceRecord[] = [];
     try {
       const items = await (prisma as any).adminFcmToken.findMany({
-        where: { isActive: true },
+        where: { isActive: true, environment: currentEnv, tokenStatus: "ACTIVE" },
         orderBy: { lastUsedAt: "desc" },
       });
       activeDevices = items.map((i: any) => ({
@@ -1112,7 +1303,9 @@ export const getActiveAdminDevices = async (req: Request, res: Response): Promis
         updatedAt: i.updatedAt ? i.updatedAt.toISOString() : new Date().toISOString(),
       }));
     } catch (e) {
-      activeDevices = loadFallbackDevices().filter((d) => d.isActive);
+      activeDevices = loadFallbackDevices().filter(
+        (d) => d.isActive && (d.environment === currentEnv || (!d.environment && currentEnv === "production")) && d.tokenStatus !== "INVALID"
+      );
     }
     res.json({ success: true, count: activeDevices.length, data: activeDevices });
   } catch (err: any) {

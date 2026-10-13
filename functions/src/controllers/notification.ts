@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
 import prisma from "../config/database";
 import { getFirebaseAdmin } from "../config/firebase";
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  resolveClientOrigin,
+  isFcmNotificationsEnabled,
+} from "../config/notificationEnv";
+import { NotificationDiagnostics } from "../services/notificationDiagnostics.service";
 
 // Helper to safely get Messaging service
 const getMessaging = () => {
@@ -40,13 +48,30 @@ export const registerDevice = async (req: Request, res: Response) => {
       });
   }
 
+  // Strictly validate client origin against active environment's allowlist
+  const clientOriginInfo = resolveClientOrigin(req);
+  if (!clientOriginInfo.isValid) {
+    return res.status(400).json({
+      status: "error",
+      success: false,
+      message: `Origin is not allowed for environment '${clientOriginInfo.environment}'. Device registration rejected.`,
+      error: "Unauthorized application origin",
+      environment: clientOriginInfo.environment,
+      providedOrigin: clientOriginInfo.rawOrigin,
+    });
+  }
+
+  const environment = clientOriginInfo.environment;
+  const appOrigin = clientOriginInfo.normalizedOrigin;
+  const firebaseProjectId = clientOriginInfo.projectId;
+
   try {
     const existing = await prisma.notificationDevice.findUnique({
       where: { fcmToken },
     });
 
     if (existing) {
-      const updated = await prisma.notificationDevice.update({
+      const updated = await (prisma.notificationDevice as any).update({
         where: { id: existing.id },
         data: {
           userId: userId !== undefined ? userId : existing.userId,
@@ -58,6 +83,10 @@ export const registerDevice = async (req: Request, res: Response) => {
           appVersion: appVersion || existing.appVersion,
           language: language || existing.language,
           country: country || existing.country,
+          environment,
+          appOrigin,
+          firebaseProjectId,
+          tokenStatus: "ACTIVE",
           notificationEnabled:
             notificationEnabled !== undefined
               ? notificationEnabled
@@ -75,7 +104,7 @@ export const registerDevice = async (req: Request, res: Response) => {
         });
     }
 
-    const created = await prisma.notificationDevice.create({
+    const created = await (prisma.notificationDevice as any).create({
       data: {
         userId,
         guestId,
@@ -87,6 +116,10 @@ export const registerDevice = async (req: Request, res: Response) => {
         appVersion,
         language,
         country,
+        environment,
+        appOrigin,
+        firebaseProjectId,
+        tokenStatus: "ACTIVE",
         notificationEnabled:
           notificationEnabled !== undefined ? notificationEnabled : true,
         lastActive: new Date(),
@@ -130,6 +163,22 @@ export const updateToken = async (req: Request, res: Response) => {
       });
   }
 
+  const clientOriginInfo = resolveClientOrigin(req);
+  if (!clientOriginInfo.isValid) {
+    return res.status(400).json({
+      status: "error",
+      success: false,
+      message: `Origin is not allowed for environment '${clientOriginInfo.environment}'. Token update rejected.`,
+      error: "Unauthorized application origin",
+      environment: clientOriginInfo.environment,
+      providedOrigin: clientOriginInfo.rawOrigin,
+    });
+  }
+
+  const environment = clientOriginInfo.environment;
+  const appOrigin = clientOriginInfo.normalizedOrigin;
+  const firebaseProjectId = clientOriginInfo.projectId;
+
   try {
     const existing = await prisma.notificationDevice.findUnique({
       where: { fcmToken: oldToken },
@@ -137,9 +186,13 @@ export const updateToken = async (req: Request, res: Response) => {
 
     if (!existing) {
       // If old token not found, register new token
-      const created = await prisma.notificationDevice.create({
+      const created = await (prisma.notificationDevice as any).create({
         data: {
           fcmToken: newToken,
+          environment,
+          appOrigin,
+          firebaseProjectId,
+          tokenStatus: "ACTIVE",
           lastActive: new Date(),
         },
       });
@@ -153,10 +206,14 @@ export const updateToken = async (req: Request, res: Response) => {
         });
     }
 
-    const updated = await prisma.notificationDevice.update({
+    const updated = await (prisma.notificationDevice as any).update({
       where: { fcmToken: oldToken },
       data: {
         fcmToken: newToken,
+        environment,
+        appOrigin,
+        firebaseProjectId,
+        tokenStatus: "ACTIVE",
         lastActive: new Date(),
       },
     });
@@ -178,8 +235,26 @@ export const updateToken = async (req: Request, res: Response) => {
         success: false,
         message: error.message || "Failed to update token.",
         error: "Failed to update token.",
-        details: error.message,
       });
+  }
+};
+
+// 2b. Unbind Account on Logout (Disassociate userId while preserving device registration)
+export const unbindDeviceAccount = async (req: Request, res: Response) => {
+  const { fcmToken } = req.body;
+  if (!fcmToken) {
+    return res.status(400).json({ status: "error", success: false, error: "fcmToken is required" });
+  }
+
+  try {
+    const currentEnv = getAppEnv();
+    await (prisma.notificationDevice as any).updateMany({
+      where: { fcmToken, environment: currentEnv },
+      data: { userId: null, lastActive: new Date() },
+    });
+    return res.status(200).json({ status: "success", success: true, message: "Account disassociated from device token." });
+  } catch (error: any) {
+    return res.status(500).json({ status: "error", success: false, error: error.message });
   }
 };
 
@@ -435,28 +510,37 @@ export const sendPushNotificationInternal = async (params: {
   let isTopic = false;
   let topicName = "";
 
-  // Determine target devices
+  const currentEnv = getAppEnv();
+
+  // Determine target devices restricted to current application environment
   if (targetType === "all") {
-    const devices = await prisma.notificationDevice.findMany({
-      where: { notificationEnabled: true },
+    const devices = await (prisma.notificationDevice as any).findMany({
+      where: { notificationEnabled: true, environment: currentEnv, tokenStatus: "ACTIVE" },
       select: { fcmToken: true },
     });
-    tokens = devices.map((d) => d.fcmToken);
+    tokens = devices.map((d: any) => d.fcmToken);
   } else if (targetType === "guests") {
-    const devices = await prisma.notificationDevice.findMany({
-      where: { userId: null, notificationEnabled: true },
+    const devices = await (prisma.notificationDevice as any).findMany({
+      where: { userId: null, notificationEnabled: true, environment: currentEnv, tokenStatus: "ACTIVE" },
       select: { fcmToken: true },
     });
-    tokens = devices.map((d) => d.fcmToken);
+    tokens = devices.map((d: any) => d.fcmToken);
   } else if (targetType === "users") {
-    const devices = await prisma.notificationDevice.findMany({
-      where: { NOT: { userId: null }, notificationEnabled: true },
+    const devices = await (prisma.notificationDevice as any).findMany({
+      where: { NOT: { userId: null }, notificationEnabled: true, environment: currentEnv, tokenStatus: "ACTIVE" },
       select: { fcmToken: true },
     });
-    tokens = devices.map((d) => d.fcmToken);
+    tokens = devices.map((d: any) => d.fcmToken);
   } else if (targetType === "device") {
     if (!targetValue)
       throw new Error("targetValue required for device target.");
+    // Validate target device belongs to active environment
+    const dev = await (prisma.notificationDevice as any).findUnique({
+      where: { fcmToken: targetValue },
+    });
+    if (dev && dev.environment && dev.environment !== currentEnv) {
+      throw new Error(`Device token is registered to '${dev.environment}', cannot send from '${currentEnv}'.`);
+    }
     tokens = [targetValue];
   } else if (targetType === "topic") {
     if (!targetValue) throw new Error("targetValue required for topic target.");
@@ -483,6 +567,9 @@ export const sendPushNotificationInternal = async (params: {
     title,
     body,
     image: image || "",
+    environment: currentEnv,
+    appOrigin: getAppOrigin(),
+    firebaseProjectId: getFirebaseProjectId(),
   };
 
   if (isTopic) {
@@ -531,8 +618,11 @@ export const sendPushNotificationInternal = async (params: {
             errCode === "messaging/invalid-registration-token" ||
             errCode === "messaging/registration-token-not-registered"
           ) {
-            prisma.notificationDevice
-              .delete({ where: { fcmToken: tokens[idx] } })
+            (prisma.notificationDevice as any)
+              .update({
+                where: { fcmToken: tokens[idx] },
+                data: { notificationEnabled: false, tokenStatus: "INVALID" },
+              })
               .catch(() => {});
           }
         }
@@ -672,9 +762,11 @@ export const adminSendTopic = async (req: Request, res: Response) => {
 export const adminSendUser = async (req: Request, res: Response) => {
   const { userId, title, body, image, actionUrl } = req.body;
 
+  const currentEnv = getAppEnv();
+
   try {
-    const devices = await prisma.notificationDevice.findMany({
-      where: { userId, notificationEnabled: true },
+    const devices = await (prisma.notificationDevice as any).findMany({
+      where: { userId, notificationEnabled: true, environment: currentEnv, tokenStatus: "ACTIVE" },
       select: { fcmToken: true },
     });
 
@@ -744,14 +836,19 @@ export const adminGetLogs = async (req: Request, res: Response) => {
 // E. Get Analytics
 export const adminGetAnalytics = async (req: Request, res: Response) => {
   try {
-    const totalDevices = await prisma.notificationDevice.count();
-    const activeDevices = await prisma.notificationDevice.count({
+    const currentEnv = getAppEnv();
+    const totalDevices = await (prisma.notificationDevice as any).count({
+      where: { environment: currentEnv },
+    });
+    const activeDevices = await (prisma.notificationDevice as any).count({
       where: {
+        environment: currentEnv,
+        tokenStatus: "ACTIVE",
         lastActive: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       },
     });
-    const registeredUsers = await prisma.notificationDevice.count({
-      where: { NOT: { userId: null } },
+    const registeredUsers = await (prisma.notificationDevice as any).count({
+      where: { environment: currentEnv, NOT: { userId: null } },
     });
     const guestDevices = totalDevices - registeredUsers;
 
@@ -817,7 +914,9 @@ export const adminGetAnalytics = async (req: Request, res: Response) => {
 // F. Get Registered Devices list
 export const adminGetDevices = async (req: Request, res: Response) => {
   try {
-    const list = await prisma.notificationDevice.findMany({
+    const currentEnv = getAppEnv();
+    const list = await (prisma.notificationDevice as any).findMany({
+      where: { environment: currentEnv },
       orderBy: { lastActive: "desc" },
       include: {
         user: { select: { email: true, firstName: true, lastName: true } },

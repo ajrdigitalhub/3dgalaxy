@@ -1,9 +1,9 @@
 <div class="space-y-8 text-left max-w-6xl mx-auto py-4 px-4 sm:px-6">
   <!-- BREADCRUMBS & ACTION BAR -->
   <div class="flex items-center justify-between">
-    <button (click)="location.back()"
-      class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
-      <mat-icon class="scale-75">arrow_back</mat-icon> Back to My Orders
+    <button (click)="goBack()"
+      class="flex items-center gap-2 text-xs font-bold text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors cursor-pointer border-none bg-transparent">
+      <mat-icon class="scale-75">arrow_back</mat-icon> Back to Orders
     </button>
     @if (order(); as ord) {
       <div class="text-xs text-neutral-500 dark:text-neutral-400 font-medium" id="current_time_display">
@@ -25,8 +25,8 @@
     <mat-icon class="text-rose-500 scale-125">error_outline</mat-icon>
     <h3 class="text-sm font-bold text-rose-500">Retrieval Failure</h3>
     <p class="text-xs text-neutral-500 line-clamp-3">{{ error() }}</p>
-    <button (click)="location.back()"
-      class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all">
+    <button (click)="goBack()"
+      class="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer border-none">
       Go Back
     </button>
   </div>

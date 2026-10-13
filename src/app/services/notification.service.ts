@@ -334,11 +334,15 @@ export class NotificationService {
     }
 
     const cfg = config || {};
+    const clientEnv = cfg.environment || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'development' : 'production');
+    const clientOrigin = cfg.appOrigin || (typeof window !== 'undefined' ? window.location.origin : '');
     const queryParams = new URLSearchParams({
       apiKey: cfg.apiKey || '',
       projectId: cfg.projectId || '',
       senderId: cfg.messagingSenderId || '',
       appId: cfg.appId || '',
+      env: clientEnv,
+      origin: clientOrigin,
     }).toString();
 
     this.serviceWorkerRegistrationPromise = navigator.serviceWorker.register(
@@ -370,6 +374,8 @@ export class NotificationService {
     else if (userAgent.indexOf("Android") > -1) os = "Android";
     else if (userAgent.indexOf("iPhone") > -1) os = "iOS";
 
+    const clientOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
+
     const payload = {
       userId,
       guestId,
@@ -382,6 +388,7 @@ export class NotificationService {
       language: navigator.language || "en",
       country: "IN", // Default
       notificationEnabled: true,
+      appOrigin: clientOrigin,
     };
 
     this.api.post<any>("/notifications/register-device", payload).subscribe({
@@ -410,6 +417,7 @@ export class NotificationService {
         deviceType: userAgent.indexOf("Mobi") > -1 ? "Mobile" : "Desktop",
         fcmToken: token,
         notificationPermission: typeof Notification !== "undefined" ? Notification.permission : "granted",
+        appOrigin: clientOrigin,
       };
       this.registerAdminDevice(adminPayload).subscribe({
         next: () => console.log("Admin FCM device token registered with backend"),
@@ -747,6 +755,17 @@ export class NotificationService {
     }
   }
 
+  // Unbind user account from device on logout (preserves device registration)
+  unbindAccount(): Observable<any> {
+    const token = this.fcmToken();
+    this.registrationKey = "";
+    if (!token) return new Observable(sub => { sub.next({ success: true }); sub.complete(); });
+    return this.api.post<any>("/notifications/unbind-account", {
+      fcmToken: token,
+      appOrigin: typeof window !== "undefined" ? window.location.origin : undefined,
+    });
+  }
+
   registerAdminDevice(payload: any): Observable<any> {
     return this.api.post("/admin/fcm/register", payload);
   }
@@ -816,6 +835,10 @@ export class NotificationService {
 
   getAdminNotificationLogs(): Observable<any> {
     return this.api.get("/admin/fcm/delivery-history");
+  }
+
+  getEnvironmentStatus(): Observable<any> {
+    return this.api.get("/admin/fcm/environment-status");
   }
 
   exportDevicesCsv(): void {

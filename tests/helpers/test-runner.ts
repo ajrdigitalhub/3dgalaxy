@@ -14,6 +14,7 @@ import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
 import { runWhatsappWebhookApiTests } from '../api/whatsapp-webhook-api.test';
 import { runCustomerCheckoutIntegrationTests } from '../integration/customer-checkout-pipeline.test';
+import { runFcmEnvironmentIsolationTests } from '../integration/fcm-environment-isolation.test';
 import { runCriticalSmokeTests } from '../smoke/critical-smoke.test';
 import fs from 'fs';
 import path from 'path';
@@ -109,6 +110,12 @@ async function main() {
     const d7 = Date.now() - s7;
     suites.push({ name: 'Customer Checkout Lifecycle Pipeline Test', category: 'INTEGRATION', ...r7, durationMs: d7 });
     console.log(`  ✓ Customer Checkout Pipeline: ${r7.passed} passed, ${r7.failed} failed (${d7}ms)`);
+
+    const sFcm = Date.now();
+    const rFcm = await runFcmEnvironmentIsolationTests(client);
+    const dFcm = Date.now() - sFcm;
+    suites.push({ name: 'FCM Push Notifications Domain & Environment Isolation Tests', category: 'INTEGRATION', ...rFcm, durationMs: dFcm });
+    console.log(`  ✓ FCM Environment & Domain Isolation: ${rFcm.passed} passed, ${rFcm.failed} failed (${dFcm}ms)`);
   }
 
   // LEVEL 4: CRITICAL SMOKE TESTS

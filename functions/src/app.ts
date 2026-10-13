@@ -307,7 +307,18 @@ const swaggerDocument = {
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+import backupScheduler from "./services/backupScheduler.service";
+
 // Centralized Global Error Handler
 app.use(globalErrorHandler);
 
+// Initialize in-process automated backup scheduler daemon
+try {
+  backupScheduler.init();
+} catch (schedErr) {
+  console.error("[APP] Failed to initialize backup scheduler daemon:", schedErr);
+}
+
+export { backupScheduler };
 export default app;
+

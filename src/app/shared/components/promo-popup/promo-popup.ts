@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit, OnDestroy, PLATFORM_ID, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit, OnDestroy, PLATFORM_ID, effect, HostListener } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -33,11 +33,11 @@ interface CountdownTime {
         >
           <!-- POPUP CONTAINER -->
           <div
-            class="fixed z-50 p-3 sm:p-4 transition-all duration-300 pointer-events-auto"
+            class="fixed z-50 p-2 sm:p-4 transition-all duration-300 pointer-events-auto flex items-center justify-center max-w-[100vw] max-h-[100vh]"
             [ngClass]="getPositionClasses(camp.popupPosition || 'center')"
           >
             <div
-              class="relative rounded-3xl overflow-hidden group flex flex-col transition-all duration-300"
+              class="relative rounded-2xl sm:rounded-3xl overflow-hidden group flex flex-col transition-all duration-300 mx-auto"
               [class.bg-white]="!isImgOnly"
               [class.dark:bg-zinc-900]="!isImgOnly"
               [class.border]="!isImgOnly"
@@ -51,6 +51,7 @@ interface CountdownTime {
                 getSizeClasses(camp.popupSize || 'medium', isImgOnly),
                 getAnimationClasses(camp.animation || 'zoom')
               ]"
+              [ngStyle]="dynamicPopupStyle()"
               (click)="$event.stopPropagation()"
             >
               <!-- CLOSE BUTTON -->
@@ -58,10 +59,10 @@ interface CountdownTime {
                 <button
                   type="button"
                   (click)="closePopup($event)"
-                  class="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-lg border border-white/20 hover:scale-110 active:scale-95"
+                  class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-xl border border-white/30 hover:scale-110 active:scale-90"
                   aria-label="Close popup"
                 >
-                  <mat-icon class="text-lg">close</mat-icon>
+                  <mat-icon class="text-base sm:text-lg">close</mat-icon>
                 </button>
               }
 
@@ -70,17 +71,28 @@ interface CountdownTime {
                 <div
                   class="relative w-full overflow-hidden flex items-center justify-center group"
                   [class.cursor-pointer]="(camp.imageClickAction || 'no_action') !== 'no_action'"
-                  [class.rounded-3xl]="isImgOnly"
+                  [class.rounded-2xl]="isImgOnly"
+                  [class.sm:rounded-3xl]="isImgOnly"
                   (click)="onImageClick(camp)"
                 >
-                  <img
-                    [src]="displayImageUrl()"
-                    [alt]="camp.headline || camp.title || 'Promotional Offer'"
-                    class="max-w-full max-h-[82vh] w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-[1.01] block"
-                    [class.rounded-3xl]="isImgOnly"
-                    [class.drop-shadow-2xl]="isImgOnly"
-                    loading="lazy"
-                  />
+                  <picture class="w-full h-auto flex items-center justify-center">
+                    @if (camp.mobileImageUrl) {
+                      <source media="(max-width: 767px)" [srcset]="camp.mobileImageUrl">
+                    }
+                    @if (camp.imageUrl || camp.mediaUrl) {
+                      <source media="(min-width: 768px)" [srcset]="camp.imageUrl || camp.mediaUrl">
+                    }
+                    <img
+                      [src]="displayImageUrl()"
+                      [alt]="camp.headline || camp.title || 'Promotional Offer'"
+                      (load)="onImageLoad($event)"
+                      [ngClass]="getImageClasses(isImgOnly)"
+                      class="transition-transform duration-500 group-hover:scale-[1.01] block mx-auto"
+                      loading="eager"
+                      fetchpriority="high"
+                      decoding="async"
+                    />
+                  </picture>
                   @if (camp.discountText && !isImgOnly) {
                     <div class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg z-20">
                       {{ camp.discountText }}
@@ -179,6 +191,10 @@ interface CountdownTime {
     .bg-black-30 { background-color: rgba(0, 0, 0, 0.3); }
     .bg-black-70 { background-color: rgba(0, 0, 0, 0.7); }
     .bg-black-50-blur { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); }
+    img {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: auto;
+    }
   `]
 })
 export class PromoPopupComponent implements OnInit, OnDestroy {
@@ -192,6 +208,9 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
   public activeCampaign = signal<any | null>(null);
   public countdown = signal<CountdownTime | null>(null);
   public isMobile = signal<boolean>(false);
+  public windowWidth = signal<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  public windowHeight = signal<number>(typeof window !== 'undefined' ? window.innerHeight : 768);
+  public imageAspectRatio = signal<number | null>(null);
   public dismissedCampaignIds = new Set<string>();
 
   private timerId: any = null;
@@ -200,6 +219,18 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
   private lastEvaluatedPath = '';
 
   constructor() {
+    // Reset and preload image dimensions whenever active campaign changes
+    effect(() => {
+      const camp = this.activeCampaign();
+      this.imageAspectRatio.set(null);
+      if (camp && isPlatformBrowser(this.platformId)) {
+        const url = this.displayImageUrl();
+        if (url) {
+          this.preloadImageDimensions(url);
+        }
+      }
+    }, { allowSignalWrites: true });
+
     // Reactive Effect listening to Campaign data, Auth changes, Notification permission state
     effect(() => {
       const ads = this.ds.advertisements();
@@ -231,10 +262,35 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     }
   }
 
+  @HostListener('window:resize')
+  public onResize() {
+    this.checkDevice();
+  }
+
   private checkDevice() {
     if (typeof window !== 'undefined') {
+      this.windowWidth.set(window.innerWidth);
+      this.windowHeight.set(window.innerHeight);
       this.isMobile.set(window.innerWidth < 768);
     }
+  }
+
+  public onImageLoad(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && img.naturalWidth && img.naturalHeight) {
+      this.imageAspectRatio.set(img.naturalWidth / img.naturalHeight);
+    }
+  }
+
+  private preloadImageDimensions(url: string) {
+    if (!url || typeof Image === 'undefined') return;
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        this.imageAspectRatio.set(img.naturalWidth / img.naturalHeight);
+      }
+    };
+    img.src = url;
   }
 
   public displayImageUrl = computed(() => {
@@ -625,13 +681,73 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
       .replace(/{{endDate}}/g, camp?.endDate || '');
   }
 
+  public dynamicPopupStyle = computed(() => {
+    const camp = this.activeCampaign();
+    if (!camp) return {};
+
+    const isImgOnly = this.isImageOnlyMode(camp);
+    const winW = this.windowWidth();
+    const winH = this.windowHeight();
+    const isMob = winW < 768;
+
+    if (isImgOnly) {
+      const ratio = this.imageAspectRatio();
+      // Maximum allowed width dynamically tailored to device viewport
+      let maxAllowedW = isMob ? Math.min(winW - 20, winW * 0.94) : 672;
+      const size = camp.popupSize || 'medium';
+      if (!isMob) {
+        if (size === 'small') maxAllowedW = 420;
+        else if (size === 'medium') maxAllowedW = 580;
+        else if (size === 'large') maxAllowedW = 720;
+        else if (size === 'full_width') maxAllowedW = 890;
+      }
+
+      // Maximum allowed height to stay safely in viewport
+      const maxAllowedH = Math.min(winH - (isMob ? 40 : 80), winH * 0.84);
+
+      if (ratio && ratio > 0) {
+        // Find optimal width strictly respecting the natural aspect ratio
+        const widthFromHeight = maxAllowedH * ratio;
+        const targetWidth = Math.min(maxAllowedW, widthFromHeight);
+        return {
+          'width': `${Math.round(targetWidth)}px`,
+          'max-width': '94vw',
+          'max-height': `${Math.round(maxAllowedH)}px`
+        };
+      }
+
+      // Responsive fallback before image load
+      return {
+        'width': isMob ? '92vw' : 'auto',
+        'max-width': isMob ? '94vw' : `${maxAllowedW}px`,
+        'max-height': `${Math.round(maxAllowedH)}px`
+      };
+    }
+
+    // For standard popups with text/CTA
+    const maxW = isMob ? '92vw' : undefined;
+    return maxW ? { 'width': maxW, 'max-width': '94vw' } : {};
+  });
+
+  public getImageClasses(isImgOnly: boolean): string {
+    if (isImgOnly) {
+      return 'w-full h-auto max-h-[84vh] object-contain rounded-2xl sm:rounded-3xl drop-shadow-2xl';
+    }
+    return 'w-full h-auto max-h-48 sm:max-h-64 object-cover';
+  }
+
   public getPositionClasses(pos: string): string {
     switch (pos) {
-      case 'bottom_right': return 'bottom-6 right-6';
-      case 'bottom_left': return 'bottom-6 left-6';
-      case 'top_right': return 'top-6 right-6';
-      case 'top_left': return 'top-6 left-6';
-      case 'fullscreen': return 'inset-4 sm:inset-10 flex items-center justify-center';
+      case 'bottom_right':
+        return 'bottom-4 right-4 sm:bottom-6 sm:right-6 max-sm:top-1/2 max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2 max-sm:bottom-auto max-sm:right-auto';
+      case 'bottom_left':
+        return 'bottom-4 left-4 sm:bottom-6 sm:left-6 max-sm:top-1/2 max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2 max-sm:bottom-auto max-sm:left-auto';
+      case 'top_right':
+        return 'top-4 right-4 sm:top-6 sm:right-6 max-sm:top-1/2 max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2';
+      case 'top_left':
+        return 'top-4 left-4 sm:top-6 sm:left-6 max-sm:top-1/2 max-sm:left-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2';
+      case 'fullscreen':
+        return 'inset-2 sm:inset-6 md:inset-10';
       case 'center':
       default:
         return 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2';
@@ -649,15 +765,15 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
 
   public getSizeClasses(size: string, isImgOnly: boolean = false): string {
     if (isImgOnly || size === 'auto') {
-      return 'max-w-[92vw] sm:max-w-[85vw] md:max-w-2xl lg:max-w-3xl w-auto max-h-[88vh]';
+      return 'w-[92vw] sm:w-auto max-w-[94vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[88vh]';
     }
     switch (size) {
-      case 'small': return 'max-w-xs w-full';
-      case 'large': return 'max-w-xl w-full';
-      case 'full_width': return 'max-w-3xl w-full';
+      case 'small': return 'w-[92vw] sm:w-full max-w-[94vw] sm:max-w-xs';
+      case 'large': return 'w-[92vw] sm:w-full max-w-[94vw] sm:max-w-xl md:max-w-2xl';
+      case 'full_width': return 'w-[94vw] sm:w-full max-w-[96vw] sm:max-w-3xl lg:max-w-4xl';
       case 'medium':
       default:
-        return 'max-w-md w-full';
+        return 'w-[92vw] sm:w-full max-w-[94vw] sm:max-w-md md:max-w-lg';
     }
   }
 

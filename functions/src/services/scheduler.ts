@@ -1,6 +1,12 @@
 import prisma, { isPoolHealthy } from '../config/database';
 import { getFirebaseAdmin } from '../config/firebase';
 import cron from 'node-cron';
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  isFcmNotificationsEnabled,
+} from '../config/notificationEnv';
 
 const getMessaging = () => {
   try {
@@ -111,6 +117,7 @@ export const getRecommendedProducts = async (config: {
  * Fetch FCM target tokens based on segmentation rules
  */
 export const getAudienceTokens = async (audienceId: string | null, customRules?: any) => {
+  const currentEnv = getAppEnv();
   let rules = customRules;
 
   if (audienceId) {
@@ -123,9 +130,9 @@ export const getAudienceTokens = async (audienceId: string | null, customRules?:
   }
 
   if (!rules) {
-    // Default to all active device opt-ins
-    return await prisma.notificationDevice.findMany({
-      where: { notificationEnabled: true },
+    // Default to all active device opt-ins in active environment
+    return await (prisma.notificationDevice as any).findMany({
+      where: { notificationEnabled: true, environment: currentEnv, tokenStatus: 'ACTIVE' },
       include: { user: true }
     });
   }
@@ -133,7 +140,9 @@ export const getAudienceTokens = async (audienceId: string | null, customRules?:
   const { targetType, os, browser, language, includeTags, excludeTags } = rules;
 
   const whereClause: any = {
-    notificationEnabled: true
+    notificationEnabled: true,
+    environment: currentEnv,
+    tokenStatus: 'ACTIVE',
   };
 
   if (targetType === 'registered') {
@@ -295,6 +304,7 @@ export const queueCampaignMessages = async (campaignId: string) => {
       const body = personalizeText(campaign.body, variables);
       const actionUrl = personalizeText(campaign.actionUrl || '/', variables);
 
+      const currentEnv = getAppEnv();
       const payload = {
         title,
         body,
@@ -304,7 +314,10 @@ export const queueCampaignMessages = async (campaignId: string) => {
           campaignId: campaign.id,
           click_action: actionUrl,
           deepLink: campaign.deepLink || '',
-          ctaText: campaign.ctaText || 'Open'
+          ctaText: campaign.ctaText || 'Open',
+          environment: currentEnv,
+          appOrigin: getAppOrigin(),
+          firebaseProjectId: getFirebaseProjectId(),
         }
       };
 
@@ -350,6 +363,10 @@ export const queueCampaignMessages = async (campaignId: string) => {
  */
 export const processNotificationQueue = async () => {
   if (isProcessingQueue) return;
+  if (!isFcmNotificationsEnabled()) {
+    console.log('[Scheduler] FCM push notifications disabled for current environment, skipping queue processing.');
+    return;
+  }
   isProcessingQueue = true;
 
   try {
@@ -470,10 +487,11 @@ export const processNotificationQueue = async () => {
             await prisma.pushLog.createMany({ data: logsToCreate });
           }
 
-          // Clean up invalid tokens
+          // Clean up invalid tokens safely
           if (tokensToDelete.length > 0) {
-            await prisma.notificationDevice.deleteMany({
-              where: { fcmToken: { in: tokensToDelete } }
+            await (prisma.notificationDevice as any).updateMany({
+              where: { fcmToken: { in: tokensToDelete } },
+              data: { notificationEnabled: false, tokenStatus: 'INVALID' }
             }).catch(e => console.error('Error cleaning up invalid tokens:', e));
           }
 
@@ -757,11 +775,23 @@ export const runScheduledMaintenance = async (jobType: string = 'full') => {
       results.jobsExecuted.push('runDailyOfferJob');
     }
 
-    // 6. Database backup overdue health monitor check
+    // 6. Automated database backup execution & overdue health monitor check
     const { backupScheduler } = require('./backupScheduler.service');
-    if (backupScheduler && typeof backupScheduler.checkBackupOverdueAndNotify === 'function') {
-      await backupScheduler.checkBackupOverdueAndNotify();
-      results.jobsExecuted.push('checkBackupOverdueAndNotify');
+    if (backupScheduler) {
+      if (jobType === 'backup' || jobType === 'scheduled_backup') {
+        // Explicit backup run requested: force execution
+        const backupRes = await backupScheduler.runScheduledBackupIfDue(true);
+        results.jobsExecuted.push({ name: 'scheduledDatabaseBackup', forced: true, result: backupRes });
+      } else if (jobType === 'full' || jobType === 'morning_run' || jobType === 'evening_run') {
+        // Scheduled maintenance cycle: evaluate if backup is due according to schedule and execute if due
+        const backupRes = await backupScheduler.runScheduledBackupIfDue(false);
+        results.jobsExecuted.push({ name: 'scheduledDatabaseBackup', forced: false, result: backupRes });
+      }
+
+      if (typeof backupScheduler.checkBackupOverdueAndNotify === 'function') {
+        await backupScheduler.checkBackupOverdueAndNotify();
+        results.jobsExecuted.push('checkBackupOverdueAndNotify');
+      }
     }
 
     results.success = true;

@@ -13,7 +13,9 @@ import {
   downloadBackup,
   restoreFromStorage,
   uploadAndRestore,
-  getHealthCheck
+  getHealthCheck,
+  handleBackupCronTrigger,
+  handleBackupCronStatus
 } from '../controllers/backup.controller';
 
 const router = Router();
@@ -85,7 +87,13 @@ const uploadZip = multer({
   }
 });
 
-// All backup endpoints require:
+// Dedicated Cron Trigger & Status Endpoints for Cloud Scheduler / external webhooks
+// Authenticated via x-cron-secret or admin bearer token inside handleBackupCronTrigger
+router.post('/cron/run-scheduled', requireBackupModuleEnabled, handleBackupCronTrigger);
+router.get('/cron/run-scheduled', requireBackupModuleEnabled, handleBackupCronTrigger);
+router.get('/cron/status', requireBackupModuleEnabled, handleBackupCronStatus);
+
+// All user-facing backup endpoints require:
 // 1. Authenticated token
 // 2. Server-side ENV feature enabled
 router.use(authenticateToken);

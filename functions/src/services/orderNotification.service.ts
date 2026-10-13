@@ -3,9 +3,18 @@ import { triggerWhatsAppNotification, getWhatsappSettings } from "../controllers
 import { NotificationService } from "./notification.service";
 import { WhatsAppNotificationService } from "./whatsappNotificationService";
 import { NotificationTemplateResolver } from "./notificationTemplateResolver";
+import { getFirebaseAdmin } from "../config/firebase";
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  isFcmNotificationsEnabled,
+} from "../config/notificationEnv";
+import { NotificationDiagnostics } from "./notificationDiagnostics.service";
 
 export interface NotificationResult {
   customerWhatsApp: boolean;
+  customerPush?: boolean;
   adminWhatsApp: boolean;
   adminPush: boolean;
   logs: string[];
@@ -13,11 +22,12 @@ export interface NotificationResult {
 
 /**
  * End-to-End Centralized Order Notification Pipeline
- * Dispatches Customer WhatsApp, Admin WhatsApp, and Admin FCM Push Notifications.
+ * Dispatches Customer WhatsApp, Customer FCM Push, Admin WhatsApp, and Admin FCM Push Notifications.
  */
 export async function dispatchOrderNotifications(orderId: string): Promise<NotificationResult> {
   const result: NotificationResult = {
     customerWhatsApp: false,
+    customerPush: false,
     adminWhatsApp: false,
     adminPush: false,
     logs: [],
@@ -96,7 +106,110 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
       result.logs.push(`No customer phone number available.`);
     }
 
-    // 2 & 3. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp order_confirmation_admin to all active admins)
+    // 2. CUSTOMER FCM PUSH NOTIFICATION (ENVIRONMENT & DOMAIN ISOLATED)
+    const customerUserId = orderAny.userId || order.customer?.userId || (order.customer as any)?.user?.id || null;
+    if (customerUserId && isFcmNotificationsEnabled()) {
+      try {
+        const custTokens = await NotificationService.getCustomerFcmTokens(customerUserId);
+        if (custTokens.length > 0) {
+          const pushTitle = 'Order Confirmed! 🛒';
+          const pushBody = `Thank you for your order #${order.orderNumber || order.id}. We're preparing it for dispatch.`;
+          const deepLink = `/orders/${order.id}`;
+          const currentEnv = getAppEnv();
+
+          const fbAdmin = getFirebaseAdmin();
+          if (fbAdmin.apps.length) {
+            const pushPayload = {
+              tokens: custTokens,
+              notification: { title: pushTitle, body: pushBody },
+              data: {
+                type: 'orders',
+                eventKey: 'NEW_ORDER',
+                deepLink,
+                click_action: deepLink,
+                orderId: order.id,
+                orderNumber: String(order.orderNumber || order.id),
+                title: pushTitle,
+                body: pushBody,
+                environment: currentEnv,
+                appOrigin: getAppOrigin(),
+                firebaseProjectId: getFirebaseProjectId(),
+              },
+              webpush: {
+                fcmOptions: { link: deepLink },
+                notification: {
+                  title: pushTitle,
+                  body: pushBody,
+                  icon: '/assets/icons/icon-192x192.png',
+                  badge: '/assets/icons/badge-72x72.png',
+                },
+              },
+            };
+
+            const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
+            result.customerPush = pushRes.successCount > 0;
+            result.logs.push(`Customer Push Notification: ${result.customerPush ? 'SENT (' + pushRes.successCount + ' devices)' : 'FAILED'}`);
+
+            const invalidTokens: string[] = [];
+            if (pushRes.failureCount > 0) {
+              pushRes.responses.forEach((resp, idx) => {
+                if (!resp.success && resp.error) {
+                  const errCode = resp.error.code;
+                  if (
+                    errCode === 'messaging/invalid-registration-token' ||
+                    errCode === 'messaging/registration-token-not-registered'
+                  ) {
+                    invalidTokens.push(custTokens[idx]);
+                  }
+                }
+              });
+            }
+
+            if (invalidTokens.length > 0) {
+              try {
+                await (prisma.notificationDevice as any).updateMany({
+                  where: { fcmToken: { in: invalidTokens } },
+                  data: { notificationEnabled: false, tokenStatus: 'INVALID' },
+                });
+              } catch {}
+            }
+
+            await NotificationDiagnostics.recordAttempt({
+              category: 'orders',
+              eventKey: 'NEW_ORDER',
+              recipientType: 'CUSTOMER',
+              eligibleTokenCount: custTokens.length,
+              environment: currentEnv,
+              success: result.customerPush,
+              title: pushTitle,
+              bodySnippet: pushBody,
+            });
+
+            for (const token of custTokens) {
+              await prisma.notificationLog.create({
+                data: {
+                  title: pushTitle,
+                  body: pushBody,
+                  type: 'ORDER_CUSTOMER_PUSH',
+                  actionUrl: deepLink,
+                  sentTo: token,
+                  status: result.customerPush ? 'SENT' : 'FAILED',
+                  deliveryStatus: `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`,
+                  payload: pushPayload as any,
+                },
+              });
+            }
+          }
+        } else {
+          result.logs.push('Customer has no registered active FCM push devices for current environment.');
+        }
+      } catch (custPushErr: any) {
+        console.error('[OrderNotificationPipeline] Customer FCM Push error:', custPushErr);
+        result.logs.push(`Customer Push failed: ${custPushErr.message}`);
+      }
+    }
+
+    // 3 & 4. CENTRALIZED ADMIN ROUTING (FCM Push & WhatsApp order_confirmation_admin to all active admins)
     try {
       const isCod = NotificationTemplateResolver.isCodPayment(order.paymentMethod);
       const pushTitle = `🛒 Order Confirmed`;
@@ -133,6 +246,7 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
     console.log(`======================================================`);
     console.log(`[OrderNotificationPipeline Summary] Order ${order.orderNumber}:`);
     console.log(`  - Customer WhatsApp: ${result.customerWhatsApp ? '✅ SENT' : '❌ SKIPPED/FAILED'}`);
+    console.log(`  - Customer FCM Push: ${result.customerPush ? '✅ SENT' : '❌ SKIPPED/FAILED'}`);
     console.log(`  - Admin WhatsApp:    ${result.adminWhatsApp ? '✅ SENT' : '❌ SKIPPED/FAILED'}`);
     console.log(`  - Admin FCM Push:    ${result.adminPush ? '✅ SENT' : '❌ SKIPPED/FAILED'}`);
     console.log(`======================================================\n`);

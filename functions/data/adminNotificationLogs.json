@@ -1,5 +1,167 @@
 [
   {
+    "id": "8de80fd3-6866-4dcf-8cea-9e3e84f43902",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test COD User placed Order #3DX0056 for ₹1929.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "feec9083-d8bc-4a5f-8516-d9beb8cd3d3e",
+      "orderNumber": "3DX0056",
+      "totalAmount": "1929",
+      "customerName": "Deployment Test COD User",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-10-13T18:26:17.268Z",
+    "isRead": false
+  },
+  {
+    "id": "cff8c2ae-29a1-4148-aa9a-c64732307033",
+    "title": "Database Backup Completed",
+    "body": "Automatic database backup completed successfully. Size: 1.66 MB, Tables: 74.",
+    "type": "system",
+    "eventKey": "BACKUP_SUCCESS",
+    "deepLink": "/admin/settings/backups",
+    "data": {
+      "backupId": "982eeabf-663b-4e8a-a38e-8acdcff163ac",
+      "fileSize": 1736860,
+      "backupName": "3dgalaxy-db-backup-2026-10-13-184449.zip",
+      "durationMs": 17785,
+      "tableCount": 74,
+      "storagePath": "db_backups/2026-10-13/3dgalaxy-db-backup-2026-10-13-184449.zip"
+    },
+    "sentAt": "2026-10-13T13:15:10.022Z",
+    "isRead": false
+  },
+  {
+    "id": "aa0c0879-d77e-4bc9-8cd1-beed4ac62692",
+    "title": "Database Backup Completed",
+    "body": "Automatic database backup completed successfully. Size: 1.66 MB, Tables: 74.",
+    "type": "system",
+    "eventKey": "BACKUP_SUCCESS",
+    "deepLink": "/admin/settings/backups",
+    "data": {
+      "backupId": "4fd94075-816a-45bf-b5db-bc9a3944f5f8",
+      "fileSize": 1736565,
+      "backupName": "3dgalaxy-db-backup-2026-10-13-184405.zip",
+      "durationMs": 24888,
+      "tableCount": 74,
+      "storagePath": "db_backups/2026-10-13/3dgalaxy-db-backup-2026-10-13-184405.zip"
+    },
+    "sentAt": "2026-10-13T13:14:33.710Z",
+    "isRead": false
+  },
+  {
+    "id": "3672e0ed-93dc-4d12-9344-761c5b533ad2",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test Online User placed Order #3DX0056 for ₹290.00. Payment Received",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "0c0caaba-a599-4bea-b5ca-bd919d0eb922",
+      "orderNumber": "3DX0056",
+      "totalAmount": "290",
+      "customerName": "Deployment Test Online User",
+      "paymentMethod": "RAZORPAY",
+      "paymentStatus": "Paid"
+    },
+    "sentAt": "2026-10-12T18:50:05.616Z",
+    "isRead": false
+  },
+  {
+    "id": "a14400db-a08a-4ee5-b081-286e076d742e",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test COD User placed Order #3DX0055 for ₹390.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "c9efb964-700b-40eb-b490-87b51d445708",
+      "orderNumber": "3DX0055",
+      "totalAmount": "390",
+      "customerName": "Deployment Test COD User",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-10-12T18:50:01.841Z",
+    "isRead": false
+  },
+  {
+    "id": "3ba5f751-a722-476c-a664-2c979fc4a265",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test Online User placed Order #3DX0056 for ₹290.00. Payment Received",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "5b42e8fa-1871-4450-8a35-452b0ad3ea4b",
+      "orderNumber": "3DX0056",
+      "totalAmount": "290",
+      "customerName": "Deployment Test Online User",
+      "paymentMethod": "RAZORPAY",
+      "paymentStatus": "Paid"
+    },
+    "sentAt": "2026-10-12T18:38:24.969Z",
+    "isRead": false
+  },
+  {
+    "id": "d90b0131-e2a4-4110-a9b5-1ec1bad49b25",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test COD User placed Order #3DX0055 for ₹390.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "857fbf89-f604-4ce6-bb29-5c655c9f85e4",
+      "orderNumber": "3DX0055",
+      "totalAmount": "390",
+      "customerName": "Deployment Test COD User",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-10-12T18:38:21.352Z",
+    "isRead": false
+  },
+  {
+    "id": "0885c278-c85b-4f12-a4cf-8d7fd1613545",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test Online User placed Order #3DX0056 for ₹290.00. Payment Received",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "dc49f6e7-2d20-4560-ba34-73f7ebcf0aab",
+      "orderNumber": "3DX0056",
+      "totalAmount": "290",
+      "customerName": "Deployment Test Online User",
+      "paymentMethod": "RAZORPAY",
+      "paymentStatus": "Paid"
+    },
+    "sentAt": "2026-10-12T18:29:35.828Z",
+    "isRead": false
+  },
+  {
+    "id": "03f7eda0-dea1-41db-91b4-d92c3566b45f",
+    "title": "🛒 Order Confirmed",
+    "body": "Deployment Test COD User placed Order #3DX0055 for ₹390.00. Payment Pending (COD)",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders",
+    "data": {
+      "orderId": "32684846-0097-464b-be51-1afb75db5801",
+      "orderNumber": "3DX0055",
+      "totalAmount": "390",
+      "customerName": "Deployment Test COD User",
+      "paymentMethod": "COD",
+      "paymentStatus": "Pending (COD)"
+    },
+    "sentAt": "2026-10-12T18:29:32.221Z",
+    "isRead": false
+  },
+  {
     "id": "0cf4e5c0-aabf-4dc8-85b9-081535b40861",
     "title": "🛒 Order Confirmed",
     "body": "Deployment Test Online User placed Order #3DX0056 for ₹290.00. Payment Received",

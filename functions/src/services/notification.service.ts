@@ -7,6 +7,13 @@ import { WhatsAppNotificationService } from './whatsappNotificationService';
 import fs from 'fs';
 import path from 'path';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  isFcmNotificationsEnabled,
+} from '../config/notificationEnv';
+import { NotificationDiagnostics } from './notificationDiagnostics.service';
 
 export type NotificationCategory =
   | 'orders'
@@ -445,6 +452,25 @@ export class NotificationService {
    */
   private static async dispatchFcmPush(payload: NotificationPayload, category: NotificationCategory): Promise<boolean> {
     try {
+      const currentEnv = getAppEnv();
+
+      // Check if notifications are enabled for the active environment
+      if (!isFcmNotificationsEnabled()) {
+        console.log(`[NotificationService] FCM push notifications disabled for environment '${currentEnv}'`);
+        await NotificationDiagnostics.recordAttempt({
+          category,
+          eventKey: payload.eventKey,
+          recipientType: 'ADMIN',
+          eligibleTokenCount: 0,
+          environment: currentEnv,
+          success: false,
+          failureReason: 'NOTIFICATIONS_DISABLED',
+          title: payload.title,
+          bodySnippet: payload.body,
+        });
+        return false;
+      }
+
       let dbTokens: string[] = [];
       try {
         const canFetchFcmToken = await this.checkFcmTokenTableExists();
@@ -455,7 +481,11 @@ export class NotificationService {
           try {
             if ((prisma as any).adminFcmToken?.findMany) {
               return await (prisma as any).adminFcmToken.findMany({
-                where: { isActive: true },
+                where: {
+                  isActive: true,
+                  environment: currentEnv,
+                  tokenStatus: { not: 'INVALID' },
+                },
                 select: { fcmToken: true },
               });
             }
@@ -468,7 +498,11 @@ export class NotificationService {
           try {
             if ((prisma as any).adminNotificationDevice?.findMany) {
               return await (prisma as any).adminNotificationDevice.findMany({
-                where: { isActive: true },
+                where: {
+                  isActive: true,
+                  environment: currentEnv,
+                  tokenStatus: { not: 'INVALID' },
+                },
                 select: { fcmToken: true },
               });
             }
@@ -483,14 +517,25 @@ export class NotificationService {
         ];
       } catch (e) {}
 
-      // Also gather tokens from fallback legacy JSON file if any
+      // Also gather tokens from fallback legacy JSON file if any (strictly matching active environment)
       const legacyTokens = this.getLegacyDeviceTokens();
       const allTokens = Array.from(
         new Set([...dbTokens, ...legacyTokens].filter(Boolean))
       );
 
       if (allTokens.length === 0) {
-        console.log(`[NotificationService] No active FCM devices for push alert "${payload.title}"`);
+        console.log(`[NotificationService] [${currentEnv}] No active FCM devices for push alert "${payload.title}"`);
+        await NotificationDiagnostics.recordAttempt({
+          category,
+          eventKey: payload.eventKey,
+          recipientType: 'ADMIN',
+          eligibleTokenCount: 0,
+          environment: currentEnv,
+          success: false,
+          failureReason: 'NO_ELIGIBLE_TOKENS',
+          title: payload.title,
+          bodySnippet: payload.body,
+        });
         return false;
       }
 
@@ -519,6 +564,9 @@ export class NotificationService {
             click_action: targetLink,
             title: payload.title,
             body: payload.body,
+            environment: currentEnv,
+            appOrigin: getAppOrigin(),
+            firebaseProjectId: getFirebaseProjectId(),
             ...(payload.metadata
               ? Object.fromEntries(
                   Object.entries(payload.metadata).map(([k, v]) => [k, String(v)])
@@ -559,6 +607,22 @@ export class NotificationService {
 
       console.log(`[NotificationService] FCM Push multicast sent: ${totalSuccess} succeeded, ${totalFailure} failed.`);
 
+      // Log delivery diagnostics
+      await NotificationDiagnostics.recordAttempt({
+        category,
+        eventKey: payload.eventKey,
+        recipientType: 'ADMIN',
+        eligibleTokenCount: allTokens.length,
+        environment: currentEnv,
+        success: totalSuccess > 0,
+        failureReason: totalFailure > 0 ? (totalSuccess > 0 ? 'PARTIAL_SUCCESS' : 'FCM_SEND_FAILURE') : undefined,
+        sentTokens: allTokens,
+        failedTokens: invalidTokens,
+        title: payload.title,
+        bodySnippet: payload.body,
+        actionUrl: targetLink,
+      });
+
       // Clean up invalid FCM tokens automatically
       if (invalidTokens.length > 0) {
         const canUpdateFcmToken = await this.checkFcmTokenTableExists();
@@ -569,7 +633,7 @@ export class NotificationService {
             if ((prisma as any).adminFcmToken?.updateMany) {
               await (prisma as any).adminFcmToken.updateMany({
                 where: { fcmToken: { in: invalidTokens } },
-                data: { isActive: false },
+                data: { isActive: false, tokenStatus: 'INVALID' },
               });
             }
           } catch (e: any) {}
@@ -580,11 +644,18 @@ export class NotificationService {
             if ((prisma as any).adminNotificationDevice?.updateMany) {
               await (prisma as any).adminNotificationDevice.updateMany({
                 where: { fcmToken: { in: invalidTokens } },
-                data: { isActive: false },
+                data: { isActive: false, tokenStatus: 'INVALID' },
               });
             }
           } catch (e: any) {}
         }
+
+        try {
+          await (prisma.notificationDevice as any).updateMany({
+            where: { fcmToken: { in: invalidTokens } },
+            data: { notificationEnabled: false, tokenStatus: 'INVALID' },
+          });
+        } catch (e: any) {}
       }
 
       return totalSuccess > 0;
@@ -676,10 +747,13 @@ export class NotificationService {
    */
   private static getLegacyDeviceTokens(): string[] {
     try {
+      const currentEnv = getAppEnv();
       const devicesFile = path.resolve(__dirname, '../../data/adminDevices.json');
       if (fs.existsSync(devicesFile)) {
         const data = JSON.parse(fs.readFileSync(devicesFile, 'utf-8') || '[]');
-        return data.filter((d: any) => d.isActive).map((d: any) => d.fcmToken);
+        return data
+          .filter((d: any) => d.isActive && (d.environment === currentEnv || (!d.environment && currentEnv === 'production')) && d.tokenStatus !== 'INVALID')
+          .map((d: any) => d.fcmToken);
       }
     } catch {}
     return [];
@@ -712,12 +786,20 @@ export class NotificationService {
 
   public static async getCustomerFcmTokens(userId: string | null): Promise<string[]> {
     if (!userId) return [];
+    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (!isValidUuid) return [];
     try {
-      const devices = await prisma.notificationDevice.findMany({
-        where: { userId, notificationEnabled: true },
+      const currentEnv = getAppEnv();
+      const devices = await (prisma.notificationDevice as any).findMany({
+        where: {
+          userId,
+          notificationEnabled: true,
+          environment: currentEnv,
+          tokenStatus: 'ACTIVE',
+        },
         select: { fcmToken: true }
       });
-      return devices.map(d => d.fcmToken).filter(Boolean);
+      return devices.map((d: any) => d.fcmToken).filter(Boolean);
     } catch (e) {
       console.warn('[NotificationService] getCustomerFcmTokens error:', e);
       return [];
@@ -725,6 +807,7 @@ export class NotificationService {
   }
 
   public static async getAdminFcmTokens(): Promise<string[]> {
+    const currentEnv = getAppEnv();
     let dbTokens: string[] = [];
     try {
       const canFetchFcmToken = await this.checkFcmTokenTableExists();
@@ -735,7 +818,11 @@ export class NotificationService {
         try {
           if ((prisma as any).adminFcmToken?.findMany) {
             return await (prisma as any).adminFcmToken.findMany({
-              where: { isActive: true },
+              where: {
+                isActive: true,
+                environment: currentEnv,
+                tokenStatus: { not: 'INVALID' },
+              },
               select: { fcmToken: true },
             });
           }
@@ -748,7 +835,11 @@ export class NotificationService {
         try {
           if ((prisma as any).adminNotificationDevice?.findMany) {
             return await (prisma as any).adminNotificationDevice.findMany({
-              where: { isActive: true },
+              where: {
+                isActive: true,
+                environment: currentEnv,
+                tokenStatus: { not: 'INVALID' },
+              },
               select: { fcmToken: true },
             });
           }
@@ -928,7 +1019,8 @@ export class NotificationService {
       }
 
       // B. Push Notification (Customer)
-      if (enquiry.userId) {
+      if (enquiry.userId && isFcmNotificationsEnabled()) {
+        const currentEnv = getAppEnv();
         const custTokens = await this.getCustomerFcmTokens(enquiry.userId);
         if (custTokens.length > 0) {
           const pushTitle = 'Service Request Submitted';
@@ -942,22 +1034,61 @@ export class NotificationService {
               deepLink: `/services/track?trk=${trackingNumber}`,
               click_action: `/services/track?trk=${trackingNumber}`,
               title: pushTitle,
-              body: pushBody
+              body: pushBody,
+              environment: currentEnv,
+              appOrigin: getAppOrigin(),
+              firebaseProjectId: getFirebaseProjectId(),
             }
           };
 
           const fbAdmin = getFirebaseAdmin();
           let pushSuccess = false;
           let pushDelivery = '';
+          const invalidCustomerTokens: string[] = [];
+
           if (fbAdmin.apps.length) {
             try {
               const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
               pushSuccess = pushRes.successCount > 0;
               pushDelivery = `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`;
+
+              if (pushRes.failureCount > 0) {
+                pushRes.responses.forEach((resp, idx) => {
+                  if (!resp.success && resp.error) {
+                    const errCode = resp.error.code;
+                    if (
+                      errCode === 'messaging/invalid-registration-token' ||
+                      errCode === 'messaging/registration-token-not-registered'
+                    ) {
+                      invalidCustomerTokens.push(custTokens[idx]);
+                    }
+                  }
+                });
+              }
             } catch (e: any) {
               pushDelivery = e.message || 'FCM failed';
             }
           }
+
+          if (invalidCustomerTokens.length > 0) {
+            try {
+              await (prisma.notificationDevice as any).updateMany({
+                where: { fcmToken: { in: invalidCustomerTokens } },
+                data: { notificationEnabled: false, tokenStatus: 'INVALID' }
+              });
+            } catch {}
+          }
+
+          await NotificationDiagnostics.recordAttempt({
+            category: 'service',
+            eventKey: 'NEW_SERVICE_REQUEST',
+            recipientType: 'CUSTOMER',
+            eligibleTokenCount: custTokens.length,
+            environment: currentEnv,
+            success: pushSuccess,
+            title: pushTitle,
+            bodySnippet: pushBody,
+          });
 
           for (const token of custTokens) {
             await prisma.notificationLog.create({
@@ -1136,49 +1267,93 @@ export class NotificationService {
       }
 
       // B. Push Notification (Admins)
-      const adminTokens = await this.getAdminFcmTokens();
-      if (adminTokens.length > 0) {
-        const pushTitle = 'New Service Request';
-        const pushBody = 'A customer has submitted a new 3D printing enquiry.';
-        const pushPayload = {
-          tokens: adminTokens,
-          notification: { title: pushTitle, body: pushBody },
-          data: {
-            type: 'service',
-            eventKey: 'NEW_SERVICE_REQUEST',
-            deepLink: `/admin/services`,
-            click_action: `/admin/services`,
-            title: pushTitle,
-            body: pushBody
-          }
-        };
-
-        const fbAdmin = getFirebaseAdmin();
-        let pushSuccess = false;
-        let pushDelivery = '';
-        if (fbAdmin.apps.length) {
-          try {
-            const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
-            pushSuccess = pushRes.successCount > 0;
-            pushDelivery = `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`;
-          } catch (e: any) {
-            pushDelivery = e.message || 'FCM failed';
-          }
-        }
-
-        for (const token of adminTokens) {
-          await prisma.notificationLog.create({
+      if (isFcmNotificationsEnabled()) {
+        const currentEnv = getAppEnv();
+        const adminTokens = await this.getAdminFcmTokens();
+        if (adminTokens.length > 0) {
+          const pushTitle = 'New Service Request';
+          const pushBody = 'A customer has submitted a new 3D printing enquiry.';
+          const pushPayload = {
+            tokens: adminTokens,
+            notification: { title: pushTitle, body: pushBody },
             data: {
+              type: 'service',
+              eventKey: 'NEW_SERVICE_REQUEST',
+              deepLink: `/admin/services`,
+              click_action: `/admin/services`,
               title: pushTitle,
               body: pushBody,
-              type: 'SERVICE_REQUEST_ADMIN_PUSH',
-              actionUrl: `/admin/services`,
-              sentTo: token,
-              status: pushSuccess ? 'SENT' : 'FAILED',
-              deliveryStatus: pushDelivery,
-              payload: pushPayload as any
+              environment: currentEnv,
+              appOrigin: getAppOrigin(),
+              firebaseProjectId: getFirebaseProjectId(),
             }
+          };
+
+          const fbAdmin = getFirebaseAdmin();
+          let pushSuccess = false;
+          let pushDelivery = '';
+          const invalidAdminTokens: string[] = [];
+
+          if (fbAdmin.apps.length) {
+            try {
+              const pushRes = await fbAdmin.messaging().sendEachForMulticast(pushPayload);
+              pushSuccess = pushRes.successCount > 0;
+              pushDelivery = `Success: ${pushRes.successCount}, Failed: ${pushRes.failureCount}`;
+
+              if (pushRes.failureCount > 0) {
+                pushRes.responses.forEach((resp, idx) => {
+                  if (!resp.success && resp.error) {
+                    const errCode = resp.error.code;
+                    if (
+                      errCode === 'messaging/invalid-registration-token' ||
+                      errCode === 'messaging/registration-token-not-registered'
+                    ) {
+                      invalidAdminTokens.push(adminTokens[idx]);
+                    }
+                  }
+                });
+              }
+            } catch (e: any) {
+              pushDelivery = e.message || 'FCM failed';
+            }
+          }
+
+          if (invalidAdminTokens.length > 0) {
+            try {
+              if ((prisma as any).adminFcmToken?.updateMany) {
+                await (prisma as any).adminFcmToken.updateMany({
+                  where: { fcmToken: { in: invalidAdminTokens } },
+                  data: { isActive: false, tokenStatus: 'INVALID' }
+                });
+              }
+            } catch {}
+          }
+
+          await NotificationDiagnostics.recordAttempt({
+            category: 'service',
+            eventKey: 'NEW_SERVICE_REQUEST',
+            recipientType: 'ADMIN',
+            eligibleTokenCount: adminTokens.length,
+            environment: currentEnv,
+            success: pushSuccess,
+            title: pushTitle,
+            bodySnippet: pushBody,
           });
+
+          for (const token of adminTokens) {
+            await prisma.notificationLog.create({
+              data: {
+                title: pushTitle,
+                body: pushBody,
+                type: 'SERVICE_REQUEST_ADMIN_PUSH',
+                actionUrl: `/admin/services`,
+                sentTo: token,
+                status: pushSuccess ? 'SENT' : 'FAILED',
+                deliveryStatus: pushDelivery,
+                payload: pushPayload as any
+              }
+            });
+          }
         }
       }
     } catch (err: any) {

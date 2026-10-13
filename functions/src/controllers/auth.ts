@@ -9,6 +9,7 @@ import {
 import { triggerWhatsAppNotification } from "./whatsapp";
 import { NotificationService } from "../services/notification.service";
 import { logger } from "../utils/logger";
+import { getAppEnv } from "../config/notificationEnv";
 
 // Simple in-memory blocklist for illustrative JWT logouts
 const tokenBlocklist = new Set<string>();
@@ -342,6 +343,20 @@ export const logout = async (req: Request, res: Response) => {
       await prisma.refreshToken.update({
         where: { token },
         data: { revoked: true },
+      });
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  // Safely disassociate authenticated user from FCM token for active environment
+  const fcmToken = req.body.fcmToken;
+  if (fcmToken) {
+    try {
+      const currentEnv = getAppEnv();
+      await (prisma.notificationDevice as any).updateMany({
+        where: { fcmToken, environment: currentEnv },
+        data: { userId: null, lastActive: new Date() },
       });
     } catch (err) {
       // ignore

@@ -131,8 +131,195 @@ class BackupSchedulerService {
     }
   }
 
+  public getStatus() {
+    const { cronExpr, description } = this.getCronExpression();
+    return {
+      isInitialized: this.scheduledTask !== null,
+      moduleEnabled: ENV.BACKUP_MODULE_ENABLED,
+      autoBackupEnabled: ENV.BACKUP_ENABLED,
+      cronExpression: cronExpr,
+      description,
+      timezone: ENV.BACKUP_TIMEZONE,
+      scheduleType: ENV.BACKUP_SCHEDULE,
+      backupDays: ENV.BACKUP_DAYS,
+      backupTime: ENV.BACKUP_TIME,
+      retentionCount: ENV.BACKUP_RETENTION_COUNT
+    };
+  }
+
+  // Evaluate whether a backup is currently due based on schedule, weekday, and elapsed hours
+  public async isBackupDue(now: Date = new Date()): Promise<{
+    isDue: boolean;
+    reason: string;
+    elapsedHours: number;
+    lastBackupDate: Date | null;
+    currentWeekday: string;
+  }> {
+    const tz = ENV.BACKUP_TIMEZONE || 'Asia/Kolkata';
+    const dateInTz = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: tz }); // 'YYYY-MM-DD'
+    const weekdayInTz = (d: Date) => d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long' }).toLowerCase();
+
+    const todayStr = dateInTz(now);
+    const currentWeekday = weekdayInTz(now);
+
+    const history = await backupEngine.getBackupHistory(1, 1).catch(() => null);
+    const lastBackup = history?.lastSuccessfulBackup;
+
+    if (!lastBackup) {
+      return {
+        isDue: true,
+        reason: 'No previous successful backup found in database or cloud storage.',
+        elapsedHours: 9999,
+        lastBackupDate: null,
+        currentWeekday
+      };
+    }
+
+    const lastDate = new Date(lastBackup.createdAt);
+    const lastDateStr = dateInTz(lastDate);
+    const elapsedMs = now.getTime() - lastDate.getTime();
+    const elapsedHours = Math.max(0, elapsedMs / (1000 * 60 * 60));
+
+    // If a backup already completed successfully today (same calendar date in target TZ), do not duplicate
+    if (todayStr === lastDateStr) {
+      return {
+        isDue: false,
+        reason: `A successful database backup (${lastBackup.backupName}) already completed today (${todayStr}).`,
+        elapsedHours,
+        lastBackupDate: lastDate,
+        currentWeekday
+      };
+    }
+
+    const scheduleType = (ENV.BACKUP_SCHEDULE || 'twice-weekly').toLowerCase().trim();
+
+    if (scheduleType === 'hourly') {
+      if (elapsedHours >= 1) {
+        return {
+          isDue: true,
+          reason: `Hourly schedule due (${elapsedHours.toFixed(1)} hours elapsed since last backup).`,
+          elapsedHours,
+          lastBackupDate: lastDate,
+          currentWeekday
+        };
+      }
+    } else if (scheduleType === 'daily') {
+      if (elapsedHours >= 18) {
+        return {
+          isDue: true,
+          reason: `Daily schedule due (${elapsedHours.toFixed(1)} hours elapsed, new calendar day).`,
+          elapsedHours,
+          lastBackupDate: lastDate,
+          currentWeekday
+        };
+      }
+    } else if (scheduleType === 'twice-weekly') {
+      const scheduledDays = (ENV.BACKUP_DAYS || 'Wednesday,Sunday')
+        .toLowerCase()
+        .split(',')
+        .map((s) => s.trim());
+
+      // If today is one of the scheduled days and none was done today
+      if (scheduledDays.includes(currentWeekday)) {
+        return {
+          isDue: true,
+          reason: `Today (${currentWeekday}) is a scheduled backup day (${ENV.BACKUP_DAYS}) and no backup was completed today.`,
+          elapsedHours,
+          lastBackupDate: lastDate,
+          currentWeekday
+        };
+      }
+
+      // Catch-up condition: gap between backups should not exceed ~84 hours (3.5 days)
+      if (elapsedHours >= 84) {
+        return {
+          isDue: true,
+          reason: `Scheduled backup is overdue for catch-up (${elapsedHours.toFixed(1)} hours elapsed since last backup).`,
+          elapsedHours,
+          lastBackupDate: lastDate,
+          currentWeekday
+        };
+      }
+    } else if (scheduleType === 'monthly') {
+      const dayOfMonth = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric' }).format(now), 10);
+      if (dayOfMonth === 1 || elapsedHours >= 672) {
+        return {
+          isDue: true,
+          reason: `Monthly schedule due (${dayOfMonth === 1 ? '1st of month' : `${elapsedHours.toFixed(1)} hours elapsed`}).`,
+          elapsedHours,
+          lastBackupDate: lastDate,
+          currentWeekday
+        };
+      }
+    }
+
+    // Universal overdue safeguard (over 4 days without any backup)
+    if (elapsedHours >= 96) {
+      return {
+        isDue: true,
+        reason: `Backup overdue for catch-up (${elapsedHours.toFixed(1)} hours elapsed without backup).`,
+        elapsedHours,
+        lastBackupDate: lastDate,
+        currentWeekday
+      };
+    }
+
+    return {
+      isDue: false,
+      reason: `Backup is up to date (${elapsedHours.toFixed(1)} hours elapsed; scheduled on ${ENV.BACKUP_DAYS || 'Wednesday,Sunday'}).`,
+      elapsedHours,
+      lastBackupDate: lastDate,
+      currentWeekday
+    };
+  }
+
+  // High-level trigger method: evaluates if backup is due (or forced) and executes safely
+  public async runScheduledBackupIfDue(force = false): Promise<{
+    executed: boolean;
+    reason: string;
+    result?: any;
+    error?: string;
+    dueCheck?: any;
+  }> {
+    if (!ENV.BACKUP_MODULE_ENABLED) {
+      console.log('[BACKUP SCHEDULER] Backup module disabled by ENV. Skipping scheduled backup.');
+      return { executed: false, reason: 'BACKUP_MODULE_DISABLED' };
+    }
+
+    if (!ENV.BACKUP_ENABLED && !force) {
+      console.log('[BACKUP SCHEDULER] Automatic backups disabled (BACKUP_ENABLED=false). Skipping.');
+      return { executed: false, reason: 'AUTO_BACKUP_DISABLED' };
+    }
+
+    if (backupEngine.isBusy()) {
+      console.warn('[BACKUP SCHEDULER] Backup engine is currently busy with another operation. Skipping trigger.');
+      return { executed: false, reason: 'BACKUP_ENGINE_BUSY', result: backupEngine.getActiveJob() };
+    }
+
+    const dueCheck = await this.isBackupDue(new Date());
+
+    if (!force && !dueCheck.isDue) {
+      console.log(`[BACKUP SCHEDULER] Backup check skipped: ${dueCheck.reason}`);
+      return { executed: false, reason: dueCheck.reason, dueCheck };
+    }
+
+    console.log(`[BACKUP SCHEDULER] Executing scheduled backup (${force ? 'FORCED_TRIGGER' : dueCheck.reason})...`);
+    const execution = await this.executeScheduledBackupWithRetry();
+
+    return {
+      executed: execution.success,
+      reason: force ? 'FORCED_TRIGGER' : dueCheck.reason,
+      result: execution.result,
+      error: execution.error,
+      dueCheck
+    };
+  }
+
   // Execute backup with single controlled retry on failure
-  public async executeScheduledBackupWithRetry(): Promise<void> {
+  public async executeScheduledBackupWithRetry(): Promise<{ success: boolean; result?: any; error?: string }> {
+    let lastResult: any = null;
+    let lastError: string | null = null;
+
     const attemptBackup = async (attempt: number): Promise<boolean> => {
       try {
         console.log(`[BACKUP SCHEDULER] Starting automated backup (Attempt ${attempt}/2)...`);
@@ -140,6 +327,8 @@ class BackupSchedulerService {
           type: 'SCHEDULED',
           createdBy: 'AUTOMATED_SCHEDULER'
         });
+
+        lastResult = result;
 
         // Notify Admin of success
         await NotificationService.createSystemNotification({
@@ -159,33 +348,41 @@ class BackupSchedulerService {
 
         return true;
       } catch (err: any) {
-        console.error(`[BACKUP SCHEDULER] Backup attempt ${attempt} failed:`, err?.message || err);
+        lastError = err?.message || String(err);
+        console.error(`[BACKUP SCHEDULER] Backup attempt ${attempt} failed:`, lastError);
         return false;
       }
     };
 
     const firstAttemptSuccess = await attemptBackup(1);
-    if (!firstAttemptSuccess) {
-      console.log('[BACKUP SCHEDULER] Retrying scheduled backup in 30 seconds...');
-      await new Promise((resolve) => setTimeout(resolve, 30000));
-      const secondAttemptSuccess = await attemptBackup(2);
-
-      if (!secondAttemptSuccess) {
-        console.error('[BACKUP SCHEDULER] All scheduled backup attempts failed.');
-
-        // Dispatch failure notification
-        await NotificationService.createSystemNotification({
-          eventKey: 'BACKUP_FAILED' as any,
-          title: 'Database Backup Failed',
-          body: `Automatic scheduled database backup failed after retry. Please inspect the Database Backup dashboard immediately.`,
-          deepLink: '/admin/settings/backups',
-          metadata: {
-            time: new Date().toISOString(),
-            schedule: ENV.BACKUP_SCHEDULE
-          }
-        }).catch((notifErr) => console.warn('[BACKUP SCHEDULER] Could not send failure notification:', notifErr));
-      }
+    if (firstAttemptSuccess) {
+      return { success: true, result: lastResult };
     }
+
+    console.log('[BACKUP SCHEDULER] Retrying scheduled backup in 30 seconds...');
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+    const secondAttemptSuccess = await attemptBackup(2);
+
+    if (secondAttemptSuccess) {
+      return { success: true, result: lastResult };
+    }
+
+    console.error('[BACKUP SCHEDULER] All scheduled backup attempts failed.');
+
+    // Dispatch failure notification
+    await NotificationService.createSystemNotification({
+      eventKey: 'BACKUP_FAILED' as any,
+      title: 'Database Backup Failed',
+      body: `Automatic scheduled database backup failed after retry. Please inspect the Database Backup dashboard immediately.`,
+      deepLink: '/admin/settings/backups',
+      metadata: {
+        time: new Date().toISOString(),
+        schedule: ENV.BACKUP_SCHEDULE,
+        error: lastError
+      }
+    }).catch((notifErr) => console.warn('[BACKUP SCHEDULER] Could not send failure notification:', notifErr));
+
+    return { success: false, error: lastError || 'Scheduled backup failed after retry' };
   }
 
   // Check if last backup was > 7 days ago and send overdue notification
@@ -218,7 +415,6 @@ class BackupSchedulerService {
   }
 
   public getNextRunDate(): string | null {
-    // Estimated next run time
     const { cronExpr } = this.getCronExpression();
     return cronExpr;
   }

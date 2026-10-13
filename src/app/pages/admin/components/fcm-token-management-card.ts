@@ -25,6 +25,12 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
               <span [class]="isRegistered() ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'" class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border">
                 {{ isRegistered() ? 'Token Active' : 'Unregistered' }}
               </span>
+              @if (envStatus()) {
+                <span class="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border flex items-center gap-1">
+                  <mat-icon class="text-[11px] h-[11px] w-[11px]">shield</mat-icon>
+                  {{ envStatus()?.environment }} Isolated
+                </span>
+              }
             </h3>
             <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
               Receive real-time push alerts for orders, service enquiries, and system updates on this device.
@@ -40,6 +46,52 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
           <mat-icon class="text-sm">refresh</mat-icon>
         </button>
       </div>
+
+      <!-- ENVIRONMENT ISOLATION TELEMETRY -->
+      @if (envStatus()) {
+        <div class="p-3.5 bg-zinc-50/80 dark:bg-zinc-950/80 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+              <mat-icon class="text-xs h-3.5 w-3.5 text-indigo-500">domain_verification</mat-icon>
+              Server Environment & Domain Isolation
+            </span>
+            <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Enforced Server-Side
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+            <div class="bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+              <span class="block text-[8px] uppercase font-bold text-zinc-400">Environment</span>
+              <span class="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wide truncate block">
+                {{ envStatus()?.environment }}
+              </span>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+              <span class="block text-[8px] uppercase font-bold text-zinc-400">Configured Origin</span>
+              <span class="font-bold text-zinc-700 dark:text-zinc-300 truncate block" [title]="envStatus()?.configuredOrigin">
+                {{ envStatus()?.configuredOrigin || 'Same Origin' }}
+              </span>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+              <span class="block text-[8px] uppercase font-bold text-zinc-400">Env Active Devices</span>
+              <span class="font-black text-zinc-900 dark:text-zinc-100 truncate block">
+                {{ envStatus()?.activeDevicesCount || 0 }} / {{ envStatus()?.registeredDevicesCount || 0 }}
+              </span>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+              <span class="block text-[8px] uppercase font-bold text-zinc-400">Firebase Project</span>
+              <span class="font-bold text-zinc-600 dark:text-zinc-400 truncate block" [title]="envStatus()?.firebaseProjectId">
+                {{ envStatus()?.firebaseProjectId || 'Default' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- DEVICE TELEMETRY GRID -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
@@ -118,6 +170,7 @@ export class AdminFcmTokenCard implements OnInit {
   fcmToken = signal<string>("");
   isRegistered = signal<boolean>(false);
   loading = signal<boolean>(false);
+  envStatus = signal<any>(null);
 
   deviceInfo = signal<{ name: string; browser: string; os: string }>({
     name: "Desktop Device",
@@ -129,7 +182,21 @@ export class AdminFcmTokenCard implements OnInit {
     this.refreshDeviceInfo();
   }
 
+  loadEnvironmentStatus() {
+    this.ns.getEnvironmentStatus().subscribe({
+      next: (res) => {
+        if (res?.success && res.data) {
+          this.envStatus.set(res.data);
+        }
+      },
+      error: (err) => {
+        console.warn("Failed to load FCM environment status:", err);
+      },
+    });
+  }
+
   refreshDeviceInfo() {
+    this.loadEnvironmentStatus();
     if (typeof window !== "undefined") {
       this.permissionState.set(Notification.permission);
 
@@ -197,6 +264,7 @@ export class AdminFcmTokenCard implements OnInit {
           this.ns.registerAdminDevice(payload).subscribe({
             next: () => {
               this.toastService.success("Admin device registered & FCM token synced with backend!");
+              this.loadEnvironmentStatus();
             },
             error: (err) => {
               console.error("Failed to register admin FCM device:", err);

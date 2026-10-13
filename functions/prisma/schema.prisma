@@ -1088,6 +1088,10 @@ model NotificationDevice {
   language            String?  @db.VarChar(50)
   country             String?  @db.VarChar(100)
   notificationEnabled Boolean  @default(true) @map("notification_enabled")
+  environment         String   @default("production") @db.VarChar(50)
+  appOrigin           String?  @map("app_origin") @db.VarChar(255)
+  firebaseProjectId   String?  @map("firebase_project_id") @db.VarChar(100)
+  tokenStatus         String   @default("ACTIVE") @map("token_status") @db.VarChar(50)
   lastActive          DateTime @default(now()) @map("last_active") @db.Timestamptz
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
@@ -1097,6 +1101,7 @@ model NotificationDevice {
   @@index([userId])
   @@index([sessionId])
   @@index([guestId])
+  @@index([environment])
   @@map("notification_devices")
 }
 
@@ -1337,6 +1342,10 @@ model AdminNotificationDevice {
   fcmToken                String            @unique @map("fcm_token") @db.Text
   deviceId                String?           @map("device_id") @db.VarChar(255)
   isActive                Boolean           @default(true) @map("is_active")
+  environment             String            @default("production") @db.VarChar(50)
+  appOrigin               String?           @map("app_origin") @db.VarChar(255)
+  firebaseProjectId       String?           @map("firebase_project_id") @db.VarChar(100)
+  tokenStatus             String            @default("ACTIVE") @map("token_status") @db.VarChar(50)
   notificationPermission  String            @default("granted") @map("notification_permission") @db.VarChar(50)
   lastSeen                DateTime          @default(now()) @map("last_seen") @db.Timestamptz
   createdAt               DateTime          @default(now()) @map("created_at") @db.Timestamptz
@@ -1344,6 +1353,7 @@ model AdminNotificationDevice {
 
   @@index([adminId])
   @@index([isActive])
+  @@index([environment])
   @@map("admin_notification_devices")
 }
 
@@ -1397,6 +1407,10 @@ model AdminFcmToken {
   isActive               Boolean           @default(true) @map("is_active")
   isOnline               Boolean           @default(true) @map("is_online")
   notificationEnabled    Boolean           @default(true) @map("notification_enabled")
+  environment            String            @default("production") @db.VarChar(50)
+  appOrigin              String?           @map("app_origin") @db.VarChar(255)
+  firebaseProjectId      String?           @map("firebase_project_id") @db.VarChar(100)
+  tokenStatus            String            @default("ACTIVE") @map("token_status") @db.VarChar(50)
   lastNotificationSentAt DateTime?         @map("last_notification_sent_at") @db.Timestamptz
   notificationCount      Int               @default(0) @map("notification_count")
   lastUsedAt             DateTime          @default(now()) @map("last_used_at") @db.Timestamptz
@@ -1407,6 +1421,7 @@ model AdminFcmToken {
   @@index([adminId])
   @@index([isActive])
   @@index([isOnline])
+  @@index([environment])
   @@index([fcmToken])
   @@map("admin_fcm_tokens")
 }

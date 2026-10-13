@@ -36,6 +36,25 @@ pool.query(`
   ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
   ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
   ALTER TABLE IF EXISTS product_categories ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT false;
+
+  -- FCM Notification Environment Isolation columns
+  ALTER TABLE IF EXISTS notification_devices ADD COLUMN IF NOT EXISTS environment VARCHAR(50) DEFAULT 'production';
+  ALTER TABLE IF EXISTS notification_devices ADD COLUMN IF NOT EXISTS app_origin VARCHAR(255);
+  ALTER TABLE IF EXISTS notification_devices ADD COLUMN IF NOT EXISTS firebase_project_id VARCHAR(100);
+  ALTER TABLE IF EXISTS notification_devices ADD COLUMN IF NOT EXISTS token_status VARCHAR(50) DEFAULT 'ACTIVE';
+  CREATE INDEX IF NOT EXISTS idx_notification_devices_env ON notification_devices(environment);
+
+  ALTER TABLE IF EXISTS admin_fcm_tokens ADD COLUMN IF NOT EXISTS environment VARCHAR(50) DEFAULT 'production';
+  ALTER TABLE IF EXISTS admin_fcm_tokens ADD COLUMN IF NOT EXISTS app_origin VARCHAR(255);
+  ALTER TABLE IF EXISTS admin_fcm_tokens ADD COLUMN IF NOT EXISTS firebase_project_id VARCHAR(100);
+  ALTER TABLE IF EXISTS admin_fcm_tokens ADD COLUMN IF NOT EXISTS token_status VARCHAR(50) DEFAULT 'ACTIVE';
+  CREATE INDEX IF NOT EXISTS idx_admin_fcm_tokens_env ON admin_fcm_tokens(environment);
+
+  ALTER TABLE IF EXISTS admin_notification_devices ADD COLUMN IF NOT EXISTS environment VARCHAR(50) DEFAULT 'production';
+  ALTER TABLE IF EXISTS admin_notification_devices ADD COLUMN IF NOT EXISTS app_origin VARCHAR(255);
+  ALTER TABLE IF EXISTS admin_notification_devices ADD COLUMN IF NOT EXISTS firebase_project_id VARCHAR(100);
+  ALTER TABLE IF EXISTS admin_notification_devices ADD COLUMN IF NOT EXISTS token_status VARCHAR(50) DEFAULT 'ACTIVE';
+  CREATE INDEX IF NOT EXISTS idx_admin_notification_devices_env ON admin_notification_devices(environment);
 `).catch(err => {
   console.warn('⚠️ Auto-schema check notice:', err.message);
 });

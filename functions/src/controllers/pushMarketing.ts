@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { setDynamicFirebaseConfig, getFirebaseAdmin } from '../config/firebase';
+import {
+  getAppEnv,
+  getAppOrigin,
+  getFirebaseProjectId,
+  isFcmNotificationsEnabled,
+} from '../config/notificationEnv';
 
 // Helper to safely parse JSON
 const parseJSON = (str: any, defaultVal: any = {}) => {
@@ -285,17 +291,20 @@ export const getPublicFirebaseSettings = async (req: Request, res: Response) => 
     const record = await prisma.setting.findUnique({
       where: { settingKey: 'firebase-settings' }
     });
-    if (!record) {
-      return res.status(200).json({ success: true, data: { enabled: false } });
-    }
-    const data = parseJSON(record.settingData, {});
+    const data = record ? parseJSON(record.settingData, {}) : {};
+    const currentEnv = getAppEnv();
+    const projectId = data.projectId || getFirebaseProjectId();
+    const isEnabled = isFcmNotificationsEnabled() && (record ? !!data.enabled : true);
+
     const publicData = {
-      enabled: !!data.enabled,
-      projectId: data.projectId || '',
+      enabled: isEnabled,
+      projectId,
       apiKey: data.apiKey || '',
       appId: data.appId || '',
       messagingSenderId: data.messagingSenderId || '',
-      vapidPublicKey: data.vapidPublicKey || ''
+      vapidPublicKey: data.vapidPublicKey || '',
+      environment: currentEnv,
+      appOrigin: getAppOrigin(),
     };
     return res.status(200).json({ success: true, data: publicData });
   } catch (error: any) {

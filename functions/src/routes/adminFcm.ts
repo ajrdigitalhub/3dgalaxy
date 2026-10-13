@@ -15,10 +15,12 @@ import {
   sendAdminMulticastNotification,
   getAdminNotificationLogs,
   cleanupStaleAdminDevices,
+  getEnvironmentStatus,
 } from "../controllers/adminFcm";
 
 const router = Router();
 
+router.get("/environment-status", getEnvironmentStatus);
 router.post("/register", registerAdminDevice);
 router.put("/update", updateAdminDevice);
 router.get("/devices", getAdminDevices);

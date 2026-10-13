@@ -368,11 +368,21 @@ export class CustomerOrderDetailsComponent implements OnInit {
 
   ngOnInit() {
     this.route.paramMap.subscribe((params) => {
-      const orderNumber = params.get("orderNumber");
-      if (orderNumber) {
-        this.fetchOrder(orderNumber);
+      const orderIdentifier = params.get("orderNumber") || params.get("id");
+      if (orderIdentifier) {
+        this.fetchOrder(orderIdentifier);
       }
     });
+  }
+
+  goBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      this.location.back();
+    } else if (this.ds.userProfile()) {
+      this.router.navigate(["/account/orders"]);
+    } else {
+      this.router.navigate(["/"]);
+    }
   }
 
   private getHeaders() {

@@ -1475,8 +1475,9 @@ export class DatastoreService {
   }
 
   async logout(redirect = true, showToast = true) {
+    const fcmToken = typeof localStorage !== 'undefined' ? localStorage.getItem('fcm_token') || '' : '';
     return new Promise<void>((resolve) => {
-      this.api.post('/auth/logout', {}).subscribe({
+      this.api.post('/auth/logout', { fcmToken }).subscribe({
         next: () => {
           this.clearSession();
           if (showToast) {

@@ -2884,7 +2884,7 @@ import { environment } from "../../../../environments/environment";
                               <!-- IMAGE ONLY LIVE PREVIEW -->
                               <div class="relative w-full overflow-hidden rounded-2xl bg-zinc-950 flex items-center justify-center p-1">
                                 @if (imgPath) {
-                                  <img [src]="imgPath" alt="Preview" class="max-w-full max-h-[65vh] w-auto h-auto object-contain rounded-xl block shadow-xl" />
+                                  <img [src]="imgPath" alt="Preview" class="w-full max-h-[65vh] h-auto object-contain rounded-xl block shadow-xl" />
                                 } @else {
                                   <div class="w-full h-48 bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 text-xs font-mono">
                                     [ No Visual Asset Uploaded ]

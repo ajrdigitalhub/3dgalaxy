@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   registerDevice,
   updateToken,
+  unbindDeviceAccount,
   subscribeToTopic,
   unsubscribeFromTopic,
   getNotifications,
@@ -22,6 +23,7 @@ const adminGuard = [authenticateToken, requireRole(['Admin', 'Super Admin', 'Man
 // --- Customer / Guest Endpoints ---
 router.post('/notifications/register-device', registerDevice);
 router.post('/notifications/update-token', updateToken);
+router.post('/notifications/unbind-account', unbindDeviceAccount);
 router.post('/notifications/subscribe', subscribeToTopic);
 router.post('/notifications/unsubscribe', unsubscribeFromTopic);
 router.get('/notifications', getNotifications);

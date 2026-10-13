@@ -393,3 +393,81 @@ export const getHealthCheck = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * POST /api/admin/backups/cron/run-scheduled
+ * GET /api/admin/backups/cron/run-scheduled
+ * Authenticated via x-cron-secret / x-scheduler-secret OR Bearer ENV.CRON_SECRET OR Admin JWT
+ * Triggers automated backup evaluation or forced execution
+ */
+export const handleBackupCronTrigger = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers['authorization'] || '';
+    const cronSecretHeader = (req.headers['x-cron-secret'] || req.headers['x-scheduler-secret'] || '') as string;
+    const querySecret = (req.query.secret || req.query.cron_secret || '') as string;
+    const expectedSecret = ENV.CRON_SECRET;
+
+    const isValidSecret =
+      (Boolean(cronSecretHeader) && cronSecretHeader === expectedSecret) ||
+      (Boolean(querySecret) && querySecret === expectedSecret) ||
+      (Boolean(authHeader) && (authHeader === `Bearer ${expectedSecret}` || authHeader.includes(expectedSecret)));
+
+    const user = (req as any).user;
+    const isAdmin = !!user && ['admin', 'superadmin'].includes(String(user.role || '').toLowerCase());
+
+    if (!isValidSecret && !isAdmin) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized: Invalid cron secret header or admin authentication required.'
+      });
+    }
+
+    const force = req.query.force === 'true' || req.body?.force === true;
+    const outcome = await backupScheduler.runScheduledBackupIfDue(force);
+
+    return res.status(200).json({
+      success: outcome.executed ? Boolean(outcome.result) : true,
+      message: outcome.executed
+        ? 'Scheduled database backup process executed successfully.'
+        : `Scheduled backup evaluated: ${outcome.reason}`,
+      data: outcome
+    });
+  } catch (error: any) {
+    console.error('[BACKUP CONTROLLER] handleBackupCronTrigger error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error executing scheduled backup trigger'
+    });
+  }
+};
+
+/**
+ * GET /api/admin/backups/cron/status
+ * Returns current cron status and due evaluation
+ */
+export const handleBackupCronStatus = async (req: Request, res: Response) => {
+  try {
+    const status = backupScheduler.getStatus();
+    const dueCheck = await backupScheduler.isBackupDue().catch((e) => ({
+      isDue: false,
+      reason: e.message,
+      elapsedHours: 0,
+      lastBackupDate: null,
+      currentWeekday: ''
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...status,
+        dueEvaluation: dueCheck
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error retrieving cron status'
+    });
+  }
+};
+

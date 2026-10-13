@@ -6,6 +6,8 @@ const apiKey = urlParams.get('apiKey');
 const projectId = urlParams.get('projectId');
 const senderId = urlParams.get('senderId');
 const appId = urlParams.get('appId');
+const envParam = urlParams.get('env');
+const originParam = urlParams.get('origin');
 
 const getParam = (val, fallback) => (val && val.trim() !== '') ? val.trim() : fallback;
 
@@ -13,6 +15,8 @@ const finalApiKey = getParam(apiKey, "AIzaSyD4uCGuumfRefkteG6QjGrvFUW1FLMW3o8");
 const finalProjectId = getParam(projectId, "ajr3dgalaxy");
 const finalSenderId = getParam(senderId, "111872927152");
 const finalAppId = getParam(appId, "1:111872927152:web:b498fd9a072f776a2ae275");
+const swEnv = getParam(envParam, "production");
+const swOrigin = getParam(originParam, self.location.origin);
 
 firebase.initializeApp({
   apiKey: finalApiKey,
@@ -26,7 +30,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 /**
- * Parse incoming push payload into standardized title & options
+ * Parse incoming push payload into standardized title & options with environment validation
  */
 function parseNotificationPayload(rawData) {
   let title = '3D Galaxy';
@@ -53,6 +57,15 @@ function parseNotificationPayload(rawData) {
     const notif = payload.notification || payload.data?.notification || {};
     const data = payload.data || payload;
 
+    // Defense-in-depth: check environment tag if attached to notification payload
+    const payloadEnv = data.environment || payload.environment;
+    if (payloadEnv && typeof payloadEnv === 'string' && swEnv) {
+      if (payloadEnv.toLowerCase() !== swEnv.toLowerCase()) {
+        console.warn(`[firebase-messaging-sw.js] Dropped cross-environment notification (target: ${payloadEnv}, sw: ${swEnv})`);
+        return null;
+      }
+    }
+
     title = notif.title || data.title || data.name || title;
     body = notif.body || data.body || data.message || body;
     icon = notif.icon || data.icon || notif.image || data.image || icon;
@@ -73,68 +86,121 @@ function parseNotificationPayload(rawData) {
       vibrate: [200, 100, 200],
       data: {
         click_action: clickAction,
-        url: clickAction
+        url: clickAction,
+        environment: swEnv
       }
     }
   };
 }
 
-// Native Push Event Listener
-// CRITICAL: Chrome on Android requires event.waitUntil(showNotification(...)) to prevent
-// displaying the default fallback notification "This site has been updated in the background."
+// Native Push Event Listener with Duplicate Prevention
 self.addEventListener('push', (event) => {
-  let rawData = {};
-  if (event.data) {
-    try {
-      rawData = event.data.json();
-    } catch (e) {
-      rawData = { body: event.data.text() };
+  event.waitUntil((async () => {
+    let rawData = {};
+    if (event.data) {
+      try {
+        rawData = event.data.json();
+      } catch (e) {
+        rawData = { body: event.data.text() };
+      }
     }
-  }
 
-  const { title, options } = parseNotificationPayload(rawData);
+    const parsed = parseNotificationPayload(rawData);
+    if (!parsed) {
+      // Notification dropped due to cross-environment isolation
+      return;
+    }
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+    // Check if application window is open and focused in the foreground
+    const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const hasFocusedWindow = windowClients.some(
+      (client) => client.focused && client.visibilityState === 'visible'
+    );
+
+    // If application is already active in the foreground, notify window client
+    // without popping a duplicate system tray notification
+    if (hasFocusedWindow) {
+      windowClients.forEach((client) => {
+        client.postMessage({
+          type: 'FCM_FOREGROUND_PUSH',
+          payload: rawData
+        });
+      });
+      return;
+    }
+
+    // Check if message is a data-only push or if Firebase handles it natively
+    const hasFCMNotificationPayload = Boolean(
+      rawData.notification || (rawData.webpush && rawData.webpush.notification)
+    );
+
+    // If the message already contains an FCM notification payload, Firebase
+    // automatically displays it. Do not show another notification to avoid duplicates.
+    if (hasFCMNotificationPayload) {
+      return;
+    }
+
+    return self.registration.showNotification(parsed.title, parsed.options);
+  })());
 });
 
-// Firebase Background Handler fallback
+// Firebase Background Handler for data-only messages
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received FCM background message:', payload);
+  console.log('[firebase-messaging-sw.js] Received FCM background message in env:', swEnv, payload);
+  const parsed = parseNotificationPayload(payload);
+  if (!parsed) {
+    console.warn(`[firebase-messaging-sw.js] Background message dropped due to environment mismatch`);
+    return;
+  }
+  // Only display if Firebase has not already displayed a notification payload
+  if (!payload.notification) {
+    return self.registration.showNotification(parsed.title, parsed.options);
+  }
 });
 
-// Notification Click Handler
+// Notification Click Handler with Domain & Origin Enforcement
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.click_action || event.notification.data?.url || '/';
+  const rawTarget = event.notification.data?.click_action || event.notification.data?.url || '/';
+
+  // Normalize target URL strictly to current origin to prevent cross-domain leaks
+  let safeTargetUrl = '/';
+  try {
+    const resolved = new URL(rawTarget, self.location.origin);
+    if (resolved.origin === self.location.origin) {
+      safeTargetUrl = resolved.href;
+    } else {
+      safeTargetUrl = new URL(resolved.pathname + resolved.search, self.location.origin).href;
+    }
+  } catch {
+    safeTargetUrl = new URL('/', self.location.origin).href;
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // First try to find a client already at the exact target URL
+      // 1. Try to find client already at the target URL
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        if (client.url.includes(targetUrl) && 'focus' in client) {
+        if (client.url === safeTargetUrl && 'focus' in client) {
           return client.focus();
         }
       }
-      
-      // If not found, try to find ANY existing window for the app to reuse and navigate
+
+      // 2. Try to reuse any open window belonging to this origin
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
           client.focus();
           if ('navigate' in client) {
-            return client.navigate(targetUrl);
+            return client.navigate(safeTargetUrl);
           }
         }
       }
 
-      // Fallback: open a new window
+      // 3. Fallback: open new window on this origin
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return clients.openWindow(safeTargetUrl);
       }
     })
   );
 });
-
