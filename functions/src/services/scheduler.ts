@@ -492,7 +492,7 @@ export const processNotificationQueue = async () => {
             await (prisma.notificationDevice as any).updateMany({
               where: { fcmToken: { in: tokensToDelete } },
               data: { notificationEnabled: false, tokenStatus: 'INVALID' }
-            }).catch(e => console.error('Error cleaning up invalid tokens:', e));
+            }).catch((e: any) => console.error('Error cleaning up invalid tokens:', e));
           }
 
           // Update Queue Items

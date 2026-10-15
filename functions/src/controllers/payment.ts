@@ -28,39 +28,6 @@ const deductInventory = async (tx: any, orderId: string) => {
   });
 
   for (const item of items) {
-    // 1. Deduct from main Warehouse Inventory
-    const warehouse = await tx.warehouse.findFirst();
-    if (warehouse) {
-      const inventory = await tx.inventory.findFirst({
-        where: {
-          productId: item.productId,
-          variantId: item.variantId,
-          warehouseId: warehouse.id,
-        },
-      });
-
-      if (inventory) {
-        await tx.inventory.update({
-          where: { id: inventory.id },
-          data: {
-            quantity: {
-              decrement: item.quantity,
-            },
-          },
-        });
-
-        // Record inventory transaction
-        await tx.inventoryTransaction.create({
-          data: {
-            inventoryId: inventory.id,
-            transactionType: 'DECREMENT',
-            quantity: item.quantity,
-            referenceId: orderId,
-            notes: `Stock deducted for Order ${orderId}`,
-          },
-        });
-      }
-    }
 
     // 2. Deduct from Product.stock
     if (item.productId) {
@@ -1371,10 +1338,6 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
 
       let guestUser = await prisma.user.findFirst({ where: { email } });
       if (!guestUser) {
-        let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
-        if (!guestRole) {
-          guestRole = await prisma.role.create({ data: { name: 'Guest', description: 'Guest customer role' } });
-        }
         guestUser = await prisma.user.create({
           data: {
             email,
@@ -1382,7 +1345,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
             lastName: name.split(' ').slice(1).join(' ') || 'Customer',
             passwordHash: '',
             isActive: true,
-            roles: { create: { roleId: guestRole.id } }
+            role: 'Guest'
           }
         });
       }

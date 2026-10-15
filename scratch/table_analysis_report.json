@@ -1,0 +1,457 @@
+[
+  {
+    "table": "audit_logs",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 4,
+    "backendSamples": ""
+  },
+  {
+    "table": "banners",
+    "inPrisma": true,
+    "backendMatches": 21,
+    "frontendMatches": 45,
+    "backendSamples": "app.ts, homepage.ts, banner.controller.ts"
+  },
+  {
+    "table": "blog_categories",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "blogs",
+    "inPrisma": true,
+    "backendMatches": 8,
+    "frontendMatches": 19,
+    "backendSamples": "homepage.ts, index.ts, admin.ts"
+  },
+  {
+    "table": "brands",
+    "inPrisma": true,
+    "backendMatches": 33,
+    "frontendMatches": 82,
+    "backendSamples": "app.ts, brand.ts, category.ts"
+  },
+  {
+    "table": "cart_items",
+    "inPrisma": true,
+    "backendMatches": 19,
+    "frontendMatches": 23,
+    "backendSamples": "abandonedCheckout.ts, payment.ts"
+  },
+  {
+    "table": "carts",
+    "inPrisma": true,
+    "backendMatches": 5,
+    "frontendMatches": 10,
+    "backendSamples": "index.ts, admin.ts, shipping.service.ts"
+  },
+  {
+    "table": "categories",
+    "inPrisma": true,
+    "backendMatches": 63,
+    "frontendMatches": 218,
+    "backendSamples": "app.ts, database.ts, analytics.ts"
+  },
+  {
+    "table": "contact_requests",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "coupons",
+    "inPrisma": true,
+    "backendMatches": 8,
+    "frontendMatches": 16,
+    "backendSamples": "admin.ts"
+  },
+  {
+    "table": "coupon_usage",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "customer_addresses",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 3,
+    "backendSamples": ""
+  },
+  {
+    "table": "customer_notifications",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "customer_reviews",
+    "inPrisma": true,
+    "backendMatches": 11,
+    "frontendMatches": 4,
+    "backendSamples": "customer.ts, exploreConfig.ts, product.ts"
+  },
+  {
+    "table": "customers",
+    "inPrisma": true,
+    "backendMatches": 44,
+    "frontendMatches": 103,
+    "backendSamples": "app.ts, adminCustomer.ts, auth.ts"
+  },
+  {
+    "table": "customer_sessions",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "customer_wishlist",
+    "inPrisma": true,
+    "backendMatches": 11,
+    "frontendMatches": 4,
+    "backendSamples": "adminCustomer.ts, customer.ts, pushMarketing.ts"
+  },
+  {
+    "table": "homepage_section_items",
+    "inPrisma": true,
+    "backendMatches": 1,
+    "frontendMatches": 0,
+    "backendSamples": "settings.service.ts"
+  },
+  {
+    "table": "homepage_sections",
+    "inPrisma": true,
+    "backendMatches": 9,
+    "frontendMatches": 10,
+    "backendSamples": "homepage.ts, settings.service.ts"
+  },
+  {
+    "table": "inventory",
+    "inPrisma": true,
+    "backendMatches": 43,
+    "frontendMatches": 23,
+    "backendSamples": "order.ts, payment.ts, product.ts"
+  },
+  {
+    "table": "inventory_transactions",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "menu_items",
+    "inPrisma": true,
+    "backendMatches": 2,
+    "frontendMatches": 11,
+    "backendSamples": "homepage.ts"
+  },
+  {
+    "table": "menus",
+    "inPrisma": true,
+    "backendMatches": 2,
+    "frontendMatches": 7,
+    "backendSamples": "app.ts"
+  },
+  {
+    "table": "newsletter_subscribers",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "notifications",
+    "inPrisma": true,
+    "backendMatches": 74,
+    "frontendMatches": 78,
+    "backendSamples": "notificationEnv.ts, abandonedCheckout.ts, adminFcm.ts"
+  },
+  {
+    "table": "notification_templates",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "order_items",
+    "inPrisma": true,
+    "backendMatches": 11,
+    "frontendMatches": 5,
+    "backendSamples": "whatsapp.ts, backupEngine.service.ts"
+  },
+  {
+    "table": "orders",
+    "inPrisma": true,
+    "backendMatches": 111,
+    "frontendMatches": 198,
+    "backendSamples": "app.ts, adminCustomer.ts, analytics.ts"
+  },
+  {
+    "table": "order_status_history",
+    "inPrisma": true,
+    "backendMatches": 1,
+    "frontendMatches": 0,
+    "backendSamples": "order.ts"
+  },
+  {
+    "table": "pages",
+    "inPrisma": true,
+    "backendMatches": 6,
+    "frontendMatches": 80,
+    "backendSamples": "pushCampaign.ts, sitemap.ts, admin.ts"
+  },
+  {
+    "table": "page_sections",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "payment_gateways",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 2,
+    "backendSamples": ""
+  },
+  {
+    "table": "payments",
+    "inPrisma": true,
+    "backendMatches": 34,
+    "frontendMatches": 31,
+    "backendSamples": "adminCustomer.ts, order.ts, payment.ts"
+  },
+  {
+    "table": "permissions",
+    "inPrisma": true,
+    "backendMatches": 22,
+    "frontendMatches": 1,
+    "backendSamples": "auth.ts, integration.middleware.ts, backup.routes.ts"
+  },
+  {
+    "table": "product_attributes",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_attribute_values",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_downloads",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 2,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_faqs",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 2,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_features",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 2,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_images",
+    "inPrisma": false,
+    "backendMatches": 7,
+    "frontendMatches": 2,
+    "backendSamples": "productImport.ts"
+  },
+  {
+    "table": "product_included_items",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_options",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 3,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_option_values",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_related_products",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_reviews",
+    "inPrisma": true,
+    "backendMatches": 4,
+    "frontendMatches": 3,
+    "backendSamples": "reviewAggregation.ts"
+  },
+  {
+    "table": "products",
+    "inPrisma": true,
+    "backendMatches": 128,
+    "frontendMatches": 345,
+    "backendSamples": "app.ts, database.ts, analytics.ts"
+  },
+  {
+    "table": "product_seo",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_shipping",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_specifications",
+    "inPrisma": false,
+    "backendMatches": 1,
+    "frontendMatches": 0,
+    "backendSamples": "csv-import.ts"
+  },
+  {
+    "table": "product_tag_mapping",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_tags",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_variant_images",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_variant_options",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "product_variants",
+    "inPrisma": true,
+    "backendMatches": 7,
+    "frontendMatches": 0,
+    "backendSamples": "backupEngine.service.ts"
+  },
+  {
+    "table": "product_warranty",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "refresh_tokens",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "role_permissions",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "roles",
+    "inPrisma": true,
+    "backendMatches": 38,
+    "frontendMatches": 15,
+    "backendSamples": "auth.ts, order.ts, payment.ts"
+  },
+  {
+    "table": "search_logs",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "search_settings",
+    "inPrisma": false,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "shipments",
+    "inPrisma": true,
+    "backendMatches": 12,
+    "frontendMatches": 14,
+    "backendSamples": "adminCustomer.ts, order.ts, packagingSlip.ts"
+  },
+  {
+    "table": "theme_settings",
+    "inPrisma": true,
+    "backendMatches": 12,
+    "frontendMatches": 1,
+    "backendSamples": "settings.ts, settings.service.ts, backupEngine.service.ts"
+  },
+  {
+    "table": "user_roles",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  },
+  {
+    "table": "users",
+    "inPrisma": true,
+    "backendMatches": 18,
+    "frontendMatches": 9,
+    "backendSamples": "app.ts, adminCustomer.ts, notification.ts"
+  },
+  {
+    "table": "warehouses",
+    "inPrisma": true,
+    "backendMatches": 0,
+    "frontendMatches": 0,
+    "backendSamples": ""
+  }
+]

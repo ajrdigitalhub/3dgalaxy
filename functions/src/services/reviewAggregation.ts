@@ -29,10 +29,21 @@ export interface ProductRatingStats {
   lastReviewDate: string | null;
 }
 
-// In-memory cache for ultra-fast response times
-const ratingCache = new Map<string, ProductRatingStats>();
+// In-memory cache for ultra-fast response times (TTL: 5 minutes)
+const ratingCache = new Map<string, { stats: ProductRatingStats; expiresAt: number }>();
 
 export class ReviewAggregationService {
+  /**
+   * Invalidate cached rating stats
+   */
+  static clearCache(productId?: string): void {
+    if (productId) {
+      ratingCache.delete(productId);
+    } else {
+      ratingCache.clear();
+    }
+  }
+
   /**
    * Aggregates and calculates accurate review statistics for a product.
    * Only includes APPROVED reviews (excludes PENDING, REJECTED, and DELETED).
@@ -40,6 +51,11 @@ export class ReviewAggregationService {
   static async aggregateProductRating(productId: string): Promise<ProductRatingStats> {
     if (!productId) {
       return this.getEmptyStats('');
+    }
+
+    const cached = ratingCache.get(productId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.stats;
     }
 
     try {
@@ -51,13 +67,6 @@ export class ReviewAggregationService {
             include: { user: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      // 2. Fetch ProductReview records
-      const productReviews = await prisma.productReview.findMany({
-        where: { productId, isApproved: true },
-        include: { user: true },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -109,30 +118,13 @@ export class ReviewAggregationService {
         }
       }
 
-      // Process ProductReviews
-      for (const pr of productReviews) {
-        const authorName = pr.user?.firstName
-          ? `${pr.user.firstName} ${pr.user.lastName || ''}`.trim()
-          : 'Verified Buyer';
-
-        approvedItems.push({
-          id: pr.id,
-          rating: Number(pr.rating) || 5,
-          title: pr.title || 'Product Review',
-          comment: pr.comment || '',
-          authorName,
-          images: [],
-          createdAt: pr.createdAt,
-        });
-      }
-
       // Sort by newest date
       approvedItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       const totalReviews = approvedItems.length;
       if (totalReviews === 0) {
         const emptyStats = this.getEmptyStats(productId);
-        ratingCache.set(productId, emptyStats);
+        ratingCache.set(productId, { stats: emptyStats, expiresAt: Date.now() + 300 * 1000 });
         return emptyStats;
       }
 
@@ -186,7 +178,7 @@ export class ReviewAggregationService {
         lastReviewDate: latest ? latest.createdAt.toISOString() : null,
       };
 
-      ratingCache.set(productId, stats);
+      ratingCache.set(productId, { stats, expiresAt: Date.now() + 300 * 1000 });
       return stats;
     } catch (error) {
       console.error(`[ReviewAggregationService] Error aggregating product ${productId}:`, error);
@@ -198,6 +190,7 @@ export class ReviewAggregationService {
    * Recalculates product rating statistics and clears system response caches.
    */
   static async updateProductRating(productId: string): Promise<ProductRatingStats> {
+    ratingCache.delete(productId);
     const stats = await this.aggregateProductRating(productId);
     clearCache(); // Invalidate global endpoint cache (sysCache)
     return stats;
@@ -234,8 +227,9 @@ export class ReviewAggregationService {
    * Gets rating stats from cache or computes them if missing.
    */
   static async getProductRating(productId: string, fallbackReviews?: any[]): Promise<ProductRatingStats> {
-    if (ratingCache.has(productId)) {
-      return ratingCache.get(productId)!;
+    const cached = ratingCache.get(productId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.stats;
     }
 
     // Fallback inline calculation if reviews list is already available
@@ -277,7 +271,7 @@ export class ReviewAggregationService {
           latestReview: null,
           lastReviewDate: null,
         };
-        ratingCache.set(productId, stats);
+        ratingCache.set(productId, { stats, expiresAt: Date.now() + 300 * 1000 });
         return stats;
       }
     }
@@ -290,9 +284,6 @@ export class ReviewAggregationService {
    */
   static async getReviewAnalytics() {
     const customerReviews = await prisma.customerReview.findMany({
-      include: { product: true },
-    });
-    const productReviews = await prisma.productReview.findMany({
       include: { product: true },
     });
 
@@ -331,11 +322,6 @@ export class ReviewAggregationService {
         } catch (e) {}
       }
       processReview(cr.productId, cr.product?.name || 'Product', Number(cr.rating) || 5, status);
-    }
-
-    for (const pr of productReviews) {
-      const status = pr.isApproved ? 'APPROVED' : 'PENDING';
-      processReview(pr.productId, pr.product?.name || 'Product', Number(pr.rating) || 5, status);
     }
 
     const averageStoreRating = approvedCount > 0 ? Math.round((totalRatingSum / approvedCount) * 10) / 10 : 0;

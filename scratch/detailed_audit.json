@@ -1,0 +1,528 @@
+[
+  {
+    "table": "product_variant_options",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_variant_images",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_option_values",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_options",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_attribute_values",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_attributes",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_specifications",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [
+      {
+        "file": "functions\\src\\utils\\csv-import.ts",
+        "line": 539,
+        "text": "resolveText(row, [\"specifications\", \"product_specifications\"]),",
+        "type": "TABLE_NAME"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "product_features",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_downloads",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_faqs",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_images",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_included_items",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_related_products",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_seo",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_shipping",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_warranty",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_tag_mapping",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "product_tags",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "customer_sessions",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "customer_notifications",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "search_logs",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "coupon_usage",
+    "model": "couponUsage",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "page_sections",
+    "model": "pageSection",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "blog_categories",
+    "model": "blogCategory",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "notification_templates",
+    "model": "notificationTemplate",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "inventory_transactions",
+    "model": "inventoryTransaction",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 862,
+        "text": "const existingRestore = await tx.inventoryTransaction.findFirst({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 901,
+        "text": "await tx.inventoryTransaction.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\payment.ts",
+        "line": 55,
+        "text": "await tx.inventoryTransaction.create({",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "contact_requests",
+    "model": "contactRequest",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "order_status_history",
+    "model": "orderStatusHistory",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 1260,
+        "text": "await prisma.orderStatusHistory.create({",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "search_settings",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "payment_gateways",
+    "model": null,
+    "inPrisma": false,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "theme_settings",
+    "model": "themeSetting",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 9,
+        "text": "sysCache.del('theme_settings');",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 18,
+        "text": "let cached = sysCache.get('theme_settings');",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 23,
+        "text": "let settingRecord = await prisma.themeSetting.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 29,
+        "text": "settingRecord = await prisma.themeSetting.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 55,
+        "text": "sysCache.set('theme_settings', data, 5);",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 91,
+        "text": "let settingRecord = await prisma.themeSetting.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 96,
+        "text": "settingRecord = await prisma.themeSetting.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 121,
+        "text": "const updated = await prisma.themeSetting.upsert({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 150,
+        "text": "const existing = await prisma.themeSetting.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\settings.ts",
+        "line": 157,
+        "text": "const updated = await prisma.themeSetting.upsert({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 259,
+        "text": "prisma.themeSetting.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 287,
+        "text": "// 1. Merge Theme Settings from theme_settings table",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 296,
+        "text": "await prisma.themeSetting.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 555,
+        "text": "await prisma.themeSetting.upsert({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 702,
+        "text": "sysCache.del(\"theme_settings\");",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 725,
+        "text": "sysCache.del(\"theme_settings\");",
+        "type": "TABLE_NAME"
+      },
+      {
+        "file": "functions\\src\\routes\\admin.ts",
+        "line": 873,
+        "text": "const rawSettings = await prisma.themeSetting.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\services\\backupEngine.service.ts",
+        "line": 1060,
+        "text": "prisma.themeSetting.count().catch((e) => { errors.push(`themeSettings: ${e.message}`); return 0; }),",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "homepage_section_items",
+    "model": "homepageSectionItem",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\category.ts",
+        "line": 446,
+        "text": "await tx.homepageSectionItem.deleteMany({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\modules\\settings\\settings.service.ts",
+        "line": 670,
+        "text": "await tx.homepageSectionItem.createMany({",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "product_reviews",
+    "model": "productReview",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\services\\backupEngine.service.ts",
+        "line": 1057,
+        "text": "prisma.productReview.count().catch((e) => { errors.push(`reviews: ${e.message}`); return 0; }),",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\services\\reviewAggregation.ts",
+        "line": 74,
+        "text": "const productReviews = await prisma.productReview.findMany({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\services\\reviewAggregation.ts",
+        "line": 312,
+        "text": "const productReviews = await prisma.productReview.findMany({",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  },
+  {
+    "table": "role_permissions",
+    "model": "rolePermission",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "user_roles",
+    "model": "userRole",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "permissions",
+    "model": "permission",
+    "inPrisma": true,
+    "backendHits": [],
+    "frontendHits": []
+  },
+  {
+    "table": "roles",
+    "model": "role",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\auth.ts",
+        "line": 78,
+        "text": "let role = await prisma.role.findUnique({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\auth.ts",
+        "line": 82,
+        "text": "role = await prisma.role.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 561,
+        "text": "let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 563,
+        "text": "guestRole = await prisma.role.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\payment.ts",
+        "line": 1376,
+        "text": "let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\payment.ts",
+        "line": 1378,
+        "text": "guestRole = await prisma.role.create({ data: { name: 'Guest', description: 'Guest customer role' } });",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\user.ts",
+        "line": 119,
+        "text": "const roles = await prisma.role.findMany({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\user.ts",
+        "line": 135,
+        "text": "const created = await prisma.role.create({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\user.ts",
+        "line": 161,
+        "text": "const updated = await prisma.role.update({",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\services\\whatsappConversationService.ts",
+        "line": 122,
+        "text": "guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\services\\whatsappConversationService.ts",
+        "line": 124,
+        "text": "guestRole = await prisma.role.create({",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": [
+      {
+        "file": "src\\app\\core\\guards\\auth.guard.ts",
+        "line": 47,
+        "text": "const allowedRoles = (route.data && route.data['roles']) as string[] | undefined;"
+      }
+    ]
+  },
+  {
+    "table": "warehouses",
+    "model": "warehouse",
+    "inPrisma": true,
+    "backendHits": [
+      {
+        "file": "functions\\src\\controllers\\order.ts",
+        "line": 879,
+        "text": "const warehouse = await tx.warehouse.findFirst();",
+        "type": "PRISMA_MODEL"
+      },
+      {
+        "file": "functions\\src\\controllers\\payment.ts",
+        "line": 31,
+        "text": "const warehouse = await tx.warehouse.findFirst();",
+        "type": "PRISMA_MODEL"
+      }
+    ],
+    "frontendHits": []
+  }
+]

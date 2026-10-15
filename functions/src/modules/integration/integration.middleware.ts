@@ -243,10 +243,10 @@ export const authenticateIntegration = async (
             // Verify in Prisma DB
             const dbUser = await prisma.user.findFirst({
               where: { email, isActive: true },
-              include: { roles: { include: { role: true } } },
+              select: { role: true },
             });
-            const dbRole = dbUser?.roles[0]?.role?.name?.toUpperCase();
-            if (dbRole === 'ADMIN' || dbRole === 'SUPERADMIN' || dbRole === 'MANAGER') {
+            const dbRole = dbUser?.role?.toUpperCase();
+            if (dbRole === 'ADMIN' || dbRole === 'SUPER ADMIN' || dbRole === 'SUPERADMIN' || dbRole === 'MANAGER') {
               role = 'ADMIN';
             } else {
               role = dbRole || 'CUSTOMER';

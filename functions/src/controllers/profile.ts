@@ -23,15 +23,7 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
         isVerified: true,
         createdAt: true,
         updatedAt: true,
-        roles: {
-          select: {
-            role: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
+        role: true,
       },
     });
 
@@ -41,7 +33,10 @@ export const getProfile = async (req: AuthenticatedRequest, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      data: user,
+      data: {
+        ...user,
+        roles: [{ role: { name: user.role || 'Customer' } }],
+      },
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to retrieve profile', details: error.message });
@@ -78,22 +73,17 @@ export const updateProfile = async (req: AuthenticatedRequest, res: Response) =>
         isVerified: true,
         createdAt: true,
         updatedAt: true,
-        roles: {
-          select: {
-            role: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
+        role: true,
       },
     });
 
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: updated,
+      data: {
+        ...updated,
+        roles: [{ role: { name: updated.role || 'Customer' } }],
+      },
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update profile', details: error.message });

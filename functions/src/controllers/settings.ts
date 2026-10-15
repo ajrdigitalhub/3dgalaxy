@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { clearCache } from '../middleware/cache';
-import { getSettingsService } from '../modules/settings/settings.service';
+import { getSettingsService, updateSettingsService } from '../modules/settings/settings.service';
 import { sysCache } from '../config/cache';
 import { ENV } from '../config/env';
 
@@ -20,39 +20,27 @@ export const getThemeSettings = async (req: Request, res: Response) => {
       return res.status(200).json(cached);
     }
 
-    let settingRecord = await prisma.themeSetting.findUnique({
-      where: { keyName: 'global-settings' },
-    });
+    const settings = await getSettingsService();
+    const data = settings?.theme || {
+      logo: 'https://picsum.photos/seed/logo/200/50',
+      favicon: 'https://picsum.photos/seed/favicon/32/32',
+      primaryColor: '#d65108',
+      secondaryColor: '#1e3a8a',
+      typography: 'Inter',
+      headerConfig: { announceBar: 'Welcome B2B Buyers - Brahma 3D Galactic Fabrication Platform' },
+      footerConfig: { copyright: '© 2026 Brahma 3D Galaxy Labs. All Rights Reserved.' },
+      homepageConfig: { columnsCount: 3, itemsFeaturedCount: 6 },
+      recentPurchasePopup: {
+        enabled: true,
+        interval: 5000,
+        displayDuration: 4000,
+        maxItems: 20,
+        showLocation: true,
+        showTime: true
+      }
+    };
 
-    if (!settingRecord) {
-      // Seed with initial generic fallback styling presets
-      settingRecord = await prisma.themeSetting.create({
-        data: {
-          keyName: 'global-settings',
-          value: JSON.stringify({
-            logo: 'https://picsum.photos/seed/logo/200/50',
-            favicon: 'https://picsum.photos/seed/favicon/32/32',
-            primaryColor: '#d65108',
-            secondaryColor: '#1e3a8a',
-            typography: 'Inter',
-            headerConfig: { announceBar: 'Welcome B2B Buyers - Brahma 3D Galactic Fabrication Platform' },
-            footerConfig: { copyright: '© 2026 Brahma 3D Galaxy Labs. All Rights Reserved.' },
-            homepageConfig: { columnsCount: 3, itemsFeaturedCount: 6 },
-            recentPurchasePopup: {
-              enabled: true,
-              interval: 5000,
-              displayDuration: 4000,
-              maxItems: 20,
-              showLocation: true,
-              showTime: true
-            }
-          })
-        },
-      });
-    }
-
-    const data = JSON.parse(settingRecord.value as string);
-    sysCache.set('theme_settings', data, 5);
+    sysCache.set('theme_settings', data, 60);
     return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find storefront visual presets', details: error.message });
@@ -88,26 +76,13 @@ export const getSecuritySettings = async (req: Request, res: Response) => {
       return res.status(200).json(cached);
     }
 
-    let settingRecord = await prisma.themeSetting.findUnique({
-      where: { keyName: 'security-settings' },
-    });
-
-    if (!settingRecord) {
-      settingRecord = await prisma.themeSetting.create({
-        data: {
-          keyName: 'security-settings',
-          value: JSON.stringify({
-             sessionTimeout: 30,
-             idleWarningTime: 25,
-             enableIdleTimeout: true,
-             enableSessionWarningPopup: true,
-          })
-        },
-      });
-    }
-
-    const data = JSON.parse(settingRecord.value as string);
-    sysCache.set('security_settings', data, 5);
+    const data = {
+      sessionTimeout: 30,
+      idleWarningTime: 25,
+      enableIdleTimeout: true,
+      enableSessionWarningPopup: true,
+    };
+    sysCache.set('security_settings', data, 300);
     return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to get security settings', details: error.message });
@@ -115,58 +90,27 @@ export const getSecuritySettings = async (req: Request, res: Response) => {
 };
 
 export const updateSecuritySettings = async (req: Request, res: Response) => {
-  const { sessionTimeout, idleWarningTime, enableIdleTimeout, enableSessionWarningPopup } = req.body;
-
   try {
-    const updated = await prisma.themeSetting.upsert({
-      where: { keyName: 'security-settings' },
-      update: {
-        value: JSON.stringify({
-          sessionTimeout: sessionTimeout ?? 30,
-          idleWarningTime: idleWarningTime ?? 25,
-          enableIdleTimeout: enableIdleTimeout ?? true,
-          enableSessionWarningPopup: enableSessionWarningPopup ?? true,
-        })
-      },
-      create: {
-        keyName: 'security-settings',
-        value: JSON.stringify({
-          sessionTimeout: sessionTimeout ?? 30,
-          idleWarningTime: idleWarningTime ?? 25,
-          enableIdleTimeout: enableIdleTimeout ?? true,
-          enableSessionWarningPopup: enableSessionWarningPopup ?? true,
-        })
-      },
-    });
+    const data = {
+      sessionTimeout: req.body.sessionTimeout ?? 30,
+      idleWarningTime: req.body.idleWarningTime ?? 25,
+      enableIdleTimeout: req.body.enableIdleTimeout ?? true,
+      enableSessionWarningPopup: req.body.enableSessionWarningPopup ?? true,
+    };
 
+    sysCache.set('security_settings', data, 300);
     clearSettingsCache();
-    return res.status(200).json(JSON.parse(updated.value as string));
+    return res.status(200).json(data);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to update security settings', details: error.message });
   }
 };
+
 export const updateThemeSettings = async (req: Request, res: Response) => {
   try {
-    const existing = await prisma.themeSetting.findUnique({
-      where: { keyName: 'global-settings' },
-    });
-
-    const currentValue = existing ? JSON.parse(existing.value as string) : {};
-    const newValue = { ...currentValue, ...req.body };
-
-    const updated = await prisma.themeSetting.upsert({
-      where: { keyName: 'global-settings' },
-      update: {
-        value: JSON.stringify(newValue)
-      },
-      create: {
-        keyName: 'global-settings',
-        value: JSON.stringify(newValue)
-      },
-    });
-
+    const updated = await updateSettingsService({ theme: req.body });
     clearSettingsCache();
-    return res.status(200).json(JSON.parse(updated.value as string));
+    return res.status(200).json(updated?.theme || req.body);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to write storefront visual presets', details: error.message });
   }

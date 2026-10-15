@@ -117,18 +117,6 @@ export class WhatsAppConversationService {
 
     let guestUser = await prisma.user.findFirst({ where: { email: guestEmail } });
     if (!guestUser) {
-      let guestRole: any = null;
-      try {
-        guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
-        if (!guestRole) {
-          guestRole = await prisma.role.create({
-            data: { name: 'Guest', description: 'Guest customer role' }
-          });
-        }
-      } catch (roleErr: any) {
-        logger.warn(`[WhatsAppConversationService] Could not find/create Guest role: ${roleErr.message}`);
-      }
-
       const userData: any = {
         email: guestEmail,
         firstName,
@@ -136,11 +124,8 @@ export class WhatsAppConversationService {
         mobile: e164,
         passwordHash: '',
         isActive: true,
+        role: 'Guest',
       };
-
-      if (guestRole) {
-        userData.roles = { create: { roleId: guestRole.id } };
-      }
 
       guestUser = await prisma.user.create({ data: userData });
     }

@@ -251,9 +251,15 @@ export const getSettingsService = async () => {
   }
 
   try {
-    const record = await prisma.setting.findUnique({
-      where: { settingKey: "app_settings" },
-    });
+    // Fetch primary setting and banners concurrently to minimize database latency
+    const [record, banners] = await Promise.all([
+      prisma.setting.findUnique({
+        where: { settingKey: "app_settings" },
+      }).catch(() => null),
+      prisma.banner.findMany({
+        where: { isActive: true },
+      }).catch(() => []),
+    ]);
 
     let settingsObj: any = null;
     if (record && record.settingData) {
@@ -272,39 +278,12 @@ export const getSettingsService = async () => {
           settingKey: "app_settings",
           settingData: settingsObj,
         },
-      });
-    }
-
-    // 1. Merge Theme Settings from theme_settings table
-    try {
-      const themeRecord = await prisma.themeSetting.findUnique({
-        where: { keyName: "global-settings" },
-      });
-      if (themeRecord && themeRecord.value) {
-        const themeVal = typeof themeRecord.value === "string"
-          ? JSON.parse(themeRecord.value)
-          : themeRecord.value;
-        settingsObj.theme = { ...settingsObj.theme, ...themeVal };
-      } else {
-        // Seed the theme_settings table with initial visual settings from current settings blob
-        await prisma.themeSetting.create({
-          data: {
-            keyName: "global-settings",
-            value: settingsObj.theme || defaultSettings.theme,
-          },
-        });
-      }
-    } catch (themeError) {
-      console.error("Error loading theme settings into config:", themeError);
+      }).catch(() => null);
     }
 
     // 2. Merge Banners/Sliders from banners table
     try {
-      const banners = await prisma.banner.findMany({
-        where: { isActive: true },
-      });
-
-      if (banners.length > 0) {
+      if (banners && banners.length > 0) {
         const storedHeroSlides = (settingsObj.heroSlides && Array.isArray(settingsObj.heroSlides)) ? settingsObj.heroSlides : [];
         const heroBanners = banners.filter(b => b.position === "HERO" || b.position === "slider" || b.position === "hero_main" || b.position === "hero");
         
@@ -549,13 +528,7 @@ export const updateSettingsService = async (payload: any) => {
     if (payload.fontFamily || payload.typography) newSettings.theme.fontFamily = payload.fontFamily || payload.typography;
     if (payload.darkMode !== undefined) newSettings.theme.darkMode = payload.darkMode;
 
-    if (newSettings.theme) {
-      await prisma.themeSetting.upsert({
-        where: { keyName: "global-settings" },
-        update: { value: newSettings.theme },
-        create: { keyName: "global-settings", value: newSettings.theme },
-      });
-    }
+
 
     // 2. Sync Banners (heroSlides and promoBanners) if updated
     if (payload.heroSlides !== undefined || payload.promoBanners !== undefined || payload.resetToDefault) {

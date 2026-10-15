@@ -90,13 +90,7 @@ export const authenticateToken = async (
           id: true,
           email: true,
           isActive: true,
-          roles: {
-            select: {
-              role: {
-                select: { name: true }
-              }
-            }
-          }
+          role: true,
         }
       });
     } catch (dbErr) {
@@ -104,11 +98,10 @@ export const authenticateToken = async (
     }
 
     if (user && user.isActive !== false) {
-      const primaryRole = user.roles[0]?.role;
       const userPayload = {
         id: user.id,
         email: user.email,
-        role: primaryRole?.name || userRole || 'Admin',
+        role: user.role || userRole || 'Admin',
         permissions: ['*'],
       };
       sysCache.set(cacheKey, userPayload, 300);
@@ -166,12 +159,11 @@ export const optionalAuthenticateToken = async (
       try {
         user = await prisma.user.findUnique({
           where: { id: decoded.id },
-          include: {
-            roles: {
-              include: {
-                role: true
-              }
-            }
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+            role: true,
           },
         });
       } catch (dbErr) {
@@ -180,11 +172,10 @@ export const optionalAuthenticateToken = async (
     }
 
     if (user && user.isActive !== false) {
-      const primaryRole = user.roles[0]?.role;
       req.user = {
         id: user.id,
         email: user.email,
-        role: primaryRole?.name || decoded?.role || 'Customer',
+        role: user.role || decoded?.role || 'Customer',
         permissions: [],
       };
     } else if (decoded && (decoded.id || decoded.email)) {

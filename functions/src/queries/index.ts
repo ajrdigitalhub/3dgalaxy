@@ -33,7 +33,7 @@ export const queries = {
   // Orders
   orders: {
     findMany: (customerId?: string) => prisma.order.findMany({ where: customerId ? { customerId } : undefined, include: { items: true, customer: true } }),
-    findById: (id: string) => prisma.order.findUnique({ where: { id }, include: { items: true, statusHistory: true, payments: true, customer: true } }),
+    findById: (id: string) => prisma.order.findUnique({ where: { id }, include: { items: true, payments: true, customer: true } }),
     create: (data: any) => prisma.order.create({ data }),
     updateStatus: (id: string, status: string) => prisma.order.update({ where: { id }, data: { status } }),
   },
@@ -57,14 +57,14 @@ export const queries = {
 
   // Inventory
   inventory: {
-    findByProductId: (productId: string) => prisma.inventory.findMany({ where: { productId }, include: { warehouse: true } }),
+    findByProductId: (productId: string) => prisma.inventory.findMany({ where: { productId } }),
     adjustQuantity: (id: string, newQuantity: number) => prisma.inventory.update({ where: { id }, data: { quantity: newQuantity } }),
   },
 
   // CMS/Blogs
   blogs: {
-    findMany: () => prisma.blog.findMany({ include: { category: true, author: true } }),
-    findById: (id: string) => prisma.blog.findUnique({ where: { id }, include: { category: true, author: true } }),
+    findMany: () => prisma.blog.findMany({ include: { author: true } }),
+    findById: (id: string) => prisma.blog.findUnique({ where: { id }, include: { author: true } }),
     create: (data: any) => prisma.blog.create({ data }),
     update: (id: string, data: any) => prisma.blog.update({ where: { id }, data }),
   },

@@ -1054,10 +1054,10 @@ export class BackupEngineService {
         prisma.productVariant.count().catch((e) => { errors.push(`productVariants: ${e.message}`); return 0; }),
         prisma.order.count().catch((e) => { errors.push(`orders: ${e.message}`); return 0; }),
         prisma.orderItem.count().catch((e) => { errors.push(`orderItems: ${e.message}`); return 0; }),
-        prisma.productReview.count().catch((e) => { errors.push(`reviews: ${e.message}`); return 0; }),
+        prisma.customerReview.count().catch((e) => { errors.push(`reviews: ${e.message}`); return 0; }),
         prisma.banner.count().catch((e) => { errors.push(`banners: ${e.message}`); return 0; }),
         prisma.whatsappMessage.count().catch((e) => { errors.push(`whatsappMessages: ${e.message}`); return 0; }),
-        prisma.themeSetting.count().catch((e) => { errors.push(`themeSettings: ${e.message}`); return 0; }),
+        prisma.setting.count().catch((e) => { errors.push(`themeSettings: ${e.message}`); return 0; }),
       ]);
 
       // Check relationships
