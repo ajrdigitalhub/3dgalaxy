@@ -838,15 +838,9 @@ export class WhatsAppNotificationService {
             isActive: true,
             deletedAt: null,
             mobile: { not: null },
-            roles: {
-              some: {
-                role: {
-                  name: {
-                    in: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF', 'Super Admin', 'Admin', 'Manager', 'Staff'],
-                    mode: 'insensitive'
-                  }
-                }
-              }
+            role: {
+              in: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF', 'Super Admin', 'Admin', 'Manager', 'Staff', 'admin', 'manager'],
+              mode: 'insensitive'
             }
           },
           select: { id: true, mobile: true, firstName: true, lastName: true }

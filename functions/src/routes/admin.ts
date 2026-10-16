@@ -4,6 +4,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import fs from 'fs';
 import { FirebaseStorageService } from '../modules/storage/firebase-storage.service';
 import { sysCache } from '../config/cache';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 import { upload } from '../middleware/upload';
 import { getSalesAnalytics, getAnalyticsFilterOptions, salesAnalyticsStream } from '../controllers/analytics';
@@ -283,13 +284,13 @@ async function lenientAuth(req: Request) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userRecord = await prisma.user.findUnique({
       where: { id: decoded.id },
-      include: { roles: { include: { role: true } } }
+      select: { id: true, email: true, isActive: true, role: true }
     });
     if (!userRecord || !userRecord.isActive) return null;
     return {
       id: userRecord.id,
       email: userRecord.email,
-      role: userRecord.roles?.[0]?.role?.name || 'Customer'
+      role: userRecord.role || 'Customer'
     };
   } catch {
     return null;
@@ -810,14 +811,14 @@ router.get('/notifications', adminGuard, async (req: Request, res: Response) => 
   try {
     const list = await prisma.systemNotification.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { user: true, template: true }
+      include: { user: true }
     });
 
     const formatted = list.map(n => ({
       id: n.id,
-      title: n.template?.subject || 'Notification',
-      message: n.template?.body || '',
-      type: n.template?.channel || 'Campaign',
+      title: 'Notification',
+      message: n.errorMessage || 'System Notification',
+      type: 'Campaign',
       sentTo: n.user?.email || 'All Users',
       createdAt: n.createdAt.toISOString().split('T')[0]
     }));
@@ -870,10 +871,8 @@ router.get('/recent-purchases', async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, data: recentPurchasesCache.data, cached: true });
     }
 
-    const rawSettings = await prisma.themeSetting.findUnique({
-      where: { keyName: 'global-settings' }
-    });
-    const settings = rawSettings ? (typeof rawSettings.value === 'string' ? JSON.parse(rawSettings.value) : rawSettings.value) as any : null;
+    const allSettings = await getSettingsService();
+    const settings = (allSettings?.theme as any) ?? null;
     const config = settings?.recentPurchasePopup ?? {};
 
     const maxItems = Number(config.maxItems || 20);

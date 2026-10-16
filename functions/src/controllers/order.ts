@@ -558,13 +558,6 @@ export const createOrder = async (req: any, res: Response) => {
       // Find or create guest user
       let guestUser = await prisma.user.findFirst({ where: { email: resolvedEmail } });
       if (!guestUser) {
-        let guestRole = await prisma.role.findFirst({ where: { name: 'Guest' } });
-        if (!guestRole) {
-          guestRole = await prisma.role.create({
-            data: { name: 'Guest', description: 'Guest customer role' }
-          });
-        }
-
         guestUser = await prisma.user.create({
           data: {
             email: resolvedEmail,
@@ -572,9 +565,7 @@ export const createOrder = async (req: any, res: Response) => {
             lastName: resolvedName.split(' ').slice(1).join(' ') || 'Customer',
             passwordHash: '',
             isActive: true,
-            roles: {
-              create: { roleId: guestRole.id }
-            }
+            role: 'Guest'
           }
         });
       }
@@ -746,9 +737,6 @@ export const createOrder = async (req: any, res: Response) => {
             shippingWeightDisplay: shippingCalc.formattedWeight,
           },
           items: { create: parsedItems },
-          statusHistory: { 
-            create: [{ status: 'Pending', comments: isGuest ? 'Guest Order created' : 'Order created', createdBy: userId || null }] 
-          },
           payments: {
             create: [{ paymentMethod, amount: totalAmount, status: 'Pending' }]
           }
@@ -838,9 +826,6 @@ export const trackOrder = async (req: Request, res: Response) => {
             variant: true
           }
         },
-        statusHistory: {
-          orderBy: { createdAt: 'desc' }
-        },
         payments: true,
         shipments: {
           orderBy: { createdAt: 'desc' }
@@ -852,64 +837,21 @@ export const trackOrder = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'No order found matching the provided Number and Email' });
     }
 
-    return res.status(200).json(order);
+    return res.status(200).json({
+      ...order,
+      statusHistory: [{ status: order.status, createdAt: order.updatedAt }]
+    });
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to track order', details: error.message });
   }
 };
 
 export const restoreInventory = async (tx: any, orderId: string) => {
-  const existingRestore = await tx.inventoryTransaction.findFirst({
-    where: {
-      referenceId: orderId,
-      transactionType: 'INCREMENT',
-      notes: { contains: 'Stock restored' }
-    }
-  });
-
-  if (existingRestore) {
-    console.log(`[InventoryRestore] Stock already restored for Order ${orderId}`);
-    return;
-  }
-
   const items = await tx.orderItem.findMany({
     where: { orderId },
   });
 
-  const warehouse = await tx.warehouse.findFirst();
-
   for (const item of items) {
-    if (warehouse) {
-      const inventory = await tx.inventory.findFirst({
-        where: {
-          productId: item.productId,
-          variantId: item.variantId,
-          warehouseId: warehouse.id,
-        },
-      });
-
-      if (inventory) {
-        await tx.inventory.update({
-          where: { id: inventory.id },
-          data: {
-            quantity: {
-              increment: item.quantity,
-            },
-          },
-        });
-
-        await tx.inventoryTransaction.create({
-          data: {
-            inventoryId: inventory.id,
-            transactionType: 'INCREMENT',
-            quantity: item.quantity,
-            referenceId: orderId,
-            notes: `Stock restored for cancelled Order ${orderId}`,
-          },
-        });
-      }
-    }
-
     if (item.productId) {
       await tx.product.update({
         where: { id: item.productId },
@@ -1019,13 +961,6 @@ export const updateOrderStatus = async (req: any, res: Response) => {
       data: { 
         status,
         ...(shipmentDataToSave?.estimatedDelivery ? { estimatedDelivery: shipmentDataToSave.estimatedDelivery } : {}),
-        statusHistory: {
-          create: {
-            status,
-            comments: isShippedStatus && shipmentDataToSave?.trackingNumber ? `Order shipped via ${shipmentDataToSave.courierDisplayName} (Tracking: ${shipmentDataToSave.trackingNumber})` : `Status updated to ${status}`,
-            createdBy: req.user?.id
-          }
-        }
       },
       include: {
         customer: { include: { user: true } },
@@ -1034,6 +969,20 @@ export const updateOrderStatus = async (req: any, res: Response) => {
         shipments: { orderBy: { createdAt: 'desc' } }
       }
     });
+
+    // Write audit log for status update
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user?.id || null,
+        action: 'ORDER_STATUS_UPDATE',
+        entityType: 'Order',
+        entityId: existing.id,
+        newData: JSON.stringify({
+          status,
+          comments: isShippedStatus && shipmentDataToSave?.trackingNumber ? `Order shipped via ${shipmentDataToSave.courierDisplayName} (Tracking: ${shipmentDataToSave.trackingNumber})` : `Status updated to ${status}`
+        }),
+      },
+    }).catch(() => {});
 
     if (shipmentDataToSave) {
       try {
@@ -1200,13 +1149,6 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
       data: {
         status: 'Shipped',
         estimatedDelivery: estDelivery,
-        statusHistory: {
-          create: {
-            status: 'Shipped',
-            comments: `Shipment details updated: ${displayName} (${trackNum})`,
-            createdBy: (req as any).user?.id
-          }
-        }
       },
       include: {
         customer: { include: { user: true } },
@@ -1215,6 +1157,20 @@ export const updateShipmentTracking = async (req: Request, res: Response) => {
         shipments: { orderBy: { createdAt: 'desc' } }
       }
     });
+
+    // Write audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: (req as any).user?.id || null,
+        action: 'ORDER_SHIPMENT_TRACKING_UPDATE',
+        entityType: 'Order',
+        entityId: order.id,
+        newData: JSON.stringify({
+          status: 'Shipped',
+          comments: `Shipment details updated: ${displayName} (${trackNum})`
+        }),
+      },
+    }).catch(() => {});
 
     try {
       await prisma.$executeRawUnsafe(
@@ -1257,12 +1213,13 @@ export const addOrderNotes = async (req: any, res: Response) => {
     const order = await prisma.order.findUnique({ where: orderWhere });
     if (!order) return res.status(404).json({ error: 'Not found' });
 
-    await prisma.orderStatusHistory.create({
+    await prisma.auditLog.create({
       data: {
-        orderId: order.id,
-        status: order.status,
-        comments: `Admin Note: ${notes}`,
-        createdBy: req.user?.id
+        userId: req.user?.id || 'admin',
+        action: 'ORDER_NOTE_ADDED',
+        entityType: 'Order',
+        entityId: order.id,
+        newData: JSON.stringify({ note: notes, status: order.status, orderNumber: order.orderNumber })
       }
     });
 

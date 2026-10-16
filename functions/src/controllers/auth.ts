@@ -73,19 +73,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Find or create the role
     const targetRoleName = roleName || "Customer";
-    let role = await prisma.role.findUnique({
-      where: { name: targetRoleName },
-    });
-    if (!role) {
-      role = await prisma.role.create({
-        data: {
-          name: targetRoleName,
-        },
-      });
-    }
-
     const nameParts = (name || "").trim().split(/\s+/);
     const firstName = nameParts[0] || "User";
     const lastName = nameParts.slice(1).join(" ") || "";
@@ -98,18 +86,7 @@ export const register = async (req: Request, res: Response) => {
         lastName,
         mobile,
         isActive: true,
-        roles: {
-          create: {
-            roleId: role.id,
-          },
-        },
-      },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
+        role: targetRoleName,
       },
     });
 
@@ -133,7 +110,7 @@ export const register = async (req: Request, res: Response) => {
       metadata: { userId: newUser.id, email: newUser.email, mobile: newUser.mobile },
     });
 
-    const userRoleName = newUser.roles?.[0]?.role?.name || "Customer";
+    const userRoleName = (newUser as any).role || "Customer";
     const accessToken = generateAccessToken({
       id: newUser.id,
       email: newUser.email,
@@ -186,13 +163,6 @@ export const login = async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
     });
 
     if (!user || user.isActive === false) {
@@ -246,7 +216,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    const userRoleName = user.roles?.[0]?.role?.name || "Customer";
+    const userRoleName = (user as any).role || "Customer";
 
     const accessToken = generateAccessToken({
       id: user.id,
@@ -431,21 +401,13 @@ export const refreshToken = async (req: Request, res: Response) => {
       const dbToken = await prisma.refreshToken.findUnique({
         where: { token },
         include: {
-          user: {
-            include: {
-              roles: {
-                include: {
-                  role: true,
-                },
-              },
-            },
-          },
+          user: true,
         },
       });
 
       if (dbToken && !dbToken.revoked && dbToken.expiresAt >= new Date()) {
         if (dbToken.user && dbToken.user.isActive !== false) {
-          userRoleName = dbToken.user.roles?.[0]?.role?.name || "Customer";
+          userRoleName = (dbToken.user as any).role || "Customer";
           userId = dbToken.user.id;
           userEmail = dbToken.user.email;
 

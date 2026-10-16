@@ -148,7 +148,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         deletedAt: null
       },
       include: {
-        reviews: true,
         variants: { where: { isActive: true } }
       },
       take: 12,
@@ -172,9 +171,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
     }
 
     const bestSellers = bestSellersRaw.map(p => {
-      const prodReviews = p.reviews ? p.reviews.map(r => Number(r.rating || 5)) : [];
-      const custRevRatings = reviewsMap.get(p.id) || [];
-      const allRatings = [...prodReviews, ...custRevRatings];
+      const allRatings = reviewsMap.get(p.id) || [];
       
       let rating: number | null = null;
       let totalReviews = allRatings.length;

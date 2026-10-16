@@ -171,9 +171,6 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
             variants: {
               where: { isActive: true }
             },
-            reviews: {
-              include: { user: true }
-            },
             customerReviews: {
               include: {
                 customer: {
@@ -202,9 +199,6 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
               },
               variants: {
                 where: { isActive: true }
-              },
-              reviews: {
-                include: { user: true }
               }
             }
           });
@@ -217,9 +211,6 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
               category: true,
               variants: {
                 where: { isActive: true }
-              },
-              reviews: {
-                include: { user: true }
               }
             }
           });
@@ -1212,8 +1203,12 @@ export const getProductBySlug = async (req: Request, res: Response) => {
         variants: true,
         category: true,
         brand: true,
-        reviews: {
-          include: { user: true },
+        customerReviews: {
+          include: {
+            customer: {
+              include: { user: true }
+            }
+          },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -1250,7 +1245,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       relatedProducts: relations.relatedProducts
     };
 
-    const mappedReviews = (item.reviews || []).map((review: any) => {
+    const mappedReviews = (item.customerReviews || []).map((review: any) => {
       const user = review.user || review.customer?.user;
       let parsedTitle = "Verified Review";
       let parsedComment = review.reviewText || "";
@@ -1359,6 +1354,16 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 
 export const getProductById = async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ error: 'Product ID or slug is required' });
+  }
+
+  // Gracefully delegate to slug handler if parameter is not a UUID
+  if (!isUuid(id)) {
+    req.params.slug = id;
+    return getProductBySlug(req, res);
+  }
+
   try {
     const cacheKey = 'products_id_' + id + '_' + (req.originalUrl.includes('/details') ? 'admin' : 'cust');
     const cachedResponse = sysCache.get(cacheKey);
@@ -1375,8 +1380,8 @@ export const getProductById = async (req: Request, res: Response) => {
           include: { category: true }
         },
         brand: true,
-        reviews: {
-          include: { user: true },
+        customerReviews: {
+          include: { customer: { include: { user: true } } },
         },
       },
     });
@@ -1435,7 +1440,7 @@ export const getProductById = async (req: Request, res: Response) => {
       },
       options: safeParseArray(item.options),
       variants: mappedProduct.variants || [],
-      reviews: item.reviews || [],
+      reviews: item.customerReviews || [],
       // Keep backward compatibility lists
       images: mappedProduct.images,
       specifications: mappedProduct.specifications,
@@ -1635,10 +1640,7 @@ export const createProduct = async (req: Request, res: Response) => {
           productCategories: {
             include: { category: true }
           },
-          brand: true,
-          reviews: {
-            include: { user: true }
-          }
+          brand: true
         }
       });
     }, { maxWait: 15000, timeout: 30000 });
@@ -1904,10 +1906,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           productCategories: {
             include: { category: true }
           },
-          brand: true,
-          reviews: {
-            include: { user: true }
-          }
+          brand: true
         }
       });
     }, { maxWait: 15000, timeout: 30000 });
@@ -2220,8 +2219,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
           productCategories: {
             include: { category: true }
           },
-          variants: true,
-          reviews: true
+          variants: true
         }
       })
     ]);

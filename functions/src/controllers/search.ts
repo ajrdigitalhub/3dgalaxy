@@ -58,7 +58,7 @@ const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
 
   const primaryProducts = await prisma.product.findMany({
     where: primaryWhere,
-    include: { category: true, reviews: true, brand: true, variants: { where: { isActive: true } } },
+    include: { category: true, brand: true, variants: { where: { isActive: true } } },
     ...(limit ? { take: limit * 3 } : {})
   });
 
@@ -80,7 +80,7 @@ const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
 
     const secondaryProducts = await prisma.product.findMany({
       where: secondaryWhere,
-      include: { category: true, reviews: true, brand: true, variants: { where: { isActive: true } } },
+      include: { category: true, brand: true, variants: { where: { isActive: true } } },
       take: limit - allProducts.length
     });
 
@@ -138,7 +138,7 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
     // Format products using mapProductFields
     const formattedProducts = products.map((p) => {
       const mapped = mapProductFields(p);
-      const approved = (p.reviews || []).filter((r: any) => r.isApproved !== false);
+      const approved = ((p as any).reviews || (p as any).customerReviews || []).filter((r: any) => r.isApproved !== false);
       const ratingCount = approved.length;
       let avgRating = 0;
       if (ratingCount > 0) {

@@ -330,7 +330,6 @@ export class IntegrationService {
               },
             },
             variant: true,
-            warehouse: true,
           },
         }),
       ]);
@@ -363,7 +362,7 @@ export class IntegrationService {
             brand: prod.brand?.name,
             basePrice: Number(prod.basePrice),
             salePrice: prod.salePrice ? Number(prod.salePrice) : null,
-            warehouse: inv.warehouse?.name,
+            warehouse: 'Main Storefront',
             reservedQty: inv.reservedQty,
           },
         };
@@ -440,7 +439,6 @@ export class IntegrationService {
       include: {
         product: { include: { category: true, brand: true } },
         variant: true,
-        warehouse: true,
       },
     });
 
@@ -472,7 +470,7 @@ export class IntegrationService {
           brand: prod.brand?.name,
           basePrice: Number(prod.basePrice),
           salePrice: prod.salePrice ? Number(prod.salePrice) : null,
-          warehouse: inv.warehouse?.name,
+          warehouse: 'Main Storefront',
           reservedQty: inv.reservedQty,
         },
       };

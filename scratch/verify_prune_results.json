@@ -1,0 +1,351 @@
+[
+  {
+    "table": "product_variant_options",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_variant_images",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_option_values",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_options",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_attribute_values",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_attributes",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_specifications",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [
+      "functions\\src\\utils\\csv-import.ts"
+    ],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_features",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_downloads",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_faqs",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_images",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_included_items",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_related_products",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_seo",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_shipping",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_warranty",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_tag_mapping",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_tags",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "customer_sessions",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "customer_notifications",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "search_logs",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "search_settings",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "payment_gateways",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "coupon_usage",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "page_sections",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "blog_categories",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "notification_templates",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "contact_requests",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "warehouses",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "inventory_transactions",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "homepage_section_items",
+    "inPrisma": true,
+    "modelName": "HomepageSectionItem",
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "theme_settings",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [
+      "functions\\src\\controllers\\settings.ts",
+      "functions\\src\\modules\\settings\\settings.service.ts"
+    ],
+    "frontendReferences": []
+  },
+  {
+    "table": "product_reviews",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "order_status_history",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "role_permissions",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "user_roles",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "permissions",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": []
+  },
+  {
+    "table": "roles",
+    "inPrisma": false,
+    "modelName": null,
+    "prismaCalls": [],
+    "backendRawSql": [],
+    "backendReferences": [],
+    "frontendReferences": [
+      "src\\app\\core\\guards\\auth.guard.ts"
+    ]
+  }
+]
