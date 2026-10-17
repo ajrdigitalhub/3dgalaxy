@@ -237,7 +237,7 @@ import { SalesAnalyticsComponent } from './sales-analytics/sales-analytics.compo
                         {{ tp.brand }}
                       </span>
                       <span class="h-2.5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
-                      <span class="text-[9px] text-blue-500 font-extrabold whitespace-nowrap">
+                      <span class="text-[9px] text-red-500 font-extrabold whitespace-nowrap">
                         {{ tp.salesCount }} Sold
                       </span>
                     </div>

@@ -406,6 +406,7 @@ export class AdminPanel implements OnInit {
     "general" | "images" | "pricing" | "inventory" | "seo" | "variants"
   >("general");
   editingProduct = signal<Product | null>(null);
+  previousTabBeforeEdit = signal<AdminTab | null>(null);
 
   // Theme Settings signals
   primaryColor = signal("#2563eb");
@@ -1710,6 +1711,10 @@ export class AdminPanel implements OnInit {
 
   // --- PRODUCT MANAGEMENT LOGICS ---
   startProductEdit(p: Product) {
+    if (this.activeTab() !== "products") {
+      this.previousTabBeforeEdit.set(this.activeTab());
+    }
+    this.setActiveTab("products");
     this.editingProduct.set(p);
 
     // Synchronize categories immediately from product object
@@ -1929,6 +1934,11 @@ export class AdminPanel implements OnInit {
 
   cancelProductEdit() {
     this.editingProduct.set(null);
+    const prevTab = this.previousTabBeforeEdit();
+    if (prevTab) {
+      this.previousTabBeforeEdit.set(null);
+      this.setActiveTab(prevTab);
+    }
     this.pName.set("");
     this.pSku.set("");
     this.pDesc.set("");

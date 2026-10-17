@@ -1,5 +1,20 @@
 [
   {
+    "id": "3315d33d-40b8-4ace-89e4-d1e188e75980",
+    "title": "👤 New Customer Registration",
+    "body": "User  (testadmin@3dgalaxy.com) created a new customer account.",
+    "type": "customers",
+    "eventKey": "NEW_CUSTOMER_REGISTRATION",
+    "deepLink": "/admin/customers",
+    "data": {
+      "email": "testadmin@3dgalaxy.com",
+      "mobile": "9111381113",
+      "userId": "5e1c1437-0b31-469e-9780-f9233d7e0e31"
+    },
+    "sentAt": "2026-10-17T06:45:21.320Z",
+    "isRead": false
+  },
+  {
     "id": "8de80fd3-6866-4dcf-8cea-9e3e84f43902",
     "title": "🛒 Order Confirmed",
     "body": "Deployment Test COD User placed Order #3DX0056 for ₹1929.00. Payment Pending (COD)",

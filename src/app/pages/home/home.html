@@ -22,7 +22,7 @@
   } @placeholder {
   <div class="h-28 w-full bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
   } } @case ('FEATURED_PRODUCTS') { @defer (on viewport) {
-  <app-home-featured-products />
+  <app-home-featured-products [section]="section" />
   <app-home-featured-showcase class="block pt-12 pb-16" />
   } @placeholder {
   <div class="h-96 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-3xl animate-pulse"></div>
@@ -49,11 +49,16 @@
   } @placeholder {
   <div class="h-24 max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-xl animate-pulse"></div>
   } }
-  <!-- @case ('SHOP_BY_CATEGORY') { @defer (on viewport) {
+  @case ('SHOP_BY_CATEGORY') { @defer (on viewport) {
   <app-home-shop-by-category [section]="section" />
   } @placeholder {
   <div class="h-[600px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
-  } } -->
+  } }
+  @case ('SHOP-BY-CATEGORY') { @defer (on viewport) {
+  <app-home-shop-by-category [section]="section" />
+  } @placeholder {
+  <div class="h-[600px] max-w-7xl mx-auto bg-neutral-100 dark:bg-neutral-900/40 rounded-[2.5rem] animate-pulse"></div>
+  } }
   @case ('TECHNOLOGY-HUBS') { @defer (on viewport) {
   <app-home-technology-hubs [section]="section" />
   } @placeholder {

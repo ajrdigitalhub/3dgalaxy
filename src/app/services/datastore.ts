@@ -703,14 +703,29 @@ export class DatastoreService {
       ];
     }
 
-    // Ensure SHOP_BY_CATEGORY comes right after BRANDS
+    // Ensure SHOP_BY_CATEGORY is present and positioned right after BRANDS
     const brandsIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'BRANDS');
     const shopCatIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'SHOP_BY_CATEGORY');
 
-    if (brandsIdx !== -1 && shopCatIdx !== -1 && shopCatIdx !== brandsIdx + 1) {
-      const [shopCatSection] = resultSections.splice(shopCatIdx, 1);
-      const targetBrandsIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'BRANDS');
-      resultSections.splice(targetBrandsIdx + 1, 0, shopCatSection);
+    if (shopCatIdx === -1) {
+      const insertIdx = brandsIdx !== -1 ? brandsIdx + 1 : 3;
+      resultSections.splice(insertIdx, 0, {
+        id: 'shop-11',
+        name: 'Shop By Category',
+        type: 'SHOP_BY_CATEGORY',
+        visible: true,
+        order: insertIdx + 1,
+        config: {}
+      });
+    } else {
+      if (resultSections[shopCatIdx].visible === undefined) {
+        resultSections[shopCatIdx].visible = true;
+      }
+      if (brandsIdx !== -1 && shopCatIdx !== brandsIdx + 1) {
+        const [shopCatSection] = resultSections.splice(shopCatIdx, 1);
+        const targetBrandsIdx = resultSections.findIndex(s => s.type?.toUpperCase() === 'BRANDS');
+        resultSections.splice(targetBrandsIdx + 1, 0, shopCatSection);
+      }
     }
 
     return resultSections;

@@ -2,6 +2,7 @@ import {
   Component,
   ChangeDetectionStrategy,
   inject,
+  Input,
   OnInit,
   signal,
   computed,
@@ -53,7 +54,7 @@ import { firstValueFrom } from "rxjs";
           <h3
             class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display"
           >
-            Featured Innovations
+            {{ (section?.config?.['title'] === 'Featured Innovations' ? 'Featured Products' : section?.config?.['title']) || 'Featured Products' }}
           </h3>
         </div>
         <div class="flex items-center gap-3 justify-center sm:justify-start">
@@ -333,6 +334,7 @@ import { firstValueFrom } from "rxjs";
   `,
 })
 export class HomeFeaturedProductsComponent implements OnInit {
+  @Input() section?: any;
   ds = inject(DatastoreService);
   settingsService = inject(SettingsService);
   router = inject(Router);

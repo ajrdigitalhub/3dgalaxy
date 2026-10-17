@@ -5,8 +5,12 @@ import {
   signal,
   computed,
   Input,
+  OnInit,
+  OnDestroy,
+  PLATFORM_ID,
+  HostListener,
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, isPlatformBrowser } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { DomSanitizer } from "@angular/platform-browser";
 import { RouterModule, Router } from "@angular/router";
@@ -641,7 +645,7 @@ export class HomeNewsletterComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section
-      [id]="section.id"
+      [id]="section?.id || 'shop-by-category'"
       class="max-w-7xl mx-auto px-6 space-y-12"
       appScrollReveal="fade"
     >
@@ -649,12 +653,12 @@ export class HomeNewsletterComponent {
         <h2
           class="text-[10px] font-black uppercase tracking-[0.4em] text-theme-primary font-display"
         >
-          {{ section.config["subtitle"] || "Browse Collections" }}
+          {{ section?.config?.["subtitle"] || "Browse Collections" }}
         </h2>
         <h3
           class="text-3xl font-black text-neutral-900 dark:text-white tracking-tighter font-display"
         >
-          {{ section.config["title"] || "Shop By Category" }}
+          {{ section?.config?.["title"] || "Shop By Category" }}
         </h3>
       </div>
 
@@ -812,9 +816,14 @@ export class HomeShopByCategoryComponent {
   });
 
   selectedCategorySlugs = computed(() => {
+    const sectionCats = this.section?.config?.categoryIds || this.section?.config?.categories;
     const homeSections = this.settingsService.homepageSections();
-    if (homeSections == null || typeof homeSections !== "object") return [];
-    const featuredCategories = (homeSections as any).featuredCategories;
+    const settings = this.settingsService.settingsData() || {};
+    const featuredCategories =
+      (Array.isArray(sectionCats) && sectionCats.length > 0 ? sectionCats : null) ||
+      (homeSections as any)?.featuredCategories ||
+      (settings as any)?.homePageSections?.featuredCategories ||
+      (settings as any)?.featuredCategories;
     if (!Array.isArray(featuredCategories)) return [];
     return featuredCategories
       .map((category: any) =>
@@ -2089,108 +2098,415 @@ export class HomeFlashDealsComponent {
   }
 }
 
-// 2. BEST SELLERS
+// 2. TOP SOLD / BEST SELLERS
 @Component({
   selector: "app-home-best-sellers",
   standalone: true,
   imports: [CommonModule, RouterModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    .product-card-image-container {
+      position: relative;
+      overflow: hidden;
+    }
+    .product-card-image-container .primary-image {
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center center;
+    }
+    .product-card-image-container .secondary-image {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center center;
+    }
+    .group:hover .product-card-image-container .secondary-image {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+    .group:hover .product-card-image-container:has(.secondary-image) .primary-image {
+      opacity: 0;
+      transform: scale(1.08);
+    }
+    .group:hover .product-card-image-container:not(:has(.secondary-image)) .primary-image {
+      transform: scale(1.08);
+    }
+  `],
   template: `
-    <section class="max-w-7xl mx-auto px-6 py-12" *ngIf="items().length > 0">
-      <div class="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4 mb-8">
-        <div class="flex items-center justify-center p-2.5 bg-orange-500/10 text-orange-500 rounded-xl">
-          <mat-icon class="scale-110">military_tech</mat-icon>
-        </div>
-        <div>
-          <h2 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase font-display">
-            Best Sellers
-          </h2>
-          <p class="text-zinc-500 text-xs font-semibold">Our most popular and trusted 3D printing choices.</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        <div 
-          *ngFor="let p of items()" 
-          class="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-3xl p-4 flex flex-col justify-between hover:shadow-[0_12px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all relative group"
-        >
-          <div class="absolute top-4 left-4 z-10 bg-orange-600 text-white px-2 py-0.5 text-[8px] font-black rounded-lg uppercase tracking-wider shadow-sm">
-            BESTSELLER
-          </div>
-
-          <a [routerLink]="['/product', p.slug]" class="block relative w-full aspect-square bg-zinc-50 dark:bg-zinc-950/40 rounded-2xl overflow-hidden p-4 mb-4 flex items-center justify-center product-card-image-container">
-            <img [src]="p.primaryImage || p.images[0] || 'assets/images/user-placeholder.png'" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto transform group-hover:scale-105 transition-transform duration-500" alt="Product" />
-            @if (p.secondaryImage && p.secondaryImage !== (p.primaryImage || p.images[0])) {
-              <img [src]="p.secondaryImage" (error)="handleImageError($event)" class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto" alt="Product Alternate" />
-            }
-          </a>
-
-          <div class="space-y-2 flex-1 flex flex-col justify-between">
+    <section class="max-w-7xl mx-auto px-6 py-8 sm:py-12" *ngIf="topProducts().length > 0">
+      <div 
+        class="p-5 sm:p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/60 rounded-3xl shadow-xs transition-all relative overflow-hidden"
+        (mouseenter)="isHovered.set(true)"
+        (mouseleave)="isHovered.set(false)"
+      >
+        <!-- Header with Rank Title & Navigation Controls -->
+        <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 pb-4 mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <mat-icon class="!text-[20px] !w-5 !h-5">star</mat-icon>
+            </div>
             <div>
-              <div class="flex items-center gap-1 mb-1">
-                <ng-container *ngIf="getProductReviewCount(p) > 0; else noReviews">
-                  <mat-icon class="text-amber-500 scale-75">star</mat-icon>
-                  <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">{{ getProductAvgRating(p) }} ({{ getProductReviewCount(p) }})</span>
-                </ng-container>
-                <ng-template #noReviews>
-                  <span class="text-[10px] text-zinc-400 dark:text-zinc-500">No reviews</span>
-                </ng-template>
-              </div>
-              <h3 class="text-sm font-bold text-zinc-800 dark:text-zinc-100 line-clamp-2 min-h-[40px] leading-snug">
-                {{ p.name }}
-              </h3>
-              <div class="flex items-center gap-2 mt-2">
-                <span class="text-base font-black text-zinc-900 dark:text-white">₹{{ p.salePrice | number }}</span>
-                <span class="text-xs text-zinc-400 line-through font-semibold" *ngIf="p.mrp > p.salePrice">₹{{ p.mrp | number }}</span>
-              </div>
-            </div>
-
-            <div class="pt-2 border-t border-zinc-100 dark:border-zinc-800/60 mt-2">
-              <ng-container *ngIf="p.variants && p.variants.length > 0; else defaultBestSellerView">
-                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
-                  <mat-icon class="scale-75">tune</mat-icon>
-                  Select Variant
-                </a>
-              </ng-container>
-              <ng-template #defaultBestSellerView>
-                <a [routerLink]="['/product', p.slug]" class="w-full h-10 bg-zinc-900 dark:bg-zinc-800 hover:bg-orange-600 dark:hover:bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors duration-300 no-underline">
-                  View Details
-                  <mat-icon class="scale-75">arrow_forward</mat-icon>
-                </a>
-              </ng-template>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block leading-none">Performance Rank</span>
+              <h4 class="text-sm sm:text-base font-black text-zinc-800 dark:text-zinc-200 mt-1">Top Performing Products</h4>
             </div>
           </div>
+          
+          <!-- Controls: Progress Counter & Prev/Next Arrows -->
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-mono font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full">
+              {{ safeActiveIndex() }} / {{ originalProductsLength() }}
+            </span>
+            <button
+              type="button"
+              (click)="prev()"
+              aria-label="Previous product"
+              class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition shadow-2xs cursor-pointer border-none"
+            >
+              <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">chevron_left</mat-icon>
+            </button>
+            <button
+              type="button"
+              (click)="next()"
+              aria-label="Next product"
+              class="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition shadow-2xs cursor-pointer border-none"
+            >
+              <mat-icon class="!text-[18px] !w-[18px] !h-[18px]">chevron_right</mat-icon>
+            </button>
+          </div>
         </div>
+
+        <!-- Carousel Viewport (3 Products In A Row, Auto-Scroll One By One) -->
+        <div 
+          class="relative w-full overflow-hidden"
+          (touchstart)="onTouchStart($event)"
+          (touchend)="onTouchEnd($event)"
+        >
+          <div 
+            class="flex select-none transition-transform"
+            (transitionend)="onTransitionEnd()"
+            [style.gap.px]="20"
+            [style.transitionDuration.ms]="isTransitioning() ? 500 : 0"
+            [style.transform]="getTransform()"
+          >
+            @for (tp of displayProducts(); track tp.id + '-' + idx; let idx = $index) {
+              <div [style.width]="getCardWidth()" class="shrink-0">
+                <div class="group relative bg-zinc-50/80 dark:bg-zinc-950/40 border border-zinc-200/80 dark:border-zinc-800/70 rounded-3xl p-4 sm:p-5 flex flex-col justify-between hover:border-orange-500/40 dark:hover:border-orange-500/40 hover:shadow-[0_16px_40px_rgba(234,88,12,0.1)] transition-all duration-500 text-left h-full">
+                  
+                  <!-- Improved Image Container with Hover Next Image Swap & Zoom Animation Effect -->
+                  <div class="relative aspect-square w-full bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 flex items-center justify-center overflow-hidden p-3.5 mb-3.5 product-card-image-container">
+                    <div class="shimmer-sweep absolute inset-0 pointer-events-none z-10"></div>
+                    
+                    <!-- Rank Badge -->
+                    <span class="absolute top-3 left-3 bg-gradient-to-r from-red-600 to-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-lg shadow-md z-20 uppercase tracking-wider">
+                      Rank #{{ (idx % originalProductsLength()) + 1 }}
+                    </span>
+
+                    <!-- Top Pick Star Pill -->
+                    <span class="absolute top-3 right-3 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[9px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1 z-20 backdrop-blur-xs">
+                      <mat-icon class="!text-[11px] !w-[11px] !h-[11px]">star</mat-icon>
+                      Top Pick
+                    </span>
+
+                    <!-- Primary Image -->
+                    <img 
+                      [src]="getPrimaryImage(tp)" 
+                      [alt]="tp.name"
+                      class="max-w-[85%] max-h-[85%] object-contain primary-image absolute inset-0 m-auto p-1 z-1"
+                      referrerpolicy="no-referrer"
+                      loading="lazy"
+                      (error)="handleImageError($event)"
+                    />
+
+                    <!-- Secondary / Next Image on Hover (if available) with Zoom Animation -->
+                    @if (getSecondaryImage(tp)) {
+                      <img 
+                        [src]="getSecondaryImage(tp)" 
+                        [alt]="tp.name + ' Alternate View'"
+                        class="max-w-[85%] max-h-[85%] object-contain secondary-image absolute inset-0 m-auto p-1 z-2"
+                        referrerpolicy="no-referrer"
+                        loading="lazy"
+                        (error)="handleImageError($event)"
+                      />
+                      <span class="absolute bottom-2.5 right-2.5 z-20 bg-black/60 backdrop-blur-xs text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <mat-icon class="!text-[10px] !w-2.5 !h-2.5">photo_library</mat-icon>
+                        <span>More Views</span>
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Brand & Product Title -->
+                  <div class="mb-3">
+                    <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider block mb-1 truncate">
+                      {{ tp.brand || '3D GALAXY' }}
+                    </span>
+                    <a 
+                      [routerLink]="['/product', tp.slug]"
+                      class="text-sm font-black uppercase text-zinc-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors line-clamp-2 leading-snug min-h-[38px] block no-underline cursor-pointer"
+                      [title]="tp.name"
+                    >
+                      {{ tp.name }}
+                    </a>
+                  </div>
+
+                  <!-- Bottom: Product Price & View Product Button Alone -->
+                  <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex flex-col gap-3 mt-auto">
+                    <div class="flex items-baseline justify-between">
+                      <div class="flex items-baseline gap-1.5">
+                        <span class="text-base sm:text-lg font-black font-mono text-zinc-900 dark:text-white">
+                          ₹{{ getPrice(tp) | number }}
+                        </span>
+                        @if (getMrp(tp) > getPrice(tp)) {
+                          <span class="text-xs text-zinc-400 line-through font-semibold font-mono">
+                            ₹{{ getMrp(tp) | number }}
+                          </span>
+                        }
+                      </div>
+                      @if (getDiscount(tp) > 0) {
+                        <span class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                          {{ getDiscount(tp) }}% OFF
+                        </span>
+                      }
+                    </div>
+
+                    <a 
+                      [routerLink]="['/product', tp.slug]"
+                      class="w-full h-10 bg-zinc-900 hover:bg-orange-600 dark:bg-white dark:hover:bg-orange-500 text-white dark:text-zinc-900 dark:hover:text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer no-underline whitespace-nowrap"
+                    >
+                      <span>View Product</span>
+                      <mat-icon class="scale-75 -mr-1">arrow_forward</mat-icon>
+                    </a>
+                  </div>
+
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Navigation Dots -->
+        <div class="flex items-center justify-center gap-1.5 mt-5" *ngIf="topProducts().length > 1">
+          @for (tp of topProducts(); track tp.id; let idx = $index) {
+            <button
+              type="button"
+              (click)="goToSlide(idx)"
+              [attr.aria-label]="'Go to product ' + (idx + 1)"
+              class="h-1.5 rounded-full transition-all duration-300 cursor-pointer border-none p-0"
+              [ngClass]="(currentIndex() % originalProductsLength()) === idx ? 'w-6 bg-orange-500' : 'w-1.5 bg-zinc-300 dark:bg-zinc-700 hover:bg-zinc-400'"
+            ></button>
+          }
+        </div>
+
       </div>
     </section>
   `
 })
-export class HomeBestSellersComponent {
+export class HomeBestSellersComponent implements OnInit, OnDestroy {
   ds = inject(DatastoreService);
-  items = computed(() => this.ds.homepageData()?.bestSellers || []);
+  platformId = inject(PLATFORM_ID);
 
-  getProductAvgRating(p: any): number {
-    if (!p) return 0;
-    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
-    if (reviews.length > 0) {
-      const sum = reviews.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
-      return Math.round((sum / reviews.length) * 10) / 10;
+  currentIndex = signal(0);
+  isHovered = signal(false);
+  isTransitioning = signal(true);
+  windowWidth = signal(1200);
+
+  private autoScrollTimer: any = null;
+  private touchStartX = 0;
+
+  topProducts = computed(() => {
+    const hpData = this.ds.homepageData();
+    if (hpData?.topSoldProducts && hpData.topSoldProducts.length > 0) {
+      return hpData.topSoldProducts;
     }
-    return p.avgRating ? Math.round(Number(p.avgRating) * 10) / 10 : 0;
+    if (hpData?.bestSellers && hpData.bestSellers.length > 0) {
+      const first = hpData.bestSellers[0];
+      if (first && first.salesCount !== undefined) {
+        return hpData.bestSellers;
+      }
+      const mockSales = [45, 32, 28, 19, 15, 12, 10, 8];
+      return hpData.bestSellers.map((p: any, idx: number) => ({
+        ...p,
+        salesCount: p.salesCount || mockSales[idx] || 10,
+        totalRevenue: p.totalRevenue || ((p.salesCount || mockSales[idx] || 10) * (p.salePrice || p.mrp || 500)),
+        brand: p.brand || '3D GALAXY'
+      }));
+    }
+
+    const products = this.ds.products() || [];
+    const mockSales = [45, 32, 28, 19, 15, 12, 10, 8];
+    return products.slice(0, 8).map((p: any, idx: number) => {
+      const sales = mockSales[idx] || 10;
+      const price = Number(p.sale_price || p.salePrice || p.basePrice || p.price || 400);
+      return {
+        ...p,
+        salesCount: sales,
+        totalRevenue: sales * price,
+        salePrice: price,
+        brand: p.brand || '3D GALAXY',
+        slug: p.slug || p.id
+      };
+    });
+  });
+
+  originalProductsLength = computed(() => this.topProducts().length);
+
+  displayProducts = computed(() => {
+    const list = this.topProducts();
+    if (list.length === 0) return [];
+    // Clone first 3-4 items to make infinite wrap seamless
+    return [...list, ...list.slice(0, 4)];
+  });
+
+  visibleCards = computed(() => {
+    const w = this.windowWidth();
+    if (w < 640) return 1;
+    if (w < 1024) return 2;
+    return 3;
+  });
+
+  safeActiveIndex = computed(() => {
+    const len = this.originalProductsLength();
+    if (len === 0) return 1;
+    return (this.currentIndex() % len) + 1;
+  });
+
+  @HostListener("window:resize", [])
+  onResize() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.windowWidth.set(window.innerWidth);
+    }
   }
 
-  getProductReviewCount(p: any): number {
-    if (!p) return 0;
-    const reviews = Array.isArray(p.reviews) ? p.reviews : [];
-    if (reviews.length > 0) {
-      return reviews.length;
+  ngOnInit() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.windowWidth.set(window.innerWidth);
+      this.startAutoScroll();
     }
-    return p.ratingCount || 0;
+  }
+
+  ngOnDestroy() {
+    this.stopAutoScroll();
+  }
+
+  startAutoScroll() {
+    this.stopAutoScroll();
+    this.autoScrollTimer = setInterval(() => {
+      if (!this.isHovered() && this.originalProductsLength() > 1) {
+        this.next();
+      }
+    }, 3000);
+  }
+
+  stopAutoScroll() {
+    if (this.autoScrollTimer) {
+      clearInterval(this.autoScrollTimer);
+      this.autoScrollTimer = null;
+    }
+  }
+
+  getTransform(): string {
+    const idx = this.currentIndex();
+    const vis = this.visibleCards();
+    const gap = 20;
+    return `translate3d(calc(-${idx} * (100% + ${gap}px) / ${vis}), 0, 0)`;
+  }
+
+  getCardWidth(): string {
+    const vis = this.visibleCards();
+    const gap = 20;
+    return `calc((100% - (${gap}px * ${vis - 1})) / ${vis})`;
+  }
+
+  next() {
+    const n = this.originalProductsLength();
+    if (n <= 1) return;
+    this.isTransitioning.set(true);
+    this.currentIndex.update((c) => c + 1);
+  }
+
+  prev() {
+    const n = this.originalProductsLength();
+    if (n <= 1) return;
+    if (this.currentIndex() === 0) {
+      this.isTransitioning.set(false);
+      this.currentIndex.set(n);
+      setTimeout(() => {
+        this.isTransitioning.set(true);
+        this.currentIndex.set(n - 1);
+      }, 20);
+      return;
+    }
+    this.isTransitioning.set(true);
+    this.currentIndex.update((c) => c - 1);
+  }
+
+  onTransitionEnd() {
+    const n = this.originalProductsLength();
+    if (this.currentIndex() >= n) {
+      this.isTransitioning.set(false);
+      this.currentIndex.set(0);
+    }
+  }
+
+  goToSlide(index: number) {
+    this.isTransitioning.set(true);
+    this.currentIndex.set(index);
+  }
+
+  onTouchStart(e: TouchEvent) {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      this.touchStartX = e.changedTouches[0].screenX;
+    }
+  }
+
+  onTouchEnd(e: TouchEvent) {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      const diff = this.touchStartX - e.changedTouches[0].screenX;
+      if (Math.abs(diff) > 40) {
+        if (diff > 0) {
+          this.next();
+        } else {
+          this.prev();
+        }
+      }
+    }
+  }
+
+  getPrice(p: any): number {
+    return Number(p?.salePrice ?? p?.sale_price ?? p?.price ?? p?.basePrice ?? 0);
+  }
+
+  getMrp(p: any): number {
+    return Number(p?.mrp ?? 0);
+  }
+
+  getDiscount(p: any): number {
+    const mrp = this.getMrp(p);
+    const price = this.getPrice(p);
+    return mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  }
+
+  getPrimaryImage(p: any): string {
+    return p?.primaryImage || (p?.images && p?.images[0]?.url) || (p?.images && p?.images[0]) || p?.image || p?.thumbnail || 'assets/images/user-placeholder.png';
+  }
+
+  getSecondaryImage(p: any): string | null {
+    const primary = this.getPrimaryImage(p);
+    if (p?.secondaryImage && p?.secondaryImage !== primary) {
+      return p.secondaryImage;
+    }
+    if (Array.isArray(p?.images) && p.images.length > 1) {
+      for (let i = 1; i < p.images.length; i++) {
+        const candidate = typeof p.images[i] === 'string' ? p.images[i] : p.images[i]?.url;
+        if (candidate && candidate !== primary) {
+          return candidate;
+        }
+      }
+    }
+    return null;
   }
 
   handleImageError(event: any) {
     if (event.target) {
-      (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/galaxy/200/200';
+      (event.target as HTMLImageElement).src = 'assets/images/user-placeholder.png';
     }
   }
 }

@@ -48,9 +48,8 @@ export class AdminVariantGroupConfigComponent {
 
   @Input() set variantGroups(val: any[]) {
     if (!val || val.length === 0) {
-      if (this.groups().length === 0) {
-        this.groups.set([this.createDefaultGroup()]);
-      }
+      this.groups.set([]);
+      this.activeGroupIndex.set(0);
       return;
     }
 
@@ -286,11 +285,19 @@ export class AdminVariantGroupConfigComponent {
 
   removeGroup(index: number) {
     const list = [...this.groups()];
-    if (list.length <= 1) return;
+    if (list.length === 0) return;
     list.splice(index, 1);
     this.groups.set(list);
-    this.activeGroupIndex.set(Math.max(0, index - 1));
+    this.activeGroupIndex.set(Math.max(0, Math.min(this.activeGroupIndex(), list.length - 1)));
     this.emitChange();
+  }
+
+  removeAllGroups() {
+    if (confirm('Are you sure you want to remove all variant groups?')) {
+      this.groups.set([]);
+      this.activeGroupIndex.set(0);
+      this.emitChange();
+    }
   }
 
   addTier(grp: VariantGroupConfig) {
@@ -384,7 +391,9 @@ export class AdminVariantGroupConfigComponent {
   }
 
   onDisplayTypeChange(type: VariantDisplayType) {
-    const grp = { ...this.currentGroup()! };
+    const current = this.currentGroup();
+    if (!current) return;
+    const grp = { ...current };
     grp.displayType = type;
     if (type === 'bundle-builder') {
       grp.selectionMode = 'bundle';

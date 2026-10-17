@@ -112,12 +112,12 @@
       }
     },
     {
-      "id": "featured-innovations",
-      "name": "Featured Innovation Catalog",
+      "id": "featured-products",
+      "name": "Featured Products Catalog",
       "visible": false,
       "order": 9,
       "config": {
-        "title": "Featured Innovations",
+        "title": "Featured Products",
         "subtitle": "Precision Catalog"
       }
     },

@@ -540,7 +540,7 @@ export const normalizeProductMediaList = (rawImages: any[], rawVariants: any[] =
   const mediaByUrl = new Map<string, any>();
 
   const safeImgs = safeParseArray(rawImages);
-  const safeVars = safeParseArray(rawVariants);
+  const safeVars = safeParseArray(rawVariants).filter((v: any) => v && v.isActive !== false && !v.deletedAt);
 
   // 1. Register product images
   safeImgs.forEach((img: any, idx: number) => {
@@ -873,14 +873,19 @@ export const getProducts = async (req: Request, res: Response) => {
     const allMapped = await getAllMappedProductsCached();
     const allDbCategories = await getAllDbCategoriesCached();
 
-    // Helper to check if a category belongs to a parent (by ID or slug)
+    // Helper to check if a category belongs to a parent (by ID, slug, or name)
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
       if (!cat) return false;
       const catId = typeof cat === 'object' ? cat.id : String(cat);
       const catSlug = typeof cat === 'object' ? cat.slug : String(cat);
-      if (catId === parentSlugOrId || catSlug === parentSlugOrId) return true;
+      const catName = typeof cat === 'object' ? (cat.name || '') : String(cat);
+      if (catId === parentSlugOrId || catSlug === parentSlugOrId || (catName && catName.toLowerCase() === parentSlugOrId.toLowerCase())) return true;
 
-      const targetCat = allDbCategories.find(c => c.id === parentSlugOrId || c.slug === parentSlugOrId);
+      const targetCat = allDbCategories.find(c =>
+        c.id === parentSlugOrId ||
+        c.slug === parentSlugOrId ||
+        (c.name && c.name.toLowerCase() === parentSlugOrId.toLowerCase())
+      );
       if (!targetCat) return false;
 
       const getDescendantIds = (parentId: string): string[] => {
@@ -916,7 +921,10 @@ export const getProducts = async (req: Request, res: Response) => {
       const catsArray = (category as string).split(',').map(s => s.trim()).filter(Boolean);
       filtered = filtered.filter(p => {
         const prodCats = Array.isArray(p.categories) && p.categories.length > 0 ? p.categories : (p.category ? [p.category] : []);
-        return catsArray.some(cVal => prodCats.some((cItem: any) => isCategoryChildOf(cItem, cVal)));
+        return catsArray.some(cVal => {
+          if (p.categoryId === cVal || (Array.isArray(p.categoryIds) && p.categoryIds.includes(cVal))) return true;
+          return prodCats.some((cItem: any) => isCategoryChildOf(cItem, cVal));
+        });
       });
     }
 
@@ -927,7 +935,9 @@ export const getProducts = async (req: Request, res: Response) => {
         return subcatsArray.some(sVal =>
           p.categoryId === sVal ||
           p.category?.slug === sVal ||
-          prodCats.some((cItem: any) => cItem.id === sVal || cItem.slug === sVal)
+          (p.category?.name && p.category.name.toLowerCase() === sVal.toLowerCase()) ||
+          (Array.isArray(p.categoryIds) && p.categoryIds.includes(sVal)) ||
+          prodCats.some((cItem: any) => cItem.id === sVal || cItem.slug === sVal || (cItem.name && cItem.name.toLowerCase() === sVal.toLowerCase()))
         );
       });
     }
@@ -945,11 +955,11 @@ export const getProducts = async (req: Request, res: Response) => {
     // Price filter
     const minP = priceMin ? parseFloat(priceMin as string) : null;
     const maxP = priceMax ? parseFloat(priceMax as string) : null;
-    if (minP !== null) {
-      filtered = filtered.filter(p => p.activePrice >= minP);
+    if (minP !== null && !isNaN(minP)) {
+      filtered = filtered.filter(p => (p.salePrice || p.activePrice || p.basePrice || 0) >= minP);
     }
-    if (maxP !== null) {
-      filtered = filtered.filter(p => p.activePrice <= maxP);
+    if (maxP !== null && !isNaN(maxP)) {
+      filtered = filtered.filter(p => (p.salePrice || p.activePrice || p.basePrice || 0) <= maxP);
     }
 
     // Rating filter
@@ -1046,16 +1056,51 @@ export const getProducts = async (req: Request, res: Response) => {
     const aggPrinterTypeMap: Record<string, number> = {};
     const aggCompatibilityMap: Record<string, number> = {};
 
-    baseForAgg.forEach(p => {
-      // Categories
-      if (p.category) {
-        const cat = p.category;
-        if (!aggCategoriesMap[cat.id]) {
-          aggCategoriesMap[cat.id] = { id: cat.id, name: cat.name, parentId: cat.parentId, count: 0 };
-        }
-        aggCategoriesMap[cat.id].count++;
-      }
+    // Base for Categories aggregation (only filtered by search, so user can always see and select any category)
+    let baseForCatAgg = allMapped;
+    if (search) {
+      const term = (search as string).toLowerCase().trim();
+      baseForCatAgg = baseForCatAgg.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        (p.brand?.name || '').toLowerCase().includes(term) ||
+        (p.category?.name || '').toLowerCase().includes(term)
+      );
+    }
 
+    baseForCatAgg.forEach(p => {
+      const prodCats: any[] = Array.isArray(p.categories) && p.categories.length > 0
+        ? p.categories
+        : (p.category ? [p.category] : []);
+
+      const countedInProd = new Set<string>();
+
+      prodCats.forEach((cat: any) => {
+        if (!cat || !cat.id) return;
+        if (!countedInProd.has(cat.id)) {
+          countedInProd.add(cat.id);
+          if (!aggCategoriesMap[cat.id]) {
+            aggCategoriesMap[cat.id] = { id: cat.id, name: cat.name, parentId: cat.parentId || null, count: 0 };
+          }
+          aggCategoriesMap[cat.id].count++;
+        }
+
+        let currentParentId = cat.parentId;
+        while (currentParentId) {
+          const parentCat = allDbCategories.find(c => c.id === currentParentId);
+          if (!parentCat) break;
+          if (!countedInProd.has(parentCat.id)) {
+            countedInProd.add(parentCat.id);
+            if (!aggCategoriesMap[parentCat.id]) {
+              aggCategoriesMap[parentCat.id] = { id: parentCat.id, name: parentCat.name, parentId: parentCat.parentId || null, count: 0 };
+            }
+            aggCategoriesMap[parentCat.id].count++;
+          }
+          currentParentId = parentCat.parentId;
+        }
+      });
+    });
+
+    baseForAgg.forEach(p => {
       // Brands
       if (p.brand) {
         const b = p.brand;
@@ -1200,7 +1245,9 @@ export const getProductBySlug = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { slug },
       include: {
-        variants: true,
+        variants: {
+          where: { deletedAt: null, isActive: true }
+        },
         category: true,
         brand: true,
         customerReviews: {
@@ -1374,7 +1421,9 @@ export const getProductById = async (req: Request, res: Response) => {
     const item = await prisma.product.findUnique({
       where: { id },
       include: {
-        variants: true,
+        variants: {
+          where: { deletedAt: null, isActive: true }
+        },
         category: true,
         productCategories: {
           include: { category: true }
@@ -1901,7 +1950,9 @@ export const updateProduct = async (req: Request, res: Response) => {
       return tx.product.findUnique({
         where: { id },
         include: {
-          variants: true,
+          variants: {
+            where: { deletedAt: null, isActive: true }
+          },
           category: true,
           productCategories: {
             include: { category: true }
@@ -2140,7 +2191,7 @@ export const getProductVariants = async (req: Request, res: Response) => {
   const productId = req.params.productId || req.params.id;
   try {
     const variants = await prisma.productVariant.findMany({
-      where: { productId: productId },
+      where: { productId: productId, deletedAt: null, isActive: true },
       orderBy: { createdAt: 'asc' }
     });
     return res.status(200).json({ success: true, data: variants });
@@ -2219,7 +2270,9 @@ export const getAdminProducts = async (req: Request, res: Response) => {
           productCategories: {
             include: { category: true }
           },
-          variants: true
+          variants: {
+            where: { deletedAt: null, isActive: true }
+          }
         }
       })
     ]);

@@ -909,6 +909,15 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
+                      @if (admin.pVariants().length > 0 || admin.pOptions().length > 0) {
+                        <button 
+                          type="button" 
+                          (click)="removeAllVariantsAndOptions()"
+                          class="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-lg text-[11px] font-black uppercase tracking-wider cursor-pointer flex items-center gap-1.5 transition-all"
+                          title="Remove all variants and options from this product">
+                          <mat-icon class="scale-75 text-sm">delete_sweep</mat-icon> Remove All Variants & Options
+                        </button>
+                      }
                       <button 
                         type="button" 
                         (click)="tourService.startTour()"
@@ -1211,9 +1220,21 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                           </div>
                         </div>
                       </div>
-                      <button type="button" (click)="addCustomVariant()" class="px-3 py-1 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-xs">
-                        <mat-icon class="scale-75">add</mat-icon> Add Variant Row
-                      </button>
+                      <div class="flex items-center gap-2">
+                        @if (admin.pVariants().length > 0) {
+                          <button
+                            type="button"
+                            (click)="clearAllVariants()"
+                            class="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-lg text-[10px] font-black uppercase cursor-pointer flex items-center gap-1 transition-colors"
+                            title="Clear all generated variant rows"
+                          >
+                            <mat-icon class="scale-75 text-sm">delete_sweep</mat-icon> Clear All Variants
+                          </button>
+                        }
+                        <button type="button" (click)="addCustomVariant()" class="px-3 py-1 bg-emerald-600 text-white hover:bg-emerald-500 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-xs">
+                          <mat-icon class="scale-75">add</mat-icon> Add Variant Row
+                        </button>
+                      </div>
                     </div>
 
                     @if (admin.pVariants().length === 0) {
@@ -2312,7 +2333,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                                 <mat-icon class="text-[18px] w-[18px] h-[18px] flex items-center justify-center">bolt</mat-icon>
                               </button>
                               <button
-                                (click)="admin.startProductEdit(p)"
+                                (click)="editProduct(p)"
                                 class="h-8 w-8 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-955 transition-colors inline-flex items-center justify-center cursor-pointer border-none bg-transparent"
                                 title="Edit Product Details"
                               >
@@ -2985,7 +3006,7 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                             <td class="py-3 text-right pr-3">
                               <div class="inline-flex items-center gap-1">
                                 <button
-                                  (click)="admin.startProductEdit(p)"
+                                  (click)="editProduct(p)"
                                   title="Edit Product Details"
                                   class="p-1.5 hover:bg-blue-500/10 text-blue-500 rounded-lg border-none bg-transparent cursor-pointer"
                                 >
@@ -5390,7 +5411,26 @@ export class AdminCatalogTab {
   removeVariant(index: number) {
     const list = [...this.admin.pVariants()];
     list.splice(index, 1);
+    if (list.length > 0 && !list.some((v) => v.isDefault)) {
+      list[0].isDefault = true;
+    }
     this.admin.pVariants.set(list);
+    this.toastService.info("Variant row removed.");
+  }
+
+  clearAllVariants() {
+    if (confirm("Are you sure you want to remove all variants from this product?")) {
+      this.admin.pVariants.set([]);
+      this.toastService.info("All variants cleared.");
+    }
+  }
+
+  removeAllVariantsAndOptions() {
+    if (confirm("Are you sure you want to remove all variants and options from this product? The product will be saved as a standard single-SKU product.")) {
+      this.admin.pVariants.set([]);
+      this.admin.pOptions.set([]);
+      this.toastService.success("All variants and options removed.");
+    }
   }
 
   currentPage = signal<number>(1);
@@ -5505,6 +5545,11 @@ export class AdminCatalogTab {
     { id: "related_products", label: "Related Products" },
     { id: "seo", label: "SEO" },
   ];
+
+  editProduct(p: any) {
+    this.activeEditTab.set("general");
+    this.admin.startProductEdit(p);
+  }
 
   startEditNew() {
     this.activeEditTab.set("general");

@@ -131,7 +131,7 @@ export class HomeCategoriesComponent {
     const finalCat = isSelected ? "" : cat;
 
     const layout = this.ds.homeLayout();
-    const isCatalogVisible = layout.some(s => s.id === 'featured-innovations' && s.visible);
+    const isCatalogVisible = layout.some(s => (s.id === 'featured-innovations' || s.id === 'featured-products' || s.type === 'FEATURED_PRODUCTS') && s.visible);
     if (isCatalogVisible) {
       this.ds.filterCategory.set(finalCat);
       const el = document.getElementById('products-catalog');

@@ -10,31 +10,62 @@
         <p class="subtitle">Configure display types, selection modes, bundle pricing, duplicate rules, and test live rendering.</p>
       </div>
     </div>
-    <button type="button" class="add-group-btn" (click)="addGroup()">
-      <mat-icon>add</mat-icon> Add Variant Group
-    </button>
+    <div class="flex items-center gap-2">
+      @if (groups().length > 0) {
+        <button
+          type="button"
+          class="px-3 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/30 flex items-center gap-1 cursor-pointer transition-colors"
+          (click)="removeAllGroups()"
+          title="Remove all variant groups"
+        >
+          <mat-icon class="scale-75 text-sm">delete_sweep</mat-icon> Remove All Groups
+        </button>
+      }
+      <button type="button" class="add-group-btn" (click)="addGroup()">
+        <mat-icon>add</mat-icon> Add Variant Group
+      </button>
+    </div>
   </div>
 
   <div class="config-layout">
     <!-- LEFT SIDEBAR: GROUP TABS & SETTINGS FORM -->
     <div class="form-panel">
       <!-- Tabs -->
-      <div class="group-tabs-row">
+      <div class="group-tabs-row" *ngIf="groups().length > 0">
         <button 
           type="button"
           *ngFor="let gItem of groups(); let i = index" 
           class="tab-btn"
           [class.active]="activeGroupIndex() === i"
           (click)="activeGroupIndex.set(i)">
-          {{ gItem.displayName || gItem.variantName || 'Group #' + (i + 1) }}
+          <span>{{ gItem.displayName || gItem.variantName || 'Group #' + (i + 1) }}</span>
+          <span
+            class="ml-2 hover:text-rose-500 text-zinc-400 font-normal inline-flex items-center"
+            (click)="$event.stopPropagation(); removeGroup(i)"
+            title="Remove Group">✕</span>
         </button>
       </div>
+
+      @if (groups().length === 0) {
+        <div class="p-8 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/50 my-2">
+          <div class="w-10 h-10 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 flex items-center justify-center mb-2">
+            <mat-icon>tune</mat-icon>
+          </div>
+          <h4 class="text-xs font-black uppercase text-zinc-800 dark:text-zinc-200 tracking-wider">No Variant Groups Configured</h4>
+          <p class="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 mb-4 max-w-md mx-auto">
+            This product currently has no variant options and will be treated as a single product. Click below to add options like Color, Size, or Weight.
+          </p>
+          <button type="button" class="add-group-btn mx-auto" (click)="addGroup()">
+            <mat-icon>add</mat-icon> Add Variant Group
+          </button>
+        </div>
+      }
 
       @if (currentGroup(); as grp) {
         <div class="form-card">
           <div class="form-section-title flex items-center justify-between">
             <span>General Settings</span>
-            <button type="button" class="remove-btn" *ngIf="groups().length > 1" (click)="removeGroup(activeGroupIndex())">
+            <button type="button" class="remove-btn" (click)="removeGroup(activeGroupIndex())" title="Remove this variant group">
               <mat-icon>delete</mat-icon> Remove Group
             </button>
           </div>

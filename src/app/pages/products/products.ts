@@ -120,31 +120,7 @@ export class Products implements OnInit {
   private filterRequest$ = new ReplaySubject<any>(1);
   private destroyRef = inject(DestroyRef);
 
-  constructor() {
-    // Automatically re-resolve categories/brands when datastore finishes loading asynchronously
-    effect(() => {
-      const cats = this.ds.categories();
-      const params = this.route.snapshot.params;
-      if (cats && cats.length > 0 && params && params['categorySlug']) {
-        const slug = params['categorySlug'];
-        const cat = cats.find((c) => c.slug === slug || c.id === slug);
-        if (cat) {
-          const currentCategory = this.activeCategory();
-          if (currentCategory !== cat.id) {
-            this.activeCategory.set(cat.id);
-            const updated = { ...this.queryParams() };
-            updated['category'] = cat.id;
-            this.queryParams.set(updated);
-            this.setSeoTags(
-              cat.name,
-              `Shop premium ${cat.name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
-              `category/${slug}`
-            );
-          }
-        }
-      }
-    });
-  }
+  constructor() {}
 
   ngOnInit() {
     // Set up switchMap request cancellation for product filters
@@ -183,8 +159,10 @@ export class Products implements OnInit {
             .find((c) => c.slug === slug || c.id === slug);
           const catValue = cat ? cat.id : slug;
 
-          // Force category query parameter to match the route path categorySlug
-          mergedParams["category"] = catValue;
+          // Set category from route path only if query parameter was not already provided
+          if (!mergedParams["category"]) {
+            mergedParams["category"] = catValue;
+          }
 
           const name = cat ? cat.name : slug.replace(/-/g, " ");
           this.setSeoTags(
@@ -199,8 +177,10 @@ export class Products implements OnInit {
             .find((br) => br.slug === bSlug || br.name === bSlug);
           const bValue = b ? b.name : bSlug;
 
-          // Force brand query parameter to match the route path brandSlug
-          mergedParams["brand"] = bValue;
+          // Set brand from route path only if query parameter was not already provided
+          if (!mergedParams["brand"]) {
+            mergedParams["brand"] = bValue;
+          }
 
           const name = b ? b.name : bSlug;
           this.setSeoTags(
@@ -311,7 +291,13 @@ export class Products implements OnInit {
     this.filterRequest$.next(queryParams);
   }
 
-  // URL Manipulation Helpers
+  // URL Manipulation & Filter Navigation Helpers
+  navigateWithFilters(queryParams: Record<string, any>) {
+    this.router.navigate(["/products"], {
+      queryParams,
+    });
+  }
+
   updateUrlQueryParam(key: string, value: string | null) {
     const currentParams = { ...this.queryParams() };
     if (value) {
@@ -323,33 +309,31 @@ export class Products implements OnInit {
       currentParams["page"] = "1";
     }
 
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: currentParams,
-    });
+    this.navigateWithFilters(currentParams);
   }
 
   toggleFilter(key: string, value: string) {
     const currentParams = { ...this.queryParams() };
     let values = currentParams[key] ? currentParams[key].split(",") : [];
 
-    let targetToRemove = value;
+    let catObj: any = null;
+    let brandObj: any = null;
+
     if (key === "category") {
-      const cat = this.ds.categories().find((c) => c.id === value || c.slug === value);
-      if (cat) {
-        const found = values.find((v: string) => v === cat.id || v === cat.slug);
-        if (found) targetToRemove = found;
-      }
+      catObj = this.ds.categories().find((c) => c.id === value || c.slug === value || c.name.toLowerCase() === value.toLowerCase());
     } else if (key === "brand") {
-      const b = this.ds.brands().find((br) => br.id === value || br.slug === value || br.name.toLowerCase() === value.toLowerCase());
-      if (b) {
-        const found = values.find((v: string) => v.toLowerCase() === b.name.toLowerCase() || v.toLowerCase() === b.slug.toLowerCase());
-        if (found) targetToRemove = found;
-      }
+      brandObj = this.ds.brands().find((br) => br.id === value || br.slug === value || br.name.toLowerCase() === value.toLowerCase());
     }
 
-    if (values.includes(targetToRemove)) {
-      values = values.filter((v: string) => v !== targetToRemove);
+    const isMatch = (v: string) => {
+      if (v === value) return true;
+      if (catObj && (v === catObj.id || v === catObj.slug || v.toLowerCase() === catObj.name.toLowerCase())) return true;
+      if (brandObj && (v.toLowerCase() === brandObj.name.toLowerCase() || v.toLowerCase() === brandObj.slug.toLowerCase() || v === brandObj.id)) return true;
+      return v.toLowerCase() === value.toLowerCase();
+    };
+
+    if (values.some(isMatch)) {
+      values = values.filter((v: string) => !isMatch(v));
     } else {
       values.push(value);
     }
@@ -362,10 +346,7 @@ export class Products implements OnInit {
 
     currentParams["page"] = "1";
 
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: currentParams,
-    });
+    this.navigateWithFilters(currentParams);
   }
 
   isFilterActive(key: string, value: string): boolean {
@@ -375,33 +356,35 @@ export class Products implements OnInit {
     if (values.includes(value)) return true;
 
     if (key === "category") {
-      const cat = this.ds.categories().find((c) => c.id === value || c.slug === value);
+      const cat = this.ds.categories().find((c) => c.id === value || c.slug === value || c.name.toLowerCase() === value.toLowerCase());
       if (cat) {
-        return values.includes(cat.id) || values.includes(cat.slug);
+        return values.some((v: string) => v === cat.id || v === cat.slug || v.toLowerCase() === cat.name.toLowerCase());
       }
+      return values.some((v: string) => v.toLowerCase() === value.toLowerCase());
     }
     if (key === "brand") {
       const b = this.ds.brands().find((br) => br.id === value || br.slug === value || br.name.toLowerCase() === value.toLowerCase());
       if (b) {
-        return values.some((v: string) => v.toLowerCase() === b.name.toLowerCase() || v.toLowerCase() === b.slug.toLowerCase());
+        return values.some((v: string) => v.toLowerCase() === b.name.toLowerCase() || v.toLowerCase() === b.slug.toLowerCase() || v === b.id);
       }
+      return values.some((v: string) => v.toLowerCase() === value.toLowerCase());
     }
-    return false;
+    return values.some((v: string) => v.toLowerCase() === value.toLowerCase());
   }
 
   setPriceRange(min: string, max: string) {
     const currentParams = { ...this.queryParams() };
-    if (min || max) {
-      currentParams["price"] = `${min}-${max}`;
+    const cleanMin = min ? min.trim() : "";
+    const cleanMax = max ? max.trim() : "";
+
+    if (cleanMin || cleanMax) {
+      currentParams["price"] = `${cleanMin}-${cleanMax}`;
     } else {
       delete currentParams["price"];
     }
     currentParams["page"] = "1";
 
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: currentParams,
-    });
+    this.navigateWithFilters(currentParams);
   }
 
   clearPriceRange() {
@@ -414,11 +397,25 @@ export class Products implements OnInit {
     if (currentParams["sort"]) preserved["sort"] = currentParams["sort"];
     if (currentParams["limit"]) preserved["limit"] = currentParams["limit"];
 
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: preserved,
-      replaceUrl: true,
-    });
+    this.activeSearch.set("");
+    this.activeCategory.set("");
+    this.activeSubcategory.set("");
+    this.activeBrand.set("");
+    this.activePriceMin.set("");
+    this.activePriceMax.set("");
+    this.activeRating.set("");
+    this.activeStock.set("");
+    this.activeFeatured.set("");
+    this.activeColor.set("");
+    this.activeMaterial.set("");
+    this.activeTechnology.set("");
+    this.activePrinterType.set("");
+    this.activeCompatibility.set("");
+    this.brandSearchTerm.set("");
+    this.categorySearchTerm.set("");
+    this.materialSearchTerm.set("");
+
+    this.navigateWithFilters(preserved);
   }
 
   removeSingleFilter(key: string, value: string) {
@@ -431,6 +428,18 @@ export class Products implements OnInit {
       return;
     }
     this.toggleFilter(key, value);
+  }
+
+  applyDrawerFilters(min?: string, max?: string) {
+    const currentMin = this.activePriceMin();
+    const currentMax = this.activePriceMax();
+    const newMin = (min !== undefined && min !== null ? min : currentMin).trim();
+    const newMax = (max !== undefined && max !== null ? max : currentMax).trim();
+
+    if (newMin !== currentMin || newMax !== currentMax) {
+      this.setPriceRange(newMin, newMax);
+    }
+    this.showFilterDrawer.set(false);
   }
 
   // Collapsible Accordion Groups
@@ -468,13 +477,19 @@ export class Products implements OnInit {
 
   // Helper methods for templates (avoiding arrow functions in bindings)
   getParentCategories(): any[] {
-    return this.availableFilters().categories.filter((c: any) => !c.parentId);
+    const cats = this.availableFilters()?.categories || [];
+    if (cats.length > 0) {
+      return cats.filter((c: any) => !c.parentId);
+    }
+    return (this.ds.categories() || []).filter((c: any) => !c.parentId);
   }
 
   getChildCategories(parentId: string): any[] {
-    return this.availableFilters().categories.filter(
-      (c: any) => c.parentId === parentId,
-    );
+    const cats = this.availableFilters()?.categories || [];
+    if (cats.length > 0) {
+      return cats.filter((c: any) => c.parentId === parentId);
+    }
+    return (this.ds.categories() || []).filter((c: any) => c.parentId === parentId);
   }
 
   getRatingOptions(): any[] {
