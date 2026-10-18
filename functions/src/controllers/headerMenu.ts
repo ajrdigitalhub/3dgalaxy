@@ -35,15 +35,64 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       });
     }
 
-    // 1. Calculate active product counts per category
-    const categoryGroupCounts = await prisma.product.groupBy({
-      by: ['categoryId'],
-      where: {
-        isActive: true,
-        deletedAt: null
-      },
-      _count: { id: true }
-    });
+    // 1. Fetch core entities concurrently
+    const [
+      categoryGroupCounts,
+      brandGroupCounts,
+      allCategories,
+      brandsRaw,
+      bestSellersRaw,
+      settingRecord
+    ] = await Promise.all([
+      prisma.product.groupBy({
+        by: ['categoryId'],
+        where: { isActive: true, deletedAt: null },
+        _count: { id: true }
+      }),
+      prisma.product.groupBy({
+        by: ['brandId'],
+        where: { isActive: true, deletedAt: null },
+        _count: { id: true }
+      }),
+      prisma.category.findMany({
+        where: { isActive: true, deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          image: true,
+          banner: true,
+          icon: true,
+          parentId: true,
+          description: true,
+          isFeatured: true,
+          sortOrder: true
+        },
+        orderBy: { sortOrder: 'asc' }
+      }),
+      prisma.brand.findMany({
+        where: { deletedAt: null },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logo: true,
+          description: true
+        },
+        orderBy: { name: 'asc' }
+      }),
+      prisma.product.findMany({
+        where: { isActive: true, deletedAt: null },
+        include: {
+          variants: { where: { isActive: true } }
+        },
+        take: 12,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.setting.findUnique({
+        where: { settingKey: 'header_menu_config' }
+      })
+    ]);
 
     const directCategoryCountMap = new Map<string, number>();
     categoryGroupCounts.forEach(item => {
@@ -52,42 +101,11 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       }
     });
 
-    // 2. Calculate active product counts per brand
-    const brandGroupCounts = await prisma.product.groupBy({
-      by: ['brandId'],
-      where: {
-        isActive: true,
-        deletedAt: null
-      },
-      _count: { id: true }
-    });
-
     const brandCountMap = new Map<string, number>();
     brandGroupCounts.forEach(item => {
       if (item.brandId) {
         brandCountMap.set(item.brandId, item._count.id);
       }
-    });
-
-    // 3. Fetch All Categories
-    const allCategories = await prisma.category.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        image: true,
-        banner: true,
-        icon: true,
-        parentId: true,
-        description: true,
-        isFeatured: true,
-        sortOrder: true
-      },
-      orderBy: { sortOrder: 'asc' }
     });
 
     // Recursive tree building & count aggregation
@@ -116,21 +134,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
     const rootCategoriesRaw = allCategories.filter(c => !c.parentId);
     const categoryTree = rootCategoriesRaw.map(cat => buildCategoryNode(cat));
 
-    // 4. Fetch Active Brands
-    const brandsRaw = await prisma.brand.findMany({
-      where: {
-        deletedAt: null
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        logo: true,
-        description: true
-      },
-      orderBy: { name: 'asc' }
-    });
-
     const brands = brandsRaw.map(b => ({
       id: b.id,
       name: b.name,
@@ -141,25 +144,17 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       productCount: brandCountMap.get(b.id) || 0
     })).sort((a, b) => b.productCount - a.productCount);
 
-    // 5. Fetch Best Sellers / Featured Products with real review stats
-    const bestSellersRaw = await prisma.product.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null
-      },
-      include: {
-        variants: { where: { isActive: true } }
-      },
-      take: 12,
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const allCustReviews = await prisma.customerReview.findMany({
-      select: { productId: true, rating: true, reviewText: true }
-    });
+    // Fetch reviews strictly targeted to the 12 best seller products (not whole table)
+    const bestSellerIds = bestSellersRaw.map(p => p.id);
+    const targetedReviews = bestSellerIds.length > 0
+      ? await prisma.customerReview.findMany({
+          where: { productId: { in: bestSellerIds } },
+          select: { productId: true, rating: true, reviewText: true }
+        })
+      : [];
 
     const reviewsMap = new Map<string, number[]>();
-    for (const cr of allCustReviews) {
+    for (const cr of targetedReviews) {
       if (cr.reviewText && cr.reviewText.trim().startsWith("{")) {
         try {
           const parsed = JSON.parse(cr.reviewText);
@@ -172,14 +167,11 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
 
     const bestSellers = bestSellersRaw.map(p => {
       const allRatings = reviewsMap.get(p.id) || [];
-      
       let rating: number | null = null;
       let totalReviews = allRatings.length;
       if (allRatings.length > 0) {
         const sum = allRatings.reduce((a, b) => a + b, 0);
         rating = Number((sum / allRatings.length).toFixed(1));
-      } else {
-        rating = null;
       }
 
       let primaryImage = null;
@@ -205,11 +197,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         inStock: p.stock > 0,
         categoryId: p.categoryId
       };
-    });
-
-    // 6. Fetch Admin Configuration Settings
-    const settingRecord = await prisma.setting.findUnique({
-      where: { settingKey: 'header_menu_config' }
     });
 
     const config = settingRecord ? { ...DEFAULT_MENU_CONFIG, ...(settingRecord.settingData as object) } : DEFAULT_MENU_CONFIG;

@@ -611,30 +611,62 @@ export class CheckoutComponent implements OnInit {
       }
     }
 
+    const flatItems: any[] = [];
+    for (const item of this.groupedCheckoutItems()) {
+      const effectivePrice = this.getPrice(item);
+      const basePrice = Number(item.product?.salePrice || item.product?.sale_price || item.product?.basePrice || effectivePrice);
+      flatItems.push({
+        productId: item.product.id,
+        variantId: item.variant?.id || null,
+        quantity: item.quantity,
+        price: effectivePrice,
+        unitPrice: effectivePrice,
+        basePrice: basePrice,
+        effectivePrice: effectivePrice,
+        configurationType: item.bundleDetails ? 'bundle' : (item.selectedWeightValue ? 'weight' : (item.variant ? 'variant' : 'standard')),
+        configurationName: item.bundleDetails?.bundleName || (item.selectedWeightValue ? `${item.selectedWeightValue} ${item.selectedWeightUnit || 'kg'}` : (item.variant?.name || null)),
+        bundleDetails: item.bundleDetails || null,
+        selectedOptions: item.bundleDetails?.selectedOptions || item.bundleDetails?.selectedVariants || (item.variant?.optionValues ? [item.variant.optionValues] : []),
+        selectedWeightValue: item.selectedWeightValue || item.bundleDetails?.selectedWeightValue || null,
+        selectedWeightUnit: item.selectedWeightUnit || item.bundleDetails?.selectedWeightUnit || null,
+        isCustomWeight: item.isCustomWeight || false,
+        customWeightValue: item.customWeightValue || null,
+        unitPricePerWeight: item.unitPricePerWeight || null,
+        weightInGrams: getItemWeightGrams(item),
+        isFree: false
+      });
+
+      if (item.bundleSubs && Array.isArray(item.bundleSubs) && item.bundleSubs.length > 0) {
+        for (const sub of item.bundleSubs) {
+          if (!sub?.product?.id) continue;
+          const subBasePrice = Number(sub.product?.salePrice || sub.product?.sale_price || sub.product?.basePrice || 0);
+          flatItems.push({
+            productId: sub.product.id,
+            variantId: sub.variant?.id || null,
+            quantity: sub.quantity || 1,
+            price: 0,
+            unitPrice: 0,
+            basePrice: subBasePrice,
+            effectivePrice: 0,
+            isFree: true,
+            parentProductId: item.product.id,
+            configurationType: 'free_bundle',
+            configurationName: `Free Included with ${item.product.name}`,
+            bundleDetails: null,
+            selectedOptions: [],
+            selectedWeightValue: null,
+            selectedWeightUnit: null,
+            isCustomWeight: false,
+            customWeightValue: null,
+            unitPricePerWeight: null,
+            weightInGrams: getItemWeightGrams(sub) || 0
+          });
+        }
+      }
+    }
+
     const payload = {
-      items: this.groupedCheckoutItems().map((item: any) => {
-        const effectivePrice = this.getPrice(item);
-        const basePrice = Number(item.product?.salePrice || item.product?.sale_price || item.product?.basePrice || effectivePrice);
-        return {
-          productId: item.product.id,
-          variantId: item.variant?.id || null,
-          quantity: item.quantity,
-          price: effectivePrice,
-          unitPrice: effectivePrice,
-          basePrice: basePrice,
-          effectivePrice: effectivePrice,
-          configurationType: item.bundleDetails ? 'bundle' : (item.selectedWeightValue ? 'weight' : (item.variant ? 'variant' : 'standard')),
-          configurationName: item.bundleDetails?.bundleName || (item.selectedWeightValue ? `${item.selectedWeightValue} ${item.selectedWeightUnit || 'kg'}` : (item.variant?.name || null)),
-          bundleDetails: item.bundleDetails || null,
-          selectedOptions: item.bundleDetails?.selectedOptions || item.bundleDetails?.selectedVariants || (item.variant?.optionValues ? [item.variant.optionValues] : []),
-          selectedWeightValue: item.selectedWeightValue || item.bundleDetails?.selectedWeightValue || null,
-          selectedWeightUnit: item.selectedWeightUnit || item.bundleDetails?.selectedWeightUnit || null,
-          isCustomWeight: item.isCustomWeight || false,
-          customWeightValue: item.customWeightValue || null,
-          unitPricePerWeight: item.unitPricePerWeight || null,
-          weightInGrams: getItemWeightGrams(item),
-        };
-      }),
+      items: flatItems,
       shippingAddress: `${this.accAddr1()} ${this.accAddr2()}, ${this.accCity()}, ${this.accState()} - ${this.accPin()}`,
       shippingAddressSnapshot: {
         fullName: this.name(),

@@ -162,6 +162,32 @@ export class AdminPanel implements OnInit {
 
   activeTab = signal<AdminTab>("dashboard");
 
+  resolveBrandId(rawBrand: any): string {
+    if (!rawBrand) return "";
+    const brands = this.ds.brands() || [];
+    const rawStr = typeof rawBrand === "object" ? String(rawBrand.id || rawBrand.slug || rawBrand.name || "") : String(rawBrand).trim();
+    if (!rawStr) return "";
+
+    // 1. Direct match by id
+    const byId = brands.find((b) => b.id === rawStr);
+    if (byId) return byId.id;
+
+    // 2. Case-insensitive name match
+    const byName = brands.find((b) => b.name && b.name.toLowerCase() === rawStr.toLowerCase());
+    if (byName) return byName.id;
+
+    // 3. Slug match
+    const bySlug = brands.find((b) => b.slug && b.slug.toLowerCase() === rawStr.toLowerCase());
+    if (bySlug) return bySlug.id;
+
+    return rawStr;
+  }
+
+  onBrandChange(val: string) {
+    this.pBrandRaw.set(val || "");
+    this.pBrand.set(val || "");
+  }
+
   ngOnInit() {
     this.route.queryParams.subscribe((params) => {
       if (params["tab"]) {
@@ -554,7 +580,8 @@ export class AdminPanel implements OnInit {
   // Product drafting state
   pName = signal<string>("");
   pSlug = signal<string>("");
-  pBrand = signal<string>("3D Galaxy");
+  pBrand = signal<string>("");
+  pBrandRaw = signal<string>("");
   pCatId = signal<string>("");
   pCategoryIds = signal<string[]>([]);
   pSku = signal<string>("");
@@ -1132,6 +1159,17 @@ export class AdminPanel implements OnInit {
         }
       });
     }
+    // Synchronize product brand selection when brands catalog resolves
+    effect(() => {
+      const brands = this.ds.brands();
+      const raw = this.pBrandRaw();
+      if (raw && brands.length > 0) {
+        const resolved = this.resolveBrandId(raw);
+        if (resolved && this.pBrand() !== resolved) {
+          this.pBrand.set(resolved);
+        }
+      }
+    });
     // Sync local signals with database settings
     effect(() => {
       const s = this.ds.settings();
@@ -1243,7 +1281,8 @@ export class AdminPanel implements OnInit {
     this.pName.set("");
     this.pSku.set("");
     this.pDesc.set("");
-    this.pBrand.set("3D Galaxy");
+    this.pBrandRaw.set("");
+    this.pBrand.set("");
     this.pCatId.set("");
     this.pCategoryIds.set([]);
     this.pMrp.set(1499);
@@ -1727,7 +1766,9 @@ export class AdminPanel implements OnInit {
     this.pSku.set(p.sku || "");
     this.pDesc.set(p.description || "");
     this.pLongDesc.set(p.long_description || "");
-    this.pBrand.set(p.brandId || (p as any).brand_id || (p as any).brand?.id || p.brand || "");
+    const initialBrandRaw = p.brandId || (p as any).brand_id || (p as any).brand?.id || (typeof p.brand === 'string' ? p.brand : (p.brand as any)?.name) || "";
+    this.pBrandRaw.set(initialBrandRaw);
+    this.pBrand.set(this.resolveBrandId(initialBrandRaw));
     this.pMrp.set(p.mrp || 0);
     this.pSale.set(p.sale_price || 0);
     this.pDealer.set(p.dealer_price || 0);
@@ -1822,9 +1863,9 @@ export class AdminPanel implements OnInit {
             this.pLongDesc.set(
               detail.long_description || p.long_description || "",
             );
-            this.pBrand.set(
-              detail.brandId || detail.brand_id || detail.brand?.id || p.brandId || (p as any).brand_id || ""
-            );
+            const apiBrandRaw = found.brandId || detail.brandId || detail.brand_id || detail.brand?.id || (typeof detail.brand === 'string' ? detail.brand : detail.brand?.name) || initialBrandRaw;
+            this.pBrandRaw.set(apiBrandRaw);
+            this.pBrand.set(this.resolveBrandId(apiBrandRaw));
             if (resolvedCats.primaryCategoryId) {
               this.pCatId.set(resolvedCats.primaryCategoryId);
             } else if (resolvedCats.categoryIds.length > 0) {
@@ -1943,7 +1984,8 @@ export class AdminPanel implements OnInit {
     this.pSku.set("");
     this.pDesc.set("");
     this.pLongDesc.set("");
-    this.pBrand.set("3D Galaxy");
+    this.pBrandRaw.set("");
+    this.pBrand.set("");
     this.pCatId.set("");
     this.pCategoryIds.set([]);
     this.pMrp.set(1499);
@@ -2526,6 +2568,10 @@ export class AdminPanel implements OnInit {
       isPrimary: cId === primaryId || (idx === 0 && !primaryId)
     }));
 
+    const selectedBrandId = this.pBrand();
+    const matchedBrand = this.ds.brands().find((b) => b.id === selectedBrandId);
+    const finalBrandName = matchedBrand ? matchedBrand.name : (selectedBrandId || "3D Galaxy");
+
     const pData: any = {
       name,
       slug:
@@ -2534,8 +2580,8 @@ export class AdminPanel implements OnInit {
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)+/g, ""),
-      brand: this.pBrand() || "3D Galaxy",
-      brandId: this.pBrand() || undefined,
+      brand: finalBrandName,
+      brandId: matchedBrand ? matchedBrand.id : (selectedBrandId || undefined),
       category_id: primaryId || undefined,
       categoryId: primaryId || undefined,
       categoryIds: selectedCategoryIds,
@@ -2569,7 +2615,7 @@ export class AdminPanel implements OnInit {
       is360Supported: isEdit
         ? this.editingProduct()?.is360Supported || false
         : false,
-      tags: [this.pBrand() || "3D Galaxy"],
+      tags: [finalBrandName],
       specs: this.pSpecs(),
       specifications: this.pSpecs(),
       downloads: this.pDownloads(),

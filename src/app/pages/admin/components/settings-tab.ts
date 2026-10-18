@@ -22,6 +22,8 @@ import { TrackingService, CourierPartnerConfig } from "../../../core/services/tr
 import { environment } from "../../../../environments/environment";
 
 
+import { PromoPopupComponent } from "../../../shared/components/promo-popup/promo-popup";
+
 @Component({
   selector: "app-admin-settings-tab",
   standalone: true,
@@ -34,6 +36,7 @@ import { environment } from "../../../../environments/environment";
     MarketingTrackingTabComponent,
     AdminDevicesTab,
     BackupManagementComponent,
+    PromoPopupComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -2099,6 +2102,7 @@ import { environment } from "../../../../environments/environment";
                           { id: 'popup', name: 'Popup Config', icon: 'picture_in_picture' },
                           { id: 'triggers', name: 'Triggers & Freq', icon: 'bolt' },
                           { id: 'targeting', name: 'Targeting', icon: 'ads_click' },
+                          { id: 'push', name: 'Push Notifications', icon: 'notifications_active' },
                           { id: 'promotion', name: 'Promotions', icon: 'local_offer' }
                         ]; track tab.id) {
                           <button
@@ -2197,21 +2201,26 @@ import { environment } from "../../../../environments/environment";
                             <div class="space-y-1">
                               <span class="block text-[9px] font-black text-zinc-400 uppercase">Campaign Type</span>
                               <select
-                                [value]="ad.type || 'banner'"
+                                [value]="ad.type || 'popup'"
                                 (change)="updateAdField(editingAdIndex()!, 'type', $any($event.target).value)"
                                 class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
                               >
-                                <option value="banner">Banner</option>
-                                <option value="popup">Popup</option>
-                                <option value="flash_sale">Flash Sale</option>
+                                <option value="popup">Promotional Popup (Rich)</option>
+                                <option value="image_only">Image-Only Popup</option>
+                                <option value="banner">Storefront Banner</option>
+                                <option value="flash_sale">Flash Sale Popup</option>
                                 <option value="product">Product Promotion</option>
                                 <option value="category">Category Promotion</option>
                                 <option value="coupon">Coupon Promotion</option>
                                 <option value="announcement">Announcement</option>
                                 <option value="seasonal">Seasonal Campaign</option>
-                                <option value="new_product">New Product</option>
                                 <option value="clearance">Clearance Sale</option>
                               </select>
+                              @if (isImageOnlyMode(ad)) {
+                                <div class="mt-1.5 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-[9px] text-amber-600 dark:text-amber-400 font-medium">
+                                  <strong>Image-Only Active:</strong> Headlines, descriptions, and CTA text are hidden. Only your image and close button will show.
+                                </div>
+                              }
                             </div>
 
                             <div class="space-y-1">
@@ -2840,6 +2849,118 @@ import { environment } from "../../../../environments/environment";
                           </div>
                         </div>
                       }
+
+                      <!-- TAB 8: PUSH NOTIFICATIONS -->
+                      @if (adEditorViewMode() === 'scroll' || adEditorTab() === 'push') {
+                        <div id="ad-sec-push" class="scroll-mt-36 p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-4 transition-all">
+                          <div class="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                            <div>
+                              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                                <mat-icon class="text-orange-500 text-sm">notifications_active</mat-icon>
+                                Firebase Push Notification Channel
+                              </h3>
+                              <p class="text-[11px] text-zinc-500">Dispatch or schedule push notifications to eligible subscribed devices.</p>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                              <span class="text-xs font-black text-zinc-700 dark:text-zinc-300">Enable Push</span>
+                              <input
+                                type="checkbox"
+                                [checked]="ad.enablePushNotification === true"
+                                (change)="updateAdField(editingAdIndex()!, 'enablePushNotification', $any($event.target).checked)"
+                                class="w-4 h-4 rounded text-orange-500 accent-orange-500 cursor-pointer"
+                              />
+                            </label>
+                          </div>
+
+                          @if (ad.enablePushNotification) {
+                            <div class="space-y-3 pt-1">
+                              <div class="space-y-1">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Notification Title</span>
+                                <input
+                                  type="text"
+                                  [value]="ad.pushTitle || ad.headline || ad.title || ''"
+                                  (input)="updateAdField(editingAdIndex()!, 'pushTitle', $any($event.target).value)"
+                                  placeholder="e.g. Exclusive 3D Galaxy Flash Sale"
+                                  class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                                />
+                              </div>
+
+                              <div class="space-y-1">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Notification Body Text</span>
+                                <textarea
+                                  rows="2"
+                                  [value]="ad.pushBody || ad.subheadline || ad.description || ''"
+                                  (input)="updateAdField(editingAdIndex()!, 'pushBody', $any($event.target).value)"
+                                  placeholder="e.g. Save flat 20% on all PLA filaments today! Limited stock available."
+                                  class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white resize-none"
+                                ></textarea>
+                              </div>
+
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Deep Link / Target URL</span>
+                                  <input
+                                    type="text"
+                                    [value]="ad.pushDeepLink || ad.ctaUrl || ad.linkUrl || '/products'"
+                                    (input)="updateAdField(editingAdIndex()!, 'pushDeepLink', $any($event.target).value)"
+                                    placeholder="/products?category=filaments"
+                                    class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                                  />
+                                </div>
+
+                                <div class="space-y-1">
+                                  <span class="block text-[9px] font-black text-zinc-400 uppercase">Push Audience Target</span>
+                                  <select
+                                    [value]="ad.pushAudience || 'all'"
+                                    (change)="updateAdField(editingAdIndex()!, 'pushAudience', $any($event.target).value)"
+                                    class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white font-bold"
+                                  >
+                                    <option value="all">All Subscribed Devices</option>
+                                    <option value="customers">Registered Customers Only</option>
+                                    <option value="guests">Guest Devices Only</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="space-y-1">
+                                <span class="block text-[9px] font-black text-zinc-400 uppercase">Rich Image URL (Optional)</span>
+                                <input
+                                  type="text"
+                                  [value]="ad.pushImage || ad.imageUrl || ad.mediaUrl || ''"
+                                  (input)="updateAdField(editingAdIndex()!, 'pushImage', $any($event.target).value)"
+                                  placeholder="https://example.com/promo-banner.jpg"
+                                  class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none text-zinc-900 dark:text-white"
+                                />
+                              </div>
+
+                              <div class="pt-2 flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  (click)="sendTestPushNotification(ad)"
+                                  [disabled]="testPushLoading()"
+                                  class="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                  <mat-icon class="text-sm">{{ testPushLoading() ? 'rotate_right' : 'send_to_mobile' }}</mat-icon>
+                                  Send Test Push
+                                </button>
+                                <button
+                                  type="button"
+                                  (click)="dispatchPushCampaign(ad)"
+                                  [disabled]="dispatchPushLoading()"
+                                  class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                                >
+                                  <mat-icon class="text-sm">{{ dispatchPushLoading() ? 'rotate_right' : 'campaign' }}</mat-icon>
+                                  Dispatch Push Campaign
+                                </button>
+                              </div>
+                            </div>
+                          } @else {
+                            <p class="text-xs text-zinc-400 py-1">
+                              Push notifications are currently disabled for this campaign. Enable the checkbox above to send web push notifications to customer devices.
+                            </p>
+                          }
+                        </div>
+                      }
                     </div>
 
                     <!-- RIGHT COLUMN: INTERACTIVE LIVE PREVIEW PANEL (5 COLS) -->
@@ -2851,113 +2972,73 @@ import { environment } from "../../../../environments/environment";
                             <h3 class="text-xs font-black uppercase tracking-wider text-zinc-200">Live Campaign Preview</h3>
                           </div>
 
-                          <!-- VIEWPORT TOGGLE -->
-                          <div class="flex items-center bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+                          <!-- VIEWPORT TOGGLE WITH ACTIVE ORANGE BRAND THEME -->
+                          <div class="flex items-center bg-zinc-900 p-1 rounded-xl border border-zinc-800 gap-1">
                             <button
+                              type="button"
                               (click)="previewViewport.set('desktop')"
-                              [class]="previewViewport() === 'desktop' ? 'p-1 bg-orange-500 text-white rounded-lg' : 'p-1 text-zinc-400 hover:text-white'"
-                              title="Desktop View"
+                              [class]="previewViewport() === 'desktop'
+                                ? 'px-3 py-1.5 bg-[#f54f00] text-white rounded-lg font-black text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer'
+                                : 'px-3 py-1.5 text-zinc-400 hover:text-white rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer'"
+                              title="Desktop Preview"
                             >
                               <mat-icon class="text-sm">desktop_windows</mat-icon>
+                              <span class="hidden sm:inline">Desktop</span>
                             </button>
                             <button
+                              type="button"
                               (click)="previewViewport.set('mobile')"
-                              [class]="previewViewport() === 'mobile' ? 'p-1 bg-orange-500 text-white rounded-lg' : 'p-1 text-zinc-400 hover:text-white'"
-                              title="Mobile View"
+                              [class]="previewViewport() === 'mobile'
+                                ? 'px-3 py-1.5 bg-[#f54f00] text-white rounded-lg font-black text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer'
+                                : 'px-3 py-1.5 text-zinc-400 hover:text-white rounded-lg text-xs flex items-center gap-1.5 transition-all cursor-pointer'"
+                              title="Mobile Preview"
                             >
                               <mat-icon class="text-sm">smartphone</mat-icon>
+                              <span class="hidden sm:inline">Mobile</span>
                             </button>
                           </div>
                         </div>
 
-                        <!-- LIVE PREVIEW CANVAS -->
+                        <!-- LIVE PREVIEW CANVAS RENDERING REAL PROMO POPUP COMPONENT -->
                         <div
-                          class="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 overflow-hidden relative"
-                          [class.max-w-xs]="previewViewport() === 'mobile'"
-                          [class.mx-auto]="previewViewport() === 'mobile'"
+                          class="bg-zinc-900/90 rounded-2xl p-3 border border-zinc-800 overflow-hidden relative flex flex-col items-center justify-center min-h-[380px]"
                         >
-                          <div class="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 text-zinc-900 dark:text-white relative group">
-                            @let isImgOnly = isImageOnlyMode(ad);
-                            @let imgPath = (previewViewport() === 'mobile' && ad.mobileImageUrl) ? ad.mobileImageUrl : (ad.imageUrl || ad.mediaUrl);
-
-                            @if (isImgOnly) {
-                              <!-- IMAGE ONLY LIVE PREVIEW -->
-                              <div class="relative w-full overflow-hidden rounded-2xl bg-zinc-950 flex items-center justify-center p-1">
-                                @if (imgPath) {
-                                  <img [src]="imgPath" alt="Preview" class="w-full max-h-[65vh] h-auto object-contain rounded-xl block shadow-xl" />
-                                } @else {
-                                  <div class="w-full h-48 bg-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 text-xs font-mono">
-                                    [ No Visual Asset Uploaded ]
-                                  </div>
-                                }
-                                @if (ad.showCloseButton !== false) {
-                                  <div class="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center text-xs backdrop-blur-md border border-white/20">
-                                    <mat-icon class="text-sm">close</mat-icon>
-                                  </div>
-                                }
+                          @if (previewViewport() === 'mobile') {
+                            <!-- REALISTIC SMARTPHONE FRAME -->
+                            <div class="w-[300px] sm:w-[316px] rounded-[36px] border-[6px] border-zinc-700 bg-zinc-950 shadow-2xl relative overflow-hidden flex flex-col items-center p-2 min-h-[460px]">
+                              <!-- Phone Notch Simulator -->
+                              <div class="w-24 h-4 bg-zinc-800 rounded-b-xl mx-auto mb-2 flex items-center justify-center shrink-0">
+                                <div class="w-2 h-2 rounded-full bg-zinc-900"></div>
                               </div>
-                            } @else {
-                              <!-- FULL PROMOTIONAL LIVE PREVIEW -->
-                              @if (ad.showCloseButton !== false) {
-                                <div class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center text-xs">
-                                  <mat-icon class="text-sm">close</mat-icon>
+                              <app-promo-popup
+                                [isPreviewMode]="true"
+                                [previewCampaign]="ad"
+                                [previewViewport]="'mobile'"
+                              />
+                            </div>
+                          } @else {
+                            <!-- REALISTIC DESKTOP BROWSER FRAME -->
+                            <div class="w-full rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl relative overflow-hidden flex flex-col min-h-[360px]">
+                              <!-- Desktop Title Bar -->
+                              <div class="bg-zinc-850 px-3.5 py-2 border-b border-zinc-800 flex items-center gap-2 shrink-0">
+                                <div class="flex items-center gap-1.5">
+                                  <div class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
+                                  <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                                  <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
                                 </div>
-                              }
-
-                              @if (imgPath) {
-                                <div class="relative w-full h-36 bg-zinc-900 overflow-hidden">
-                                  <img [src]="imgPath" alt="Preview" class="w-full h-full object-cover" />
-                                  @if (ad.discountText) {
-                                    <div class="absolute top-2 left-2 bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
-                                      {{ ad.discountText }}
-                                    </div>
-                                  }
+                                <div class="mx-auto text-[10px] font-mono text-zinc-400 bg-zinc-900 px-3 py-0.5 rounded-full border border-zinc-800">
+                                  3dgalaxy.in/store
                                 </div>
-                              }
-
-                              <!-- PREVIEW CONTENT -->
-                              <div class="p-4 space-y-3">
-                                <div>
-                                  <span class="text-[8px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">
-                                    {{ ad.type || 'BANNER' }}
-                                  </span>
-                                  <h4 class="text-sm font-black mt-1 leading-tight text-zinc-900 dark:text-white">
-                                    {{ ad.headline || ad.title || 'Your Campaign Headline Here' }}
-                                  </h4>
-                                  @if (ad.subheadline) {
-                                    <p class="text-[10px] text-zinc-400 mt-0.5 line-clamp-2">{{ ad.subheadline }}</p>
-                                  }
-                                </div>
-
-                                <!-- PREVIEW TIMER -->
-                                @if (ad.enableCountdown) {
-                                  <div class="p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-800 text-center">
-                                    <span class="text-[8px] font-black uppercase text-zinc-400 block mb-1">Offer Ends In</span>
-                                    <div class="grid grid-cols-4 gap-1 text-[10px] font-mono font-black">
-                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded text-orange-500">02d</div>
-                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">14h</div>
-                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">35m</div>
-                                      <div class="bg-white dark:bg-zinc-900 p-1 rounded">42s</div>
-                                    </div>
-                                  </div>
-                                }
-
-                                <!-- PREVIEW COUPON -->
-                                @if (ad.couponCode) {
-                                  <div class="flex items-center justify-between p-2 bg-orange-500/10 rounded-lg border border-dashed border-orange-500/40 text-[10px]">
-                                    <span class="font-mono font-black uppercase text-orange-500">{{ ad.couponCode }}</span>
-                                    <span class="text-[8px] font-black uppercase bg-orange-500 text-white px-2 py-0.5 rounded">Copy</span>
-                                  </div>
-                                }
-
-                                <!-- PREVIEW CTA BUTTON -->
-                                <button class="w-full py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black text-[10px] uppercase rounded-xl shadow-md flex items-center justify-center gap-1 cursor-pointer">
-                                  <span>{{ ad.ctaText || 'Shop Now' }}</span>
-                                  <mat-icon class="text-xs">arrow_forward</mat-icon>
-                                </button>
                               </div>
-                            }
-                          </div>
+                              <div class="relative w-full flex-1 flex items-center justify-center p-3">
+                                <app-promo-popup
+                                  [isPreviewMode]="true"
+                                  [previewCampaign]="ad"
+                                  [previewViewport]="'desktop'"
+                                />
+                              </div>
+                            </div>
+                          }
                         </div>
                       </div>
                     </div>
@@ -7142,6 +7223,8 @@ export class AdminSettingsTab implements OnDestroy {
   public adEditorTab = signal<string>('basic');
   public adEditorViewMode = signal<'scroll' | 'tab'>('scroll');
   public previewViewport = signal<string>('desktop');
+  public testPushLoading = signal<boolean>(false);
+  public dispatchPushLoading = signal<boolean>(false);
   private adIntersectionObserver: IntersectionObserver | null = null;
 
   ngOnDestroy() {
@@ -7192,7 +7275,7 @@ export class AdminSettingsTab implements OnDestroy {
     }
 
     setTimeout(() => {
-      const sectionIds = ['basic', 'content', 'schedule', 'popup', 'triggers', 'targeting', 'promotion'];
+      const sectionIds = ['basic', 'content', 'schedule', 'popup', 'triggers', 'targeting', 'push', 'promotion'];
       const targets = sectionIds
         .map(id => document.getElementById('ad-sec-' + id))
         .filter((el): el is HTMLElement => !!el);
@@ -7225,11 +7308,14 @@ export class AdminSettingsTab implements OnDestroy {
 
   isImageOnlyMode(ad: any): boolean {
     if (!ad) return false;
+    const type = (ad.type || '').toLowerCase().trim();
+    if (type === 'image_only' || type === 'image_popup') return true;
     if (ad.contentMode === 'IMAGE_ONLY' || ad.contentMode === 'IMAGE_CLOSE' || ad.showImageOnly || ad.hideHeader) return true;
     const hasHeadline = !!(ad.headline && String(ad.headline).trim());
     const hasTitle = !!(ad.title && String(ad.title).trim());
     const hasSubheadline = !!(ad.subheadline && String(ad.subheadline).trim());
-    return !hasHeadline && !hasTitle && !hasSubheadline;
+    const hasCta = !!(ad.ctaText && String(ad.ctaText).trim());
+    return !hasHeadline && !hasTitle && !hasSubheadline && !hasCta;
   }
 
   ensureDraftAdvertisements(): any[] {
@@ -7290,9 +7376,9 @@ export class AdminSettingsTab implements OnDestroy {
       openInNewTab: false,
       imageUrl: "",
       mobileImageUrl: "",
-      type: "banner",
+      type: "popup",
       status: "active",
-      placement: "homepage",
+      placement: "floating_popup",
       priority: 1,
       startDate: "",
       startTime: "09:00",
@@ -7303,7 +7389,7 @@ export class AdminSettingsTab implements OnDestroy {
       countdownType: "campaign_end",
       customEndDate: "",
       customDuration: "",
-      isPopup: false,
+      isPopup: true,
       popupPosition: "center",
       popupSize: "medium",
       overlay: "dark",
@@ -7327,6 +7413,12 @@ export class AdminSettingsTab implements OnDestroy {
       productId: "",
       categoryId: "",
       discountText: "LIMITED TIME",
+      enablePushNotification: false,
+      pushTitle: "",
+      pushBody: "",
+      pushImage: "",
+      pushDeepLink: "/products",
+      pushAudience: "all",
       impressions: 0,
       clicks: 0
     });
@@ -7343,9 +7435,77 @@ export class AdminSettingsTab implements OnDestroy {
       if (field === 'ctaUrl') updated.linkUrl = value;
       if (field === 'imageUrl') updated.mediaUrl = value;
       if (field === 'name') updated.title = updated.title || value;
+      if (field === 'type') {
+        const val = String(value).toLowerCase().trim();
+        if (val === 'popup' || val === 'image_only' || val === 'image_popup' || val === 'flash_sale') {
+          updated.isPopup = true;
+          updated.placement = 'floating_popup';
+        } else if (val === 'banner') {
+          updated.isPopup = false;
+          updated.placement = 'homepage';
+        }
+      }
       list[index] = updated;
       return { ...d, advertisements: list };
     });
+  }
+
+  async sendTestPushNotification(ad: any) {
+    if (!ad) return;
+    this.testPushLoading.set(true);
+    try {
+      const storedToken = typeof localStorage !== 'undefined' ? (localStorage.getItem('fcm_token') || localStorage.getItem('3dgalaxy_fcm_token')) : '';
+      const token = this.admin.ds.settingsService?.advertisements() || storedToken || 'TEST_DEVICE_FCM_TOKEN';
+
+      const res: any = await this.admin.http.post('/api/admin/push/test', {
+        fcmToken: token,
+        title: ad.pushTitle || ad.headline || ad.title || ad.name || 'Special Promotional Offer',
+        body: ad.pushBody || ad.subheadline || ad.description || 'Exclusive discounts on 3D Galaxy products!',
+        image: ad.pushImage || ad.imageUrl || ad.mediaUrl || '',
+        actionUrl: ad.pushDeepLink || ad.ctaUrl || ad.linkUrl || '/products'
+      }).toPromise();
+
+      if (res && res.success) {
+        this.toastService.success('Test Push Notification dispatched successfully!');
+      } else {
+        this.toastService.info(res?.message || 'Push test request completed.');
+      }
+    } catch (err: any) {
+      this.toastService.error(err.error?.message || err.message || 'Failed to dispatch test push notification');
+    } finally {
+      this.testPushLoading.set(false);
+    }
+  }
+
+  async dispatchPushCampaign(ad: any) {
+    if (!ad) return;
+    this.dispatchPushLoading.set(true);
+    try {
+      const payload = {
+        name: `[Campaign] ${ad.name || ad.title || 'Campaign'}`,
+        type: 'promotional',
+        title: ad.pushTitle || ad.headline || ad.title || ad.name || 'Special Offer',
+        body: ad.pushBody || ad.subheadline || ad.description || 'Explore offers on 3D Galaxy store.',
+        image: ad.pushImage || ad.imageUrl || ad.mediaUrl || '',
+        actionUrl: ad.pushDeepLink || ad.ctaUrl || ad.linkUrl || '/products',
+        priority: ad.priority && ad.priority >= 3 ? 'High' : 'Normal',
+        status: 'Draft'
+      };
+
+      const createRes: any = await this.admin.http.post('/api/admin/push/campaign', payload).toPromise();
+      const campaignId = createRes?.data?.id || createRes?.id;
+
+      if (campaignId) {
+        await this.admin.http.post('/api/admin/push/send', { campaignId }).toPromise();
+        this.toastService.success('Push notification campaign compiled and queued for dispatch!');
+      } else {
+        this.toastService.info('Push notification campaign created in database.');
+      }
+    } catch (err: any) {
+      this.toastService.error(err.error?.message || err.message || 'Push campaign dispatch failed');
+    } finally {
+      this.dispatchPushLoading.set(false);
+    }
   }
 
   duplicateCampaign(index: number) {

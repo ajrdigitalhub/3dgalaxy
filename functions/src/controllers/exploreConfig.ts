@@ -184,7 +184,6 @@ const PRODUCT_SELECT = {
   isFeatured: true,
   createdAt: true,
   category: { select: { slug: true, name: true } },
-  reviews: { select: { rating: true } },
   variants: { where: { isActive: true }, select: { id: true } },
   brand: { select: { name: true } },
 } as const;
@@ -194,7 +193,8 @@ const PRODUCT_SELECT = {
  * reviewsMap must already be scoped to the displayed product IDs.
  */
 function formatProduct(p: any, reviewsMap: Map<string, number[]>) {
-  const prodReviews = p.reviews ? p.reviews.map((r: any) => Number(r.rating || 5)) : [];
+  const rawReviews = Array.isArray(p.customerReviews) ? p.customerReviews : (Array.isArray(p.reviews) ? p.reviews : []);
+  const prodReviews = rawReviews.map((r: any) => Number(r.rating || 5));
   const custRevRatings = reviewsMap.get(p.id) || [];
   const allRatings = [...prodReviews, ...custRevRatings];
 

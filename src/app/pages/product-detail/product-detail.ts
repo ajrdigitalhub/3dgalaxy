@@ -1271,12 +1271,30 @@ export class ProductDetail {
     if (!Array.isArray(list)) return [];
     return list
       .map((item: any) => {
-        if (item && typeof item === "object" && item.name) return item;
-        const id = typeof item === "string" ? item : item.id;
-        return this.ds.products().find((x) => x.id === id);
+        const id = typeof item === "string" ? item : (item.id || item.productId);
+        const found = this.ds.products().find((x) => x.id === id);
+        const qty = (typeof item === "object" && item.quantity) ? Math.max(1, parseInt(item.quantity, 10)) : 1;
+        if (found) {
+          return { ...found, quantity: qty };
+        }
+        if (item && typeof item === "object" && item.name) {
+          return { ...item, quantity: qty };
+        }
+        return undefined;
       })
-      .filter((x) => x !== undefined) as Product[];
+      .filter((x) => x !== undefined) as any[];
   });
+
+  formatItemBrand(item: any): string {
+    if (!item) return '';
+    if (typeof item.brand === 'object' && item.brand !== null) {
+      return item.brand.name || item.brand.title || item.brand.label || '';
+    }
+    if (typeof item.brand === 'string') {
+      return item.brand;
+    }
+    return item.sku || '';
+  }
 
   recommendedFilamentsList = computed(() => {
     const p = this.product();
@@ -1939,6 +1957,8 @@ export class ProductDetail {
     const bundleItems = this.bundleProductsList();
     if (bundleItems && bundleItems.length > 0) {
       for (const item of bundleItems) {
+        const itemMultiplier = (item as any).quantity ? Math.max(1, parseInt((item as any).quantity, 10)) : 1;
+        const freeItemQuantity = this.quantity() * itemMultiplier;
         this.ds.cart.update((items) => {
           const isExist = items.some(
             (i) => i.product.id === item.id && i.isFree,
@@ -1946,7 +1966,7 @@ export class ProductDetail {
           if (isExist) {
             return items.map((i) =>
               i.product.id === item.id && i.isFree
-                ? { ...i, quantity: i.quantity + this.quantity() }
+                ? { ...i, quantity: i.quantity + freeItemQuantity }
                 : i,
             );
           }
@@ -1957,7 +1977,7 @@ export class ProductDetail {
             ...items,
             {
               product: item,
-              quantity: this.quantity(),
+              quantity: freeItemQuantity,
               selectedPriceType: priceType,
               isFree: true,
             },

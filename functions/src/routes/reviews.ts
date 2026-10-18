@@ -251,6 +251,16 @@ router.get("/products/:id/reviews", async (req, res) => {
   }
 });
 
+router.get(["/reviews/product/:id", "/reviews/product/:id/stats"], async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const stats = await ReviewAggregationService.aggregateProductRating(productId);
+    return res.status(200).json({ success: true, data: stats, stats });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Check if the authenticated user has purchased a specific product (delivered)
 router.get(
   "/reviews/purchase-check/:productId",

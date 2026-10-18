@@ -221,10 +221,12 @@
                   <a [routerLink]="['/product', item.product?.slug]">{{ item.product?.name }}</a>
                 </h4>
                 <div class="flex items-center gap-2">
+                  @if (item.unitPrice > 0 && !item.isFree) {
                   <button type="button" (click)="reorderItem(item)"
                     class="rounded-full border border-orange-200 bg-orange-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-orange-600 hover:bg-orange-500 hover:text-white transition dark:border-orange-900/50 dark:text-orange-400">
                     Buy again
                   </button>
+                  }
                   @if (canReviewOrder()) {
                   <button type="button" (click)="openProductReview(item)"
                     class="rounded-full border border-neutral-200 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-700 transition hover:border-blue-500 hover:text-blue-500 dark:border-neutral-800 dark:text-neutral-300">
@@ -258,6 +260,13 @@
                   }
                 </div>
               </div>
+              } @else if (item.isFree || item.configurationType === 'free_bundle') {
+              <div class="my-1">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-black uppercase tracking-wider">
+                  <mat-icon class="scale-75 -ml-1 text-emerald-600 dark:text-emerald-400">card_giftcard</mat-icon>
+                  Complimentary Gift Included
+                </span>
+              </div>
               } @else if (item.selectedOptions && item.selectedOptions.length > 0) {
               <div class="flex flex-wrap gap-1.5 my-1">
                 @for (opt of item.selectedOptions; track opt.attribute || $index) {
@@ -287,6 +296,11 @@
 
             <!-- Line calculations -->
             <div class="text-right whitespace-nowrap shrink-0 space-y-0.5">
+              @if (item.unitPrice === 0 || item.isFree) {
+              <span class="inline-block px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-black uppercase tracking-wider border border-emerald-500/20">
+                FREE
+              </span>
+              } @else {
               <p class="text-sm font-extrabold font-mono text-neutral-900 dark:text-white">
                 {{ item.unitPrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
               </p>
@@ -297,6 +311,7 @@
               <p class="text-[9px] font-mono text-neutral-400 line-through">
                 Base: {{ item.basePrice * item.quantity | currency:'INR':'symbol':'1.0-0' }}
               </p>
+              }
               }
             </div>
           </div>

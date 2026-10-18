@@ -1,9 +1,22 @@
-import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit, OnDestroy, PLATFORM_ID, effect, HostListener } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  computed,
+  signal,
+  OnInit,
+  OnDestroy,
+  PLATFORM_ID,
+  effect,
+  HostListener,
+  Input
+} from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { DatastoreService, Advertisement } from '../../../services/datastore';
 import { NotificationService } from '../../../services/notification.service';
+import { CampaignEligibilityService } from '../../../services/campaign-eligibility.service';
 import { ToastService } from '../toast/toast.service';
 
 interface CountdownTime {
@@ -24,17 +37,21 @@ interface CountdownTime {
         @let isImgOnly = isImageOnlyMode(camp);
         <!-- BACKDROP OVERLAY -->
         <div
-          class="fixed inset-0 z-50 transition-opacity duration-300 animate-fadeIn"
+          [class]="isPreviewMode
+            ? 'absolute inset-0 z-30 transition-opacity duration-300 rounded-2xl flex items-center justify-center p-2 overflow-hidden'
+            : 'fixed inset-0 z-50 transition-opacity duration-300 animate-fadeIn'"
           [class.bg-black-30]="camp.overlay === 'light'"
           [class.bg-black-70]="camp.overlay === 'dark'"
           [class.bg-black-50-blur]="camp.overlay === 'blur'"
-          [class.pointer-events-none]="camp.overlay === 'none'"
+          [class.pointer-events-none]="!isPreviewMode && camp.overlay === 'none'"
           (click)="onBackdropClick($event)"
         >
           <!-- POPUP CONTAINER -->
           <div
-            class="fixed z-50 p-2 sm:p-4 transition-all duration-300 pointer-events-auto flex items-center justify-center max-w-[100vw] max-h-[100vh]"
-            [ngClass]="getPositionClasses(camp.popupPosition || 'center')"
+            [class]="isPreviewMode
+              ? 'relative z-30 pointer-events-auto flex items-center justify-center w-full max-h-full'
+              : 'fixed z-50 p-2 sm:p-4 transition-all duration-300 pointer-events-auto flex items-center justify-center max-w-[100vw] max-h-[100vh]'"
+            [ngClass]="isPreviewMode ? '' : getPositionClasses(camp.popupPosition || 'center')"
           >
             <div
               class="relative rounded-2xl sm:rounded-3xl overflow-hidden group flex flex-col transition-all duration-300 mx-auto"
@@ -59,8 +76,8 @@ interface CountdownTime {
                 <button
                   type="button"
                   (click)="closePopup($event)"
-                  class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-xl border border-white/30 hover:scale-110 active:scale-90"
-                  aria-label="Close popup"
+                  class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-xl border border-white/30 hover:scale-110 active:scale-90"
+                  aria-label="Close promotion"
                 >
                   <mat-icon class="text-base sm:text-lg">close</mat-icon>
                 </button>
@@ -84,7 +101,7 @@ interface CountdownTime {
                     }
                     <img
                       [src]="displayImageUrl()"
-                      [alt]="camp.headline || camp.title || 'Promotional Offer'"
+                      [alt]="camp.headline || camp.title || camp.name || 'Promotional Offer'"
                       (load)="onImageLoad($event)"
                       [ngClass]="getImageClasses(isImgOnly)"
                       class="transition-transform duration-500 group-hover:scale-[1.01] block mx-auto"
@@ -101,9 +118,9 @@ interface CountdownTime {
                 </div>
               }
 
-              <!-- CAMPAIGN TEXT CONTENT (Only rendered if NOT in Image-Only mode) -->
+              <!-- CAMPAIGN TEXT CONTENT (Strictly rendered only if NOT in Image-Only mode) -->
               @if (!isImgOnly) {
-                <div class="p-6 space-y-4 text-center sm:text-left bg-white dark:bg-zinc-900">
+                <div class="p-4 sm:p-6 space-y-3 sm:space-y-4 text-center sm:text-left bg-white dark:bg-zinc-900">
                   <div>
                     @if (camp.type) {
                       <span class="inline-block text-[9px] font-black uppercase tracking-widest text-orange-500 bg-orange-500/10 px-2.5 py-0.5 rounded-full mb-1">
@@ -111,7 +128,7 @@ interface CountdownTime {
                       </span>
                     }
                     @if (camp.headline || camp.title) {
-                      <h3 class="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white leading-tight">
+                      <h3 class="text-lg sm:text-2xl font-black text-zinc-900 dark:text-white leading-tight">
                         {{ resolvePlaceholders(camp.headline || camp.title || '') }}
                       </h3>
                     }
@@ -125,25 +142,25 @@ interface CountdownTime {
                   <!-- COUNTDOWN TIMER DISPLAY -->
                   @if (camp.enableCountdown && countdown()) {
                     <div class="py-2 px-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                      <span class="block text-[9px] font-black uppercase tracking-widest text-zinc-400 text-center mb-1.5">
+                      <span class="block text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-400 text-center mb-1">
                         OFFER ENDS IN
                       </span>
-                      <div class="grid grid-cols-4 gap-2 text-center font-mono">
-                        <div class="bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                          <span class="block text-base font-black text-orange-600 dark:text-orange-400 leading-none">{{ countdown()?.days }}</span>
-                          <span class="text-[8px] text-zinc-400 font-bold uppercase">Days</span>
+                      <div class="grid grid-cols-4 gap-1.5 sm:gap-2 text-center font-mono">
+                        <div class="bg-white dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                          <span class="block text-sm sm:text-base font-black text-orange-600 dark:text-orange-400 leading-none">{{ countdown()?.days }}</span>
+                          <span class="text-[7px] sm:text-[8px] text-zinc-400 font-bold uppercase">Days</span>
                         </div>
-                        <div class="bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                          <span class="block text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.hours }}</span>
-                          <span class="text-[8px] text-zinc-400 font-bold uppercase">Hours</span>
+                        <div class="bg-white dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                          <span class="block text-sm sm:text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.hours }}</span>
+                          <span class="text-[7px] sm:text-[8px] text-zinc-400 font-bold uppercase">Hours</span>
                         </div>
-                        <div class="bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                          <span class="block text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.minutes }}</span>
-                          <span class="text-[8px] text-zinc-400 font-bold uppercase">Mins</span>
+                        <div class="bg-white dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                          <span class="block text-sm sm:text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.minutes }}</span>
+                          <span class="text-[7px] sm:text-[8px] text-zinc-400 font-bold uppercase">Mins</span>
                         </div>
-                        <div class="bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                          <span class="block text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.seconds }}</span>
-                          <span class="text-[8px] text-zinc-400 font-bold uppercase">Secs</span>
+                        <div class="bg-white dark:bg-zinc-900 p-1.5 sm:p-2 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                          <span class="block text-sm sm:text-base font-black text-zinc-800 dark:text-zinc-200 leading-none">{{ countdown()?.seconds }}</span>
+                          <span class="text-[7px] sm:text-[8px] text-zinc-400 font-bold uppercase">Secs</span>
                         </div>
                       </div>
                     </div>
@@ -151,8 +168,8 @@ interface CountdownTime {
 
                   <!-- COUPON CODE QUICK COPY BOX -->
                   @if (camp.couponCode) {
-                    <div class="flex items-center justify-between p-2.5 bg-orange-500/10 border border-dashed border-orange-500/40 rounded-xl">
-                      <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between p-2 sm:p-2.5 bg-orange-500/10 border border-dashed border-orange-500/40 rounded-xl">
+                      <div class="flex items-center gap-1.5">
                         <mat-icon class="text-orange-500 text-sm">confirmation_number</mat-icon>
                         <span class="text-xs font-mono font-black uppercase text-orange-600 dark:text-orange-400 tracking-wider">
                           {{ camp.couponCode }}
@@ -160,7 +177,7 @@ interface CountdownTime {
                       </div>
                       <button
                         (click)="copyCoupon(camp.couponCode)"
-                        class="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
+                        class="px-2.5 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
                       >
                         Copy Code
                       </button>
@@ -172,7 +189,7 @@ interface CountdownTime {
                     <div class="pt-1">
                       <button
                         (click)="onCtaClick(camp)"
-                        class="w-full py-3.5 px-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:shadow-orange-500/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                        class="w-full py-2.5 sm:py-3.5 px-4 sm:px-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:shadow-orange-500/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <span>{{ resolvePlaceholders(camp.ctaText || 'Claim Offer Now') }}</span>
                         <mat-icon class="text-sm">arrow_forward</mat-icon>
@@ -200,26 +217,52 @@ interface CountdownTime {
 export class PromoPopupComponent implements OnInit, OnDestroy {
   public ds = inject(DatastoreService);
   public ns = inject(NotificationService);
+  public eligibilityService = inject(CampaignEligibilityService);
   public router = inject(Router);
   public toast = inject(ToastService);
   private platformId = inject(PLATFORM_ID);
 
-  public isVisible = signal<boolean>(false);
-  public activeCampaign = signal<any | null>(null);
+  // PREVIEW INPUTS (When rendered inside Admin Campaign Editor)
+  @Input() isPreviewMode: boolean = false;
+  @Input() previewCampaign: any = null;
+  @Input() previewViewport: 'desktop' | 'mobile' = 'desktop';
+
+  // Internal reactive signals
+  public internalVisible = signal<boolean>(false);
+  public internalActiveCampaign = signal<any | null>(null);
   public countdown = signal<CountdownTime | null>(null);
-  public isMobile = signal<boolean>(false);
-  public windowWidth = signal<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
-  public windowHeight = signal<number>(typeof window !== 'undefined' ? window.innerHeight : 768);
   public imageAspectRatio = signal<number | null>(null);
-  public dismissedCampaignIds = new Set<string>();
 
   private timerId: any = null;
   private scrollListener: any = null;
   private exitListener: any = null;
-  private lastEvaluatedPath = '';
+
+  // Active campaign resolution (Preview vs Live Storefront)
+  public activeCampaign = computed(() => {
+    if (this.isPreviewMode) {
+      return this.previewCampaign;
+    }
+    return this.internalActiveCampaign();
+  });
+
+  // Visibility resolution
+  public isVisible = computed(() => {
+    if (this.isPreviewMode) {
+      return !!this.previewCampaign;
+    }
+    return this.internalVisible();
+  });
+
+  // Device resolution (Preview viewport vs Live Browser screen)
+  public isMobile = computed(() => {
+    if (this.isPreviewMode) {
+      return this.previewViewport === 'mobile';
+    }
+    return this.eligibilityService.isMobile();
+  });
 
   constructor() {
-    // Reset and preload image dimensions whenever active campaign changes
+    // 1. Reactive Preloader for Image Dimensions
     effect(() => {
       const camp = this.activeCampaign();
       this.imageAspectRatio.set(null);
@@ -231,48 +274,43 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
       }
     }, { allowSignalWrites: true });
 
-    // Reactive Effect listening to Campaign data, Auth changes, Notification permission state
+    // 2. Countdown Timer synchronization for both Live and Preview modes
     effect(() => {
-      const ads = this.ds.advertisements();
-      const currentUser = this.ds.currentUser();
-      const currentUrl = this.router.url;
+      const camp = this.activeCampaign();
+      if (camp && camp.enableCountdown) {
+        this.startCountdown(camp);
+      } else {
+        this.clearTimer();
+      }
+    });
 
-      if (!isPlatformBrowser(this.platformId)) return;
-
-      this.devLog(`Effect triggered — Ads count: ${ads.length}, User: ${currentUser?.email || 'Guest'}`);
-      this.evaluateEligibility();
+    // 3. Live Storefront Evaluation Listener
+    effect(() => {
+      if (this.isPreviewMode) return;
+      const eligible = this.eligibilityService.eligibleCampaign();
+      if (eligible && !this.internalVisible()) {
+        this.internalActiveCampaign.set(eligible);
+        this.setupTrigger(eligible);
+      } else if (!eligible && this.internalVisible()) {
+        this.internalVisible.set(false);
+        this.internalActiveCampaign.set(null);
+        this.clearTimer();
+        this.removeListeners();
+      }
     });
   }
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.checkDevice();
-    // Ensure initial advertisements fetch is initiated
-    this.ds.reloadAdvertisements();
+    if (!this.isPreviewMode) {
+      this.ds.reloadAdvertisements();
+      this.eligibilityService.evaluate('init');
+    }
   }
 
   ngOnDestroy() {
     this.clearTimer();
     this.removeListeners();
-  }
-
-  private devLog(...args: any[]) {
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || (window as any).__DEBUG_CAMPAIGNS__)) {
-      console.log('[Campaign]', ...args);
-    }
-  }
-
-  @HostListener('window:resize')
-  public onResize() {
-    this.checkDevice();
-  }
-
-  private checkDevice() {
-    if (typeof window !== 'undefined') {
-      this.windowWidth.set(window.innerWidth);
-      this.windowHeight.set(window.innerHeight);
-      this.isMobile.set(window.innerWidth < 768);
-    }
   }
 
   public onImageLoad(event: Event) {
@@ -302,190 +340,8 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     return camp.imageUrl || camp.mediaUrl || '';
   });
 
-  private getVisitorState() {
-    const currentUser = this.ds.currentUser();
-    const isLoggedIn = !!currentUser;
-    const isGuest = !isLoggedIn;
-
-    let hasReturningMarker = false;
-    if (typeof localStorage !== 'undefined') {
-      hasReturningMarker = localStorage.getItem('3dgalaxy_returning_visitor') === 'true';
-    }
-
-    let isNewAccount = false;
-    if (currentUser && currentUser.metadata && currentUser.metadata.creationTime) {
-      const createdMs = Date.parse(currentUser.metadata.creationTime);
-      const ageMs = Date.now() - createdMs;
-      if (ageMs < 24 * 60 * 60 * 1000) {
-        isNewAccount = true;
-      }
-    }
-
-    const isNewVisitor = !hasReturningMarker && (isGuest || isNewAccount);
-    const isReturningVisitor = hasReturningMarker || (isLoggedIn && !isNewAccount);
-
-    return { isGuest, isLoggedIn, isNewVisitor, isReturningVisitor };
-  }
-
-  private isAudienceMatching(adAudience: string | undefined, visitorState: any): boolean {
-    const audience = (adAudience || 'all').toLowerCase();
-
-    if (audience === 'all' || audience === 'everyone') {
-      return true;
-    }
-    if ((audience === 'guests_only' || audience === 'guest') && visitorState.isGuest) {
-      return true;
-    }
-    if ((audience === 'logged_in' || audience === 'authenticated') && visitorState.isLoggedIn) {
-      return true;
-    }
-    if ((audience === 'new_users_only' || audience === 'new_user') && visitorState.isNewVisitor) {
-      return true;
-    }
-    if ((audience === 'returning_users_only' || audience === 'returning_user') && visitorState.isReturningVisitor) {
-      return true;
-    }
-
-    return false;
-  }
-
-  private isFrequencyAllowed(ad: any): boolean {
-    if (!ad || !ad.id) return false;
-    if (this.dismissedCampaignIds.has(String(ad.id))) return false;
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`3d_ad_dismissed_${ad.id}`)) {
-      return false;
-    }
-    if (typeof localStorage === 'undefined') return true;
-
-    const freq = (ad.frequency || 'always').toLowerCase();
-    const keyPrefix = `3d_ad_${ad.id}`;
-
-    if (freq === 'session' && sessionStorage.getItem(`${keyPrefix}_session_shown`)) {
-      return false;
-    }
-
-    if (freq === 'daily' || freq === 'once_per_day') {
-      const lastShown = localStorage.getItem(`${keyPrefix}_last_shown_date`);
-      if (lastShown && lastShown === new Date().toDateString()) {
-        return false;
-      }
-    }
-
-    if (freq === 'campaign' || freq === 'once_per_campaign') {
-      if (localStorage.getItem(`${keyPrefix}_campaign_shown`)) {
-        return false;
-      }
-    }
-
-    if (ad.maxImpressionsPerUser && ad.maxImpressionsPerUser > 0) {
-      const count = parseInt(localStorage.getItem(`${keyPrefix}_impressions_count`) || '0', 10);
-      if (count >= ad.maxImpressionsPerUser) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  public evaluateEligibility() {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const rawAds = this.ds.advertisements() || [];
-    this.devLog(`API loaded: ${rawAds.length} total advertisements`);
-
-    if (!rawAds.length) return;
-
-    // Check notification prompt state so modal popups don't clash
-    if (this.ns.isPromptVisible) {
-      this.devLog('Notification permission prompt is currently active. Deferring popup evaluation.');
-      setTimeout(() => this.evaluateEligibility(), 2500);
-      return;
-    }
-
-    const now = new Date().getTime();
-    const currentPath = this.router.url;
-    const visitorState = this.getVisitorState();
-
-    this.devLog(`Visitor state: Guest=${visitorState.isGuest}, LoggedIn=${visitorState.isLoggedIn}, NewVisitor=${visitorState.isNewVisitor}, ReturningVisitor=${visitorState.isReturningVisitor}`);
-
-    // Filter campaigns for active, popup-enabled, matching audience & route
-    const eligible = rawAds.filter((ad: any) => {
-      if (!ad || !ad.id) return false;
-      if (this.dismissedCampaignIds.has(String(ad.id))) return false;
-      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`3d_ad_dismissed_${ad.id}`)) return false;
-
-      // Must be marked popup or floating_popup placement
-      const isPopup = ad.isPopup === true || ad.type === 'popup' || ad.placement === 'floating_popup';
-      if (!isPopup) return false;
-
-      // Status check
-      const status = (ad.status || 'active').toLowerCase();
-      if (status === 'draft' || status === 'paused' || status === 'archived') return false;
-
-      // Schedule timeline check
-      if (ad.startDate) {
-        const startMs = Date.parse(`${ad.startDate}T${ad.startTime || '00:00'}:00`);
-        if (!isNaN(startMs) && now < startMs) return false;
-      }
-      if (ad.endDate) {
-        const endMs = Date.parse(`${ad.endDate}T${ad.endTime || '23:59'}:59`);
-        if (!isNaN(endMs) && now > endMs) return false;
-      }
-
-      // Audience targeting check
-      if (!this.isAudienceMatching(ad.audience, visitorState)) {
-        this.devLog(`Campaign "${ad.name || ad.id}" skipped due to audience mismatch (${ad.audience})`);
-        return false;
-      }
-
-      // Page targeting check
-      const pageTarget = ad.pageTargeting || 'all';
-      if (pageTarget === 'homepage' && currentPath !== '/' && currentPath !== '') return false;
-      if (pageTarget === 'product_page' && !currentPath.includes('/products/')) return false;
-      if (pageTarget === 'category_page' && !currentPath.includes('/categories/')) return false;
-      if (pageTarget === 'cart' && !currentPath.includes('/cart')) return false;
-      if (pageTarget === 'checkout' && !currentPath.includes('/checkout')) return false;
-      if (pageTarget === 'specific_url' && ad.targetUrlPath && !currentPath.includes(ad.targetUrlPath)) return false;
-
-      // Device targeting check
-      const dev = ad.deviceTargeting || 'all';
-      if (dev === 'desktop' && this.isMobile()) return false;
-      if (dev === 'mobile' && !this.isMobile()) return false;
-
-      // Frequency capping check
-      if (!this.isFrequencyAllowed(ad)) {
-        this.devLog(`Campaign "${ad.name || ad.id}" skipped due to frequency capping (${ad.frequency})`);
-        return false;
-      }
-
-      return true;
-    });
-
-    this.devLog(`Eligible campaigns count: ${eligible.length}`);
-    if (!eligible.length) {
-      // If currently active campaign is no longer eligible (e.g. user logged in), hide it
-      if (this.isVisible()) {
-        this.closePopup();
-      }
-      return;
-    }
-
-    // Sort by priority (highest priority first)
-    eligible.sort((a, b) => (b.priority || 1) - (a.priority || 1));
-    const targetCampaign = eligible[0];
-
-    // Avoid re-triggering same popup if already displaying
-    if (this.isVisible() && this.activeCampaign()?.id === targetCampaign.id) {
-      return;
-    }
-
-    this.activeCampaign.set(targetCampaign);
-    this.setupTrigger(targetCampaign);
-  }
-
   private setupTrigger(camp: any) {
     const trigger = camp.trigger || 'immediate';
-    this.devLog(`Setting up trigger "${trigger}" for campaign "${camp.name || camp.id}"`);
 
     if (trigger === 'immediate') {
       this.triggerShow(camp);
@@ -520,42 +376,28 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
 
   private triggerShow(camp: any) {
     if (!camp || !camp.id) return;
-    if (this.dismissedCampaignIds.has(String(camp.id))) return;
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`3d_ad_dismissed_${camp.id}`)) return;
+    this.internalVisible.set(true);
 
-    this.isVisible.set(true);
-
-    // Record impression analytics via API
+    // Record impression analytics via API and local frequency tracker
     this.ds.recordAdImpression(camp.id);
-
-    // Record isolated frequency caps for this specific campaign
-    if (typeof localStorage !== 'undefined') {
-      const keyPrefix = `3d_ad_${camp.id}`;
-      sessionStorage.setItem(`${keyPrefix}_session_shown`, 'true');
-      localStorage.setItem(`${keyPrefix}_last_shown_date`, new Date().toDateString());
-      localStorage.setItem(`${keyPrefix}_last_shown_time`, Date.now().toString());
-      localStorage.setItem(`${keyPrefix}_campaign_shown`, 'true');
-
-      const count = parseInt(localStorage.getItem(`${keyPrefix}_impressions_count`) || '0', 10);
-      localStorage.setItem(`${keyPrefix}_impressions_count`, (count + 1).toString());
-
-      // Mark user as returning visitor for subsequent checks
-      localStorage.setItem('3dgalaxy_returning_visitor', 'true');
-    }
+    this.eligibilityService.recordCampaignDisplay(camp);
 
     if (camp.enableCountdown) {
       this.startCountdown(camp);
     }
-
-    this.devLog(`Popup DISPLAYED: ${camp.name || camp.id}`);
   }
 
   private startCountdown(camp: any) {
     this.clearTimer();
+    if (!camp || !camp.enableCountdown) {
+      this.countdown.set(null);
+      return;
+    }
 
     let targetMs = 0;
     if (camp.endDate) {
-      targetMs = Date.parse(`${camp.endDate}T${camp.endTime || '23:59'}:59`);
+      const parsed = this.eligibilityService.parseScheduleTimestamp(camp.endDate, camp.endTime || '23:59', camp.timezone);
+      targetMs = parsed || (Date.now() + 24 * 60 * 60 * 1000);
     } else if (camp.customEndDate) {
       targetMs = Date.parse(camp.customEndDate);
     } else {
@@ -563,7 +405,7 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     }
 
     const updateTimer = () => {
-      const nowMs = new Date().getTime();
+      const nowMs = Date.now();
       const diff = Math.max(0, targetMs - nowMs);
 
       if (diff <= 0) {
@@ -594,6 +436,7 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+    this.countdown.set(null);
   }
 
   private removeListeners() {
@@ -610,15 +453,19 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
       event.preventDefault();
       event.stopPropagation();
     }
-    const camp = this.activeCampaign();
-    if (camp && camp.id) {
-      this.dismissedCampaignIds.add(String(camp.id));
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem(`3d_ad_dismissed_${camp.id}`, 'true');
-      }
+
+    if (this.isPreviewMode) {
+      this.toast.info('Preview: Close button clicked');
+      return;
     }
-    this.isVisible.set(false);
-    this.activeCampaign.set(null);
+
+    const camp = this.activeCampaign();
+    if (camp) {
+      this.eligibilityService.dismissCampaign(camp);
+    }
+
+    this.internalVisible.set(false);
+    this.internalActiveCampaign.set(null);
     this.clearTimer();
     this.removeListeners();
   }
@@ -650,6 +497,12 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
   }
 
   public onCtaClick(camp: any) {
+    if (this.isPreviewMode) {
+      const target = camp.ctaUrl || camp.linkUrl || camp.targetUrl || '/products';
+      this.toast.info(`Preview: CTA action triggered (${target})`);
+      return;
+    }
+
     this.ds.recordAdClick(camp.id);
     this.closePopup();
 
@@ -686,13 +539,27 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     if (!camp) return {};
 
     const isImgOnly = this.isImageOnlyMode(camp);
-    const winW = this.windowWidth();
-    const winH = this.windowHeight();
-    const isMob = winW < 768;
+    const isMob = this.isMobile();
+
+    if (this.isPreviewMode) {
+      if (isImgOnly) {
+        return {
+          'width': '100%',
+          'max-width': isMob ? '280px' : '440px',
+          'max-height': '360px'
+        };
+      }
+      return {
+        'width': '100%',
+        'max-width': isMob ? '280px' : '440px'
+      };
+    }
+
+    const winW = this.eligibilityService.windowWidth();
+    const winH = this.eligibilityService.windowHeight();
 
     if (isImgOnly) {
       const ratio = this.imageAspectRatio();
-      // Maximum allowed width dynamically tailored to device viewport
       let maxAllowedW = isMob ? Math.min(winW - 20, winW * 0.94) : 672;
       const size = camp.popupSize || 'medium';
       if (!isMob) {
@@ -702,11 +569,9 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
         else if (size === 'full_width') maxAllowedW = 890;
       }
 
-      // Maximum allowed height to stay safely in viewport
       const maxAllowedH = Math.min(winH - (isMob ? 40 : 80), winH * 0.84);
 
       if (ratio && ratio > 0) {
-        // Find optimal width strictly respecting the natural aspect ratio
         const widthFromHeight = maxAllowedH * ratio;
         const targetWidth = Math.min(maxAllowedW, widthFromHeight);
         return {
@@ -716,7 +581,6 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
         };
       }
 
-      // Responsive fallback before image load
       return {
         'width': isMob ? '92vw' : 'auto',
         'max-width': isMob ? '94vw' : `${maxAllowedW}px`,
@@ -724,16 +588,19 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
       };
     }
 
-    // For standard popups with text/CTA
     const maxW = isMob ? '92vw' : undefined;
     return maxW ? { 'width': maxW, 'max-width': '94vw' } : {};
   });
 
   public getImageClasses(isImgOnly: boolean): string {
     if (isImgOnly) {
-      return 'w-full h-auto max-h-[84vh] object-contain rounded-2xl sm:rounded-3xl drop-shadow-2xl';
+      return this.isPreviewMode
+        ? 'w-full h-auto max-h-[320px] object-contain rounded-2xl drop-shadow-2xl'
+        : 'w-full h-auto max-h-[84vh] object-contain rounded-2xl sm:rounded-3xl drop-shadow-2xl';
     }
-    return 'w-full h-auto max-h-48 sm:max-h-64 object-cover';
+    return this.isPreviewMode
+      ? 'w-full h-32 sm:h-36 object-cover'
+      : 'w-full h-auto max-h-48 sm:max-h-64 object-cover';
   }
 
   public getPositionClasses(pos: string): string {
@@ -756,14 +623,20 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
 
   public isImageOnlyMode(camp: any): boolean {
     if (!camp) return false;
+    const type = (camp.type || '').toLowerCase().trim();
+    if (type === 'image_only' || type === 'image_popup') return true;
     if (camp.contentMode === 'IMAGE_ONLY' || camp.contentMode === 'IMAGE_CLOSE' || camp.showImageOnly || camp.hideHeader) return true;
     const hasHeadline = !!(camp.headline && String(camp.headline).trim());
     const hasTitle = !!(camp.title && String(camp.title).trim());
     const hasSubheadline = !!(camp.subheadline && String(camp.subheadline).trim());
-    return !hasHeadline && !hasTitle && !hasSubheadline;
+    const hasCta = !!(camp.ctaText && String(camp.ctaText).trim());
+    return !hasHeadline && !hasTitle && !hasSubheadline && !hasCta;
   }
 
   public getSizeClasses(size: string, isImgOnly: boolean = false): string {
+    if (this.isPreviewMode) {
+      return 'w-full max-w-full';
+    }
     if (isImgOnly || size === 'auto') {
       return 'w-[92vw] sm:w-auto max-w-[94vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[88vh]';
     }

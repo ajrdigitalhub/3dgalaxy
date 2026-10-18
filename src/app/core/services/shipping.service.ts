@@ -272,6 +272,27 @@ export class ShippingService {
         quantity: qty,
         lineSubtotal,
       });
+
+      if (item.bundleSubs && Array.isArray(item.bundleSubs) && item.bundleSubs.length > 0) {
+        for (const sub of item.bundleSubs) {
+          const subProd = sub.product || sub;
+          if (subProd) {
+            const subQty = Math.max(1, Number(sub.quantity) || 1);
+            const subUnitWeight = getItemWeightGrams(sub);
+            const subTotalWeight = subUnitWeight * subQty;
+            totalCartWeightGrams += subTotalWeight;
+            resolvedItems.push({
+              item: sub,
+              product: subProd,
+              variant: sub.variant || null,
+              unitWeightGrams: subUnitWeight,
+              totalWeightGrams: subTotalWeight,
+              quantity: subQty,
+              lineSubtotal: 0,
+            });
+          }
+        }
+      }
     }
 
     const isGlobalThresholdMet =

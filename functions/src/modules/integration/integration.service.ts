@@ -11,6 +11,7 @@ import backupEngine from '../../services/backupEngine.service';
 import backupScheduler from '../../services/backupScheduler.service';
 import { getSettingsService, updateSettingsService } from '../settings/settings.service';
 import { clearCache } from '../../middleware/cache';
+import { sysCache } from '../../config/cache';
 import {
   IntegrationHealthResponse,
   NormalizedInventoryItem,
@@ -32,6 +33,11 @@ export class IntegrationService {
   // 1. HEALTH (Requirement 14)
   // ---------------------------------------------------------------------------
   public async getHealth(): Promise<IntegrationHealthResponse> {
+    const cached = sysCache.get('integration_health');
+    if (cached) {
+      return { ...cached, timestamp: new Date().toISOString() };
+    }
+
     const timestamp = new Date().toISOString();
     let dbStatus: 'HEALTHY' | 'UNHEALTHY' = 'HEALTHY';
     let firebaseStatus: 'CONNECTED' | 'DISCONNECTED' = 'DISCONNECTED';
@@ -90,7 +96,7 @@ export class IntegrationService {
       storageStatus === 'CONNECTED' &&
       backupStatus !== 'DEGRADED';
 
-    return {
+    const healthResult: IntegrationHealthResponse = {
       success: isSystemHealthy,
       application: '3D Galaxy',
       environment: process.env.NODE_ENV || 'production',
@@ -104,6 +110,8 @@ export class IntegrationService {
         backup: backupStatus,
       },
     };
+    sysCache.set('integration_health', healthResult, 15);
+    return healthResult;
   }
 
   // ---------------------------------------------------------------------------

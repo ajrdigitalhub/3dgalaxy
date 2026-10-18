@@ -214,43 +214,43 @@ export const getSalesAnalytics = async (req: Request, res: Response) => {
       };
     }
 
-    // Fetch current period orders & items
-    const currentOrders = await prisma.order.findMany({
-      where: {
-        ...baseOrderWhere,
-        createdAt: { gte: from, lte: to }
-      },
-      include: {
-        items: {
-          where: orderItemWhere,
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                categoryId: true,
-                category: { select: { id: true, name: true } },
-                productCategories: { select: { categoryId: true, isPrimary: true, category: { select: { id: true, name: true } } } }
+    // Fetch current and previous period orders & items concurrently
+    const [currentOrders, previousOrders] = await Promise.all([
+      prisma.order.findMany({
+        where: {
+          ...baseOrderWhere,
+          createdAt: { gte: from, lte: to }
+        },
+        include: {
+          items: {
+            where: orderItemWhere,
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  categoryId: true,
+                  category: { select: { id: true, name: true } },
+                  productCategories: { select: { categoryId: true, isPrimary: true, category: { select: { id: true, name: true } } } }
+                }
               }
             }
           }
+        },
+        orderBy: { createdAt: 'asc' }
+      }),
+      prisma.order.findMany({
+        where: {
+          ...baseOrderWhere,
+          createdAt: { gte: prevFrom, lte: prevTo }
+        },
+        include: {
+          items: {
+            where: orderItemWhere
+          }
         }
-      },
-      orderBy: { createdAt: 'asc' }
-    });
-
-    // Fetch previous period orders & items
-    const previousOrders = await prisma.order.findMany({
-      where: {
-        ...baseOrderWhere,
-        createdAt: { gte: prevFrom, lte: prevTo }
-      },
-      include: {
-        items: {
-          where: orderItemWhere
-        }
-      }
-    });
+      })
+    ]);
 
     // Calculate Summary Metrics
     const currentRevenue = currentOrders.reduce((acc, o) => {
@@ -546,8 +546,8 @@ export const getSalesAnalytics = async (req: Request, res: Response) => {
       lastUpdated: new Date().toISOString()
     };
 
-    // Store in cache for 30s
-    sysCache.set(cacheKey, responsePayload, 30);
+    // Store in cache for 120s
+    sysCache.set(cacheKey, responsePayload, 120);
 
     return res.status(200).json({
       success: true,

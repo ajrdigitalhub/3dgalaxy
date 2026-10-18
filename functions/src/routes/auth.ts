@@ -12,5 +12,8 @@ router.post('/refresh', refreshToken);
 router.post('/refresh-token', refreshToken);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.get('/me', authenticateToken, (req: any, res: any) => {
+  return res.status(200).json({ success: true, user: req.user });
+});
 
 export default router;

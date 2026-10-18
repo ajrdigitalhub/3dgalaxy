@@ -28,6 +28,7 @@ import { CategoryMultiSelectComponent } from "../../../shared/components/categor
 import { VariantTourGuideComponent } from "../../../shared/components/variant-tour-guide/variant-tour-guide.component";
 import { VariantTourService } from "../../../core/services/variant-tour.service";
 import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
+import { ProductSearchSelectorComponent } from "../../../shared/components/product-search-selector/product-search-selector.component";
 
 @Component({
   selector: "app-admin-catalog-tab",
@@ -44,10 +45,11 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
     AdminVariantTemplatesComponent,
     CategoryMultiSelectComponent,
     VariantTourGuideComponent,
+    ProductSearchSelectorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="space-y-8 animate-fadeIn animate-duration-300">
+    <div class="space-y-8">
       <!-- ========================= TAB: PRODUCTS CATALOG ========================= -->
       @if (admin.activeTab() === "bulk-import") {
         <app-admin-product-import></app-admin-product-import>
@@ -241,8 +243,8 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                         </div>
                       </div>
                       <select
-                        [value]="admin.pBrand()"
-                        (change)="admin.pBrand.set($any($event.target).value)"
+                        [ngModel]="admin.pBrand()"
+                        (ngModelChange)="admin.onBrandChange($event)"
                         class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl text-xs outline-none font-bold text-zinc-900 dark:text-white"
                       >
                         <option value="">Select Brand...</option>
@@ -392,128 +394,205 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
                     </div>
 
                     <!-- Bundle Products Selector -->
-                    <div class="space-y-2">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Included Bundle Products (Complimentary / FREE
-                        Included)</span
+                    <div class="space-y-3">
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <span
+                            class="block text-[11px] font-black text-zinc-700 dark:text-zinc-300 uppercase tracking-wider pl-1"
+                            >Included Bundle Products (Complimentary / Free Gifts)</span
+                          >
+                          <span class="text-[11px] text-zinc-400 pl-1">
+                            Items bundled automatically with this product at zero extra cost to the buyer.
+                          </span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-xs">
+                          <mat-icon class="scale-50 text-[10px]">card_giftcard</mat-icon>
+                          100% Free to Customer • Zero Added Cost
+                        </span>
+                      </div>
+
+                      <!-- Search & Choose Trigger Bar -->
+                      <div
+                        (click)="openBundleModal()"
+                        class="group relative flex items-center justify-between gap-3 p-3 sm:p-3.5 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-emerald-50/50 dark:from-blue-950/20 dark:via-indigo-950/10 dark:to-emerald-950/20 border-2 border-dashed border-blue-200 dark:border-blue-800/60 hover:border-blue-500 dark:hover:border-blue-400 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-md"
                       >
-                      <div class="flex gap-2">
-                        <select
-                          #bundleSelect
-                          class="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
-                        >
-                          <option value="">
-                            Select a complimentary product to include for
-                            FREE...
-                          </option>
-                          @for (p of admin.ds.products(); track p.id) {
-                            @if (
-                              p.id !== admin.editingProduct()?.id &&
-                              !isProductInBundle(p.id)
-                            ) {
-                              <option [value]="p.id">
-                                {{ p.name }} ({{ p.sku }})
-                              </option>
-                            }
-                          }
-                        </select>
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="w-10 h-10 rounded-xl bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                            <mat-icon class="text-lg">search</mat-icon>
+                          </div>
+                          <div class="min-w-0">
+                            <div class="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                              <span>Search & Choose Complimentary Product</span>
+                              <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded">Pop-up</span>
+                            </div>
+                            <div class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                              Click here to search catalog products and specify free gift quantities (e.g. 2x spools, nozzles)
+                            </div>
+                          </div>
+                        </div>
+
                         <button
                           type="button"
-                          (click)="
-                            addBundleProduct(bundleSelect.value);
-                            bundleSelect.value = ''
-                          "
-                          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold uppercase rounded-xl border-none cursor-pointer"
+                          (click)="openBundleModal(); $event.stopPropagation()"
+                          class="shrink-0 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer border-none"
                         >
-                          Add to Bundle
+                          <mat-icon class="text-sm scale-90">add</mat-icon>
+                          <span>Select Product & Qty</span>
                         </button>
                       </div>
 
+                      <!-- Currently Included Items List / Cards -->
                       @if (admin.pBundleProducts().length > 0) {
-                        <div class="flex flex-wrap gap-2 mt-2">
-                          @for (
-                            bItem of admin.pBundleProducts();
-                            track bItem.id || bItem
-                          ) {
-                            <span
-                              class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-55/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-bold border border-blue-150 dark:border-blue-900/40"
-                            >
-                              {{ getBundleItemName(bItem) }}
-                              <button
-                                type="button"
-                                (click)="removeBundleProduct(bItem.id || bItem)"
-                                class="text-red-400 hover:text-red-650 bg-transparent border-none p-0 cursor-pointer flex items-center justify-center"
+                        <div class="space-y-2 mt-1">
+                          <div class="flex items-center justify-between text-[11px] font-bold text-zinc-500 px-1">
+                            <span>Currently Included ({{ admin.pBundleProducts().length }} {{ admin.pBundleProducts().length === 1 ? 'item' : 'items' }})</span>
+                            <span class="text-[10px] text-zinc-400">Adjust quantity per order or remove</span>
+                          </div>
+
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            @for (bItem of admin.pBundleProducts(); track bItem.id || bItem) {
+                              <div
+                                class="flex items-center justify-between gap-3 p-3 bg-white dark:bg-zinc-900/80 border border-zinc-200/90 dark:border-zinc-800 rounded-xl shadow-xs hover:border-blue-300 dark:hover:border-blue-700/60 transition-all"
                               >
-                                <mat-icon
-                                  class="scale-75 text-xs w-4 h-4 flex items-center justify-center"
-                                  >close</mat-icon
-                                >
-                              </button>
-                            </span>
-                          }
+                                <!-- Thumbnail & Product Details -->
+                                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                  @if (getBundleItemImage(bItem); as imgUrl) {
+                                    <img [src]="imgUrl" [alt]="getBundleItemName(bItem)" class="w-11 h-11 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950" />
+                                  } @else {
+                                    <div class="w-11 h-11 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                                      <mat-icon class="scale-75 text-blue-600 dark:text-blue-400">card_giftcard</mat-icon>
+                                    </div>
+                                  }
+                                  <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate" [title]="getBundleItemName(bItem)">
+                                      {{ getBundleItemName(bItem) }}
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-1.5 text-[10px] mt-0.5">
+                                      <span class="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">FREE</span>
+                                      @if (getBundleItemSku(bItem); as sku) {
+                                        <span class="font-mono text-zinc-400">{{ sku }}</span>
+                                      }
+                                      @if (getBundleItemPrice(bItem); as price) {
+                                        <span class="text-zinc-400 line-through">₹{{ price }}</span>
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Quantity Stepper & Remove Action -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                  <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 rounded-lg p-0.5">
+                                    <button
+                                      type="button"
+                                      (click)="updateBundleItemQuantity(bItem, -1)"
+                                      [disabled]="getBundleItemQuantity(bItem) <= 1"
+                                      class="w-6 h-6 flex items-center justify-center rounded text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+                                      title="Decrease quantity"
+                                    >
+                                      <mat-icon class="text-xs scale-75">remove</mat-icon>
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="99"
+                                      [value]="getBundleItemQuantity(bItem)"
+                                      (change)="onBundleItemQuantityInputChange(bItem, $event)"
+                                      (keyup.enter)="$any($event.target).blur()"
+                                      class="w-7 text-center font-bold text-xs text-zinc-900 dark:text-zinc-100 bg-transparent border-none focus:outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                      title="Complimentary quantity"
+                                    />
+                                    <span class="text-[10px] font-bold text-zinc-400 select-none mr-1">×</span>
+                                    <button
+                                      type="button"
+                                      (click)="updateBundleItemQuantity(bItem, 1)"
+                                      [disabled]="getBundleItemQuantity(bItem) >= 99"
+                                      class="w-6 h-6 flex items-center justify-center rounded text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+                                      title="Increase quantity"
+                                    >
+                                      <mat-icon class="text-xs scale-75">add</mat-icon>
+                                    </button>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    (click)="removeBundleProduct(bItem)"
+                                    class="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center"
+                                    title="Remove complimentary product"
+                                  >
+                                    <mat-icon class="scale-75 text-xs">close</mat-icon>
+                                  </button>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="p-3.5 bg-zinc-50 dark:bg-zinc-900/40 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl text-center">
+                          <p class="text-xs text-zinc-500 m-0">No complimentary products added to this bundle yet.</p>
                         </div>
                       }
                     </div>
 
                     <!-- Recommended Filaments Selector -->
-                    <div class="space-y-2">
-                      <span
-                        class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
-                        >Recommended Filaments catalog items</span
-                      >
-                      <div class="flex gap-2">
-                        <select
-                          #filamentSelect
-                          class="flex-1 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none text-zinc-900 dark:text-white"
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span
+                          class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1"
+                          >Recommended Filaments Catalog Items</span
                         >
-                          <option value="">
-                            Select suggested filament for compatible printer...
-                          </option>
-                          @for (p of admin.ds.products(); track p.id) {
-                            @if (
-                              p.id !== admin.editingProduct()?.id &&
-                              !admin.pRecommendedFilaments().includes(p.id)
-                            ) {
-                              <option [value]="p.id">
-                                {{ p.name }} ({{ p.sku }})
-                              </option>
-                            }
-                          }
-                        </select>
-                        <button
-                          type="button"
-                          (click)="
-                            addRecommendedFilament(filamentSelect.value);
-                            filamentSelect.value = ''
-                          "
-                          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold uppercase rounded-xl border-none cursor-pointer"
-                        >
-                          Add Filament
-                        </button>
+                        <span class="text-[10px] font-medium text-zinc-400">
+                          Filament recommendations suggested for this printer
+                        </span>
                       </div>
 
+                      <app-product-search-selector
+                        placeholder="Search compatible filaments by name or SKU..."
+                        buttonText="Add Filament"
+                        [isFilamentOnly]="true"
+                        [currentProductId]="admin.editingProduct()?.id"
+                        [excludedProductIds]="admin.pRecommendedFilaments()"
+                        (productAdded)="addRecommendedFilament($event)"
+                      />
+
                       @if (admin.pRecommendedFilaments().length > 0) {
-                        <div class="flex flex-wrap gap-2 mt-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                           @for (
                             fId of admin.pRecommendedFilaments();
                             track fId
                           ) {
-                            <span
-                              class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-55/60 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-150 dark:border-emerald-900/40"
+                            <div
+                              class="flex items-center justify-between gap-3 p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 rounded-xl"
                             >
-                              {{ getBundleItemName(fId) }}
+                              <div class="flex items-center gap-2.5 min-w-0">
+                                @if (getBundleItemImage(fId); as imgUrl) {
+                                  <img [src]="imgUrl" [alt]="getBundleItemName(fId)" class="w-9 h-9 rounded-lg object-cover border border-emerald-200 dark:border-emerald-800 shrink-0 bg-white dark:bg-zinc-950" />
+                                } @else {
+                                  <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0">
+                                    <mat-icon class="scale-50 text-emerald-600 dark:text-emerald-400">texture</mat-icon>
+                                  </div>
+                                }
+                                <div class="min-w-0">
+                                  <div class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                                    {{ getBundleItemName(fId) }}
+                                  </div>
+                                  <div class="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                                    <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Recommended</span>
+                                    @if (getBundleItemSku(fId); as sku) {
+                                      <span>•</span>
+                                      <span class="font-mono text-zinc-400">{{ sku }}</span>
+                                    }
+                                  </div>
+                                </div>
+                              </div>
                               <button
                                 type="button"
                                 (click)="removeRecommendedFilament(fId)"
-                                class="text-red-400 hover:text-red-650 bg-transparent border-none p-0 cursor-pointer flex items-center justify-center"
+                                class="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors bg-transparent border-none cursor-pointer flex items-center justify-center"
+                                title="Remove recommended filament"
                               >
-                                <mat-icon
-                                  class="scale-75 text-xs w-4 h-4 flex items-center justify-center"
-                                  >close</mat-icon
-                                >
+                                <mat-icon class="scale-75 text-xs">close</mat-icon>
                               </button>
-                            </span>
+                            </div>
                           }
                         </div>
                       }
@@ -4288,6 +4367,265 @@ import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
       }
       <app-variant-tour-guide></app-variant-tour-guide>
     </div>
+
+    <!-- ==================== POPUP MODAL: SEARCH & CHOOSE INCLUDED BUNDLE PRODUCT ==================== -->
+    @if (showBundleModal()) {
+      <div
+        class="fixed inset-0 z-[9999] w-screen h-screen bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+        style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; z-index: 9999; margin: 0; display: flex; align-items: center; justify-content: center;"
+        (click)="closeBundleModal()"
+        (keydown.escape)="closeBundleModal()"
+      >
+        <div
+          class="relative w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto mx-auto"
+          style="margin: auto;"
+          (click)="$event.stopPropagation()"
+        >
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <mat-icon class="text-xl">card_giftcard</mat-icon>
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 m-0">
+                  Choose Complimentary Bundle Product
+                </h3>
+                <p class="text-xs text-zinc-500 m-0">
+                  Search catalog, pick an item, and choose how many units to include for free.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="closeBundleModal()"
+              class="w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors border-none bg-transparent cursor-pointer"
+              title="Close dialog"
+            >
+              <mat-icon class="text-base">close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Modal Search & Category Filter Section (Sticky) -->
+          <div class="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-3 shrink-0">
+            <!-- Search Bar -->
+            <div class="relative flex items-center">
+              <mat-icon class="absolute left-3.5 text-zinc-400 text-base scale-95 pointer-events-none">search</mat-icon>
+              <input
+                #bundleSearchInput
+                type="text"
+                [ngModel]="bundleSearchQuery()"
+                (ngModelChange)="bundleSearchQuery.set($event)"
+                placeholder="Search products by name, SKU, or brand..."
+                class="w-full pl-10 pr-10 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
+              @if (bundleSearchQuery()) {
+                <button
+                  type="button"
+                  (click)="bundleSearchQuery.set('')"
+                  class="absolute right-3 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 bg-transparent border-none cursor-pointer flex items-center justify-center"
+                  title="Clear search"
+                >
+                  <mat-icon class="text-xs scale-90">close</mat-icon>
+                </button>
+              }
+            </div>
+
+            <!-- Category Filter Chips -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+              <button
+                type="button"
+                (click)="bundleCategoryFilter.set('all')"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border"
+                [ngClass]="bundleCategoryFilter() === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700'"
+              >
+                All Categories
+              </button>
+              @for (cat of getAvailableBundleCategories(); track cat.id) {
+                <button
+                  type="button"
+                  (click)="bundleCategoryFilter.set(cat.id)"
+                  class="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border"
+                  [ngClass]="bundleCategoryFilter() === cat.id
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700'"
+                >
+                  {{ cat.name }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Product Candidate List (Scrollable Area) -->
+          <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2 min-h-[180px] max-h-[300px]">
+            @for (prod of getFilteredBundleProducts(); track prod.id) {
+              <div
+                (click)="selectBundleCandidate(prod)"
+                class="group flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer"
+                [ngClass]="bundleSelectedProduct()?.id === prod.id
+                  ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20'
+                  : 'bg-white dark:bg-zinc-950/60 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'"
+              >
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                  @if (getBundleItemImage(prod); as imgUrl) {
+                    <img [src]="imgUrl" [alt]="prod.name" class="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-950" />
+                  } @else {
+                    <div class="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                      <mat-icon class="scale-75 text-zinc-400">inventory_2</mat-icon>
+                    </div>
+                  }
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {{ prod.name }}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-[10px] sm:text-xs text-zinc-500 mt-0.5">
+                      @if (prod.brand) {
+                        <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ prod.brand }}</span>
+                        <span>•</span>
+                      }
+                      @if (prod.sku) {
+                        <span class="font-mono text-zinc-400">{{ prod.sku }}</span>
+                        <span>•</span>
+                      }
+                      <span [ngClass]="(prod.stock || 0) > 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-red-500 font-semibold'">
+                        {{ (prod.stock || 0) > 0 ? 'In Stock (' + prod.stock + ')' : 'Out of Stock' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2.5 shrink-0">
+                  <div class="text-right">
+                    <div class="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                      ₹{{ getBundleItemPrice(prod) || 0 }}
+                    </div>
+                    @if (isProductInBundle(prod.id)) {
+                      <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded-full">
+                        Already in bundle
+                      </span>
+                    }
+                  </div>
+
+                  <div
+                    class="w-6 h-6 rounded-full flex items-center justify-center border transition-all"
+                    [ngClass]="bundleSelectedProduct()?.id === prod.id
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'border-zinc-300 dark:border-zinc-700 text-transparent'"
+                  >
+                    <mat-icon class="text-xs scale-75">check</mat-icon>
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="py-10 text-center">
+                <mat-icon class="text-3xl text-zinc-300 dark:text-zinc-600 mb-2">search_off</mat-icon>
+                <p class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 m-0">No matching products found.</p>
+                <p class="text-[11px] text-zinc-400 m-0 mt-1">Try typing a different name, SKU, or clear category filters.</p>
+              </div>
+            }
+          </div>
+
+          <!-- Quantity & Selection Configuration Footer Section -->
+          <div class="p-4 sm:p-5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/90 space-y-3 shrink-0">
+            @if (bundleSelectedProduct(); as sel) {
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 bg-white dark:bg-zinc-950 border border-blue-200 dark:border-blue-900/60 rounded-xl shadow-xs">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  @if (getBundleItemImage(sel); as imgUrl) {
+                    <img [src]="imgUrl" [alt]="sel.name" class="w-9 h-9 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0" />
+                  }
+                  <div class="min-w-0">
+                    <div class="text-[11px] font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                      {{ sel.name }}
+                    </div>
+                    <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                      Complimentary (₹0 to customer)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quantity Controls & Preset Chips -->
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <span class="text-xs font-bold text-zinc-700 dark:text-zinc-300 shrink-0">Quantity:</span>
+
+                  <!-- Stepper -->
+                  <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      (click)="decrementBundleQuantity()"
+                      [disabled]="bundleSelectedQuantity() <= 1"
+                      class="w-7 h-7 flex items-center justify-center rounded text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+                    >
+                      <mat-icon class="text-xs scale-75">remove</mat-icon>
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max="99"
+                      [ngModel]="bundleSelectedQuantity()"
+                      (ngModelChange)="setBundleQuantity($event)"
+                      class="w-10 text-center font-bold text-xs text-zinc-900 dark:text-zinc-100 bg-transparent border-none focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      (click)="incrementBundleQuantity()"
+                      [disabled]="bundleSelectedQuantity() >= 99"
+                      class="w-7 h-7 flex items-center justify-center rounded text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
+                    >
+                      <mat-icon class="text-xs scale-75">add</mat-icon>
+                    </button>
+                  </div>
+
+                  <!-- Quick Preset Buttons -->
+                  <div class="hidden sm:flex items-center gap-1">
+                    @for (q of [1, 2, 3, 5]; track q) {
+                      <button
+                        type="button"
+                        (click)="bundleSelectedQuantity.set(q)"
+                        class="px-2 py-1 text-[10px] font-bold rounded-md border transition-all cursor-pointer"
+                        [ngClass]="bundleSelectedQuantity() === q
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700'"
+                      >
+                        {{ q }}x
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <div class="p-2.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/50 dark:border-blue-900/30 rounded-xl flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
+                <mat-icon class="text-sm scale-90">info</mat-icon>
+                <span>Select a product from the list above to set its complimentary quantity.</span>
+              </div>
+            }
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-end gap-2.5 pt-1">
+              <button
+                type="button"
+                (click)="closeBundleModal()"
+                class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-colors cursor-pointer border-none"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                (click)="confirmAddBundleProduct()"
+                [disabled]="!bundleSelectedProduct()"
+                class="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed border-none flex items-center gap-1.5"
+              >
+                <mat-icon class="text-sm scale-90">check</mat-icon>
+                <span>
+                  {{ isProductInBundle(bundleSelectedProduct()?.id) ? 'Update in Bundle' : 'Add to Bundle (' + bundleSelectedQuantity() + '×)' }}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class AdminCatalogTab {
@@ -4296,6 +4634,13 @@ export class AdminCatalogTab {
   api = inject(ApiService);
   tourService = inject(VariantTourService);
   @Input({ required: true }) admin!: AdminPanel;
+
+  // --- INCLUDED BUNDLE PRODUCTS POPUP MODAL SIGNALS ---
+  showBundleModal = signal<boolean>(false);
+  bundleSearchQuery = signal<string>('');
+  bundleCategoryFilter = signal<string>('all');
+  bundleSelectedProduct = signal<any | null>(null);
+  bundleSelectedQuantity = signal<number>(1);
 
   // --- CENTRALIZED PRODUCT MEDIA LIBRARY SIGNALS ---
   mediaSearchQuery = signal<string>('');
@@ -5581,46 +5926,264 @@ export class AdminCatalogTab {
     });
   }
 
-  isProductInBundle(id: string): boolean {
+  isProductInBundle(idOrItem: any): boolean {
+    if (!idOrItem) return false;
+    const id = typeof idOrItem === "string" ? idOrItem : (idOrItem?.id || idOrItem?.productId);
+    if (!id) return false;
+    const targetIdStr = String(id).toLowerCase().trim();
     const list = this.admin.pBundleProducts();
     return list.some((item: any) => {
-      const bId = typeof item === "string" ? item : item.id;
-      return bId === id;
+      const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+      return String(bId || '').toLowerCase().trim() === targetIdStr;
     });
   }
 
-  addBundleProduct(id: string) {
+  openBundleModal() {
+    this.bundleSearchQuery.set('');
+    this.bundleCategoryFilter.set('all');
+    this.bundleSelectedProduct.set(null);
+    this.bundleSelectedQuantity.set(1);
+    this.showBundleModal.set(true);
+  }
+
+  closeBundleModal() {
+    this.showBundleModal.set(false);
+    this.bundleSelectedProduct.set(null);
+  }
+
+  selectBundleCandidate(prod: any) {
+    this.bundleSelectedProduct.set(prod);
+    const id = typeof prod === "string" ? prod : (prod?.id || prod?.productId);
+    const targetIdStr = String(id || '').toLowerCase().trim();
+    const existing = this.admin.pBundleProducts().find((item: any) => {
+      const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+      return String(bId || '').toLowerCase().trim() === targetIdStr;
+    });
+    if (existing) {
+      this.bundleSelectedQuantity.set(this.getBundleItemQuantity(existing));
+    } else {
+      this.bundleSelectedQuantity.set(1);
+    }
+  }
+
+  setBundleQuantity(val: any) {
+    const num = parseInt(val, 10);
+    this.bundleSelectedQuantity.set(isNaN(num) || num < 1 ? 1 : Math.min(99, num));
+  }
+
+  incrementBundleQuantity() {
+    this.bundleSelectedQuantity.update((q) => Math.min(99, q + 1));
+  }
+
+  decrementBundleQuantity() {
+    this.bundleSelectedQuantity.update((q) => Math.max(1, q - 1));
+  }
+
+  confirmAddBundleProduct() {
+    const prod = this.bundleSelectedProduct();
+    if (!prod) return;
+    const qty = this.bundleSelectedQuantity();
+    this.addBundleProduct(prod, qty);
+    this.toastService.success(`Added ${qty}× ${prod.name} as complimentary item.`);
+    this.closeBundleModal();
+  }
+
+  addBundleProduct(prodOrId: any, quantity: number = 1) {
+    if (!prodOrId) return;
+    const id = typeof prodOrId === "string" ? prodOrId : (prodOrId?.id || prodOrId?.productId);
     if (!id) return;
+    const targetIdStr = String(id).toLowerCase().trim();
+    const qty = Math.max(1, parseInt(quantity as any, 10) || 1);
     const list = [...this.admin.pBundleProducts()];
-    list.push({ id });
+    const existingIndex = list.findIndex((item: any) => {
+      const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+      return String(bId || '').toLowerCase().trim() === targetIdStr;
+    });
+
+    if (existingIndex >= 0) {
+      const existing = list[existingIndex];
+      if (typeof existing === "object" && existing !== null) {
+        list[existingIndex] = { ...existing, quantity: qty };
+      } else {
+        list[existingIndex] = { id, quantity: qty };
+      }
+    } else {
+      if (typeof prodOrId === "object") {
+        const img = Array.isArray(prodOrId.images) && prodOrId.images[0]
+          ? (typeof prodOrId.images[0] === "string" ? prodOrId.images[0] : prodOrId.images[0].url)
+          : (prodOrId.image || prodOrId.thumbnail || undefined);
+        list.push({
+          id,
+          name: prodOrId.name,
+          sku: prodOrId.sku,
+          image: img,
+          price: prodOrId.salePrice !== undefined ? prodOrId.salePrice : (prodOrId.basePrice !== undefined ? prodOrId.basePrice : prodOrId.price),
+          quantity: qty
+        });
+      } else {
+        list.push({ id, quantity: qty });
+      }
+    }
     this.admin.pBundleProducts.set(list);
   }
 
-  removeBundleProduct(id: string) {
-    const list = this.admin.pBundleProducts().filter((item: any) => {
-      const bId = typeof item === "string" ? item : item.id;
-      return bId !== id;
+  onBundleItemQuantityInputChange(idOrItem: any, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = parseInt(input.value, 10);
+    this.updateBundleItemQuantity(idOrItem, isNaN(val) ? 1 : val, true);
+  }
+
+  updateBundleItemQuantity(idOrItem: any, deltaOrValue: number, isAbsolute: boolean = false) {
+    const id = typeof idOrItem === "string" ? idOrItem : (idOrItem?.id || idOrItem?.productId);
+    if (!id) return;
+    const targetIdStr = String(id).toLowerCase().trim();
+
+    const list = this.admin.pBundleProducts().map((item: any) => {
+      const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+      const bIdStr = String(bId || '').toLowerCase().trim();
+      if (bIdStr !== targetIdStr) return item;
+
+      const currentQty = this.getBundleItemQuantity(item);
+      const newQty = Math.max(1, Math.min(99, isAbsolute ? deltaOrValue : currentQty + deltaOrValue));
+
+      if (typeof item === "object" && item !== null) {
+        return { ...item, quantity: newQty };
+      }
+      return { id: bId, quantity: newQty };
     });
     this.admin.pBundleProducts.set(list);
   }
 
-  addRecommendedFilament(id: string) {
+  getBundleItemQuantity(itemOrId: any): number {
+    if (typeof itemOrId === "object" && itemOrId !== null && itemOrId.quantity !== undefined) {
+      const q = parseInt(itemOrId.quantity, 10);
+      return isNaN(q) || q < 1 ? 1 : q;
+    }
+    const id = typeof itemOrId === "string" ? itemOrId : (itemOrId?.id || itemOrId?.productId);
+    if (id) {
+      const targetIdStr = String(id).toLowerCase().trim();
+      const found = this.admin.pBundleProducts().find((item: any) => {
+        const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+        return String(bId || '').toLowerCase().trim() === targetIdStr;
+      });
+      if (found && typeof found === 'object' && found.quantity !== undefined) {
+        const q = parseInt(found.quantity, 10);
+        return isNaN(q) || q < 1 ? 1 : q;
+      }
+    }
+    return 1;
+  }
+
+  getBundleItemPrice(itemOrId: any): number | null {
+    if (typeof itemOrId === "object" && itemOrId?.price !== undefined) {
+      return Number(itemOrId.price) || 0;
+    }
+    const id = typeof itemOrId === "string" ? itemOrId : itemOrId?.id;
+    const prod = this.admin.ds.products().find((p: any) => p.id === id);
+    if (!prod) return null;
+    return prod.salePrice || prod.basePrice || (prod as any).sale_price || (prod as any).price || null;
+  }
+
+  getAvailableBundleCategories(): Array<{ id: string; name: string }> {
+    const prods = this.admin.ds.products() || [];
+    const allCats = this.admin.ds.categories() || [];
+    const catMap = new Map<string, string>();
+    for (const c of allCats) {
+      if (c && c.id) catMap.set(c.id, c.name);
+    }
+    const usedCatIds = new Set<string>();
+    for (const p of prods) {
+      const cId = p.category_id || p.categoryId;
+      if (cId) usedCatIds.add(cId);
+    }
+    const result: Array<{ id: string; name: string }> = [];
+    for (const id of usedCatIds) {
+      result.push({ id, name: catMap.get(id) || id });
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getFilteredBundleProducts(): any[] {
+    const currentId = this.admin.editingProduct()?.id;
+    let list = (this.admin.ds.products() || []).filter((p: any) => p && p.id !== currentId);
+    const q = this.bundleSearchQuery().toLowerCase().trim();
+    const catFilter = this.bundleCategoryFilter();
+
+    if (catFilter !== 'all') {
+      list = list.filter((p: any) => (p.category_id || p.categoryId) === catFilter);
+    }
+
+    if (q) {
+      list = list.filter((p: any) =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.sku || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q)
+      );
+    }
+
+    return list.slice(0, 50);
+  }
+
+  removeBundleProduct(idOrItem: any) {
+    const id = typeof idOrItem === "string" ? idOrItem : (idOrItem?.id || idOrItem?.productId);
+    if (!id) return;
+    const targetIdStr = String(id).toLowerCase().trim();
+
+    const list = this.admin.pBundleProducts().filter((item: any) => {
+      const bId = typeof item === "string" ? item : (item?.id || item?.productId);
+      return String(bId || '').toLowerCase().trim() !== targetIdStr;
+    });
+    this.admin.pBundleProducts.set(list);
+  }
+
+  addRecommendedFilament(prodOrId: any) {
+    if (!prodOrId) return;
+    const id = typeof prodOrId === "string" ? prodOrId : prodOrId.id;
     if (!id) return;
     const list = [...this.admin.pRecommendedFilaments()];
-    if (!list.includes(id)) {
+    if (!list.some((x: any) => (typeof x === "string" ? x : x?.id) === id)) {
       list.push(id);
       this.admin.pRecommendedFilaments.set(list);
     }
   }
 
   removeRecommendedFilament(id: string) {
-    const list = this.admin.pRecommendedFilaments().filter((x) => x !== id);
+    const list = this.admin.pRecommendedFilaments().filter((x: any) => {
+      const fId = typeof x === "string" ? x : x.id;
+      return fId !== id;
+    });
     this.admin.pRecommendedFilaments.set(list);
   }
 
   getBundleItemName(itemOrId: any): string {
-    const id = typeof itemOrId === "string" ? itemOrId : itemOrId.id;
+    if (typeof itemOrId === "object" && itemOrId?.name) {
+      return itemOrId.name;
+    }
+    const id = typeof itemOrId === "string" ? itemOrId : itemOrId?.id;
     return this.getProductName(id);
+  }
+
+  getBundleItemSku(itemOrId: any): string {
+    if (typeof itemOrId === "object" && itemOrId?.sku) {
+      return itemOrId.sku;
+    }
+    const id = typeof itemOrId === "string" ? itemOrId : itemOrId?.id;
+    const prod = this.admin.ds.products().find((p: any) => p.id === id);
+    return prod?.sku || "";
+  }
+
+  getBundleItemImage(itemOrId: any): string | null {
+    if (typeof itemOrId === "object" && itemOrId?.image) {
+      return itemOrId.image;
+    }
+    const id = typeof itemOrId === "string" ? itemOrId : itemOrId?.id;
+    const prod = this.admin.ds.products().find((p: any) => p.id === id);
+    if (!prod) return null;
+    if (Array.isArray(prod.images) && prod.images.length > 0) {
+      const first = prod.images[0];
+      return typeof first === "string" ? first : (first?.url || null);
+    }
+    return prod.thumbnail || (prod as any).image || null;
   }
 
   getProductName(id: string): string {

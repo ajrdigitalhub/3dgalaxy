@@ -149,10 +149,12 @@ export const getPackagingSlipPDF = async (req: AuthenticatedRequest, res: Respon
         } else if (item.weightInGrams) {
           weightLabel = ` [${item.weightInGrams < 1000 ? item.weightInGrams + 'g' : (item.weightInGrams / 1000).toFixed(2) + 'kg'}]`;
         }
+        const isFreeItem = item.isFree || item.configurationType === 'free_bundle' || price === 0;
+        const freeBadge = isFreeItem ? ' [FREE INCLUDED]' : '';
         return {
           qty,
           sku: item.variant?.sku || item.product?.sku || 'SKU-001',
-          description: `${item.product?.name || item.name || 'Item'}${variantLabel}${weightLabel}`,
+          description: `${item.product?.name || item.name || 'Item'}${variantLabel}${weightLabel}${freeBadge}`,
           price,
           extPrice: Number(item.totalPrice || (price * qty)),
         };

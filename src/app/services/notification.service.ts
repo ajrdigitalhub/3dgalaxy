@@ -48,13 +48,19 @@ export class NotificationService {
   popupConfig = signal<any>(null);
   publicFcmConfig = signal<any>(null);
 
+  public isPromptVisibleSignal = signal<boolean>(false);
   private showPromptSubject = new BehaviorSubject<boolean>(false);
   private registrationKey = "";
   private serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
   showPrompt$ = this.showPromptSubject.asObservable();
 
+  public setPromptVisibility(visible: boolean) {
+    this.isPromptVisibleSignal.set(visible);
+    this.showPromptSubject.next(visible);
+  }
+
   get isPromptVisible(): boolean {
-    return this.showPromptSubject.value;
+    return this.isPromptVisibleSignal();
   }
 
   constructor() {
@@ -197,7 +203,7 @@ export class NotificationService {
     const triggerShow = () => {
       if (triggered) return;
       triggered = true;
-      this.showPromptSubject.next(true);
+      this.setPromptVisibility(true);
       window.removeEventListener('scroll', scrollHandler);
     };
 
@@ -234,7 +240,7 @@ export class NotificationService {
     if (!isPlatformBrowser(this.platformId)) return false;
     if (!("Notification" in window)) return false;
 
-    this.showPromptSubject.next(false);
+    this.setPromptVisibility(false);
 
     try {
       const permission = await Notification.requestPermission();
@@ -258,12 +264,12 @@ export class NotificationService {
   // Hide Prompt modal
   dismissPrompt() {
     localStorage.setItem("fcm_prompt_dismissed_time", Date.now().toString());
-    this.showPromptSubject.next(false);
+    this.setPromptVisibility(false);
   }
 
   // Force show popup for live preview or testing
   testTriggerPopup() {
-    this.showPromptSubject.next(true);
+    this.setPromptVisibility(true);
   }
 
   // Retrieve FCM Token from SDK

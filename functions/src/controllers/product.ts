@@ -172,10 +172,10 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
               where: { isActive: true }
             },
             customerReviews: {
-              include: {
-                customer: {
-                  include: { user: true }
-                }
+              select: {
+                id: true,
+                productId: true,
+                rating: true
               }
             }
           }
@@ -229,47 +229,7 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
       const allMapped = items.map(p => {
         const specs = getSpecsArray(p.specifications);
         const prodCustReviews = (p as any).customerReviews || [];
-        const combinedRawReviews = [...(p.reviews || []), ...prodCustReviews];
-
-        const mappedReviews = combinedRawReviews.map((review: any) => {
-          const user = review.user || review.customer?.user;
-          let parsedTitle = "Verified Review";
-          let parsedComment = review.reviewText || "";
-          let parsedImages: string[] = [];
-          let parsedRecommended = true;
-          let status = "APPROVED";
-
-          if (review.reviewText && review.reviewText.trim().startsWith("{")) {
-            try {
-              const parsed = JSON.parse(review.reviewText);
-              parsedTitle = parsed.title || parsedTitle;
-              parsedComment = parsed.comment || parsed.review || parsedComment;
-              parsedImages = Array.isArray(parsed.images) ? parsed.images : [];
-              if (typeof parsed.recommended === "boolean") {
-                parsedRecommended = parsed.recommended;
-              }
-              if (parsed.status) status = parsed.status;
-            } catch (e) {}
-          }
-
-          return {
-            id: review.id,
-            productId: review.productId,
-            userName: user
-              ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-              : "Customer",
-            rating: Number(review.rating || 5),
-            title: parsedTitle,
-            comment: parsedComment,
-            date: review.createdAt ? new Date(review.createdAt).toISOString() : new Date().toISOString(),
-            verified: true,
-            images: parsedImages,
-            recommended: parsedRecommended,
-            status,
-            helpfulCount: 0,
-            sellerReply: null,
-          };
-        }).filter(r => (r.status || '').toUpperCase() === 'APPROVED');
+        const mappedReviews: any[] = [];
 
         // Extract Color
         const colorSpec = specs.find(s => ['color', 'colors', 'colour', 'colours'].includes(s.name.toLowerCase()));
@@ -340,15 +300,18 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
         }
 
         // Calculate rating strictly from real approved reviews
+        const allRatings: number[] = [];
+        if (p.reviews && Array.isArray(p.reviews)) {
+          p.reviews.filter((r: any) => r.isApproved !== false).forEach((r: any) => allRatings.push(Number(r.rating || 5)));
+        }
+        if (prodCustReviews.length > 0) {
+          prodCustReviews.forEach((r: any) => allRatings.push(Number(r.rating || 5)));
+        }
         let avgRating = 0;
-        let ratingCount = 0;
-        if (p.reviews && p.reviews.length > 0) {
-          const approved = p.reviews.filter((r: any) => r.isApproved !== false);
-          if (approved.length > 0) {
-            const sum = approved.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
-            avgRating = Math.round((sum / approved.length) * 10) / 10;
-            ratingCount = approved.length;
-          }
+        let ratingCount = allRatings.length;
+        if (allRatings.length > 0) {
+          const sum = allRatings.reduce((acc: number, r: number) => acc + r, 0);
+          avgRating = Math.round((sum / allRatings.length) * 10) / 10;
         }
 
         // Stock status
@@ -427,6 +390,8 @@ export async function getAllMappedProductsCached(): Promise<any[]> {
           specifications: specs,
           brand: p.brand,
           category: primaryCategory || p.category,
+          bundleProducts: p.bundleProducts,
+          recommendedFilaments: p.recommendedFilaments,
           variants: p.variants,
           hasVariants: p.variants && p.variants.length > 0,
           reviews: mappedReviews,
@@ -1220,11 +1185,33 @@ const populateProductRelations = async (item: any) => {
   const relatedList = safeParseArray(item.relatedProducts);
   const relatedIds = relatedList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId || x?.relatedToId)).filter(Boolean);
 
-  const [bundleProducts, recommendedFilaments, relatedProducts] = await Promise.all([
+  const [dbBundleProducts, recommendedFilaments, relatedProducts] = await Promise.all([
     bundleIds.length > 0 ? prisma.product.findMany({ where: { id: { in: bundleIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
     filamentIds.length > 0 ? prisma.product.findMany({ where: { id: { in: filamentIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
     relatedIds.length > 0 ? prisma.product.findMany({ where: { id: { in: relatedIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([])
   ]);
+
+  const bundleProducts = bundleList.map((rawBundle: any) => {
+    const rawId = typeof rawBundle === 'string' ? rawBundle : (rawBundle?.id || rawBundle?.productId);
+    const dbProd = dbBundleProducts.find(p => p.id === rawId || (rawId && p.id && p.id.toLowerCase() === String(rawId).toLowerCase()));
+    const qty = (typeof rawBundle === 'object' && rawBundle?.quantity !== undefined)
+      ? Math.max(1, parseInt(rawBundle.quantity, 10) || 1)
+      : 1;
+
+    if (dbProd) {
+      return {
+        ...dbProd,
+        quantity: qty
+      };
+    }
+    if (typeof rawBundle === 'object' && rawBundle.name) {
+      return {
+        ...rawBundle,
+        quantity: qty
+      };
+    }
+    return null;
+  }).filter(Boolean);
 
   return {
     bundleProducts,
@@ -1336,7 +1323,10 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       ...item,
       reviews: mappedReviews,
       categoryPath: catPath,
-      bundleProducts: relations.bundleProducts.map(p => mapProductFields(p)),
+      bundleProducts: relations.bundleProducts.map((p: any) => ({
+        ...mapProductFields(p),
+        quantity: p.quantity !== undefined ? p.quantity : 1
+      })),
       recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
       relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
     });
@@ -1457,7 +1447,10 @@ export const getProductById = async (req: Request, res: Response) => {
     const mappedProduct = mapProductFields({
       ...item,
       categoryPath: catPath,
-      bundleProducts: relations.bundleProducts.map(p => mapProductFields(p)),
+      bundleProducts: relations.bundleProducts.map((p: any) => ({
+        ...mapProductFields(p),
+        quantity: p.quantity !== undefined ? p.quantity : 1
+      })),
       recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
       relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
     });
@@ -1471,6 +1464,8 @@ export const getProductById = async (req: Request, res: Response) => {
       categoryIds: mappedProduct.categoryIds,
       categories: mappedProduct.categories,
       primaryCategory: mappedProduct.primaryCategory,
+      brandId: mappedProduct.brandId,
+      brand: mappedProduct.brand,
       variantImages: (mappedProduct.variants || []).map((v: any) => ({
         variantId: v.id,
         imageIds: v.variantImages || []
@@ -1568,8 +1563,49 @@ export const createProduct = async (req: Request, res: Response) => {
     const parsedShipping = safeParseObject(shipping);
     const parsedRelatedProducts = safeParseArray(relatedProducts);
     const parsedIncludedItems = safeParseArray(included_items);
-    const parsedBundleProducts = safeParseArray(bundleProducts);
-    const parsedRecommendedFilaments = safeParseArray(recommendedFilaments);
+    const sanitizeProductRelationshipList = (rawList: any[] | undefined, excludeProductId?: string): any[] => {
+      if (!rawList || !Array.isArray(rawList)) return [];
+      const seenIds = new Set<string>();
+      const sanitized: any[] = [];
+      for (const item of rawList) {
+        if (!item) continue;
+        const id = typeof item === 'string' ? item.trim() : String(item.id || item.productId || '').trim();
+        if (!id || (excludeProductId && id === excludeProductId)) continue;
+        if (seenIds.has(id.toLowerCase())) continue;
+        seenIds.add(id.toLowerCase());
+        if (typeof item === 'object') {
+          sanitized.push({
+            id,
+            name: item.name || undefined,
+            sku: item.sku || undefined,
+            price: item.price !== undefined ? item.price : (item.salePrice !== undefined ? item.salePrice : item.basePrice),
+            image: item.image || (Array.isArray(item.images) && item.images[0]?.url ? item.images[0].url : undefined),
+            quantity: item.quantity !== undefined ? Math.max(1, parseInt(item.quantity, 10) || 1) : 1
+          });
+        } else {
+          sanitized.push({ id, quantity: 1 });
+        }
+      }
+      return sanitized;
+    };
+
+    const sanitizeRecommendedFilamentsList = (rawList: any[] | undefined, excludeProductId?: string): string[] => {
+      if (!rawList || !Array.isArray(rawList)) return [];
+      const seenIds = new Set<string>();
+      const sanitized: string[] = [];
+      for (const item of rawList) {
+        if (!item) continue;
+        const id = typeof item === 'string' ? item.trim() : String(item.id || item.productId || '').trim();
+        if (!id || (excludeProductId && id === excludeProductId)) continue;
+        if (seenIds.has(id.toLowerCase())) continue;
+        seenIds.add(id.toLowerCase());
+        sanitized.push(id);
+      }
+      return sanitized;
+    };
+
+    const parsedBundleProducts = sanitizeProductRelationshipList(safeParseArray(bundleProducts));
+    const parsedRecommendedFilaments = sanitizeRecommendedFilamentsList(safeParseArray(recommendedFilaments));
 
     const rawBrand = brandId !== undefined ? brandId : (brand_id !== undefined ? brand_id : brand);
     const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);
@@ -1779,8 +1815,49 @@ export const updateProduct = async (req: Request, res: Response) => {
     const parsedShipping = shipping !== undefined ? safeParseObject(shipping) : undefined;
     const parsedRelatedProducts = relatedProducts !== undefined ? safeParseArray(relatedProducts) : undefined;
     const parsedIncludedItems = included_items !== undefined ? safeParseArray(included_items) : undefined;
-    const parsedBundleProducts = bundleProducts !== undefined ? safeParseArray(bundleProducts) : undefined;
-    const parsedRecommendedFilaments = recommendedFilaments !== undefined ? safeParseArray(recommendedFilaments) : undefined;
+    const sanitizeProductRelationshipList = (rawList: any[] | undefined, excludeProductId?: string): any[] => {
+      if (!rawList || !Array.isArray(rawList)) return [];
+      const seenIds = new Set<string>();
+      const sanitized: any[] = [];
+      for (const item of rawList) {
+        if (!item) continue;
+        const id = typeof item === 'string' ? item.trim() : String(item.id || item.productId || '').trim();
+        if (!id || (excludeProductId && id === excludeProductId)) continue;
+        if (seenIds.has(id.toLowerCase())) continue;
+        seenIds.add(id.toLowerCase());
+        if (typeof item === 'object') {
+          sanitized.push({
+            id,
+            name: item.name || undefined,
+            sku: item.sku || undefined,
+            price: item.price !== undefined ? item.price : (item.salePrice !== undefined ? item.salePrice : item.basePrice),
+            image: item.image || (Array.isArray(item.images) && item.images[0]?.url ? item.images[0].url : undefined),
+            quantity: item.quantity !== undefined ? Math.max(1, parseInt(item.quantity, 10) || 1) : 1
+          });
+        } else {
+          sanitized.push({ id, quantity: 1 });
+        }
+      }
+      return sanitized;
+    };
+
+    const sanitizeRecommendedFilamentsList = (rawList: any[] | undefined, excludeProductId?: string): string[] => {
+      if (!rawList || !Array.isArray(rawList)) return [];
+      const seenIds = new Set<string>();
+      const sanitized: string[] = [];
+      for (const item of rawList) {
+        if (!item) continue;
+        const id = typeof item === 'string' ? item.trim() : String(item.id || item.productId || '').trim();
+        if (!id || (excludeProductId && id === excludeProductId)) continue;
+        if (seenIds.has(id.toLowerCase())) continue;
+        seenIds.add(id.toLowerCase());
+        sanitized.push(id);
+      }
+      return sanitized;
+    };
+
+    const parsedBundleProducts = bundleProducts !== undefined ? sanitizeProductRelationshipList(safeParseArray(bundleProducts), id) : undefined;
+    const parsedRecommendedFilaments = recommendedFilaments !== undefined ? sanitizeRecommendedFilamentsList(safeParseArray(recommendedFilaments), id) : undefined;
 
     const rawBrand = brandId !== undefined ? brandId : (brand_id !== undefined ? brand_id : brand);
     const rawCategory = categoryId !== undefined ? categoryId : (category_id !== undefined ? category_id : category);

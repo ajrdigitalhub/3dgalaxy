@@ -249,10 +249,6 @@ import { firstValueFrom } from "rxjs";
 
                 <!-- Product Details -->
                 <div class="flex-1 flex flex-col space-y-2 text-left">
-                  <span
-                    class="text-[9px] font-black uppercase tracking-[0.2em] text-theme-primary"
-                    >{{ p.brand }}</span
-                  >
                   <a
                     [routerLink]="['/product', p.slug]"
                     class="block text-sm font-black text-neutral-800 dark:text-neutral-100 leading-snug hover:text-theme-primary min-h-[40px] line-clamp-2 transition-colors font-display"
@@ -263,8 +259,8 @@ import { firstValueFrom } from "rxjs";
                   <!-- Short Description -->
                   <p
                     class="text-xs text-neutral-500 dark:text-neutral-400 font-medium line-clamp-2 min-h-[32px] leading-relaxed"
-                    [innerHTML]="getSafeDescription(p.shortDescription || p.description)"
                   >
+                    {{ getProductDescription(p) }}
                   </p>
 
                   <div class="flex items-center justify-between mt-auto pt-2">
@@ -444,19 +440,56 @@ export class HomeFeaturedProductsComponent implements OnInit {
     return [];
   });
 
+  stripHtml(html: string): string {
+    if (!html) return '';
+    return html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  generateProductDescription(p: any): string {
+    const name = (p?.name || '').trim();
+    const nameLower = name.toLowerCase();
+
+    if (nameLower.includes('printer')) {
+      return `High-performance ${name} engineered for exceptional precision, reliable extrusion, and seamless 3D printing.`;
+    }
+    if (nameLower.includes('resin')) {
+      return `High-definition ${name} featuring low shrinkage, fast UV curing, and ultra-crisp detail resolution.`;
+    }
+    if (nameLower.includes('filament') || nameLower.includes('pla') || nameLower.includes('petg') || nameLower.includes('abs') || nameLower.includes('tpu')) {
+      return `Premium grade ${name} with consistent 1.75mm diameter, smooth flow, and clog-free extrusion.`;
+    }
+    if (nameLower.includes('nozzle') || nameLower.includes('hotend') || nameLower.includes('kit') || nameLower.includes('part') || nameLower.includes('bed')) {
+      return `Precision replacement ${name} designed for optimal thermal conductivity, durability, and smooth performance.`;
+    }
+    if (nameLower.includes('scanner') || nameLower.includes('pen') || nameLower.includes('laser')) {
+      return `Advanced ${name} delivering high accuracy, ergonomic handling, and versatile creative capabilities.`;
+    }
+    return `Professional ${name || '3D printing equipment'} crafted for superior reliability, high efficiency, and clean print results.`;
+  }
+
+  getProductDescription(p: any): string {
+    const raw = p?.shortDescription || p?.short_description || p?.description || '';
+    const cleaned = this.stripHtml(raw);
+    if (cleaned && cleaned.length > 15 && !cleaned.toLowerCase().includes('premium quality 3d fabrication component')) {
+      return cleaned;
+    }
+    return this.generateProductDescription(p);
+  }
+
   getSafeDescription(description: string): SafeHtml {
-    if (!description) return this.sanitizer.bypassSecurityTrustHtml("Premium quality 3D fabrication component.");
-
-    // Replace block-level tags that might break layout with space or simple styles
-    let cleaned = description
-      .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, '$1 ')
-      .replace(/<div[^>]*>([\s\S]*?)<\/div>/gi, '$1 ')
-      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '$1 ')
-      .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-      .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
-      .replace(/<iframe[^>]*>([\s\S]*?)<\/iframe>/gi, '');
-
-    return this.sanitizer.bypassSecurityTrustHtml(cleaned);
+    const cleaned = this.stripHtml(description);
+    return this.sanitizer.bypassSecurityTrustHtml(cleaned || "High-precision 3D printing equipment engineered for performance.");
   }
 
   @HostListener("window:resize", [])

@@ -1,5 +1,32 @@
 [
   {
+    "id": "62b17e3b-d35d-4c7a-917d-682d069fcd16",
+    "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
+    "adminName": "admin123 R",
+    "adminEmail": "admin@3dgalaxy.com",
+    "adminRole": "Super Admin",
+    "deviceName": "Chrome Desktop",
+    "deviceType": "Desktop",
+    "platform": "Windows",
+    "browser": "Chrome",
+    "operatingSystem": "Windows",
+    "fcmToken": "dYzRUk93eVZoACWKcb6zUi:APA91bGZkr-SPr4XGrbUr2yPV36PaZ1dU4_mjXs2IA2VI4IPgizeonyLzvd6GQthwl38MX6iyGkPNCheMU8LWTs-uNLgnJIstOeqCd4SthNld5YJLw_BGZQ",
+    "ipAddress": "::1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "isActive": true,
+    "isOnline": true,
+    "notificationEnabled": true,
+    "notificationPermission": "granted",
+    "environment": "development",
+    "appOrigin": "http://localhost:4200",
+    "firebaseProjectId": "ajr3dgalaxy",
+    "tokenStatus": "ACTIVE",
+    "notificationCount": 0,
+    "lastUsedAt": "2026-10-18T12:54:13.311Z",
+    "createdAt": "2026-10-18T11:24:02.995Z",
+    "updatedAt": "2026-10-18T12:54:13.311Z"
+  },
+  {
     "id": "14e81c74-b483-45eb-9f1d-418888d8aba4",
     "adminId": "8e73170e-35ba-470e-94b5-498e6189bd7e",
     "adminName": "admin123 R",
@@ -22,9 +49,9 @@
     "firebaseProjectId": "ajr3dgalaxy",
     "tokenStatus": "ACTIVE",
     "notificationCount": 0,
-    "lastUsedAt": "2026-10-17T08:01:31.252Z",
+    "lastUsedAt": "2026-10-18T03:42:05.346Z",
     "createdAt": "2026-10-17T07:10:27.446Z",
-    "updatedAt": "2026-10-17T08:01:31.252Z"
+    "updatedAt": "2026-10-18T03:42:05.346Z"
   },
   {
     "id": "795a984d-1c5b-4679-9542-9423eec2c084",
@@ -49,9 +76,9 @@
     "firebaseProjectId": "ajr3dgalaxy",
     "tokenStatus": "ACTIVE",
     "notificationCount": 0,
-    "lastUsedAt": "2026-10-17T08:01:08.602Z",
+    "lastUsedAt": "2026-10-17T12:15:46.512Z",
     "createdAt": "2026-10-17T07:10:27.220Z",
-    "updatedAt": "2026-10-17T08:01:08.602Z"
+    "updatedAt": "2026-10-17T12:15:46.512Z"
   },
   {
     "id": "17f087ce-3aae-4410-ba5e-f12a5ea205bb",

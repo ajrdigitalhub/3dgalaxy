@@ -286,9 +286,10 @@
                       {{ sub.product.name }}
                     </div>
                     <div
-                      class="text-[9px] text-emerald-600 font-black uppercase"
+                      class="flex items-center gap-1.5 mt-0.5"
                     >
-                      Free
+                      <span class="text-[9px] text-emerald-600 font-black uppercase">Free</span>
+                      <span class="px-1.5 py-0.2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-[9px] font-bold">Qty: {{ sub.quantity || 1 }}</span>
                     </div>
                   </div>
                 </a>

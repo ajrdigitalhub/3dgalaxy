@@ -699,11 +699,14 @@
                     <img [src]="ds.getProductImage(sub)" class="max-w-full max-h-full object-contain"
                       referrerpolicy="no-referrer" alt="sub" />
                   </div>
+                  <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span
+                      class="text-[10px] font-bold text-neutral-600 dark:text-neutral-300 truncate uppercase tracking-wide">{{
+                      sub.product.name }}</span>
+                    <span class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-[9px] font-bold shrink-0">Qty: {{ sub.quantity || 1 }}</span>
+                  </div>
                   <span
-                    class="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 truncate flex-1 uppercase tracking-wide">{{
-                    sub.product.name }}</span>
-                  <span
-                    class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider">Free</span>
+                    class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded text-[8px] font-black uppercase tracking-wider shrink-0">Free Included</span>
                 </div>
                 }
               </div>

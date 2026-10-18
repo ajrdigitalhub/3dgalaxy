@@ -83,18 +83,21 @@ export const authenticateToken = async (
     }
 
     let user: any = null;
-    try {
-      user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          isActive: true,
-          role: true,
-        }
-      });
-    } catch (dbErr) {
-      console.warn('[AUTH] DB user lookup warning:', dbErr);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    if (isUuid) {
+      try {
+        user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+            role: true,
+          }
+        });
+      } catch (dbErr) {
+        console.warn('[AUTH] DB user lookup warning:', dbErr);
+      }
     }
 
     if (user && user.isActive !== false) {

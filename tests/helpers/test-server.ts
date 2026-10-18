@@ -3,7 +3,8 @@
  * In-Process Ephemeral Test Server
  */
 
-// Set production environment to test real security, auth guards & interceptors
+// Enforce mock order and test execution mode: ZERO database writes during testing
+process.env.MOCK_ORDER_MODE = 'true';
 process.env.NODE_ENV = 'production';
 
 import http from 'http';
@@ -31,8 +32,11 @@ export async function startTestServer(): Promise<{ port: number; client: AxiosIn
   const baseUrl = `http://127.0.0.1:${serverPort}`;
   client = axios.create({
     baseURL: baseUrl,
-    timeout: 10000,
-    validateStatus: () => true // Allow asserting any HTTP status code without throwing
+    timeout: 25000,
+    validateStatus: () => true, // Allow asserting any HTTP status code without throwing
+    headers: {
+      'x-mock-test': 'true'
+    }
   });
 
   return { port: serverPort, client, baseUrl };

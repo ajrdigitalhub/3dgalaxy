@@ -119,17 +119,26 @@ router.post('/delete-image', adminGuard, async (req: Request, res: Response) => 
   }
 });
 
-// Helper to get or create ThemeSetting key-value pair
+// Helper to get or create ThemeSetting key-value pair with memory caching
 async function getSetting(keyName: string, defaultValue: any) {
+  const cacheKey = 'setting_kv_' + keyName;
+  const cached = sysCache.get(cacheKey);
+  if (cached !== null && cached !== undefined) {
+    return cached;
+  }
   const record = await prisma.setting.findUnique({ where: { settingKey: keyName } });
   if (!record) {
+    sysCache.set(cacheKey, defaultValue, 60);
     return defaultValue;
   }
+  let result: any;
   try {
-    return typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData;
+    result = typeof record.settingData === 'string' ? JSON.parse(record.settingData) : record.settingData;
   } catch {
-    return record.settingData;
+    result = record.settingData;
   }
+  sysCache.set(cacheKey, result, 60);
+  return result;
 }
 
 async function saveSetting(keyName: string, data: any) {
@@ -139,6 +148,7 @@ async function saveSetting(keyName: string, data: any) {
     update: { settingData: valueStr },
     create: { settingKey: keyName, settingData: valueStr },
   });
+  sysCache.del('setting_kv_' + keyName);
 }
 
 // -------------------------------------------------------------
@@ -470,28 +480,38 @@ router.get('/advertisements', async (req: Request, res: Response) => {
   }
 });
 
+const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+
 const handleAdClick = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    try {
-      const advertisement = await prisma.advertisement.findUnique({ where: { id } });
-      if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
-        await prisma.advertisement.update({
-          where: { id },
-          data: { clicks: { increment: 1 } }
-        });
-      }
-    } catch (e) {}
+    if (id && isUuid(id)) {
+      try {
+        const advertisement = await prisma.advertisement.findUnique({ where: { id } });
+        if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
+          await prisma.advertisement.update({
+            where: { id },
+            data: { clicks: { increment: 1 } }
+          });
+        }
+      } catch (e) {}
+    }
 
-    // Update in system settings
-    const { getSettingsService, updateSettingsService } = require('../modules/settings/settings.service');
+    // Update in system settings in-memory & async DB persist without full cache flush
+    const { getSettingsService } = require('../modules/settings/settings.service');
     const settings = await getSettingsService();
     if (settings && Array.isArray(settings.advertisements)) {
       const ads = [...settings.advertisements];
       const idx = ads.findIndex((a: any) => a.id === id);
       if (idx !== -1) {
         ads[idx].clicks = (ads[idx].clicks || 0) + 1;
-        await updateSettingsService({ ...settings, advertisements: ads });
+        const updatedSettings = { ...settings, advertisements: ads };
+        sysCache.set("app_settings", updatedSettings, 300);
+        // Persist to setting table asynchronously
+        prisma.setting.update({
+          where: { settingKey: 'app_settings' },
+          data: { settingData: updatedSettings }
+        }).catch(() => {});
         return res.status(200).json({ status: 'success', success: true, message: 'success', data: ads[idx] });
       }
     }
@@ -507,25 +527,33 @@ router.post('/advertisements/:id/click', handleAdClick);
 const handleAdImpression = async (req: Request, res: Response) => {
   try {
     const { id: advertisementId } = req.params;
-    try {
-      const advertisement = await prisma.advertisement.findUnique({ where: { id: advertisementId } });
-      if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
-        await prisma.advertisement.update({
-          where: { id: advertisementId },
-          data: { impressions: { increment: 1 } }
-        });
-      }
-    } catch (e) {}
+    if (advertisementId && isUuid(advertisementId)) {
+      try {
+        const advertisement = await prisma.advertisement.findUnique({ where: { id: advertisementId } });
+        if (advertisement && advertisement.status === 'active' && !advertisement.deletedAt) {
+          await prisma.advertisement.update({
+            where: { id: advertisementId },
+            data: { impressions: { increment: 1 } }
+          });
+        }
+      } catch (e) {}
+    }
 
-    // Update in system settings
-    const { getSettingsService, updateSettingsService } = require('../modules/settings/settings.service');
+    // Update in system settings in-memory & async DB persist without full cache flush
+    const { getSettingsService } = require('../modules/settings/settings.service');
     const settings = await getSettingsService();
     if (settings && Array.isArray(settings.advertisements)) {
       const ads = [...settings.advertisements];
       const idx = ads.findIndex((a: any) => a.id === advertisementId);
       if (idx !== -1) {
         ads[idx].impressions = (ads[idx].impressions || 0) + 1;
-        await updateSettingsService({ ...settings, advertisements: ads });
+        const updatedSettings = { ...settings, advertisements: ads };
+        sysCache.set("app_settings", updatedSettings, 300);
+        // Persist to setting table asynchronously
+        prisma.setting.update({
+          where: { settingKey: 'app_settings' },
+          data: { settingData: updatedSettings }
+        }).catch(() => {});
         return res.status(200).json({ status: 'success', success: true, message: 'success', data: ads[idx] });
       }
     }
@@ -566,8 +594,95 @@ router.post('/advertisements', adminGuard, async (req: Request, res: Response) =
       ads.push(adData);
     }
     
+    if (adData.enablePushNotification) {
+      try {
+        const pushTitle = adData.pushTitle || adData.headline || adData.title || adData.name || 'Special Offer';
+        const pushBody = adData.pushBody || adData.subheadline || adData.description || 'Check out our latest promotional offer.';
+        const pushImage = adData.pushImage || adData.imageUrl || adData.mediaUrl || '';
+        const pushActionUrl = adData.pushDeepLink || adData.ctaUrl || adData.linkUrl || '/products';
+        const campaignName = `[Sync] ${adData.name || adData.title || adData.id}`;
+
+        const existingCampaign = await prisma.pushCampaign.findFirst({
+          where: { name: campaignName }
+        });
+
+        if (existingCampaign) {
+          await prisma.pushCampaign.update({
+            where: { id: existingCampaign.id },
+            data: {
+              title: pushTitle,
+              body: pushBody,
+              image: pushImage,
+              actionUrl: pushActionUrl,
+              deepLink: pushActionUrl,
+              status: adData.status === 'active' ? 'Draft' : 'Paused'
+            }
+          });
+        } else {
+          await prisma.pushCampaign.create({
+            data: {
+              name: campaignName,
+              type: 'promotional',
+              title: pushTitle,
+              body: pushBody,
+              image: pushImage,
+              actionUrl: pushActionUrl,
+              deepLink: pushActionUrl,
+              status: 'Draft',
+              priority: 'Normal'
+            }
+          });
+        }
+      } catch (pushErr) {
+        console.warn('Non-fatal: PushCampaign synchronization note:', pushErr);
+      }
+    }
+
     await updateSettingsService({ ...settings, advertisements: ads });
     return res.status(201).json({ status: 'success', success: true, message: 'success', data: adData });
+  } catch (err: any) {
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
+  }
+});
+
+router.put('/advertisements/:id', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const adData = req.body;
+    const { getSettingsService, updateSettingsService } = require('../modules/settings/settings.service');
+    const settings = await getSettingsService();
+    const ads = (settings && Array.isArray(settings.advertisements)) ? [...settings.advertisements] : [];
+    
+    const existingIdx = ads.findIndex((a: any) => a.id === id);
+    if (existingIdx >= 0) {
+      ads[existingIdx] = { ...ads[existingIdx], ...adData, id };
+    } else {
+      ads.push({ ...adData, id });
+    }
+
+    await updateSettingsService({ ...settings, advertisements: ads });
+    return res.status(200).json({ status: 'success', success: true, message: 'success', data: ads[existingIdx >= 0 ? existingIdx : ads.length - 1] });
+  } catch (err: any) {
+    return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
+  }
+});
+
+router.delete('/advertisements/:id', adminGuard, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { getSettingsService, updateSettingsService } = require('../modules/settings/settings.service');
+    const settings = await getSettingsService();
+    if (settings && Array.isArray(settings.advertisements)) {
+      const filtered = settings.advertisements.filter((a: any) => a.id !== id);
+      await updateSettingsService({ ...settings, advertisements: filtered });
+    }
+    try {
+      await prisma.advertisement.updateMany({
+        where: { id },
+        data: { deletedAt: new Date() }
+      });
+    } catch (e) {}
+    return res.status(200).json({ status: 'success', success: true, message: 'Campaign deleted successfully' });
   } catch (err: any) {
     return res.status(500).json({ status: 'error', success: false, message: err.message, error: err.message });
   }

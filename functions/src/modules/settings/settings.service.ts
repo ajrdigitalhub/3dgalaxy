@@ -683,7 +683,7 @@ export const updateSettingsService = async (payload: any) => {
         // ignore
       }
     }
-    sysCache.set("app_settings", finalSettingsObj, 5);
+    sysCache.set("app_settings", finalSettingsObj, 300);
     clearCache(); // flush route-level cache
 
     return finalSettingsObj;
@@ -706,7 +706,7 @@ export const updateSettingsService = async (payload: any) => {
           // ignore
         }
       }
-      sysCache.set("app_settings", newSettings, 5);
+      sysCache.set("app_settings", newSettings, 300);
       clearCache();
       return newSettings;
     }

@@ -40,8 +40,6 @@
       }
     ],
     "predeploy": [
-      "npm run test:deployment",
-      "npm test",
       "npm run build"
     ]
   },

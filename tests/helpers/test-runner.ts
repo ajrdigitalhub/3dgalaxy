@@ -9,6 +9,8 @@ import { runAuthAndInterceptorUnitTests } from '../unit/auth-interceptors-guards
 import { runMediaPreservationAndFeaturesUnitTests } from '../unit/media-preservation-variants.test';
 import { runResponsiveAndSecurityUnitTests } from '../unit/responsive-and-security.test';
 import { runVariantCartFlowTests } from '../unit/variant-cart-flow.test';
+import { runCampaignManagerAndPushUnitTests } from '../unit/campaign-manager-and-push.test';
+import { runProductBrandBundleFilamentUnitTests } from '../unit/product-brand-bundle-filament.test';
 import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
@@ -72,6 +74,18 @@ async function main() {
     const dVar = Date.now() - sVar;
     suites.push({ name: 'Add to Cart Flow for Variant Products (50 Tests)', category: 'UNIT', ...rVar, durationMs: dVar });
     console.log(`  ✓ Variant Products Add to Cart Flow (50 Test Cases): ${rVar.passed} passed, ${rVar.failed} failed (${dVar}ms)`);
+
+    const sCamp = Date.now();
+    const rCamp = await runCampaignManagerAndPushUnitTests();
+    const dCamp = Date.now() - sCamp;
+    suites.push({ name: 'Campaign Manager, Eligibility, Preview & FCM Unit Tests', category: 'UNIT', ...rCamp, durationMs: dCamp });
+    console.log(`  ✓ Campaign Manager, Eligibility, Preview & FCM: ${rCamp.passed} passed, ${rCamp.failed} failed (${dCamp}ms)`);
+
+    const sBrand = Date.now();
+    const rBrand = await runProductBrandBundleFilamentUnitTests();
+    const dBrand = Date.now() - sBrand;
+    suites.push({ name: 'Brand Synchronization, Complimentary Bundles & Filaments Unit Tests', category: 'UNIT', ...rBrand, durationMs: dBrand });
+    console.log(`  ✓ Brand Sync, Bundle Selectors & Filaments: ${rBrand.passed} passed, ${rBrand.failed} failed (${dBrand}ms)`);
   }
 
   // LEVEL 2: API TESTS

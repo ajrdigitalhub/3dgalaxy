@@ -813,13 +813,36 @@ export class DatastoreService {
       }
       const qty = Math.max(1, Number(buyNow.quantity) || 1);
       const calculatedWeightGrams = buyNow.weightInGrams || buyNow.bundleDetails?.weightInGrams || (buyNow.selectedWeightValue ? convertToGrams(Number(buyNow.selectedWeightValue), buyNow.selectedWeightUnit || 'kg') : undefined);
+
+      let bundleSubs: any[] = [];
+      if (prod.bundleProducts) {
+        try {
+          const list = typeof prod.bundleProducts === 'string' ? JSON.parse(prod.bundleProducts) : prod.bundleProducts;
+          if (Array.isArray(list)) {
+            for (const bp of list) {
+              const subId = typeof bp === 'string' ? bp : (bp.id || bp.productId);
+              const subQtyMultiplier = (typeof bp === 'object' && bp.quantity) ? Math.max(1, parseInt(bp.quantity, 10)) : 1;
+              const subProd = allProds.find(p => p.id === subId) || (typeof bp === 'object' && bp.name ? bp : null);
+              if (subProd) {
+                bundleSubs.push({
+                  product: subProd,
+                  quantity: qty * subQtyMultiplier,
+                  isFree: true
+                });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
       return [
         {
           product: prod,
           variant: refreshedVariant,
           quantity: qty,
           isFree: false,
-          bundleProducts: [],
+          bundleProducts: prod.bundleProducts || [],
+          bundleSubs: bundleSubs,
           bundleDetails: buyNow.bundleDetails || undefined,
           weightInGrams: calculatedWeightGrams,
           selectedWeightValue: buyNow.selectedWeightValue || buyNow.bundleDetails?.selectedWeightValue,
@@ -930,7 +953,7 @@ export class DatastoreService {
           const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
           if (Array.isArray(list)) {
             for (const bp of list) {
-              const id = typeof bp === 'string' ? bp : bp.id;
+              const id = typeof bp === 'string' ? bp : (bp.id || bp.productId);
               if (id) bundledIds.add(id);
             }
           }
@@ -964,7 +987,7 @@ export class DatastoreService {
         try {
           const list = typeof p.bundleProducts === 'string' ? JSON.parse(p.bundleProducts) : p.bundleProducts;
           if (Array.isArray(list)) {
-            const listIds = list.map((bp: any) => typeof bp === 'string' ? bp : bp.id);
+            const listIds = list.map((bp: any) => typeof bp === 'string' ? bp : (bp.id || bp.productId));
             
             // First try matching items already in the cart (so if there's specific variants etc. they are preserved)
             const inCartSubs = items.filter(i => i.isFree && listIds.includes(i.product.id));
@@ -972,14 +995,16 @@ export class DatastoreService {
 
             bundleSubs = [...inCartSubs];
 
-            // For any bundled products not in the cart, load their details from the database
-            for (const subId of listIds) {
-              if (!inCartProdIds.has(subId)) {
-                const subProd = allProds.find(prod => prod.id === subId);
+            // For any bundled products not in the cart, load their details from the database or embedded object
+            for (const bp of list) {
+              const subId = typeof bp === 'string' ? bp : (bp.id || bp.productId);
+              if (subId && !inCartProdIds.has(subId)) {
+                const subQtyMultiplier = (typeof bp === 'object' && bp.quantity) ? Math.max(1, parseInt(bp.quantity, 10)) : 1;
+                const subProd = allProds.find(prod => prod.id === subId) || (typeof bp === 'object' && bp.name ? bp : null);
                 if (subProd) {
                   bundleSubs.push({
                     product: subProd,
-                    quantity: item.quantity,
+                    quantity: (item.quantity || 1) * subQtyMultiplier,
                     isFree: true
                   });
                 }
@@ -1981,7 +2006,14 @@ export class DatastoreService {
   }
 
   public mapProductFromServer(p: any): Product {
-    const brandVal = typeof p.brand === 'object' ? p.brand?.name : (p.brand || p.brandId || '');
+    let brandVal = typeof p.brand === 'object' ? p.brand?.name : (p.brand || '');
+    const brandIdVal = p.brandId || (typeof p.brand === 'object' ? p.brand?.id : undefined);
+    if (brandVal && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(brandVal)) {
+      const bObj = this.brands().find(b => b.id.toLowerCase() === brandVal.toLowerCase());
+      if (bObj) {
+        brandVal = bObj.name;
+      }
+    }
     const primaryCatId = p.categoryId || p.category_id || (typeof p.category === 'object' ? p.category?.id : p.category) || '';
     const rawCatIds = p.categoryIds || (Array.isArray(p.categories) ? p.categories.map((c: any) => typeof c === 'object' ? (c.id || c.categoryId) : c) : (primaryCatId ? [primaryCatId] : []));
     const normalizedCatIds = Array.isArray(rawCatIds) ? rawCatIds.map((c: any) => typeof c === 'object' ? (c.id || c.categoryId) : String(c).trim()).filter(Boolean) : [];
@@ -1999,8 +2031,9 @@ export class DatastoreService {
       categories: p.categories || [],
       primaryCategory: p.primaryCategory || null,
       brand: brandVal,
-      brandId: p.brandId || (typeof p.brand === 'object' ? p.brand?.id : undefined),
+      brandId: brandIdVal || (typeof p.brand === 'object' ? p.brand?.id : undefined),
       description: p.description || '',
+      shortDescription: p.shortDescription || p.short_description || p.description || '',
       long_description: p.long_description || p.longDescription || p.description || '',
       mrp: Number(p.basePrice || p.mrp || 0),
       sale_price: Number(p.salePrice || p.sale_price || p.basePrice || p.mrp || 0),
@@ -2167,8 +2200,9 @@ export class DatastoreService {
             sku: p.sku || '',
             barcode: p.barcode || '',
             category_id: p.category_id,
-            brand: p.brand || '',
+            brand: (p.brand && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.brand)) ? p.brand : '',
             description: p.description || '',
+            shortDescription: p.shortDescription || p.short_description || p.description || '',
             long_description: p.description || '',
             mrp: p.mrp || 0,
             sale_price: p.salePrice || p.mrp || 0,

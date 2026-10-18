@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { setDynamicFirebaseConfig, getFirebaseAdmin } from '../config/firebase';
+import { sysCache } from '../config/cache';
 import {
   getAppEnv,
   getAppOrigin,
@@ -94,6 +95,8 @@ export const updateFirebaseSettings = async (req: Request, res: Response) => {
       update: { settingData: updatedData },
       create: { settingKey: 'firebase-settings', settingData: updatedData }
     });
+
+    sysCache.del('public_fcm_config');
 
     // Write Audit Log
     await prisma.auditLog.create({
@@ -288,6 +291,11 @@ export const updatePopupSettings = async (req: Request, res: Response) => {
 // 6. Get Public Firebase Settings (Safe to expose)
 export const getPublicFirebaseSettings = async (req: Request, res: Response) => {
   try {
+    const cached = sysCache.get('public_fcm_config');
+    if (cached) {
+      return res.status(200).json({ success: true, data: cached });
+    }
+
     const record = await prisma.setting.findUnique({
       where: { settingKey: 'firebase-settings' }
     });
@@ -306,6 +314,7 @@ export const getPublicFirebaseSettings = async (req: Request, res: Response) => 
       environment: currentEnv,
       appOrigin: getAppOrigin(),
     };
+    sysCache.set('public_fcm_config', publicData, 600); // 10 minutes cache
     return res.status(200).json({ success: true, data: publicData });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
