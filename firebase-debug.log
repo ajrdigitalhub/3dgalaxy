@@ -1,16 +1,16 @@
-[debug] [2026-10-18T14:16:30.423Z] ----------------------------------------------------------------------
-[debug] [2026-10-18T14:16:30.425Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
-[debug] [2026-10-18T14:16:30.426Z] CLI Version:   15.19.1
-[debug] [2026-10-18T14:16:30.426Z] Platform:      win32
-[debug] [2026-10-18T14:16:30.426Z] Node Version:  v22.22.3
-[debug] [2026-10-18T14:16:30.426Z] Time:          Sun Oct 18 2026 19:46:30 GMT+0530 (India Standard Time)
-[debug] [2026-10-18T14:16:30.426Z] ----------------------------------------------------------------------
+[debug] [2026-10-19T09:01:13.654Z] ----------------------------------------------------------------------
+[debug] [2026-10-19T09:01:13.656Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-10-19T09:01:13.657Z] CLI Version:   15.19.1
+[debug] [2026-10-19T09:01:13.657Z] Platform:      win32
+[debug] [2026-10-19T09:01:13.657Z] Node Version:  v22.22.3
+[debug] [2026-10-19T09:01:13.657Z] Time:          Mon Oct 19 2026 14:31:13 GMT+0530 (India Standard Time)
+[debug] [2026-10-19T09:01:13.657Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2026-10-18T14:16:31.787Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2026-10-18T14:16:31.787Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
-[debug] [2026-10-18T14:16:31.787Z] [iam] checking project ajr3dgalaxy for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
-[debug] [2026-10-18T14:16:31.789Z] Checked if tokens are valid: true, expires at: 1792336566643
-[debug] [2026-10-18T14:16:31.790Z] Checked if tokens are valid: true, expires at: 1792336566643
-[debug] [2026-10-18T14:16:31.790Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
-[debug] [2026-10-18T14:16:31.790Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
-[debug] [2026-10-18T14:16:31.791Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-10-19T09:01:15.586Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-10-19T09:01:15.587Z] > authorizing via signed-in user (ajrdigitalhub@gmail.com)
+[debug] [2026-10-19T09:01:15.587Z] [iam] checking project ajr3dgalaxy for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-10-19T09:01:15.589Z] Checked if tokens are valid: true, expires at: 1792401669833
+[debug] [2026-10-19T09:01:15.589Z] Checked if tokens are valid: true, expires at: 1792401669833
+[debug] [2026-10-19T09:01:15.590Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions [none]
+[debug] [2026-10-19T09:01:15.590Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions  x-goog-user-project=ajr3dgalaxy
+[debug] [2026-10-19T09:01:15.590Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/ajr3dgalaxy:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}

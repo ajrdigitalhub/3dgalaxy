@@ -1136,7 +1136,7 @@ export class AdminPanel implements OnInit {
   }
 
   constructor() {
-    this.ds.reloadProducts(true, true);
+    this.ds.reloadProducts(true, true, 500);
     this.ds.reloadCategories(true);
     this.ds.reloadBrands(true);
     this.ds.reloadPages(true);

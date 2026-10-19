@@ -563,11 +563,19 @@ export class ProductDetail {
 
   getProductTitle(p: any): string {
     if (!p) return '';
-    const variantName = this.selectedVariant()?.name;
+    const baseName = (p.name || 'Product Details').trim();
+    const selected = this.selectedVariant();
+    const rawVariantName = selected?.name || (selected ? this.ds.getVariantDisplayName(selected, p.sku) : '');
+    const variantName = typeof rawVariantName === 'string' ? rawVariantName.trim() : '';
+
     if (variantName && !this.isDefaultVariantName(variantName)) {
-      return variantName;
+      if (baseName.toLowerCase().includes(variantName.toLowerCase())) {
+        return baseName;
+      }
+      return `${baseName} - ${variantName}`;
     }
-    return p.name || 'Product Details';
+
+    return baseName;
   }
 
   hasRealVariants(p: any = this.product()): boolean {
@@ -1416,34 +1424,65 @@ export class ProductDetail {
     return false;
   }
 
+  isCurrentMainProduct(p: any): boolean {
+    if (!p) return true;
+    const current = this.product();
+    if (!current) return false;
+    if (current.id && p.id && current.id === p.id) return true;
+    if (current.slug && p.slug && current.slug === p.slug) return true;
+    return false;
+  }
+
   activePrice(p: any): number {
-    if (this.isWeightBasedProduct(p)) {
-      const wData = this.selectedWeightData();
-      if (wData && wData.isValid && wData.totalPrice > 0) {
-        return wData.totalPrice;
-      }
-    }
+    if (!p) return 0;
 
-    if (this.variantEngine.activeBundleGroup()) {
-      const tier = this.variantEngine.selectedBundleTier();
-      if (tier) {
-        if (tier.priceType === 'per_variant' || tier.customPricePerItem) {
-          const perItem = tier.priceValue || tier.customPricePerItem || Number(p?.salePrice || p?.sale_price || p?.basePrice || 0);
-          return perItem * (tier.count || 1);
+    // If p is the main product being viewed & configured on this page
+    if (this.isCurrentMainProduct(p)) {
+      if (this.isWeightBasedProduct(p)) {
+        const wData = this.selectedWeightData();
+        if (wData && wData.isValid && wData.totalPrice > 0) {
+          return wData.totalPrice;
         }
-        return Number(tier.priceValue) || (Number(p?.salePrice || p?.sale_price || p?.basePrice || 0) * (tier.count || 1));
       }
+
+      if (this.variantEngine.activeBundleGroup()) {
+        const tier = this.variantEngine.selectedBundleTier();
+        if (tier) {
+          if (tier.priceType === 'per_variant' || tier.customPricePerItem) {
+            const perItem = tier.priceValue || tier.customPricePerItem || Number(p?.salePrice || p?.sale_price || p?.basePrice || 0);
+            return perItem * (tier.count || 1);
+          }
+          return Number(tier.priceValue) || (Number(p?.salePrice || p?.sale_price || p?.basePrice || 0) * (tier.count || 1));
+        }
+      }
+
+      const variant = this.selectedVariant();
+      const dealerPrice = variant
+        ? (variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price)
+        : (p?.dealerPrice || p?.dealer_price || p?.salePrice || p?.basePrice);
+      const salePrice = variant
+        ? (variant.salePrice ?? variant.price)
+        : (p?.salePrice || p?.sale_price || p?.basePrice);
+
+      return this.isDealerActive() ? Number(dealerPrice || 0) : Number(salePrice || 0);
     }
 
-    const variant = this.selectedVariant();
-    const dealerPrice = variant
-      ? (variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price)
-      : (p?.dealerPrice || p?.dealer_price || p?.salePrice || p?.basePrice);
-    const salePrice = variant
-      ? (variant.salePrice ?? variant.price)
-      : (p?.salePrice || p?.sale_price || p?.basePrice);
+    // Dynamic price calculation for related / external products
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    const defaultVariant = variants.find((v: any) => v.isDefault) || (variants.length > 0 ? variants[0] : null);
 
-    return this.isDealerActive() ? Number(dealerPrice) : Number(salePrice);
+    const isDealer = this.isDealerActive();
+    if (isDealer) {
+      const dealerVal = defaultVariant
+        ? (defaultVariant.dealerPrice ?? defaultVariant.dealer_price ?? defaultVariant.salePrice ?? defaultVariant.price)
+        : (p?.dealerPrice ?? p?.dealer_price ?? p?.salePrice ?? p?.sale_price ?? p?.basePrice ?? p?.price ?? 0);
+      return Number(dealerVal || 0);
+    }
+
+    const saleVal = defaultVariant
+      ? (defaultVariant.salePrice ?? defaultVariant.sale_price ?? defaultVariant.price)
+      : (p?.salePrice ?? p?.sale_price ?? p?.basePrice ?? p?.price ?? 0);
+    return Number(saleVal || 0);
   }
 
   mrpDiscountPercent(p: any): number {
@@ -1454,24 +1493,37 @@ export class ProductDetail {
   }
 
   getMrp(p: any): number {
-    if (this.isWeightBasedProduct(p)) {
-      const wData = this.selectedWeightData();
-      if (wData && wData.isValid && wData.weightValue > 0) {
-        const baseMrp = p?.mrp || p?.basePrice || p?.sale_price || 0;
-        return baseMrp * wData.weightValue;
+    if (!p) return 0;
+
+    if (this.isCurrentMainProduct(p)) {
+      if (this.isWeightBasedProduct(p)) {
+        const wData = this.selectedWeightData();
+        if (wData && wData.isValid && wData.weightValue > 0) {
+          const baseMrp = p?.mrp || p?.basePrice || p?.sale_price || 0;
+          return baseMrp * wData.weightValue;
+        }
       }
+
+      if (this.variantEngine.activeBundleGroup()) {
+        const tier = this.variantEngine.selectedBundleTier();
+        if (tier) {
+          const baseMrp = Number(p?.mrp || p?.basePrice || p?.sale_price || p?.salePrice || 0);
+          return baseMrp * (tier.count || 1);
+        }
+      }
+
+      const variant = this.selectedVariant();
+      if (variant) return Number(variant.mrp || variant.price || p?.mrp || p?.basePrice || 0);
+      return Number(p?.mrp || p?.basePrice || p?.sale_price || 0);
     }
 
-    if (this.variantEngine.activeBundleGroup()) {
-      const tier = this.variantEngine.selectedBundleTier();
-      if (tier) {
-        const baseMrp = Number(p?.mrp || p?.basePrice || p?.sale_price || p?.salePrice || 0);
-        return baseMrp * (tier.count || 1);
-      }
+    // Dynamic MRP calculation for related / external products
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    const defaultVariant = variants.find((v: any) => v.isDefault) || (variants.length > 0 ? variants[0] : null);
+    if (defaultVariant && (defaultVariant.mrp || defaultVariant.price)) {
+      return Number(defaultVariant.mrp || defaultVariant.price || p?.mrp || p?.basePrice || 0);
     }
-    const variant = this.selectedVariant();
-    if (variant) return Number(variant.mrp || variant.price || p?.mrp || p?.basePrice || 0);
-    return Number(p?.mrp || p?.basePrice || p?.sale_price || 0);
+    return Number(p?.mrp || p?.basePrice || p?.sale_price || p?.salePrice || 0);
   }
 
   getImageUrl(img: any): string {

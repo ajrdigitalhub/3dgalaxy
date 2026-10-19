@@ -215,7 +215,7 @@ export class CartManager {
   getVariantThumbnail(item: CartItem): string {
     if (item.variant?.imageUrl) return item.variant.imageUrl;
     if (item.product.images && item.product.images.length > 0) return item.product.images[0];
-    return 'https://3dgalaxy.co.in/assets/images/placeholder.png';
+    return 'https://3dgalaxy.co/assets/images/placeholder.png';
   }
 
   normalizeVariantName(name?: string, sku?: string): string {

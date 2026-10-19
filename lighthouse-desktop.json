@@ -3486,7 +3486,7 @@
             "entity": "web.app"
           },
           {
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
             "sessionTargetType": "page",
             "protocol": "h2",
             "cache": "none",
@@ -3504,7 +3504,7 @@
             "entity": "3dgalaxy.co.in"
           },
           {
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
             "sessionTargetType": "page",
             "protocol": "h2",
             "cache": "none",
@@ -3522,7 +3522,7 @@
             "entity": "3dgalaxy.co.in"
           },
           {
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
             "sessionTargetType": "page",
             "protocol": "h2",
             "cache": "none",
@@ -4054,7 +4054,7 @@
             "rtt": 37.373
           },
           {
-            "origin": "https://3dgalaxy.co.in",
+            "origin": "https://3dgalaxy.co",
             "rtt": 32.68500000000002
           },
           {
@@ -4169,7 +4169,7 @@
             "serverResponseTime": 44.387
           },
           {
-            "origin": "https://3dgalaxy.co.in",
+            "origin": "https://3dgalaxy.co",
             "serverResponseTime": 18.20699999999998
           },
           {
@@ -6765,10 +6765,10 @@
                 "width": 136,
                 "height": 136
               },
-              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co.in/cdn/shop/collections/3d-printing-filament.png?v=170…\" alt=\"Filaments\">",
+              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co/cdn/shop/collections/3d-printing-filament.png?v=170…\" alt=\"Filaments\">",
               "nodeLabel": "Filaments"
             },
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
             "totalBytes": 29488,
             "wastedBytes": 27513,
             "subItems": {
@@ -6795,10 +6795,10 @@
                 "width": 136,
                 "height": 136
               },
-              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co.in/cdn/shop/collections/3d-printer.png?v=1734680964&amp;wi…\" alt=\"3D Printers\">",
+              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co/cdn/shop/collections/3d-printer.png?v=1734680964&amp;wi…\" alt=\"3D Printers\">",
               "nodeLabel": "3D Printers"
             },
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
             "totalBytes": 16350,
             "wastedBytes": 15355,
             "subItems": {
@@ -6825,10 +6825,10 @@
                 "width": 136,
                 "height": 136
               },
-              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co.in/cdn/shop/collections/spare-parts.png?v=1706515312&amp;w…\" alt=\"3D Printer Accessories\">",
+              "snippet": "<img referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\" class=\"w-full h-full object-contain p-0.5 border-none filter drop-shadow-xl logo-…\" src=\"https://3dgalaxy.co/cdn/shop/collections/spare-parts.png?v=1706515312&amp;w…\" alt=\"3D Printer Accessories\">",
               "nodeLabel": "3D Printer Accessories"
             },
-            "url": "https://3dgalaxy.co.in/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
+            "url": "https://3dgalaxy.co/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
             "totalBytes": 12320,
             "wastedBytes": 11570,
             "subItems": {
@@ -7979,17 +7979,17 @@
               "type": "subitems",
               "items": [
                 {
-                  "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
+                  "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printing-filament.png?v=1706376749",
                   "mainThreadTime": 0,
                   "transferSize": 29929
                 },
                 {
-                  "url": "https://3dgalaxy.co.in/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
+                  "url": "https://3dgalaxy.co/cdn/shop/collections/3d-printer.png?v=1734680964&width=535",
                   "mainThreadTime": 0,
                   "transferSize": 16768
                 },
                 {
-                  "url": "https://3dgalaxy.co.in/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
+                  "url": "https://3dgalaxy.co/cdn/shop/collections/spare-parts.png?v=1706515312&width=535",
                   "mainThreadTime": 0,
                   "transferSize": 13161
                 }
@@ -8548,7 +8548,7 @@
     {
       "name": "3dgalaxy.co.in",
       "origins": [
-        "https://3dgalaxy.co.in"
+        "https://3dgalaxy.co"
       ],
       "isUnrecognized": true
     }

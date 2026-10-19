@@ -692,9 +692,22 @@ export const createOrder = async (req: any, res: Response) => {
         customer = await prisma.customer.create({
           data: {
             userId,
+            phone: resolvedPhone || null,
             customerType: customerType || 'retail'
           }
         });
+      } else if (resolvedPhone && customer.phone !== resolvedPhone) {
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: { phone: resolvedPhone }
+        });
+        customer.phone = resolvedPhone;
+      }
+      if (resolvedPhone) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { mobile: resolvedPhone }
+        }).catch(() => {});
       }
       customerIdToUse = customer.id;
     } else {
@@ -706,11 +719,17 @@ export const createOrder = async (req: any, res: Response) => {
             email: resolvedEmail,
             firstName: resolvedName.split(' ')[0] || 'Guest',
             lastName: resolvedName.split(' ').slice(1).join(' ') || 'Customer',
+            mobile: resolvedPhone || null,
             passwordHash: '',
             isActive: true,
             role: 'Guest'
           }
         });
+      } else if (resolvedPhone && guestUser.mobile !== resolvedPhone) {
+        await prisma.user.update({
+          where: { id: guestUser.id },
+          data: { mobile: resolvedPhone }
+        }).catch(() => {});
       }
 
       let guestCustomer = await prisma.customer.findFirst({ where: { userId: guestUser.id } });
@@ -722,6 +741,12 @@ export const createOrder = async (req: any, res: Response) => {
             customerType: 'guest'
           }
         });
+      } else if (resolvedPhone && guestCustomer.phone !== resolvedPhone) {
+        await prisma.customer.update({
+          where: { id: guestCustomer.id },
+          data: { phone: resolvedPhone }
+        });
+        guestCustomer.phone = resolvedPhone;
       }
       customerIdToUse = guestCustomer.id;
     }
@@ -754,8 +779,7 @@ export const createOrder = async (req: any, res: Response) => {
             customerId: customerIdToUse,
             OR: [
               { addressLine1: formattedLine1 },
-              { addressLine1: rawLine1 },
-              ...(postalCode !== '100001' && postalCode !== 'N/A' ? [{ postalCode, city }] : [])
+              { addressLine1: rawLine1 }
             ]
           }
         });
@@ -772,6 +796,11 @@ export const createOrder = async (req: any, res: Response) => {
               country,
               isDefault: !userId
             }
+          });
+        } else if (phone && !shipAddr.addressLine1.includes(phone)) {
+          shipAddr = await tx.customerAddress.update({
+            where: { id: shipAddr.id },
+            data: { addressLine1: formattedLine1 }
           });
         }
         shippingAddressId = shipAddr.id;
@@ -847,7 +876,10 @@ export const createOrder = async (req: any, res: Response) => {
 
       // Calculate dynamic shipping using Centralized Shipping Engine
       const shippingCalc = await ShippingService.calculateShipping(parsedItems);
-      const shippingAmount = shippingCalc.shippingCharge;
+      let shippingAmount = shippingCalc.shippingCharge;
+      if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof req.body.shippingAmount === 'number' && req.body.shippingAmount > 0) {
+        shippingAmount = Number(req.body.shippingAmount);
+      }
       const shippingSource = shippingCalc.source;
       const estimatedDelivery = `${shippingCalc.estimatedDays} Days`;
       const shippingMethod = req.body.shippingMethod || 'Standard Delivery';
@@ -876,6 +908,14 @@ export const createOrder = async (req: any, res: Response) => {
           billingAddressId,
           shipment: {
             itemConfigurations: itemConfigs,
+            contactDetails: {
+              name: resolvedName,
+              email: resolvedEmail,
+              phone: resolvedPhone
+            },
+            customerPhone: resolvedPhone,
+            customerName: resolvedName,
+            customerEmail: resolvedEmail,
             shippingRule: shippingCalc.appliedRule,
             shippingWeightGrams: shippingCalc.totalWeightGrams,
             shippingWeightDisplay: shippingCalc.formattedWeight,

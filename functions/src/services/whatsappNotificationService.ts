@@ -58,6 +58,26 @@ export class WhatsAppNotificationService {
 
     const orderAny = (order as any) || {};
 
+    let shipmentObj: any = null;
+    if (orderAny.shipment) {
+      if (typeof orderAny.shipment === 'string') {
+        try { shipmentObj = JSON.parse(orderAny.shipment); } catch { }
+      } else if (typeof orderAny.shipment === 'object') {
+        shipmentObj = orderAny.shipment;
+      }
+    }
+
+    // 0. Check shipment.contactDetails (exact checkout session snapshot)
+    if (shipmentObj?.contactDetails && isCleanPhone(shipmentObj.contactDetails.phone)) {
+      return String(shipmentObj.contactDetails.phone).trim();
+    }
+    if (shipmentObj && isCleanPhone(shipmentObj.customerPhone)) {
+      return String(shipmentObj.customerPhone).trim();
+    }
+    if (shipmentObj && isCleanPhone(shipmentObj.phone)) {
+      return String(shipmentObj.phone).trim();
+    }
+
     // 1. Check direct fields on order
     if (isCleanPhone(orderAny.guestPhone)) return String(orderAny.guestPhone).trim();
     if (isCleanPhone(orderAny.guestMobile)) return String(orderAny.guestMobile).trim();
@@ -143,6 +163,22 @@ export class WhatsAppNotificationService {
     }
 
     if (order) {
+      let shipmentObj: any = null;
+      if (order.shipment) {
+        if (typeof order.shipment === 'string') {
+          try { shipmentObj = JSON.parse(order.shipment); } catch { }
+        } else if (typeof order.shipment === 'object') {
+          shipmentObj = order.shipment;
+        }
+      }
+
+      if (shipmentObj?.contactDetails && isCleanName(shipmentObj.contactDetails.name)) {
+        return shipmentObj.contactDetails.name.trim();
+      }
+      if (shipmentObj && isCleanName(shipmentObj.customerName)) {
+        return shipmentObj.customerName.trim();
+      }
+
       if (isCleanName(order.customerName)) return order.customerName.trim();
       if (isCleanName(order.guestName)) return order.guestName.trim();
 

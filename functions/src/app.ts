@@ -49,6 +49,7 @@ import {
 import { cacheMiddleware } from "./middleware/cache";
 
 import { requestCorrelationMiddleware } from "./middleware/requestCorrelation";
+import { trafficInstrumentationMiddleware } from "./modules/integration/trafficTracker";
 import { httpLoggerMiddleware } from "./middleware/httpLogger";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 import logRoutes from "./routes/log";
@@ -64,6 +65,7 @@ const isMultipartRequest = (req: Request) => {
 
 // Application Observability Middlewares
 app.use(requestCorrelationMiddleware);
+app.use(trafficInstrumentationMiddleware);
 
 // Universal Environment-Based CORS & Preflight Middleware (Must run BEFORE rate limiters and route handlers)
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -80,7 +82,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     ENV.CLIENT_URL,
     ENV.SITE_URL,
     ENV.ADMIN_APP_URL,
-    'https://3dgalaxy.co.in',
+    'https://3dgalaxy.co',
     'https://3dgalaxy.co',
     'https://www.3dgalaxy.co.in',
     'https://ajr3dgalaxy.web.app'
@@ -286,6 +288,8 @@ app.use("/api", schedulerRoutes);
 app.use("/api", logRoutes);
 import integrationRoutes from "./modules/integration/integration.routes";
 app.use("/api/integration/v1/admin", integrationRoutes);
+import taskhubRoutes from "./modules/integration/taskhub.routes";
+app.use("/api/integration/v1", taskhubRoutes);
 
 // Raw OpenAPI/Swagger Specification Object
 const swaggerDocument = {

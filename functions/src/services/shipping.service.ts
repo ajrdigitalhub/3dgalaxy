@@ -153,15 +153,35 @@ export class ShippingService {
           variant = product.variants.find((v: any) => v.id === item.variantId) || null;
         }
 
-        const price = variant?.salePrice
+        const isItemFree = (item as any).isFree === true ||
+          (item as any).configurationType === 'free_bundle' ||
+          (item as any).configurationType === 'free_included';
+
+        const itemEffectivePrice = (item as any).effectivePrice !== undefined && !isNaN(Number((item as any).effectivePrice))
+          ? Number((item as any).effectivePrice)
+          : (item as any).unitPrice !== undefined && !isNaN(Number((item as any).unitPrice))
+          ? Number((item as any).unitPrice)
+          : (item as any).price !== undefined && !isNaN(Number((item as any).price))
+          ? Number((item as any).price)
+          : null;
+
+        const price = isItemFree
+          ? 0
+          : itemEffectivePrice !== null
+          ? itemEffectivePrice
+          : variant?.salePrice
           ? Number(variant.salePrice)
           : variant?.price
           ? Number(variant.price)
           : product.salePrice
           ? Number(product.salePrice)
-          : Number(product.basePrice);
+          : Number(product.basePrice || 0);
 
-        const lineSubtotal = price * qty;
+        const lineSubtotal = isItemFree
+          ? 0
+          : (item as any).lineTotal !== undefined && !isNaN(Number((item as any).lineTotal))
+          ? Number((item as any).lineTotal)
+          : price * qty;
         totalCartSubtotal += lineSubtotal;
 
         // Weight resolution: variant weight -> product weightInGrams -> item.weightInGrams -> 0

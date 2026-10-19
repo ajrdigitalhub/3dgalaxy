@@ -4460,6 +4460,12 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
 
           <!-- Product Candidate List (Scrollable Area) -->
           <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2 min-h-[180px] max-h-[300px]">
+            @if (admin.ds.productsLoading() && getFilteredBundleProducts().length === 0) {
+              <div class="py-10 text-center">
+                <mat-icon class="text-3xl text-blue-500 animate-spin mb-2">sync</mat-icon>
+                <p class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 m-0">Loading products catalog...</p>
+              </div>
+            } @else {
             @for (prod of getFilteredBundleProducts(); track prod.id) {
               <div
                 (click)="selectBundleCandidate(prod)"
@@ -4524,6 +4530,7 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                 <p class="text-xs font-semibold text-zinc-600 dark:text-zinc-400 m-0">No matching products found.</p>
                 <p class="text-[11px] text-zinc-400 m-0 mt-1">Try typing a different name, SKU, or clear category filters.</p>
               </div>
+            }
             }
           </div>
 
@@ -5944,6 +5951,9 @@ export class AdminCatalogTab {
     this.bundleSelectedProduct.set(null);
     this.bundleSelectedQuantity.set(1);
     this.showBundleModal.set(true);
+    if ((this.admin.ds.products() || []).length < 50) {
+      this.admin.ds.reloadProducts(false, true, 500);
+    }
   }
 
   closeBundleModal() {
@@ -6093,12 +6103,36 @@ export class AdminCatalogTab {
     }
     const usedCatIds = new Set<string>();
     for (const p of prods) {
-      const cId = p.category_id || p.categoryId;
+      const cId = p.category_id || p.categoryId || p.category?.id || p.primaryCategory?.id;
       if (cId) usedCatIds.add(cId);
+      if (Array.isArray(p.categories)) {
+        for (const c of p.categories) {
+          const id = typeof c === 'string' ? c : c?.id;
+          if (id) usedCatIds.add(id);
+        }
+      }
+      const pcs = p.productCategories || (p as any).product_categories;
+      if (Array.isArray(pcs)) {
+        for (const pc of pcs) {
+          const id = typeof pc === 'string' ? pc : (pc?.categoryId || pc?.category_id || pc?.category?.id || pc?.id);
+          if (id) usedCatIds.add(id);
+        }
+      }
+      if (Array.isArray(p.categoryIds)) {
+        for (const cid of p.categoryIds) {
+          if (cid) usedCatIds.add(String(cid));
+        }
+      }
     }
     const result: Array<{ id: string; name: string }> = [];
     for (const id of usedCatIds) {
-      result.push({ id, name: catMap.get(id) || id });
+      const name = catMap.get(id);
+      if (name) {
+        result.push({ id, name });
+      } else {
+        const matched = allCats.find((c: any) => c.id === id || c.slug === id);
+        result.push({ id, name: matched ? matched.name : id });
+      }
     }
     return result.sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -6110,18 +6144,59 @@ export class AdminCatalogTab {
     const catFilter = this.bundleCategoryFilter();
 
     if (catFilter !== 'all') {
-      list = list.filter((p: any) => (p.category_id || p.categoryId) === catFilter);
+      const allCats = this.admin.ds.categories() || [];
+      const filterIdLower = catFilter.toLowerCase().trim();
+
+      const childCatIds = allCats
+        .filter((c: any) => {
+          const pId = String(c?.parentId || c?.parent_id || '').toLowerCase().trim();
+          return pId && pId === filterIdLower;
+        })
+        .map((c: any) => String(c.id).toLowerCase().trim());
+
+      const validTargetCatIds = new Set<string>([filterIdLower, ...childCatIds]);
+
+      list = list.filter((p: any) => {
+        const pCatId = String(p.categoryId || p.category_id || p.category?.id || p.primaryCategory?.id || '').toLowerCase().trim();
+        if (pCatId && validTargetCatIds.has(pCatId)) return true;
+
+        if (p.category?.slug && validTargetCatIds.has(p.category.slug.toLowerCase().trim())) return true;
+
+        if (Array.isArray(p.categoryIds) && p.categoryIds.some((cid: any) => validTargetCatIds.has(String(cid).toLowerCase().trim()))) {
+          return true;
+        }
+
+        if (Array.isArray(p.categories) && p.categories.some((c: any) => {
+          const cId = String(c?.id || c || '').toLowerCase().trim();
+          const cSlug = String(c?.slug || '').toLowerCase().trim();
+          return validTargetCatIds.has(cId) || validTargetCatIds.has(cSlug);
+        })) {
+          return true;
+        }
+
+        const pcs = p.productCategories || (p as any).product_categories;
+        if (Array.isArray(pcs) && pcs.some((pc: any) => {
+          const pcId = String(pc?.categoryId || pc?.category_id || pc?.category?.id || pc?.id || '').toLowerCase().trim();
+          const pcSlug = String(pc?.category?.slug || '').toLowerCase().trim();
+          return validTargetCatIds.has(pcId) || validTargetCatIds.has(pcSlug);
+        })) {
+          return true;
+        }
+
+        return false;
+      });
     }
 
     if (q) {
-      list = list.filter((p: any) =>
-        (p.name || '').toLowerCase().includes(q) ||
-        (p.sku || '').toLowerCase().includes(q) ||
-        (p.brand || '').toLowerCase().includes(q)
-      );
+      list = list.filter((p: any) => {
+        const name = (p.name || '').toLowerCase();
+        const sku = (p.sku || '').toLowerCase();
+        const brand = (typeof p.brand === 'string' ? p.brand : (p.brand?.name || '')).toLowerCase();
+        return name.includes(q) || sku.includes(q) || brand.includes(q);
+      });
     }
 
-    return list.slice(0, 50);
+    return list.slice(0, 100);
   }
 
   removeBundleProduct(idOrItem: any) {

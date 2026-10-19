@@ -40,21 +40,11 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
             }
           } @else {
             @for (item of parentCategories(); track item.id; let idx = $index) {
-              <button (click)="selectFilterCategory(item.id)" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
-                [class]="'group flex flex-col items-center justify-between gap-2 p-4 sm:p-5 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl md:rounded-[2.25rem] transition-all h-48 sm:h-56 w-[calc(50%-0.5rem)] xs:w-[calc(33.333%-0.75rem)] sm:w-44 md:w-48 lg:w-52 border border-neutral-200/80 dark:border-neutral-800/80 shadow-xs hover:shadow-xl cursor-pointer relative overflow-hidden ' + 
-                         (ds.filterCategory() === item.id 
-                           ? 'bg-theme-primary/10 border-theme-primary/40 shadow-lg shadow-theme-primary/15 scale-[1.03]' 
-                           : 'hover:scale-[1.03] hover:bg-white dark:hover:bg-neutral-900 hover:border-theme-primary/40')"
-                [attr.aria-label]="'Filter by ' + item.name">
-                
-                @if (ds.filterCategory() === item.id) {
-                  <div class="absolute top-0 left-0 right-0 h-1.5 bg-theme-gradient rounded-full"></div>
-                }
+              <a [routerLink]="['/category', item.slug || item.id]" [appScrollReveal]="'rotate-in'" [delay]="idx * 80" appTilt [tiltMax]="5"
+                class="group flex flex-col items-center justify-between gap-2 p-4 sm:p-5 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md rounded-3xl md:rounded-[2.25rem] transition-all h-48 sm:h-56 w-[calc(50%-0.5rem)] xs:w-[calc(33.333%-0.75rem)] sm:w-44 md:w-48 lg:w-52 border border-neutral-200/80 dark:border-neutral-800/80 shadow-xs hover:shadow-xl hover:scale-[1.03] hover:bg-white dark:hover:bg-neutral-900 hover:border-theme-primary/40 cursor-pointer relative overflow-hidden no-underline"
+                [attr.aria-label]="'Explore ' + item.name">
 
-                <div [class]="'h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 rounded-2xl flex items-center justify-center transition-all duration-500 border-none bg-neutral-50/50 dark:bg-neutral-950/30 p-2 my-auto ' + 
-                              (ds.filterCategory() === item.id 
-                                ? 'text-theme-primary scale-105' 
-                                : 'text-neutral-700 dark:text-neutral-200 group-hover:scale-110')">
+                <div class="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 rounded-2xl flex items-center justify-center transition-all duration-500 border-none bg-neutral-50/50 dark:bg-neutral-950/30 p-2 my-auto text-neutral-700 dark:text-neutral-200 group-hover:scale-110">
                   @if (item.image) {
                     <img [src]="item.image" [alt]="item.name" class="max-w-full max-h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-500 ease-out"
                       (error)="onImageError($event)" referrerpolicy="no-referrer" loading="lazy" decoding="async">
@@ -64,15 +54,12 @@ import { TiltDirective } from '../../../shared/directives/tilt.directive';
                 </div>
 
                 <div class="flex flex-col items-center gap-0.5 w-full mt-auto">
-                  <span [class]="'text-xs sm:text-sm font-black uppercase tracking-wider text-center leading-snug line-clamp-2 px-1 transition-colors ' + 
-                                 (ds.filterCategory() === item.id 
-                                   ? 'text-theme-primary font-extrabold' 
-                                   : 'text-neutral-800 dark:text-neutral-100 group-hover:text-theme-primary')">{{ item.name }}</span>
+                  <span class="text-xs sm:text-sm font-black uppercase tracking-wider text-center leading-snug line-clamp-2 px-1 transition-colors text-neutral-800 dark:text-neutral-100 group-hover:text-theme-primary">{{ item.name }}</span>
                   <span class="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wide">
                     {{ ds.productCountMap()[item.id] !== undefined ? ds.productCountMap()[item.id] : (item.productCount || item.product_count || 0) }} ITEMS
                   </span>
                 </div>
-              </button>
+              </a>
             }
           }
         </div>
@@ -127,18 +114,9 @@ export class HomeCategoriesComponent {
   }
 
   selectFilterCategory(cat: string) {
-    const isSelected = this.ds.filterCategory() === cat;
-    const finalCat = isSelected ? "" : cat;
-
-    const layout = this.ds.homeLayout();
-    const isCatalogVisible = layout.some(s => (s.id === 'featured-innovations' || s.id === 'featured-products' || s.type === 'FEATURED_PRODUCTS') && s.visible);
-    if (isCatalogVisible) {
-      this.ds.filterCategory.set(finalCat);
-      const el = document.getElementById('products-catalog');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      this.router.navigate(['/products'], { queryParams: { category: finalCat } });
-    }
+    const category = this.ds.categories().find((c) => c.id === cat || c.slug === cat);
+    const target = category ? (category.slug || category.id) : cat;
+    this.router.navigate(['/category', target]);
   }
 
   onImageError(event: Event) {

@@ -15,6 +15,7 @@ import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
 import { runWhatsappWebhookApiTests } from '../api/whatsapp-webhook-api.test';
+import { runTaskHubObservabilityApiTests } from '../api/taskhub-observability-api.test';
 import { runCustomerCheckoutIntegrationTests } from '../integration/customer-checkout-pipeline.test';
 import { runFcmEnvironmentIsolationTests } from '../integration/fcm-environment-isolation.test';
 import { runCriticalSmokeTests } from '../smoke/critical-smoke.test';
@@ -114,6 +115,12 @@ async function main() {
     const d6 = Date.now() - s6;
     suites.push({ name: 'WhatsApp Webhooks & Automation API Tests', category: 'API', ...r6, durationMs: d6 });
     console.log(`  ✓ WhatsApp Webhooks: ${r6.passed} passed, ${r6.failed} failed (${d6}ms)`);
+
+    const sTh = Date.now();
+    const rTh = await runTaskHubObservabilityApiTests(client);
+    const dTh = Date.now() - sTh;
+    suites.push({ name: 'TaskHub Observability & Health Integration API Tests', category: 'API', ...rTh, durationMs: dTh });
+    console.log(`  ✓ TaskHub Observability APIs: ${rTh.passed} passed, ${rTh.failed} failed (${dTh}ms)`);
   }
 
   // LEVEL 3: INTEGRATION TESTS

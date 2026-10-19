@@ -228,16 +228,18 @@ export const processOrderCreation = async (tx: any, payload: any) => {
       formattedLine1 = `${name || 'Customer'} | ${phone || ''} | ${addressType} | ${rawLine1}`.trim();
     }
 
-    let shipAddr = await tx.customerAddress.findFirst({
-      where: {
-        customerId,
-        OR: [
-          { addressLine1: formattedLine1 },
-          { addressLine1: rawLine1 },
-          ...(postalCode !== '100001' && postalCode !== 'N/A' ? [{ postalCode, city }] : [])
-        ]
-      }
-    });
+    let shipAddr = null;
+    if (customerId) {
+      shipAddr = await tx.customerAddress.findFirst({
+        where: {
+          customerId,
+          OR: [
+            { addressLine1: formattedLine1 },
+            { addressLine1: rawLine1 }
+          ]
+        }
+      });
+    }
 
     if (!shipAddr) {
       shipAddr = await tx.customerAddress.create({
@@ -251,6 +253,12 @@ export const processOrderCreation = async (tx: any, payload: any) => {
           country,
           isDefault: !userId
         }
+      });
+    } else if (phone && !shipAddr.addressLine1.includes(phone)) {
+      // If address exists but contains outdated phone, update with new formatted line
+      shipAddr = await tx.customerAddress.update({
+        where: { id: shipAddr.id },
+        data: { addressLine1: formattedLine1 }
       });
     }
     shippingAddressId = shipAddr.id;
@@ -293,7 +301,7 @@ export const processOrderCreation = async (tx: any, payload: any) => {
   if (Array.isArray(items)) {
     for (const it of items) {
       const qty = Math.max(1, Number(it.quantity) || 1);
-      const unitPrice = Number(it.unitPrice || it.price || it.effectivePrice || 0);
+      const unitPrice = Number(it.unitPrice ?? it.effectivePrice ?? it.price ?? 0);
       const itemWeightGrams = Number(it.weightInGrams ?? it.weight ?? 0);
       computedSubtotal += unitPrice * qty;
       computedTotalQuantity += qty;
@@ -316,46 +324,70 @@ export const processOrderCreation = async (tx: any, payload: any) => {
     return `${(val / 1000).toFixed(2)} kg`;
   };
 
-  const orderData: any = {
-    orderNumber,
-    status: orderStatus,
-    paymentMethod,
-    paymentStatus: isConfirmed ? 'PAID' : 'PENDING',
-    paymentGateway: paymentGateway || (paymentMethod === 'RAZORPAY' ? 'razorpay' : paymentMethod === 'CASHFREE' ? 'cashfree' : 'cod'),
-    paymentId: paymentId || null,
-    transactionId: transactionId || null,
-    gatewayResponse: typeof gatewayResponse === 'object' ? JSON.stringify(gatewayResponse) : (gatewayResponse || null),
-    totalAmount: finalTotalAmount,
-    taxAmount: finalTax,
-    shippingAmount: finalShipping,
-    discountAmount: finalDiscount,
-    codCharge: finalCodCharge,
-    paidAmount: isConfirmed ? finalTotalAmount : 0,
-    totalWeightInGrams: computedTotalWeightGrams,
-    displayWeight: formatWeightServer(computedTotalWeightGrams),
-    totalQuantity: computedTotalQuantity,
-    notes: notes || null,
-    gstNumber: gstNumber || null,
-    companyName: companyName || null,
-    shipment: payload.shipment || null,
-    ...(customerId && isValidUuid(customerId) ? { customer: { connect: { id: customerId } } } : {}),
-    ...(shippingAddressId && isValidUuid(shippingAddressId) ? { shippingAddress: { connect: { id: shippingAddressId } } } : {}),
-    ...(billingAddressId && isValidUuid(billingAddressId) ? { billingAddress: { connect: { id: billingAddressId } } } : {}),
+    const finalShipment: any = payload.shipment && typeof payload.shipment === 'object'
+      ? { ...payload.shipment }
+      : {};
+    if (!finalShipment.contactDetails) {
+      finalShipment.contactDetails = {
+        name: customerName,
+        phone: customerPhone,
+        email: payload.resolvedEmail || payload.email || payload.guestEmail || ''
+      };
+    }
+    if (!finalShipment.customerPhone && customerPhone) finalShipment.customerPhone = customerPhone;
+    if (!finalShipment.customerName && customerName) finalShipment.customerName = customerName;
+    if (!finalShipment.customerEmail && (payload.resolvedEmail || payload.email)) {
+      finalShipment.customerEmail = payload.resolvedEmail || payload.email;
+    }
+
+    const orderData: any = {
+      orderNumber,
+      status: orderStatus,
+      paymentMethod,
+      paymentStatus: isConfirmed ? 'PAID' : 'PENDING',
+      paymentGateway: paymentGateway || (paymentMethod === 'RAZORPAY' ? 'razorpay' : paymentMethod === 'CASHFREE' ? 'cashfree' : 'cod'),
+      paymentId: paymentId || null,
+      transactionId: transactionId || null,
+      gatewayResponse: typeof gatewayResponse === 'object' ? JSON.stringify(gatewayResponse) : (gatewayResponse || null),
+      totalAmount: finalTotalAmount,
+      taxAmount: finalTax,
+      shippingAmount: finalShipping,
+      discountAmount: finalDiscount,
+      codCharge: finalCodCharge,
+      paidAmount: isConfirmed ? finalTotalAmount : 0,
+      totalWeightInGrams: computedTotalWeightGrams,
+      displayWeight: formatWeightServer(computedTotalWeightGrams),
+      totalQuantity: computedTotalQuantity,
+      notes: notes || null,
+      gstNumber: gstNumber || null,
+      companyName: companyName || null,
+      shipment: Object.keys(finalShipment).length > 0 ? finalShipment : null,
+    ...(customerId && isValidUuid(customerId) ? { customerId } : {}),
+    ...(shippingAddressId && isValidUuid(shippingAddressId) ? { shippingAddressId } : {}),
+    ...(billingAddressId && isValidUuid(billingAddressId) ? { billingAddressId } : {}),
     items: {
-      create: items.map((it: any) => ({
-        ...(it.productId && isValidUuid(it.productId) ? { product: { connect: { id: it.productId } } } : {}),
-        ...(it.variantId && isValidUuid(it.variantId) ? { variant: { connect: { id: it.variantId } } } : {}),
-        quantity: it.quantity,
-        unitPrice: it.unitPrice || it.price,
-        totalPrice: it.totalPrice || (it.quantity * (it.unitPrice || it.price)),
-        weightInGrams: Number(it.weightInGrams ?? it.weight ?? 0)
-      }))
+      create: (items || []).map((it: any) => {
+        const qty = Math.max(1, Number(it.quantity) || 1);
+        const unitPrice = Number(it.unitPrice ?? it.effectivePrice ?? it.price ?? 0);
+        const safeUnitPrice = isNaN(unitPrice) ? 0 : unitPrice;
+        const totalPrice = Number(it.totalPrice ?? (qty * safeUnitPrice));
+        const safeTotalPrice = isNaN(totalPrice) ? 0 : totalPrice;
+
+        return {
+          ...(it.productId && isValidUuid(it.productId) ? { productId: it.productId } : {}),
+          ...(it.variantId && isValidUuid(it.variantId) ? { variantId: it.variantId } : {}),
+          quantity: qty,
+          unitPrice: safeUnitPrice,
+          totalPrice: safeTotalPrice,
+          weightInGrams: Number(it.weightInGrams ?? it.weight ?? 0)
+        };
+      })
     },
     payments: {
       create: [{
         paymentMethod,
         transactionId: transactionId || null,
-        amount: totalAmount,
+        amount: finalTotalAmount,
         status: isConfirmed ? 'PAID' : 'PENDING'
       }]
     }
@@ -1346,6 +1378,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     guestName,
     guestEmail,
     guestPhone,
+    shippingAmount: frontendShippingAmount,
     totalAmount: frontendTotal
   } = req.body;
 
@@ -1414,7 +1447,19 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     } else if (userId) {
       let customer = await prisma.customer.findFirst({ where: { userId } });
       if (!customer) {
-        customer = await prisma.customer.create({ data: { userId, customerType: 'retail' } });
+        customer = await prisma.customer.create({ data: { userId, phone: resolvedPhone || null, customerType: 'retail' } });
+      } else if (resolvedPhone && customer.phone !== resolvedPhone) {
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: { phone: resolvedPhone }
+        });
+        customer.phone = resolvedPhone;
+      }
+      if (resolvedPhone) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { mobile: resolvedPhone }
+        }).catch(() => {});
       }
       customerIdToUse = customer.id;
       customerType = customer.customerType || 'retail';
@@ -1430,11 +1475,17 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
             email,
             firstName: name.split(' ')[0] || 'Guest',
             lastName: name.split(' ').slice(1).join(' ') || 'Customer',
+            mobile: phone || null,
             passwordHash: '',
             isActive: true,
             role: 'Guest'
           }
         });
+      } else if (phone && guestUser.mobile !== phone) {
+        await prisma.user.update({
+          where: { id: guestUser.id },
+          data: { mobile: phone }
+        }).catch(() => {});
       }
 
       let guestCust = await prisma.customer.findFirst({ where: { userId: guestUser.id } });
@@ -1442,6 +1493,12 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         guestCust = await prisma.customer.create({
           data: { userId: guestUser.id, phone, customerType: 'guest' }
         });
+      } else if (phone && guestCust.phone !== phone) {
+        await prisma.customer.update({
+          where: { id: guestCust.id },
+          data: { phone }
+        });
+        guestCust.phone = phone;
       }
       customerIdToUse = guestCust.id;
       customerType = 'guest';
@@ -1526,7 +1583,10 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
 
     // Server-side authoritative calculation
     const shippingResult = await ShippingService.calculateShipping(parsedItems.length > 0 ? parsedItems : items);
-    const shippingAmount = shippingResult.shippingCharge;
+    let shippingAmount = shippingResult.shippingCharge;
+    if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof frontendShippingAmount === 'number' && !isNaN(frontendShippingAmount) && frontendShippingAmount > 0) {
+      shippingAmount = Number(frontendShippingAmount);
+    }
     const taxAmount = 0;
     let discountAmount = 0;
 
@@ -1608,7 +1668,15 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       resolvedEmail,
       resolvedPhone,
       shipment: {
-        itemConfigurations: itemConfigs
+        itemConfigurations: itemConfigs,
+        contactDetails: {
+          name: resolvedName,
+          email: resolvedEmail,
+          phone: resolvedPhone
+        },
+        customerPhone: resolvedPhone,
+        customerName: resolvedName,
+        customerEmail: resolvedEmail
       }
     };
 

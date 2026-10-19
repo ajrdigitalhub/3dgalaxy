@@ -57,14 +57,36 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
     // Cast to any for flexible field access across different order shapes
     const orderAny = order as any;
 
+    let shipmentObj: any = null;
+    if (order.shipment) {
+      if (typeof order.shipment === 'string') {
+        try { shipmentObj = JSON.parse(order.shipment); } catch (e) {}
+      } else if (typeof order.shipment === 'object') {
+        shipmentObj = order.shipment;
+      }
+    }
+
     // Customer Name & Phone Resolution
     const customerObj = order.customer;
-    let custName = orderAny.customerName || '';
+    let custName = shipmentObj?.contactDetails?.name || shipmentObj?.customerName || orderAny.customerName || '';
     if (!custName && customerObj?.user) {
       custName = `${customerObj.user.firstName || ''} ${customerObj.user.lastName || ''}`.trim();
     }
+    if (!custName && customerObj) {
+      custName = `${(customerObj as any).firstName || ''} ${(customerObj as any).lastName || ''}`.trim();
+    }
 
-    let custPhone = customerObj?.phone || customerObj?.user?.mobile || orderAny.customerPhone || orderAny.mobile || orderAny.phone || '';
+    // Prioritize contactDetails snapshot from checkout session / shipment, then direct order fields, then customerObj
+    let custPhone = shipmentObj?.contactDetails?.phone ||
+      shipmentObj?.customerPhone ||
+      shipmentObj?.phone ||
+      orderAny.customerPhone ||
+      orderAny.guestPhone ||
+      orderAny.phone ||
+      orderAny.mobile ||
+      customerObj?.phone ||
+      customerObj?.user?.mobile ||
+      '';
 
     if (order.shippingAddress) {
       let addrObj: any = order.shippingAddress;
@@ -76,10 +98,12 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
         if (!custPhone) {
           custPhone = addrObj.phone || addrObj.mobile || addrObj.contactNumber || addrObj.phoneNumber || '';
         }
-        if (!custPhone && addrObj.addressLine1 && typeof addrObj.addressLine1 === 'string' && addrObj.addressLine1.includes('|')) {
+        if (addrObj.addressLine1 && typeof addrObj.addressLine1 === 'string' && addrObj.addressLine1.includes('|')) {
           const parts = addrObj.addressLine1.split('|').map((p: string) => p.trim());
           if (parts.length >= 2 && /^\+?\d{8,15}$/.test(parts[1].replace(/[\s-]/g, ''))) {
-            custPhone = parts[1];
+            if (!custPhone) {
+              custPhone = parts[1];
+            }
           }
           if (!custName && parts[0]) {
             custName = parts[0];

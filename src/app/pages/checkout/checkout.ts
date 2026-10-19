@@ -84,6 +84,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   isSubmitting = signal(false);
+  private isOrderFinished = false;
   showAuthModal = signal(false);
   showTermsModal = signal(false);
 
@@ -243,6 +244,11 @@ export class CheckoutComponent implements OnInit {
   });
 
   ngOnInit() {
+    if (this.groupedCheckoutItems().length === 0) {
+      this.toast.info("Your cart is empty. Please add items before proceeding to checkout.");
+      this.router.navigate(["/cart"], { replaceUrl: true });
+      return;
+    }
     this.restoreDraftState();
     if (this.isLoggedIn()) {
       this.fetchSavedAddresses();
@@ -255,6 +261,17 @@ export class CheckoutComponent implements OnInit {
   }
 
   constructor() {
+    // Guard against empty checkout state
+    effect(() => {
+      const items = this.groupedCheckoutItems();
+      if (items.length === 0 && !this.isOrderFinished && !this.isSubmitting()) {
+        untracked(() => {
+          this.toast.info("Your cart is empty. Please add items before proceeding to checkout.");
+          this.router.navigate(["/cart"], { replaceUrl: true });
+        });
+      }
+    });
+
     effect(() => {
       const pm = this.paymentMethod();
       if (pm === 'COD' || pm === 'ONLINE' || pm === 'RAZORPAY' || pm === 'CASHFREE') {
@@ -877,6 +894,7 @@ export class CheckoutComponent implements OnInit {
   }
 
   finishOrder(orderId: string, orderObj?: any) {
+    this.isOrderFinished = true;
     const isBuyNow = !!this.ds.buyNowItem();
 
     if (isBuyNow) {

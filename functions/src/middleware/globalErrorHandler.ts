@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { taskhubErrorForwarder } from '../modules/integration/taskhubErrorForwarder';
 
 export function globalErrorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const statusCode = err.status || err.statusCode || 500;
@@ -28,6 +29,13 @@ export function globalErrorHandler(err: any, req: Request, res: Response, _next:
     statusCode,
     errorCode
   });
+
+  // Asynchronously forward to TaskHub error ingestion endpoint if configured
+  try {
+    taskhubErrorForwarder.forwardError(err, req);
+  } catch {
+    // Non-blocking: never interrupt error handling
+  }
 
   // Ensure CORS response headers are set so browser doesn't obscure server errors as CORS violations
   const origin = req.headers.origin;

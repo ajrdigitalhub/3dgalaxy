@@ -51,7 +51,7 @@ const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
     id: 'qr_stl',
     shortcut: '/quote',
     title: 'Custom STL Upload Request',
-    message: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co.in/services along with your preferred material.',
+    message: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co/services along with your preferred material.',
     category: 'Printing',
     isActive: true
   },

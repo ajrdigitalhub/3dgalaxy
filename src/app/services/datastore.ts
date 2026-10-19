@@ -2139,19 +2139,22 @@ export class DatastoreService {
     });
   }
 
-  reloadProducts(showLoader = true, force = false, limit = 24, search?: string) {
+  reloadProducts(showLoader = true, force = false, limit?: number, search?: string) {
     if (!force && !search && this.products().length > 0) {
       return;
     }
+    const role = this.userRole();
+    const defaultLimit = (role === 'admin' || role === 'super-admin') ? 500 : 24;
+    const actualLimit = limit || defaultLimit;
+
     if (showLoader) {
       this.productsLoading.set(true);
     }
-    const params: any = { limit };
+    const params: any = { limit: actualLimit };
     if (search && search.trim()) {
       params.search = search.trim();
     }
 
-    const role = this.userRole();
     const endpoint = (role === 'admin' || role === 'super-admin') ? '/admin/products' : '/products';
 
     this.api?.get<any>(endpoint, params).pipe(

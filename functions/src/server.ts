@@ -21,3 +21,4 @@ app.listen(PORT, async () => {
   startScheduler();
   backupScheduler.init();
 });
+// Server reload trigger

@@ -32,7 +32,7 @@ export const ENV = {
   PG_POOL_MAX: Number(process.env.PG_POOL_MAX || 10),
   PG_IDLE_TIMEOUT_MS: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
   PG_CONN_TIMEOUT_MS: Number(process.env.PG_CONN_TIMEOUT_MS || 20000),
-  SITE_URL: (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, ''),
+  SITE_URL: (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.co').replace(/\/+$/, ''),
   SITE_NAME: process.env.SITE_NAME || process.env.STORE_NAME || '3D Galaxy',
   ADMIN_APP_URL: (process.env.ADMIN_APP_URL || process.env.ADMIN_URL || 'https://admin.3dgalaxy.in').replace(/\/+$/, ''),
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@3dgalaxy.co.in',
@@ -48,9 +48,20 @@ export const ENV = {
   BACKUP_STORAGE_ROOT: (process.env.BACKUP_STORAGE_ROOT || 'db_backups').replace(/^\/+|\/+$/g, ''),
   CRON_SECRET: process.env.CRON_SECRET || '3dgalaxy_cron_secret_key_2026',
   APP_ENV: (process.env.APP_ENV || process.env.NODE_ENV || 'development').toLowerCase(),
-  APP_ORIGIN: (process.env.APP_ORIGIN || process.env.APP_URL || process.env.SITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, ''),
+  APP_ORIGIN: (process.env.APP_ORIGIN || process.env.APP_URL || process.env.SITE_URL || 'https://3dgalaxy.co').replace(/\/+$/, ''),
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'ajr3dgalaxy',
   FCM_NOTIFICATIONS_ENABLED: process.env.FCM_NOTIFICATIONS_ENABLED !== 'false',
+  TASKHUB_INTEGRATION_ENABLED: process.env.TASKHUB_INTEGRATION_ENABLED !== 'false',
+  TASKHUB_INTEGRATION_API_KEY: process.env.TASKHUB_INTEGRATION_API_KEY || 'th_sec_3dgalaxy_prod_live_9f8b2c4e1a',
+  TASKHUB_INTEGRATION_API_KEY_SECONDARY: process.env.TASKHUB_INTEGRATION_API_KEY_SECONDARY || '',
+  TASKHUB_INTEGRATION_KEY_ID: process.env.TASKHUB_INTEGRATION_KEY_ID || 'th_key_3dgalaxy_01',
+  TASKHUB_INTEGRATION_ALLOWED_RESOURCES: (process.env.TASKHUB_INTEGRATION_ALLOWED_RESOURCES || 'health,metrics,logs,traffic,deployments')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean),
+  TASKHUB_APPLICATION_ID: process.env.TASKHUB_APPLICATION_ID || '3dgalaxy',
+  TASKHUB_ENVIRONMENT: process.env.TASKHUB_ENVIRONMENT || process.env.APP_ENV || process.env.NODE_ENV || 'production',
+  TASKHUB_ERROR_INGESTION_URL: process.env.TASKHUB_ERROR_INGESTION_URL || null,
 };
 
 export const getDatabaseUrl = () => {

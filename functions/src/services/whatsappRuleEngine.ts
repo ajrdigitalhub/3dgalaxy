@@ -76,7 +76,7 @@ export const DEFAULT_RULES: AutoReplyRule[] = [
     id: 'rule_stl_quote',
     name: 'Custom 3D Printing & STL Quote',
     keywords: ['stl', 'obj', 'quote', '3d print', 'cad', 'custom print', 'prototype'],
-    replyMessage: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co.in/services along with your preferred material for an instant quote! 🖨️',
+    replyMessage: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co/services along with your preferred material for an instant quote! 🖨️',
     matchType: 'CONTAINS',
     priority: 75,
     enabled: true,
@@ -278,7 +278,7 @@ export class WhatsAppRuleEngine {
           .join(', ');
 
         const itemsSnippet = items ? ` (Items: ${items})` : '';
-        return `Your order #${orderNum} is currently *${status}*${itemsSnippet}. Total: ₹${order.totalAmount || 0}.\nYou can track live shipping status anytime at https://3dgalaxy.co.in/orders.`;
+        return `Your order #${orderNum} is currently *${status}*${itemsSnippet}. Total: ₹${order.totalAmount || 0}.\nYou can track live shipping status anytime at https://3dgalaxy.co/orders.`;
       }
     } catch (err: any) {
       logger.warn('[WhatsAppRuleEngine] Order status lookup error:', err.message);

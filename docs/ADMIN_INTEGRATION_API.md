@@ -554,7 +554,7 @@ All errors return JSON with the correlated `requestId`:
 
 ### Step 1: Mint Integration Access Token
 ```bash
-curl -X POST https://3dgalaxy.co.in/api/integration/v1/admin/auth/token \
+curl -X POST https://3dgalaxy.co/api/integration/v1/admin/auth/token \
   -H "Content-Type: application/json" \
   -H "X-Request-ID: taskhub_init_001" \
   -d '{
@@ -566,21 +566,21 @@ curl -X POST https://3dgalaxy.co.in/api/integration/v1/admin/auth/token \
 
 ### Step 2: Fetch System Health
 ```bash
-curl -X GET https://3dgalaxy.co.in/api/integration/v1/admin/health \
+curl -X GET https://3dgalaxy.co/api/integration/v1/admin/health \
   -H "Authorization: Bearer <TOKEN>" \
   -H "X-Request-ID: taskhub_health_001"
 ```
 
 ### Step 3: Fetch Normalized Inventory
 ```bash
-curl -X GET "https://3dgalaxy.co.in/api/integration/v1/admin/inventory?limit=50&status=IN_STOCK" \
+curl -X GET "https://3dgalaxy.co/api/integration/v1/admin/inventory?limit=50&status=IN_STOCK" \
   -H "Authorization: Bearer <TOKEN>" \
   -H "X-Request-ID: taskhub_inv_001"
 ```
 
 ### Step 4: Fetch Telemetry Logs
 ```bash
-curl -X GET "https://3dgalaxy.co.in/api/integration/v1/admin/logs?limit=50&level=WARN" \
+curl -X GET "https://3dgalaxy.co/api/integration/v1/admin/logs?limit=50&level=WARN" \
   -H "Authorization: Bearer <TOKEN>" \
   -H "X-Request-ID: taskhub_logs_001"
 ```
@@ -588,12 +588,12 @@ curl -X GET "https://3dgalaxy.co.in/api/integration/v1/admin/logs?limit=50&level
 ### Step 5: Verify and Restore Backup
 ```bash
 # Verify backup integrity first
-curl -X POST https://3dgalaxy.co.in/api/integration/v1/admin/backups/a80620f5-2745-4a52-b9c9-9e22d7fd4648/verify \
+curl -X POST https://3dgalaxy.co/api/integration/v1/admin/backups/a80620f5-2745-4a52-b9c9-9e22d7fd4648/verify \
   -H "Authorization: Bearer <TOKEN>" \
   -H "X-Request-ID: taskhub_verify_001"
 
 # Execute controlled restore
-curl -X POST https://3dgalaxy.co.in/api/integration/v1/admin/backups/a80620f5-2745-4a52-b9c9-9e22d7fd4648/restore \
+curl -X POST https://3dgalaxy.co/api/integration/v1/admin/backups/a80620f5-2745-4a52-b9c9-9e22d7fd4648/restore \
   -H "Authorization: Bearer <TOKEN>" \
   -H "X-Request-ID: taskhub_restore_001"
 ```

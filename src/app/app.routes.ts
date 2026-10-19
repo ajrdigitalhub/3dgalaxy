@@ -1,6 +1,7 @@
 import { Routes } from "@angular/router";
 import { Home } from "./pages/home/home";
 import { authGuard, roleGuard } from "./core/guards/auth.guard";
+import { checkoutGuard } from "./core/guards/checkout.guard";
 
 export const routes: Routes = [
   { path: "", component: Home },
@@ -98,6 +99,7 @@ export const routes: Routes = [
     path: "checkout",
     loadComponent: () =>
       import("./pages/checkout/checkout").then((m) => m.CheckoutComponent),
+    canActivate: [checkoutGuard],
     data: { preload: true },
   },
   {
