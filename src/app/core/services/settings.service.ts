@@ -360,38 +360,44 @@ export class SettingsService {
 
   public hydrateSettings(d: any) {
     if (!d) return;
-    this.settingsData.set(d);
+    // Update settingsData safely
+    this.settingsData.update((prev: any) => ({ ...(prev || {}), ...d }));
 
     // Update all sub-signals
     if (d.siteName !== undefined) this.siteName.set(d.siteName);
     if (d.logoUrl !== undefined) this.logoUrl.set(d.logoUrl);
     if (d.currency !== undefined) this.currency.set(d.currency);
 
-    let themeData = d.theme;
-    if (!themeData) {
-      themeData = {
-        primaryColor: d.primaryColor || "#f54f00",
-        secondaryColor: d.secondaryColor || "#ea580c",
-        accentColor: d.accentColor || "#3B82F6",
-        borderRadius: d.borderRadius || "0.75rem",
-        fontFamily: d.typography || "Inter",
-        darkMode: d.darkMode !== undefined ? d.darkMode : false,
-        themeText: d.themeText || "#ffffff",
+    // Only update theme if the payload actually contains theme configuration
+    if (d.theme !== undefined || d.primaryColor !== undefined || d.secondaryColor !== undefined) {
+      let incomingTheme = d.theme || {};
+      const currentTheme = this.theme() || {};
+      const themeData = {
+        primaryColor: incomingTheme.primaryColor || d.primaryColor || currentTheme.primaryColor || "#f54f00",
+        secondaryColor: incomingTheme.secondaryColor || d.secondaryColor || currentTheme.secondaryColor || "#ea580c",
+        accentColor: incomingTheme.accentColor || d.accentColor || currentTheme.accentColor || "#3B82F6",
+        borderRadius: incomingTheme.borderRadius || d.borderRadius || currentTheme.borderRadius || "0.75rem",
+        fontFamily: incomingTheme.fontFamily || incomingTheme.typography || d.typography || currentTheme.fontFamily || "Inter",
+        darkMode: incomingTheme.darkMode !== undefined ? incomingTheme.darkMode : (d.darkMode !== undefined ? d.darkMode : (currentTheme.darkMode ?? false)),
+        themeText: incomingTheme.themeText || d.themeText || currentTheme.themeText || "#ffffff",
+        ...incomingTheme,
       };
-    } else {
-      themeData = {
-        primaryColor: themeData.primaryColor || d.primaryColor || "#f54f00",
-        secondaryColor: themeData.secondaryColor || d.secondaryColor || "#ea580c",
-        accentColor: themeData.accentColor || d.accentColor || "#3B82F6",
-        borderRadius: themeData.borderRadius || d.borderRadius || "0.75rem",
-        fontFamily: themeData.fontFamily || themeData.typography || d.typography || "Inter",
-        darkMode: themeData.darkMode !== undefined ? themeData.darkMode : (d.darkMode !== undefined ? d.darkMode : false),
-        themeText: themeData.themeText || d.themeText || "#ffffff",
-        ...themeData,
+      this.theme.set(themeData);
+      this.applyTheme(themeData);
+    } else if (!this.theme() || Object.keys(this.theme()).length === 0) {
+      // Cold-start fallback only if no theme is loaded yet
+      const fallback = {
+        primaryColor: "#f54f00",
+        secondaryColor: "#ea580c",
+        accentColor: "#3B82F6",
+        borderRadius: "0.75rem",
+        fontFamily: "Inter",
+        darkMode: false,
+        themeText: "#ffffff",
       };
+      this.theme.set(fallback);
+      this.applyTheme(fallback);
     }
-    this.theme.set(themeData);
-    this.applyTheme(themeData);
 
     if (d.heroSlides && Array.isArray(d.heroSlides)) {
       const normalizedSlides = d.heroSlides.map((s: any, idx: number) => this.normalizeHeroSlide(s, idx));
@@ -729,6 +735,22 @@ export class SettingsService {
       root.classList.remove("dark");
       document.body?.classList.remove("dark");
       root.style.colorScheme = "light";
+    }
+
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem("3d_galaxy_active_theme", JSON.stringify({
+          primaryColor: finalPrimary,
+          secondaryColor: finalSecondary,
+          accentColor: finalAccent,
+          gradient: gradient,
+          gradientAngle: angle,
+          borderRadius: borderRadius,
+          themeText: themeData.themeText || "#ffffff",
+          fontFamily: font,
+          darkMode: isDarkMode
+        }));
+      } catch (e) {}
     }
 
     // Favicon update

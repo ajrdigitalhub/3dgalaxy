@@ -7,8 +7,8 @@ import { SettingsService } from './settings.service';
 export class ThemeService {
   private settingsService = inject(SettingsService);
 
-  primaryColor = computed<string>(() => this.settingsService.theme()?.primaryColor || '#00f2fe');
-  secondaryColor = computed<string>(() => this.settingsService.theme()?.secondaryColor || '#4facfe');
+  primaryColor = computed<string>(() => this.settingsService.theme()?.primaryColor || '#f54f00');
+  secondaryColor = computed<string>(() => this.settingsService.theme()?.secondaryColor || '#ea580c');
   gradientAngle = computed<string>(() => {
     const rawAngle = this.settingsService.theme()?.gradientAngle;
     return this.formatAngle(rawAngle);

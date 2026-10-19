@@ -1637,12 +1637,13 @@ export class DatastoreService {
         if (res && res.success && res.data) {
           const d = res.data;
           
-          // 1. Settings & Theme
-          const settingsVal = d.settings || d;
-          try {
-            this.settingsService.hydrateSettings(settingsVal);
-          } catch (e) {
-            console.warn('Non-fatal settingsService sync warning:', e);
+          // 1. Settings & Theme (only if settings exist in homepage payload)
+          if (d.settings) {
+            try {
+              this.settingsService.hydrateSettings(d.settings);
+            } catch (e) {
+              console.warn('Non-fatal settingsService sync warning:', e);
+            }
           }
 
           // 2. Categories

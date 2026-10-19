@@ -53,6 +53,52 @@
   <link rel="preload" as="image" href="https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/uploads/1784893575124-image-1784893575116-226385731.jpeg" fetchpriority="high" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" media="print" onload="this.media='all'" />
+ 
+  <!-- Immediate Theme Pre-loader: Prevents Theme FOUC and Stabilizes Theme on Refresh -->
+  <script>
+    (function () {
+      try {
+        var rawActive = localStorage.getItem('3d_galaxy_active_theme');
+        var theme = rawActive ? JSON.parse(rawActive) : null;
+        if (!theme) {
+          var rawSettings = localStorage.getItem('3d_galaxy_settings');
+          var parsed = rawSettings ? JSON.parse(rawSettings) : null;
+          theme = parsed && parsed.theme ? parsed.theme : null;
+        }
+        var savedThemeMode = localStorage.getItem('3d_galaxy_theme') || localStorage.getItem('theme');
+        var isDark = savedThemeMode === 'dark' || (savedThemeMode !== 'light' && theme && theme.darkMode);
+        var doc = document.documentElement;
+        if (isDark) {
+          doc.classList.add('dark');
+          doc.style.colorScheme = 'dark';
+        } else if (savedThemeMode === 'light') {
+          doc.classList.remove('dark');
+          doc.style.colorScheme = 'light';
+        }
+        if (theme) {
+          var p = theme.primaryColor || '#f54f00';
+          var s = theme.secondaryColor || '#ea580c';
+          var a = theme.accentColor || '#3B82F6';
+          var angle = (theme.gradientAngle !== undefined ? theme.gradientAngle : '135') + '';
+          if (!angle.endsWith('deg')) angle += 'deg';
+          var grad = theme.gradient || ('linear-gradient(' + angle + ', ' + p + ', ' + s + ')');
+          var radius = theme.borderRadius || '0.75rem';
+          doc.style.setProperty('--primary-color', p);
+          doc.style.setProperty('--secondary-color', s);
+          doc.style.setProperty('--accent-color', a);
+          doc.style.setProperty('--color-primary', p);
+          doc.style.setProperty('--color-secondary', s);
+          doc.style.setProperty('--color-accent', a);
+          doc.style.setProperty('--color-theme-primary', p);
+          doc.style.setProperty('--color-theme-secondary', s);
+          doc.style.setProperty('--theme-gradient', grad);
+          doc.style.setProperty('--gradient-angle', angle);
+          doc.style.setProperty('--theme-radius', radius);
+          doc.style.setProperty('--radius', radius);
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Font loader helper to prevent layout shift and ligature glitches -->
   <script>
