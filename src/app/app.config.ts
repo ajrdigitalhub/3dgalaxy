@@ -46,7 +46,7 @@ export const appConfig: ApplicationConfig = {
       const settingsService = inject(SettingsService);
       settingsService.initSync();
       if (typeof window !== 'undefined') {
-        setTimeout(() => settingsService.loadSettings(), 50);
+        settingsService.loadSettings();
       }
     }),
     provideAnalytics({

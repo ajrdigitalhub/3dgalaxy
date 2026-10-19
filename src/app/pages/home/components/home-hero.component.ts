@@ -23,7 +23,7 @@ import { TiltDirective } from "../../../shared/directives/tilt.directive";
   imports: [CommonModule, RouterModule, MatIconModule, TiltDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (carouselConfig()?.enabled !== false) {
+    @if (carouselConfig()?.enabled !== false && (heroSlides().length > 0 || !isLoaded())) {
     <!-- HERO: PREMIUM IMMERSIVE SHOWCASE STAGE -->
     <section
       id="hero-section"
@@ -430,6 +430,8 @@ export class HomeHeroComponent {
   theme = computed(() => this.settingsService.theme() || {});
   carouselConfig = computed(() => this.settingsService.getHeroCarousel() || {});
 
+  isLoaded = computed(() => this.settingsService.isLoaded());
+
   // Load slides directly from settings
   heroSlides = computed(() => {
     const list = this.settingsService.getHeroSlides() || [];
@@ -447,43 +449,6 @@ export class HomeHeroComponent {
           (Number(a.slideOrder) || 0) - (Number(b.slideOrder) || 0),
       );
 
-    if (activeSlides.length === 0) {
-      // Return a premium default slide if none is configured
-      return [
-        {
-          id: "default-1",
-          title: "A1 Combo 3D Printer",
-          subtitle: "Bambu Lab",
-          badge: "Top Choice",
-          badgeIcon: "bolt",
-          layoutMode: "showcase",
-          showOverlayCard: true,
-          overlayCardSize: "medium",
-          overlayCardStyle: "glass",
-          showPrimaryBtn: true,
-          btnText: "Buy Now",
-          btnIcon: "shopping_cart",
-          btnTheme: "primary",
-          showSecondaryBtn: true,
-          secBtnText: "View Details",
-          secBtnIcon: "explore",
-          secBtnTheme: "glass",
-          linkUrl: "/products/bambu-lab-a1-combo",
-          desc: "Seamless multi-color printing at an accessible price point, complete with fully automated alignment and calibration sensors.",
-          imageUrl:
-            "https://images.unsplash.com/photo-1615840287214-7fe58a8f3685?auto=format&fit=crop&q=80&w=800",
-          price: "48999",
-          oldPrice: "55000",
-          discountText: "11% OFF",
-          productTag: "New In Store",
-          animationType: "fade",
-          overlayOpacity: 0.4,
-          textAlignment: "left",
-          darkOverlay: true,
-          slideDuration: 4000,
-        },
-      ];
-    }
     return activeSlides;
   });
 
