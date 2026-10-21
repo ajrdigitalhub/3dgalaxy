@@ -3,10 +3,23 @@ import { getSettingsService, updateSettingsService } from './settings.service';
 import { clearCache } from '../../middleware/cache';
 import { sysCache } from '../../config/cache';
 
+export const sanitizeSettingsForClient = (settings: any) => {
+  if (!settings || typeof settings !== 'object') return settings;
+  const cloned = JSON.parse(JSON.stringify(settings));
+  if (cloned.instagramFeedSettings) {
+    const rawToken = cloned.instagramFeedSettings.accessToken;
+    const hasToken = Boolean(rawToken && typeof rawToken === 'string' && rawToken.trim() !== '');
+    cloned.instagramFeedSettings.hasToken = hasToken;
+    cloned.instagramFeedSettings.accessToken = hasToken ? '••••••••••••••••' : '';
+  }
+  return cloned;
+};
+
 export const getSettings = async (req: Request, res: Response) => {
   try {
     const data = await getSettingsService();
-    return res.status(200).json({ success: true, data });
+    const sanitized = sanitizeSettingsForClient(data);
+    return res.status(200).json({ success: true, data: sanitized });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to find settings', details: error.message });
   }
@@ -37,7 +50,8 @@ export const updateSettings = async (req: Request, res: Response) => {
   try {
     const updated = await updateSettingsService(req.body);
     clearCache(); // Invalidate server-side cache for settings and layout configs
-    return res.status(200).json({ success: true, data: updated });
+    const sanitized = sanitizeSettingsForClient(updated);
+    return res.status(200).json({ success: true, data: sanitized });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: 'Failed to update settings', details: error.message });
   }

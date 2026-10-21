@@ -94,6 +94,7 @@ export class TrackingService {
         // Fallback default configuration if backend endpoint is initializing
         const fallback: MarketingConfig = {
           enabled: true,
+          ga4MeasurementId: 'G-4BKM2K4PS0',
           enableEnhancedConversions: true,
           enableDynamicRemarketing: true,
           enableConsentMode: true,
@@ -102,6 +103,7 @@ export class TrackingService {
           defaultCurrency: 'INR'
         };
         this.config.set(fallback);
+        this.ga4.init(fallback);
       }
     });
   }

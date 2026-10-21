@@ -41,6 +41,10 @@ export class ApiService {
       this.clearCache('brand');
     } else if (endpoint.includes('setting')) {
       this.clearCache('setting');
+      this.clearCache('instagram');
+      this.clearCache('home');
+    } else if (endpoint.includes('instagram')) {
+      this.clearCache('instagram');
     } else if (endpoint.includes('home') || endpoint.includes('homepage')) {
       this.clearCache('home');
     }

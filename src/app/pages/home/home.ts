@@ -52,7 +52,6 @@ import {
     HomeBrandsComponent,
     HomeShowcaseTwoComponent,
     HomeCategoryShowcaseRowComponent,
-    HomeNewsletterComponent,
     HomeShopByCategoryComponent,
     HomeTechnologyHubsComponent,
     HomeEnterpriseSolutionsComponent,

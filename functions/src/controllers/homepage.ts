@@ -719,7 +719,16 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
           imageUrl: b.imageUrl,
           createdAt: b.createdAt
         })),
-        instagram: settingsData.instagramFeedSettings || {},
+        instagram: settingsData.instagramFeedSettings
+          ? {
+              enabled: Boolean(settingsData.instagramFeedSettings.enabled),
+              profileName: settingsData.instagramFeedSettings.profileName || "Instagram",
+              profileUrl: settingsData.instagramFeedSettings.profileUrl || "",
+              profileImageUrl: settingsData.instagramFeedSettings.profileImageUrl || "",
+              profileBio: settingsData.instagramFeedSettings.profileBio || "",
+              postCount: Number(settingsData.instagramFeedSettings.postCount) || 6,
+            }
+          : {},
         newsletter: settingsData.newsletterSettings || {},
         services,
         products: mappedProducts

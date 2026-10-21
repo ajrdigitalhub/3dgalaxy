@@ -92,5 +92,38 @@ export async function runPublicStorefrontApiTests(client: AxiosInstance) {
     assert.strictEqual(res.status, 200, `Expected 200 OK, got ${res.status}`);
   });
 
+  // --- SECTION 25: INSTAGRAM LIVE FEED APIs ---
+
+  await test('GET /api/public/instagram-feed: Responds 200 with enabled, profile, and posts', async () => {
+    const res = await client.get('/api/public/instagram-feed');
+    assert.strictEqual(res.status, 200, `Expected 200 OK, got ${res.status}`);
+    assert.strictEqual(res.data.success, true, 'Response must indicate success: true');
+    assert.ok(res.data.data, 'Response must have data object');
+    assert.strictEqual(typeof res.data.data.enabled, 'boolean', 'Enabled flag must be boolean');
+    assert.ok(res.data.data.profile, 'Profile object must be present');
+    assert.ok(Array.isArray(res.data.data.posts), 'Posts must be an array');
+  });
+
+  await test('GET /api/public/instagram-feed: Security check — Never leaks access tokens', async () => {
+    const res = await client.get('/api/public/instagram-feed');
+    const rawJson = JSON.stringify(res.data);
+    assert.ok(!rawJson.includes('accessToken'), 'Response must never leak raw accessToken');
+    assert.ok(!rawJson.includes('IGAA'), 'Response must never expose Meta token string');
+  });
+
+  await test('POST /api/public/instagram-feed/interaction: Records impression and click events', async () => {
+    const impressionRes = await client.post('/api/public/instagram-feed/interaction', {
+      eventType: 'impression',
+      postId: 'test_post_1',
+    });
+    assert.strictEqual(impressionRes.status, 200, `Expected 200 OK for impression, got ${impressionRes.status}`);
+
+    const clickRes = await client.post('/api/public/instagram-feed/interaction', {
+      eventType: 'click',
+      postId: 'test_post_1',
+    });
+    assert.strictEqual(clickRes.status, 200, `Expected 200 OK for click, got ${clickRes.status}`);
+  });
+
   return results;
 }

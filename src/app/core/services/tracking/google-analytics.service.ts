@@ -11,16 +11,21 @@ export class GoogleAnalyticsService {
   private initialized = signal<boolean>(false);
 
   public init(config: MarketingConfig) {
-    if (!isPlatformBrowser(this.platformId) || !config.enabled || !config.ga4MeasurementId) {
+    if (!isPlatformBrowser(this.platformId) || !config.enabled) {
       return;
     }
 
-    this.measurementId.set(config.ga4MeasurementId);
-    this.injectGa4Script(config.ga4MeasurementId);
+    const id = config.ga4MeasurementId || 'G-4BKM2K4PS0';
+    this.measurementId.set(id);
+    this.injectGa4Script(id);
   }
 
   private injectGa4Script(id: string) {
-    if (document.getElementById('ga4-script')) {
+    const existing = document.getElementById('ga4-script') ||
+      document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${id}"]`) ||
+      document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=G-4BKM2K4PS0"]`);
+
+    if (existing) {
       this.initialized.set(true);
       return;
     }

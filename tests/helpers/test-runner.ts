@@ -11,6 +11,7 @@ import { runResponsiveAndSecurityUnitTests } from '../unit/responsive-and-securi
 import { runVariantCartFlowTests } from '../unit/variant-cart-flow.test';
 import { runCampaignManagerAndPushUnitTests } from '../unit/campaign-manager-and-push.test';
 import { runProductBrandBundleFilamentUnitTests } from '../unit/product-brand-bundle-filament.test';
+import { runInstagramFeedUnitTests } from '../unit/instagram-feed.test';
 import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
@@ -87,6 +88,12 @@ async function main() {
     const dBrand = Date.now() - sBrand;
     suites.push({ name: 'Brand Synchronization, Complimentary Bundles & Filaments Unit Tests', category: 'UNIT', ...rBrand, durationMs: dBrand });
     console.log(`  ✓ Brand Sync, Bundle Selectors & Filaments: ${rBrand.passed} passed, ${rBrand.failed} failed (${dBrand}ms)`);
+
+    const sIg = Date.now();
+    const rIg = await runInstagramFeedUnitTests();
+    const dIg = Date.now() - sIg;
+    suites.push({ name: 'Instagram Live Feed, Media Normalization & Security Unit Tests', category: 'UNIT', ...rIg, durationMs: dIg });
+    console.log(`  ✓ Instagram Live Feed, Media Normalization & Security: ${rIg.passed} passed, ${rIg.failed} failed (${dIg}ms)`);
   }
 
   // LEVEL 2: API TESTS

@@ -20,9 +20,8 @@ import { AdminDevicesTab } from "./admin-devices-tab";
 import { BackupManagementComponent } from "../../../admin/settings/backup-management/backup-management.component";
 import { TrackingService, CourierPartnerConfig } from "../../../core/services/tracking.service";
 import { environment } from "../../../../environments/environment";
-
-
 import { PromoPopupComponent } from "../../../shared/components/promo-popup/promo-popup";
+import { HomeInstagramFeedComponent } from "../../home/components/home-instagram-feed.component";
 
 @Component({
   selector: "app-admin-settings-tab",
@@ -37,6 +36,7 @@ import { PromoPopupComponent } from "../../../shared/components/promo-popup/prom
     AdminDevicesTab,
     BackupManagementComponent,
     PromoPopupComponent,
+    HomeInstagramFeedComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -3297,186 +3297,297 @@ import { PromoPopupComponent } from "../../../shared/components/promo-popup/prom
                     />
                   </div>
                   <div
-                    class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4"
+                    class="p-5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-6 shadow-sm"
                   >
-                    <h3
-                      class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-300"
-                    >
-                      Instagram Feed Settings
-                    </h3>
+                    <!-- Header with Status Badge -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-zinc-200 dark:border-zinc-800 gap-3">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <svg class="w-4 h-4 text-pink-600 fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                          </svg>
+                          <h3 class="text-sm font-black uppercase text-zinc-900 dark:text-zinc-100">
+                            Instagram Feed Settings
+                          </h3>
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mt-0.5">
+                          Configure Graph API integration for social proof showcase on the store home page.
+                        </p>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        @if (!draft().instagramFeedSettings?.enabled) {
+                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+                            Feed Disabled
+                          </span>
+                        } @else if (instagramDiagnostics()?.status === 'connected') {
+                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Connected ({{ instagramDiagnostics()?.postsCount || 0 }} Posts)
+                          </span>
+                        } @else if (instagramDiagnostics()?.status === 'error') {
+                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            API Error
+                          </span>
+                        } @else {
+                          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Not Configured
+                          </span>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Configuration Form Inputs -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div class="space-y-1">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Enable Instagram Feed
-                        </label>
+                      <!-- Enable Feed Toggle -->
+                      <div class="sm:col-span-2 flex items-center justify-between p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                        <div>
+                          <label class="block text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                            Enable Instagram Feed on Home Page
+                          </label>
+                          <p class="text-[11px] text-zinc-400">
+                            Display the live social gallery on the public storefront.
+                          </p>
+                        </div>
                         <input
                           type="checkbox"
-                          [checked]="
-                            draft().instagramFeedSettings?.enabled || false
-                          "
-                          (change)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'enabled',
-                              $any($event.target).checked
-                            )
-                          "
-                          class="h-4 w-4"
+                          [checked]="draft().instagramFeedSettings?.enabled || false"
+                          (change)="setNested('instagramFeedSettings', 'enabled', $any($event.target).checked)"
+                          class="h-5 w-5 accent-blue-600 cursor-pointer"
                         />
                       </div>
+
+                      <!-- Profile ID -->
                       <div class="space-y-1">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Instagram Profile ID
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Instagram Profile ID / Account ID
                         </label>
                         <input
                           type="text"
-                          [value]="
-                            draft().instagramFeedSettings?.profileId || 'me'
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'profileId',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                          [value]="draft().instagramFeedSettings?.profileId || 'me'"
+                          (input)="setNested('instagramFeedSettings', 'profileId', $any($event.target).value)"
+                          placeholder="me or numeric account ID"
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-mono"
                         />
+                        <p class="text-[10px] text-zinc-400">Use 'me' for personal tokens, or numeric ID for Facebook Graph API. Do not use &#64;handle.</p>
                       </div>
+
+                      <!-- Access Token -->
                       <div class="space-y-1">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Instagram Access Token
-                        </label>
-                        <input
-                          type="text"
-                          [value]="
-                            draft().instagramFeedSettings?.accessToken || ''
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'accessToken',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"
-                        />
+                        <div class="flex items-center justify-between">
+                          <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                            Instagram Access Token
+                          </label>
+                          @if (draft().instagramFeedSettings?.accessToken && !draft().instagramFeedSettings?.accessToken.includes('••••')) {
+                            <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">New Token Entered</span>
+                          } @else if (draft().instagramFeedSettings?.hasToken || (draft().instagramFeedSettings?.accessToken && draft().instagramFeedSettings?.accessToken.includes('••••'))) {
+                            <span class="text-[9px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950 px-1.5 py-0.5 rounded">Token Stored</span>
+                          }
+                        </div>
+                        <div class="relative">
+                          <input
+                            [type]="showInstagramToken() ? 'text' : 'password'"
+                            [value]="draft().instagramFeedSettings?.accessToken || ''"
+                            (input)="setNested('instagramFeedSettings', 'accessToken', $any($event.target).value)"
+                            placeholder="Enter Meta Long-Lived Token"
+                            class="w-full pl-4 pr-10 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none focus:border-blue-500"
+                          />
+                          <button
+                            type="button"
+                            (click)="showInstagramToken.set(!showInstagramToken())"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs"
+                            title="Toggle visibility"
+                          >
+                            <mat-icon class="text-base">{{ showInstagramToken() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                          </button>
+                        </div>
+                        <p class="text-[10px] text-zinc-400">Keep token secure. Saved tokens remain safely encrypted on the server.</p>
                       </div>
+
+                      <!-- Posts To Show -->
                       <div class="space-y-1">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Posts To Show
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Posts To Show (Max 24)
                         </label>
                         <input
                           type="number"
                           min="1"
-                          max="12"
-                          [value]="
-                            draft().instagramFeedSettings?.postCount || 6
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'postCount',
-                              $any($event.target).valueAsNumber || 6
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                          max="24"
+                          [value]="draft().instagramFeedSettings?.postCount || 6"
+                          (input)="setNested('instagramFeedSettings', 'postCount', $any($event.target).valueAsNumber || 6)"
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500"
                         />
                       </div>
+
+                      <!-- Cache Duration -->
                       <div class="space-y-1">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Cache Duration (mins)
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Cache Duration (Minutes)
                         </label>
                         <input
                           type="number"
                           min="5"
-                          max="120"
-                          [value]="
-                            draft().instagramFeedSettings?.cacheMinutes || 30
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'cacheMinutes',
-                              $any($event.target).valueAsNumber || 30
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                          max="1440"
+                          [value]="draft().instagramFeedSettings?.cacheMinutes || 30"
+                          (input)="setNested('instagramFeedSettings', 'cacheMinutes', $any($event.target).valueAsNumber || 30)"
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500"
                         />
                       </div>
-                      <div class="space-y-1 sm:col-span-2">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Instagram Profile Name
+
+                      <!-- Profile Name -->
+                      <div class="space-y-1">
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Display Profile Name
                         </label>
                         <input
                           type="text"
-                          [value]="
-                            draft().instagramFeedSettings?.profileName || ''
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'profileName',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                          [value]="draft().instagramFeedSettings?.profileName || ''"
+                          (input)="setNested('instagramFeedSettings', 'profileName', $any($event.target).value)"
+                          placeholder="e.g. 3D Galaxy Studio"
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500"
                         />
                       </div>
-                      <div class="space-y-1 sm:col-span-2">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Profile Picture URL
+
+                      <!-- Profile Picture URL -->
+                      <div class="space-y-1">
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Profile Avatar URL
                         </label>
                         <input
                           type="text"
-                          [value]="
-                            draft().instagramFeedSettings?.profileImageUrl || ''
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'profileImageUrl',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"
+                          [value]="draft().instagramFeedSettings?.profileImageUrl || ''"
+                          (input)="setNested('instagramFeedSettings', 'profileImageUrl', $any($event.target).value)"
+                          placeholder="https://..."
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500"
                         />
                       </div>
+
+                      <!-- Profile Bio / Tagline -->
                       <div class="space-y-1 sm:col-span-2">
-                        <label
-                          class="block text-[9px] font-black text-zinc-400 uppercase"
-                        >
-                          Profile Bio / Tagline
+                        <label class="block text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                          Profile Bio / Subheading
                         </label>
                         <textarea
                           rows="2"
-                          [value]="
-                            draft().instagramFeedSettings?.profileBio || ''
-                          "
-                          (input)="
-                            setNested(
-                              'instagramFeedSettings',
-                              'profileBio',
-                              $any($event.target).value
-                            )
-                          "
-                          class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none resize-none"
+                          [value]="draft().instagramFeedSettings?.profileBio || ''"
+                          (input)="setNested('instagramFeedSettings', 'profileBio', $any($event.target).value)"
+                          placeholder="Short tagline displayed beside the feed on the home page"
+                          class="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 resize-none"
                         ></textarea>
                       </div>
+                    </div>
+
+                    <!-- Diagnostics & Test Connection Toolbar -->
+                    <div class="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-3">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="space-y-0.5">
+                          <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <mat-icon class="text-sm text-blue-500">wifi_tethering</mat-icon>
+                            Connection Diagnostics
+                          </h4>
+                          <p class="text-[11px] text-zinc-400">
+                            Verify token permissions and preview real posts directly from Meta's servers.
+                          </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            (click)="testInstagramConnection()"
+                            [disabled]="instagramTesting()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold uppercase transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-600/20"
+                          >
+                            @if (instagramTesting()) {
+                              <mat-icon class="animate-spin text-sm">refresh</mat-icon>
+                              Testing...
+                            } @else {
+                              <mat-icon class="text-sm">bolt</mat-icon>
+                              Test Connection & Refresh
+                            }
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Actionable Diagnostic Alert Banner -->
+                      @if (instagramDiagnostics()?.message) {
+                        <div
+                          [ngClass]="{
+                            'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200': instagramDiagnostics()?.status === 'connected',
+                            'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-200': instagramDiagnostics()?.status === 'error',
+                            'bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-200': instagramDiagnostics()?.status === 'not_configured' || instagramDiagnostics()?.status === 'disabled'
+                          }"
+                          class="p-3.5 rounded-xl border text-xs space-y-1"
+                        >
+                          <div class="font-bold flex items-center gap-1.5">
+                            @if (instagramDiagnostics()?.status === 'connected') {
+                              <mat-icon class="text-base text-emerald-600">check_circle</mat-icon>
+                            } @else if (instagramDiagnostics()?.status === 'error') {
+                              <mat-icon class="text-base text-rose-600">error</mat-icon>
+                            } @else {
+                              <mat-icon class="text-base text-amber-600">info</mat-icon>
+                            }
+                            <span>{{ instagramDiagnostics()?.message }}</span>
+                          </div>
+                          @if (instagramDiagnostics()?.recommendation) {
+                            <p class="text-[11px] opacity-90 pl-5">
+                              <strong>Recommendation:</strong> {{ instagramDiagnostics()?.recommendation }}
+                            </p>
+                          }
+                          @if (instagramDiagnostics()?.lastChecked) {
+                            <p class="text-[10px] opacity-70 pl-5 pt-0.5">
+                              Last tested: {{ instagramDiagnostics()?.lastChecked | date:'medium' }}
+                            </p>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Live Feed Preview (Admin View) -->
+                    <div class="space-y-3 pt-2">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5">
+                          <mat-icon class="text-sm text-pink-500">grid_view</mat-icon>
+                          <h4 class="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
+                            Instagram Feed Live Storefront Preview
+                          </h4>
+                          @if (instagramDiagnostics()?.isLive) {
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                              Live Meta API
+                            </span>
+                          } @else if (instagramDiagnostics()?.isStale) {
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              Cached Backup
+                            </span>
+                          }
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] text-zinc-400">
+                          @if (instagramDiagnostics()?.lastChecked) {
+                            <span>Last verified: {{ instagramDiagnostics()?.lastChecked | date:'shortTime' }}</span>
+                          }
+                          <span>({{ (instagramDiagnostics()?.posts?.length || 0) }} items fetched)</span>
+                        </div>
+                      </div>
+
+                      @if (!draft().instagramFeedSettings?.enabled) {
+                        <div class="p-8 text-center rounded-2xl bg-white dark:bg-zinc-900 border border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400">
+                          <mat-icon class="text-3xl mb-1 opacity-50">visibility_off</mat-icon>
+                          <p class="text-xs font-bold">Feed is currently disabled</p>
+                          <p class="text-[11px] mt-0.5">Toggle "Enable Instagram Feed on Home Page" above to activate the live feed preview.</p>
+                        </div>
+                      } @else {
+                        <div class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/60 p-2 sm:p-4">
+                          <app-home-instagram-feed
+                            [previewMode]="true"
+                            [previewData]="instagramDiagnostics()"
+                            [postCountLimit]="draft().instagramFeedSettings?.postCount || 6"
+                            [externalLoading]="instagramTesting()"
+                            (refreshRequested)="testInstagramConnection()"
+                          />
+                        </div>
+                      }
                     </div>
                   </div>
                   <div class="space-y-1">
@@ -6634,6 +6745,11 @@ export class AdminSettingsTab implements OnDestroy {
   draft = signal<any>({});
   isSaving = signal<boolean>(false);
 
+  // Instagram Settings Signals
+  instagramDiagnostics = signal<any>(null);
+  instagramTesting = signal<boolean>(false);
+  showInstagramToken = signal<boolean>(false);
+
   // WhatsApp Settings Signals
   whatsappSubSection = signal<"config" | "templates">("config");
   activeTemplateKey = signal<string>("registration");
@@ -6919,6 +7035,8 @@ export class AdminSettingsTab implements OnDestroy {
       const tab = this.activeSubTab();
       if (tab === "Advertisements") {
         this.admin.ds.reloadAdvertisements(true);
+      } else if (tab === "Social Links") {
+        this.fetchInstagramDiagnostics();
       }
     });
 
@@ -6942,6 +7060,13 @@ export class AdminSettingsTab implements OnDestroy {
       } else if (this.adIntersectionObserver) {
         this.adIntersectionObserver.disconnect();
         this.adIntersectionObserver = null;
+      }
+    });
+
+    effect(() => {
+      const tab = this.activeSubTab();
+      if (tab === "Social Links" && !this.instagramDiagnostics() && !this.instagramTesting()) {
+        this.fetchInstagramDiagnostics();
       }
     });
   }
@@ -7777,6 +7902,58 @@ export class AdminSettingsTab implements OnDestroy {
     });
   }
 
+  fetchInstagramDiagnostics(force = false) {
+    this.instagramTesting.set(true);
+    const url = `/api/admin/settings/instagram/diagnostics${force ? '?refresh=true' : ''}`;
+    this.admin.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.instagramDiagnostics.set(res.data);
+        }
+        this.instagramTesting.set(false);
+      },
+      error: (err) => {
+        this.instagramDiagnostics.set({
+          status: 'error',
+          message: err.error?.message || err.message || 'Failed to load Instagram diagnostics',
+          recommendation: 'Verify network connectivity and admin credentials.',
+          posts: [],
+          postsCount: 0
+        });
+        this.instagramTesting.set(false);
+      }
+    });
+  }
+
+  testInstagramConnection() {
+    this.instagramTesting.set(true);
+    const ig = this.draft().instagramFeedSettings || {};
+    const payload = {
+      accessToken: ig.accessToken,
+      profileId: ig.profileId,
+      postCount: ig.postCount || 6,
+      enabled: ig.enabled !== false
+    };
+
+    this.admin.http.post<any>('/api/admin/settings/instagram/test-connection', payload).subscribe({
+      next: (res) => {
+        if (res && res.data) {
+          this.instagramDiagnostics.set(res.data);
+          if (res.data.status === 'connected') {
+            this.toastService.success(`Connection verified! Found ${res.data.postsCount || 0} posts.`);
+          } else {
+            this.toastService.error(res.data.message || 'Connection test failed.');
+          }
+        }
+        this.instagramTesting.set(false);
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || err.message || 'Error testing Instagram connection');
+        this.instagramTesting.set(false);
+      }
+    });
+  }
+
   async saveAllSettings() {
     this.isSaving.set(true);
     try {
@@ -7788,6 +7965,7 @@ export class AdminSettingsTab implements OnDestroy {
       if (latest && Object.keys(latest).length > 0) {
         this.draft.set(JSON.parse(JSON.stringify(latest)));
       }
+      this.fetchInstagramDiagnostics(true);
     } catch (e: any) {
       this.toastService.error(
         e.message || "Error synchronization system schema.",

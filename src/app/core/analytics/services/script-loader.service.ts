@@ -31,6 +31,11 @@ export class ScriptLoaderService {
       return Promise.resolve(true);
     }
 
+    if (this.document.querySelector(`script[src="${url}"]`) || this.document.querySelector(`script[src^="${url}"]`)) {
+      this.loadedScripts.set(url, 'loaded');
+      return Promise.resolve(true);
+    }
+
     if (this.loadingPromises.has(url)) {
       return this.loadingPromises.get(url)!;
     }

@@ -516,6 +516,35 @@ export const updateSettingsService = async (payload: any) => {
     };
   }
 
+  // Preserve stored Instagram access token if payload sends empty, undefined, or masked value
+  if (payload && payload.instagramFeedSettings) {
+    const incomingIg = payload.instagramFeedSettings;
+    const existingIg = currentSettings?.instagramFeedSettings || {};
+    const incomingToken = incomingIg.accessToken;
+    let resolvedToken = existingIg.accessToken || "";
+
+    if (incomingIg.removeToken === true || incomingToken === null) {
+      resolvedToken = "";
+    } else if (
+      typeof incomingToken === "string" &&
+      incomingToken.trim() !== "" &&
+      !incomingToken.includes("••••") &&
+      !incomingToken.startsWith("***") &&
+      incomingToken !== "[CONFIGURED]"
+    ) {
+      resolvedToken = incomingToken.trim();
+    }
+
+    newSettings.instagramFeedSettings = {
+      ...existingIg,
+      ...incomingIg,
+      accessToken: resolvedToken,
+    };
+    delete newSettings.instagramFeedSettings.removeToken;
+  } else if (currentSettings?.instagramFeedSettings) {
+    newSettings.instagramFeedSettings = currentSettings.instagramFeedSettings;
+  }
+
   try {
     // 1. Sync Theme Settings if updated
     if (!newSettings.theme) {
@@ -679,6 +708,7 @@ export const updateSettingsService = async (payload: any) => {
     if (payload && payload.instagramFeedSettings) {
       try {
         sysCache.del("instagram_feed");
+        clearCache("/api/public/instagram-feed");
       } catch (e) {
         // ignore
       }

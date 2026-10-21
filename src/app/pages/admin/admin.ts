@@ -131,7 +131,6 @@ import { AdminWhatsAppService } from "../../core/services/admin-whatsapp.service
     AdminNotificationCenterTabComponent,
     AdminWhatsappInboxComponent,
     OmniSearchComponent,
-    AdminVariantGroupConfigComponent,
     AdminReviewsTabComponent,
     AdminExploreConfigTabComponent,
     PushSettingsTabComponent,

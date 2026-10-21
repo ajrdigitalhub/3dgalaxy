@@ -35,8 +35,6 @@ import { VariantWeightSelectorComponent } from '../../../../shared/components/va
     MatIconModule,
     MatTooltipModule,
     BundleSelectorComponent,
-    VariantSlotComponent,
-    BundleSummaryComponent,
     VariantWeightSelectorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

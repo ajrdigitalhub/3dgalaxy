@@ -3758,7 +3758,7 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.price) !== undefined ? variantEditFormMap()[(v.id || v.sku)].price : (v.price ?? v.salePrice ?? 0)"
+                                    [value]="variantEditFormMap()[(v.id || v.sku)]?.price !== undefined ? variantEditFormMap()[(v.id || v.sku)].price : (v.price ?? v.salePrice ?? 0)"
                                     (input)="updateVariantModalFormField((v.id || v.sku), 'price', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
@@ -3773,7 +3773,7 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    [value]="(variantEditFormMap()[(v.id || v.sku)]?.dealerPrice) !== undefined ? variantEditFormMap()[(v.id || v.sku)].dealerPrice : (v.dealerPrice ?? v.dealer_price ?? 0)"
+                                    [value]="variantEditFormMap()[(v.id || v.sku)]?.dealerPrice !== undefined ? variantEditFormMap()[(v.id || v.sku)].dealerPrice : (v.dealerPrice ?? v.dealer_price ?? 0)"
                                     (input)="updateVariantModalFormField((v.id || v.sku), 'dealerPrice', $any($event.target).value)"
                                     class="w-full pl-6 pr-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                   />
@@ -3786,7 +3786,7 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                                   type="number"
                                   min="0"
                                   step="1"
-                                  [value]="(variantEditFormMap()[(v.id || v.sku)]?.stock) !== undefined ? variantEditFormMap()[(v.id || v.sku)].stock : (v.stock ?? 0)"
+                                  [value]="variantEditFormMap()[(v.id || v.sku)]?.stock !== undefined ? variantEditFormMap()[(v.id || v.sku)].stock : (v.stock ?? 0)"
                                   (input)="updateVariantModalFormField((v.id || v.sku), 'stock', $any($event.target).value)"
                                   class="w-20 px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-800 rounded-xl text-xs font-mono font-bold text-zinc-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 />

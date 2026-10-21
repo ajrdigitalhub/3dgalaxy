@@ -9,7 +9,7 @@ const DEFAULT_MARKETING_CONFIG = {
   metaPixelId: '',
   metaCapiToken: '',
   metaCatalogId: '',
-  ga4MeasurementId: '',
+  ga4MeasurementId: 'G-4BKM2K4PS0',
   googleAdsConversionId: '',
   googleAdsConversionLabel: '',
   googleAdsLeadLabel: '',

@@ -28,7 +28,7 @@ export class GoogleAdsTrackingService {
   }
 
   private injectGoogleAdsScript(id: string) {
-    if (document.getElementById('gads-script')) return;
+    const formattedId = id.startsWith('AW-') ? id : `AW-${id}`;
 
     window.dataLayer = window.dataLayer || [];
     if (typeof window.gtag !== 'function') {
@@ -37,12 +37,17 @@ export class GoogleAdsTrackingService {
       };
     }
 
-    window.gtag('config', id);
+    window.gtag('config', formattedId);
+
+    // If gtag.js is already loaded (e.g. via Google tag in index.html), reuse it directly
+    const existing = document.getElementById('gads-script') ||
+      document.querySelector('script[src*="googletagmanager.com/gtag/js"]');
+    if (existing) return;
 
     const script = document.createElement('script');
     script.id = 'gads-script';
     script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${formattedId}`;
     document.head.appendChild(script);
   }
 
@@ -77,9 +82,11 @@ export class GoogleAdsTrackingService {
       this.setEnhancedConversionUserData(customerData);
     }
 
+    const rawId = this.googleAdsId()!;
+    const formattedId = rawId.startsWith('AW-') ? rawId : `AW-${rawId}`;
     const sendTo = this.purchaseLabel()
-      ? `${this.googleAdsId()}/${this.purchaseLabel()}`
-      : this.googleAdsId()!;
+      ? `${formattedId}/${this.purchaseLabel()}`
+      : formattedId;
 
     if (typeof window.gtag === 'function') {
       window.gtag('event', 'conversion', {
@@ -94,9 +101,12 @@ export class GoogleAdsTrackingService {
   public trackLeadConversion(value: number = 0) {
     if (!isPlatformBrowser(this.platformId) || !this.googleAdsId() || !this.leadLabel()) return;
 
+    const rawId = this.googleAdsId()!;
+    const formattedId = rawId.startsWith('AW-') ? rawId : `AW-${rawId}`;
+
     if (typeof window.gtag === 'function') {
       window.gtag('event', 'conversion', {
-        send_to: `${this.googleAdsId()}/${this.leadLabel()}`,
+        send_to: `${formattedId}/${this.leadLabel()}`,
         value,
         currency: 'INR'
       });

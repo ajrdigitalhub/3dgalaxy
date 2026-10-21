@@ -58,7 +58,7 @@ export const appConfig: ApplicationConfig = {
         enableAdvancedMatching: true
       },
       ga4: {
-        measurementId: 'G-3DGALAXY01',
+        measurementId: 'G-4BKM2K4PS0',
         enableEnhancedEcommerce: true
       },
       googleAds: {

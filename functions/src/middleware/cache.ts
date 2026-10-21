@@ -10,6 +10,13 @@ export const cacheMiddleware = (durationInSeconds: number) => {
       return next();
     }
 
+    // Bypass cache if requested via query or header
+    if (req.query.refresh === 'true' || req.query.bypassCache === 'true' || req.headers['x-bypass-cache'] === 'true') {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Cache', 'BYPASS');
+      return next();
+    }
+
     // Set HTTP Cache-Control headers for Firebase CDN, Cloud Run Edge & browser caching
     res.setHeader(
       'Cache-Control',
@@ -41,6 +48,12 @@ export const cacheMiddleware = (durationInSeconds: number) => {
 export const clearCache = (cacheKey?: string) => {
   if (cacheKey) {
     cache.del(cacheKey);
+    const allKeys = cache.keys();
+    for (const key of allKeys) {
+      if (key.startsWith(cacheKey) || key.includes(cacheKey)) {
+        cache.del(key);
+      }
+    }
   } else {
     cache.flushAll();
   }
