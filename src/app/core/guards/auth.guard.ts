@@ -25,9 +25,8 @@ export const authGuard: CanActivateFn = async (route, state) => {
     return true;
   }
 
-  // Redirect to login page
-  router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
-  return false;
+  // Redirect to login page cleanly using UrlTree
+  return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
 export const roleGuard: CanActivateFn = async (route, state) => {
@@ -40,8 +39,7 @@ export const roleGuard: CanActivateFn = async (route, state) => {
   const role = ds.userRole();
 
   if (!profile) {
-    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
-    return false;
+    return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
   }
 
   const allowedRoles = (route.data && route.data['roles']) as string[] | undefined;
@@ -56,8 +54,7 @@ export const roleGuard: CanActivateFn = async (route, state) => {
       return true;
     }
 
-    router.navigate(['/']);
-    return false;
+    return router.createUrlTree(['/']);
   }
 
   return true; // No roles defined, so it's unrestricted after auth

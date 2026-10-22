@@ -1440,7 +1440,7 @@ export class DatastoreService {
               id: u.id,
               name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
               email: u.email,
-              role: this.mapRole(u.role),
+              role: this.mapRole(u.role || (u.roles && u.roles[0]?.role?.name) || (u.roles && u.roles[0])),
               active: u.isActive !== false,
               phone: u.mobile || '',
               gender: u.gender || '',

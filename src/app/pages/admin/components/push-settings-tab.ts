@@ -25,12 +25,27 @@ import { NotificationService } from '../../../services/notification.service';
           <p class="text-xs text-zinc-400 mt-1">Configure Firebase settings, design popups, compose campaigns, and inspect subscriber analytics.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button (click)="activeSubTab.set('analytics')" [class]="activeSubTab() === 'analytics' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Dashboard</button>
-          <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">FCM Credentials</button>
-          <button (click)="activeSubTab.set('popup-designer')" [class]="activeSubTab() === 'popup-designer' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Popup Designer</button>
-          <!-- <button (click)="activeSubTab.set('manual-send')" [class]="activeSubTab() === 'manual-send' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Campaign Builder</button> 
-          <button (click)="activeSubTab.set('rules')" [class]="activeSubTab() === 'rules' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Auto Rules</button>
-          <button (click)="activeSubTab.set('templates')" [class]="activeSubTab() === 'templates' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs">Templates</button> -->
+          <button (click)="activeSubTab.set('analytics')" [class]="activeSubTab() === 'analytics' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">dashboard</mat-icon> Dashboard
+          </button>
+          <button (click)="activeSubTab.set('manual-send')" [class]="activeSubTab() === 'manual-send' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">campaign</mat-icon> Campaigns
+            @if (allCampaigns().length > 0) {
+              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'manual-send' ? 'bg-white/20 text-white' : 'bg-orange-500/10 text-orange-500'">{{ allCampaigns().length }}</span>
+            }
+          </button>
+          <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">vpn_key</mat-icon> FCM Credentials
+          </button>
+          <button (click)="activeSubTab.set('popup-designer')" [class]="activeSubTab() === 'popup-designer' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">brush</mat-icon> Popup Designer
+          </button>
+          <button (click)="activeSubTab.set('rules')" [class]="activeSubTab() === 'rules' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">smart_toy</mat-icon> Auto Rules
+          </button>
+          <button (click)="activeSubTab.set('templates')" [class]="activeSubTab() === 'templates' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">content_copy</mat-icon> Templates
+          </button>
         </div>
       </div>
 
@@ -114,6 +129,141 @@ import { NotificationService } from '../../../services/notification.service';
                 <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().disabled }} Device(s)</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- PUSH MARKETING CAMPAIGNS SECTION IN DASHBOARD -->
+        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-orange-600/10 text-orange-500 flex items-center justify-center">
+                  <mat-icon class="text-base">campaign</mat-icon>
+                </span>
+                <h3 class="text-sm font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Marketing Campaigns</h3>
+                <span class="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-black">{{ allCampaigns().length }} Campaigns</span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mt-1">Live broadcasts, scheduled drops, automated price alerts, and subscriber engagement campaigns.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <!-- Search Input -->
+              <div class="relative flex-1 sm:w-56">
+                <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                <input type="text" [(ngModel)]="campaignSearchQuery" placeholder="Search campaigns..." class="w-full pl-8 pr-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white" />
+              </div>
+
+              <!-- Filter Pills -->
+              <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                <button (click)="campaignFilter.set('all')" [class]="campaignFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">All ({{ allCampaigns().length }})</button>
+                <button (click)="campaignFilter.set('sent')" [class]="campaignFilter() === 'sent' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">Sent ({{ pastCampaigns().length }})</button>
+                <button (click)="campaignFilter.set('scheduled')" [class]="campaignFilter() === 'scheduled' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">Scheduled ({{ activeScheduledCampaigns().length }})</button>
+              </div>
+
+              <!-- Create Campaign Quick Action -->
+              <button (click)="openCreateCampaignWizard()" class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-600/20 transition-all">
+                <mat-icon class="text-sm">add</mat-icon> Create Campaign
+              </button>
+            </div>
+          </div>
+
+          <!-- Campaigns List -->
+          <div class="space-y-3">
+            @if (filteredCampaigns().length === 0) {
+              <div class="p-8 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-2">
+                <mat-icon class="text-3xl text-zinc-400">campaign</mat-icon>
+                <p>No campaigns found matching the current filter</p>
+                <button (click)="openCreateCampaignWizard()" class="mt-2 px-4 py-1.5 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer inline-flex items-center gap-1">
+                  <mat-icon class="text-sm">add</mat-icon> Launch First Campaign
+                </button>
+              </div>
+            } @else {
+              @for (c of filteredCampaigns(); track c.id) {
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl hover:border-orange-500/40 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 group">
+                  <!-- Left: Thumbnail & Main Info -->
+                  <div class="flex items-start gap-3.5 flex-1 min-w-0">
+                    <!-- Image or Icon Thumbnail -->
+                    <div class="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center">
+                      @if (c.image) {
+                        <img [src]="c.image" class="w-full h-full object-cover" (error)="$any($event.target).style.display='none'" />
+                      } @else {
+                        <mat-icon class="text-orange-500 text-xl">notifications</mat-icon>
+                      }
+                    </div>
+
+                    <div class="space-y-1 min-w-0 flex-1">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-md text-[9px] font-black uppercase">{{ c.type }}</span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase"
+                              [ngClass]="c.status === 'Sent' || c.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : (c.status === 'Scheduled' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500')">
+                          {{ c.status }}
+                        </span>
+                        @if (c.priority === 'High') {
+                          <span class="px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded text-[8px] font-black uppercase">High Priority</span>
+                        }
+                      </div>
+
+                      <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
+                      
+                      <!-- Title & Body snippet -->
+                      <div class="text-[11px] text-zinc-600 dark:text-zinc-400 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <span class="font-bold text-zinc-800 dark:text-zinc-200 truncate">{{ c.title }}</span>
+                        @if (c.body) {
+                          <span class="hidden sm:inline text-zinc-400">•</span>
+                          <span class="text-zinc-400 truncate text-[10px]">{{ c.body }}</span>
+                        }
+                      </div>
+
+                      <!-- Dates & Action URL -->
+                      <div class="flex items-center gap-3 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
+                        @if (c.date && c.date !== 'N/A') {
+                          <span class="flex items-center gap-1"><mat-icon class="text-[12px] h-3 w-3">schedule</mat-icon> Sent: {{ c.date }}</span>
+                        }
+                        @if (c.scheduledAt) {
+                          <span class="flex items-center gap-1 text-amber-500 font-bold"><mat-icon class="text-[12px] h-3 w-3">event</mat-icon> Scheduled: {{ c.scheduledAt }}</span>
+                        }
+                        @if (c.actionUrl) {
+                          <span class="flex items-center gap-1 text-zinc-400 font-mono text-[9px] truncate max-w-xs"><mat-icon class="text-[12px] h-3 w-3">link</mat-icon> {{ c.actionUrl }}</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Middle: Analytics stats -->
+                  <div class="grid grid-cols-4 gap-3 text-center shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-zinc-800 pt-3 lg:pt-0 lg:pl-5 font-mono">
+                    <div class="px-2">
+                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Dispatched</span>
+                      <span class="font-black text-zinc-900 dark:text-white text-xs">{{ c.sentCount }}</span>
+                    </div>
+                    <div class="px-2">
+                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Delivered</span>
+                      <span class="font-black text-orange-500 text-xs">{{ c.deliveredCount }}</span>
+                    </div>
+                    <div class="px-2">
+                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Clicks</span>
+                      <span class="font-black text-blue-500 text-xs">{{ c.clickedCount }}</span>
+                    </div>
+                    <div class="px-2">
+                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">CTR</span>
+                      <span class="font-black text-emerald-500 text-xs">{{ c.ctr }}%</span>
+                    </div>
+                  </div>
+
+                  <!-- Right: Quick actions -->
+                  <div class="flex items-center gap-2 justify-end shrink-0 border-t lg:border-t-0 border-zinc-200 dark:border-zinc-800 pt-2 lg:pt-0">
+                    <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit in Composer" class="px-3 py-1.5 bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 font-black rounded-xl text-[10px] uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
+                      <mat-icon class="text-xs">send</mat-icon> Re-send
+                    </button>
+                    <button (click)="duplicateCampaign(c)" title="Duplicate as Draft" class="p-2 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl hover:text-orange-500 cursor-pointer transition-all">
+                      <mat-icon class="text-xs">content_copy</mat-icon>
+                    </button>
+                    <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-2 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl hover:text-blue-500 cursor-pointer transition-all">
+                      <mat-icon class="text-xs">download</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            }
           </div>
         </div>
       }
@@ -444,50 +594,104 @@ import { NotificationService } from '../../../services/notification.service';
             <!-- Metric Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-zinc-400">Scheduled Campaigns</span>
-                <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ activeScheduledCampaigns().length }}</h3>
+                <span class="text-[9px] font-black uppercase text-zinc-400">Total Campaigns</span>
+                <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ allCampaigns().length }}</h3>
               </div>
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-orange-500">Active Journey Flows</span>
-                <h3 class="text-2xl font-black text-orange-500">4</h3>
+                <span class="text-[9px] font-black uppercase text-orange-500">Scheduled & Drafts</span>
+                <h3 class="text-2xl font-black text-orange-500">{{ activeScheduledCampaigns().length }}</h3>
               </div>
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-blue-500">Omnichannel CTR</span>
-                <h3 class="text-2xl font-black text-blue-500">14.8%</h3>
+                <span class="text-[9px] font-black uppercase text-blue-500">Sent Broadcasts</span>
+                <h3 class="text-2xl font-black text-blue-500">{{ pastCampaigns().length }}</h3>
               </div>
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-emerald-500">Automation Revenue</span>
-                <h3 class="text-2xl font-black text-emerald-500">₹2,30,000</h3>
+                <span class="text-[9px] font-black uppercase text-emerald-500">Delivered Dispatches</span>
+                <h3 class="text-2xl font-black text-emerald-500">{{ analyticsSummary().delivered || 0 }}</h3>
               </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <!-- Active Scheduled list -->
-              <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Active scheduled & drafts</h3>
-                <div class="space-y-3">
-                  @if (activeScheduledCampaigns().length === 0) {
-                    <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                      No active scheduled or draft push campaigns. Use Campaign Builder to schedule one.
-                    </div>
-                  } @else {
-                    @for (c of activeScheduledCampaigns(); track c.id) {
-                      <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250/60 dark:border-zinc-800/80 rounded-2xl flex justify-between items-center group">
-                        <div class="space-y-1">
-                          <div class="flex items-center gap-2 flex-wrap">
-                            <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                            <span class="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded text-[8px] font-black uppercase text-zinc-600 dark:text-zinc-400">{{ c.status }}</span>
-                          </div>
-                          <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ c.name }}</h4>
-                          <p class="text-[10px] text-zinc-400">Scheduled: {{ c.scheduledAt }} | Target: {{ c.reach }} recipients</p>
-                        </div>
-                        <div class="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-sm">content_copy</mat-icon></button>
-                          <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-sm">download</mat-icon></button>
-                        </div>
+              <!-- Active Scheduled list & Recent Dispatches -->
+              <div class="lg:col-span-2 space-y-6">
+                <!-- Scheduled & Drafts -->
+                <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+                  <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Active Scheduled & Drafts</h3>
+                    <button (click)="nestedMarketingTab.set('builder')" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all"><mat-icon class="text-xs">add</mat-icon> New</button>
+                  </div>
+                  <div class="space-y-3">
+                    @if (activeScheduledCampaigns().length === 0) {
+                      <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                        No active scheduled or draft push campaigns. Use Omnichannel Wizard to schedule one.
                       </div>
+                    } @else {
+                      @for (c of activeScheduledCampaigns(); track c.id) {
+                        <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250/60 dark:border-zinc-800/80 rounded-2xl flex justify-between items-center group">
+                          <div class="space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
+                              <span class="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded text-[8px] font-black uppercase text-zinc-600 dark:text-zinc-400">{{ c.status }}</span>
+                            </div>
+                            <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ c.name }}</h4>
+                            <p class="text-[10px] text-zinc-400">Scheduled: {{ c.scheduledAt }} | Target: {{ c.reach }} recipients</p>
+                          </div>
+                          <div class="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-sm">content_copy</mat-icon></button>
+                            <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-sm">download</mat-icon></button>
+                          </div>
+                        </div>
+                      }
                     }
-                  }
+                  </div>
+                </div>
+
+                <!-- Recent Dispatched Campaigns List -->
+                <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+                  <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Recent Dispatches</h3>
+                      <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black">{{ pastCampaigns().length }} Sent</span>
+                    </div>
+                    <button (click)="nestedMarketingTab.set('history')" class="text-orange-500 text-[10px] font-black uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
+                      View All Logs <mat-icon class="text-xs">chevron_right</mat-icon>
+                    </button>
+                  </div>
+                  <div class="space-y-3">
+                    @if (pastCampaigns().length === 0) {
+                      <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                        No campaigns have been dispatched yet.
+                      </div>
+                    } @else {
+                      @for (c of pastCampaigns().slice(0, 5); track c.id) {
+                        <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+                          <div class="space-y-1 min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
+                              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
+                              <span class="text-[9px] text-zinc-400 font-bold">{{ c.date }}</span>
+                            </div>
+                            <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
+                            <p class="text-[10px] text-zinc-400 truncate">{{ c.title }}</p>
+                          </div>
+                          <div class="flex items-center gap-4 shrink-0 font-mono text-[10px] border-t sm:border-t-0 sm:border-l border-zinc-200 dark:border-zinc-800 pt-2 sm:pt-0 sm:pl-4">
+                            <div>
+                              <span class="text-[8px] block text-zinc-400 font-black uppercase">Sent</span>
+                              <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
+                            </div>
+                            <div>
+                              <span class="text-[8px] block text-zinc-400 font-black uppercase">CTR</span>
+                              <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 pl-2">
+                              <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">send</mat-icon></button>
+                              <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">content_copy</mat-icon></button>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
                 </div>
               </div>
 
@@ -1026,32 +1230,47 @@ import { NotificationService } from '../../../services/notification.service';
                   </div>
                 } @else {
                   @for (c of pastCampaigns(); track c.id) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div class="space-y-1 flex-1">
-                        <div class="flex items-center gap-2">
+                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+                      <div class="space-y-1 flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
                           <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
                           <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
+                          <span class="text-[10px] text-zinc-400 font-bold">Dispatched: {{ c.date }}</span>
                         </div>
-                        <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase">{{ c.name }}</h4>
-                        <p class="text-[10px] text-zinc-450 font-bold">Dispatched on: {{ c.date }}</p>
+                        <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase truncate">{{ c.name }}</h4>
+                        <div class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
+                          <span class="font-bold text-zinc-700 dark:text-zinc-300">{{ c.title }}</span>
+                          @if (c.body) {
+                            <span>•</span>
+                            <span class="text-zinc-400">{{ c.body }}</span>
+                          }
+                        </div>
                       </div>
 
-                      <div class="grid grid-cols-4 gap-4 text-center shrink-0 border-l border-zinc-200 dark:border-zinc-800 pl-4 font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-                        <div>
-                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Sent</span>
-                          <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
+                      <div class="flex items-center gap-4 shrink-0 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 pt-3 md:pt-0 md:pl-4">
+                        <div class="grid grid-cols-4 gap-4 text-center">
+                          <div>
+                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Sent</span>
+                            <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
+                          </div>
+                          <div>
+                            <span class="text-[8px] block text-zinc-450 font-black uppercase">CTR</span>
+                            <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
+                          </div>
+                          <div>
+                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Clicks</span>
+                            <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
+                          </div>
+                          <div>
+                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Revenue</span>
+                            <span class="font-black text-emerald-500 text-xs">₹{{ c.revenue | number }}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span class="text-[8px] block text-zinc-450 font-black uppercase">CTR</span>
-                          <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
-                        </div>
-                        <div>
-                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Clicks</span>
-                          <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
-                        </div>
-                        <div>
-                          <span class="text-[8px] block text-zinc-450 font-black uppercase">Revenue</span>
-                          <span class="font-black text-emerald-500 text-xs">₹{{ c.revenue | number }}</span>
+
+                        <div class="flex items-center gap-1.5 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+                          <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit in Composer" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">send</mat-icon></button>
+                          <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">content_copy</mat-icon></button>
+                          <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-xs">download</mat-icon></button>
                         </div>
                       </div>
                     </div>
@@ -1331,8 +1550,34 @@ export class PushSettingsTabComponent {
     analyticsTag: 'utm_camp_july'
   };
 
+  allCampaigns = signal<any[]>([]);
   activeScheduledCampaigns = signal<any[]>([]);
   pastCampaigns = signal<any[]>([]);
+  campaignFilter = signal<'all' | 'sent' | 'scheduled'>('all');
+  campaignSearchQuery = signal<string>('');
+
+  filteredCampaigns = computed(() => {
+    const filter = this.campaignFilter();
+    const query = this.campaignSearchQuery().toLowerCase().trim();
+    let list = this.allCampaigns();
+
+    if (filter === 'sent') {
+      list = list.filter(c => c.status === 'Sent' || c.status === 'Completed');
+    } else if (filter === 'scheduled') {
+      list = list.filter(c => c.status !== 'Sent' && c.status !== 'Completed');
+    }
+
+    if (query) {
+      list = list.filter(c => 
+        (c.name && c.name.toLowerCase().includes(query)) ||
+        (c.title && c.title.toLowerCase().includes(query)) ||
+        (c.body && c.body.toLowerCase().includes(query)) ||
+        (c.type && c.type.toLowerCase().includes(query))
+      );
+    }
+
+    return list;
+  });
 
   onWhatsAppTemplateSelect(name: string) {
     const tmpl = this.whatsappTemplates().find(t => t.name === name);
@@ -1428,15 +1673,42 @@ export class PushSettingsTabComponent {
     this.toast.success('Node removed from flow.');
   }
 
+  openCreateCampaignWizard() {
+    this.clearCampaignForm();
+    this.activeSubTab.set('manual-send');
+    this.nestedMarketingTab.set('builder');
+    this.wizardStep.set(1);
+  }
+
+  useCampaignAsTemplate(camp: any) {
+    this.campaignForm.name = `Copy of ${camp.name}`;
+    this.campaignForm.title = camp.title || '';
+    this.campaignForm.body = camp.body || '';
+    this.campaignForm.image = camp.image || '';
+    this.campaignForm.actionUrl = camp.actionUrl || '/';
+    this.campaignForm.priority = camp.priority || 'Normal';
+    this.campaignFormExt.campaignType = camp.type || 'Promotional';
+    this.activeSubTab.set('manual-send');
+    this.nestedMarketingTab.set('builder');
+    this.wizardStep.set(1);
+    this.toast.info('Campaign loaded into Omnichannel Wizard.');
+  }
+
   duplicateCampaign(camp: any) {
     const dupe = {
       ...camp,
       id: 'camp-' + Math.random().toString(36).substr(2, 9),
       name: `${camp.name} (Copy)`,
-      scheduledAt: '2026-08-15 12:00:00',
-      status: 'Draft'
+      scheduledAt: new Date(Date.now() + 86400000).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      status: 'Draft',
+      sentCount: 0,
+      deliveredCount: 0,
+      clickedCount: 0,
+      ctr: 0,
+      revenue: 0
     };
     this.activeScheduledCampaigns.update(c => [dupe, ...c]);
+    this.allCampaigns.update(c => [dupe, ...c]);
     this.toast.success('Campaign duplicated as draft.');
   }
 
@@ -1562,37 +1834,46 @@ export class PushSettingsTabComponent {
     this.api.get<any>('/admin/push/campaigns?limit=100').subscribe({
       next: (res) => {
         if (res && res.success && res.data && Array.isArray(res.data.list)) {
-          const all: any[] = res.data.list;
+          const rawList: any[] = res.data.list;
 
-          const scheduled = all
-            .filter((c: any) => c.status !== 'Completed' && c.status !== 'Sent')
-            .map((c: any) => ({
+          const mapped = rawList.map((c: any) => {
+            const analyticsObj = Array.isArray(c.analytics) && c.analytics.length > 0
+              ? c.analytics[0]
+              : (c.analytics && typeof c.analytics === 'object' ? c.analytics : {});
+            const sent = Number(analyticsObj?.sentCount || 0);
+            const delivered = Number(analyticsObj?.deliveredCount || 0);
+            const clicked = Number(analyticsObj?.clickedCount || 0);
+            const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
+            const revenue = Number(analyticsObj?.revenueGenerated || 0);
+
+            return {
               id: c.id,
               name: c.name,
-              type: c.type || 'Push Notification',
-              scheduledAt: c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : 'Immediate',
-              status: c.status || 'Draft',
-              reach: c.analytics?.sentCount || 0
-            }));
+              type: c.type || 'Promotional',
+              status: c.status || 'Sent',
+              title: c.title || '',
+              body: c.body || '',
+              image: c.image || null,
+              icon: c.icon || '/assets/icon.png',
+              actionUrl: c.actionUrl || '/',
+              ctaText: c.ctaText || null,
+              priority: c.priority || 'Normal',
+              sentCount: sent,
+              deliveredCount: delivered,
+              clickedCount: clicked,
+              ctr: ctr,
+              revenue: revenue,
+              reach: sent || delivered || 0,
+              date: c.createdAt ? new Date(c.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A',
+              scheduledAt: c.scheduledAt ? new Date(c.scheduledAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null,
+              raw: c
+            };
+          });
 
-          const past = all
-            .filter((c: any) => c.status === 'Completed' || c.status === 'Sent')
-            .map((c: any) => {
-              const sent = c.analytics?.sentCount || 0;
-              const clicked = c.analytics?.clickedCount || 0;
-              const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
-              return {
-                id: c.id,
-                name: c.name,
-                type: c.type || 'Push Notification',
-                sentCount: sent,
-                clickedCount: clicked,
-                ctr: ctr,
-                revenue: c.analytics?.revenueGenerated || 0,
-                date: c.createdAt ? new Date(c.createdAt).toLocaleString() : 'N/A',
-                status: c.status || 'Completed'
-              };
-            });
+          this.allCampaigns.set(mapped);
+
+          const scheduled = mapped.filter((c: any) => c.status !== 'Completed' && c.status !== 'Sent');
+          const past = mapped.filter((c: any) => c.status === 'Completed' || c.status === 'Sent');
 
           this.activeScheduledCampaigns.set(scheduled);
           this.pastCampaigns.set(past);
@@ -1844,6 +2125,7 @@ export class PushSettingsTabComponent {
                 this.toast.success('Campaign dispatched successfully to audience!');
                 this.clearCampaignForm();
                 this.loadAnalytics();
+                this.loadCampaigns();
               },
               error: (err) => this.toast.error('Failed to queue dispatch: ' + err.message)
             });
@@ -1858,6 +2140,7 @@ export class PushSettingsTabComponent {
               next: () => {
                 this.toast.success('Campaign scheduled successfully for ' + payload.scheduledAt);
                 this.clearCampaignForm();
+                this.loadCampaigns();
               },
               error: (err) => this.toast.error('Failed to schedule campaign: ' + err.message)
             });

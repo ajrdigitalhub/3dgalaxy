@@ -345,19 +345,27 @@ export class AdminComponent {
     }));
   }
 
-  async login() {
-    this.loginLoading.set(true);
-    try {
-      await this.authService.loginWithGoogle();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      this.loginLoading.set(false);
-    }
+  goToLogin() {
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
+  }
+
+  async logoutAndRedirectToLogin() {
+    await this.authService.logout();
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
+  }
+
+  navigateToStore() {
+    this.router.navigate(["/"]);
   }
 
   logout() {
     this.authService.logout();
-    this.router.navigate(["/"]);
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
   }
 }

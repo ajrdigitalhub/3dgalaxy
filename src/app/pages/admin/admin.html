@@ -227,9 +227,9 @@
   </div>
   } } @else {
   <!-- RESTRICTED COVER SCREEN -->
-  <div class="flex-1 flex items-center justify-center p-8 bg-zinc-950 text-white">
+  <div class="flex-1 flex items-center justify-center p-8 bg-zinc-950 text-white min-h-screen">
     <div
-      class="max-w-md w-full p-10 bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl text-center space-y-6 animate-pulse animate-duration-1000">
+      class="max-w-md w-full p-10 bg-zinc-900 border border-white/10 rounded-[2.5rem] shadow-2xl text-center space-y-6">
       <div
         class="h-16 w-16 bg-blue-600/15 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto shadow-md">
         <mat-icon class="text-blue-400 text-3xl">shield_lock</mat-icon>
@@ -239,33 +239,44 @@
           Access Restricted
         </h1>
         <p class="text-xs text-zinc-400">
-          Secure 3D Galaxy Enclave requires authorized Administrative
-          authorization.
+          Secure 3D Galaxy Enclave requires authorized Administrative authorization.
         </p>
       </div>
 
-      @if (ds.currentUser()) {
+      @if (ds.currentUser() || ds.userProfile()) {
       <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl space-y-1">
         <p class="text-[10px] font-black text-red-400 uppercase tracking-wider">
           Access Denied
         </p>
-        <p class="text-[9px] text-zinc-400">
-          Account "{{ ds.currentUser()?.email }}" does not have clearance keys.
+        <p class="text-[11px] text-zinc-300">
+          Account <span class="font-bold text-white">{{ ds.currentUser()?.email || ds.userProfile()?.email }}</span> does not have administrator privileges.
         </p>
       </div>
-      <button (click)="logout()"
-        class="w-full py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all">
-        Authenticate Different Account
-      </button>
+      <div class="space-y-3 pt-2">
+        <button (click)="logoutAndRedirectToLogin()"
+          class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 border-none">
+          <mat-icon class="text-base">switch_account</mat-icon>
+          Sign In with Admin Account
+        </button>
+        <button (click)="navigateToStore()"
+          class="w-full py-3 bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2">
+          <mat-icon class="text-base">storefront</mat-icon>
+          Return to Store
+        </button>
+      </div>
       } @else {
-      <button (click)="login()" [disabled]="loginLoading()"
-        class="w-full py-4.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
-        @if (loginLoading()) {
-        <span class="h-3 w-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-        Authorizing... } @else {
-        <mat-icon class="text-base">fingerprint</mat-icon>
-        Authenticate via Google }
-      </button>
+      <div class="space-y-3 pt-2">
+        <button (click)="goToLogin()"
+          class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer border-none">
+          <mat-icon class="text-base">login</mat-icon>
+          Sign In to Admin Portal
+        </button>
+        <button (click)="navigateToStore()"
+          class="w-full py-3 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2">
+          <mat-icon class="text-base">storefront</mat-icon>
+          Return to Store
+        </button>
+      </div>
       }
     </div>
   </div>

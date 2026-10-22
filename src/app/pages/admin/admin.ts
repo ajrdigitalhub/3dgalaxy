@@ -1135,6 +1135,13 @@ export class AdminPanel implements OnInit {
   }
 
   constructor() {
+    effect(() => {
+      // If auth status has resolved and visitor is not logged in, redirect to login
+      if (this.ds.authReady() && !this.ds.userProfile()) {
+        this.goToLogin();
+      }
+    });
+
     this.ds.reloadProducts(true, true, 500);
     this.ds.reloadCategories(true);
     this.ds.reloadBrands(true);
@@ -1238,21 +1245,28 @@ export class AdminPanel implements OnInit {
     this.refreshUsers();
   }
 
-  async login() {
-    this.loginLoading.set(true);
-    this.loginError.set(null);
-    try {
-      await this.ds.loginWithGoogle();
-    } catch (err: unknown) {
-      this.loginError.set((err as Error).message);
-    } finally {
-      this.loginLoading.set(false);
-    }
+  goToLogin() {
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
+  }
+
+  async logoutAndRedirectToLogin() {
+    await this.ds.logout();
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
+  }
+
+  navigateToStore() {
+    this.router.navigate(["/"]);
   }
 
   async logout() {
     await this.ds.logout();
-    this.activeTab.set("dashboard");
+    this.router.navigate(["/login"], {
+      queryParams: { returnUrl: "/admin" },
+    });
   }
 
   refreshUsers() {
