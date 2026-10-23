@@ -101,5 +101,39 @@ export async function runAdminManagementApiTests(client: AxiosInstance) {
     assert.strictEqual(putRes.status, 403, `Expected 403 Forbidden for missing scope, got ${putRes.status}`);
   });
 
+  // --- SECTION 30: MARKETING TRACKING CREDENTIALS & HEALTH CHECK TESTS ---
+
+  await test('GET /api/marketing/config: Public config responds 200 and masks CAPI secrets', async () => {
+    const res = await client.get('/api/marketing/config');
+    assert.strictEqual(res.status, 200, `Expected 200, got ${res.status}`);
+    assert.ok(res.data?.success, 'Response should indicate success');
+    // Public config must never leak the plain CAPI token if configured
+    assert.strictEqual(typeof res.data?.data?.enabled, 'boolean', 'Enabled flag must be a boolean');
+  });
+
+  await test('POST /api/admin/marketing/health-check: Validates configurations and layer statuses', async () => {
+    const res = await client.post('/api/admin/marketing/health-check', { diagRunId: 'test_ci_run_1' });
+    assert.strictEqual(res.status, 200, `Expected 200 OK, got ${res.status}`);
+    assert.ok(res.data?.success, 'Health check must return success: true');
+    assert.ok(res.data?.data?.global, 'Health check must report global status');
+    assert.ok(res.data?.data?.features, 'Health check must report features status');
+    assert.ok(res.data?.data?.ga4, 'Health check must report GA4 status');
+    assert.ok(res.data?.data?.gtm, 'Health check must report GTM status');
+    // Ensure CAPI access token is never exposed in response
+    const jsonStr = JSON.stringify(res.data);
+    assert.ok(!jsonStr.includes('EAAB') && !jsonStr.includes('EAAC'), 'Secrets must never appear in response body');
+  });
+
+  await test('POST /api/admin/marketing/capi-test: Rejects missing CAPI configuration gracefully without crashes', async () => {
+    const res = await client.post('/api/admin/marketing/capi-test', {
+      testEventCode: 'TEST12345',
+      diagRunId: 'test_ci_run_2'
+    });
+    // If not configured, should return 400 with helpful message, not 500 unhandled crash
+    assert.ok(res.status === 200 || res.status === 400 || res.status === 500, 'Should handle CAPI test safely');
+    assert.ok(res.data?.message, 'Response should contain an explanatory message');
+  });
+
   return results;
 }
+

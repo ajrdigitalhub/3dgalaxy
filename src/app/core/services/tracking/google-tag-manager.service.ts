@@ -14,8 +14,14 @@ export class GoogleTagManagerService {
       return;
     }
 
-    this.containerId.set(config.gtmContainerId);
-    this.injectGtmScript(config.gtmContainerId);
+    const trimmed = config.gtmContainerId.trim();
+    if (!trimmed.startsWith('GTM-')) {
+      console.warn(`[GTM] Invalid container ID "${trimmed}". Web GTM container IDs must start with "GTM-". Script injection skipped.`);
+      return;
+    }
+
+    this.containerId.set(trimmed);
+    this.injectGtmScript(trimmed);
   }
 
   private injectGtmScript(id: string) {

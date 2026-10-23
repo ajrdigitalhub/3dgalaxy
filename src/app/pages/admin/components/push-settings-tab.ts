@@ -34,6 +34,12 @@ import { NotificationService } from '../../../services/notification.service';
               <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'manual-send' ? 'bg-white/20 text-white' : 'bg-orange-500/10 text-orange-500'">{{ allCampaigns().length }}</span>
             }
           </button>
+          <button (click)="activeSubTab.set('devices')" [class]="activeSubTab() === 'devices' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">devices</mat-icon> FCM Devices
+            @if (subscriberDevices().length > 0) {
+              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'devices' ? 'bg-white/20 text-white' : 'bg-emerald-500/10 text-emerald-500'">{{ subscriberDevices().length }}</span>
+            }
+          </button>
           <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
             <mat-icon class="text-sm">vpn_key</mat-icon> FCM Credentials
           </button>
@@ -143,7 +149,7 @@ import { NotificationService } from '../../../services/notification.service';
                 <h3 class="text-sm font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Marketing Campaigns</h3>
                 <span class="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-black">{{ allCampaigns().length }} Campaigns</span>
               </div>
-              <p class="text-[11px] text-zinc-400 mt-1">Live broadcasts, scheduled drops, automated price alerts, and subscriber engagement campaigns.</p>
+              <p class="text-[11px] text-zinc-400 mt-1">Instant on-spot broadcasts, automated price alerts, and subscriber engagement campaigns.</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
@@ -157,7 +163,6 @@ import { NotificationService } from '../../../services/notification.service';
               <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
                 <button (click)="campaignFilter.set('all')" [class]="campaignFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">All ({{ allCampaigns().length }})</button>
                 <button (click)="campaignFilter.set('sent')" [class]="campaignFilter() === 'sent' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">Sent ({{ pastCampaigns().length }})</button>
-                <button (click)="campaignFilter.set('scheduled')" [class]="campaignFilter() === 'scheduled' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">Scheduled ({{ activeScheduledCampaigns().length }})</button>
               </div>
 
               <!-- Create Campaign Quick Action -->
@@ -217,10 +222,7 @@ import { NotificationService } from '../../../services/notification.service';
                       <!-- Dates & Action URL -->
                       <div class="flex items-center gap-3 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
                         @if (c.date && c.date !== 'N/A') {
-                          <span class="flex items-center gap-1"><mat-icon class="text-[12px] h-3 w-3">schedule</mat-icon> Sent: {{ c.date }}</span>
-                        }
-                        @if (c.scheduledAt) {
-                          <span class="flex items-center gap-1 text-amber-500 font-bold"><mat-icon class="text-[12px] h-3 w-3">event</mat-icon> Scheduled: {{ c.scheduledAt }}</span>
+                          <span class="flex items-center gap-1"><mat-icon class="text-[12px] h-3 w-3">schedule</mat-icon> Dispatched: {{ c.date }}</span>
                         }
                         @if (c.actionUrl) {
                           <span class="flex items-center gap-1 text-zinc-400 font-mono text-[9px] truncate max-w-xs"><mat-icon class="text-[12px] h-3 w-3">link</mat-icon> {{ c.actionUrl }}</span>
@@ -584,6 +586,7 @@ import { NotificationService } from '../../../services/notification.service';
         <div class="flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 pb-3 mb-6">
           <button (click)="nestedMarketingTab.set('dashboard')" [class]="nestedMarketingTab() === 'dashboard' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Dashboard</button>
           <button (click)="nestedMarketingTab.set('builder')" [class]="nestedMarketingTab() === 'builder' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Omnichannel Wizard</button>
+          <button (click)="nestedMarketingTab.set('devices')" [class]="nestedMarketingTab() === 'devices' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all flex items-center gap-1.5"><mat-icon class="text-sm">devices</mat-icon> Devices & Opt-In ({{ subscriberDevices().length }})</button>
           <button (click)="nestedMarketingTab.set('flows')" [class]="nestedMarketingTab() === 'flows' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Visual Flow Builder</button>
           <button (click)="nestedMarketingTab.set('history')" [class]="nestedMarketingTab() === 'history' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Logs & Audit</button>
         </div>
@@ -597,65 +600,39 @@ import { NotificationService } from '../../../services/notification.service';
                 <span class="text-[9px] font-black uppercase text-zinc-400">Total Campaigns</span>
                 <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ allCampaigns().length }}</h3>
               </div>
-              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-orange-500">Scheduled & Drafts</span>
-                <h3 class="text-2xl font-black text-orange-500">{{ activeScheduledCampaigns().length }}</h3>
+              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2 cursor-pointer" (click)="nestedMarketingTab.set('devices')">
+                <span class="text-[9px] font-black uppercase text-emerald-500">Opted-In FCM Devices</span>
+                <div class="flex items-baseline justify-between">
+                  <h3 class="text-2xl font-black text-emerald-500">{{ optedInDevicesCount() }}</h3>
+                  <span class="text-[9px] text-zinc-400 font-bold">of {{ subscriberDevices().length }}</span>
+                </div>
               </div>
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
                 <span class="text-[9px] font-black uppercase text-blue-500">Sent Broadcasts</span>
                 <h3 class="text-2xl font-black text-blue-500">{{ pastCampaigns().length }}</h3>
               </div>
               <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-emerald-500">Delivered Dispatches</span>
-                <h3 class="text-2xl font-black text-emerald-500">{{ analyticsSummary().delivered || 0 }}</h3>
+                <span class="text-[9px] font-black uppercase text-orange-500">Delivered Dispatches</span>
+                <h3 class="text-2xl font-black text-orange-500">{{ analyticsSummary().delivered || 0 }}</h3>
               </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <!-- Active Scheduled list & Recent Dispatches -->
+              <!-- Recent Dispatches List -->
               <div class="lg:col-span-2 space-y-6">
-                <!-- Scheduled & Drafts -->
-                <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-                  <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Active Scheduled & Drafts</h3>
-                    <button (click)="nestedMarketingTab.set('builder')" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all"><mat-icon class="text-xs">add</mat-icon> New</button>
-                  </div>
-                  <div class="space-y-3">
-                    @if (activeScheduledCampaigns().length === 0) {
-                      <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                        No active scheduled or draft push campaigns. Use Omnichannel Wizard to schedule one.
-                      </div>
-                    } @else {
-                      @for (c of activeScheduledCampaigns(); track c.id) {
-                        <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-250/60 dark:border-zinc-800/80 rounded-2xl flex justify-between items-center group">
-                          <div class="space-y-1">
-                            <div class="flex items-center gap-2 flex-wrap">
-                              <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                              <span class="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded text-[8px] font-black uppercase text-zinc-600 dark:text-zinc-400">{{ c.status }}</span>
-                            </div>
-                            <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ c.name }}</h4>
-                            <p class="text-[10px] text-zinc-400">Scheduled: {{ c.scheduledAt }} | Target: {{ c.reach }} recipients</p>
-                          </div>
-                          <div class="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-sm">content_copy</mat-icon></button>
-                            <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-sm">download</mat-icon></button>
-                          </div>
-                        </div>
-                      }
-                    }
-                  </div>
-                </div>
-
                 <!-- Recent Dispatched Campaigns List -->
                 <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
                   <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
                     <div class="flex items-center gap-2">
-                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Recent Dispatches</h3>
+                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Recent Broadcasts (On-Spot Dispatches)</h3>
                       <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black">{{ pastCampaigns().length }} Sent</span>
                     </div>
-                    <button (click)="nestedMarketingTab.set('history')" class="text-orange-500 text-[10px] font-black uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
-                      View All Logs <mat-icon class="text-xs">chevron_right</mat-icon>
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <button (click)="nestedMarketingTab.set('builder')" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all"><mat-icon class="text-xs">bolt</mat-icon> New On-Spot Campaign</button>
+                      <button (click)="nestedMarketingTab.set('history')" class="text-orange-500 text-[10px] font-black uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
+                        View All Logs <mat-icon class="text-xs">chevron_right</mat-icon>
+                      </button>
+                    </div>
                   </div>
                   <div class="space-y-3">
                     @if (pastCampaigns().length === 0) {
@@ -1010,48 +987,58 @@ import { NotificationService } from '../../../services/notification.service';
                 </div>
               }
 
-              <!-- STEP 5: SCHEDULING & CRON -->
+              <!-- STEP 5: ON-SPOT IMMEDIATE DISPATCH -->
               @if (wizardStep() === 5) {
                 <div class="space-y-4 animate-fadeIn">
-                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">Scheduling & Expiry</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Review & On-Spot Immediate Dispatch
+                    </h3>
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                      ⚡ On-Spot Send Only
+                    </span>
+                  </div>
+
+                  <!-- Information Callout -->
+                  <div class="p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/60 dark:border-orange-900/30 rounded-2xl flex items-start gap-3">
+                    <mat-icon class="text-orange-500 text-lg shrink-0 mt-0.5">bolt</mat-icon>
                     <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Scheduling Frequency</label>
-                      <select [(ngModel)]="campaignForm.scheduleMode" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                        <option value="now">Send Immediately</option>
-                        <option value="later">Schedule Specific Date & Time</option>
-                        <option value="cron">Recurring (Cron Expression)</option>
-                      </select>
+                      <h4 class="text-xs font-black text-orange-600 dark:text-orange-400 uppercase">Instant Broadcast Dispatch</h4>
+                      <p class="text-[11px] text-zinc-600 dark:text-zinc-400">
+                        This campaign will be broadcast <strong>on the spot</strong> to all active opted-in subscriber devices ({{ optedInDevicesCount() }} devices ready). Scheduling has been removed for immediate delivery.
+                      </p>
                     </div>
+                  </div>
 
-                    @if (campaignForm.scheduleMode === 'later') {
-                      <div class="space-y-1">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase">Scheduled Time (IST)</label>
-                        <input type="datetime-local" [(ngModel)]="campaignForm.scheduledAt" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                      </div>
-                    }
-
-                    @if (campaignForm.scheduleMode === 'cron') {
-                      <div class="space-y-1">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase">Cron Expression (e.g. 0 17 * * *)</label>
-                        <input type="text" placeholder="0 17 * * * (Everyday 5:00 PM)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                      </div>
-                    }
-
-                    <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Campaign Expiry Time (Optional)</label>
-                      <input type="datetime-local" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                  <!-- Campaign Summary Grid -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <div>
+                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Campaign Name</span>
+                      <span class="text-xs font-black text-zinc-800 dark:text-white">{{ campaignForm.name || 'Untitled Campaign' }}</span>
                     </div>
+                    <div>
+                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Relay Channel</span>
+                      <span class="text-xs font-black uppercase text-orange-500">{{ selectedChannel() }}</span>
+                    </div>
+                    <div>
+                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Notification Title</span>
+                      <span class="text-xs font-bold text-zinc-800 dark:text-white truncate block">{{ campaignForm.title || '(No Title Specified)' }}</span>
+                    </div>
+                    <div>
+                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Target Audience</span>
+                      <span class="text-xs font-black text-emerald-500">{{ getReachEstimate() }} Devices</span>
+                    </div>
+                  </div>
 
-                    <div class="md:col-span-2 border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-2 grid grid-cols-2 gap-4">
-                      <div class="flex items-center gap-2">
-                        <input type="checkbox" id="dnd-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
-                        <label for="dnd-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Do Not Disturb (10 PM - 7 AM)</label>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <input type="checkbox" id="cap-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
-                        <label for="cap-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Respect Frequency Capping (1/day)</label>
-                      </div>
+                  <div class="border-t border-zinc-100 dark:border-zinc-800 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" id="dnd-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
+                      <label for="dnd-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Do Not Disturb (10 PM - 7 AM)</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input type="checkbox" id="cap-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
+                      <label for="cap-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Respect Frequency Capping (1/day)</label>
                     </div>
                   </div>
                 </div>
@@ -1065,7 +1052,7 @@ import { NotificationService } from '../../../services/notification.service';
                   @if (wizardStep() < 5) {
                     <button type="button" (click)="wizardStep.set(wizardStep() + 1)" class="px-6 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">Next</button>
                   } @else {
-                    <button type="button" (click)="dispatchManualCampaign(); nestedMarketingTab.set('dashboard')" class="px-6 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5"><mat-icon class="text-sm font-black">send</mat-icon> Dispatch Campaign</button>
+                    <button type="button" (click)="dispatchManualCampaign(); nestedMarketingTab.set('dashboard')" class="px-6 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-600/30"><mat-icon class="text-sm font-black">bolt</mat-icon> Dispatch On-Spot Now</button>
                   }
                 </div>
               </div>
@@ -1407,6 +1394,230 @@ import { NotificationService } from '../../../services/notification.service';
         </div>
       }
 
+      <!-- REGISTERED FCM SUBSCRIBER DEVICES TAB -->
+      @if (activeSubTab() === 'devices' || (activeSubTab() === 'manual-send' && nestedMarketingTab() === 'devices')) {
+        <div class="space-y-6 animate-fadeIn">
+          <!-- Header Banner -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+            <div>
+              <h2 class="text-lg font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-emerald-600/10 text-emerald-500 flex items-center justify-center"><mat-icon>devices</mat-icon></span>
+                FCM Registered Devices & Subscribers
+              </h2>
+              <p class="text-xs text-zinc-400 mt-1">Live inspection of all client devices registered with Firebase Cloud Messaging, with Opt-In / Opt-Out statuses.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button (click)="loadSubscriberDevices()" [disabled]="loadingDevices()" class="px-3.5 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 transition-all">
+                <mat-icon class="text-sm" [class.animate-spin]="loadingDevices()">refresh</mat-icon> Refresh
+              </button>
+              <button (click)="exportDevicesCsv()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 transition-all shadow-sm">
+                <mat-icon class="text-sm">download</mat-icon> Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
+              <span class="text-[9px] font-black uppercase text-zinc-400">Total FCM Devices</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ subscriberDevices().length }}</h3>
+                <span class="text-[9px] text-zinc-400 font-bold">Endpoints</span>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
+              <span class="text-[9px] font-black uppercase text-emerald-500">Opted In (Active)</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-emerald-500">{{ optedInDevicesCount() }}</h3>
+                <span class="text-[9px] text-emerald-500 font-bold">{{ optedInPercent() }}% Allowed</span>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
+              <span class="text-[9px] font-black uppercase text-rose-500">Opted Out (Blocked)</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-rose-500">{{ optedOutDevicesCount() }}</h3>
+                <span class="text-[9px] text-rose-400 font-bold">{{ optedOutPercent() }}% Denied</span>
+              </div>
+            </div>
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
+              <span class="text-[9px] font-black uppercase text-blue-500">Platform Distribution</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-base font-black text-blue-500">{{ desktopCount() }} Desktop / {{ mobileCount() }} Mobile</h3>
+                <span class="text-[9px] text-zinc-400 font-bold">Devices</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters & Search Toolbar -->
+          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+              <!-- Status Filter Pills -->
+              <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                <button (click)="devicesStatusFilter.set('all')"
+                        [class]="devicesStatusFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
+                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all">
+                  All ({{ subscriberDevices().length }})
+                </button>
+                <button (click)="devicesStatusFilter.set('opted_in')"
+                        [class]="devicesStatusFilter() === 'opted_in' ? 'bg-white dark:bg-zinc-900 text-emerald-600 font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
+                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Opted In ({{ optedInDevicesCount() }})
+                </button>
+                <button (click)="devicesStatusFilter.set('opted_out')"
+                        [class]="devicesStatusFilter() === 'opted_out' ? 'bg-white dark:bg-zinc-900 text-rose-600 font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
+                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Opted Out ({{ optedOutDevicesCount() }})
+                </button>
+              </div>
+
+              <!-- Search input -->
+              <div class="relative flex-1 max-w-md">
+                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                <input type="text" [(ngModel)]="devicesSearchQuery" placeholder="Search by FCM token, user email, guest ID, browser, OS..." class="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white">
+              </div>
+            </div>
+
+            <!-- Secondary Dropdowns (Platform & Browser) -->
+            <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase text-zinc-400">Platform:</span>
+                <select [(ngModel)]="devicesPlatformFilter" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
+                  <option value="all">All Platforms</option>
+                  <option value="desktop">Desktop</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="android">Android</option>
+                  <option value="ios">iOS</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black uppercase text-zinc-400">Browser:</span>
+                <select [(ngModel)]="devicesBrowserFilter" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
+                  <option value="all">All Browsers</option>
+                  <option value="chrome">Chrome</option>
+                  <option value="safari">Safari</option>
+                  <option value="firefox">Firefox</option>
+                  <option value="edge">Edge</option>
+                </select>
+              </div>
+              <span class="text-zinc-400 text-[10px] ml-auto">Showing {{ filteredDevices().length }} of {{ subscriberDevices().length }} devices</span>
+            </div>
+          </div>
+
+          <!-- Devices Data Table -->
+          <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
+            @if (loadingDevices()) {
+              <div class="p-12 text-center text-xs text-zinc-400 font-bold uppercase flex items-center justify-center gap-2">
+                <mat-icon class="animate-spin text-orange-500">sync</mat-icon> Loading Registered Devices...
+              </div>
+            } @else if (filteredDevices().length === 0) {
+              <div class="p-12 text-center text-xs text-zinc-400 font-bold uppercase space-y-2">
+                <mat-icon class="text-3xl text-zinc-400">phonelink_off</mat-icon>
+                <p>No FCM devices found matching the current filters.</p>
+              </div>
+            } @else {
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-zinc-50 dark:bg-zinc-950/70 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase text-zinc-400 tracking-wider">
+                    <tr>
+                      <th class="py-3 px-4">Status</th>
+                      <th class="py-3 px-4">User / Identity</th>
+                      <th class="py-3 px-4">Device & OS</th>
+                      <th class="py-3 px-4">Browser</th>
+                      <th class="py-3 px-4">FCM Token Hash</th>
+                      <th class="py-3 px-4">Last Active</th>
+                      <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    @for (dev of filteredDevices(); track dev.id || dev.fcmToken) {
+                      <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors group">
+                        <!-- Status Badge (Opted In vs Opted Out) -->
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          @if (dev.notificationEnabled) {
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                              OPTED IN
+                            </span>
+                          } @else {
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                              OPTED OUT
+                            </span>
+                          }
+                        </td>
+
+                        <!-- User / Identity -->
+                        <td class="py-3 px-4">
+                          @if (dev.user?.email) {
+                            <div class="font-bold text-zinc-800 dark:text-white flex items-center gap-1">
+                              <mat-icon class="text-xs text-blue-500">person</mat-icon>
+                              <span class="truncate max-w-[150px]">{{ dev.user.email }}</span>
+                            </div>
+                            <span class="text-[9px] text-zinc-400 block">{{ dev.user.firstName || '' }} {{ dev.user.lastName || '' }}</span>
+                          } @else {
+                            <div class="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
+                              <mat-icon class="text-xs text-zinc-400">fingerprint</mat-icon>
+                              <span class="truncate max-w-[140px]">{{ dev.guestId || dev.sessionId || 'Guest Visitor' }}</span>
+                            </div>
+                            <span class="text-[9px] font-bold text-zinc-400 uppercase">Guest Session</span>
+                          }
+                        </td>
+
+                        <!-- Device & OS -->
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <div class="flex items-center gap-2">
+                            <mat-icon class="text-sm text-zinc-400">{{ (dev.device?.toLowerCase() === 'mobile' || dev.os?.toLowerCase().includes('android') || dev.os?.toLowerCase().includes('ios')) ? 'smartphone' : 'computer' }}</mat-icon>
+                            <div>
+                              <span class="font-bold text-zinc-800 dark:text-zinc-200 block">{{ dev.os || 'Unknown OS' }}</span>
+                              <span class="text-[9px] text-zinc-400 uppercase">{{ dev.device || 'Desktop' }}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Browser -->
+                        <td class="py-3 px-4 whitespace-nowrap">
+                          <span class="font-bold text-zinc-700 dark:text-zinc-300">{{ dev.browser || 'Browser' }}</span>
+                          @if (dev.environment) {
+                            <span class="ml-1.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase" [class]="dev.environment === 'production' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'">{{ dev.environment === 'production' ? 'PROD' : 'DEV' }}</span>
+                          }
+                        </td>
+
+                        <!-- FCM Token (Masked + Copy) -->
+                        <td class="py-3 px-4">
+                          <div class="flex items-center gap-1.5 font-mono text-[10px] bg-zinc-100 dark:bg-zinc-800/80 px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700/60 max-w-[180px]">
+                            <span class="truncate text-zinc-700 dark:text-zinc-300" [title]="dev.fcmToken">{{ dev.fcmToken ? (dev.fcmToken.slice(0, 8) + '...' + dev.fcmToken.slice(-6)) : 'No Token' }}</span>
+                            <button (click)="copyFcmToken(dev.fcmToken)" title="Copy Full Token" class="text-zinc-400 hover:text-orange-500 border-none bg-transparent cursor-pointer p-0 shrink-0">
+                              <mat-icon class="text-xs">content_copy</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+
+                        <!-- Last Active -->
+                        <td class="py-3 px-4 whitespace-nowrap text-zinc-500 dark:text-zinc-400 text-[10px]">
+                          {{ formatDeviceDate(dev.lastActive || dev.createdAt) }}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                          <div class="flex items-center justify-end gap-1.5">
+                            <button (click)="sendDirectTestPush(dev)" title="Send Test Push Notification" class="p-1.5 bg-orange-600/10 hover:bg-orange-600 text-orange-600 hover:text-white rounded-lg border-none cursor-pointer transition-all flex items-center justify-center">
+                              <mat-icon class="text-xs">send</mat-icon>
+                            </button>
+                            <button (click)="copyFcmToken(dev.fcmToken)" title="Copy Token" class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center">
+                              <mat-icon class="text-xs">content_copy</mat-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
     </div>
   `,
   styles: [`
@@ -1454,9 +1665,89 @@ export class PushSettingsTabComponent {
   previewDevice = signal<string>('desktop');
 
   // Omnichannel Marketing Automation Hub Signals & State
-  nestedMarketingTab = signal<'dashboard' | 'builder' | 'flows' | 'history'>('dashboard');
+  nestedMarketingTab = signal<'dashboard' | 'builder' | 'devices' | 'flows' | 'history'>('dashboard');
   wizardStep = signal<number>(1);
   selectedChannel = signal<'push' | 'whatsapp' | 'both'>('push');
+
+  // FCM Registered Devices & Opt-In State
+  subscriberDevices = signal<any[]>([]);
+  loadingDevices = signal<boolean>(false);
+  devicesStatusFilter = signal<'all' | 'opted_in' | 'opted_out'>('all');
+  devicesPlatformFilter = signal<string>('all');
+  devicesBrowserFilter = signal<string>('all');
+  devicesSearchQuery = signal<string>('');
+
+  optedInDevicesCount = computed(() => this.subscriberDevices().filter(d => d.notificationEnabled === true).length);
+  optedOutDevicesCount = computed(() => this.subscriberDevices().filter(d => d.notificationEnabled === false).length);
+
+  optedInPercent = computed(() => {
+    const total = this.subscriberDevices().length;
+    return total ? Math.round((this.optedInDevicesCount() / total) * 100) : 0;
+  });
+
+  optedOutPercent = computed(() => {
+    const total = this.subscriberDevices().length;
+    return total ? Math.round((this.optedOutDevicesCount() / total) * 100) : 0;
+  });
+
+  desktopCount = computed(() => {
+    return this.subscriberDevices().filter(d => {
+      const dev = (d.device || '').toLowerCase();
+      const os = (d.os || '').toLowerCase();
+      return dev === 'desktop' || os.includes('windows') || os.includes('mac') || os.includes('linux');
+    }).length;
+  });
+
+  mobileCount = computed(() => {
+    return this.subscriberDevices().filter(d => {
+      const dev = (d.device || '').toLowerCase();
+      const os = (d.os || '').toLowerCase();
+      return dev === 'mobile' || os.includes('android') || os.includes('ios');
+    }).length;
+  });
+
+  filteredDevices = computed(() => {
+    let list = this.subscriberDevices();
+    const status = this.devicesStatusFilter();
+    const platform = this.devicesPlatformFilter().toLowerCase();
+    const browser = this.devicesBrowserFilter().toLowerCase();
+    const q = this.devicesSearchQuery().toLowerCase().trim();
+
+    if (status === 'opted_in') {
+      list = list.filter(d => d.notificationEnabled === true);
+    } else if (status === 'opted_out') {
+      list = list.filter(d => d.notificationEnabled === false);
+    }
+
+    if (platform !== 'all') {
+      list = list.filter(d => {
+        const dev = (d.device || '').toLowerCase();
+        const os = (d.os || '').toLowerCase();
+        if (platform === 'desktop') return dev === 'desktop' || os.includes('windows') || os.includes('mac') || os.includes('linux');
+        if (platform === 'mobile') return dev === 'mobile' || os.includes('android') || os.includes('ios');
+        return dev.includes(platform) || os.includes(platform);
+      });
+    }
+
+    if (browser !== 'all') {
+      list = list.filter(d => d.browser && d.browser.toLowerCase().includes(browser));
+    }
+
+    if (q) {
+      list = list.filter(d =>
+        (d.fcmToken && d.fcmToken.toLowerCase().includes(q)) ||
+        (d.browser && d.browser.toLowerCase().includes(q)) ||
+        (d.os && d.os.toLowerCase().includes(q)) ||
+        (d.guestId && d.guestId.toLowerCase().includes(q)) ||
+        (d.sessionId && d.sessionId.toLowerCase().includes(q)) ||
+        (d.user?.email && d.user.email.toLowerCase().includes(q)) ||
+        (d.environment && d.environment.toLowerCase().includes(q)) ||
+        (d.country && d.country.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  });
 
   whatsappTemplates = signal<any[]>([
     {
@@ -1553,7 +1844,7 @@ export class PushSettingsTabComponent {
   allCampaigns = signal<any[]>([]);
   activeScheduledCampaigns = signal<any[]>([]);
   pastCampaigns = signal<any[]>([]);
-  campaignFilter = signal<'all' | 'sent' | 'scheduled'>('all');
+  campaignFilter = signal<'all' | 'sent'>('all');
   campaignSearchQuery = signal<string>('');
 
   filteredCampaigns = computed(() => {
@@ -1563,8 +1854,6 @@ export class PushSettingsTabComponent {
 
     if (filter === 'sent') {
       list = list.filter(c => c.status === 'Sent' || c.status === 'Completed');
-    } else if (filter === 'scheduled') {
-      list = list.filter(c => c.status !== 'Sent' && c.status !== 'Completed');
     }
 
     if (query) {
@@ -1699,7 +1988,6 @@ export class PushSettingsTabComponent {
       ...camp,
       id: 'camp-' + Math.random().toString(36).substr(2, 9),
       name: `${camp.name} (Copy)`,
-      scheduledAt: new Date(Date.now() + 86400000).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       status: 'Draft',
       sentCount: 0,
       deliveredCount: 0,
@@ -1707,7 +1995,6 @@ export class PushSettingsTabComponent {
       ctr: 0,
       revenue: 0
     };
-    this.activeScheduledCampaigns.update(c => [dupe, ...c]);
     this.allCampaigns.update(c => [dupe, ...c]);
     this.toast.success('Campaign duplicated as draft.');
   }
@@ -1827,6 +2114,7 @@ export class PushSettingsTabComponent {
     this.estimateAudience();
     this.loadAuditLogs();
     this.loadCampaigns();
+    this.loadSubscriberDevices();
   }
 
   // Loaders
@@ -1865,18 +2153,15 @@ export class PushSettingsTabComponent {
               revenue: revenue,
               reach: sent || delivered || 0,
               date: c.createdAt ? new Date(c.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A',
-              scheduledAt: c.scheduledAt ? new Date(c.scheduledAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null,
               raw: c
             };
           });
 
           this.allCampaigns.set(mapped);
 
-          const scheduled = mapped.filter((c: any) => c.status !== 'Completed' && c.status !== 'Sent');
           const past = mapped.filter((c: any) => c.status === 'Completed' || c.status === 'Sent');
-
-          this.activeScheduledCampaigns.set(scheduled);
           this.pastCampaigns.set(past);
+          this.activeScheduledCampaigns.set([]);
         }
       },
       error: () => { }
@@ -2098,7 +2383,7 @@ export class PushSettingsTabComponent {
     }
 
     const payload = {
-      name: this.campaignForm.name || `Manual Campaign: ${this.campaignForm.title}`,
+      name: this.campaignForm.name || `On-Spot Campaign: ${this.campaignForm.title}`,
       type: 'Promotional',
       title: this.campaignForm.title,
       body: this.campaignForm.body,
@@ -2106,11 +2391,9 @@ export class PushSettingsTabComponent {
       actionUrl: this.campaignForm.actionUrl || '/',
       priority: this.campaignForm.priority,
       audienceRules: { targetType: this.campaignForm.targetType },
-      scheduleMode: this.campaignForm.scheduleMode,
-      scheduledAt: this.campaignForm.scheduleMode === 'later' ? this.campaignForm.scheduledAt : null
+      scheduleMode: 'now',
+      scheduledAt: null
     };
-
-    const endpoint = this.campaignForm.scheduleMode === 'now' ? '/admin/push/campaign' : '/admin/push/schedule';
 
     // First save campaign
     this.api.post<any>('/admin/push/campaign', payload).subscribe({
@@ -2118,37 +2401,108 @@ export class PushSettingsTabComponent {
         if (res.success && res.data) {
           const campaignId = res.data.id;
 
-          if (payload.scheduleMode === 'now') {
-            // Trigger send immediately
-            this.api.post<any>('/admin/push/send', { campaignId }).subscribe({
-              next: () => {
-                this.toast.success('Campaign dispatched successfully to audience!');
-                this.clearCampaignForm();
-                this.loadAnalytics();
-                this.loadCampaigns();
-              },
-              error: (err) => this.toast.error('Failed to queue dispatch: ' + err.message)
-            });
-          } else {
-            // Schedule it
-            this.api.post<any>('/admin/push/schedule', {
-              campaignId,
-              scheduledAt: payload.scheduledAt,
-              timezone: 'Asia/Kolkata',
-              scheduleType: 'Specific Date & Time'
-            }).subscribe({
-              next: () => {
-                this.toast.success('Campaign scheduled successfully for ' + payload.scheduledAt);
-                this.clearCampaignForm();
-                this.loadCampaigns();
-              },
-              error: (err) => this.toast.error('Failed to schedule campaign: ' + err.message)
-            });
-          }
+          // Dispatch on-spot immediately
+          this.api.post<any>('/admin/push/send', { campaignId }).subscribe({
+            next: () => {
+              this.toast.success('On-spot broadcast campaign dispatched successfully to all opted-in FCM devices!');
+              this.clearCampaignForm();
+              this.loadAnalytics();
+              this.loadCampaigns();
+            },
+            error: (err) => this.toast.error('Failed to trigger broadcast dispatch: ' + err.message)
+          });
         }
       },
       error: (err) => this.toast.error('Failed to create campaign: ' + err.message)
     });
+  }
+
+  // Subscriber Devices Methods
+  loadSubscriberDevices() {
+    this.loadingDevices.set(true);
+    this.api.get<any>('/admin/notifications/devices').subscribe({
+      next: (res) => {
+        this.loadingDevices.set(false);
+        if (res && res.success && Array.isArray(res.data)) {
+          this.subscriberDevices.set(res.data);
+        }
+      },
+      error: (err) => {
+        this.loadingDevices.set(false);
+        console.error('Failed to load subscriber devices:', err);
+      }
+    });
+  }
+
+  copyFcmToken(token: string) {
+    if (!token) return;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(token);
+      this.toast.success('FCM Device Token copied to clipboard!');
+    }
+  }
+
+  sendDirectTestPush(dev: any) {
+    if (!dev || !dev.fcmToken) {
+      this.toast.error('No valid FCM token on this device.');
+      return;
+    }
+    this.toast.info('Sending test notification to device...');
+    this.api.post<any>('/admin/push/test', {
+      fcmToken: dev.fcmToken,
+      title: '⚡ 3D Galaxy Test Push',
+      body: `Live test ping sent to ${dev.browser || 'Browser'} on ${dev.os || 'Device'}`,
+      actionUrl: '/'
+    }).subscribe({
+      next: () => this.toast.success('Test notification delivered to device!'),
+      error: (err) => this.toast.error('Failed to deliver test: ' + (err.message || 'Error'))
+    });
+  }
+
+  exportDevicesCsv() {
+    const devices = this.filteredDevices();
+    if (devices.length === 0) {
+      this.toast.info('No devices to export.');
+      return;
+    }
+    const headers = ['ID', 'Status', 'User / Guest', 'Browser', 'OS', 'Device Type', 'Environment', 'Country', 'Last Active', 'FCM Token'];
+    const rows = devices.map(d => [
+      `"${d.id || ''}"`,
+      `"${d.notificationEnabled ? 'Opted In' : 'Opted Out'}"`,
+      `"${d.user?.email || d.guestId || 'Anonymous'}"`,
+      `"${d.browser || ''}"`,
+      `"${d.os || ''}"`,
+      `"${d.device || ''}"`,
+      `"${d.environment || ''}"`,
+      `"${d.country || ''}"`,
+      `"${d.lastActive || d.createdAt || ''}"`,
+      `"${d.fcmToken || ''}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `3dgalaxy_fcm_devices_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toast.success(`Exported ${devices.length} devices to CSV.`);
+  }
+
+  formatDeviceDate(dateStr: any): string {
+    if (!dateStr) return 'N/A';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return String(dateStr);
+    }
   }
 
   triggerDailyOfferTest() {

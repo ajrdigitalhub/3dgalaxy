@@ -12,6 +12,7 @@ import { runVariantCartFlowTests } from '../unit/variant-cart-flow.test';
 import { runCampaignManagerAndPushUnitTests } from '../unit/campaign-manager-and-push.test';
 import { runProductBrandBundleFilamentUnitTests } from '../unit/product-brand-bundle-filament.test';
 import { runInstagramFeedUnitTests } from '../unit/instagram-feed.test';
+import { runMarketingTrackingUnitTests } from '../unit/marketing-tracking-diagnostics.test';
 import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
@@ -94,6 +95,12 @@ async function main() {
     const dIg = Date.now() - sIg;
     suites.push({ name: 'Instagram Live Feed, Media Normalization & Security Unit Tests', category: 'UNIT', ...rIg, durationMs: dIg });
     console.log(`  ✓ Instagram Live Feed, Media Normalization & Security: ${rIg.passed} passed, ${rIg.failed} failed (${dIg}ms)`);
+
+    const sMkt = Date.now();
+    const rMkt = await runMarketingTrackingUnitTests();
+    const dMkt = Date.now() - sMkt;
+    suites.push({ name: 'Marketing Tracking Credentials, Health & Sanitization Unit Tests', category: 'UNIT', ...rMkt, durationMs: dMkt });
+    console.log(`  ✓ Marketing Tracking Credentials & Health Suite: ${rMkt.passed} passed, ${rMkt.failed} failed (${dMkt}ms)`);
   }
 
   // LEVEL 2: API TESTS

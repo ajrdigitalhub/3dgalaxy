@@ -7,7 +7,9 @@ import {
   generateGoogleMerchantFeedXml,
   generateGoogleMerchantFeedJson,
   generateMetaCatalogFeedXml,
-  getAdminMarketingDashboardStats
+  getAdminMarketingDashboardStats,
+  runTrackingHealthCheck,
+  runCapiConnectivityTest
 } from '../controllers/marketing';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { cacheMiddleware } from '../middleware/cache';
@@ -29,5 +31,7 @@ router.get('/marketing/feeds/meta-catalog.xml', cacheMiddleware(900), generateMe
 router.get('/admin/marketing/settings', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager']), getAdminMarketingSettings);
 router.put('/admin/marketing/settings', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager']), updateAdminMarketingSettings);
 router.get('/admin/marketing/dashboard-stats', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager']), getAdminMarketingDashboardStats);
+router.post('/admin/marketing/health-check', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager']), runTrackingHealthCheck);
+router.post('/admin/marketing/capi-test', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager']), runCapiConnectivityTest);
 
 export default router;

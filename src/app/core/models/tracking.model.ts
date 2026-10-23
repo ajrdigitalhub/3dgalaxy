@@ -15,6 +15,7 @@ export interface MarketingConfig {
   enableServerSideCapi: boolean;
   debugMode: boolean;
   defaultCurrency: string;
+  metaTestEventCode?: string | null;
 }
 
 export interface TrackingItem {
