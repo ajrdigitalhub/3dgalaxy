@@ -10,6 +10,7 @@ import {
   LeadPayload
 } from '../analytics.types';
 import { ScriptLoaderService } from '../services/script-loader.service';
+import { sanitizeAnalyticsPayload, sanitizeAnalyticsItem } from '../analytics.utils';
 
 declare global {
   interface Window {
@@ -44,18 +45,39 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     this.measurementId = config.ga4.measurementId;
 
     window.dataLayer = window.dataLayer || [];
-    window.gtag = window.gtag || function () {
-      window.dataLayer.push(arguments);
-    };
+    if (typeof window.gtag !== 'function') {
+      window.gtag = function () {
+        window.dataLayer.push(arguments);
+      };
+    }
 
-    window.gtag('js', new Date());
+    // Configure Measurement ID with send_page_view: false so SPA route tracker manages virtual page views
     window.gtag('config', this.measurementId, {
-      send_page_view: config.ga4.sendPageViewOnLoad ?? false
+      send_page_view: false
     });
 
-    const scriptUrl = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
-    const loaded = await this.scriptLoader.loadScript(scriptUrl);
+    // In GTM-managed GA4 tracking architecture, GTM is the central container loading the Google Tag.
+    // If GTM is present in DOM or window, we don't load a separate direct gtag.js to prevent duplicate network hits.
+    const gtmActive = !!document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
+      !!(window as any).google_tag_manager;
 
+    if (gtmActive) {
+      this.initialized = true;
+      return true;
+    }
+
+    const scriptUrl = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
+    
+    // Check if tag is already loaded via direct tag snippet in index.html to avoid duplicate network loads
+    const existing = document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${this.measurementId}"]`) ||
+      document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`);
+
+    if (existing) {
+      this.initialized = true;
+      return true;
+    }
+
+    const loaded = await this.scriptLoader.loadScript(scriptUrl);
     if (loaded) {
       this.initialized = true;
     }
@@ -63,115 +85,189 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     return loaded;
   }
 
+  public isGtmManagingGa4(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    return !!(
+      document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
+      (window as any).google_tag_manager
+    );
+  }
+
   public isInitialized(): boolean {
-    return this.initialized && isPlatformBrowser(this.platformId) && typeof window.gtag === 'function';
+    return isPlatformBrowser(this.platformId) && (this.initialized || typeof window.gtag === 'function');
   }
 
   public trackPageView(url: string, title?: string): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'page_view', {
       page_title: title || (typeof document !== 'undefined' ? document.title : ''),
-      page_location: url,
+      page_location: typeof window !== 'undefined' ? window.location.href : url,
+      page_path: url,
       send_to: this.measurementId
     });
   }
 
   public trackEvent(eventName: string, payload?: Record<string, any>): void {
-    if (!this.isInitialized()) return;
-    window.gtag('event', eventName, payload || {});
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+
+    // Remap non-standard legacy ecommerce event names to GA4 recommended events
+    let normalizedEvent = eventName;
+    if (eventName === 'product') {
+      normalizedEvent = 'view_item';
+    } else if (eventName === 'checkout') {
+      normalizedEvent = 'begin_checkout';
+    }
+
+    const cleanPayload = sanitizeAnalyticsPayload(payload || {});
+    window.gtag('event', normalizedEvent, cleanPayload);
   }
 
   public trackViewItem(item: AnalyticsItem): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItem = sanitizeAnalyticsItem(item);
+    const value = cleanItem.price * (cleanItem.quantity || 1);
+
     window.gtag('event', 'view_item', {
-      currency: item.currency || 'INR',
-      value: item.price,
-      items: [item]
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackViewItemList(items: AnalyticsItem[], listName: string = 'Catalog'): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = (items || []).map((i, idx) => sanitizeAnalyticsItem({ ...i, index: i.index ?? idx + 1 }));
+
     window.gtag('event', 'view_item_list', {
       item_list_name: listName,
-      items
+      items: cleanItems
+    });
+  }
+
+  public trackSelectItem(item: AnalyticsItem, listName: string = 'Catalog'): void {
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItem = sanitizeAnalyticsItem(item);
+
+    window.gtag('event', 'select_item', {
+      item_list_name: listName,
+      items: [cleanItem]
     });
   }
 
   public trackViewCart(items: AnalyticsItem[], totalValue: number): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = (items || []).map((i) => sanitizeAnalyticsItem(i));
+
     window.gtag('event', 'view_cart', {
       currency: 'INR',
-      value: totalValue,
-      items
+      value: Number(Number(totalValue || 0).toFixed(2)),
+      items: cleanItems
     });
   }
 
   public trackAddToCart(item: AnalyticsItem, quantity: number = 1): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItem = sanitizeAnalyticsItem({ ...item, quantity });
+    const value = cleanItem.price * cleanItem.quantity!;
+
     window.gtag('event', 'add_to_cart', {
-      currency: item.currency || 'INR',
-      value: item.price * quantity,
-      items: [{ ...item, quantity }]
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackRemoveFromCart(item: AnalyticsItem, quantity: number = 1): void {
-    if (!this.isInitialized()) return;
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItem = sanitizeAnalyticsItem({ ...item, quantity });
+    const value = cleanItem.price * cleanItem.quantity!;
+
     window.gtag('event', 'remove_from_cart', {
-      currency: item.currency || 'INR',
-      value: item.price * quantity,
-      items: [{ ...item, quantity }]
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackCheckout(payload: CheckoutPayload): void {
-    if (!this.isInitialized()) return;
-    window.gtag('event', 'begin_checkout', {
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+    const cleanPayload: Record<string, any> = {
       currency: payload.currency || 'INR',
-      value: payload.value,
-      coupon: payload.coupon,
-      items: payload.items
+      value: Number(Number(payload.value || 0).toFixed(2)),
+      items: cleanItems
+    };
+
+    if (payload.coupon) {
+      cleanPayload['coupon'] = payload.coupon;
+    }
+
+    window.gtag('event', 'begin_checkout', cleanPayload);
+  }
+
+  public trackAddShippingInfo(shippingTier: string, value: number, items: AnalyticsItem[] = []): void {
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+
+    window.gtag('event', 'add_shipping_info', {
+      currency: 'INR',
+      value: Number(Number(value || 0).toFixed(2)),
+      shipping_tier: shippingTier,
+      items: cleanItems
     });
   }
 
-  public trackAddPaymentInfo(paymentType: string, payload: CheckoutPayload): void {
-    if (!this.isInitialized()) return;
+  public trackAddPaymentInfo(paymentType: string, value: number, items: AnalyticsItem[] = []): void {
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+
     window.gtag('event', 'add_payment_info', {
-      currency: payload.currency || 'INR',
-      value: payload.value,
+      currency: 'INR',
+      value: Number(Number(value || 0).toFixed(2)),
       payment_type: paymentType,
-      items: payload.items
+      items: cleanItems
     });
   }
 
   public trackPurchase(payload: PurchasePayload): void {
-    if (!this.isInitialized()) return;
-    window.gtag('event', 'purchase', {
-      transaction_id: payload.transaction_id,
-      value: payload.value,
-      tax: payload.tax || 0,
-      shipping: payload.shipping || 0,
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+
+    const cleanPayload: Record<string, any> = {
+      transaction_id: String(payload.transaction_id),
+      value: Number(Number(payload.value || 0).toFixed(2)),
+      tax: Number(Number(payload.tax || 0).toFixed(2)),
+      shipping: Number(Number(payload.shipping || 0).toFixed(2)),
       currency: payload.currency || 'INR',
-      coupon: payload.coupon,
-      items: payload.items
-    });
+      items: cleanItems
+    };
+
+    if (payload.coupon) {
+      cleanPayload['coupon'] = payload.coupon;
+    }
+
+    window.gtag('event', 'purchase', cleanPayload);
   }
 
   public trackRefund(transactionId: string, value?: number, items?: AnalyticsItem[]): void {
-    if (!this.isInitialized()) return;
-    window.gtag('event', 'refund', {
+    if (!this.isInitialized() || this.isGtmManagingGa4()) return;
+    const cleanItems = items ? items.map((i) => sanitizeAnalyticsItem(i)) : undefined;
+
+    const cleanPayload: Record<string, any> = {
       transaction_id: transactionId,
-      value,
-      currency: 'INR',
-      items
-    });
+      currency: 'INR'
+    };
+
+    if (value !== undefined) cleanPayload['value'] = Number(value.toFixed(2));
+    if (cleanItems) cleanPayload['items'] = cleanItems;
+
+    window.gtag('event', 'refund', cleanPayload);
   }
 
   public trackLead(payload: LeadPayload): void {
     if (!this.isInitialized()) return;
     window.gtag('event', 'generate_lead', {
-      value: payload.value || 0,
+      value: Number(Number(payload.value || 0).toFixed(2)),
       currency: payload.currency || 'INR',
       lead_type: payload.lead_type || 'general'
     });
@@ -205,6 +301,7 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
 
   public setUserProperties(properties: Record<string, any>): void {
     if (!this.isInitialized()) return;
-    window.gtag('set', 'user_properties', properties);
+    const cleanProperties = sanitizeAnalyticsPayload(properties);
+    window.gtag('set', 'user_properties', cleanProperties);
   }
 }

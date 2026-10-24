@@ -25,6 +25,7 @@ import { DeliveryEstimateService } from "../../core/services/delivery-estimate.s
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { calculateItemWeight, calculatePackageSummary, formatWeight, getItemWeightGrams } from "../../shared/utils/weight.utils";
 import { firstValueFrom } from "rxjs";
+import { AnalyticsService, mapCartItemToAnalyticsItem } from "../../core/analytics";
 
 export interface CustomerAddress {
   id: string;
@@ -65,6 +66,7 @@ export class CheckoutComponent implements OnInit {
   settingsService = inject(SettingsService);
   shippingService = inject(ShippingService);
   deliveryService = inject(DeliveryEstimateService);
+  analytics = inject(AnalyticsService);
 
 
 
@@ -258,6 +260,13 @@ export class CheckoutComponent implements OnInit {
     // Preload payment gateways silently in checkout background
     this.paymentLoader.loadRazorpay();
     this.paymentLoader.loadCashfree();
+
+    // Track begin_checkout
+    const items = this.groupedCheckoutItems();
+    if (items.length > 0) {
+      const mapped = items.map(item => mapCartItemToAnalyticsItem(item));
+      this.analytics.trackCheckout(mapped, this.grandTotal());
+    }
   }
 
   constructor() {
@@ -549,6 +558,15 @@ export class CheckoutComponent implements OnInit {
     if (step > 1 && !this.validateStep1()) return;
     if (step > 2 && !this.validateStep2()) return;
     if (step > 3 && !this.validateStep3()) return;
+
+    if (step === 3) {
+      const items = this.groupedCheckoutItems().map(item => mapCartItemToAnalyticsItem(item));
+      const shippingTier = this.shippingDetails().shippingLabel || (this.shipping() === 0 ? 'Free Shipping' : 'Standard Delivery');
+      this.analytics.trackShippingSelected(shippingTier, this.grandTotal(), items);
+    } else if (step === 4) {
+      const items = this.groupedCheckoutItems().map(item => mapCartItemToAnalyticsItem(item));
+      this.analytics.trackPaymentSelected(this.paymentMethod(), this.grandTotal(), items);
+    }
 
     this.activeStep.set(step);
     this.saveDraftState();

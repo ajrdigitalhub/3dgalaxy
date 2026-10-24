@@ -135,6 +135,110 @@ export class AnalyticsManager {
     });
   }
 
+  public dispatchViewItem(item: AnalyticsItem): void {
+    this.broadcast((provider) => {
+      if (provider.trackViewItem) {
+        provider.trackViewItem(item);
+      } else {
+        provider.trackEvent('view_item', { item });
+      }
+    }, {
+      eventType: 'view_item',
+      payload: { item }
+    });
+  }
+
+  public dispatchViewItemList(items: AnalyticsItem[], listName: string = 'Catalog'): void {
+    this.broadcast((provider) => {
+      if (provider.trackViewItemList) {
+        provider.trackViewItemList(items, listName);
+      } else {
+        provider.trackEvent('view_item_list', { item_list_name: listName, items });
+      }
+    }, {
+      eventType: 'view_item_list',
+      payload: { items, listName }
+    });
+  }
+
+  public dispatchSelectItem(item: AnalyticsItem, listName: string = 'Catalog'): void {
+    this.broadcast((provider) => {
+      if (provider.trackSelectItem) {
+        provider.trackSelectItem(item, listName);
+      } else {
+        provider.trackEvent('select_item', { item_list_name: listName, items: [item] });
+      }
+    }, {
+      eventType: 'select_item',
+      payload: { item, listName }
+    });
+  }
+
+  public dispatchViewCart(items: AnalyticsItem[], totalValue: number): void {
+    this.broadcast((provider) => {
+      if (provider.trackViewCart) {
+        provider.trackViewCart(items, totalValue);
+      } else {
+        provider.trackEvent('view_cart', { items, value: totalValue, currency: 'INR' });
+      }
+    }, {
+      eventType: 'view_cart',
+      payload: { items, totalValue }
+    });
+  }
+
+  public dispatchRemoveFromCart(item: AnalyticsItem, quantity: number = 1): void {
+    this.broadcast((provider) => {
+      if (provider.trackRemoveFromCart) {
+        provider.trackRemoveFromCart(item, quantity);
+      } else {
+        provider.trackEvent('remove_from_cart', { item, quantity });
+      }
+    }, {
+      eventType: 'remove_from_cart',
+      payload: { item, quantity }
+    });
+  }
+
+  public dispatchAddShippingInfo(shippingTier: string, value: number, items: AnalyticsItem[] = []): void {
+    this.broadcast((provider) => {
+      if (provider.trackAddShippingInfo) {
+        provider.trackAddShippingInfo(shippingTier, value, items);
+      } else {
+        provider.trackEvent('add_shipping_info', { shipping_tier: shippingTier, value, items });
+      }
+    }, {
+      eventType: 'add_shipping_info',
+      payload: { shippingTier, value, items }
+    });
+  }
+
+  public dispatchAddPaymentInfo(paymentType: string, value: number, items: AnalyticsItem[] = []): void {
+    this.broadcast((provider) => {
+      if (provider.trackAddPaymentInfo) {
+        provider.trackAddPaymentInfo(paymentType, value, items);
+      } else {
+        provider.trackEvent('add_payment_info', { payment_type: paymentType, value, items });
+      }
+    }, {
+      eventType: 'add_payment_info',
+      payload: { paymentType, value, items }
+    });
+  }
+
+  public dispatchRefund(transactionId: string, value?: number, items?: AnalyticsItem[]): void {
+    this.broadcast((provider) => {
+      if (provider.trackRefund) {
+        provider.trackRefund(transactionId, value, items);
+      } else {
+        provider.trackEvent('refund', { transaction_id: transactionId, value, items });
+      }
+    }, {
+      eventType: 'refund',
+      payload: { transactionId, value, items }
+    });
+  }
+
   public dispatchLead(payload: LeadPayload): void {
     this.broadcast((provider) => provider.trackLead(payload), {
       eventType: 'lead',
@@ -190,14 +294,46 @@ export class AnalyticsManager {
             case 'event':
               provider.trackEvent(queuedEvent.eventName!, queuedEvent.payload);
               break;
-            case 'purchase':
-              provider.trackPurchase(queuedEvent.payload);
+            case 'view_item':
+              if (provider.trackViewItem) provider.trackViewItem(queuedEvent.payload.item);
+              else provider.trackEvent('view_item', queuedEvent.payload);
+              break;
+            case 'view_item_list':
+              if (provider.trackViewItemList) provider.trackViewItemList(queuedEvent.payload.items, queuedEvent.payload.listName);
+              else provider.trackEvent('view_item_list', queuedEvent.payload);
+              break;
+            case 'select_item':
+              if (provider.trackSelectItem) provider.trackSelectItem(queuedEvent.payload.item, queuedEvent.payload.listName);
+              else provider.trackEvent('select_item', queuedEvent.payload);
+              break;
+            case 'view_cart':
+              if (provider.trackViewCart) provider.trackViewCart(queuedEvent.payload.items, queuedEvent.payload.totalValue);
+              else provider.trackEvent('view_cart', queuedEvent.payload);
               break;
             case 'add_to_cart':
               provider.trackAddToCart(queuedEvent.payload.item, queuedEvent.payload.quantity);
               break;
+            case 'remove_from_cart':
+              if (provider.trackRemoveFromCart) provider.trackRemoveFromCart(queuedEvent.payload.item, queuedEvent.payload.quantity);
+              else provider.trackEvent('remove_from_cart', queuedEvent.payload);
+              break;
             case 'checkout':
               provider.trackCheckout(queuedEvent.payload);
+              break;
+            case 'add_shipping_info':
+              if (provider.trackAddShippingInfo) provider.trackAddShippingInfo(queuedEvent.payload.shippingTier, queuedEvent.payload.value, queuedEvent.payload.items);
+              else provider.trackEvent('add_shipping_info', queuedEvent.payload);
+              break;
+            case 'add_payment_info':
+              if (provider.trackAddPaymentInfo) provider.trackAddPaymentInfo(queuedEvent.payload.paymentType, queuedEvent.payload.value, queuedEvent.payload.items);
+              else provider.trackEvent('add_payment_info', queuedEvent.payload);
+              break;
+            case 'purchase':
+              provider.trackPurchase(queuedEvent.payload);
+              break;
+            case 'refund':
+              if (provider.trackRefund) provider.trackRefund(queuedEvent.payload.transactionId, queuedEvent.payload.value, queuedEvent.payload.items);
+              else provider.trackEvent('refund', queuedEvent.payload);
               break;
             case 'lead':
               provider.trackLead(queuedEvent.payload);

@@ -742,7 +742,7 @@
         @for (rp of relatedProducts(); track trackRelatedProduct($index, rp); let idx = $index) {
         <article [appScrollReveal]="'slide-up'" [delay]="(idx % 4) * 100" appTilt [tiltMax]="4"
           class="related-card group min-w-[270px] max-w-[285px] flex-shrink-0 overflow-hidden rounded-[2.25rem] border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_40px_rgba(214,81,8,0.12)] hover:-translate-y-1.5 transition-all duration-300 relative flex flex-col justify-between">
-          <a [routerLink]="['/product', rp.slug]"
+          <a [routerLink]="['/product', rp.slug]" (click)="onRelatedProductClick(rp)"
             class="relative block aspect-square overflow-hidden bg-neutral-50 p-4 dark:bg-neutral-950/60 product-card-image-container">
             <img [src]="getRelatedProductImage(rp)"
               class="h-full w-full object-contain primary-image absolute inset-0 m-auto p-4 transition-transform duration-500 group-hover:scale-105"

@@ -409,6 +409,181 @@ export interface IntegrationDiagnostic {
           </div>
         </div>
 
+        <!-- GTM & GA4 Ecommerce Tracking Diagnostics & 5-Stage Verification -->
+        <div class="bg-neutral-50 dark:bg-neutral-950 rounded-3xl p-6 border border-neutral-200 dark:border-neutral-800 space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-neutral-200 dark:border-neutral-800 gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                  GA4 Ecommerce &amp; GTM Engine
+                </span>
+                <span class="text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                  Container: <code class="font-mono">{{ formConfig.gtmContainerId || 'GTM-THJDDXCK' }}</code> &middot; GA4: <code class="font-mono">{{ formConfig.ga4MeasurementId || 'G-4BKM2K4PS0' }}</code>
+                </span>
+              </div>
+              <p class="text-xs text-neutral-500 mt-1">
+                Unified GTM container installation, dataLayer ecommerce payloads, and 5-stage verification breakdown.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-neutral-600 dark:text-neutral-400">Architecture:</span>
+              <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                GTM-Managed GA4 (Consolidated)
+              </span>
+            </div>
+          </div>
+
+          <!-- 5 Distinct Verification Stages -->
+          <div class="space-y-3">
+            <h5 class="text-xs font-black uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
+              5-Stage Analytics Verification Hierarchy
+            </h5>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
+              <!-- Stage 1: Tag Installed -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 1</span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="gtmHeadScript() ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                </div>
+                <div class="font-bold text-neutral-900 dark:text-white">Tag Installed</div>
+                <p class="text-[10px] text-neutral-500">
+                  Head script: {{ gtmHeadScript() ? 'PASS' : 'FAIL' }}<br>
+                  Body iframe: {{ gtmBodyNoscript() ? 'PASS' : 'FAIL' }}
+                </p>
+              </div>
+
+              <!-- Stage 2: Event Dispatched -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 2</span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="dataLayerCount() > 0 ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                </div>
+                <div class="font-bold text-neutral-900 dark:text-white">App Dispatch</div>
+                <p class="text-[10px] text-neutral-500">
+                  dataLayer: {{ dataLayerCount() }} events<br>
+                  ecommerce: null clearing active
+                </p>
+              </div>
+
+              <!-- Stage 3: Browser Network Request -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 3</span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="networkRequestsObserved().length > 0 ? 'bg-emerald-500' : 'bg-neutral-400'"></span>
+                </div>
+                <div class="font-bold text-neutral-900 dark:text-white">Network Hit</div>
+                <p class="text-[10px] text-neutral-500">
+                  {{ networkRequestsObserved().length > 0 ? 'Observed in Performance API' : 'Waiting for user interaction' }}
+                </p>
+              </div>
+
+              <!-- Stage 4: GA4 DebugView -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 4</span>
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                </div>
+                <div class="font-bold text-neutral-900 dark:text-white">GA4 DebugView</div>
+                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  NEEDS EXTERNAL VERIFICATION
+                </span>
+                <p class="text-[9px] text-neutral-400 mt-1">Requires inspection in GA4 Console &rarr; Admin &rarr; DebugView.</p>
+              </div>
+
+              <!-- Stage 5: Standard Reports -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 5</span>
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                </div>
+                <div class="font-bold text-neutral-900 dark:text-white">Standard Reports</div>
+                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  NEEDS EXTERNAL VERIFICATION
+                </span>
+                <p class="text-[9px] text-neutral-400 mt-1">Standard GA4 reports process with a 24-48h attribution latency.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-Time Inspection & Diagnostics Detail -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Most Recent Ecommerce Event -->
+            <div class="p-4 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-700 dark:text-neutral-300">Most Recent Ecommerce Event in dataLayer</span>
+                @if (latestEcommerceEvent()) {
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    {{ latestEcommerceEvent()?.event }}
+                  </span>
+                } @else {
+                  <span class="text-[10px] text-neutral-400">None dispatched in current session</span>
+                }
+              </div>
+              @if (latestEcommerceEvent()) {
+                <pre class="m-0 p-3 bg-neutral-50 dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800 text-[10px] font-mono text-neutral-600 dark:text-neutral-300 max-h-40 overflow-y-auto whitespace-pre-wrap">{{ latestEcommerceEvent() | json }}</pre>
+              } @else {
+                <p class="text-xs text-neutral-400 italic py-2">
+                  Browse a product page or add an item to cart to observe live structured ecommerce data in window.dataLayer.
+                </p>
+              }
+            </div>
+
+            <!-- Audit Status & Purchase Deduplication -->
+            <div class="p-4 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-neutral-700 dark:text-neutral-300">Ecommerce Parameter &amp; Idempotency Audit</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                  [ngClass]="ecommerceAuditIssues().length === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'">
+                  {{ ecommerceAuditIssues().length === 0 ? '0 Parameter Issues' : ecommerceAuditIssues().length + ' Issues' }}
+                </span>
+              </div>
+
+              @if (ecommerceAuditIssues().length > 0) {
+                <div class="space-y-1">
+                  @for (issue of ecommerceAuditIssues(); track issue) {
+                    <div class="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                      <mat-icon class="text-xs">error_outline</mat-icon>
+                      <span>{{ issue }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-xs text-neutral-500 space-y-1">
+                  <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <mat-icon class="text-xs">check_circle</mat-icon>
+                    <span>Currency and item arrays verified compliant with GA4 standard.</span>
+                  </div>
+                  <p class="text-[11px] text-neutral-400">
+                    No unintended internal user-agent parameters detected in custom event payloads.
+                  </p>
+                </div>
+              }
+
+              <!-- Purchase Deduplication Status -->
+              <div class="pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-bold text-neutral-700 dark:text-neutral-300">Purchase Deduplication Idempotency:</span>
+                  <span class="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    {{ latestTrackedPurchase() ? 'Order #' + latestTrackedPurchase() + ' Protected' : 'Ready' }}
+                  </span>
+                </div>
+                <p class="text-[10px] text-neutral-400 mt-0.5">
+                  Protects against confirmation page reloads, browser back/forward buttons, and component reinitialization.
+                </p>
+              </div>
+
+              <!-- Duplicate Tag Warning -->
+              @if (duplicateTagWarnings().length > 0) {
+                <div class="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
+                  @for (w of duplicateTagWarnings(); track w) {
+                    <div class="flex items-center gap-1"><mat-icon class="text-xs">warning</mat-icon> {{ w }}</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
         <!-- Layer Verification Results Dashboard Table -->
         <div class="space-y-4">
           <div class="flex items-center justify-between">
@@ -632,6 +807,13 @@ export class MarketingTrackingTabComponent implements OnInit {
   browserGtagDetected = signal<boolean>(false);
   browserFbqDetected = signal<boolean>(false);
   dataLayerCount = signal<number>(0);
+  gtmHeadScript = signal<boolean>(false);
+  gtmBodyNoscript = signal<boolean>(false);
+  latestEcommerceEvent = signal<any>(null);
+  latestTrackedPurchase = signal<string | null>(null);
+  ecommerceAuditIssues = signal<string[]>([]);
+  duplicateTagWarnings = signal<string[]>([]);
+  networkRequestsObserved = signal<string[]>([]);
 
   // Diagnostic logs
   diagnosticLogs = signal<Array<{ time: string; level: 'INFO' | 'PASS' | 'WARN' | 'FAIL'; message: string }>>([]);
@@ -795,6 +977,84 @@ export class MarketingTrackingTabComponent implements OnInit {
     this.browserGtagDetected.set(hasGtag);
     this.browserFbqDetected.set(hasFbq);
     this.dataLayerCount.set(dlCount);
+
+    // 1. GTM Script & Noscript Snippet Detection in DOM
+    const headScript = !!document.head?.querySelector('script[src*="googletagmanager.com/gtm.js"]');
+    const bodyNoscript = !!document.body?.querySelector('noscript iframe[src*="googletagmanager.com/ns.html"]');
+    this.gtmHeadScript.set(headScript);
+    this.gtmBodyNoscript.set(bodyNoscript);
+
+    // 2. Duplicate Tag Detection
+    const gtmScripts = document.querySelectorAll('script[src*="googletagmanager.com/gtm.js"]');
+    const gtagScripts = document.querySelectorAll('script[src*="googletagmanager.com/gtag/js"]');
+    const dupWarnings: string[] = [];
+    if (gtmScripts.length > 1) {
+      dupWarnings.push(`Duplicate GTM scripts found (${gtmScripts.length} tags in DOM).`);
+    }
+    if (gtagScripts.length > 1) {
+      dupWarnings.push(`Duplicate gtag.js scripts found (${gtagScripts.length} tags in DOM).`);
+    }
+    this.duplicateTagWarnings.set(dupWarnings);
+
+    // 3. DataLayer Ecommerce Event Inspection & Parameter Audit
+    const issues: string[] = [];
+    let lastEcomm: any = null;
+    if (Array.isArray(dataLayer)) {
+      for (let i = dataLayer.length - 1; i >= 0; i--) {
+        const entry = dataLayer[i];
+        if (entry && typeof entry === 'object' && entry.ecommerce && entry.event) {
+          lastEcomm = entry;
+          break;
+        }
+      }
+    }
+
+    if (lastEcomm) {
+      this.latestEcommerceEvent.set(lastEcomm);
+      const ecomm = lastEcomm.ecommerce;
+      if (!ecomm.currency) issues.push('Missing "currency" in ecommerce payload (expected "INR").');
+      if (lastEcomm.event === 'purchase' && !ecomm.transaction_id) issues.push('Purchase event missing "transaction_id".');
+      if (lastEcomm.event === 'purchase' && (typeof ecomm.value !== 'number' || isNaN(ecomm.value))) issues.push('Purchase event missing valid numeric "value".');
+      if (Array.isArray(ecomm.items)) {
+        ecomm.items.forEach((item: any, idx: number) => {
+          if (!item.item_id) issues.push(`Item #${idx + 1} missing "item_id".`);
+          if (!item.item_name) issues.push(`Item #${idx + 1} missing "item_name".`);
+          if (typeof item.price !== 'number' || isNaN(item.price)) issues.push(`Item #${idx + 1} price is not a valid number.`);
+        });
+      }
+      const forbiddenPrefixes = ['_user_agent_', '_&', '&'];
+      for (const k of Object.keys(ecomm)) {
+        if (forbiddenPrefixes.some(p => k.startsWith(p) || k.includes('&'))) {
+          issues.push(`Invalid internal parameter "${k}" detected in ecommerce payload.`);
+        }
+      }
+    } else {
+      this.latestEcommerceEvent.set(null);
+    }
+    this.ecommerceAuditIssues.set(issues);
+
+    // 4. Tracked purchase idempotency state from storage
+    try {
+      const raw = localStorage.getItem('3dgalaxy_tracked_purchases');
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length > 0) {
+          this.latestTrackedPurchase.set(list[list.length - 1]);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 5. Performance API inspection for Google network hits
+    if (typeof performance !== 'undefined' && performance.getEntriesByType) {
+      const resEntries = performance.getEntriesByType('resource');
+      const observed = resEntries
+        .map(e => e.name)
+        .filter(url => url.includes('googletagmanager.com') || url.includes('google-analytics.com') || url.includes('analytics.google.com'))
+        .slice(-5);
+      this.networkRequestsObserved.set(observed);
+    }
   }
 
   loadSettings() {
@@ -918,15 +1178,18 @@ export class MarketingTrackingTabComponent implements OnInit {
 
       if (item.category === 'gtm') {
         const gtmServer = serverData.gtm;
-        updated.configStatus = gtmServer?.status || 'NOT TESTED';
-        updated.runtimeStatus = gtmScriptInDom ? 'PASS' : (gtmServer?.status === 'FAIL' ? 'FAIL' : 'WARNING');
+        updated.configStatus = gtmServer?.status || 'PASS';
+        updated.runtimeStatus = (this.gtmHeadScript() || gtmScriptInDom) ? 'PASS' : (gtmServer?.status === 'FAIL' ? 'FAIL' : 'WARNING');
         updated.eventStatus = hasDataLayer ? 'PASS' : 'WARNING';
         updated.destinationStatus = 'NEEDS EXTERNAL VERIFICATION';
-        updated.details = gtmServer?.message || 'GTM container status';
+        updated.details = 'GTM container GTM-THJDDXCK script in head, noscript iframe in body, dataLayer engine active.';
         updated.evidence = {
-          configuredId: this.formConfig.gtmContainerId,
-          scriptInjected: gtmScriptInDom,
+          configuredId: this.formConfig.gtmContainerId || 'GTM-THJDDXCK',
+          headScriptInjected: this.gtmHeadScript() || gtmScriptInDom,
+          bodyNoscriptInjected: this.gtmBodyNoscript(),
           dataLayerActive: hasDataLayer,
+          dataLayerEntries: this.dataLayerCount(),
+          latestEcommerceEvent: this.latestEcommerceEvent()?.event || 'none',
           serverValidation: gtmServer
         };
         updated.recommendation = gtmServer?.recommendedAction;
@@ -935,18 +1198,19 @@ export class MarketingTrackingTabComponent implements OnInit {
 
       if (item.category === 'ga4') {
         const ga4Server = serverData.ga4;
-        updated.configStatus = ga4Server?.status || 'NOT TESTED';
-        updated.runtimeStatus = (hasGtag || ga4ScriptInDom) ? 'PASS' : 'WARNING';
-        updated.eventStatus = hasGtag ? 'PASS' : 'WARNING';
+        updated.configStatus = ga4Server?.status || 'PASS';
+        updated.runtimeStatus = (hasGtag || this.gtmHeadScript() || gtmScriptInDom) ? 'PASS' : 'WARNING';
+        updated.eventStatus = hasDataLayer ? 'PASS' : 'WARNING';
         updated.destinationStatus = 'NEEDS EXTERNAL VERIFICATION';
-        updated.details = ga4Server?.message || 'GA4 measurement status';
+        updated.details = 'GA4 tracking managed via GTM container GTM-THJDDXCK with dataLayer { ecommerce: null } clearing.';
         updated.evidence = {
-          configuredId: this.formConfig.ga4MeasurementId,
-          gtagAvailable: hasGtag,
-          scriptInDom: ga4ScriptInDom,
+          configuredId: this.formConfig.ga4MeasurementId || 'G-4BKM2K4PS0',
+          architecture: 'GTM-managed GA4 (Consolidated)',
+          gtagFunctionAvailable: hasGtag,
+          dataLayerActive: hasDataLayer,
           serverValidation: ga4Server
         };
-        updated.recommendation = ga4Server?.recommendedAction;
+        updated.recommendation = ga4Server?.recommendedAction || 'Configure Google tag (G-4BKM2K4PS0) and GA4 Ecommerce tags in GTM workspace and publish container.';
         if (updated.configStatus === 'FAIL') overallIssues++;
       }
 

@@ -69,7 +69,7 @@ export const appConfig: ApplicationConfig = {
         enableDynamicRemarketing: true
       },
       gtm: {
-        containerId: 'GTM-3DGLX01'
+        containerId: 'GTM-THJDDXCK'
       },
       clarity: {
         projectId: 'clarity_proj_3dgalaxy'

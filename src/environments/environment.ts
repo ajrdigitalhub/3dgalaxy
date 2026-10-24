@@ -9,10 +9,10 @@ export const environment = {
         }
         return 'https://3dgalaxy.co';
     },
-    get apiUrl() {
-        // if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        //     return "http://localhost:4000/api";
-        // }
+    get apiUrl(): string {
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            return "http://localhost:4000/api";
+        }
         return "https://api-kcrj5xgpxa-uc.a.run.app/api";
     },
 };

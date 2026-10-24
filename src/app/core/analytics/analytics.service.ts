@@ -46,43 +46,64 @@ export class AnalyticsService {
 
   // --- Core Ecommerce Tracking ---
   public trackViewItem(item: AnalyticsItem): void {
-    this.manager.dispatchEvent('view_item', { item });
+    this.manager.dispatchViewItem(item);
   }
 
   public trackProductImpression(items: AnalyticsItem[], listName: string = 'Catalog'): void {
-    this.manager.dispatchEvent('view_item_list', { item_list_name: listName, items });
+    this.manager.dispatchViewItemList(items, listName);
   }
 
   public trackProductClick(item: AnalyticsItem, listName: string = 'Catalog'): void {
-    this.manager.dispatchEvent('select_item', { item_list_name: listName, items: [item] });
+    this.manager.dispatchSelectItem(item, listName);
   }
 
-  public trackAddToCart(item: AnalyticsItem, quantity: number = 1): void {
-    this.manager.dispatchAddToCart(item, quantity);
+  public trackAddToCart(item: AnalyticsItem | AnalyticsItem[], quantity: number = 1): void {
+    if (Array.isArray(item)) {
+      item.forEach(i => this.manager.dispatchAddToCart(i, i.quantity || quantity));
+    } else {
+      this.manager.dispatchAddToCart(item, quantity);
+    }
   }
 
-  public trackRemoveFromCart(item: AnalyticsItem, quantity: number = 1): void {
-    this.manager.dispatchEvent('remove_from_cart', { item, quantity });
+  public trackRemoveFromCart(item: AnalyticsItem | AnalyticsItem[], quantity: number = 1): void {
+    if (Array.isArray(item)) {
+      item.forEach(i => this.manager.dispatchRemoveFromCart(i, i.quantity || quantity));
+    } else {
+      this.manager.dispatchRemoveFromCart(item, quantity);
+    }
   }
 
-  public trackViewCart(items: AnalyticsItem[], totalValue: number): void {
-    this.manager.dispatchEvent('view_cart', { items, value: totalValue, currency: 'INR' });
+  public trackViewCart(items: AnalyticsItem[], totalValue: number = 0): void {
+    this.manager.dispatchViewCart(items, totalValue);
   }
 
   public trackWishlist(item: AnalyticsItem): void {
     this.manager.dispatchEvent('add_to_wishlist', { item });
   }
 
-  public trackCheckout(payload: CheckoutPayload): void {
-    this.manager.dispatchCheckout(payload);
+  public trackCheckout(payloadOrItems: CheckoutPayload | AnalyticsItem[], totalValue?: number): void {
+    if (Array.isArray(payloadOrItems)) {
+      const val = typeof totalValue === 'number' ? totalValue : payloadOrItems.reduce((acc, i) => acc + (i.price * (i.quantity || 1)), 0);
+      this.manager.dispatchCheckout({
+        items: payloadOrItems,
+        value: val,
+        currency: 'INR'
+      });
+    } else {
+      this.manager.dispatchCheckout(payloadOrItems);
+    }
   }
 
-  public trackShippingSelected(shippingTier: string, value: number): void {
-    this.manager.dispatchEvent('add_shipping_info', { shipping_tier: shippingTier, value });
+  public trackShippingSelected(shippingTier: string, valueOrItems: number | AnalyticsItem[] = 0, maybeItems: AnalyticsItem[] = []): void {
+    const val = typeof valueOrItems === 'number' ? valueOrItems : 0;
+    const items = Array.isArray(valueOrItems) ? valueOrItems : maybeItems;
+    this.manager.dispatchAddShippingInfo(shippingTier, val, items);
   }
 
-  public trackPaymentSelected(paymentType: string, value: number): void {
-    this.manager.dispatchEvent('add_payment_info', { payment_type: paymentType, value });
+  public trackPaymentSelected(paymentType: string, valueOrItems: number | AnalyticsItem[] = 0, maybeItems: AnalyticsItem[] = []): void {
+    const val = typeof valueOrItems === 'number' ? valueOrItems : 0;
+    const items = Array.isArray(valueOrItems) ? valueOrItems : maybeItems;
+    this.manager.dispatchAddPaymentInfo(paymentType, val, items);
   }
 
   public trackPurchase(payload: PurchasePayload): void {
@@ -90,7 +111,7 @@ export class AnalyticsService {
   }
 
   public trackRefund(transactionId: string, value?: number, items?: AnalyticsItem[]): void {
-    this.manager.dispatchEvent('refund', { transaction_id: transactionId, value, items });
+    this.manager.dispatchRefund(transactionId, value, items);
   }
 
   public trackCouponApplied(couponCode: string, discountAmount: number): void {

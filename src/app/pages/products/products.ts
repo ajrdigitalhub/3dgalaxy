@@ -24,6 +24,7 @@ import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { hasProductVariants } from "../../shared/utils/product.utils";
 import { environment } from "../../../environments/environment";
+import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
 
 @Component({
   selector: "app-products",
@@ -47,6 +48,7 @@ export class Products implements OnInit {
   titleService = inject(Title);
   metaService = inject(Meta);
   document = inject(DOCUMENT);
+  analytics = inject(AnalyticsService);
 
   // API State Signals
   productsList = signal<any[]>([]);
@@ -144,6 +146,19 @@ export class Products implements OnInit {
         this.availableFilters.set(res.availableFilters);
       }
       this.isLoading.set(false);
+
+      if (products.length > 0) {
+        const listName = this.activeCategory() ? `Category: ${this.activeCategory()}` : 'Product Catalog';
+        const listId = this.activeCategory() || 'all_products';
+        const analyticsItems = products.slice(0, 20).map((p: any, idx: number) =>
+          mapProductToAnalyticsItem(p, {
+            item_list_id: listId,
+            item_list_name: listName,
+            index: idx + 1
+          })
+        );
+        this.analytics.trackProductImpression(analyticsItems, listName);
+      }
     });
 
     // Combine route path parameters and query parameters to run synchronously
@@ -561,6 +576,13 @@ export class Products implements OnInit {
       return;
     }
     this.ds.addToCart(p, 1);
+    const price = this.activePrice(p);
+    const item = mapProductToAnalyticsItem(p, {
+      quantity: 1,
+      price: price,
+      item_list_name: this.activeCategory() ? `Category: ${this.activeCategory()}` : 'Product Catalog'
+    });
+    this.analytics.trackAddToCart(item, 1);
   }
 
   getCategoryIcon(catId: string): string {
@@ -739,5 +761,17 @@ export class Products implements OnInit {
     }
 
     return chips;
+  }
+
+  onProductClick(product: any, index?: number): void {
+    if (!product) return;
+    const listName = this.activeCategory() ? `Category: ${this.activeCategory()}` : 'Product Catalog';
+    const listId = this.activeCategory() || 'all_products';
+    const item = mapProductToAnalyticsItem(product, {
+      item_list_id: listId,
+      item_list_name: listName,
+      index: index !== undefined ? index + 1 : undefined
+    });
+    this.analytics.trackProductClick(item, listName);
   }
 }

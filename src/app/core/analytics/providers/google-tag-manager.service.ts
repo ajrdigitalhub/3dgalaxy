@@ -10,6 +10,7 @@ import {
   LeadPayload
 } from '../analytics.types';
 import { ScriptLoaderService } from '../services/script-loader.service';
+import { sanitizeAnalyticsPayload, sanitizeAnalyticsItem } from '../analytics.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -30,14 +31,25 @@ export class GoogleTagManagerService implements AnalyticsProvider {
       return false;
     }
 
-    if (!config.gtm || !config.gtm.containerId || config.gtm.containerId.startsWith('GTM-3DGLX')) {
+    const targetId = config.gtm?.containerId?.trim() || 'GTM-THJDDXCK';
+    if (!targetId || !targetId.startsWith('GTM-')) {
       return false;
     }
 
-    this.containerId = config.gtm.containerId;
-    const dataLayerName = config.gtm.dataLayerName || 'dataLayer';
+    this.containerId = targetId;
+    const dataLayerName = config.gtm?.dataLayerName || 'dataLayer';
 
     window[dataLayerName as any] = window[dataLayerName as any] || [];
+
+    // Check if GTM is already loaded or injected via index.html snippet to prevent duplicate tag loading
+    const existingScript = document.querySelector(`script[src*="googletagmanager.com/gtm.js?id=${this.containerId}"]`) ||
+      document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
+      (window as any).google_tag_manager?.[this.containerId];
+
+    if (existingScript) {
+      this.initialized = true;
+      return true;
+    }
 
     const inlineScript = `
       (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -56,7 +68,7 @@ export class GoogleTagManagerService implements AnalyticsProvider {
   }
 
   public isInitialized(): boolean {
-    return this.initialized && isPlatformBrowser(this.platformId) && Array.isArray(window.dataLayer);
+    return isPlatformBrowser(this.platformId) && (this.initialized || Array.isArray(window.dataLayer));
   }
 
   public pushToDataLayer(object: Record<string, any>): void {
@@ -65,79 +77,189 @@ export class GoogleTagManagerService implements AnalyticsProvider {
     window.dataLayer.push(object);
   }
 
+  /**
+   * Pushes a GA4-compliant ecommerce event to window.dataLayer.
+   * Crucial rule: Always clears the previous ecommerce object ({ ecommerce: null })
+   * prior to pushing new ecommerce data to avoid parameter bleeding and malformed arrays.
+   */
+  public pushEcommerce(eventName: string, ecommerceData: Record<string, any>): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.dataLayer = window.dataLayer || [];
+
+    // Clear previous ecommerce object per GA4 / GTM developer documentation
+    window.dataLayer.push({ ecommerce: null });
+
+    // Push sanitized ecommerce payload
+    window.dataLayer.push({
+      event: eventName,
+      ecommerce: sanitizeAnalyticsPayload(ecommerceData)
+    });
+  }
+
   public trackPageView(url: string, title?: string): void {
     this.pushToDataLayer({
       event: 'page_view',
-      page_location: url,
+      page_location: typeof window !== 'undefined' ? window.location.href : url,
+      page_path: url,
       page_title: title || (typeof document !== 'undefined' ? document.title : '')
     });
   }
 
   public trackEvent(eventName: string, payload?: Record<string, any>): void {
+    let normalized = eventName;
+    if (eventName === 'product') normalized = 'view_item';
+    if (eventName === 'checkout') normalized = 'begin_checkout';
+
+    const cleanPayload = sanitizeAnalyticsPayload(payload || {});
     this.pushToDataLayer({
-      event: eventName,
-      ...payload
+      event: normalized,
+      ...cleanPayload
+    });
+  }
+
+  public trackViewItem(item: AnalyticsItem): void {
+    const cleanItem = sanitizeAnalyticsItem(item);
+    const value = cleanItem.price * (cleanItem.quantity || 1);
+
+    this.pushEcommerce('view_item', {
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackProductView(item: AnalyticsItem): void {
-    this.pushToDataLayer({
-      event: 'view_item',
-      ecommerce: {
-        currency: item.currency || 'INR',
-        value: item.price,
-        items: [item]
-      }
+    this.trackViewItem(item);
+  }
+
+  public trackViewItemList(items: AnalyticsItem[], listName: string = 'Catalog'): void {
+    const cleanItems = (items || []).map((i, idx) => sanitizeAnalyticsItem({ ...i, index: i.index ?? idx + 1 }));
+
+    this.pushEcommerce('view_item_list', {
+      item_list_name: listName,
+      items: cleanItems
+    });
+  }
+
+  public trackSelectItem(item: AnalyticsItem, listName: string = 'Catalog'): void {
+    const cleanItem = sanitizeAnalyticsItem(item);
+
+    this.pushEcommerce('select_item', {
+      item_list_name: listName,
+      items: [cleanItem]
+    });
+  }
+
+  public trackViewCart(items: AnalyticsItem[], totalValue: number): void {
+    const cleanItems = (items || []).map((i) => sanitizeAnalyticsItem(i));
+
+    this.pushEcommerce('view_cart', {
+      currency: 'INR',
+      value: Number(Number(totalValue || 0).toFixed(2)),
+      items: cleanItems
     });
   }
 
   public trackAddToCart(item: AnalyticsItem, quantity: number = 1): void {
-    this.pushToDataLayer({
-      event: 'add_to_cart',
-      ecommerce: {
-        currency: item.currency || 'INR',
-        value: item.price * quantity,
-        items: [{ ...item, quantity }]
-      }
+    const cleanItem = sanitizeAnalyticsItem({ ...item, quantity });
+    const value = cleanItem.price * cleanItem.quantity!;
+
+    this.pushEcommerce('add_to_cart', {
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
+    });
+  }
+
+  public trackRemoveFromCart(item: AnalyticsItem, quantity: number = 1): void {
+    const cleanItem = sanitizeAnalyticsItem({ ...item, quantity });
+    const value = cleanItem.price * cleanItem.quantity!;
+
+    this.pushEcommerce('remove_from_cart', {
+      currency: cleanItem.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackWishlist(item: AnalyticsItem): void {
-    this.pushToDataLayer({
-      event: 'add_to_wishlist',
-      ecommerce: {
-        currency: item.currency || 'INR',
-        value: item.price,
-        items: [item]
-      }
+    const cleanItem = sanitizeAnalyticsItem(item);
+
+    this.pushEcommerce('add_to_wishlist', {
+      currency: cleanItem.currency || 'INR',
+      value: Number(cleanItem.price.toFixed(2)),
+      items: [cleanItem]
     });
   }
 
   public trackCheckout(payload: CheckoutPayload): void {
-    this.pushToDataLayer({
-      event: 'begin_checkout',
-      ecommerce: {
-        currency: payload.currency || 'INR',
-        value: payload.value,
-        coupon: payload.coupon,
-        items: payload.items
-      }
+    const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+    const ecommerce: Record<string, any> = {
+      currency: payload.currency || 'INR',
+      value: Number(Number(payload.value || 0).toFixed(2)),
+      items: cleanItems
+    };
+
+    if (payload.coupon) {
+      ecommerce['coupon'] = payload.coupon;
+    }
+
+    this.pushEcommerce('begin_checkout', ecommerce);
+  }
+
+  public trackAddShippingInfo(shippingTier: string, value: number, items: AnalyticsItem[] = []): void {
+    const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+
+    this.pushEcommerce('add_shipping_info', {
+      currency: 'INR',
+      value: Number(Number(value || 0).toFixed(2)),
+      shipping_tier: shippingTier,
+      items: cleanItems
+    });
+  }
+
+  public trackAddPaymentInfo(paymentType: string, value: number, items: AnalyticsItem[] = []): void {
+    const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+
+    this.pushEcommerce('add_payment_info', {
+      currency: 'INR',
+      value: Number(Number(value || 0).toFixed(2)),
+      payment_type: paymentType,
+      items: cleanItems
     });
   }
 
   public trackPurchase(payload: PurchasePayload): void {
-    this.pushToDataLayer({
-      event: 'purchase',
-      ecommerce: {
-        transaction_id: payload.transaction_id,
-        value: payload.value,
-        tax: payload.tax || 0,
-        shipping: payload.shipping || 0,
-        currency: payload.currency || 'INR',
-        coupon: payload.coupon,
-        items: payload.items
-      }
-    });
+    const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+
+    const ecommerce: Record<string, any> = {
+      transaction_id: String(payload.transaction_id),
+      value: Number(Number(payload.value || 0).toFixed(2)),
+      tax: Number(Number(payload.tax || 0).toFixed(2)),
+      shipping: Number(Number(payload.shipping || 0).toFixed(2)),
+      currency: payload.currency || 'INR',
+      items: cleanItems
+    };
+
+    if (payload.coupon) {
+      ecommerce['coupon'] = payload.coupon;
+    }
+
+    this.pushEcommerce('purchase', ecommerce);
+  }
+
+  public trackRefund(transactionId: string, value?: number, items?: AnalyticsItem[]): void {
+    const cleanItems = items ? items.map((i) => sanitizeAnalyticsItem(i)) : undefined;
+
+    const ecommerce: Record<string, any> = {
+      transaction_id: transactionId,
+      currency: 'INR'
+    };
+
+    if (value !== undefined) ecommerce['value'] = Number(value.toFixed(2));
+    if (cleanItems) ecommerce['items'] = cleanItems;
+
+    this.pushEcommerce('refund', ecommerce);
   }
 
   public trackLead(payload: LeadPayload): void {
@@ -145,7 +267,8 @@ export class GoogleTagManagerService implements AnalyticsProvider {
       event: 'generate_lead',
       lead_source: payload.source,
       lead_type: payload.lead_type,
-      value: payload.value || 0
+      currency: payload.currency || 'INR',
+      value: Number(Number(payload.value || 0).toFixed(2))
     });
   }
 
@@ -160,7 +283,7 @@ export class GoogleTagManagerService implements AnalyticsProvider {
     this.pushToDataLayer({
       event: 'apply_coupon',
       coupon_code: couponCode,
-      discount_amount: discountAmount
+      discount_amount: Number(Number(discountAmount || 0).toFixed(2))
     });
   }
 }

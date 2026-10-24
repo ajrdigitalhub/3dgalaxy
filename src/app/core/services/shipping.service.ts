@@ -543,15 +543,22 @@ export class ShippingService {
           };
         }
       } else if (catMode === "weight_based" || catRules.length > 0) {
-        const sortedRules = [...catRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
+        const sortedRules = [...catRules].sort((a, b) => (Number(a.fromGrams) || 0) - (Number(b.fromGrams) || 0));
         let matchedTier: WeightRule | null = null;
 
-        for (const tier of sortedRules) {
+        for (let i = 0; i < sortedRules.length; i++) {
+          const tier = sortedRules[i];
           const minW = Number(tier.fromGrams) || 0;
           const maxW =
             tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
               ? Number(tier.toGrams)
               : Infinity;
+
+          // For the lowest tier, cover weights from 0 up to maxW
+          if (i === 0 && group.totalWeightGrams <= maxW) {
+            matchedTier = tier;
+            break;
+          }
 
           if (group.totalWeightGrams >= minW && group.totalWeightGrams <= maxW) {
             matchedTier = tier;
@@ -560,7 +567,11 @@ export class ShippingService {
         }
 
         if (!matchedTier && sortedRules.length > 0) {
-          matchedTier = sortedRules[sortedRules.length - 1];
+          if (group.totalWeightGrams <= (Number(sortedRules[0].fromGrams) || 0)) {
+            matchedTier = sortedRules[0];
+          } else {
+            matchedTier = sortedRules[sortedRules.length - 1];
+          }
         }
 
         if (matchedTier) {
@@ -655,15 +666,22 @@ export class ShippingService {
       let defaultRuleName = "";
 
       if (enableWeightBasedShipping && defaultWeightRules.length > 0) {
-        const sortedRules = [...defaultWeightRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
+        const sortedRules = [...defaultWeightRules].sort((a, b) => (Number(a.fromGrams) || 0) - (Number(b.fromGrams) || 0));
         let matchedTier: WeightRule | null = null;
 
-        for (const tier of sortedRules) {
+        for (let i = 0; i < sortedRules.length; i++) {
+          const tier = sortedRules[i];
           const minW = Number(tier.fromGrams) || 0;
           const maxW =
             tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
               ? Number(tier.toGrams)
               : Infinity;
+
+          // For the lowest tier, cover weights from 0 up to maxW
+          if (i === 0 && defaultShippingWeightGrams <= maxW) {
+            matchedTier = tier;
+            break;
+          }
 
           if (defaultShippingWeightGrams >= minW && defaultShippingWeightGrams <= maxW) {
             matchedTier = tier;
@@ -672,7 +690,11 @@ export class ShippingService {
         }
 
         if (!matchedTier && sortedRules.length > 0) {
-          matchedTier = sortedRules[sortedRules.length - 1];
+          if (defaultShippingWeightGrams <= (Number(sortedRules[0].fromGrams) || 0)) {
+            matchedTier = sortedRules[0];
+          } else {
+            matchedTier = sortedRules[sortedRules.length - 1];
+          }
         }
 
         if (matchedTier) {

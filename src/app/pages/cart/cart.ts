@@ -11,6 +11,7 @@ import { calculateItemWeight, calculatePackageSummary, formatWeight } from '../.
 import { DeliveryEstimatePipe } from '../../shared/pipes/delivery-estimate.pipe';
 import { DeliveryEstimateService } from '../../core/services/delivery-estimate.service';
 import { ShippingChargeSkeletonComponent } from '../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component';
+import { AnalyticsService, mapCartItemToAnalyticsItem, mapProductToAnalyticsItem } from '../../core/analytics';
 
 @Component({
   selector: 'app-cart-checkout',
@@ -25,6 +26,7 @@ export class CartCheckout implements OnInit {
   router = inject(Router);
   settingsService = inject(SettingsService);
   deliveryEstimateService = inject(DeliveryEstimateService);
+  analytics = inject(AnalyticsService);
 
   couponInputText = signal<string>('');
   showOffers = signal(false);
@@ -52,6 +54,14 @@ export class CartCheckout implements OnInit {
   ngOnInit() {
     this.ds.clearBuyNowItem();
     this.ds.reloadProducts(false);
+
+    // Track view_cart on load if cart has items
+    const items = this.ds.groupedCartItems() || [];
+    if (items.length > 0) {
+      const pricing = this.ds.cartPricingSummary();
+      const mapped = items.map((item: any) => mapCartItemToAnalyticsItem(item));
+      this.analytics.trackViewCart(mapped, pricing.grandTotal || pricing.subtotal || 0);
+    }
   }
 
   accruedPoints = computed(() => {
@@ -71,7 +81,23 @@ export class CartCheckout implements OnInit {
   });
 
   changeQty(id: string, qty: number, variantId?: string) {
+    const existing = this.ds.groupedCartItems().find((i: any) => (i.product?.id === id || i.productId === id) && (!variantId || i.variantId === variantId));
+    const oldQty = existing ? existing.quantity : 0;
+
     this.ds.updateCartQty(id, qty, variantId);
+
+    if (existing) {
+      const price = existing.price || existing.product?.salePrice || existing.product?.basePrice || 0;
+      if (qty === 0 || qty < oldQty) {
+        const removedDiff = oldQty - qty;
+        const removedItem = mapCartItemToAnalyticsItem({ ...existing, quantity: removedDiff });
+        this.analytics.trackRemoveFromCart(removedItem, removedDiff);
+      } else if (qty > oldQty) {
+        const addedDiff = qty - oldQty;
+        const addedItem = mapCartItemToAnalyticsItem({ ...existing, quantity: addedDiff });
+        this.analytics.trackAddToCart(addedItem, addedDiff);
+      }
+    }
   }
 
   onCouponInput(event: Event) {
@@ -127,10 +153,19 @@ export class CartCheckout implements OnInit {
       event.stopPropagation();
     }
     this.ds.addToCart(product, 1);
+    const price = this.getProductPrice(product);
+    const item = mapProductToAnalyticsItem(product, { quantity: 1, price });
+    this.analytics.trackAddToCart(item, 1);
     this.toastService.success(`Added "${product.name}" to cart!`);
   }
 
   proceedToCheckout() {
+    const cartItems = this.ds.groupedCartItems() || [];
+    const pricing = this.ds.cartPricingSummary();
+    if (cartItems.length > 0) {
+      const mapped = cartItems.map((item: any) => mapCartItemToAnalyticsItem(item));
+      this.analytics.trackCheckout(mapped, pricing.grandTotal || pricing.subtotal || 0);
+    }
     this.ds.clearBuyNowItem();
     this.router.navigate(['/checkout']);
   }

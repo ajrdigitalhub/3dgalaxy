@@ -26,6 +26,8 @@ export interface AnalyticsItem {
   index?: number;
   discount?: number;
   coupon?: string;
+  item_list_id?: string;
+  item_list_name?: string;
 }
 
 export interface CustomerData {
@@ -87,7 +89,22 @@ export interface AIMarketingPayload {
 
 export interface QueuedEvent {
   id: string;
-  eventType: 'page_view' | 'event' | 'purchase' | 'add_to_cart' | 'checkout' | 'lead' | 'user_properties';
+  eventType:
+    | 'page_view'
+    | 'event'
+    | 'purchase'
+    | 'add_to_cart'
+    | 'checkout'
+    | 'lead'
+    | 'user_properties'
+    | 'view_item'
+    | 'view_item_list'
+    | 'select_item'
+    | 'view_cart'
+    | 'remove_from_cart'
+    | 'add_shipping_info'
+    | 'add_payment_info'
+    | 'refund';
   eventName?: string;
   payload?: any;
   timestamp: number;
@@ -168,6 +185,15 @@ export interface AnalyticsProvider {
   trackAddToCart(item: AnalyticsItem, quantity?: number): void;
   trackCheckout(payload: CheckoutPayload): void;
   trackLead(payload: LeadPayload): void;
+
+  trackViewItem?(item: AnalyticsItem): void;
+  trackViewItemList?(items: AnalyticsItem[], listName?: string): void;
+  trackSelectItem?(item: AnalyticsItem, listName?: string): void;
+  trackViewCart?(items: AnalyticsItem[], totalValue: number): void;
+  trackRemoveFromCart?(item: AnalyticsItem, quantity?: number): void;
+  trackAddShippingInfo?(shippingTier: string, value: number, items: AnalyticsItem[]): void;
+  trackAddPaymentInfo?(paymentType: string, value: number, items: AnalyticsItem[]): void;
+  trackRefund?(transactionId: string, value?: number, items?: AnalyticsItem[]): void;
 
   setUserProperties?(properties: Record<string, any>): void;
   grantConsent?(): void;

@@ -38,6 +38,7 @@ import { DeliveryEstimateService } from "../../core/services/delivery-estimate.s
 import { WeightPipe } from "../../shared/pipes/weight.pipe";
 import { formatWeight, resolveEffectiveWeight, convertToGrams } from "../../shared/utils/weight.utils";
 import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
+import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
 
@@ -73,6 +74,7 @@ export class ProductDetail {
   router = inject(Router);
   shippingService = inject(ShippingService);
   deliveryEstimateService = inject(DeliveryEstimateService);
+  analytics = inject(AnalyticsService);
 
   displayProductWeight = computed(() => {
     const p = this.product();
@@ -1369,6 +1371,10 @@ export class ProductDetail {
       return;
     }
     this.ds.addToCart(product, 1);
+    try {
+      const trackingItem = mapProductToAnalyticsItem(product, 1);
+      this.analytics.trackAddToCart(trackingItem, 1);
+    } catch (e) {}
     this.toastService.success(`${product.name} added to cart.`);
   }
 
@@ -1640,6 +1646,13 @@ export class ProductDetail {
     return product.id || product.slug || index;
   }
 
+  onRelatedProductClick(product: Product) {
+    try {
+      const trackingItem = mapProductToAnalyticsItem(product, 1);
+      this.analytics.trackProductClick(trackingItem, 'Related Products');
+    } catch (e) {}
+  }
+
   getRelatedProductImage(product: Product): string {
     const first = product.images?.[0];
     return this.getImageUrl(first);
@@ -1777,6 +1790,10 @@ export class ProductDetail {
           };
           this.fetchedProduct.set(merged);
           this.initializeDefaultVariant(merged);
+          try {
+            const trackingItem = mapProductToAnalyticsItem(merged, 1, this.selectedVariant());
+            this.analytics.trackViewItem(trackingItem);
+          } catch (e) {}
           this.saveToRecentlyViewed(merged);
           void this.loadRelatedProducts(
             merged,
@@ -1975,6 +1992,10 @@ export class ProductDetail {
 
       this.isAddingToCart.set(true);
       this.ds.addToCart(p, this.quantity(), enrichedVariant, weightPayload);
+      try {
+        const trackingItem = mapProductToAnalyticsItem(p, this.quantity(), enrichedVariant);
+        this.analytics.trackAddToCart(trackingItem, this.quantity());
+      } catch (e) {}
     } 
     // 2. Custom Bundle Builder mode
     else if (this.variantEngine.activeBundleGroup() && this.variantEngine.selectedBundleTier()) {
@@ -2003,6 +2024,10 @@ export class ProductDetail {
       }
       this.isAddingToCart.set(true);
       this.ds.addToCart(p, this.quantity(), undefined, weightPayload);
+      try {
+        const trackingItem = mapProductToAnalyticsItem(p, this.quantity());
+        this.analytics.trackAddToCart(trackingItem, this.quantity());
+      } catch (e) {}
     }
 
     // Automatically add complimentary bundle items to the cart
@@ -2103,6 +2128,11 @@ export class ProductDetail {
       this.toastService.error("Product is currently out of stock.");
       return;
     }
+
+    try {
+      const trackingItem = mapProductToAnalyticsItem(p, this.quantity(), this.selectedVariant());
+      this.analytics.trackAddToCart(trackingItem, this.quantity());
+    } catch (e) {}
 
     if (this.variantEngine.activeBundleGroup()) {
       const bundleGrp = this.variantEngine.activeBundleGroup();

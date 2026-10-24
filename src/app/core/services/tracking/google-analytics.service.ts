@@ -20,7 +20,20 @@ export class GoogleAnalyticsService {
     this.injectGa4Script(id);
   }
 
+  public isGtmManagingGa4(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    return !!(
+      document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
+      (window as any).google_tag_manager
+    );
+  }
+
   private injectGa4Script(id: string) {
+    if (this.isGtmManagingGa4()) {
+      this.initialized.set(true);
+      return;
+    }
+
     const existing = document.getElementById('ga4-script') ||
       document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${id}"]`) ||
       document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=G-4BKM2K4PS0"]`);
@@ -54,7 +67,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackPageView(title: string, url: string) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
 
     if (typeof window.gtag === 'function') {
       window.gtag('event', 'page_view', {
@@ -68,17 +81,17 @@ export class GoogleAnalyticsService {
 
   private mapItem(item: TrackingItem) {
     return {
-      item_id: item.item_id,
-      item_name: item.item_name,
-      item_category: item.item_category || 'General',
-      item_brand: item.item_brand || '3DGalaxy',
-      price: item.price,
-      quantity: item.quantity || 1
+      item_id: String(item.item_id || 'PRODUCT'),
+      item_name: String(item.item_name || 'Product'),
+      item_category: String(item.item_category || 'General'),
+      item_brand: String(item.item_brand || '3DGalaxy'),
+      price: Number(item.price) || 0,
+      quantity: Math.max(1, Math.round(Number(item.quantity) || 1))
     };
   }
 
   public trackViewItem(item: TrackingItem) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'view_item', {
       currency: item.currency || 'INR',
       value: item.price,
@@ -87,7 +100,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackViewItemList(items: TrackingItem[], listName: string = 'Catalog') {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'view_item_list', {
       item_list_name: listName,
       items: items.map(i => this.mapItem(i))
@@ -95,7 +108,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackAddToCart(item: TrackingItem, quantity: number = 1) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     const mapped = this.mapItem({ ...item, quantity });
     window.gtag('event', 'add_to_cart', {
       currency: item.currency || 'INR',
@@ -105,7 +118,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackRemoveFromCart(item: TrackingItem) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'remove_from_cart', {
       currency: item.currency || 'INR',
       value: item.price * (item.quantity || 1),
@@ -114,7 +127,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackBeginCheckout(items: TrackingItem[], totalValue: number) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'begin_checkout', {
       currency: 'INR',
       value: totalValue,
@@ -123,7 +136,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackPurchase(orderId: string, items: TrackingItem[], totalValue: number, tax: number = 0, shipping: number = 0) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'purchase', {
       transaction_id: orderId,
       value: totalValue,
@@ -135,7 +148,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackSearch(searchTerm: string) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
     window.gtag('event', 'search', {
       search_term: searchTerm
     });

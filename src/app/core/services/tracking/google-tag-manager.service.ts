@@ -25,7 +25,14 @@ export class GoogleTagManagerService {
   }
 
   private injectGtmScript(id: string) {
-    if (document.getElementById('gtm-script')) return;
+    if (
+      document.getElementById('gtm-script') ||
+      document.querySelector(`script[src*="googletagmanager.com/gtm.js?id=${id}"]`) ||
+      document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
+      (window as any).google_tag_manager?.[id]
+    ) {
+      return;
+    }
 
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
@@ -41,5 +48,18 @@ export class GoogleTagManagerService {
     if (!isPlatformBrowser(this.platformId)) return;
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push(data);
+  }
+
+  /**
+   * Pushes a GA4-compliant ecommerce event to window.dataLayer, clearing previous ecommerce object first.
+   */
+  public pushEcommerce(eventName: string, ecommerceData: any) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null });
+    window.dataLayer.push({
+      event: eventName,
+      ecommerce: ecommerceData
+    });
   }
 }

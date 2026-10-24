@@ -48,6 +48,15 @@ export class ConsentService {
 
     this.consentSignal.set(updatedState);
     this.persistConsent(updatedState);
+
+    if (isPlatformBrowser(this.platformId) && typeof (window as any).gtag === 'function') {
+      (window as any).gtag('consent', 'update', {
+        'analytics_storage': updatedState.analytics ? 'granted' : 'denied',
+        'ad_storage': updatedState.marketing ? 'granted' : 'denied',
+        'ad_user_data': updatedState.marketing ? 'granted' : 'denied',
+        'ad_personalization': updatedState.marketing ? 'granted' : 'denied'
+      });
+    }
   }
 
   public grantAll(): void {

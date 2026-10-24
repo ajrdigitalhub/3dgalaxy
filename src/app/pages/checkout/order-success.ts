@@ -7,6 +7,7 @@ import {ApiService} from '../../services/api.service';
 import {ToastService} from '../../shared/components/toast/toast.service';
 import {DeliveryEstimateService} from '../../core/services/delivery-estimate.service';
 import {firstValueFrom} from 'rxjs';
+import {AnalyticsService, isPurchaseAlreadyTracked, markPurchaseAsTracked} from '../../core/analytics';
 
 interface PaperParticle {
   x: number;
@@ -251,6 +252,7 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);
 
   deliveryEstimateService = inject(DeliveryEstimateService);
+  analytics = inject(AnalyticsService);
 
   order: any;
   customerName = '';
@@ -312,6 +314,8 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
       this.resolveCustomerName();
       if (orderId && (!this.order.totalAmount || !this.order.items)) {
         this.loadOrderFromApi(orderId);
+      } else {
+        this.trackPurchaseIfEligible();
       }
     } else if (orderId) {
       this.loadOrderFromApi(orderId);
@@ -353,6 +357,7 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
       if (fetchedOrder && (fetchedOrder.id || fetchedOrder.orderNumber)) {
         this.order = fetchedOrder;
         this.resolveCustomerName();
+        this.trackPurchaseIfEligible();
       }
     } catch (err) {
       console.error('Failed to load order details from API:', err);
@@ -399,6 +404,52 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
     }
 
     this.isGuest = !u && (this.order?.customerType === 'guest' || !!this.order?.guestName);
+  }
+
+  private trackPurchaseIfEligible(): void {
+    if (!this.order) return;
+    const transactionId = String(this.order.orderNumber || this.order.id || '').trim();
+    if (!transactionId) return;
+
+    // Strict idempotency: prevent duplicates on refresh, navigation, or re-render
+    if (isPurchaseAlreadyTracked(transactionId)) {
+      return;
+    }
+
+    // Verify order/payment status
+    const status = (this.order.status || '').toLowerCase();
+    const paymentStatus = (this.order.paymentStatus || '').toLowerCase();
+    if (status === 'cancelled' || status === 'failed' || paymentStatus === 'failed') {
+      return;
+    }
+
+    const rawItems = this.order.items || this.order.orderItems || [];
+    const items = rawItems.map((oi: any) => ({
+      item_id: String(oi.productId || oi.product?.id || oi.id || 'item'),
+      item_name: String(oi.product?.name || oi.name || oi.title || 'Product'),
+      price: Number(oi.price || oi.unitPrice || 0),
+      quantity: Number(oi.quantity || 1),
+      item_variant: oi.variant?.name || oi.configurationName || undefined
+    }));
+
+    const totalValue = Number(this.order.totalAmount || this.order.grandTotal || 0);
+    const tax = Number(this.order.taxAmount || this.order.tax || 0);
+    const shipping = Number(this.order.shippingAmount || this.order.shipping || 0);
+
+    if (totalValue > 0 || items.length > 0) {
+      this.analytics.trackPurchase({
+        transaction_id: transactionId,
+        value: totalValue,
+        currency: 'INR',
+        tax: tax > 0 ? tax : undefined,
+        shipping: shipping > 0 ? shipping : undefined,
+        coupon: this.order.couponCode || undefined,
+        items: items
+      });
+
+      // Persist tracked state in localStorage
+      markPurchaseAsTracked(transactionId);
+    }
   }
 
   ngAfterViewInit() {

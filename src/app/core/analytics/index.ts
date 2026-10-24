@@ -17,3 +17,4 @@ export * from './providers/microsoft-clarity.service';
 export * from './providers/microsoft-ads.service';
 export * from './providers/tiktok-pixel.service';
 export * from './providers/linkedin-insight.service';
+export * from './analytics.utils';

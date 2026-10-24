@@ -13,7 +13,7 @@ const DEFAULT_MARKETING_CONFIG = {
   googleAdsConversionId: '',
   googleAdsConversionLabel: '',
   googleAdsLeadLabel: '',
-  gtmContainerId: '',
+  gtmContainerId: 'GTM-THJDDXCK',
   googleMerchantCenterId: '',
   enableEnhancedConversions: true,
   enableDynamicRemarketing: true,
@@ -205,31 +205,68 @@ export const generateGoogleMerchantFeedXml = async (req: Request, res: Response)
     <description>3D Printers, Filaments, SLA Resins and Spare Parts in India</description>\n`;
 
     products.forEach(p => {
-      const price = Number(p.basePrice).toFixed(2);
-      const salePrice = p.salePrice ? Number(p.salePrice).toFixed(2) : null;
-      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : [`${ENV.SITE_URL}/3d-logo.png`];
-      const mainImage = images[0];
+      const regularPriceNum = Number(p.basePrice || p.mrp || p.salePrice || 0);
+      if (regularPriceNum <= 0) return; // Skip products without valid pricing to avoid Google Merchant disapproval
+
+      const price = regularPriceNum.toFixed(2);
+      const salePriceNum = p.salePrice ? Number(p.salePrice) : 0;
+      const hasSalePrice = salePriceNum > 0 && salePriceNum < regularPriceNum;
+      const salePrice = hasSalePrice ? salePriceNum.toFixed(2) : null;
+
+      let rawImages = p.images;
+      if (typeof rawImages === 'string') {
+        try {
+          rawImages = JSON.parse(rawImages);
+        } catch {
+          rawImages = [rawImages];
+        }
+      }
+
+      const parsedImages = (Array.isArray(rawImages) ? rawImages : [])
+        .map((img: any) => {
+          if (!img) return null;
+          let u = typeof img === 'string' ? img.trim() : (img.url ? String(img.url).trim() : '');
+          if (!u || u === '[object Object]') return null;
+          return u.startsWith('http://') || u.startsWith('https://') ? u : `${ENV.SITE_URL.replace(/\/$/, '')}/${u.replace(/^\//, '')}`;
+        })
+        .filter(Boolean) as string[];
+
+      const mainImage = parsedImages[0] || `${ENV.SITE_URL}/3d-logo.png`;
+      const additionalImages = parsedImages.slice(1, 10);
       const availability = p.stock > 0 ? 'in_stock' : 'out_of_stock';
       const brandName = p.brand?.name || ENV.SITE_NAME;
       const categoryName = p.category?.name || '3D Printers & Accessories';
+      const hasGtinOrMpn = !!(p.sku || p.barcode);
 
-      xml += `    <item>
-      <g:id>${p.id}</g:id>
-      <g:title><![CDATA[${p.name}]]></g:title>
-      <g:description><![CDATA[${p.description || p.name}]]></g:description>
-      <g:link>${ENV.SITE_URL}/product/${p.slug}</g:link>
-      <g:image_link>${mainImage}</g:image_link>
-      <g:availability>${availability}</g:availability>
-      <g:price>${price} INR</g:price>\n`;
+      xml += `    <item>\n`;
+      xml += `      <g:id>${p.id}</g:id>\n`;
+      xml += `      <g:title><![CDATA[${p.name}]]></g:title>\n`;
+      xml += `      <g:description><![CDATA[${p.description || p.name}]]></g:description>\n`;
+      xml += `      <g:link>${ENV.SITE_URL}/product/${p.slug}</g:link>\n`;
+      xml += `      <g:image_link>${mainImage}</g:image_link>\n`;
+      additionalImages.forEach(img => {
+        xml += `      <g:additional_image_link>${img}</g:additional_image_link>\n`;
+      });
+      xml += `      <g:availability>${availability}</g:availability>\n`;
+      xml += `      <g:price>${price} INR</g:price>\n`;
 
       if (salePrice) {
         xml += `      <g:sale_price>${salePrice} INR</g:sale_price>\n`;
       }
 
-      xml += `      <g:brand><![CDATA[${brandName}]]></g:brand>
-      <g:condition>new</g:condition>
-      <g:google_product_category><![CDATA[${categoryName}]]></g:google_product_category>
-    </item>\n`;
+      xml += `      <g:brand><![CDATA[${brandName}]]></g:brand>\n`;
+      xml += `      <g:condition>new</g:condition>\n`;
+      xml += `      <g:google_product_category><![CDATA[${categoryName}]]></g:google_product_category>\n`;
+
+      if (hasGtinOrMpn) {
+        if (p.sku) xml += `      <g:mpn>${p.sku}</g:mpn>\n`;
+        if (p.barcode) xml += `      <g:gtin>${p.barcode}</g:gtin>\n`;
+        xml += `      <g:identifier_exists>yes</g:identifier_exists>\n`;
+      } else {
+        xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
+      }
+
+      xml += `    </item>\n`;
     });
 
     xml += `  </channel>
@@ -259,23 +296,55 @@ export const generateGoogleMerchantFeedJson = async (req: Request, res: Response
       }
     });
 
-    const feedItems = products.map(p => {
-      const images = Array.isArray(p.images) && p.images.length > 0 ? (p.images as string[]) : [`${ENV.SITE_URL}/3d-logo.png`];
-      return {
-        id: p.id,
-        title: p.name,
-        description: p.description || p.name,
-        link: `${ENV.SITE_URL}/product/${p.slug}`,
-        image_link: images[0],
-        additional_image_links: images.slice(1),
-        availability: p.stock > 0 ? 'in_stock' : 'out_of_stock',
-        price: `${Number(p.basePrice).toFixed(2)} INR`,
-        sale_price: p.salePrice ? `${Number(p.salePrice).toFixed(2)} INR` : undefined,
-        brand: p.brand?.name || ENV.SITE_NAME,
-        condition: 'new',
-        google_product_category: p.category?.name || '3D Printers'
-      };
-    });
+    const feedItems = products
+      .map(p => {
+        const regularPriceNum = Number(p.basePrice || p.mrp || p.salePrice || 0);
+        if (regularPriceNum <= 0) return null;
+
+        const salePriceNum = p.salePrice ? Number(p.salePrice) : 0;
+        const hasSalePrice = salePriceNum > 0 && salePriceNum < regularPriceNum;
+
+        let rawImages = p.images;
+        if (typeof rawImages === 'string') {
+          try {
+            rawImages = JSON.parse(rawImages);
+          } catch {
+            rawImages = [rawImages];
+          }
+        }
+
+        const parsedImages = (Array.isArray(rawImages) ? rawImages : [])
+          .map((img: any) => {
+            if (!img) return null;
+            let u = typeof img === 'string' ? img.trim() : (img.url ? String(img.url).trim() : '');
+            if (!u || u === '[object Object]') return null;
+            return u.startsWith('http://') || u.startsWith('https://') ? u : `${ENV.SITE_URL.replace(/\/$/, '')}/${u.replace(/^\//, '')}`;
+          })
+          .filter(Boolean) as string[];
+
+        const mainImage = parsedImages[0] || `${ENV.SITE_URL}/3d-logo.png`;
+        const additionalImages = parsedImages.slice(1, 10);
+        const hasGtinOrMpn = !!(p.sku || p.barcode);
+
+        return {
+          id: p.id,
+          title: p.name,
+          description: p.description || p.name,
+          link: `${ENV.SITE_URL}/product/${p.slug}`,
+          image_link: mainImage,
+          additional_image_links: additionalImages,
+          availability: p.stock > 0 ? 'in_stock' : 'out_of_stock',
+          price: `${regularPriceNum.toFixed(2)} INR`,
+          sale_price: hasSalePrice ? `${salePriceNum.toFixed(2)} INR` : undefined,
+          brand: p.brand?.name || ENV.SITE_NAME,
+          condition: 'new',
+          google_product_category: p.category?.name || '3D Printers & Accessories',
+          identifier_exists: hasGtinOrMpn ? 'yes' : 'no',
+          mpn: p.sku || undefined,
+          gtin: p.barcode || undefined
+        };
+      })
+      .filter(Boolean);
 
     return res.json({
       title: `${ENV.SITE_NAME} Product Feed`,

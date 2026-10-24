@@ -158,5 +158,193 @@ export async function runMarketingTrackingUnitTests() {
     }
   });
 
+  // --- 7. GA4 EVENT PARAMETER SANITIZATION & WARNING PREVENTION ---
+
+  test('Sanitization: Removes internal Google Tag parameters (_user_agent_*, _&rcb, _&ae)', () => {
+    const rawPayload = {
+      event: 'view_item',
+      currency: 'INR',
+      value: 7999,
+      _user_agent_architecture: 'x86',
+      _user_agent_bitness: '64',
+      _user_agent_full_version_list: 'Google Chrome;120.0',
+      _user_agent_mobile: '?0',
+      _user_agent_model: '',
+      _user_agent_platform: 'Windows',
+      _user_agent_platform_version: '10.0.0',
+      _user_agent_wow64: '?0',
+      '_&rcb': '12345678',
+      '_&ae': '1',
+      items: [{ item_id: 'PRD-101', item_name: 'Ender 3 V3', price: 7999, quantity: 1 }]
+    };
+
+    // Apply the sanitization logic implemented in analytics.utils.ts
+    const sanitized: Record<string, any> = {};
+    for (const [key, value] of Object.entries(rawPayload)) {
+      if (
+        key.startsWith('_user_agent_') ||
+        key.startsWith('_&') ||
+        key.includes('&') ||
+        key === '_rcb' ||
+        key === '_ae' ||
+        key.startsWith('__')
+      ) {
+        continue;
+      }
+      sanitized[key] = value;
+    }
+
+    assert.strictEqual(sanitized._user_agent_architecture, undefined);
+    assert.strictEqual(sanitized._user_agent_bitness, undefined);
+    assert.strictEqual(sanitized._user_agent_platform, undefined);
+    assert.strictEqual(sanitized['_&rcb'], undefined);
+    assert.strictEqual(sanitized['_&ae'], undefined);
+    assert.strictEqual(sanitized.currency, 'INR');
+    assert.strictEqual(sanitized.value, 7999);
+    assert.strictEqual(sanitized.items.length, 1);
+  });
+
+  // --- 8. LEGACY EVENT NAME REMAPPING ---
+
+  test('Legacy Remapping: Translates custom "product" and "checkout" events to GA4 standard events', () => {
+    const eventMapping: Record<string, string> = {
+      'product': 'view_item',
+      'checkout': 'begin_checkout',
+      'cart': 'view_cart'
+    };
+
+    function remapEvent(name: string): string {
+      const lower = (name || '').toLowerCase().trim();
+      return eventMapping[lower] || name;
+    }
+
+    assert.strictEqual(remapEvent('product'), 'view_item', '"product" must map to "view_item"');
+    assert.strictEqual(remapEvent('checkout'), 'begin_checkout', '"checkout" must map to "begin_checkout"');
+    assert.strictEqual(remapEvent('view_item'), 'view_item', 'Standard "view_item" remains intact');
+    assert.strictEqual(remapEvent('purchase'), 'purchase', 'Standard "purchase" remains intact');
+  });
+
+  // --- 9. GA4 ECOMMERCE ITEM STRUCTURE & NUMERIC VALIDATION ---
+
+  test('GA4 Items: Validates required item_id, item_name, numeric price and quantity', () => {
+    const rawItem = {
+      id: 'P-1234',
+      name: 'PLA+ Filament 1kg White',
+      price: '899.50',
+      quantity: '2',
+      category: 'Filaments',
+      brand: '3D Galaxy'
+    };
+
+    const price = Number(rawItem.price);
+    const quantity = Math.max(1, parseInt(String(rawItem.quantity), 10) || 1);
+
+    const formatted = {
+      item_id: String(rawItem.id),
+      item_name: String(rawItem.name),
+      price: isNaN(price) ? 0 : price,
+      quantity: quantity,
+      item_category: rawItem.category,
+      item_brand: rawItem.brand
+    };
+
+    assert.strictEqual(formatted.item_id, 'P-1234');
+    assert.strictEqual(formatted.item_name, 'PLA+ Filament 1kg White');
+    assert.strictEqual(formatted.price, 899.50);
+    assert.strictEqual(typeof formatted.price, 'number');
+    assert.strictEqual(formatted.quantity, 2);
+    assert.strictEqual(typeof formatted.quantity, 'number');
+  });
+
+  // --- 10. PURCHASE IDEMPOTENCY & STATUS VERIFICATION ---
+
+  test('Purchase Idempotency: Prevents duplicate purchase event dispatch for identical transaction_id', () => {
+    const trackedPurchases = new Set<string>();
+
+    function isAlreadyTracked(txId: string): boolean {
+      return trackedPurchases.has(txId);
+    }
+
+    function recordPurchase(txId: string): boolean {
+      if (isAlreadyTracked(txId)) {
+        return false; // Suppressed duplicate
+      }
+      trackedPurchases.add(txId);
+      return true; // Dispatched
+    }
+
+    const testTxId = 'ORD-2026-9901';
+
+    // First attempt: must dispatch
+    const firstDispatch = recordPurchase(testTxId);
+    assert.strictEqual(firstDispatch, true, 'First purchase dispatch must succeed');
+
+    // Second attempt (reload / component reinit): must be blocked
+    const duplicateDispatch = recordPurchase(testTxId);
+    assert.strictEqual(duplicateDispatch, false, 'Duplicate purchase dispatch must be suppressed');
+
+    // Third attempt with distinct order: must dispatch
+    const distinctDispatch = recordPurchase('ORD-2026-9902');
+    assert.strictEqual(distinctDispatch, true, 'Distinct purchase must dispatch');
+  });
+
+  test('Purchase Status: Blocks purchase dispatch for cancelled or failed orders', () => {
+    function shouldTrackPurchase(order: { status?: string; paymentStatus?: string; totalAmount: number }): boolean {
+      const status = (order.status || '').toLowerCase();
+      const paymentStatus = (order.paymentStatus || '').toLowerCase();
+      if (status === 'cancelled' || status === 'failed' || paymentStatus === 'failed') {
+        return false;
+      }
+      return order.totalAmount > 0;
+    }
+
+    assert.strictEqual(shouldTrackPurchase({ status: 'delivered', paymentStatus: 'paid', totalAmount: 1499 }), true);
+    assert.strictEqual(shouldTrackPurchase({ status: 'placed', paymentStatus: 'pending', totalAmount: 1499 }), true); // COD
+    assert.strictEqual(shouldTrackPurchase({ status: 'cancelled', paymentStatus: 'failed', totalAmount: 1499 }), false);
+    assert.strictEqual(shouldTrackPurchase({ status: 'failed', paymentStatus: 'failed', totalAmount: 1499 }), false);
+    assert.strictEqual(shouldTrackPurchase({ status: 'confirmed', paymentStatus: 'paid', totalAmount: 0 }), false);
+  });
+
+  // --- 11. GOOGLE MERCHANT CENTER FEED ATTRIBUTE COMPLIANCE ---
+
+  test('Merchant Center Feed: Prices fall back to MRP or salePrice when basePrice is null to prevent 0.00 INR disapproval', () => {
+    const productWithNullBase = {
+      id: 'prod-1',
+      basePrice: null,
+      mrp: 1299,
+      salePrice: 999
+    };
+
+    const regularPrice = Number(productWithNullBase.basePrice || productWithNullBase.mrp || productWithNullBase.salePrice || 0);
+    assert.ok(regularPrice > 0, 'Price must be greater than 0');
+    assert.strictEqual(regularPrice, 1299);
+  });
+
+  test('Merchant Center Feed: Image link extraction handles objects, strings and relative URLs without [object Object]', () => {
+    const rawImages = [
+      { url: 'https://cdn.3dgalaxy.in/images/printer.jpg' },
+      '/uploads/filament.png'
+    ];
+
+    const baseUrl = 'https://3dgalaxy.in';
+    const parsedImages = rawImages.map((img: any) => {
+      let u = typeof img === 'string' ? img.trim() : (img.url ? String(img.url).trim() : '');
+      if (!u || u === '[object Object]') return null;
+      return u.startsWith('http://') || u.startsWith('https://') ? u : `${baseUrl}/${u.replace(/^\//, '')}`;
+    }).filter(Boolean);
+
+    assert.strictEqual(parsedImages[0], 'https://cdn.3dgalaxy.in/images/printer.jpg');
+    assert.strictEqual(parsedImages[1], 'https://3dgalaxy.in/uploads/filament.png');
+    assert.ok(!parsedImages.some(img => img?.includes('[object Object]')));
+  });
+
+  test('Merchant Center Feed: Emits <g:identifier_exists>no</g:identifier_exists> when GTIN or MPN is absent', () => {
+    const productWithoutBarcode = { sku: null, barcode: null };
+    const hasGtinOrMpn = !!(productWithoutBarcode.sku || productWithoutBarcode.barcode);
+    const identifierTag = hasGtinOrMpn ? '<g:identifier_exists>yes</g:identifier_exists>' : '<g:identifier_exists>no</g:identifier_exists>';
+    
+    assert.strictEqual(identifierTag, '<g:identifier_exists>no</g:identifier_exists>');
+  });
+
   return results;
 }

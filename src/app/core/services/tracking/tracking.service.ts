@@ -134,13 +134,18 @@ export class TrackingService {
   public trackViewItem(item: TrackingItem) {
     this.metaPixel.trackViewContent(item);
     this.ga4.trackViewItem(item);
-    this.gtm.pushToDataLayer({ event: 'view_item', ecommerce: { items: [item] } });
+    const value = (Number(item.price) || 0) * (Number(item.quantity) || 1);
+    this.gtm.pushEcommerce('view_item', {
+      currency: item.currency || 'INR',
+      value: Number(value.toFixed(2)),
+      items: [item]
+    });
     this.gads.trackDynamicRemarketing('product', [item], item.price);
   }
 
   public trackViewItemList(items: TrackingItem[], listName: string = 'Catalog') {
     this.ga4.trackViewItemList(items, listName);
-    this.gtm.pushToDataLayer({ event: 'view_item_list', item_list_name: listName, ecommerce: { items } });
+    this.gtm.pushEcommerce('view_item_list', { item_list_name: listName, items });
     this.gads.trackDynamicRemarketing('category', items);
   }
 
@@ -148,13 +153,18 @@ export class TrackingService {
     const eventId = this.generateEventId();
     this.metaPixel.trackAddToCart(item, quantity, eventId);
     this.ga4.trackAddToCart(item, quantity);
-    this.gtm.pushToDataLayer({ event: 'add_to_cart', ecommerce: { value: item.price * quantity, items: [item] } });
-    this.gads.trackDynamicRemarketing('cart', [item], item.price * quantity);
+    const totalItemValue = (Number(item.price) || 0) * quantity;
+    this.gtm.pushEcommerce('add_to_cart', {
+      currency: item.currency || 'INR',
+      value: Number(totalItemValue.toFixed(2)),
+      items: [{ ...item, quantity }]
+    });
+    this.gads.trackDynamicRemarketing('cart', [item], totalItemValue);
 
     if (this.config()?.enableServerSideCapi) {
       this.capi.sendCapiEvent('AddToCart', eventId, {
         currency: 'INR',
-        value: item.price * quantity,
+        value: totalItemValue,
         content_ids: [item.item_id],
         content_name: item.item_name
       }, {}, this.utmParams());
@@ -163,14 +173,23 @@ export class TrackingService {
 
   public trackRemoveFromCart(item: TrackingItem) {
     this.ga4.trackRemoveFromCart(item);
-    this.gtm.pushToDataLayer({ event: 'remove_from_cart', ecommerce: { items: [item] } });
+    const totalItemValue = (Number(item.price) || 0) * (Number(item.quantity) || 1);
+    this.gtm.pushEcommerce('remove_from_cart', {
+      currency: item.currency || 'INR',
+      value: Number(totalItemValue.toFixed(2)),
+      items: [item]
+    });
   }
 
   public trackInitiateCheckout(items: TrackingItem[], totalValue: number) {
     const eventId = this.generateEventId();
     this.metaPixel.trackInitiateCheckout(items, totalValue, eventId);
     this.ga4.trackBeginCheckout(items, totalValue);
-    this.gtm.pushToDataLayer({ event: 'begin_checkout', ecommerce: { value: totalValue, items } });
+    this.gtm.pushEcommerce('begin_checkout', {
+      currency: 'INR',
+      value: Number(Number(totalValue || 0).toFixed(2)),
+      items
+    });
 
     if (this.config()?.enableServerSideCapi) {
       this.capi.sendCapiEvent('InitiateCheckout', eventId, {
@@ -194,7 +213,14 @@ export class TrackingService {
     this.metaPixel.trackPurchase(orderId, items, totalValue, eventId);
     this.ga4.trackPurchase(orderId, items, totalValue, tax, shipping);
     this.gads.trackPurchaseConversion(orderId, totalValue, customerData);
-    this.gtm.pushToDataLayer({ event: 'purchase', ecommerce: { transaction_id: orderId, value: totalValue, items } });
+    this.gtm.pushEcommerce('purchase', {
+      transaction_id: orderId,
+      value: Number(Number(totalValue || 0).toFixed(2)),
+      tax: Number(Number(tax || 0).toFixed(2)),
+      shipping: Number(Number(shipping || 0).toFixed(2)),
+      currency: 'INR',
+      items
+    });
     this.gads.trackDynamicRemarketing('purchase', items, totalValue);
 
     if (this.config()?.enableServerSideCapi) {

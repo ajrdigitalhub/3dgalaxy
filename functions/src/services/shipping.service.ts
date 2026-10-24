@@ -184,15 +184,37 @@ export class ShippingService {
           : price * qty;
         totalCartSubtotal += lineSubtotal;
 
-        // Weight resolution: variant weight -> product weightInGrams -> item.weightInGrams -> 0
-        const unitWeight = Number(
-          variant?.weight ||
-          variant?.weightInGrams ||
-          product.weightInGrams ||
-          (product as any).weight ||
-          item.weightInGrams ||
-          0
-        );
+        // Weight resolution: variant weight -> product weightInGrams -> item.weightInGrams -> fallback
+        const vWeightGrams = variant?.weightInGrams !== undefined && variant?.weightInGrams !== null
+          ? Number(variant.weightInGrams)
+          : variant?.weight !== undefined && variant?.weight !== null
+          ? Number(variant.weight)
+          : 0;
+
+        const pWeightGrams = product.weightInGrams !== undefined && product.weightInGrams !== null
+          ? Number(product.weightInGrams)
+          : (product as any).weight !== undefined && (product as any).weight !== null
+          ? Number((product as any).weight)
+          : 0;
+
+        const itemWeightGrams = (item as any)?.weightInGrams !== undefined && (item as any)?.weightInGrams !== null
+          ? Number((item as any).weightInGrams)
+          : (item as any)?.weight !== undefined && (item as any)?.weight !== null
+          ? Number((item as any).weight)
+          : 0;
+
+        let unitWeight = 0;
+        if (!isNaN(vWeightGrams) && vWeightGrams > 0) {
+          unitWeight = vWeightGrams;
+        } else if (!isNaN(pWeightGrams) && pWeightGrams > 0) {
+          unitWeight = pWeightGrams;
+        } else if (!isNaN(itemWeightGrams) && itemWeightGrams > 0) {
+          unitWeight = itemWeightGrams;
+        } else {
+          const isFilament = (product.name && /filament|pla|petg|abs|tpu/i.test(product.name)) ||
+                            (product.category?.name && /filament/i.test(product.category.name));
+          unitWeight = isFilament ? 1000 : 0;
+        }
 
         const itemTotalWeight = unitWeight * qty;
         totalCartWeightGrams += itemTotalWeight;
@@ -440,14 +462,21 @@ export class ShippingService {
           };
         }
       } else if (catMode === 'weight_based' || catRules.length > 0) {
-        const sortedRules = [...catRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
+        const sortedRules = [...catRules].sort((a, b) => (Number(a.fromGrams) || 0) - (Number(b.fromGrams) || 0));
         let matchedTier: WeightRule | null = null;
 
-        for (const tier of sortedRules) {
+        for (let i = 0; i < sortedRules.length; i++) {
+          const tier = sortedRules[i];
           const minW = Number(tier.fromGrams) || 0;
           const maxW = tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
             ? Number(tier.toGrams)
             : Infinity;
+
+          // For the lowest tier, cover weights from 0 up to maxW
+          if (i === 0 && group.totalWeightGrams <= maxW) {
+            matchedTier = tier;
+            break;
+          }
 
           if (group.totalWeightGrams >= minW && group.totalWeightGrams <= maxW) {
             matchedTier = tier;
@@ -456,7 +485,11 @@ export class ShippingService {
         }
 
         if (!matchedTier && sortedRules.length > 0) {
-          matchedTier = sortedRules[sortedRules.length - 1];
+          if (group.totalWeightGrams <= (Number(sortedRules[0].fromGrams) || 0)) {
+            matchedTier = sortedRules[0];
+          } else {
+            matchedTier = sortedRules[sortedRules.length - 1];
+          }
         }
 
         if (matchedTier) {
@@ -552,14 +585,21 @@ export class ShippingService {
       let defaultRuleName = '';
 
       if (enableWeightBasedShipping && defaultWeightRules.length > 0) {
-        const sortedRules = [...defaultWeightRules].sort((a, b) => (a.fromGrams || 0) - (b.fromGrams || 0));
+        const sortedRules = [...defaultWeightRules].sort((a, b) => (Number(a.fromGrams) || 0) - (Number(b.fromGrams) || 0));
         let matchedTier: WeightRule | null = null;
 
-        for (const tier of sortedRules) {
+        for (let i = 0; i < sortedRules.length; i++) {
+          const tier = sortedRules[i];
           const minW = Number(tier.fromGrams) || 0;
           const maxW = tier.toGrams !== undefined && tier.toGrams !== null && Number(tier.toGrams) > 0
             ? Number(tier.toGrams)
             : Infinity;
+
+          // For the lowest tier, cover weights from 0 up to maxW
+          if (i === 0 && defaultShippingWeightGrams <= maxW) {
+            matchedTier = tier;
+            break;
+          }
 
           if (defaultShippingWeightGrams >= minW && defaultShippingWeightGrams <= maxW) {
             matchedTier = tier;
@@ -568,7 +608,11 @@ export class ShippingService {
         }
 
         if (!matchedTier && sortedRules.length > 0) {
-          matchedTier = sortedRules[sortedRules.length - 1];
+          if (defaultShippingWeightGrams <= (Number(sortedRules[0].fromGrams) || 0)) {
+            matchedTier = sortedRules[0];
+          } else {
+            matchedTier = sortedRules[sortedRules.length - 1];
+          }
         }
 
         if (matchedTier) {
