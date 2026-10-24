@@ -9,6 +9,7 @@ export interface MarketingConfig {
   googleAdsLeadLabel?: string | null;
   gtmContainerId?: string | null;
   googleMerchantCenterId?: string | null;
+  googleMerchantStoreCode?: string | null;
   enableEnhancedConversions: boolean;
   enableDynamicRemarketing: boolean;
   enableConsentMode: boolean;

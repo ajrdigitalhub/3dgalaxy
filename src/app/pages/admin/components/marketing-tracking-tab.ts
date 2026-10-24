@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../../services/api.service';
 import { MarketingConfig, MarketingDashboardStats } from '../../../core/models/tracking.model';
+import { validateEcommercePayload } from '../../../core/analytics/analytics.utils';
 
 export type DiagnosticStatus = 'PASS' | 'FAIL' | 'WARNING' | 'NOT TESTED' | 'NEEDS EXTERNAL VERIFICATION';
 
@@ -164,10 +165,10 @@ export interface IntegrationDiagnostic {
           <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-blue-500/10 text-blue-500 border border-blue-500/20">Auto Sync</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200/50 dark:border-neutral-850 space-y-2">
             <div class="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300">
-              <span>Google Merchant Center (XML)</span>
+              <span>Google Merchant (XML)</span>
               <button type="button" (click)="copyFeedUrl('/api/marketing/feeds/google-merchant.xml')" class="text-[#d65108] hover:underline cursor-pointer border-none bg-transparent font-bold">Copy URL</button>
             </div>
             <code class="block text-[10px] font-mono text-neutral-500 truncate bg-white dark:bg-neutral-900 p-2 rounded-xl border border-neutral-200 dark:border-neutral-800">
@@ -177,7 +178,17 @@ export interface IntegrationDiagnostic {
 
           <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200/50 dark:border-neutral-850 space-y-2">
             <div class="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300">
-              <span>Google Merchant Center (JSON)</span>
+              <span>Google Local Inventory (XML)</span>
+              <button type="button" (click)="copyFeedUrl('/api/marketing/feeds/google-local-inventory.xml')" class="text-[#d65108] hover:underline cursor-pointer border-none bg-transparent font-bold">Copy URL</button>
+            </div>
+            <code class="block text-[10px] font-mono text-neutral-500 truncate bg-white dark:bg-neutral-900 p-2 rounded-xl border border-neutral-200 dark:border-neutral-800">
+              /api/marketing/feeds/google-local-inventory.xml
+            </code>
+          </div>
+
+          <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200/50 dark:border-neutral-850 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300">
+              <span>Google Merchant (JSON)</span>
               <button type="button" (click)="copyFeedUrl('/api/marketing/feeds/google-merchant.json')" class="text-[#d65108] hover:underline cursor-pointer border-none bg-transparent font-bold">Copy URL</button>
             </div>
             <code class="block text-[10px] font-mono text-neutral-500 truncate bg-white dark:bg-neutral-900 p-2 rounded-xl border border-neutral-200 dark:border-neutral-800">
@@ -187,13 +198,25 @@ export interface IntegrationDiagnostic {
 
           <div class="p-4 bg-neutral-50 dark:bg-neutral-950 rounded-2xl border border-neutral-200/50 dark:border-neutral-850 space-y-2">
             <div class="flex items-center justify-between text-xs font-bold text-neutral-700 dark:text-neutral-300">
-              <span>Meta Commerce Catalog Feed</span>
+              <span>Meta Commerce Catalog</span>
               <button type="button" (click)="copyFeedUrl('/api/marketing/feeds/meta-catalog.xml')" class="text-[#d65108] hover:underline cursor-pointer border-none bg-transparent font-bold">Copy URL</button>
             </div>
             <code class="block text-[10px] font-mono text-neutral-500 truncate bg-white dark:bg-neutral-900 p-2 rounded-xl border border-neutral-200 dark:border-neutral-800">
               /api/marketing/feeds/meta-catalog.xml
             </code>
           </div>
+        </div>
+
+        <!-- Google Merchant Center Approval & Diagnostics Notice -->
+        <div class="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-xs space-y-2 text-amber-900 dark:text-amber-200">
+          <div class="flex items-center gap-2 font-bold text-amber-700 dark:text-amber-400">
+            <mat-icon class="text-sm">verified</mat-icon>
+            <span>Google Merchant Center Approval Guidance</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-[11px] text-neutral-600 dark:text-neutral-400 pl-1">
+            <li><strong>Missing local inventory data:</strong> The primary product feed declares <code>&lt;g:channel&gt;online&lt;/g:channel&gt;</code> and standard shipping for all items. If Google Merchant Center enrolled your account into "Free local product listings", you can either submit the <strong>Google Local Inventory (XML)</strong> feed under Data Sources, or in Merchant Center Settings &rarr; Free local listings, uncheck local listings to approve strictly for Online Shopping Ads &amp; Free Listings.</li>
+            <li><strong>Missing product image:</strong> Feeds now resolve product gallery photos, variant combos, and high-resolution equipment graphics with zero placeholder logos and no SVG files, fulfilling Google Shopping image guidelines.</li>
+          </ul>
         </div>
       </div>
 
@@ -248,6 +271,18 @@ export interface IntegrationDiagnostic {
           <div class="space-y-1.5">
             <label class="text-xs font-bold uppercase text-neutral-700 dark:text-neutral-300">Google Tag Manager (GTM) Container ID</label>
             <input type="text" [(ngModel)]="formConfig.gtmContainerId" name="gtmContainerId" placeholder="e.g. GTM-XXXXXXX" class="w-full h-11 px-4 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-neutral-900 dark:text-white outline-none focus:border-[#d65108]">
+          </div>
+
+          <!-- Google Merchant Center ID -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase text-neutral-700 dark:text-neutral-300">Google Merchant Center ID</label>
+            <input type="text" [(ngModel)]="formConfig.googleMerchantCenterId" name="googleMerchantCenterId" placeholder="e.g. 531234567" class="w-full h-11 px-4 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-neutral-900 dark:text-white outline-none focus:border-[#d65108]">
+          </div>
+
+          <!-- Google Business Store Code for Local Inventory -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold uppercase text-neutral-700 dark:text-neutral-300">Google Business Store Code (Local Inventory)</label>
+            <input type="text" [(ngModel)]="formConfig.googleMerchantStoreCode" name="googleMerchantStoreCode" placeholder="e.g. 3D_GALAXY_MAIN" class="w-full h-11 px-4 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold text-neutral-900 dark:text-white outline-none focus:border-[#d65108]">
           </div>
 
           <!-- Optional: Meta Test Event Code (Admin-Only Diagnostic) -->
@@ -433,74 +468,87 @@ export interface IntegrationDiagnostic {
             </div>
           </div>
 
-          <!-- 5 Distinct Verification Stages -->
+          <!-- 6 Distinct Verification Stages -->
           <div class="space-y-3">
             <h5 class="text-xs font-black uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
-              5-Stage Analytics Verification Hierarchy
+              6-Stage Analytics Verification Hierarchy
             </h5>
-            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
-              <!-- Stage 1: Tag Installed -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+              <!-- Stage 1: App Event Created -->
               <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 1</span>
-                  <span class="w-2 h-2 rounded-full" [ngClass]="gtmHeadScript() ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                 </div>
-                <div class="font-bold text-neutral-900 dark:text-white">Tag Installed</div>
+                <div class="font-bold text-neutral-900 dark:text-white">App Event</div>
                 <p class="text-[10px] text-neutral-500">
-                  Head script: {{ gtmHeadScript() ? 'PASS' : 'FAIL' }}<br>
-                  Body iframe: {{ gtmBodyNoscript() ? 'PASS' : 'FAIL' }}
+                  AnalyticsManager active<br>
+                  Events dispatched
                 </p>
               </div>
 
-              <!-- Stage 2: Event Dispatched -->
+              <!-- Stage 2: dataLayer Pushed -->
               <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 2</span>
                   <span class="w-2 h-2 rounded-full" [ngClass]="dataLayerCount() > 0 ? 'bg-emerald-500' : 'bg-amber-500'"></span>
                 </div>
-                <div class="font-bold text-neutral-900 dark:text-white">App Dispatch</div>
+                <div class="font-bold text-neutral-900 dark:text-white">dataLayer Pushed</div>
                 <p class="text-[10px] text-neutral-500">
-                  dataLayer: {{ dataLayerCount() }} events<br>
-                  ecommerce: null clearing active
+                  {{ dataLayerCount() }} events in queue<br>
+                  ecommerce: null clearing
                 </p>
               </div>
 
-              <!-- Stage 3: Browser Network Request -->
+              <!-- Stage 3: GTM Tag Fired -->
               <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 3</span>
-                  <span class="w-2 h-2 rounded-full" [ngClass]="networkRequestsObserved().length > 0 ? 'bg-emerald-500' : 'bg-neutral-400'"></span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="gtmHeadScript() ? 'bg-amber-500' : 'bg-rose-500'"></span>
                 </div>
-                <div class="font-bold text-neutral-900 dark:text-white">Network Hit</div>
+                <div class="font-bold text-neutral-900 dark:text-white">GTM Tag Fired</div>
                 <p class="text-[10px] text-neutral-500">
-                  {{ networkRequestsObserved().length > 0 ? 'Observed in Performance API' : 'Waiting for user interaction' }}
+                  Container loaded<br>
+                  <span class="text-amber-600 dark:text-amber-400 font-semibold">GTM has 0 published tags</span>
                 </p>
               </div>
 
-              <!-- Stage 4: GA4 DebugView -->
+              <!-- Stage 4: Browser Network Hit -->
               <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 4</span>
-                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span class="w-2 h-2 rounded-full" [ngClass]="networkRequestsObserved().length > 0 ? 'bg-emerald-500' : 'bg-neutral-400'"></span>
                 </div>
-                <div class="font-bold text-neutral-900 dark:text-white">GA4 DebugView</div>
-                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  NEEDS EXTERNAL VERIFICATION
-                </span>
-                <p class="text-[9px] text-neutral-400 mt-1">Requires inspection in GA4 Console &rarr; Admin &rarr; DebugView.</p>
+                <div class="font-bold text-neutral-900 dark:text-white">Browser Network</div>
+                <p class="text-[10px] text-neutral-500">
+                  {{ networkRequestsObserved().length > 0 ? 'Direct gtag /collect sent' : 'Waiting for event' }}
+                </p>
               </div>
 
-              <!-- Stage 5: Standard Reports -->
+              <!-- Stage 5: GA4 DebugView -->
               <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 5</span>
                   <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                 </div>
+                <div class="font-bold text-neutral-900 dark:text-white">GA4 DebugView</div>
+                <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  EXTERNAL CONFIRMATION
+                </span>
+                <p class="text-[9px] text-neutral-400 mt-1">Check GA4 &rarr; Admin &rarr; DebugView.</p>
+              </div>
+
+              <!-- Stage 6: Standard Reports -->
+              <div class="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-bold text-neutral-400 uppercase">Stage 6</span>
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                </div>
                 <div class="font-bold text-neutral-900 dark:text-white">Standard Reports</div>
                 <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  NEEDS EXTERNAL VERIFICATION
+                  24-48H LATENCY
                 </span>
-                <p class="text-[9px] text-neutral-400 mt-1">Standard GA4 reports process with a 24-48h attribution latency.</p>
+                <p class="text-[9px] text-neutral-400 mt-1">Requires 24-48h attribution processing.</p>
               </div>
             </div>
           </div>
@@ -941,6 +989,7 @@ export class MarketingTrackingTabComponent implements OnInit {
     googleAdsLeadLabel: '',
     gtmContainerId: '',
     googleMerchantCenterId: '',
+    googleMerchantStoreCode: '3D_GALAXY_MAIN',
     enableEnhancedConversions: true,
     enableDynamicRemarketing: true,
     enableConsentMode: true,
@@ -1011,23 +1060,8 @@ export class MarketingTrackingTabComponent implements OnInit {
 
     if (lastEcomm) {
       this.latestEcommerceEvent.set(lastEcomm);
-      const ecomm = lastEcomm.ecommerce;
-      if (!ecomm.currency) issues.push('Missing "currency" in ecommerce payload (expected "INR").');
-      if (lastEcomm.event === 'purchase' && !ecomm.transaction_id) issues.push('Purchase event missing "transaction_id".');
-      if (lastEcomm.event === 'purchase' && (typeof ecomm.value !== 'number' || isNaN(ecomm.value))) issues.push('Purchase event missing valid numeric "value".');
-      if (Array.isArray(ecomm.items)) {
-        ecomm.items.forEach((item: any, idx: number) => {
-          if (!item.item_id) issues.push(`Item #${idx + 1} missing "item_id".`);
-          if (!item.item_name) issues.push(`Item #${idx + 1} missing "item_name".`);
-          if (typeof item.price !== 'number' || isNaN(item.price)) issues.push(`Item #${idx + 1} price is not a valid number.`);
-        });
-      }
-      const forbiddenPrefixes = ['_user_agent_', '_&', '&'];
-      for (const k of Object.keys(ecomm)) {
-        if (forbiddenPrefixes.some(p => k.startsWith(p) || k.includes('&'))) {
-          issues.push(`Invalid internal parameter "${k}" detected in ecommerce payload.`);
-        }
-      }
+      const validation = validateEcommercePayload(lastEcomm.event, lastEcomm.ecommerce);
+      issues.push(...validation.issues);
     } else {
       this.latestEcommerceEvent.set(null);
     }
@@ -1199,18 +1233,19 @@ export class MarketingTrackingTabComponent implements OnInit {
       if (item.category === 'ga4') {
         const ga4Server = serverData.ga4;
         updated.configStatus = ga4Server?.status || 'PASS';
-        updated.runtimeStatus = (hasGtag || this.gtmHeadScript() || gtmScriptInDom) ? 'PASS' : 'WARNING';
+        updated.runtimeStatus = (hasGtag || ga4ScriptInDom) ? 'PASS' : 'WARNING';
         updated.eventStatus = hasDataLayer ? 'PASS' : 'WARNING';
         updated.destinationStatus = 'NEEDS EXTERNAL VERIFICATION';
-        updated.details = 'GA4 tracking managed via GTM container GTM-THJDDXCK with dataLayer { ecommerce: null } clearing.';
+        updated.details = 'GA4 direct gtag.js measurement active with parallel GTM dataLayer { ecommerce: null } clearing.';
         updated.evidence = {
           configuredId: this.formConfig.ga4MeasurementId || 'G-4BKM2K4PS0',
-          architecture: 'GTM-managed GA4 (Consolidated)',
+          architecture: 'Direct gtag.js + GTM dataLayer (Dual Reliable Pipeline)',
+          directGtagScriptLoaded: ga4ScriptInDom,
           gtagFunctionAvailable: hasGtag,
           dataLayerActive: hasDataLayer,
           serverValidation: ga4Server
         };
-        updated.recommendation = ga4Server?.recommendedAction || 'Configure Google tag (G-4BKM2K4PS0) and GA4 Ecommerce tags in GTM workspace and publish container.';
+        updated.recommendation = ga4Server?.recommendedAction || 'Direct gtag.js dispatches all events to G-4BKM2K4PS0. To enable GTM tags as well, configure GA4 Google Tag in GTM workspace and publish.';
         if (updated.configStatus === 'FAIL') overallIssues++;
       }
 

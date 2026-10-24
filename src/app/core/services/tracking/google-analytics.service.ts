@@ -21,19 +21,10 @@ export class GoogleAnalyticsService {
   }
 
   public isGtmManagingGa4(): boolean {
-    if (!isPlatformBrowser(this.platformId)) return false;
-    return !!(
-      document.querySelector('script[src*="googletagmanager.com/gtm.js"]') ||
-      (window as any).google_tag_manager
-    );
+    return false;
   }
 
   private injectGa4Script(id: string) {
-    if (this.isGtmManagingGa4()) {
-      this.initialized.set(true);
-      return;
-    }
-
     const existing = document.getElementById('ga4-script') ||
       document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${id}"]`) ||
       document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=G-4BKM2K4PS0"]`);
@@ -52,7 +43,7 @@ export class GoogleAnalyticsService {
 
     window.gtag('js', new Date());
     window.gtag('config', id, {
-      send_page_view: false // We trigger virtual page_view on NavigationEnd
+      send_page_view: false // Virtual page_views triggered per navigation
     });
 
     const script = document.createElement('script');
@@ -67,7 +58,7 @@ export class GoogleAnalyticsService {
   }
 
   public trackPageView(title: string, url: string) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
 
     if (typeof window.gtag === 'function') {
       window.gtag('event', 'page_view', {
@@ -91,66 +82,89 @@ export class GoogleAnalyticsService {
   }
 
   public trackViewItem(item: TrackingItem) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    const mapped = this.mapItem(item);
     window.gtag('event', 'view_item', {
       currency: item.currency || 'INR',
-      value: item.price,
-      items: [this.mapItem(item)]
+      value: mapped.price * mapped.quantity,
+      items: [mapped],
+      send_to: this.measurementId()
     });
   }
 
   public trackViewItemList(items: TrackingItem[], listName: string = 'Catalog') {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
     window.gtag('event', 'view_item_list', {
       item_list_name: listName,
-      items: items.map(i => this.mapItem(i))
+      items: items.map(i => this.mapItem(i)),
+      send_to: this.measurementId()
     });
   }
 
   public trackAddToCart(item: TrackingItem, quantity: number = 1) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
     const mapped = this.mapItem({ ...item, quantity });
     window.gtag('event', 'add_to_cart', {
       currency: item.currency || 'INR',
-      value: item.price * quantity,
-      items: [mapped]
+      value: mapped.price * quantity,
+      items: [mapped],
+      send_to: this.measurementId()
     });
   }
 
   public trackRemoveFromCart(item: TrackingItem) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    const mapped = this.mapItem(item);
     window.gtag('event', 'remove_from_cart', {
       currency: item.currency || 'INR',
-      value: item.price * (item.quantity || 1),
-      items: [this.mapItem(item)]
+      value: mapped.price * (item.quantity || 1),
+      items: [mapped],
+      send_to: this.measurementId()
     });
   }
 
   public trackBeginCheckout(items: TrackingItem[], totalValue: number) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    const mappedItems = items.map(i => this.mapItem(i));
+    const itemsSubtotal = mappedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : totalValue;
+
     window.gtag('event', 'begin_checkout', {
       currency: 'INR',
-      value: totalValue,
-      items: items.map(i => this.mapItem(i))
+      value: Number(val.toFixed(2)),
+      items: mappedItems,
+      send_to: this.measurementId()
+    });
+    window.gtag('event', 'checkout', {
+      currency: 'INR',
+      value: Number(val.toFixed(2)),
+      items: mappedItems,
+      send_to: this.measurementId()
     });
   }
 
   public trackPurchase(orderId: string, items: TrackingItem[], totalValue: number, tax: number = 0, shipping: number = 0) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
+    const mappedItems = items.map(i => this.mapItem(i));
+    const itemsSubtotal = mappedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : totalValue;
+
     window.gtag('event', 'purchase', {
       transaction_id: orderId,
-      value: totalValue,
-      tax,
-      shipping,
+      value: Number(val.toFixed(2)),
+      tax: Number(Number(tax || 0).toFixed(2)),
+      shipping: Number(Number(shipping || 0).toFixed(2)),
       currency: 'INR',
-      items: items.map(i => this.mapItem(i))
+      items: mappedItems,
+      send_to: this.measurementId()
     });
   }
 
   public trackSearch(searchTerm: string) {
-    if (!isPlatformBrowser(this.platformId) || !this.measurementId() || this.isGtmManagingGa4()) return;
+    if (!isPlatformBrowser(this.platformId) || !this.measurementId()) return;
     window.gtag('event', 'search', {
-      search_term: searchTerm
+      search_term: searchTerm,
+      send_to: this.measurementId()
     });
   }
 }

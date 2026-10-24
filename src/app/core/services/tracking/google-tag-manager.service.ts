@@ -56,7 +56,6 @@ export class GoogleTagManagerService {
   public pushEcommerce(eventName: string, ecommerceData: any) {
     if (!isPlatformBrowser(this.platformId)) return;
     window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ ecommerce: null });
     window.dataLayer.push({
       event: eventName,
       ecommerce: ecommerceData

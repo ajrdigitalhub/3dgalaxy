@@ -261,11 +261,25 @@ export class CheckoutComponent implements OnInit {
     this.paymentLoader.loadRazorpay();
     this.paymentLoader.loadCashfree();
 
-    // Track begin_checkout
+    // Track begin_checkout (avoid duplicate if user just clicked 'Proceed to Checkout' from Cart within 4 seconds)
     const items = this.groupedCheckoutItems();
     if (items.length > 0) {
-      const mapped = items.map(item => mapCartItemToAnalyticsItem(item));
-      this.analytics.trackCheckout(mapped, this.grandTotal());
+      let shouldTrack = true;
+      try {
+        const lastTracked = Number(sessionStorage.getItem('last_checkout_tracked_time') || 0);
+        if (Date.now() - lastTracked < 4000) {
+          shouldTrack = false;
+        }
+      } catch (e) {}
+
+      if (shouldTrack) {
+        try {
+          sessionStorage.setItem('last_checkout_tracked_time', String(Date.now()));
+        } catch (e) {}
+        const mapped = items.map(item => mapCartItemToAnalyticsItem(item));
+        const itemsSubtotal = mapped.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+        this.analytics.trackCheckout(mapped, Number(itemsSubtotal.toFixed(2)));
+      }
     }
   }
 
@@ -561,11 +575,13 @@ export class CheckoutComponent implements OnInit {
 
     if (step === 3) {
       const items = this.groupedCheckoutItems().map(item => mapCartItemToAnalyticsItem(item));
+      const itemsSubtotal = items.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
       const shippingTier = this.shippingDetails().shippingLabel || (this.shipping() === 0 ? 'Free Shipping' : 'Standard Delivery');
-      this.analytics.trackShippingSelected(shippingTier, this.grandTotal(), items);
+      this.analytics.trackShippingSelected(shippingTier, Number(itemsSubtotal.toFixed(2)), items);
     } else if (step === 4) {
       const items = this.groupedCheckoutItems().map(item => mapCartItemToAnalyticsItem(item));
-      this.analytics.trackPaymentSelected(this.paymentMethod(), this.grandTotal(), items);
+      const itemsSubtotal = items.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+      this.analytics.trackPaymentSelected(this.paymentMethod(), Number(itemsSubtotal.toFixed(2)), items);
     }
 
     this.activeStep.set(step);

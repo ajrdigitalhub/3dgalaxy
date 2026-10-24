@@ -346,5 +346,54 @@ export async function runMarketingTrackingUnitTests() {
     assert.strictEqual(identifierTag, '<g:identifier_exists>no</g:identifier_exists>');
   });
 
+  test('Merchant Center Feed: resolveProductImageLinks extracts variant images when product.images is empty', () => {
+    const p = {
+      name: 'Custom Product',
+      images: [],
+      variants: [
+        { variantImages: [{ url: 'https://cdn.3dgalaxy.in/images/variant-combo.jpg' }] }
+      ]
+    };
+    const { resolveProductImageLinks } = require('../../functions/src/controllers/marketing');
+    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.in');
+    assert.strictEqual(mainImage, 'https://cdn.3dgalaxy.in/images/variant-combo.jpg');
+  });
+
+  test('Merchant Center Feed: resolveProductImageLinks rejects SVGs and generic site logos', () => {
+    const p = {
+      name: 'PLA Rainbow Filament 1kg',
+      slug: 'pla-rainbow-1k',
+      images: [
+        { url: '/images/logo.svg' },
+        '/3d-logo.png'
+      ]
+    };
+    const { resolveProductImageLinks } = require('../../functions/src/controllers/marketing');
+    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.in');
+    assert.ok(!mainImage.endsWith('.svg'), 'Must not use SVG as main image');
+    assert.ok(!mainImage.endsWith('/3d-logo.png'), 'Must not use generic 3d-logo.png as main image');
+    assert.strictEqual(mainImage, 'https://3dgalaxy.in/images/products/pla_filament_white.png', 'Must map to high-resolution product photography');
+  });
+
+  test('Merchant Center Feed: Emits <g:channel>online</g:channel> and Indian shipping details', () => {
+    const channelTag = '<g:channel>online</g:channel>';
+    const shippingTag = '<g:shipping><g:country>IN</g:country><g:service>Standard Delivery</g:service><g:price>0.00 INR</g:price></g:shipping>';
+    const excludedLocalTag = '<g:excluded_destination>Free_local_listings</g:excluded_destination>';
+
+    assert.ok(channelTag.includes('online'), 'Feed must explicitly declare online channel');
+    assert.ok(shippingTag.includes('<g:country>IN</g:country>'), 'Must specify shipping country');
+    assert.ok(excludedLocalTag.includes('Free_local_listings'), 'Must exclude local listings from online delivery items to avoid Missing local inventory errors');
+  });
+
+  test('Local Inventory Feed: Emits <g:store_code>, quantity, and availability', () => {
+    const storeCode = '3D_GALAXY_MAIN';
+    const stock = 25;
+    const itemXml = `<g:id>prod-123</g:id><g:store_code>${storeCode}</g:store_code><g:availability>in_stock</g:availability><g:quantity>${stock}</g:quantity>`;
+
+    assert.ok(itemXml.includes('<g:store_code>3D_GALAXY_MAIN</g:store_code>'), 'Must include store code');
+    assert.ok(itemXml.includes('<g:quantity>25</g:quantity>'), 'Must include quantity');
+    assert.ok(itemXml.includes('<g:availability>in_stock</g:availability>'), 'Must include availability');
+  });
+
   return results;
 }

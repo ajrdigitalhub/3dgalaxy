@@ -197,3 +197,125 @@ export function clearTrackedPurchases(): void {
     localStorage.removeItem(TRACKED_PURCHASES_KEY);
   }
 }
+
+export interface ValidationResult {
+  valid: boolean;
+  issues: string[];
+}
+
+/**
+ * Validates an ecommerce payload against standard GA4 ecommerce rules before dispatching.
+ * Ensures valid event name, ISO 4217 currency, non-negative numeric value, non-empty items
+ * with valid item_id, item_name, numeric price/quantity, valid purchase transaction_id,
+ * and checks that purchase value agrees with sum(item.price * item.quantity).
+ */
+export function validateEcommercePayload(eventName: string, payload: any): ValidationResult {
+  const issues: string[] = [];
+
+  if (!eventName || typeof eventName !== 'string') {
+    issues.push('Missing or invalid event name');
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    issues.push('Payload must be an object');
+    return { valid: false, issues };
+  }
+
+  // Reject forbidden internal parameters
+  for (const key of Object.keys(payload)) {
+    if (key.startsWith('_user_agent_') || key.startsWith('_&') || key.includes('&')) {
+      issues.push(`Forbidden internal parameter "${key}" in payload`);
+    }
+  }
+
+  // Validate Currency (must be uppercase 3-letter ISO code)
+  if (payload.currency !== undefined) {
+    if (typeof payload.currency !== 'string' || !/^[A-Z]{3}$/.test(payload.currency)) {
+      issues.push(`Invalid currency "${payload.currency}", expected 3-letter ISO 4217 code (e.g. 'INR')`);
+    }
+  }
+
+  // Validate Value (if present, must be non-negative finite number)
+  if (payload.value !== undefined) {
+    const val = Number(payload.value);
+    if (isNaN(val) || !isFinite(val) || val < 0) {
+      issues.push(`Invalid numeric value: ${payload.value}`);
+    }
+  }
+
+  // Validate Items (if present)
+  if (payload.items !== undefined) {
+    if (!Array.isArray(payload.items)) {
+      issues.push('items must be an array');
+    } else {
+      const requiredItemsEvents = ['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'purchase'];
+      if (requiredItemsEvents.includes(eventName) && payload.items.length === 0) {
+        issues.push(`Event "${eventName}" requires a non-empty items array`);
+      }
+
+      payload.items.forEach((item: any, idx: number) => {
+        if (!item || typeof item !== 'object') {
+          issues.push(`Item at index ${idx} is not an object`);
+          return;
+        }
+        if (!item.item_id && !item.id && !item.productId) {
+          issues.push(`Item at index ${idx} is missing item_id`);
+        }
+        if (!item.item_name && !item.name && !item.productName) {
+          issues.push(`Item at index ${idx} is missing item_name`);
+        }
+        const p = Number(item.price);
+        if (isNaN(p) || !isFinite(p) || p < 0) {
+          issues.push(`Item "${item.item_name || idx}" has invalid price: ${item.price}`);
+        }
+        const q = Number(item.quantity);
+        if (isNaN(q) || !isFinite(q) || q < 1) {
+          issues.push(`Item "${item.item_name || idx}" has invalid quantity: ${item.quantity}`);
+        }
+      });
+    }
+  }
+
+  // Specific validations for purchase
+  if (eventName === 'purchase') {
+    if (!payload.transaction_id || String(payload.transaction_id).trim().length === 0) {
+      issues.push('Purchase event requires a non-empty transaction_id');
+    }
+
+    if (Array.isArray(payload.items) && payload.items.length > 0 && payload.value !== undefined) {
+      const itemsSum = payload.items.reduce((sum: number, it: any) => sum + (Number(it.price || 0) * Number(it.quantity || 1)), 0);
+      const val = Number(payload.value);
+      const ship = Number(payload.shipping || 0);
+      const tax = Number(payload.tax || 0);
+      const grandSum = itemsSum + ship + tax;
+      // Accept either items subtotal or grand total (items + shipping + tax)
+      if (Math.abs(itemsSum - val) > 0.1 && Math.abs(grandSum - val) > 0.1) {
+        issues.push(`Purchase value (${val}) does not match sum of item price * quantity (${Number(itemsSum.toFixed(2))}) or grand total (${Number(grandSum.toFixed(2))})`);
+      }
+    }
+
+    if (payload.shipping !== undefined) {
+      const ship = Number(payload.shipping);
+      if (isNaN(ship) || !isFinite(ship) || ship < 0) {
+        issues.push(`Invalid shipping value: ${payload.shipping}`);
+      }
+    }
+
+    if (payload.tax !== undefined) {
+      const tax = Number(payload.tax);
+      if (isNaN(tax) || !isFinite(tax) || tax < 0) {
+        issues.push(`Invalid tax value: ${payload.tax}`);
+      }
+    }
+  }
+
+  if (issues.length > 0) {
+    console.warn(`[Analytics Validation Warning] [${eventName}]:`, issues);
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues
+  };
+}
+

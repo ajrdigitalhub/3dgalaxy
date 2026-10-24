@@ -32,7 +32,7 @@ export const ENV = {
   PG_POOL_MAX: Number(process.env.PG_POOL_MAX || 10),
   PG_IDLE_TIMEOUT_MS: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
   PG_CONN_TIMEOUT_MS: Number(process.env.PG_CONN_TIMEOUT_MS || 20000),
-  SITE_URL: (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.co').replace(/\/+$/, ''),
+  SITE_URL: (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.in').replace(/\/+$/, ''),
   SITE_NAME: process.env.SITE_NAME || process.env.STORE_NAME || '3D Galaxy',
   ADMIN_APP_URL: (process.env.ADMIN_APP_URL || process.env.ADMIN_URL || 'https://admin.3dgalaxy.in').replace(/\/+$/, ''),
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@3dgalaxy.co.in',

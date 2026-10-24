@@ -416,7 +416,7 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    // Verify order/payment status
+    // Verify order and payment status
     const status = (this.order.status || '').toLowerCase();
     const paymentStatus = (this.order.paymentStatus || '').toLowerCase();
     if (status === 'cancelled' || status === 'failed' || paymentStatus === 'failed') {
@@ -424,30 +424,41 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
     }
 
     const rawItems = this.order.items || this.order.orderItems || [];
-    const items = rawItems.map((oi: any) => ({
-      item_id: String(oi.productId || oi.product?.id || oi.id || 'item'),
-      item_name: String(oi.product?.name || oi.name || oi.title || 'Product'),
-      price: Number(oi.price || oi.unitPrice || 0),
-      quantity: Number(oi.quantity || 1),
-      item_variant: oi.variant?.name || oi.configurationName || undefined
-    }));
+    const items = rawItems.map((oi: any) => {
+      const p = Number(oi.price || oi.unitPrice || 0);
+      const q = Number(oi.quantity || 1);
+      return {
+        item_id: String(oi.productId || oi.product?.id || oi.sku || oi.id || 'PRODUCT'),
+        item_name: String(oi.product?.name || oi.name || oi.title || 'Product'),
+        price: isNaN(p) || p < 0 ? 0 : Number(p.toFixed(2)),
+        quantity: isNaN(q) || q < 1 ? 1 : Math.round(q),
+        item_variant: oi.variant?.name || oi.variantTitle || oi.configurationName || undefined
+      };
+    });
 
-    const totalValue = Number(this.order.totalAmount || this.order.grandTotal || 0);
-    const tax = Number(this.order.taxAmount || this.order.tax || 0);
-    const shipping = Number(this.order.shippingAmount || this.order.shipping || 0);
+    // In GA4 ecommerce, value is the items subtotal: sum(price * quantity).
+    // Tax and shipping are passed separately.
+    const itemsSubtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const calculatedValue = itemsSubtotal > 0
+      ? Number(itemsSubtotal.toFixed(2))
+      : Number(Number(this.order.subtotal || this.order.totalAmount || this.order.grandTotal || 0).toFixed(2));
 
-    if (totalValue > 0 || items.length > 0) {
+    const tax = Number(Number(this.order.taxAmount || this.order.tax || 0).toFixed(2));
+    const shipping = Number(Number(this.order.shippingAmount || this.order.shipping || 0).toFixed(2));
+    const currency = String(this.order.currency || 'INR').toUpperCase();
+
+    if (calculatedValue > 0 || items.length > 0) {
       this.analytics.trackPurchase({
         transaction_id: transactionId,
-        value: totalValue,
-        currency: 'INR',
+        value: calculatedValue,
+        currency: currency,
         tax: tax > 0 ? tax : undefined,
         shipping: shipping > 0 ? shipping : undefined,
         coupon: this.order.couponCode || undefined,
         items: items
       });
 
-      // Persist tracked state in localStorage
+      // Persist tracked state in localStorage for idempotency
       markPurchaseAsTracked(transactionId);
     }
   }

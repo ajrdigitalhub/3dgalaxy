@@ -86,10 +86,7 @@ export class GoogleTagManagerService implements AnalyticsProvider {
     if (!isPlatformBrowser(this.platformId)) return;
     window.dataLayer = window.dataLayer || [];
 
-    // Clear previous ecommerce object per GA4 / GTM developer documentation
-    window.dataLayer.push({ ecommerce: null });
-
-    // Push sanitized ecommerce payload
+    // Push sanitized ecommerce payload directly without wiping shared dataLayer state
     window.dataLayer.push({
       event: eventName,
       ecommerce: sanitizeAnalyticsPayload(ecommerceData)
@@ -194,9 +191,12 @@ export class GoogleTagManagerService implements AnalyticsProvider {
 
   public trackCheckout(payload: CheckoutPayload): void {
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+    const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
+
     const ecommerce: Record<string, any> = {
       currency: payload.currency || 'INR',
-      value: Number(Number(payload.value || 0).toFixed(2)),
+      value: Number(val.toFixed(2)),
       items: cleanItems
     };
 
@@ -209,10 +209,12 @@ export class GoogleTagManagerService implements AnalyticsProvider {
 
   public trackAddShippingInfo(shippingTier: string, value: number, items: AnalyticsItem[] = []): void {
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+    const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
 
     this.pushEcommerce('add_shipping_info', {
       currency: 'INR',
-      value: Number(Number(value || 0).toFixed(2)),
+      value: Number(val.toFixed(2)),
       shipping_tier: shippingTier,
       items: cleanItems
     });
@@ -220,10 +222,12 @@ export class GoogleTagManagerService implements AnalyticsProvider {
 
   public trackAddPaymentInfo(paymentType: string, value: number, items: AnalyticsItem[] = []): void {
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
+    const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
 
     this.pushEcommerce('add_payment_info', {
       currency: 'INR',
-      value: Number(Number(value || 0).toFixed(2)),
+      value: Number(val.toFixed(2)),
       payment_type: paymentType,
       items: cleanItems
     });
@@ -231,16 +235,22 @@ export class GoogleTagManagerService implements AnalyticsProvider {
 
   public trackPurchase(payload: PurchasePayload): void {
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
+    const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
+    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
 
     const ecommerce: Record<string, any> = {
       transaction_id: String(payload.transaction_id),
-      value: Number(Number(payload.value || 0).toFixed(2)),
-      tax: Number(Number(payload.tax || 0).toFixed(2)),
-      shipping: Number(Number(payload.shipping || 0).toFixed(2)),
+      value: Number(val.toFixed(2)),
       currency: payload.currency || 'INR',
       items: cleanItems
     };
 
+    if (payload.tax !== undefined && !isNaN(Number(payload.tax))) {
+      ecommerce['tax'] = Number(Number(payload.tax).toFixed(2));
+    }
+    if (payload.shipping !== undefined && !isNaN(Number(payload.shipping))) {
+      ecommerce['shipping'] = Number(Number(payload.shipping).toFixed(2));
+    }
     if (payload.coupon) {
       ecommerce['coupon'] = payload.coupon;
     }

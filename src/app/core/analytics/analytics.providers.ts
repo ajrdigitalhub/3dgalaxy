@@ -13,28 +13,11 @@ export function provideAnalytics(config: AnalyticsConfig): EnvironmentProviders 
       const analyticsService = inject(AnalyticsService);
       const configService = inject(ConfigurationService);
       configService.setConfig(config);
-      // Defer third-party script injection away from the critical rendering path until user interaction or idle
       if (typeof window !== 'undefined') {
-        let initialized = false;
-        const triggerInit = () => {
-          if (initialized) return;
-          initialized = true;
-          window.removeEventListener('scroll', triggerInit);
-          window.removeEventListener('touchstart', triggerInit);
-          window.removeEventListener('click', triggerInit);
-          window.removeEventListener('mousemove', triggerInit);
-          analyticsService.init(config);
-        };
-
-        window.addEventListener('scroll', triggerInit, { passive: true, once: true });
-        window.addEventListener('touchstart', triggerInit, { passive: true, once: true });
-        window.addEventListener('click', triggerInit, { passive: true, once: true });
-        window.addEventListener('mousemove', triggerInit, { passive: true, once: true });
-        window.addEventListener('keydown', triggerInit, { passive: true, once: true });
-        window.addEventListener('beforeunload', triggerInit, { once: true });
-
-        // Fallback after 15s to keep initial synthetic Lighthouse window free of third-party long tasks
-        setTimeout(triggerInit, 15000);
+        // Initialize immediately in the browser so pageviews, route transitions,
+        // and immediate ecommerce actions (e.g. direct /checkout navigation or Add to Cart)
+        // are fully tracked from the first interaction without a 15-second delay.
+        analyticsService.init(config);
       }
     })
   ]);

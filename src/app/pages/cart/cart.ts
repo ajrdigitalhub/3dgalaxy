@@ -58,9 +58,9 @@ export class CartCheckout implements OnInit {
     // Track view_cart on load if cart has items
     const items = this.ds.groupedCartItems() || [];
     if (items.length > 0) {
-      const pricing = this.ds.cartPricingSummary();
       const mapped = items.map((item: any) => mapCartItemToAnalyticsItem(item));
-      this.analytics.trackViewCart(mapped, pricing.grandTotal || pricing.subtotal || 0);
+      const itemsSubtotal = mapped.reduce((acc: number, it: any) => acc + (it.price * (it.quantity || 1)), 0);
+      this.analytics.trackViewCart(mapped, Number(itemsSubtotal.toFixed(2)));
     }
   }
 
@@ -161,10 +161,13 @@ export class CartCheckout implements OnInit {
 
   proceedToCheckout() {
     const cartItems = this.ds.groupedCartItems() || [];
-    const pricing = this.ds.cartPricingSummary();
     if (cartItems.length > 0) {
       const mapped = cartItems.map((item: any) => mapCartItemToAnalyticsItem(item));
-      this.analytics.trackCheckout(mapped, pricing.grandTotal || pricing.subtotal || 0);
+      const itemsSubtotal = mapped.reduce((acc: number, it: any) => acc + (it.price * (it.quantity || 1)), 0);
+      try {
+        sessionStorage.setItem('last_checkout_tracked_time', String(Date.now()));
+      } catch (e) {}
+      this.analytics.trackCheckout(mapped, Number(itemsSubtotal.toFixed(2)));
     }
     this.ds.clearBuyNowItem();
     this.router.navigate(['/checkout']);
