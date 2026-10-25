@@ -136,7 +136,7 @@ The General tab establishes the core data attributes, search identifiers, and pu
 ### Detailed Field Explanations
 
 1. **Product Title:** The customer-facing identity of the item. It is automatically propagated to the HTML \`<title>\` tag, OpenGraph social cards, breadcrumbs, search index tokens, and order line items.
-2. **URL Slug:** The clean URI path appended to \`https://3dgalaxy.in/product/\`. Must contain only lowercase alphanumeric characters and hyphens (e.g., \`creality-ender-3-v3-ke\`). Changing the slug on published products breaks legacy search links unless a 301 redirect is provisioned.
+2. **URL Slug:** The clean URI path appended to \`https://3dgalaxy.co/product/\`. Must contain only lowercase alphanumeric characters and hyphens (e.g., \`creality-ender-3-v3-ke\`). Changing the slug on published products breaks legacy search links unless a 301 redirect is provisioned.
 3. **SKU / Barcode:** Internal warehouse inventory identifier and scannable GS1/EAN barcode. If the product has Cartesian variants, this serves as the parent base SKU.
 4. **Short Description:** Rendered immediately below the product title and star rating on the storefront PDP. It also forms the default fallback for search engine meta descriptions.
 5. **Full Description:** Fully featured rich text HTML editor supporting headings, bullet points, technical comparison tables, and embedded diagrams.

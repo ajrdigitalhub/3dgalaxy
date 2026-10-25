@@ -2009,6 +2009,13 @@ export class ProductDetail {
       if (bundleDetails) {
         this.isAddingToCart.set(true);
         this.ds.addBundleToCart(p, bundleDetails, this.quantity());
+        try {
+          const trackingItem = mapProductToAnalyticsItem(p, {
+            quantity: this.quantity(),
+            price: bundleDetails.effectivePrice || bundleDetails.bundlePrice || p.salePrice || p.basePrice || 0
+          });
+          this.analytics.trackAddToCart(trackingItem, this.quantity());
+        } catch (e) {}
         setTimeout(() => {
           this.isAddingToCart.set(false);
           this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
@@ -2129,11 +2136,6 @@ export class ProductDetail {
       return;
     }
 
-    try {
-      const trackingItem = mapProductToAnalyticsItem(p, this.quantity(), this.selectedVariant());
-      this.analytics.trackAddToCart(trackingItem, this.quantity());
-    } catch (e) {}
-
     if (this.variantEngine.activeBundleGroup()) {
       const bundleGrp = this.variantEngine.activeBundleGroup();
       if (this.variantEngine.bundleSlots().length === 0 && this.variantEngine.selectedBundleTier()) {
@@ -2212,6 +2214,11 @@ export class ProductDetail {
       variant: selected,
       quantity: this.quantity() || 1,
     });
+
+    try {
+      const trackingItem = mapProductToAnalyticsItem(p, this.quantity() || 1, selected);
+      this.analytics.trackAddToCart(trackingItem, this.quantity() || 1);
+    } catch (e) {}
 
     this.toastService.success(`Proceeding to checkout for "${p.name}"`);
     this.router.navigate(["/checkout"]);

@@ -266,7 +266,7 @@ async function main() {
               </div>
             </div>
             <div class="address-bar">
-              <div class="url-box">https://3dgalaxy.in/</div>
+              <div class="url-box">https://3dgalaxy.co/</div>
             </div>
           </div>
           <div class="zoom-display">
@@ -304,7 +304,7 @@ async function main() {
               </div>
             </div>
             <div class="address-bar">
-              <div class="url-box">https://3dgalaxy.in/</div>
+              <div class="url-box">https://3dgalaxy.co/</div>
             </div>
           </div>
           <div class="zoom-display">
@@ -344,7 +344,7 @@ async function main() {
               </div>
             </div>
             <div class="address-bar">
-              <div class="url-box">https://3dgalaxy.in/</div>
+              <div class="url-box">https://3dgalaxy.co/</div>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ import { DeliveryEstimateService } from '../core/services/delivery-estimate.serv
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
-import { catchError, finalize, shareReplay } from 'rxjs/operators';
+import { catchError, finalize, shareReplay, retry } from 'rxjs/operators';
 import { CartBundleDetails } from '../core/models/variant-engine.model';
 import { convertToGrams, formatWeight, getItemWeightGrams } from '../shared/utils/weight.utils';
 
@@ -3376,9 +3376,10 @@ export class DatastoreService {
       ipAddress: '127.0.0.1',
       activity,
       details
-    }).subscribe({
-      error: (err) => console.warn('Activity logging failed:', err)
-    });
+    }, { silent: true }).pipe(
+      retry({ count: 1, delay: 1000 }),
+      catchError(() => of(null))
+    ).subscribe();
   }
 
   getProductImage(item: any): string {

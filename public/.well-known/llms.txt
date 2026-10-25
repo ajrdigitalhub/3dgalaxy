@@ -11,19 +11,19 @@
 
 ## Primary Web Pages
 
-- [Homepage](https://3dgalaxy.in/): Latest 3D printers, promo banners, and featured products.
-- [3D Printers & Products Catalog](https://3dgalaxy.in/products): Browse, filter, and search full product catalog.
-- [Custom 3D Printing Service](https://3dgalaxy.in/printing-service): Automated STL 3D slicer and instant quote builder.
-- [About Us](https://3dgalaxy.in/about): Company background, factory details, and contact info.
-- [Track Order](https://3dgalaxy.in/orders): Live order status and tracking details.
+- [Homepage](https://3dgalaxy.co/): Latest 3D printers, promo banners, and featured products.
+- [3D Printers & Products Catalog](https://3dgalaxy.co/products): Browse, filter, and search full product catalog.
+- [Custom 3D Printing Service](https://3dgalaxy.co/printing-service): Automated STL 3D slicer and instant quote builder.
+- [About Us](https://3dgalaxy.co/about): Company background, factory details, and contact info.
+- [Track Order](https://3dgalaxy.co/orders): Live order status and tracking details.
 
 ## API & Integration Reference
 
-- Sitemap: `https://3dgalaxy.in/sitemap.xml`
-- API Health & Consolidated Home: `GET https://3dgalaxy.in/api/home`
-- Products List API: `GET https://3dgalaxy.in/api/products`
-- Categories API: `GET https://3dgalaxy.in/api/categories`
-- Slicing Quote Calculation: `POST https://3dgalaxy.in/api/slice/quote`
+- Sitemap: `https://3dgalaxy.co/sitemap.xml`
+- API Health & Consolidated Home: `GET https://3dgalaxy.co/api/home`
+- Products List API: `GET https://3dgalaxy.co/api/products`
+- Categories API: `GET https://3dgalaxy.co/api/categories`
+- Slicing Quote Calculation: `POST https://3dgalaxy.co/api/slice/quote`
 
 ## Contact & Location
 

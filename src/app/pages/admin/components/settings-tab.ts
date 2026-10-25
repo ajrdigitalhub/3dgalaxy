@@ -3027,7 +3027,7 @@ import { HomeInstagramFeedComponent } from "../../home/components/home-instagram
                                   <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
                                 </div>
                                 <div class="mx-auto text-[10px] font-mono text-zinc-400 bg-zinc-900 px-3 py-0.5 rounded-full border border-zinc-800">
-                                  3dgalaxy.in/store
+                                  3dgalaxy.co/store
                                 </div>
                               </div>
                               <div class="relative w-full flex-1 flex items-center justify-center p-3">

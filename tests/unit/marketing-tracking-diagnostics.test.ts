@@ -24,7 +24,7 @@ export async function runMarketingTrackingUnitTests() {
     const candidateId = 'G-4BKM2K4PS0';
     const isGtmFormat = /^GTM-[A-Z0-9]+$/i.test(candidateId);
     const hasGa4Prefix = candidateId.startsWith('G-');
-    
+
     assert.strictEqual(isGtmFormat, false, 'G-4BKM2K4PS0 must NOT pass GTM format test');
     assert.strictEqual(hasGa4Prefix, true, 'Must identify G- prefix as GA4 measurement ID format');
   });
@@ -138,7 +138,7 @@ export async function runMarketingTrackingUnitTests() {
     };
 
     assert.strictEqual(safeTestEvent.custom_data.test_mode, true, 'Test mode flag must be present');
-    assert.ok(!JSON.stringify(safeTestEvent).includes('@3dgalaxy.in'), 'No real company customer email in test payload');
+    assert.ok(!JSON.stringify(safeTestEvent).includes('@3dgalaxy.co'), 'No real company customer email in test payload');
   });
 
   // --- 6. CONSENT MODE V2 STORAGE KEYS ---
@@ -322,19 +322,19 @@ export async function runMarketingTrackingUnitTests() {
 
   test('Merchant Center Feed: Image link extraction handles objects, strings and relative URLs without [object Object]', () => {
     const rawImages = [
-      { url: 'https://cdn.3dgalaxy.in/images/printer.jpg' },
+      { url: 'https://cdn.3dgalaxy.co/images/printer.jpg' },
       '/uploads/filament.png'
     ];
 
-    const baseUrl = 'https://3dgalaxy.in';
+    const baseUrl = 'https://3dgalaxy.co';
     const parsedImages = rawImages.map((img: any) => {
       let u = typeof img === 'string' ? img.trim() : (img.url ? String(img.url).trim() : '');
       if (!u || u === '[object Object]') return null;
       return u.startsWith('http://') || u.startsWith('https://') ? u : `${baseUrl}/${u.replace(/^\//, '')}`;
     }).filter(Boolean);
 
-    assert.strictEqual(parsedImages[0], 'https://cdn.3dgalaxy.in/images/printer.jpg');
-    assert.strictEqual(parsedImages[1], 'https://3dgalaxy.in/uploads/filament.png');
+    assert.strictEqual(parsedImages[0], 'https://cdn.3dgalaxy.co/images/printer.jpg');
+    assert.strictEqual(parsedImages[1], 'https://3dgalaxy.co/uploads/filament.png');
     assert.ok(!parsedImages.some(img => img?.includes('[object Object]')));
   });
 
@@ -342,7 +342,7 @@ export async function runMarketingTrackingUnitTests() {
     const productWithoutBarcode = { sku: null, barcode: null };
     const hasGtinOrMpn = !!(productWithoutBarcode.sku || productWithoutBarcode.barcode);
     const identifierTag = hasGtinOrMpn ? '<g:identifier_exists>yes</g:identifier_exists>' : '<g:identifier_exists>no</g:identifier_exists>';
-    
+
     assert.strictEqual(identifierTag, '<g:identifier_exists>no</g:identifier_exists>');
   });
 
@@ -351,12 +351,12 @@ export async function runMarketingTrackingUnitTests() {
       name: 'Custom Product',
       images: [],
       variants: [
-        { variantImages: [{ url: 'https://cdn.3dgalaxy.in/images/variant-combo.jpg' }] }
+        { variantImages: [{ url: 'https://cdn.3dgalaxy.co/images/variant-combo.jpg' }] }
       ]
     };
     const { resolveProductImageLinks } = require('../../functions/src/controllers/marketing');
-    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.in');
-    assert.strictEqual(mainImage, 'https://cdn.3dgalaxy.in/images/variant-combo.jpg');
+    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.co');
+    assert.strictEqual(mainImage, 'https://cdn.3dgalaxy.co/images/variant-combo.jpg');
   });
 
   test('Merchant Center Feed: resolveProductImageLinks rejects SVGs and generic site logos', () => {
@@ -369,10 +369,10 @@ export async function runMarketingTrackingUnitTests() {
       ]
     };
     const { resolveProductImageLinks } = require('../../functions/src/controllers/marketing');
-    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.in');
+    const { mainImage } = resolveProductImageLinks(p, 'https://3dgalaxy.co');
     assert.ok(!mainImage.endsWith('.svg'), 'Must not use SVG as main image');
     assert.ok(!mainImage.endsWith('/3d-logo.png'), 'Must not use generic 3d-logo.png as main image');
-    assert.strictEqual(mainImage, 'https://3dgalaxy.in/images/products/pla_filament_white.png', 'Must map to high-resolution product photography');
+    assert.strictEqual(mainImage, 'https://3dgalaxy.co/images/products/pla_filament_white.png', 'Must map to high-resolution product photography');
   });
 
   test('Merchant Center Feed: Emits <g:channel>online</g:channel> and Indian shipping details', () => {

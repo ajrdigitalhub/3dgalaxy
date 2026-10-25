@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, timer } from 'rxjs';
 import { catchError, retry, tap, shareReplay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -125,11 +125,29 @@ export class ApiService {
     return request$;
   }
 
-  post<T>(endpoint: string, body: any): Observable<T> {
+  post<T>(endpoint: string, body: any, options?: { silent?: boolean; headers?: HttpHeaders | Record<string, string | string[]> }): Observable<T> {
     this.invalidateRelatedCache(endpoint);
-    const headers = this.getHeaders();
+    let headers: Record<string, string | string[]> = { ...this.getHeaders() };
+    if (options?.headers) {
+      if (options.headers instanceof HttpHeaders) {
+        options.headers.keys().forEach((k) => {
+          const val = (options.headers as HttpHeaders).get(k);
+          if (val !== null) headers[k] = val;
+        });
+      } else {
+        Object.assign(headers, options.headers);
+      }
+    }
+    if (options?.silent) {
+      headers['X-Skip-Global-Error-Toast'] = 'true';
+    }
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, body, { headers }).pipe(
-      catchError(this.handleError)
+      catchError((error) => {
+        if (options?.silent) {
+          return throwError(() => error);
+        }
+        return this.handleError(error);
+      })
     );
   }
 

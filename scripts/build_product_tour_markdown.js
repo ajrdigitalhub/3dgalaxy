@@ -552,7 +552,7 @@ Documenting warranty duration, customer helpline numbers, and coverage exclusion
 | :---: | :--- | :--- | :--- | :--- |
 | **①** | **Warranty Duration** | Text Input | \`12 Months Manufacturer Warranty\` | Reassures customers and builds brand credibility. |
 | **②** | **Support Phone** | Phone Input | \`+91 98765 43210\` | Verified helpline displayed on order invoices. |
-| **③** | **Helpdesk Email** | Email Input | \`support@3dgalaxy.in\` | Routed directly to customer service ticketing system. |
+| **③** | **Helpdesk Email** | Email Input | \`support@3dgalaxy.co\` | Routed directly to customer service ticketing system. |
 | **④** | **Coverage Terms** | Textarea | Details covered components (Motherboard, Steppers) vs consumables (Nozzles, PEI sheets). | Prevents disputes regarding wearable parts. |
 
 ---
@@ -628,7 +628,7 @@ Precise SEO titles, meta descriptions, and OpenGraph tags ensure maximum organic
 | **①** | **Meta Title** | Text Input | $50 - 60$ Chars | \`Anycubic Kobra Neo 3D Printer \| Buy Online at 3D Galaxy India\` |
 | **②** | **Meta Description** | Textarea | $140 - 160$ Chars | \`Buy genuine Anycubic Kobra Neo with LeviQ auto-leveling at 3D Galaxy India. High speed, direct drive extruder, free shipping across India.\` |
 | **③** | **Keywords** | Tag Input | $5 - 10$ Tags | \`3d printer, anycubic, kobra neo, fdm printer, auto leveling\` |
-| **④** | **Canonical URL** | Text Input | Full URL | \`https://3dgalaxy.in/products/anycubic-kobra-neo\` |
+| **④** | **Canonical URL** | Text Input | Full URL | \`https://3dgalaxy.co/products/anycubic-kobra-neo\` |
 | **⑤** | **OpenGraph Preview** | Visual Card | Auto | Real-time preview of WhatsApp, Twitter, and LinkedIn share cards. |
 
 ---

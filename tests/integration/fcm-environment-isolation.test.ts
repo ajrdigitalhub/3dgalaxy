@@ -36,10 +36,10 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
   // =========================================================================
 
   await test('Origin Normalization: Normalizes URLs, downcases host, strips trailing slashes', () => {
-    assert.strictEqual(normalizeOrigin('https://3dgalaxy.in/'), 'https://3dgalaxy.in');
-    assert.strictEqual(normalizeOrigin('HTTPS://3DGALAXY.IN'), 'https://3dgalaxy.in');
+    assert.strictEqual(normalizeOrigin('https://3dgalaxy.co/'), 'https://3dgalaxy.co');
+    assert.strictEqual(normalizeOrigin('HTTPS://3DGALAXY.IN'), 'https://3dgalaxy.co');
     assert.strictEqual(normalizeOrigin('http://localhost:4200/path?query=1'), 'http://localhost:4200');
-    assert.strictEqual(normalizeOrigin('https://3dgalaxy.in:443'), 'https://3dgalaxy.in');
+    assert.strictEqual(normalizeOrigin('https://3dgalaxy.co:443'), 'https://3dgalaxy.co');
     assert.strictEqual(normalizeOrigin('http://localhost:80'), 'http://localhost');
     assert.strictEqual(normalizeOrigin('invalid-origin'), null);
     assert.strictEqual(normalizeOrigin(null), null);
@@ -48,15 +48,15 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
 
   await test('Domain Isolation: Validates allowed origins for production, staging, development', () => {
     // Production checks
-    assert.strictEqual(isOriginAllowed('https://3dgalaxy.in', 'production'), true, '3dgalaxy.in must be allowed in production');
-    assert.strictEqual(isOriginAllowed('https://www.3dgalaxy.in', 'production'), true, 'www.3dgalaxy.in must be allowed in production');
+    assert.strictEqual(isOriginAllowed('https://3dgalaxy.co', 'production'), true, '3dgalaxy.co must be allowed in production');
+    assert.strictEqual(isOriginAllowed('https://www.3dgalaxy.co', 'production'), true, 'www.3dgalaxy.co must be allowed in production');
     assert.strictEqual(isOriginAllowed('https://3dgalaxy.com', 'production'), true, '3dgalaxy.com must be allowed in production');
     assert.strictEqual(isOriginAllowed('http://localhost:4200', 'production'), false, 'localhost must be rejected in production');
-    assert.strictEqual(isOriginAllowed('https://staging.3dgalaxy.in', 'production'), false, 'staging must be rejected in production');
+    assert.strictEqual(isOriginAllowed('https://staging.3dgalaxy.co', 'production'), false, 'staging must be rejected in production');
 
     // Staging checks
-    assert.strictEqual(isOriginAllowed('https://staging.3dgalaxy.in', 'staging'), true, 'staging origin must be allowed in staging');
-    assert.strictEqual(isOriginAllowed('https://3dgalaxy.in', 'staging'), false, 'production domain must be rejected in staging');
+    assert.strictEqual(isOriginAllowed('https://staging.3dgalaxy.co', 'staging'), true, 'staging origin must be allowed in staging');
+    assert.strictEqual(isOriginAllowed('https://3dgalaxy.co', 'staging'), false, 'production domain must be rejected in staging');
 
     // Development & Test checks
     assert.strictEqual(isOriginAllowed('http://localhost:4200', 'development'), true, 'localhost:4200 allowed in dev');
@@ -65,10 +65,10 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
   });
 
   await test('Security: Rejects malicious, spoofed, and subdomain-traversal origins', () => {
-    // Subdomain-as-domain attack: attacker owns attacker.com and registers 3dgalaxy.in.attacker.com
-    assert.strictEqual(isOriginAllowed('https://3dgalaxy.in.attacker.com', 'production'), false);
-    assert.strictEqual(isOriginAllowed('https://attacker-3dgalaxy.in', 'production'), false);
-    assert.strictEqual(isOriginAllowed('http://3dgalaxy.in', 'production'), false, 'Insecure HTTP must be rejected in production');
+    // Subdomain-as-domain attack: attacker owns attacker.com and registers 3dgalaxy.co.attacker.com
+    assert.strictEqual(isOriginAllowed('https://3dgalaxy.co.attacker.com', 'production'), false);
+    assert.strictEqual(isOriginAllowed('https://attacker-3dgalaxy.co', 'production'), false);
+    assert.strictEqual(isOriginAllowed('http://3dgalaxy.co', 'production'), false, 'Insecure HTTP must be rejected in production');
     assert.strictEqual(isOriginAllowed('https://evil.com', 'production'), false);
     assert.strictEqual(isOriginAllowed('javascript:void(0)', 'production'), false);
     assert.strictEqual(isOriginAllowed('', 'production'), false);
@@ -138,7 +138,7 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
   await test('POST /api/notifications/register-device: Ignores client-supplied spoofed environment', async () => {
     // Current environment in tests is 'production' (or 'test')
     const currentEnv = getAppEnv();
-    const validOrigin = getAllowedOriginsForEnv(currentEnv)[0] || 'https://3dgalaxy.in';
+    const validOrigin = getAllowedOriginsForEnv(currentEnv)[0] || 'https://3dgalaxy.co';
 
     const testToken = `test-token-spoof-${Date.now()}`;
     const res = await client.post('/api/notifications/register-device', {
@@ -161,7 +161,7 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
 
   await test('POST /api/notifications/unbind-account: Disassociates account on logout without deleting device', async () => {
     const currentEnv = getAppEnv();
-    const validOrigin = getAllowedOriginsForEnv(currentEnv)[0] || 'https://3dgalaxy.in';
+    const validOrigin = getAllowedOriginsForEnv(currentEnv)[0] || 'https://3dgalaxy.co';
     const testToken = `test-token-unbind-${Date.now()}`;
 
     // Register token first

@@ -33,6 +33,16 @@ export class GoogleAdsService implements AnalyticsProvider {
   private whatsappLabel?: string;
   private couponLabel?: string;
 
+  private isPlaceholderId(id: string): boolean {
+    if (!id || typeof id !== 'string') return true;
+    const clean = id.replace(/^AW-/, '').trim();
+    if (!clean || !/^\d{8,12}$/.test(clean)) return true;
+    if (clean === '987654321' || clean === '123456789' || clean === '1234567890' || /^(\d)\1+$/.test(clean)) {
+      return true;
+    }
+    return false;
+  }
+
   public async init(config: AnalyticsConfig): Promise<boolean> {
     if (!isPlatformBrowser(this.platformId)) {
       return false;
@@ -42,7 +52,12 @@ export class GoogleAdsService implements AnalyticsProvider {
       return false;
     }
 
-    this.conversionIds = config.googleAds.conversionIds;
+    const validIds = config.googleAds.conversionIds.filter(id => !this.isPlaceholderId(id));
+    if (validIds.length === 0) {
+      return false;
+    }
+
+    this.conversionIds = validIds;
     this.purchaseLabel = config.googleAds.purchaseConversionLabel;
     this.leadLabel = config.googleAds.leadConversionLabel;
     this.newsletterLabel = config.googleAds.newsletterConversionLabel;

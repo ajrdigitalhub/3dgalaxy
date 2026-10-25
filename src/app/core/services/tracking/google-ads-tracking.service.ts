@@ -13,8 +13,18 @@ export class GoogleAdsTrackingService {
   private enableEnhancedConversions = signal<boolean>(false);
   private enableDynamicRemarketing = signal<boolean>(false);
 
+  private isPlaceholderId(id: string): boolean {
+    if (!id || typeof id !== 'string') return true;
+    const clean = id.replace(/^AW-/, '').trim();
+    if (!clean || !/^\d{8,12}$/.test(clean)) return true;
+    if (clean === '987654321' || clean === '123456789' || clean === '1234567890' || /^(\d)\1+$/.test(clean)) {
+      return true;
+    }
+    return false;
+  }
+
   public init(config: MarketingConfig) {
-    if (!isPlatformBrowser(this.platformId) || !config.enabled || !config.googleAdsConversionId) {
+    if (!isPlatformBrowser(this.platformId) || !config.enabled || !config.googleAdsConversionId || this.isPlaceholderId(config.googleAdsConversionId)) {
       return;
     }
 

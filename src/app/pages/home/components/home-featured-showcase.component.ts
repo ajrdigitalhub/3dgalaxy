@@ -19,6 +19,7 @@ import { DatastoreService, Product } from "../../../services/datastore";
 import { animate } from "motion";
 import { TiltDirective } from "../../../shared/directives/tilt.directive";
 import { ToastService } from "../../../shared/components/toast/toast.service";
+import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analytics";
 
 @Component({
   selector: "app-home-featured-showcase",
@@ -244,6 +245,7 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
   toastService = inject(ToastService);
   router = inject(Router);
   platformId = inject(PLATFORM_ID);
+  analytics = inject(AnalyticsService);
   private sanitizer = inject(DomSanitizer);
 
   safeHtml(html: string) {
@@ -417,6 +419,10 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
   }
 
   buyNow(product: Product) {
+    try {
+      const trackingItem = mapProductToAnalyticsItem(product, 1);
+      this.analytics.trackAddToCart(trackingItem, 1);
+    } catch (e) {}
     this.ds.setBuyNowItem({ product, quantity: 1 });
     this.router.navigate(["/checkout"]);
   }

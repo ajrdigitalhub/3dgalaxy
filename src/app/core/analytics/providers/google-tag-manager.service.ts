@@ -192,7 +192,9 @@ export class GoogleTagManagerService implements AnalyticsProvider {
   public trackCheckout(payload: CheckoutPayload): void {
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
+    const val = (payload.value !== undefined && !isNaN(Number(payload.value)) && Number(payload.value) > 0)
+      ? Number(payload.value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const ecommerce: Record<string, any> = {
       currency: payload.currency || 'INR',
@@ -210,7 +212,9 @@ export class GoogleTagManagerService implements AnalyticsProvider {
   public trackAddShippingInfo(shippingTier: string, value: number, items: AnalyticsItem[] = []): void {
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
+    const val = (value !== undefined && !isNaN(Number(value)) && Number(value) > 0)
+      ? Number(value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     this.pushEcommerce('add_shipping_info', {
       currency: 'INR',
@@ -223,7 +227,9 @@ export class GoogleTagManagerService implements AnalyticsProvider {
   public trackAddPaymentInfo(paymentType: string, value: number, items: AnalyticsItem[] = []): void {
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
+    const val = (value !== undefined && !isNaN(Number(value)) && Number(value) > 0)
+      ? Number(value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     this.pushEcommerce('add_payment_info', {
       currency: 'INR',
@@ -236,7 +242,10 @@ export class GoogleTagManagerService implements AnalyticsProvider {
   public trackPurchase(payload: PurchasePayload): void {
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
+    // GA4 standard: value is total transaction revenue (including shipping & tax) passed by caller
+    const val = (payload.value !== undefined && !isNaN(Number(payload.value)) && Number(payload.value) > 0)
+      ? Number(payload.value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const ecommerce: Record<string, any> = {
       transaction_id: String(payload.transaction_id),

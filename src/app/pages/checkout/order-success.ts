@@ -312,7 +312,7 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
     if (state && state.order && (state.order.id || state.order.orderNumber)) {
       this.order = state.order[0] || state.order;
       this.resolveCustomerName();
-      if (orderId && (!this.order.totalAmount || !this.order.items)) {
+      if (orderId && (!this.order.totalAmount || !this.order.items || !this.order.items.length)) {
         this.loadOrderFromApi(orderId);
       } else {
         this.trackPurchaseIfEligible();
@@ -424,36 +424,44 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
     }
 
     const rawItems = this.order.items || this.order.orderItems || [];
+    // If order items have not loaded yet, wait for loadOrderFromApi before dispatching
+    if (!rawItems || rawItems.length === 0) {
+      return;
+    }
+
     const items = rawItems.map((oi: any) => {
-      const p = Number(oi.price || oi.unitPrice || 0);
+      const p = Number(oi.price ?? oi.unitPrice ?? oi.effectivePrice ?? 0);
       const q = Number(oi.quantity || 1);
+      const rawName = oi.product?.name || oi.productName || oi.name || oi.title || oi.item_name;
       return {
         item_id: String(oi.productId || oi.product?.id || oi.sku || oi.id || 'PRODUCT'),
-        item_name: String(oi.product?.name || oi.name || oi.title || 'Product'),
+        item_name: String(rawName || 'Product'),
         price: isNaN(p) || p < 0 ? 0 : Number(p.toFixed(2)),
         quantity: isNaN(q) || q < 1 ? 1 : Math.round(q),
         item_variant: oi.variant?.name || oi.variantTitle || oi.configurationName || undefined
       };
     });
 
-    // In GA4 ecommerce, value is the items subtotal: sum(price * quantity).
-    // Tax and shipping are passed separately.
     const itemsSubtotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    const calculatedValue = itemsSubtotal > 0
-      ? Number(itemsSubtotal.toFixed(2))
-      : Number(Number(this.order.subtotal || this.order.totalAmount || this.order.grandTotal || 0).toFixed(2));
-
     const tax = Number(Number(this.order.taxAmount || this.order.tax || 0).toFixed(2));
-    const shipping = Number(Number(this.order.shippingAmount || this.order.shipping || 0).toFixed(2));
+    const shipping = Number(Number(this.order.shippingAmount || this.order.shipping || this.order.shippingFee || 0).toFixed(2));
+    const rawTotal = Number(this.order.totalAmount || this.order.grandTotal || 0);
+
+    // In GA4 ecommerce specifications:
+    // "value" on purchase represents TOTAL TRANSACTION REVENUE (grand total, including shipping and tax).
+    const calculatedValue = rawTotal > 0
+      ? Number(rawTotal.toFixed(2))
+      : Number((itemsSubtotal + shipping + tax).toFixed(2));
+
     const currency = String(this.order.currency || 'INR').toUpperCase();
 
-    if (calculatedValue > 0 || items.length > 0) {
+    if (calculatedValue > 0 && items.length > 0) {
       this.analytics.trackPurchase({
         transaction_id: transactionId,
         value: calculatedValue,
         currency: currency,
         tax: tax > 0 ? tax : undefined,
-        shipping: shipping > 0 ? shipping : undefined,
+        shipping: shipping >= 0 ? shipping : undefined,
         coupon: this.order.couponCode || undefined,
         items: items
       });

@@ -914,7 +914,7 @@ The System Core Configurator (`/admin?tab=settings`) governs global store rules,
 | :--- | :--- | :--- | :--- |
 | `SMTP Host` | Outgoing mail server host | `smtp.sendgrid.net` | Routes transactional order emails |
 | `SMTP Port` | Connection port | `587` (TLS) / `465` (SSL) | Establishes secure handshake |
-| `Sender Email` | Verified from email address | `orders@3dgalaxy.in` | Displays sender in customer inbox |
+| `Sender Email` | Verified from email address | `orders@3dgalaxy.co` | Displays sender in customer inbox |
 | `Sender Name` | Display name | `3D Galaxy Support` | Enhances brand email recognition |
 | `API Key / Secret` | SMTP password / API token | `SG.••••••••••••` *(Masked)* | Authenticates outbound emails |
 
@@ -1219,7 +1219,7 @@ The 3D Galaxy Disaster Recovery Engine ensures business continuity through autom
 3. Click **Add Keyword Rule**:
    * *Keyword*: `FILAMENT`
    * *Match Type*: `Contains`
-   * *Reply*: *"Explore our complete line of engineering filaments here: https://3dgalaxy.in/category/filaments"*
+   * *Reply*: *"Explore our complete line of engineering filaments here: https://3dgalaxy.co/category/filaments"*
 4. Click **Save Automation Rules**.
 
 ### Use Case 17: Launch a Targeted Push Notification Campaign

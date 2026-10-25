@@ -2,7 +2,7 @@ export const environment = {
     production: false,
     siteName: '3D Galaxy',
     supportEmail: 'support@3dgalaxy.co',
-    adminUrl: 'https://admin.3dgalaxy.in',
+    adminUrl: 'https://3dgalaxy.co/admin',
     get siteUrl() {
         if (typeof window !== 'undefined' && window.location.origin) {
             return window.location.origin;

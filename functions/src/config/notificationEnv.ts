@@ -7,22 +7,22 @@ export type AppEnvironment = 'production' | 'staging' | 'development' | 'test';
  */
 const BASE_ALLOWLIST: Record<AppEnvironment, string[]> = {
   production: [
-    'https://3dgalaxy.in',
-    'https://www.3dgalaxy.in',
+    'https://3dgalaxy.co',
+    'https://www.3dgalaxy.co',
     'https://3dgalaxy.co',
     'https://www.3dgalaxy.co.in',
     'https://3dgalaxy.co',
     'https://3dgalaxy.com',
-    'https://admin.3dgalaxy.in',
+    'https://admin.3dgalaxy.co',
     'https://admin.3dgalaxy.co.in',
     'https://admin.3dgalaxy.co',
   ],
   staging: [
-    'https://staging.3dgalaxy.in',
+    'https://staging.3dgalaxy.co',
     'https://staging.3dgalaxy.co.in',
     'https://staging.3dgalaxy.co',
     'https://staging.3dgalaxy.com',
-    'https://staging-admin.3dgalaxy.in',
+    'https://staging-admin.3dgalaxy.co',
     'https://staging-admin.3dgalaxy.co.in',
   ],
   development: [

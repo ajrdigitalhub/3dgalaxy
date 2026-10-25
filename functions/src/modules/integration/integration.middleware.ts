@@ -35,7 +35,7 @@ export const integrationCorsMiddleware = (
     process.env.TASKHUB_ALLOWED_ORIGINS ||
     process.env.INTEGRATION_ALLOWED_ORIGINS ||
     process.env.ALLOWED_ORIGINS ||
-    'http://localhost:4200,http://localhost:3000,https://3dgalaxy.co,https://admin.3dgalaxy.in'
+    'http://localhost:4200,http://localhost:3000,https://3dgalaxy.co,https://admin.3dgalaxy.co'
   )
     .split(',')
     .map((o) => o.trim())

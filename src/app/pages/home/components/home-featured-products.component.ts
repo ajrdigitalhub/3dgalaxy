@@ -21,6 +21,7 @@ import { ToastService } from "../../../shared/components/toast/toast.service";
 import { ScrollRevealDirective } from "../../../shared/directives/scroll-reveal.directive";
 import { TiltDirective } from "../../../shared/directives/tilt.directive";
 import { firstValueFrom } from "rxjs";
+import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analytics";
 
 @Component({
   selector: "app-home-featured-products",
@@ -337,6 +338,7 @@ export class HomeFeaturedProductsComponent implements OnInit {
   http = inject(HttpClient);
   toastService = inject(ToastService);
   sanitizer = inject(DomSanitizer);
+  analytics = inject(AnalyticsService);
   private platformId = inject(PLATFORM_ID);
 
   // Responsive Width & Carousel States
@@ -562,6 +564,10 @@ export class HomeFeaturedProductsComponent implements OnInit {
 
   // --- ACTIONS ---
   buyNow(p: Product) {
+    try {
+      const trackingItem = mapProductToAnalyticsItem(p, 1);
+      this.analytics.trackAddToCart(trackingItem, 1);
+    } catch (e) {}
     this.ds.setBuyNowItem({ product: p, quantity: 1 });
     this.router.navigate(["/checkout"]);
   }

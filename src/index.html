@@ -9,7 +9,7 @@
   <!-- Google Consent Mode v2 default initialization -->
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('consent', 'default', {
       'ad_storage': 'granted',
       'analytics_storage': 'granted',
@@ -22,7 +22,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-4BKM2K4PS0"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-4BKM2K4PS0', {
       send_page_view: false
@@ -30,11 +30,14 @@
   </script>
 
   <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-THJDDXCK');</script>
+  <script>(function (w, d, s, l, i) {
+      w[l] = w[l] || []; w[l].push({
+        'gtm.start':
+          new Date().getTime(), event: 'gtm.js'
+      }); var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+          'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-THJDDXCK');</script>
   <!-- End Google Tag Manager -->
 
   <!-- SEO Meta Tags -->
@@ -45,7 +48,7 @@
     content="buy 3d printers online India, best 3d printing service, custom 3d prototyping, Bambu Lab distributor India, cheap 3d printer parts, online STL slicer quote, PLA filament buy online, SLA resin printing India, rapid prototyping, industrial 3D printing" />
   <meta name="author" content="3D Galaxy Team" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://3dgalaxy.in/" />
+  <link rel="canonical" href="https://3dgalaxy.co/" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
@@ -53,7 +56,7 @@
   <meta property="og:description"
     content="India's leading platform for 3D printers & rapid manufacturing. Shop Bambu Lab & Creality systems. Get automated slicing quotes for SLA & FDM parts." />
   <meta property="og:image" content="/3d-logo.png" />
-  <meta property="og:url" content="https://3dgalaxy.in/" />
+  <meta property="og:url" content="https://3dgalaxy.co/" />
   <meta property="og:site_name" content="3D Galaxy" />
 
   <!-- Twitter -->
@@ -81,10 +84,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://storage.googleapis.com" crossorigin />
-  <link rel="preload" as="image" href="https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/uploads/1784893575124-image-1784893575116-226385731.jpeg" fetchpriority="high" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" media="print" onload="this.media='all'" />
- 
+  <link rel="preload" as="image"
+    href="https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/uploads/1784893575124-image-1784893575116-226385731.jpeg"
+    fetchpriority="high" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+    media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap" media="print"
+    onload="this.media='all'" />
+
   <!-- Immediate Theme Pre-loader: Prevents Theme FOUC and Stabilizes Theme on Refresh -->
   <script>
     (function () {
@@ -127,7 +135,7 @@
           doc.style.setProperty('--theme-radius', radius);
           doc.style.setProperty('--radius', radius);
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
 
@@ -137,7 +145,7 @@
       document.fonts.load('1em Material Icons').then(function () {
         document.documentElement.classList.add('material-icons-loaded');
       });
-      setTimeout(function() {
+      setTimeout(function () {
         document.documentElement.classList.add('material-icons-loaded');
       }, 2500);
     } else {
@@ -178,9 +186,17 @@
     }
 
     @keyframes initialProgressAnim {
-      0% { transform: translateX(-100%) scaleX(0.4); }
-      50% { transform: translateX(100%) scaleX(1.2); }
-      100% { transform: translateX(300%) scaleX(0.4); }
+      0% {
+        transform: translateX(-100%) scaleX(0.4);
+      }
+
+      50% {
+        transform: translateX(100%) scaleX(1.2);
+      }
+
+      100% {
+        transform: translateX(300%) scaleX(0.4);
+      }
     }
 
     .initial-loader-container {
@@ -202,10 +218,13 @@
     }
 
     @keyframes logo3dfloat {
-      0%, 100% {
+
+      0%,
+      100% {
         transform: translateY(0px) rotateX(0deg) scale(1);
         filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 15px rgba(245, 79, 0, 0.3));
       }
+
       50% {
         transform: translateY(-8px) rotateX(6deg) scale(1.04);
         filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 25px rgba(245, 79, 0, 0.5));
@@ -225,7 +244,9 @@
     }
 
     @keyframes initialSpin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .initial-loader-caption {
@@ -235,7 +256,7 @@
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: #a1a1aa;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
   </style>
 </head>
@@ -243,15 +264,16 @@
 <body
   class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 min-h-screen transition-all duration-300">
   <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-THJDDXCK"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-THJDDXCK" height="0" width="0"
+      style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   <app-root>
     <div class="initial-loader-progress-track">
       <div class="initial-loader-progress-bar"></div>
     </div>
     <div class="initial-loader-container">
-      <img src="/3d-logo.png" alt="3D Galaxy" class="initial-loader-logo" onerror="this.onerror=null;this.src='/logo.svg';" />
+      <img src="/3d-logo.png" alt="3D Galaxy" class="initial-loader-logo"
+        onerror="this.onerror=null;this.src='/logo.svg';" />
       <div class="initial-loader-spinner"></div>
       <p class="initial-loader-caption">Loading 3D Galaxy...</p>
     </div>

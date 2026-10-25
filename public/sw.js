@@ -49,6 +49,8 @@ self.addEventListener('fetch', (event) => {
 
   // Bypass non-GET requests and FCM/Firebase messaging endpoints
   if (event.request.method !== 'GET') return;
+  // Only handle same-origin requests to avoid breaking external analytics, ads, and third-party APIs
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.includes('/api/') || url.hostname.includes('firebase') || url.hostname.includes('supabase')) {
     return;
   }

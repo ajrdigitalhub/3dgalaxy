@@ -183,9 +183,20 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     window.gtag('event', 'cart', payload);
   }
 
+  private lastAddToCartTime = 0;
+  private lastAddToCartItemId = '';
+
   public trackAddToCart(item: AnalyticsItem, quantity: number = 1): void {
     if (!this.isInitialized()) return;
     const cleanItem = sanitizeAnalyticsItem({ ...item, quantity });
+    const now = Date.now();
+    // Debounce duplicate add_to_cart for the same item within 400ms
+    if (this.lastAddToCartItemId === cleanItem.item_id && now - this.lastAddToCartTime < 400) {
+      return;
+    }
+    this.lastAddToCartItemId = cleanItem.item_id;
+    this.lastAddToCartTime = now;
+
     const value = cleanItem.price * cleanItem.quantity!;
 
     const payload = {
@@ -219,7 +230,9 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     if (!this.isInitialized()) return;
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
+    const val = (payload.value !== undefined && !isNaN(Number(payload.value)) && Number(payload.value) > 0)
+      ? Number(payload.value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const cleanPayload: Record<string, any> = {
       currency: payload.currency || 'INR',
@@ -243,7 +256,9 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     if (!this.isInitialized()) return;
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
+    const val = (value !== undefined && !isNaN(Number(value)) && Number(value) > 0)
+      ? Number(value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const payload = {
       currency: 'INR',
@@ -261,7 +276,9 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     if (!this.isInitialized()) return;
     const cleanItems = items.map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(value || 0);
+    const val = (value !== undefined && !isNaN(Number(value)) && Number(value) > 0)
+      ? Number(value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const payload = {
       currency: 'INR',
@@ -279,7 +296,10 @@ export class GoogleAnalyticsService implements AnalyticsProvider {
     if (!this.isInitialized()) return;
     const cleanItems = (payload.items || []).map((i) => sanitizeAnalyticsItem(i));
     const itemsSubtotal = cleanItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
-    const val = itemsSubtotal > 0 ? itemsSubtotal : Number(payload.value || 0);
+    // GA4 standard: value is total transaction revenue (including shipping & tax) passed by caller
+    const val = (payload.value !== undefined && !isNaN(Number(payload.value)) && Number(payload.value) > 0)
+      ? Number(payload.value)
+      : (itemsSubtotal > 0 ? itemsSubtotal : 0);
 
     const cleanPayload: Record<string, any> = {
       transaction_id: String(payload.transaction_id),

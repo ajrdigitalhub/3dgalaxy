@@ -192,7 +192,7 @@ export const resolveSiteBaseUrl = (req?: Request): string => {
       return `${proto}://${host}`.replace(/\/+$/, '');
     }
   }
-  return (ENV.SITE_URL || 'https://3dgalaxy.in').replace(/\/+$/, '');
+  return (ENV.SITE_URL || 'https://3dgalaxy.co').replace(/\/+$/, '');
 };
 
 const sanitizeCdata = (val?: string | null): string => {

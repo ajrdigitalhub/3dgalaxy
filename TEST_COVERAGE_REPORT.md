@@ -1,8 +1,8 @@
 # 3D Galaxy — Automated Regression & CI Validation Report
 
-**Generated:** 2026-10-24T20:16:51.069Z  
-**Status:** PASSED (CI APPROVED)  
-**Total Duration:** 39.59s  
+**Generated:** 2026-10-25T05:30:04.639Z  
+**Status:** FAILED (DEPLOYMENT BLOCKED)  
+**Total Duration:** 18.00s  
 
 ---
 
@@ -12,9 +12,9 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Level 1 — Unit Tests** | 151 | 151 | 0 | 0 | 100% |
 | **Level 2 — API Tests** | 52 | 52 | 0 | 0 | 100% |
-| **Level 3 — Integration Tests** | 13 | 13 | 0 | 0 | 100% |
+| **Level 3 — Integration Tests** | 12 | 12 | 0 | 0 | 100% |
 | **Level 4 — Smoke Tests (Section 41)** | 14 | 14 | 0 | 0 | 100% |
-| **TOTAL OVERALL** | **230** | **230** | **0** | **0** | **100.0%** |
+| **TOTAL OVERALL** | **230** | **229** | **1** | **0** | **99.6%** |
 
 ---
 
@@ -23,103 +23,111 @@
 ### Cart, Pricing, COD & Variants Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 10 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 2ms
 
 
 ### Auth, Interceptors & Deduplication Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 6 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 1ms
 
 
 ### Media Preservation, Reviews & Backups Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 8 | **Failed:** 0
-- **Duration:** 4ms
+- **Duration:** 1ms
 
 
 ### Security Sanitization & Responsive Layout Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 1ms
 
 
 ### Add to Cart Flow for Variant Products (50 Tests) (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 50 | **Failed:** 0
-- **Duration:** 17ms
+- **Duration:** 7ms
 
 
 ### Campaign Manager, Eligibility, Preview & FCM Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 6ms
+- **Duration:** 3ms
 
 
 ### Brand Synchronization, Complimentary Bundles & Filaments Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 22 | **Failed:** 0
-- **Duration:** 15ms
+- **Duration:** 6ms
 
 
 ### Instagram Live Feed, Media Normalization & Security Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 7 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 1ms
 
 
 ### Marketing Tracking Credentials, Health & Sanitization Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 25 | **Failed:** 0
-- **Duration:** 8ms
+- **Duration:** 5ms
 
 
 ### Public Storefront & Guest Experience API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 23270ms
+- **Duration:** 7366ms
 
 
 ### Checkout, COD Validation & Payment API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 50ms
+- **Duration:** 42ms
 
 
 ### Admin Route Authorization & Security API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 11 | **Failed:** 0
-- **Duration:** 3009ms
+- **Duration:** 2639ms
 
 
 ### WhatsApp Webhooks & Automation API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 4 | **Failed:** 0
-- **Duration:** 773ms
+- **Duration:** 730ms
 
 
 ### TaskHub Observability & Health Integration API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 6874ms
+- **Duration:** 3514ms
 
 
 ### Customer Checkout Lifecycle Pipeline Test (INTEGRATION)
 - **Status:** ✅ PASSED
 - **Passed:** 1 | **Failed:** 0
-- **Duration:** 2186ms
+- **Duration:** 1800ms
 
 
 ### FCM Push Notifications Domain & Environment Isolation Tests (INTEGRATION)
-- **Status:** ✅ PASSED
-- **Passed:** 12 | **Failed:** 0
-- **Duration:** 1305ms
+- **Status:** ❌ FAILED
+- **Passed:** 11 | **Failed:** 1
+- **Duration:** 1238ms
 
+Errors:
+  - `Origin Normalization: Normalizes URLs, downcases host, strips trailing slashes: Expected values to be strictly equal:
++ actual - expected
+
++ 'https://3dgalaxy.in'
+- 'https://3dgalaxy.co'
+                    ^
+`
 
 ### Pre-Deployment Critical Smoke Tests (SMOKE)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 1549ms
+- **Duration:** 233ms
 
 
 

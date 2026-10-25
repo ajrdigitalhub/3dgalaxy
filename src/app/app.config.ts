@@ -53,29 +53,12 @@ export const appConfig: ApplicationConfig = {
       enabled: true,
       debugMode: false,
       defaultCurrency: 'INR',
-      meta: {
-        pixelIds: ['1234567890'],
-        enableAdvancedMatching: true
-      },
       ga4: {
         measurementId: 'G-4BKM2K4PS0',
         enableEnhancedEcommerce: true
       },
-      googleAds: {
-        conversionIds: ['AW-987654321'],
-        purchaseConversionLabel: 'purchase_label_123',
-        leadConversionLabel: 'lead_label_456',
-        enableEnhancedConversions: true,
-        enableDynamicRemarketing: true
-      },
       gtm: {
         containerId: 'GTM-THJDDXCK'
-      },
-      clarity: {
-        projectId: 'clarity_proj_3dgalaxy'
-      },
-      microsoftAds: {
-        uetId: '1234567'
       }
     }),
     provideRouter(
