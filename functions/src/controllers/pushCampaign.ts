@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { generateCampaignContent } from '../services/gemini';
 import { getAudienceTokens, queueCampaignMessages, processNotificationQueue, getRecommendedProducts } from '../services/scheduler';
 import { getFirebaseAdmin } from '../config/firebase';
+import { calculateMonthlyUsage } from './pushBilling';
 
 const getMessaging = () => {
   try {
@@ -236,6 +237,8 @@ export const createCampaign = async (req: Request, res: Response) => {
   }
 
   try {
+    const initialStatus = status === 'Scheduled' ? 'Scheduled' : 'Draft';
+
     const campaign = await prisma.pushCampaign.create({
       data: {
         name,
@@ -253,7 +256,7 @@ export const createCampaign = async (req: Request, res: Response) => {
         productsConfig: productsConfig || {},
         audienceId,
         scheduleId,
-        status,
+        status: initialStatus,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null
       }
     });
@@ -306,15 +309,54 @@ export const sendCampaignNow = async (req: Request, res: Response) => {
   }
 
   try {
+    const campaign = await prisma.pushCampaign.findUnique({
+      where: { id: campaignId }
+    });
+
+    if (!campaign) {
+      return res.status(404).json({ status: 'error', success: false, message: 'Campaign not found.' });
+    }
+
+    // Check if campaign already has active notifications in the queue
+    const activeQueueCount = await prisma.notificationQueue.count({
+      where: {
+        campaignId,
+        status: { in: ['Pending', 'Processing', 'QUEUED', 'PROCESSING'] }
+      }
+    });
+
+    if (activeQueueCount > 0) {
+      return res.status(409).json({
+        status: 'conflict',
+        success: false,
+        message: 'Campaign is already actively queued for dispatch. Duplicate dispatch prevented.'
+      });
+    }
+
+    if (campaign.status === 'Completed') {
+      return res.status(409).json({
+        status: 'conflict',
+        success: false,
+        message: 'Campaign has already completed delivery. Use "Re-send" to launch a new broadcast.'
+      });
+    }
+
     // Compile and push messages to queue immediately
     await queueCampaignMessages(campaignId);
-    // Trigger queue processor asynchronously
-    processNotificationQueue().catch(e => console.error('Error starting queue processor:', e));
+    // Process queue immediately so delivery completes and analytics are populated
+    await processNotificationQueue();
+
+    // Fetch refreshed campaign with analytics
+    const refreshed = await prisma.pushCampaign.findUnique({
+      where: { id: campaignId },
+      include: { analytics: true }
+    });
 
     return res.status(200).json({
       status: 'success',
       success: true,
-      message: 'Campaign compiled and dispatch queued.'
+      message: 'Campaign compiled and dispatched successfully.',
+      data: refreshed
     });
   } catch (error: any) {
     return res.status(500).json({ status: 'error', success: false, message: error.message });
@@ -433,79 +475,289 @@ export const sendTestNotification = async (req: Request, res: Response) => {
 // 7. Click & Conversion Tracking
 // ==========================================
 export const trackClick = async (req: Request, res: Response) => {
-  const { logId } = req.body;
-  if (!logId) {
-    return res.status(400).json({ status: 'error', success: false, message: 'logId required.' });
+  const { logId, campaignId, userId, guestId, fcmToken, source } = req.body;
+  if (!logId && !campaignId) {
+    return res.status(400).json({ status: 'error', success: false, message: 'logId or campaignId required.' });
   }
 
   try {
-    const log = await prisma.pushLog.findUnique({
-      where: { id: logId }
-    });
+    let targetCampaignId = campaignId;
 
-    if (!log) {
-      return res.status(404).json({ status: 'error', success: false, message: 'Log not found.' });
-    }
-
-    if (log.status !== 'CLICKED') {
-      await prisma.pushLog.update({
-        where: { id: logId },
-        data: {
-          status: 'CLICKED',
-          clickedAt: new Date()
-        }
+    if (logId) {
+      const log = await prisma.pushLog.findUnique({
+        where: { id: logId }
       });
 
-      if (log.campaignId) {
-        await prisma.pushAnalytics.update({
-          where: { campaignId: log.campaignId },
+      if (log) {
+        targetCampaignId = targetCampaignId || log.campaignId;
+        if (log.status !== 'CLICKED') {
+          await prisma.pushLog.update({
+            where: { id: logId },
+            data: {
+              status: 'CLICKED',
+              clickedAt: new Date()
+            }
+          });
+        }
+      }
+    } else if (targetCampaignId) {
+      // Find an existing log for this campaign to mark as CLICKED
+      const existingLog = await prisma.pushLog.findFirst({
+        where: {
+          campaignId: targetCampaignId,
+          status: { not: 'CLICKED' },
+          ...(fcmToken ? { fcmToken } : userId ? { userId } : guestId ? { guestId } : {})
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (existingLog) {
+        await prisma.pushLog.update({
+          where: { id: existingLog.id },
           data: {
-            clickedCount: { increment: 1 }
+            status: 'CLICKED',
+            clickedAt: new Date()
+          }
+        });
+      } else {
+        // Create an attribution log
+        await prisma.pushLog.create({
+          data: {
+            campaignId: targetCampaignId,
+            userId: userId || null,
+            guestId: guestId || null,
+            fcmToken: fcmToken || `click_attr_${source || 'web'}`,
+            status: 'CLICKED',
+            clickedAt: new Date(),
+            deliveredAt: new Date()
+          }
+        }).catch(() => {});
+      }
+    }
+
+    if (targetCampaignId) {
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId: targetCampaignId },
+        create: {
+          campaignId: targetCampaignId,
+          sentCount: 1,
+          deliveredCount: 1,
+          openedCount: 1,
+          clickedCount: 1
+        },
+        update: {
+          clickedCount: { increment: 1 }
+        }
+      });
+    }
+
+    return res.status(200).json({ status: 'success', success: true, message: 'Click tracked.' });
+  } catch (error: any) {
+    console.error('Error tracking push click:', error);
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
+  }
+};
+
+export const trackOpen = async (req: Request, res: Response) => {
+  const { logId, campaignId, userId, guestId, fcmToken, source } = req.body;
+  if (!logId && !campaignId) {
+    return res.status(400).json({ status: 'error', success: false, message: 'logId or campaignId required.' });
+  }
+
+  try {
+    let targetCampaignId = campaignId;
+
+    if (logId) {
+      const log = await prisma.pushLog.findUnique({
+        where: { id: logId }
+      });
+
+      if (log) {
+        targetCampaignId = targetCampaignId || log.campaignId;
+        if (log.status !== 'CLICKED' && log.status !== 'OPENED') {
+          await prisma.pushLog.update({
+            where: { id: logId },
+            data: {
+              status: 'OPENED',
+              openedAt: new Date()
+            }
+          });
+        }
+      }
+    } else if (targetCampaignId) {
+      const existingLog = await prisma.pushLog.findFirst({
+        where: {
+          campaignId: targetCampaignId,
+          status: { in: ['SENT', 'DELIVERED'] },
+          ...(fcmToken ? { fcmToken } : userId ? { userId } : guestId ? { guestId } : {})
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (existingLog) {
+        await prisma.pushLog.update({
+          where: { id: existingLog.id },
+          data: {
+            status: 'OPENED',
+            openedAt: new Date()
           }
         });
       }
     }
 
-    return res.status(200).json({ status: 'success', success: true, message: 'Click tracked.' });
+    if (targetCampaignId) {
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId: targetCampaignId },
+        create: {
+          campaignId: targetCampaignId,
+          sentCount: 1,
+          deliveredCount: 1,
+          openedCount: 1
+        },
+        update: {
+          openedCount: { increment: 1 }
+        }
+      });
+    }
+
+    return res.status(200).json({ status: 'success', success: true, message: 'Open tracked.' });
   } catch (error: any) {
+    console.error('Error tracking push open:', error);
     return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
 
 export const trackConversion = async (req: Request, res: Response) => {
-  const { logId, orderId, revenue } = req.body;
-  if (!logId) {
-    return res.status(400).json({ status: 'error', success: false, message: 'logId required.' });
+  const { logId, campaignId, orderId, revenue } = req.body;
+  if (!logId && !campaignId) {
+    return res.status(400).json({ status: 'error', success: false, message: 'logId or campaignId required.' });
   }
 
   try {
-    const log = await prisma.pushLog.findUnique({
-      where: { id: logId }
-    });
+    let targetCampaignId = campaignId;
 
-    if (!log) {
-      return res.status(404).json({ status: 'error', success: false, message: 'Log not found.' });
+    if (logId) {
+      const log = await prisma.pushLog.findUnique({
+        where: { id: logId }
+      });
+
+      if (log) {
+        targetCampaignId = targetCampaignId || log.campaignId;
+        await prisma.pushLog.update({
+          where: { id: logId },
+          data: {
+            status: 'CONVERTED',
+            convertedAt: new Date()
+          }
+        });
+      }
     }
 
-    await prisma.pushLog.update({
-      where: { id: logId },
-      data: {
-        status: 'CONVERTED',
-        convertedAt: new Date()
-      }
-    });
-
-    if (log.campaignId) {
-      await prisma.pushAnalytics.update({
-        where: { campaignId: log.campaignId },
-        data: {
+    if (targetCampaignId) {
+      const rev = Number(revenue || 0);
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId: targetCampaignId },
+        create: {
+          campaignId: targetCampaignId,
+          conversionCount: 1,
+          revenueGenerated: rev
+        },
+        update: {
           conversionCount: { increment: 1 },
-          revenueGenerated: { increment: Number(revenue || 0) }
+          revenueGenerated: { increment: rev }
         }
       });
     }
 
     return res.status(200).json({ status: 'success', success: true, message: 'Conversion tracked.' });
+  } catch (error: any) {
+    return res.status(500).json({ status: 'error', success: false, message: error.message });
+  }
+};
+
+export const simulateCampaignEvent = async (req: Request, res: Response) => {
+  const { id: campaignId } = req.params;
+  const { event, revenue = 0 } = req.body;
+
+  try {
+    const campaign = await prisma.pushCampaign.findUnique({
+      where: { id: campaignId }
+    });
+    if (!campaign) {
+      return res.status(404).json({ status: 'error', success: false, message: 'Campaign not found.' });
+    }
+
+    if (event === 'open') {
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId },
+        create: { campaignId, openedCount: 1 },
+        update: { openedCount: { increment: 1 } }
+      });
+      await prisma.pushLog.create({
+        data: {
+          campaignId,
+          status: 'OPENED',
+          fcmToken: `simulated_open_${Date.now()}`,
+          openedAt: new Date(),
+          deliveredAt: new Date()
+        }
+      });
+    } else if (event === 'click') {
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId },
+        create: { campaignId, clickedCount: 1, openedCount: 1 },
+        update: {
+          clickedCount: { increment: 1 },
+          openedCount: { increment: 1 }
+        }
+      });
+      await prisma.pushLog.create({
+        data: {
+          campaignId,
+          status: 'CLICKED',
+          fcmToken: `simulated_click_${Date.now()}`,
+          clickedAt: new Date(),
+          openedAt: new Date(),
+          deliveredAt: new Date()
+        }
+      });
+    } else if (event === 'conversion') {
+      const revAmount = Number(revenue) || 1299;
+      await prisma.pushAnalytics.upsert({
+        where: { campaignId },
+        create: {
+          campaignId,
+          conversionCount: 1,
+          revenueGenerated: revAmount
+        },
+        update: {
+          conversionCount: { increment: 1 },
+          revenueGenerated: { increment: revAmount }
+        }
+      });
+      await prisma.pushLog.create({
+        data: {
+          campaignId,
+          status: 'CONVERTED',
+          fcmToken: `simulated_conversion_${Date.now()}`,
+          convertedAt: new Date(),
+          clickedAt: new Date(),
+          deliveredAt: new Date()
+        }
+      });
+    }
+
+    const refreshed = await prisma.pushCampaign.findUnique({
+      where: { id: campaignId },
+      include: { analytics: true }
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      success: true,
+      message: `Simulated ${event} tracked for campaign.`,
+      data: refreshed
+    });
   } catch (error: any) {
     return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
@@ -527,8 +779,12 @@ export const getCampaignAnalytics = async (req: Request, res: Response) => {
 
     // Consolidated Dashboard Analytics
     const totalCampaigns = await prisma.pushCampaign.count();
-    const activeCampaigns = await prisma.pushCampaign.count({ where: { status: 'Sending' } });
+    const activeCampaigns = await prisma.pushCampaign.count({ where: { status: { in: ['Sending', 'Queued'] } } });
     const scheduledCampaigns = await prisma.pushCampaign.count({ where: { status: 'Scheduled' } });
+    const queuedCount = await prisma.notificationQueue.count({ where: { status: { in: ['QUEUED', 'PROCESSING'] } } });
+    const optedInDevices = await prisma.notificationDevice.count({ where: { notificationEnabled: true, tokenStatus: 'ACTIVE' } });
+    const totalDevices = await prisma.notificationDevice.count();
+    const unsubscribedUsers = await prisma.notificationDevice.count({ where: { notificationEnabled: false } });
 
     // Aggregate values
     const aggregates = await prisma.pushAnalytics.aggregate({
@@ -543,17 +799,24 @@ export const getCampaignAnalytics = async (req: Request, res: Response) => {
       }
     });
 
-    const totalDevices = await prisma.notificationDevice.count();
-    const unsubscribedUsers = await prisma.notificationDevice.count({ where: { notificationEnabled: false } });
-
     const sent = aggregates._sum.sentCount || 0;
     const delivered = aggregates._sum.deliveredCount || 0;
     const opened = aggregates._sum.openedCount || 0;
     const clicked = aggregates._sum.clickedCount || 0;
     const conversions = aggregates._sum.conversionCount || 0;
 
+    const deliveryRate = sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0;
+    const openRate = delivered > 0 ? Number(((opened / delivered) * 100).toFixed(1)) : (sent > 0 ? Number(((opened / sent) * 100).toFixed(1)) : 0);
     const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(2)) : 0;
     const convRate = clicked > 0 ? Number(((conversions / clicked) * 100).toFixed(2)) : 0;
+
+    // Real monthly billing aggregation for current period
+    let monthlyBilling: any = null;
+    try {
+      monthlyBilling = await calculateMonthlyUsage();
+    } catch (e) {
+      console.error('Error fetching monthly billing in analytics:', e);
+    }
 
     // Daily distribution logs for the last 15 days
     const fifteenDaysAgo = new Date();
@@ -586,14 +849,24 @@ export const getCampaignAnalytics = async (req: Request, res: Response) => {
           totalCampaigns,
           activeCampaigns,
           scheduledCampaigns,
+          optedInDevices,
+          notificationsQueued: queuedCount,
           notificationsSent: sent,
           delivered,
+          deliveryRate,
           opened,
+          openRate,
+          clicked,
           ctr,
           conversionRate: convRate,
           failedDeliveries: aggregates._sum.failedCount || 0,
           unsubscribedUsers,
           totalDevices,
+          currentMonthBillableUsage: monthlyBilling?.usage?.billableNotifications || 0,
+          currentMonthEstimatedCharge: monthlyBilling?.financials?.totalAmount || 0,
+          currency: monthlyBilling?.financials?.currency || 'INR',
+          billingMonth: monthlyBilling?.billingMonth || '',
+          previousMonth: monthlyBilling?.previousMonth || null,
           revenueGenerated: aggregates._sum.revenueGenerated || 0
         },
         dailyTrends: Object.entries(dailySends).map(([date, vals]) => ({

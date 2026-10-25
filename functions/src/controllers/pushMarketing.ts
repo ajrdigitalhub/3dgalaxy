@@ -350,8 +350,39 @@ export const searchProductsForPush = async (req: Request, res: Response) => {
         discountPercent = Math.round(((basePrice - salePrice) / basePrice) * 100);
       }
 
-      const imageUrls = parseJSON(p.images, []);
-      const primaryImage = imageUrls.length > 0 ? imageUrls[0] : '';
+      // Safe canonical image URL resolution (handles object array, string array, or variant fallback)
+      let primaryImage = '';
+      const rawImgs = parseJSON(p.images, []);
+      if (Array.isArray(rawImgs) && rawImgs.length > 0) {
+        const primObj = rawImgs.find((img: any) => typeof img === 'object' && img?.isPrimary) || rawImgs[0];
+        if (typeof primObj === 'string') {
+          primaryImage = primObj.trim();
+        } else if (typeof primObj === 'object' && primObj !== null) {
+          primaryImage = (primObj.url || primObj.imageUrl || primObj.storagePath || '').trim();
+        }
+      } else if (typeof rawImgs === 'string' && rawImgs.trim()) {
+        primaryImage = rawImgs.trim();
+      }
+
+      // Check variants if root product has no image
+      if (!primaryImage && Array.isArray(p.variants)) {
+        for (const v of p.variants) {
+          const vImgs = parseJSON(v.variantImages || (v as any).images, []);
+          if (Array.isArray(vImgs) && vImgs.length > 0) {
+            const vFirst = vImgs.find((img: any) => typeof img === 'object' && img?.isPrimary) || vImgs[0];
+            const vUrl = typeof vFirst === 'string' ? vFirst.trim() : (vFirst?.url || vFirst?.imageUrl || '').trim();
+            if (vUrl) {
+              primaryImage = vUrl;
+              break;
+            }
+          }
+        }
+      }
+
+      // Normalize protocol-relative URLs
+      if (primaryImage.startsWith('//')) {
+        primaryImage = `https:${primaryImage}`;
+      }
 
       return {
         id: p.id,

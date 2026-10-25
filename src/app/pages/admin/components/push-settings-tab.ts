@@ -8,6 +8,8 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
 import { DatastoreService } from '../../../services/datastore';
 import { NotificationService } from '../../../services/notification.service';
 
+const FALLBACK_PRODUCT_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="%23f97316" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-9 5-9-5V8l9-5 9 5v8Z"/><path d="M12 21V12"/><path d="M3.27 6.96 12 12l8.73-5.04"/></svg>`;
+
 @Component({
   selector: 'app-admin-push-settings-tab',
   standalone: true,
@@ -15,349 +17,270 @@ import { NotificationService } from '../../../services/notification.service';
   template: `
     <div class="space-y-6 font-sans">
       
-      <!-- Top Sub Tabs switcher -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+      <!-- Top Navigation Tabs Switcher -->
+      <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
         <div>
           <h2 class="text-lg font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
-            <span class="w-8 h-8 rounded-lg bg-orange-600/10 text-orange-500 flex items-center justify-center"><mat-icon>notifications_active</mat-icon></span>
-            Push Marketing Control Hub
+            <span class="w-8 h-8 rounded-xl bg-orange-600/10 text-orange-500 flex items-center justify-center">
+              <mat-icon>notifications_active</mat-icon>
+            </span>
+            Push Notification Marketing Hub
           </h2>
-          <p class="text-xs text-zinc-400 mt-1">Configure Firebase settings, design popups, compose campaigns, and inspect subscriber analytics.</p>
+          <p class="text-xs text-zinc-400 mt-1">PWA Web Push Campaigns, Subscriber Devices, Realtime Delivery Analytics & Monthly Billing.</p>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <button (click)="activeSubTab.set('analytics')" [class]="activeSubTab() === 'analytics' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
-            <mat-icon class="text-sm">dashboard</mat-icon> Dashboard
+        
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button (click)="activeSubTab.set('overview')" [class]="activeSubTab() === 'overview' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">dashboard</mat-icon> Overview
           </button>
-          <button (click)="activeSubTab.set('manual-send')" [class]="activeSubTab() === 'manual-send' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+          
+          <button (click)="activeSubTab.set('campaigns'); campaignManagerMode.set('list')" [class]="activeSubTab() === 'campaigns' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
             <mat-icon class="text-sm">campaign</mat-icon> Campaigns
             @if (allCampaigns().length > 0) {
-              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'manual-send' ? 'bg-white/20 text-white' : 'bg-orange-500/10 text-orange-500'">{{ allCampaigns().length }}</span>
+              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'campaigns' ? 'bg-white/20 text-white' : 'bg-orange-500/10 text-orange-500'">{{ allCampaigns().length }}</span>
             }
           </button>
+          
           <button (click)="activeSubTab.set('devices')" [class]="activeSubTab() === 'devices' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
-            <mat-icon class="text-sm">devices</mat-icon> FCM Devices
+            <mat-icon class="text-sm">devices</mat-icon> Devices & Opt-In
             @if (subscriberDevices().length > 0) {
-              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'devices' ? 'bg-white/20 text-white' : 'bg-emerald-500/10 text-emerald-500'">{{ subscriberDevices().length }}</span>
+              <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black" [class]="activeSubTab() === 'devices' ? 'bg-white/20 text-white' : 'bg-emerald-500/10 text-emerald-500'">{{ optedInDevicesCount() }}</span>
             }
           </button>
-          <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+          
+          <button (click)="activeSubTab.set('billing')" [class]="activeSubTab() === 'billing' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">receipt_long</mat-icon> Monthly Billing
+          </button>
+          
+          <button (click)="activeSubTab.set('analytics')" [class]="activeSubTab() === 'analytics' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">insights</mat-icon> Analytics
+          </button>
+          
+          <button (click)="activeSubTab.set('logs')" [class]="activeSubTab() === 'logs' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+            <mat-icon class="text-sm">history</mat-icon> Logs & Audit
+          </button>
+          
+          <button (click)="activeSubTab.set('fcm-config')" [class]="activeSubTab() === 'fcm-config' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
             <mat-icon class="text-sm">vpn_key</mat-icon> FCM Credentials
           </button>
-          <button (click)="activeSubTab.set('popup-designer')" [class]="activeSubTab() === 'popup-designer' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
+          
+          <button (click)="activeSubTab.set('popup-designer')" [class]="activeSubTab() === 'popup-designer' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
             <mat-icon class="text-sm">brush</mat-icon> Popup Designer
-          </button>
-          <button (click)="activeSubTab.set('rules')" [class]="activeSubTab() === 'rules' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
-            <mat-icon class="text-sm">smart_toy</mat-icon> Auto Rules
-          </button>
-          <button (click)="activeSubTab.set('templates')" [class]="activeSubTab() === 'templates' ? 'bg-orange-600 text-white shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-655 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'" class="px-3 py-1.5 text-xs font-black uppercase rounded-xl transition-all cursor-pointer border-none shadow-xs flex items-center gap-1.5">
-            <mat-icon class="text-sm">content_copy</mat-icon> Templates
           </button>
         </div>
       </div>
 
-      <!-- ANALYTICS DASHBOARD -->
-      @if (activeSubTab() === 'analytics') {
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-            <span class="text-[9px] font-black uppercase text-zinc-400">Total Subscribers</span>
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-2xl font-black">{{ analyticsSummary().totalDevices }}</h3>
-              <span class="text-[9px] text-zinc-400 font-bold">Devices</span>
+      <!-- ======================================================== -->
+      <!-- SECTION 1: OVERVIEW DASHBOARD -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'overview') {
+        <div class="space-y-6 animate-fadeIn">
+          
+          <!-- Refresh bar with authoritative backend evidence -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-xs font-black uppercase tracking-wider text-zinc-800 dark:text-white">Live System Engine Active</span>
+              <span class="text-[11px] text-zinc-400">| Last synced: {{ lastRefreshed() }}</span>
             </div>
-          </div>
-          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-            <span class="text-[9px] font-black uppercase text-orange-500">Delivered Notifications</span>
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-2xl font-black text-orange-500">{{ analyticsSummary().delivered }}</h3>
-              <span class="text-[9px] text-zinc-400 font-bold">FCM Dispatch</span>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-            <span class="text-[9px] font-black uppercase text-blue-500">Avg. Click-Through Rate</span>
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-2xl font-black text-blue-500">{{ analyticsSummary().ctr }}%</h3>
-              <span class="text-[9px] text-emerald-500 font-bold">Engagement</span>
-            </div>
-          </div>
-          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-            <span class="text-[9px] font-black uppercase text-emerald-500">Revenue Generated</span>
-            <div class="flex items-baseline justify-between">
-              <h3 class="text-2xl font-black text-emerald-500">₹{{ analyticsSummary().revenueGenerated || 0 }}</h3>
-              <span class="text-[9px] text-zinc-400 font-bold">via UTM Campaign</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-            <div class="flex justify-between items-center">
-              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">FCM Engagement Trend (Last 15 Days)</h3>
-              <span class="text-[9px] font-bold text-zinc-400">Pushes & Clicks</span>
-            </div>
-            
-            <div class="h-56 flex items-end gap-3 pt-6 border-b border-zinc-200 dark:border-zinc-800">
-              @if (dailyTrends().length === 0) {
-                <div class="w-full h-full flex items-center justify-center text-xs text-zinc-400 uppercase font-black">No Trend Data Found</div>
-              } @else {
-                @for (trend of dailyTrends(); track trend.date) {
-                  <div class="flex-1 flex flex-col items-center gap-2 group relative">
-                    <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-t-lg relative overflow-hidden" style="height: 140px;">
-                      <!-- Sends bar -->
-                      <div class="bg-orange-500/35 absolute bottom-0 left-0 right-0 rounded-t-md" [style.height.%]="getSendsPercent(trend.sends)"></div>
-                      <!-- Clicks bar -->
-                      <div class="bg-orange-600 absolute bottom-0 left-1 right-1 rounded-t-md" [style.height.%]="getClicksPercent(trend.clicks)"></div>
-                    </div>
-                    <span class="text-[8px] font-black uppercase text-zinc-400">{{ trend.date | date:'dd MMM' }}</span>
-                  </div>
-                }
-              }
-            </div>
-            <div class="flex items-center gap-4 justify-center text-[10px]">
-              <span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 bg-orange-550/35 rounded-xs"></span> Dispatches</span>
-              <span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 bg-orange-600 rounded-xs"></span> Clicks</span>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Subscriber Split</h3>
-            
-            <div class="space-y-5">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full"></span> Guest Users</span>
-                <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().guests }} Device(s)</span>
-              </div>
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Registered Users</span>
-                <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().registered }} Device(s)</span>
-              </div>
-              <div class="flex items-center justify-between text-xs border-t border-zinc-100 dark:border-zinc-800 pt-3">
-                <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-red-500 rounded-full"></span> Invalid/Opted Out</span>
-                <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().disabled }} Device(s)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PUSH MARKETING CAMPAIGNS SECTION IN DASHBOARD -->
-        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="w-7 h-7 rounded-lg bg-orange-600/10 text-orange-500 flex items-center justify-center">
-                  <mat-icon class="text-base">campaign</mat-icon>
-                </span>
-                <h3 class="text-sm font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Marketing Campaigns</h3>
-                <span class="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-black">{{ allCampaigns().length }} Campaigns</span>
-              </div>
-              <p class="text-[11px] text-zinc-400 mt-1">Instant on-spot broadcasts, automated price alerts, and subscriber engagement campaigns.</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-              <!-- Search Input -->
-              <div class="relative flex-1 sm:w-56">
-                <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
-                <input type="text" [(ngModel)]="campaignSearchQuery" placeholder="Search campaigns..." class="w-full pl-8 pr-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white" />
-              </div>
-
-              <!-- Filter Pills -->
-              <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
-                <button (click)="campaignFilter.set('all')" [class]="campaignFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">All ({{ allCampaigns().length }})</button>
-                <button (click)="campaignFilter.set('sent')" [class]="campaignFilter() === 'sent' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'" class="px-2.5 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all">Sent ({{ pastCampaigns().length }})</button>
-              </div>
-
-              <!-- Create Campaign Quick Action -->
-              <button (click)="openCreateCampaignWizard()" class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-600/20 transition-all">
-                <mat-icon class="text-sm">add</mat-icon> Create Campaign
+            <div class="flex items-center gap-2">
+              <button (click)="refreshAllHubData()" class="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-orange-500 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 cursor-pointer flex items-center gap-1.5 transition-all">
+                <mat-icon class="text-sm">refresh</mat-icon> Refresh
+              </button>
+              <button (click)="openCreateCampaignWizard()" class="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-sm transition-all">
+                <mat-icon class="text-sm">add</mat-icon> New Push Campaign
               </button>
             </div>
           </div>
 
-          <!-- Campaigns List -->
-          <div class="space-y-3">
-            @if (filteredCampaigns().length === 0) {
-              <div class="p-8 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-2">
-                <mat-icon class="text-3xl text-zinc-400">campaign</mat-icon>
-                <p>No campaigns found matching the current filter</p>
-                <button (click)="openCreateCampaignWizard()" class="mt-2 px-4 py-1.5 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer inline-flex items-center gap-1">
-                  <mat-icon class="text-sm">add</mat-icon> Launch First Campaign
-                </button>
-              </div>
-            } @else {
-              @for (c of filteredCampaigns(); track c.id) {
-                <div class="p-4 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl hover:border-orange-500/40 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4 group">
-                  <!-- Left: Thumbnail & Main Info -->
-                  <div class="flex items-start gap-3.5 flex-1 min-w-0">
-                    <!-- Image or Icon Thumbnail -->
-                    <div class="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center">
-                      @if (c.image) {
-                        <img [src]="c.image" class="w-full h-full object-cover" (error)="$any($event.target).style.display='none'" />
-                      } @else {
-                        <mat-icon class="text-orange-500 text-xl">notifications</mat-icon>
-                      }
-                    </div>
-
-                    <div class="space-y-1 min-w-0 flex-1">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-md text-[9px] font-black uppercase">{{ c.type }}</span>
-                        <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase"
-                              [ngClass]="c.status === 'Sent' || c.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : (c.status === 'Scheduled' ? 'bg-amber-500/10 text-amber-500' : 'bg-blue-500/10 text-blue-500')">
-                          {{ c.status }}
-                        </span>
-                        @if (c.priority === 'High') {
-                          <span class="px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded text-[8px] font-black uppercase">High Priority</span>
-                        }
-                      </div>
-
-                      <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
-                      
-                      <!-- Title & Body snippet -->
-                      <div class="text-[11px] text-zinc-600 dark:text-zinc-400 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <span class="font-bold text-zinc-800 dark:text-zinc-200 truncate">{{ c.title }}</span>
-                        @if (c.body) {
-                          <span class="hidden sm:inline text-zinc-400">•</span>
-                          <span class="text-zinc-400 truncate text-[10px]">{{ c.body }}</span>
-                        }
-                      </div>
-
-                      <!-- Dates & Action URL -->
-                      <div class="flex items-center gap-3 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
-                        @if (c.date && c.date !== 'N/A') {
-                          <span class="flex items-center gap-1"><mat-icon class="text-[12px] h-3 w-3">schedule</mat-icon> Dispatched: {{ c.date }}</span>
-                        }
-                        @if (c.actionUrl) {
-                          <span class="flex items-center gap-1 text-zinc-400 font-mono text-[9px] truncate max-w-xs"><mat-icon class="text-[12px] h-3 w-3">link</mat-icon> {{ c.actionUrl }}</span>
-                        }
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Middle: Analytics stats -->
-                  <div class="grid grid-cols-4 gap-3 text-center shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-zinc-800 pt-3 lg:pt-0 lg:pl-5 font-mono">
-                    <div class="px-2">
-                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Dispatched</span>
-                      <span class="font-black text-zinc-900 dark:text-white text-xs">{{ c.sentCount }}</span>
-                    </div>
-                    <div class="px-2">
-                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Delivered</span>
-                      <span class="font-black text-orange-500 text-xs">{{ c.deliveredCount }}</span>
-                    </div>
-                    <div class="px-2">
-                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">Clicks</span>
-                      <span class="font-black text-blue-500 text-xs">{{ c.clickedCount }}</span>
-                    </div>
-                    <div class="px-2">
-                      <span class="text-[8px] block text-zinc-400 font-black uppercase tracking-wider">CTR</span>
-                      <span class="font-black text-emerald-500 text-xs">{{ c.ctr }}%</span>
-                    </div>
-                  </div>
-
-                  <!-- Right: Quick actions -->
-                  <div class="flex items-center gap-2 justify-end shrink-0 border-t lg:border-t-0 border-zinc-200 dark:border-zinc-800 pt-2 lg:pt-0">
-                    <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit in Composer" class="px-3 py-1.5 bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 font-black rounded-xl text-[10px] uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
-                      <mat-icon class="text-xs">send</mat-icon> Re-send
-                    </button>
-                    <button (click)="duplicateCampaign(c)" title="Duplicate as Draft" class="p-2 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl hover:text-orange-500 cursor-pointer transition-all">
-                      <mat-icon class="text-xs">content_copy</mat-icon>
-                    </button>
-                    <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-2 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-xl hover:text-blue-500 cursor-pointer transition-all">
-                      <mat-icon class="text-xs">download</mat-icon>
-                    </button>
-                  </div>
-                </div>
-              }
-            }
-          </div>
-        </div>
-      }
-
-      <!-- FIREBASE CONFIGURATION -->
-      @if (activeSubTab() === 'fcm-config') {
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Firebase Project Settings</h3>
-              <span class="text-[8px] font-black uppercase px-2 py-0.5 rounded-full" [ngClass]="fcmConfig.enabled ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
-                {{ fcmConfig.enabled ? 'ACTIVE' : 'DISABLED' }}
-              </span>
+          <!-- 10 Summary Cards from Real Backend Data -->
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            
+            <!-- 1. Total Campaigns -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400">Total Campaigns</span>
+              <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ allCampaigns().length }}</h3>
+              <p class="text-[10px] text-zinc-400">All created campaigns</p>
             </div>
 
-            <form class="grid grid-cols-1 md:grid-cols-2 gap-4" (submit)="saveFCMConfig($event)">
-              <div class="md:col-span-2 flex items-center gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
-                <input type="checkbox" id="fcm-enabled" [(ngModel)]="fcmConfig.enabled" name="enabled" class="w-4 h-4 text-orange-600 border-zinc-300 rounded focus:ring-orange-500 cursor-pointer">
-                <label for="fcm-enabled" class="text-xs font-black uppercase cursor-pointer">Enable FCM Push Notification Marketing System</label>
-              </div>
+            <!-- 2. Active Dispatches -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-blue-500">Active Dispatches</span>
+              <h3 class="text-2xl font-black text-blue-500">{{ analyticsSummary().activeCampaigns || 0 }}</h3>
+              <p class="text-[10px] text-zinc-400">Sending or in queue</p>
+            </div>
 
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Firebase Project ID</label>
-                <input type="text" [(ngModel)]="fcmConfig.projectId" name="projectId" placeholder="my-firebase-project" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
+            <!-- 3. Opted-in Push Devices -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1 cursor-pointer" (click)="activeSubTab.set('devices')">
+              <span class="text-[9px] font-black uppercase tracking-wider text-emerald-500">Opted-In Devices</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-emerald-500">{{ optedInDevicesCount() }}</h3>
+                <span class="text-[10px] text-zinc-400 font-bold">of {{ subscriberDevices().length }}</span>
               </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">API Key</label>
-                <input type="password" [(ngModel)]="fcmConfig.apiKey" name="apiKey" placeholder="AIzaSy..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">App ID</label>
-                <input type="text" [(ngModel)]="fcmConfig.appId" name="appId" placeholder="1:12345:web:abcd" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Sender ID</label>
-                <input type="text" [(ngModel)]="fcmConfig.messagingSenderId" name="messagingSenderId" placeholder="123456789" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="md:col-span-2 space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">VAPID Public Key</label>
-                <input type="text" [(ngModel)]="fcmConfig.vapidPublicKey" name="vapidPublicKey" placeholder="BEl62wpCL7..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="md:col-span-2 space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase flex justify-between">
-                  <span>Firebase Admin Credentials JSON (Service Account)</span>
-                  <span class="text-zinc-500 lowercase text-[8px] font-normal">base64 encoded or plain text JSON</span>
-                </label>
-                <textarea [(ngModel)]="fcmConfig.serviceAccount" name="serviceAccount" rows="4" placeholder='{ "type": "service_account", "project_id": ... }' class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono"></textarea>
-              </div>
+              <p class="text-[10px] text-zinc-400">Active PWA subscriptions</p>
+            </div>
 
-              <!-- Defaults Configuration -->
-              <div class="md:col-span-2 border-t border-zinc-150 dark:border-zinc-800 pt-4 mt-2">
-                <h4 class="text-[10px] font-black uppercase text-zinc-500 mb-3">Notification Defaults</h4>
-              </div>
+            <!-- 4. Notifications Queued -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-amber-500">Notifications Queued</span>
+              <h3 class="text-2xl font-black text-amber-500">{{ analyticsSummary().notificationsQueued || 0 }}</h3>
+              <p class="text-[10px] text-zinc-400">Pending worker pickup</p>
+            </div>
 
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Default Icon</label>
-                <input type="text" [(ngModel)]="fcmConfig.defaultIcon" name="defaultIcon" placeholder="/assets/icon.png" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Default Badge</label>
-                <input type="text" [(ngModel)]="fcmConfig.defaultBadge" name="defaultBadge" placeholder="/assets/badge.png" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="md:col-span-2 space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Default Click Redirect URL</label>
-                <input type="text" [(ngModel)]="fcmConfig.defaultClickUrl" name="defaultClickUrl" placeholder="/" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
+            <!-- 5. Notifications Sent -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-orange-500">Successfully Sent</span>
+              <h3 class="text-2xl font-black text-orange-500">{{ analyticsSummary().notificationsSent || 0 }}</h3>
+              <p class="text-[10px] text-zinc-400">Accepted by push service</p>
+            </div>
 
-              <div class="md:col-span-2 flex flex-wrap gap-2 justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <button type="button" (click)="validateFCMConfig()" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-850 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">verified_user</mat-icon> Validate Config</button>
-                <button type="button" (click)="testFCMConnection()" class="px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">rss_feed</mat-icon> Test Connection</button>
-                <button type="button" (click)="triggerTestPush()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-750 dark:bg-zinc-750 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">send</mat-icon> Test Notification</button>
-                <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">save</mat-icon> Save Configuration</button>
+            <!-- 6. Notifications Delivered -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-emerald-600">Confirmed Delivery</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-emerald-600">{{ analyticsSummary().delivered || 0 }}</h3>
+                <span class="text-xs font-black text-emerald-500">{{ analyticsSummary().deliveryRate || 0.0 }}%</span>
               </div>
-            </form>
+              <p class="text-[10px] text-zinc-400">Device confirmed receipts</p>
+            </div>
+
+            <!-- 7. Notifications Opened -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-purple-500">Opens & Read Rate</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-purple-500">{{ analyticsSummary().opened || 0 }}</h3>
+                <span class="text-xs font-black text-purple-400">{{ analyticsSummary().openRate || 0.0 }}%</span>
+              </div>
+              <p class="text-[10px] text-zinc-400">Notification views & opens</p>
+            </div>
+
+            <!-- 8. Clicks & CTR -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-indigo-500">Clicks & CTR</span>
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-2xl font-black text-indigo-500">{{ analyticsSummary().clicked || 0 }}</h3>
+                <span class="text-xs font-black text-emerald-500">{{ analyticsSummary().ctr || 0.0 }}%</span>
+              </div>
+              <p class="text-[10px] text-zinc-400">User interactions</p>
+            </div>
+
+            <!-- 8. Monthly Billable Usage -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1 cursor-pointer" (click)="activeSubTab.set('billing')">
+              <span class="text-[9px] font-black uppercase tracking-wider text-purple-500">Month's Billable Usage</span>
+              <h3 class="text-2xl font-black text-purple-500">{{ analyticsSummary().currentMonthBillableUsage || 0 }}</h3>
+              <p class="text-[10px] text-zinc-400">Current calendar cycle</p>
+            </div>
+
+            <!-- 9. Month's Estimated Charge -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1 cursor-pointer relative group/kpirate" (click)="activeSubTab.set('billing')">
+              <span class="text-[9px] font-black uppercase tracking-wider text-emerald-500">Month's Charge</span>
+              <h3 class="text-2xl font-black text-emerald-500">₹{{ (analyticsSummary().currentMonthEstimatedCharge || 0) | number:'1.2-2' }}</h3>
+              @if (analyticsSummary().previousMonth) {
+                <span class="text-[9px] text-zinc-400 font-bold block">Prev: ₹{{ analyticsSummary().previousMonth.totalAmount }}</span>
+              } @else {
+                <p class="text-[10px] text-zinc-400 flex items-center gap-1 cursor-help hover:text-purple-400 transition-colors">
+                  <span>Rate: ₹{{ monthlyBillingData()?.financials?.unitRate || 0.05 }} / notif</span>
+                  <span class="text-[8px] px-1 py-0.2 rounded bg-purple-500/10 text-purple-400 font-bold font-mono">{{ monthlyBillingData()?.financials?.activeTier || '1–10,000' }}</span>
+                  <mat-icon class="text-[11px] text-zinc-500">info</mat-icon>
+                </p>
+              }
+
+              <!-- Popover on Hover -->
+              <div class="invisible group-hover/kpirate:visible opacity-0 group-hover/kpirate:opacity-100 transition-all duration-200 absolute left-0 bottom-full mb-2 z-50 w-72 bg-black border border-zinc-800 rounded-2xl p-3 shadow-2xl space-y-2 pointer-events-none">
+                <div class="flex justify-between items-center text-[9px] font-black uppercase text-zinc-400 pb-1.5 border-b border-zinc-800">
+                  <span>Monthly volume per project</span>
+                  <span>Rate / push</span>
+                </div>
+                <div class="space-y-1">
+                  @for (t of billingTiers; track t.label) {
+                    <div class="flex justify-between items-center py-1 px-2 rounded-lg text-[11px]"
+                         [ngClass]="(monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label ? 'bg-purple-950/60 text-purple-300 font-bold border border-purple-500/30' : 'text-zinc-300'">
+                      <span>{{ t.label }}</span>
+                      <span class="font-mono font-bold">{{ t.priceLabel }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- 10. Failed Notifications -->
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase tracking-wider text-red-500">Failed Sends</span>
+              <h3 class="text-2xl font-black text-red-500">{{ analyticsSummary().failedDeliveries || 0 }}</h3>
+              <p class="text-[10px] text-zinc-400">Excluded from billing</p>
+            </div>
+
           </div>
 
-          <!-- AUDIT LOGS & AUDIENCE -->
-          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Audit Trail</h3>
-            
-            <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-              @if (auditLogs().length === 0) {
-                <div class="text-xs text-zinc-400 py-6 text-center uppercase font-black">No Audit Logs Found</div>
+          <!-- Recent Campaigns Dispatches Feed -->
+          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
+                  <mat-icon class="text-base text-orange-500">campaign</mat-icon>
+                  Recent Push Broadcasts & Activity
+                </h3>
+                <p class="text-[11px] text-zinc-400 mt-0.5">Authoritative status of recently dispatched or draft campaigns.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="refreshAllHubData()" title="Refresh Campaigns & Metrics" class="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
+                  <mat-icon class="text-xs">refresh</mat-icon> Refresh
+                </button>
+                <button (click)="activeSubTab.set('campaigns'); campaignManagerMode.set('list')" class="text-orange-500 text-xs font-black uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
+                  View All Campaigns <mat-icon class="text-xs">chevron_right</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              @if (allCampaigns().length === 0) {
+                <div class="p-8 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                  No campaigns dispatched yet. Launch your first push notification campaign.
+                </div>
               } @else {
-                @for (log of auditLogs(); track log.id) {
-                  <div class="border-b border-zinc-100 dark:border-zinc-800 pb-3 space-y-1.5">
-                    <div class="flex justify-between items-start">
-                      <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{{ log.action }}</span>
-                      <span class="text-[9px] text-zinc-400 font-bold">{{ log.createdAt | date:'dd MMM, hh:mm a' }}</span>
+                @for (c of allCampaigns().slice(0, 5); track c.id) {
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3 min-w-0 flex-1">
+                      <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 shrink-0 overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-zinc-800">
+                        @if (c.image) {
+                          <img [src]="c.image" class="w-full h-full object-cover" (error)="onProductImgError($event)" />
+                        } @else {
+                          <mat-icon class="text-sm">notifications</mat-icon>
+                        }
+                      </div>
+                      <div class="space-y-1 min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-orange-500/10 text-orange-500">{{ c.type }}</span>
+                          <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase"
+                                [ngClass]="c.status === 'Sent' || c.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : (c.status === 'Draft' ? 'bg-zinc-500/10 text-zinc-400' : 'bg-blue-500/10 text-blue-500')">
+                            {{ c.status }}
+                          </span>
+                          <span class="text-[10px] text-zinc-400 font-bold">{{ c.date }}</span>
+                        </div>
+                        <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{{ c.title }}</p>
+                      </div>
                     </div>
-                    <p class="text-[10px] text-zinc-500 dark:text-zinc-400">By user ID: <span class="font-bold font-mono">{{ log.userId || 'System' }}</span></p>
-                    <p class="text-[10px] text-zinc-500 dark:text-zinc-400">IP Address: <span class="font-bold">{{ log.ipAddress || 'unknown' }}</span></p>
+
+                    <div class="flex items-center gap-6 shrink-0 font-mono text-[10px] border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 pt-3 md:pt-0 md:pl-5">
+                      <div class="text-center">
+                        <span class="text-[8px] block text-zinc-400 uppercase font-black">Sent</span>
+                        <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
+                      </div>
+                      <div class="text-center">
+                        <span class="text-[8px] block text-zinc-400 uppercase font-black">Delivered</span>
+                        <span class="font-black text-orange-500 text-xs">{{ c.deliveredCount }}</span>
+                      </div>
+                      <div class="text-center">
+                        <span class="text-[8px] block text-zinc-400 uppercase font-black">Clicks</span>
+                        <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5 pl-2">
+                        <button (click)="useCampaignAsTemplate(c)" title="Duplicate / Edit" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer">
+                          <mat-icon class="text-xs">content_copy</mat-icon>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 }
               }
@@ -366,356 +289,259 @@ import { NotificationService } from '../../../services/notification.service';
         </div>
       }
 
-      <!-- POPUP CONFIGURATION DESIGNER -->
-      @if (activeSubTab() === 'popup-designer') {
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          <!-- Designer Controls -->
-          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Popup Styling & Behavior</h3>
-            
-            <form class="grid grid-cols-1 md:grid-cols-2 gap-4" (submit)="savePopupConfig($event)">
-              <div class="md:col-span-2 flex items-center gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
-                <input type="checkbox" id="popup-enabled" [(ngModel)]="popupConfig.enabled" name="enabled" class="w-4 h-4 text-orange-600 border-zinc-300 rounded focus:ring-orange-500 cursor-pointer">
-                <label for="popup-enabled" class="text-xs font-black uppercase cursor-pointer">Enable Permission Popup Banner</label>
-              </div>
-
-              <div class="md:col-span-2 space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Popup Title</label>
-                <input type="text" [(ngModel)]="popupConfig.title" name="title" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="md:col-span-2 space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Popup Description</label>
-                <textarea [(ngModel)]="popupConfig.description" name="description" rows="4" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500"></textarea>
-              </div>
-
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Allow Button Text</label>
-                <input type="text" [(ngModel)]="popupConfig.allowText" name="allowText" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Cancel Button Text</label>
-                <input type="text" [(ngModel)]="popupConfig.cancelText" name="cancelText" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Logo Image URL</label>
-                <input type="text" [(ngModel)]="popupConfig.logoUrl" name="logoUrl" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Banner Image URL</label>
-                <input type="text" [(ngModel)]="popupConfig.bannerUrl" name="bannerUrl" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Background Color</label>
-                <div class="flex gap-2">
-                  <input type="color" [(ngModel)]="popupConfig.backgroundColor" name="backgroundColor" class="w-10 h-8 border border-zinc-200 dark:border-zinc-850 rounded-lg cursor-pointer bg-transparent">
-                  <input type="text" [(ngModel)]="popupConfig.backgroundColor" name="backgroundColorVal" class="flex-1 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Text Color</label>
-                <div class="flex gap-2">
-                  <input type="color" [(ngModel)]="popupConfig.textColor" name="textColor" class="w-10 h-8 border border-zinc-200 dark:border-zinc-850 rounded-lg cursor-pointer bg-transparent">
-                  <input type="text" [(ngModel)]="popupConfig.textColor" name="textColorVal" class="flex-1 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Button Primary Color</label>
-                <div class="flex gap-2">
-                  <input type="color" [(ngModel)]="popupConfig.buttonColor" name="buttonColor" class="w-10 h-8 border border-zinc-200 dark:border-zinc-850 rounded-lg cursor-pointer bg-transparent">
-                  <input type="text" [(ngModel)]="popupConfig.buttonColor" name="buttonColorVal" class="flex-1 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Border Radius (px)</label>
-                <input type="number" [(ngModel)]="popupConfig.borderRadius" name="borderRadius" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-              </div>
-
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Entrance Animation</label>
-                <select [(ngModel)]="popupConfig.animation" name="animation" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                  <option value="scale-in">Scale In</option>
-                  <option value="slide-in-bottom">Slide In Bottom</option>
-                  <option value="fade">Fade In</option>
-                  <option value="bounce-in">Bounce In</option>
-                </select>
-              </div>
-
-              <!-- Cooldown & Delays -->
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Delay Before Show (sec)</label>
-                <input type="number" [(ngModel)]="popupConfig.delayShow" name="delayShow" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Show After Scroll %</label>
-                <input type="number" [(ngModel)]="popupConfig.scrollShow" name="scrollShow" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-              </div>
-              <div class="space-y-1">
-                <label class="block text-[9px] font-black text-zinc-400 uppercase">Re-show Cooldown (days)</label>
-                <input type="number" [(ngModel)]="popupConfig.reshowDays" name="reshowDays" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-              </div>
-
-              <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-3 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mt-2">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="pop-sync-theme" [(ngModel)]="popupConfig.syncWithTheme" name="syncWithTheme" class="w-3.5 h-3.5 text-orange-600 rounded">
-                  <label for="pop-sync-theme" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Sync Theme</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="pop-once" [(ngModel)]="popupConfig.showOnce" name="showOnce" class="w-3.5 h-3.5 text-orange-600 rounded">
-                  <label for="pop-once" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Show Once</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="pop-hide-exist" [(ngModel)]="popupConfig.hideExisting" name="hideExisting" class="w-3.5 h-3.5 text-orange-600 rounded">
-                  <label for="pop-hide-exist" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Hide Existing</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="pop-hide-chk" [(ngModel)]="popupConfig.hideCheckout" name="hideCheckout" class="w-3.5 h-3.5 text-orange-600 rounded">
-                  <label for="pop-hide-chk" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Hide Checkout</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" id="pop-hide-pay" [(ngModel)]="popupConfig.hidePayment" name="hidePayment" class="w-3.5 h-3.5 text-orange-600 rounded">
-                  <label for="pop-hide-pay" class="text-[10px] font-black uppercase text-zinc-400 cursor-pointer">Hide Payment</label>
-                </div>
-              </div>
-
-              <div class="md:col-span-2 flex justify-end pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">save</mat-icon> Save Popup Settings</button>
-              </div>
-            </form>
+      <!-- ======================================================== -->
+      <!-- SECTION 2: CAMPAIGNS (LIST OR 5-STEP WIZARD) -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'campaigns') {
+        
+        <!-- Toggle header: List view vs New Wizard -->
+        <div class="flex justify-between items-center bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 mb-6">
+          <div class="flex items-center gap-2">
+            <button (click)="campaignManagerMode.set('list')" [class]="campaignManagerMode() === 'list' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'" class="px-4 py-2 text-xs font-black uppercase rounded-xl border-none cursor-pointer flex items-center gap-1.5 transition-all">
+              <mat-icon class="text-sm">list</mat-icon> All Campaigns ({{ allCampaigns().length }})
+            </button>
+            <button (click)="openCreateCampaignWizard()" [class]="campaignManagerMode() === 'wizard' ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'" class="px-4 py-2 text-xs font-black uppercase rounded-xl border-none cursor-pointer flex items-center gap-1.5 transition-all">
+              <mat-icon class="text-sm">add</mat-icon> Create Campaign Wizard
+            </button>
           </div>
+          <span class="text-xs text-zinc-400 font-bold hidden sm:inline">PWA / Web Push Channels Only</span>
+        </div>
 
-          <!-- Interactive Live Preview -->
-          <div class="space-y-4">
-            <div class="flex flex-wrap justify-between items-center gap-3 bg-zinc-100 dark:bg-zinc-800/40 p-4 rounded-2xl">
-              <div>
-                <span class="text-xs font-black uppercase text-zinc-500">Live Preview Sandbox</span>
-                <p class="text-[10px] text-zinc-400 mt-0.5">Accurate preview matching active theme and responsive design.</p>
+        <!-- VIEW A: CAMPAIGN LIST -->
+        @if (campaignManagerMode() === 'list') {
+          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+            <!-- Filter & Search Toolbar (Row 1: Search + Status Pills + Actions) -->
+            <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              <!-- Search Input with Clear Button -->
+              <div class="relative flex-1">
+                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
+                <input type="text"
+                       [ngModel]="campaignSearchQuery()"
+                       (ngModelChange)="campaignSearchQuery.set($event)"
+                       placeholder="Search campaigns by title, body, URL or tag..."
+                       class="w-full pl-9 pr-8 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white transition-all" />
+                @if (campaignSearchQuery()) {
+                  <button (click)="campaignSearchQuery.set('')"
+                          class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 border-none bg-transparent cursor-pointer p-0.5">
+                    <mat-icon class="text-xs">close</mat-icon>
+                  </button>
+                }
               </div>
-              <div class="flex items-center gap-2">
-                <button type="button" (click)="triggerLivePreview()" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none flex items-center gap-1 shadow-xs">
-                  <mat-icon class="!text-xs !w-3.5 !h-3.5">play_arrow</mat-icon> Test Live Popup
-                </button>
-                <div class="h-4 w-px bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
-                <button type="button" (click)="previewDevice.set('desktop')" [class]="previewDevice() === 'desktop' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Desktop</button>
-                <button type="button" (click)="previewDevice.set('mobile')" [class]="previewDevice() === 'mobile' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400'" class="px-3 py-1 text-[10px] uppercase border-none rounded-lg cursor-pointer">Mobile</button>
-              </div>
-            </div>
 
-            <!-- Preview viewport container -->
-            <div class="w-full flex items-center justify-center p-6 bg-zinc-100/50 dark:bg-zinc-950/20 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-[2.5rem] relative overflow-hidden" [style.minHeight.px]="450">
-              
-              <!-- Desktop Frame -->
-              @if (previewDevice() === 'desktop') {
-                <div class="w-full max-w-md border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 sm:p-8 text-center relative overflow-hidden transition-all duration-300"
-                     [style.backgroundColor]="getPreviewBgColor()"
-                     [style.color]="getPreviewTextColor()"
-                     [style.borderRadius.px]="popupConfig.borderRadius || 24">
-                  
-                  @if (popupConfig.bannerUrl) {
-                    <div class="-mt-6 -mx-6 sm:-mt-8 sm:-mx-8 mb-5 sm:mb-6 h-28 sm:h-36 overflow-hidden relative">
-                      <img [src]="popupConfig.bannerUrl" class="w-full h-full object-cover" alt="Banner" />
-                    </div>
+              <!-- Status Filter Pills with Live Badges -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                  <button (click)="campaignFilter.set('all')"
+                          [class]="campaignFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                          class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1.5">
+                    <span>All</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px]" [class]="campaignFilter() === 'all' ? 'bg-orange-500/10 text-orange-500 font-black' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'">{{ campaignCounts().all }}</span>
+                  </button>
+
+                  <button (click)="campaignFilter.set('sent')"
+                          [class]="campaignFilter() === 'sent' ? 'bg-white dark:bg-zinc-900 text-emerald-500 font-black shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                          class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1.5">
+                    <span>Sent</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px]" [class]="campaignFilter() === 'sent' ? 'bg-emerald-500/20 text-emerald-500 font-black' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'">{{ campaignCounts().sent }}</span>
+                  </button>
+
+                  <button (click)="campaignFilter.set('draft')"
+                          [class]="campaignFilter() === 'draft' ? 'bg-white dark:bg-zinc-900 text-amber-500 font-black shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                          class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1.5">
+                    <span>Drafts</span>
+                    <span class="px-1.5 py-0.2 rounded-full text-[9px]" [class]="campaignFilter() === 'draft' ? 'bg-amber-500/20 text-amber-500 font-black' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'">{{ campaignCounts().draft }}</span>
+                  </button>
+
+                  @if (campaignCounts().failed > 0) {
+                    <button (click)="campaignFilter.set('failed')"
+                            [class]="campaignFilter() === 'failed' ? 'bg-white dark:bg-zinc-900 text-rose-500 font-black shadow-xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'"
+                            class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1.5">
+                      <span>Failed</span>
+                      <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-rose-500/20 text-rose-500 font-black">{{ campaignCounts().failed }}</span>
+                    </button>
                   }
-
-                  <div class="flex justify-center mb-3 sm:mb-4">
-                    <div class="p-2 rounded-2xl" [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800/80 border border-zinc-700/60 shadow-md' : 'bg-white/95 border border-zinc-200/90 shadow-sm'">
-                      <img [src]="getPreviewLogoUrl()" class="w-12 h-12 sm:w-14 sm:h-14 object-contain" alt="Logo" />
-                    </div>
-                  </div>
-
-                  <h3 class="text-lg sm:text-xl font-extrabold tracking-tight mb-2">{{ popupConfig.title || '🚀 Welcome to 3D Galaxy!' }}</h3>
-                  <p class="text-xs sm:text-sm leading-relaxed mb-6 whitespace-pre-line" [style.color]="getPreviewSubtextColor()">{{ popupConfig.description || 'Stay ahead with exclusive deals, custom print launches, premium merchandise, flash sales and limited-time offers.' }}</p>
-
-                  <div class="flex gap-3 justify-center">
-                    <button type="button" class="h-10 sm:h-11 px-5 rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer border"
-                            [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800 text-zinc-200 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'">
-                      {{ popupConfig.cancelText || 'Maybe Later' }}
-                    </button>
-                    <button type="button" [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-10 sm:h-11 px-5 text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer border-none flex-1 shadow-md shadow-orange-500/20">
-                      {{ popupConfig.allowText || 'Keep Me Updated 🔔' }}
-                    </button>
-                  </div>
                 </div>
-              }
 
-              <!-- Mobile Frame -->
-              @if (previewDevice() === 'mobile') {
-                <div class="w-72 h-[440px] bg-zinc-800 dark:bg-black rounded-[2.5rem] border-[6px] border-zinc-700 relative overflow-hidden flex flex-col justify-end p-3 shadow-xl">
-                  <!-- Notch -->
-                  <div class="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-zinc-700 rounded-full"></div>
-                  
-                  <!-- Floating bottom popup -->
-                  <div class="w-full shadow-2xl p-4 text-center relative overflow-hidden transition-all duration-300 mb-2 border"
-                       [style.backgroundColor]="getPreviewBgColor()"
-                       [style.color]="getPreviewTextColor()"
-                       [style.borderColor]="ds.theme() === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'"
-                       [style.borderRadius.px]="(popupConfig.borderRadius || 24) * 0.75">
-                    
-                    <div class="flex items-center gap-2.5 mb-2.5 text-left">
-                      <div class="p-1.5 rounded-xl" [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800' : 'bg-white border border-zinc-200'">
-                        <img [src]="getPreviewLogoUrl()" class="w-8 h-8 object-contain" alt="Logo" />
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <h3 class="text-[11px] font-bold tracking-tight truncate">{{ popupConfig.title || '🚀 Welcome to 3D Galaxy!' }}</h3>
-                        <p class="text-[9px] leading-tight line-clamp-2" [style.color]="getPreviewSubtextColor()">{{ popupConfig.description || 'Enable notifications for deals.' }}</p>
-                      </div>
-                    </div>
-
-                    <div class="flex gap-2 justify-center mt-2">
-                      <button type="button" class="h-7 px-2.5 rounded-lg font-bold text-[9px] uppercase tracking-wider cursor-pointer border flex-1"
-                              [ngClass]="ds.theme() === 'dark' ? 'bg-zinc-800 text-zinc-200 border-zinc-700' : 'bg-zinc-100 text-zinc-700 border-zinc-200'">
-                        {{ popupConfig.cancelText || 'Later' }}
-                      </button>
-                      <button type="button" [style.backgroundColor]="popupConfig.buttonColor || '#f97316'" class="h-7 px-3 text-white rounded-lg font-bold text-[9px] uppercase tracking-wider cursor-pointer border-none flex-1">
-                        {{ popupConfig.allowText || 'Update 🔔' }}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- CAMPAIGN BUILDER (MANUAL SEND) -->
-      @if (activeSubTab() === 'manual-send') {
-        <!-- Nested Marketing Automation Switcher -->
-        <div class="flex flex-wrap items-center gap-1 border-b border-zinc-200 dark:border-zinc-800 pb-3 mb-6">
-          <button (click)="nestedMarketingTab.set('dashboard')" [class]="nestedMarketingTab() === 'dashboard' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Dashboard</button>
-          <button (click)="nestedMarketingTab.set('builder')" [class]="nestedMarketingTab() === 'builder' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Omnichannel Wizard</button>
-          <button (click)="nestedMarketingTab.set('devices')" [class]="nestedMarketingTab() === 'devices' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all flex items-center gap-1.5"><mat-icon class="text-sm">devices</mat-icon> Devices & Opt-In ({{ subscriberDevices().length }})</button>
-          <button (click)="nestedMarketingTab.set('flows')" [class]="nestedMarketingTab() === 'flows' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Visual Flow Builder</button>
-          <button (click)="nestedMarketingTab.set('history')" [class]="nestedMarketingTab() === 'history' ? 'bg-orange-600/10 text-orange-500 font-black' : 'text-zinc-400 font-medium'" class="px-4 py-2 text-xs uppercase border-none rounded-xl cursor-pointer transition-all">Logs & Audit</button>
-        </div>
-
-        <!-- NESTED TAB 1: MARKETING DASHBOARD -->
-        @if (nestedMarketingTab() === 'dashboard') {
-          <div class="space-y-6">
-            <!-- Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-zinc-400">Total Campaigns</span>
-                <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ allCampaigns().length }}</h3>
-              </div>
-              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2 cursor-pointer" (click)="nestedMarketingTab.set('devices')">
-                <span class="text-[9px] font-black uppercase text-emerald-500">Opted-In FCM Devices</span>
-                <div class="flex items-baseline justify-between">
-                  <h3 class="text-2xl font-black text-emerald-500">{{ optedInDevicesCount() }}</h3>
-                  <span class="text-[9px] text-zinc-400 font-bold">of {{ subscriberDevices().length }}</span>
-                </div>
-              </div>
-              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-blue-500">Sent Broadcasts</span>
-                <h3 class="text-2xl font-black text-blue-500">{{ pastCampaigns().length }}</h3>
-              </div>
-              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-                <span class="text-[9px] font-black uppercase text-orange-500">Delivered Dispatches</span>
-                <h3 class="text-2xl font-black text-orange-500">{{ analyticsSummary().delivered || 0 }}</h3>
+                <button (click)="refreshAllHubData()" title="Refresh Campaigns" class="p-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-xl border-none cursor-pointer flex items-center transition-all">
+                  <mat-icon class="text-sm">refresh</mat-icon>
+                </button>
+                <button (click)="openCreateCampaignWizard()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-sm transition-all shrink-0">
+                  <mat-icon class="text-sm">add</mat-icon> New Campaign
+                </button>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <!-- Recent Dispatches List -->
-              <div class="lg:col-span-2 space-y-6">
-                <!-- Recent Dispatched Campaigns List -->
-                <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-                  <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Recent Broadcasts (On-Spot Dispatches)</h3>
-                      <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-black">{{ pastCampaigns().length }} Sent</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button (click)="nestedMarketingTab.set('builder')" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all"><mat-icon class="text-xs">bolt</mat-icon> New On-Spot Campaign</button>
-                      <button (click)="nestedMarketingTab.set('history')" class="text-orange-500 text-[10px] font-black uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
-                        View All Logs <mat-icon class="text-xs">chevron_right</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="space-y-3">
-                    @if (pastCampaigns().length === 0) {
-                      <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                        No campaigns have been dispatched yet.
-                      </div>
-                    } @else {
-                      @for (c of pastCampaigns().slice(0, 5); track c.id) {
-                        <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
-                          <div class="space-y-1 min-w-0 flex-1">
-                            <div class="flex items-center gap-2 flex-wrap">
-                              <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                              <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
-                              <span class="text-[9px] text-zinc-400 font-bold">{{ c.date }}</span>
-                            </div>
-                            <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
-                            <p class="text-[10px] text-zinc-400 truncate">{{ c.title }}</p>
-                          </div>
-                          <div class="flex items-center gap-4 shrink-0 font-mono text-[10px] border-t sm:border-t-0 sm:border-l border-zinc-200 dark:border-zinc-800 pt-2 sm:pt-0 sm:pl-4">
-                            <div>
-                              <span class="text-[8px] block text-zinc-400 font-black uppercase">Sent</span>
-                              <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
-                            </div>
-                            <div>
-                              <span class="text-[8px] block text-zinc-400 font-black uppercase">CTR</span>
-                              <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 pl-2">
-                              <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">send</mat-icon></button>
-                              <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">content_copy</mat-icon></button>
-                            </div>
-                          </div>
-                        </div>
-                      }
+            <!-- Row 2: Secondary Dropdown Filters (Category, Date Range, Sort) & Counter -->
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Category Select -->
+                <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <mat-icon class="text-zinc-400 text-xs">category</mat-icon>
+                  <span class="text-[10px] font-black uppercase text-zinc-400">Category:</span>
+                  <select [ngModel]="campaignCategoryFilter()"
+                          (ngModelChange)="campaignCategoryFilter.set($event)"
+                          class="bg-transparent border-none outline-none text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer pr-1">
+                    <option value="all" class="bg-white dark:bg-zinc-900">All Categories</option>
+                    @for (cat of availableCategories(); track cat) {
+                      <option [value]="cat" class="bg-white dark:bg-zinc-900">{{ cat }}</option>
                     }
-                  </div>
+                  </select>
+                </div>
+
+                <!-- Date Range Select -->
+                <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <mat-icon class="text-zinc-400 text-xs">calendar_today</mat-icon>
+                  <span class="text-[10px] font-black uppercase text-zinc-400">Period:</span>
+                  <select [ngModel]="campaignDateFilter()"
+                          (ngModelChange)="campaignDateFilter.set($event)"
+                          class="bg-transparent border-none outline-none text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer pr-1">
+                    <option value="all" class="bg-white dark:bg-zinc-900">All Time</option>
+                    <option value="today" class="bg-white dark:bg-zinc-900">Today (Last 24h)</option>
+                    <option value="7days" class="bg-white dark:bg-zinc-900">Last 7 Days</option>
+                    <option value="30days" class="bg-white dark:bg-zinc-900">Last 30 Days</option>
+                  </select>
+                </div>
+
+                <!-- Sort By Select -->
+                <div class="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <mat-icon class="text-zinc-400 text-xs">swap_vert</mat-icon>
+                  <span class="text-[10px] font-black uppercase text-zinc-400">Sort:</span>
+                  <select [ngModel]="campaignSortBy()"
+                          (ngModelChange)="campaignSortBy.set($event)"
+                          class="bg-transparent border-none outline-none text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer pr-1">
+                    <option value="newest" class="bg-white dark:bg-zinc-900">Most Recent</option>
+                    <option value="oldest" class="bg-white dark:bg-zinc-900">Oldest First</option>
+                    <option value="sends" class="bg-white dark:bg-zinc-900">Highest Dispatched</option>
+                    <option value="clicks" class="bg-white dark:bg-zinc-900">Most Clicks</option>
+                    <option value="ctr" class="bg-white dark:bg-zinc-900">Highest CTR (%)</option>
+                  </select>
                 </div>
               </div>
 
-              <!-- Channel Usage split -->
-              <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Channel Efficiency Split</h3>
-                <div class="space-y-4">
-                  <div class="space-y-1">
-                    <div class="flex justify-between text-[10px] font-bold">
-                      <span class="text-zinc-400 uppercase">PWA Web Push</span>
-                      <span>54% (CTR 12.5%)</span>
-                    </div>
-                    <div class="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-orange-500 h-full rounded-full" style="width: 54%"></div>
-                    </div>
-                  </div>
-                  <div class="space-y-1">
-                    <div class="flex justify-between text-[10px] font-bold">
-                      <span class="text-zinc-400 uppercase">WhatsApp Templates</span>
-                      <span>36% (CTR 16.4%)</span>
-                    </div>
-                    <div class="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-emerald-500 h-full rounded-full" style="width: 36%"></div>
-                    </div>
-                  </div>
-                  <div class="space-y-1">
-                    <div class="flex justify-between text-[10px] font-bold">
-                      <span class="text-zinc-400 uppercase">Combined Multi-Channel</span>
-                      <span>10% (CTR 24.8%)</span>
-                    </div>
-                    <div class="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-blue-500 h-full rounded-full" style="width: 10%"></div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Active Filters Count & Reset Button -->
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-zinc-400">
+                  Showing <span class="font-black text-zinc-800 dark:text-zinc-200">{{ filteredCampaigns().length }}</span> of {{ allCampaigns().length }}
+                </span>
+
+                @if (hasActiveCampaignFilters()) {
+                  <button (click)="resetCampaignFilters()"
+                          class="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
+                    <mat-icon class="text-xs">clear_all</mat-icon> Reset Filters
+                  </button>
+                }
               </div>
+            </div>
+
+            <div class="space-y-3">
+              @if (filteredCampaigns().length === 0) {
+                <div class="p-8 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                  No campaigns found matching current filters.
+                </div>
+              } @else {
+                @for (c of filteredCampaigns(); track c.id) {
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl hover:border-orange-500/40 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5 flex-1 min-w-0">
+                      <div class="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+                        @if (c.image) {
+                          <img [src]="c.image" class="w-full h-full object-cover" (error)="onProductImgError($event)" />
+                        } @else {
+                          <mat-icon class="text-orange-500 text-xl">notifications</mat-icon>
+                        }
+                      </div>
+
+                      <div class="space-y-1 min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[9px] font-black uppercase">{{ c.type }}</span>
+                          <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase"
+                                [ngClass]="c.status === 'Sent' || c.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : (c.status === 'Draft' ? 'bg-zinc-500/10 text-zinc-400' : 'bg-blue-500/10 text-blue-500')">
+                            {{ c.status }}
+                          </span>
+                          @if (c.priority === 'High') {
+                            <span class="px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded text-[8px] font-black uppercase">High Priority</span>
+                          }
+                        </div>
+                        <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ c.name }}</h4>
+                        <div class="text-[11px] text-zinc-600 dark:text-zinc-400 flex items-center gap-2 truncate">
+                          <span class="font-bold text-zinc-800 dark:text-zinc-200">{{ c.title }}</span>
+                          @if (c.body) {
+                            <span>•</span>
+                            <span class="text-zinc-400 truncate">{{ c.body }}</span>
+                          }
+                        </div>
+                        <div class="flex items-center gap-3 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
+                          @if (c.date && c.date !== 'N/A') {
+                            <span class="flex items-center gap-1"><mat-icon class="text-[12px] h-3 w-3">schedule</mat-icon> Dispatched: {{ c.date }}</span>
+                          }
+                          @if (c.actionUrl) {
+                            <span class="flex items-center gap-1 text-zinc-400 font-mono text-[9px] truncate max-w-xs"><mat-icon class="text-[12px] h-3 w-3">link</mat-icon> {{ c.actionUrl }}</span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Metrics: DISPATCHED, DELIVERED, OPENS, CLICKS, CTR -->
+                    <div class="grid grid-cols-5 gap-2 text-center shrink-0 border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-zinc-800 pt-3 lg:pt-0 lg:pl-5 font-mono">
+                      <div class="px-1.5">
+                        <span class="text-[8px] block text-zinc-400 font-black uppercase">Dispatched</span>
+                        <span class="font-black text-zinc-900 dark:text-white text-xs">{{ c.sentCount }}</span>
+                      </div>
+                      <div class="px-1.5">
+                        <span class="text-[8px] block text-zinc-400 font-black uppercase">Delivered</span>
+                        <span class="font-black text-orange-500 text-xs">{{ c.deliveredCount }}</span>
+                        @if (c.sentCount > 0) {
+                          <span class="text-[8px] text-zinc-400 block font-bold">{{ c.deliveryRate }}%</span>
+                        }
+                      </div>
+                      <div class="px-1.5">
+                        <span class="text-[8px] block text-zinc-400 font-black uppercase">Opens</span>
+                        <span class="font-black text-purple-500 text-xs">{{ c.openedCount }}</span>
+                        @if (c.deliveredCount > 0) {
+                          <span class="text-[8px] text-purple-400 block font-bold">{{ c.openRate }}%</span>
+                        }
+                      </div>
+                      <div class="px-1.5">
+                        <span class="text-[8px] block text-zinc-400 font-black uppercase">Clicks</span>
+                        <span class="font-black text-blue-500 text-xs">{{ c.clickedCount }}</span>
+                      </div>
+                      <div class="px-1.5">
+                        <span class="text-[8px] block text-zinc-400 font-black uppercase">CTR</span>
+                        <span class="font-black text-emerald-500 text-xs">{{ c.ctr }}%</span>
+                      </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-1.5 justify-end shrink-0 border-t lg:border-t-0 border-zinc-200 dark:border-zinc-800 pt-2 lg:pt-0 flex-wrap">
+                      <button (click)="openCampaignAnalytics(c)" title="View Detailed Campaign Performance & Funnel" class="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 font-black rounded-xl text-[10px] uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
+                        <mat-icon class="text-xs">insights</mat-icon> Analytics
+                      </button>
+                      <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit in Composer" class="px-2.5 py-1.5 bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 font-black rounded-xl text-[10px] uppercase border-none cursor-pointer flex items-center gap-1 transition-all">
+                        <mat-icon class="text-xs">send</mat-icon> Re-send
+                      </button>
+                      <button (click)="duplicateCampaign(c)" title="Duplicate as Draft" class="p-1.5 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-xl cursor-pointer">
+                        <mat-icon class="text-xs">content_copy</mat-icon>
+                      </button>
+                      <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-1.5 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-xl cursor-pointer">
+                        <mat-icon class="text-xs">download</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              }
             </div>
           </div>
         }
 
-        <!-- NESTED TAB 2: CAMPAIGN WIZARD -->
-        @if (nestedMarketingTab() === 'builder') {
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-              <!-- Wizard Steps -->
-              <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-250/40 dark:border-zinc-800/80 mb-6">
-                <span class="text-[10px] font-black uppercase text-zinc-400">Step {{ wizardStep() }} of 5</span>
+        <!-- VIEW B: 5-STEP CAMPAIGN WIZARD WITH FUNCTIONAL LIVE PREVIEW -->
+        @if (campaignManagerMode() === 'wizard') {
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            <!-- Left Side: Wizard Steps Container (7 Cols on Wide) -->
+            <div class="xl:col-span-7 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+              
+              <!-- Step Progress Indicator -->
+              <div class="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                <span class="text-[10px] font-black uppercase text-zinc-400">Step {{ wizardStep() }} of 5: {{ getWizardStepName(wizardStep()) }}</span>
                 <div class="flex items-center gap-1.5">
                   @for (step of [1,2,3,4,5]; track step) {
                     <div [class]="wizardStep() >= step ? 'bg-orange-500' : 'bg-zinc-200 dark:bg-zinc-800'" class="w-8 h-1 rounded-full transition-all"></div>
@@ -726,903 +552,1384 @@ import { NotificationService } from '../../../services/notification.service';
               <!-- STEP 1: CAMPAIGN DETAILS -->
               @if (wizardStep() === 1) {
                 <div class="space-y-4 animate-fadeIn">
-                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">Campaign Details</h3>
+                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">Step 1 — Campaign Details</h3>
+                  
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Campaign Name</label>
-                      <input type="text" [(ngModel)]="campaignForm.name" placeholder="e.g. Maker Filament Launch Blast" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
-                    </div>
-                    <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Campaign Sub-Category</label>
-                      <select [(ngModel)]="campaignFormExt.campaignType" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
-                        <option value="Flash Sale">Flash Sale</option>
-                        <option value="Cart Recovery">Cart Recovery</option>
-                        <option value="Price Drop">Price Drop</option>
-                        <option value="New Arrival">New Arrival</option>
-                        <option value="Back In Stock">Back In Stock</option>
-                        <option value="Review Request">Review Request</option>
-                        <option value="Order Status Update">Order Status Update</option>
-                        <option value="Payment Reminder">Payment Reminder</option>
-                        <option value="Newsletter">Newsletter</option>
-                      </select>
-                    </div>
                     <div class="md:col-span-2 space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Description</label>
-                      <textarea [(ngModel)]="campaignFormExt.description" placeholder="Short description of this campaign goals..." rows="2" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none resize-none"></textarea>
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Campaign Name *</label>
+                      <input type="text" [(ngModel)]="campaignForm.name" placeholder="e.g. Maker Filament Festive Drop" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none focus:border-orange-500">
                     </div>
+
                     <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Priority</label>
-                      <select [(ngModel)]="campaignForm.priority" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                        <option value="Normal">Normal</option>
-                        <option value="High">High</option>
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Objective</label>
+                      <select [(ngModel)]="campaignForm.objective" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                        <option value="Promotional">Promotional Blast</option>
+                        <option value="Price Drop">Price Drop Alert</option>
+                        <option value="New Arrival">New Hardware Arrival</option>
+                        <option value="Cart Recovery">Cart Abandonment Recovery</option>
+                        <option value="Re-engagement">Customer Re-engagement</option>
                       </select>
                     </div>
+
                     <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Internal Notes</label>
-                      <input type="text" [(ngModel)]="campaignFormExt.internalNotes" placeholder="Targeting PWA and WhatsApp optins..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Category</label>
+                      <select [(ngModel)]="campaignForm.category" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                        <option value="Flash Sale">Flash Sale</option>
+                        <option value="Daily Deal">Daily Deal</option>
+                        <option value="Hardware Discount">Hardware Discount</option>
+                        <option value="Filament Clearance">Filament Clearance</option>
+                        <option value="Community Notice">Community Notice</option>
+                      </select>
+                    </div>
+
+                    <div class="md:col-span-2 space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Internal Description / Notes</label>
+                      <textarea [(ngModel)]="campaignForm.description" rows="2" placeholder="Campaign strategy, targeted audience notes, or marketing goals..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500"></textarea>
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Dispatch Strategy</label>
+                      <select [(ngModel)]="campaignForm.scheduleMode" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                        <option value="now">Immediate Dispatch (Send Now)</option>
+                        <option value="draft">Save as Inactive Draft</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Optional UTM Campaign Tag</label>
+                      <input type="text" [(ngModel)]="campaignForm.utmCampaign" placeholder="e.g. festive_diwali_2026" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
                     </div>
                   </div>
                 </div>
               }
 
-              <!-- STEP 2: AUDIENCE SEGMENTATION -->
+              <!-- STEP 2: AUDIENCE -->
               @if (wizardStep() === 2) {
                 <div class="space-y-4 animate-fadeIn">
-                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">Target Audience Segment</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-3">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Client Groups (OR)</label>
-                      <div class="grid grid-cols-2 gap-2">
-                        @for (ut of [
-                          { key: 'everyone', label: 'Everyone (All Opt-ins)' },
-                          { key: 'guests', label: 'Guest Clients Only' },
-                          { key: 'registered', label: 'Registered Accounts' },
-                          { key: 'vip', label: 'VIP Spenders' },
-                          { key: 'inactive', label: 'Inactive 30+ Days' },
-                          { key: 'highValue', label: 'High Basket Value' }
-                        ]; track ut.key) {
-                          <div class="flex items-center gap-2 p-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-                            <input type="checkbox" [id]="'ut-' + ut.key" [(ngModel)]="$any(audienceSegmentFilters.userTypes)[ut.key]" class="w-3.5 h-3.5 text-orange-600 rounded cursor-pointer">
-                            <label [for]="'ut-' + ut.key" class="text-[10px] font-black uppercase text-zinc-700 dark:text-zinc-300 cursor-pointer truncate">{{ ut.label }}</label>
+                  <div class="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Step 2 — Target Audience Selection</h3>
+                    <button (click)="refreshAudienceEstimate()" class="text-orange-500 text-xs font-bold uppercase border-none bg-transparent cursor-pointer hover:underline flex items-center gap-1">
+                      <mat-icon class="text-xs">refresh</mat-icon> Refresh Count
+                    </button>
+                  </div>
+
+                  <!-- Audience Reach Summary Card -->
+                  <div class="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span class="text-[9px] font-black uppercase text-orange-500">Eligible Opted-In Push Recipients</span>
+                      <h4 class="text-2xl font-black text-zinc-900 dark:text-white">{{ getReachEstimate() }} Devices</h4>
+                      <p class="text-[10px] text-zinc-400 mt-0.5">Verified active PWA tokens ready for delivery.</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/20 text-orange-500 flex items-center justify-center">
+                      <mat-icon>devices</mat-icon>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <label class="block text-[9px] font-black text-zinc-400 uppercase">Target Segment</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      @for (seg of [
+                        { id: 'everyone', name: 'All Opted-In Subscribers', desc: 'Broadcast to every valid push subscriber.' },
+                        { id: 'active_shoppers', name: 'Active Customers', desc: 'Customers with orders in the last 60 days.' },
+                        { id: 'abandoned_cart', name: 'Cart Abandoners', desc: 'Users with items left in their cart.' },
+                        { id: 'wishlist', name: 'Wishlist Users', desc: 'Customers tracking favorite products.' }
+                      ]; track seg.id) {
+                        <div (click)="campaignForm.targetType = seg.id" [class]="campaignForm.targetType === seg.id ? 'border-orange-500 bg-orange-500/5' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950'" class="p-3.5 rounded-2xl border cursor-pointer transition-all space-y-1">
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-zinc-900 dark:text-white">{{ seg.name }}</span>
+                            <span class="w-3 h-3 rounded-full border flex items-center justify-center" [class]="campaignForm.targetType === seg.id ? 'border-orange-500 bg-orange-500' : 'border-zinc-400'"></span>
                           </div>
+                          <p class="text-[10px] text-zinc-400">{{ seg.desc }}</p>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Platform Targeting</label>
+                      <div class="flex gap-2">
+                        @for (p of [
+                          { id: 'all', label: 'All Platforms' },
+                          { id: 'desktop', label: 'Desktop Web Only' },
+                          { id: 'mobile', label: 'Android / Mobile Only' }
+                        ]; track p.id) {
+                          <button (click)="campaignForm.targetPlatform = p.id" [class]="campaignForm.targetPlatform === p.id ? 'bg-orange-600 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'" class="flex-1 py-2 text-[10px] font-black uppercase rounded-xl border-none cursor-pointer transition-all">
+                            {{ p.label }}
+                          </button>
                         }
                       </div>
                     </div>
-
-                    <div class="space-y-4">
-                      <div class="space-y-1">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Min purchase threshold (times)</label>
-                        <input type="number" [(ngModel)]="audienceSegmentFilters.purchaseCountMin" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                      </div>
-                      <div class="space-y-1">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Total spend limit (min INR)</label>
-                        <input type="number" [(ngModel)]="audienceSegmentFilters.totalSpendMin" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                      </div>
-                      <div class="space-y-1">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase pl-1">Device/Platform split (AND)</label>
-                        <div class="flex flex-wrap gap-2 pt-1">
-                          @for (plat of ['android', 'ios', 'web', 'pwa']; track plat) {
-                            <button (click)="$any(audienceSegmentFilters.platforms)[plat] = !$any(audienceSegmentFilters.platforms)[plat]"
-                                    [class]="$any(audienceSegmentFilters.platforms)[plat] ? 'bg-orange-500/10 text-orange-500 font-black border-orange-500/20' : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-400 border-zinc-200 dark:border-zinc-800'"
-                                    class="px-2.5 py-1 text-[9px] uppercase font-black border rounded-lg cursor-pointer transition-all">
-                              {{ plat }}
-                            </button>
-                          }
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               }
 
-              <!-- STEP 3: CONTENT & INTEGRATION -->
+              <!-- STEP 3: PUSH NOTIFICATION CONTENT (NO WHATSAPP) -->
               @if (wizardStep() === 3) {
-                <div class="space-y-6 animate-fadeIn">
-                  <!-- Channel selector -->
-                  <div class="space-y-1">
-                    <label class="block text-[9px] font-black text-zinc-400 uppercase">Channel Relay</label>
-                    <div class="flex gap-2">
-                      @for (ch of [
-                        { key: 'push', label: 'PWA Web Push' },
-                        { key: 'whatsapp', label: 'Meta WhatsApp Template' },
-                        { key: 'both', label: 'Omnichannel Both (Push + WA)' }
-                      ]; track ch.key) {
-                        <button (click)="selectedChannel.set($any(ch.key)); campaignForm.targetType = 'everyone'"
-                                [class]="selectedChannel() === ch.key ? 'bg-orange-600 text-white' : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-400 border border-zinc-200 dark:border-zinc-800'"
-                                class="flex-1 py-3 text-[10px] uppercase font-black rounded-xl cursor-pointer transition-all border-none">
-                          {{ ch.label }}
+                <div class="space-y-4 animate-fadeIn">
+                  <div class="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <h3 class="text-xs font-black uppercase tracking-wider text-orange-500 flex items-center gap-1.5">
+                      <mat-icon class="text-sm">notifications_active</mat-icon>
+                      PWA / Web Push Notification Content
+                    </h3>
+                    <span class="text-[10px] text-zinc-400 font-bold">Standard Push Channel</span>
+                  </div>
+
+                  <!-- Product catalogue autocomplete filler -->
+                  <div class="space-y-1 relative bg-zinc-50 dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                    <div class="flex justify-between items-center">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Load from Product Catalogue (Optional)</label>
+                      @if (selectedProduct()) {
+                        <button (click)="clearSelectedProduct()" class="text-[9px] text-red-500 font-bold border-none bg-transparent cursor-pointer hover:underline">
+                          Clear Selected Product
                         </button>
                       }
                     </div>
+
+                    <div class="flex gap-2">
+                      <div class="relative flex-1">
+                        <input type="text" [(ngModel)]="productSearchQuery" (input)="onProductSearchInput()" placeholder="Search ABS filament, resin, nozzle, printer..." class="w-full pl-3 pr-8 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white font-medium">
+                        @if (productSearchQuery) {
+                          <button (click)="clearProductSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 border-none bg-transparent cursor-pointer">
+                            <mat-icon class="text-xs">close</mat-icon>
+                          </button>
+                        }
+                      </div>
+                      <button type="button" (click)="searchProducts()" class="px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1">
+                        @if (isSearchingProducts()) {
+                          <mat-icon class="text-xs animate-spin">refresh</mat-icon>
+                        } @else {
+                          <mat-icon class="text-xs">search</mat-icon>
+                        }
+                        Search
+                      </button>
+                    </div>
+
+                    <!-- Autocomplete dropdown with clean thumbnails & fallback -->
+                    @if (searchResults().length > 0) {
+                      <div class="absolute z-30 top-full left-0 right-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl mt-1 shadow-xl max-h-56 overflow-y-auto p-2 space-y-1">
+                        @for (p of searchResults(); track p.id) {
+                          <button (click)="selectProduct(p)" class="w-full flex items-center gap-3 p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left border-none bg-transparent rounded-xl cursor-pointer transition-all">
+                            <img [src]="p.image || fallbackProductImage" (error)="onProductImgError($event)" class="w-10 h-10 object-contain rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 border border-zinc-200 dark:border-zinc-700 shrink-0" />
+                            <div class="flex-1 min-w-0">
+                              <h4 class="text-xs font-black truncate text-zinc-900 dark:text-white">{{ p.name }}</h4>
+                              <div class="flex items-center gap-2 text-[10px] text-zinc-400">
+                                <span class="font-bold text-orange-500">₹{{ p.salePrice || p.basePrice }}</span>
+                                @if (p.sku) {
+                                  <span class="font-mono text-[9px] text-zinc-400">SKU: {{ p.sku }}</span>
+                                }
+                              </div>
+                            </div>
+                            <span class="text-[10px] text-orange-500 font-bold uppercase shrink-0">Use</span>
+                          </button>
+                        }
+                      </div>
+                    }
                   </div>
 
-                  <!-- Push fields -->
-                  @if (selectedChannel() === 'push' || selectedChannel() === 'both') {
-                    <div class="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                      <h4 class="text-xs font-black uppercase text-orange-500">PWA Push Notification Fields</h4>
-                      
-                      <!-- Product auto filler inline inside wizard content -->
-                      <div class="space-y-1 relative">
-                        <label class="block text-[9px] font-black text-zinc-400 uppercase">Load Details from Product catalog (Optional)</label>
-                        <div class="flex gap-2">
-                          <input type="text" [(ngModel)]="productSearchQuery" placeholder="Search filament, resin, nozzle..." class="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                          <button type="button" (click)="searchProducts()" class="px-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">Search</button>
-                        </div>
-                        @if (searchResults().length > 0) {
-                          <div class="absolute z-20 top-full left-0 right-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 rounded-xl mt-1 shadow-lg max-h-40 overflow-y-auto p-2 space-y-1">
-                            @for (p of searchResults(); track p.id) {
-                              <button (click)="selectProduct(p)" class="w-full flex items-center gap-3 p-1.5 hover:bg-zinc-55 dark:hover:bg-zinc-800 text-left border-none bg-transparent rounded-lg cursor-pointer">
-                                <img [src]="p.image || '/assets/icon.png'" class="w-8 h-8 object-cover rounded" />
-                                <div class="flex-1 overflow-hidden">
-                                  <h4 class="text-xs font-bold truncate">{{ p.name }}</h4>
-                                  <p class="text-[9px] text-zinc-400 font-bold">₹{{ p.salePrice || p.basePrice }}</p>
-                                </div>
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Notification Title</label>
-                          <input type="text" [(ngModel)]="campaignForm.title" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-                        </div>
-                        <div class="space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Redirect URL / Link</label>
-                          <input type="text" [(ngModel)]="campaignForm.actionUrl" placeholder="/product/slug" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-                        </div>
-                        <div class="md:col-span-2 space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Notification Body</label>
-                          <textarea [(ngModel)]="campaignForm.body" rows="2" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500"></textarea>
-                        </div>
-                        <div class="md:col-span-2 space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Rich Image Banner URL</label>
-                          <input type="text" [(ngModel)]="campaignForm.image" placeholder="https://..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
-                        </div>
-                      </div>
-                    </div>
-                  }
-
-                  <!-- WhatsApp fields -->
-                  @if (selectedChannel() === 'whatsapp' || selectedChannel() === 'both') {
-                    <div class="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                      <h4 class="text-xs font-black uppercase text-emerald-500">Meta WhatsApp Approved Templates</h4>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Template Name</label>
-                          <select (change)="onWhatsAppTemplateSelect($any($event.target).value)" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer font-mono font-bold">
-                            <option value="">-- Choose Approved Template --</option>
-                            @for (t of whatsappTemplates(); track t.name) {
-                              <option [value]="t.name">{{ t.name }} ({{ t.category }})</option>
-                            }
-                          </select>
-                        </div>
-
-                        <div class="space-y-1">
-                          <label class="block text-[9px] font-black text-zinc-400 uppercase">Media Attachment Type</label>
-                          <select [(ngModel)]="whatsappAttachmentType" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                            <option value="none">None</option>
-                            <option value="image">Image Attachment</option>
-                            <option value="video">Video Attachment</option>
-                            <option value="document">PDF Document Attachment</option>
-                          </select>
-                        </div>
-
-                        @if (whatsappAttachmentType() !== 'none') {
-                          <div class="md:col-span-2 space-y-1">
-                            <label class="block text-[9px] font-black text-zinc-400 uppercase">Media Attachment URL</label>
-                            <input type="text" [(ngModel)]="whatsappAttachmentUrl" placeholder="https://..." class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                          </div>
-                        }
-                      </div>
-
-                      <!-- Variable Mapper -->
-                      @if (selectedWhatsAppTemplate()) {
-                        <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-2xl space-y-3">
-                          <h5 class="text-[10px] font-black uppercase text-zinc-400">Dynamic Variable Mapping</h5>
-                          <div class="space-y-2">
-                            @for (v of detectedVariables(); track v) {
-                              <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-2">
-                                <span class="text-xs font-mono font-black text-zinc-700 dark:text-zinc-300">{{"{{"}}</span><span class="text-xs font-mono font-black text-zinc-700 dark:text-zinc-300 font-bold">{{ v }}</span><span class="text-xs font-mono font-black text-zinc-700 dark:text-zinc-300">{{"}}"}}</span>
-                                <div class="flex gap-2 w-full sm:w-auto">
-                                  <select [(ngModel)]="variableMappings()[v]" class="px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
-                                    <option value="Customer.firstName">Customer First Name</option>
-                                    <option value="Order.orderNumber">Order Number</option>
-                                    <option value="Order.totalAmount">Order Amount</option>
-                                    <option value="Order.paymentStatus">Order Payment Status</option>
-                                    <option value="Order.trackingUrl">Order Tracking URL</option>
-                                    <option value="Custom Text">Custom Text Input</option>
-                                  </select>
-                                  @if (variableMappings()[v] === 'Custom Text') {
-                                    <input type="text" placeholder="Value..." class="px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none w-28">
-                                  }
-                                </div>
-                              </div>
-                            }
-                          </div>
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-
-              <!-- STEP 4: AI CONTENT HELPER -->
-              @if (wizardStep() === 4) {
-                <div class="space-y-4 animate-fadeIn">
-                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">AI Copilot Content Helper</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="md:col-span-2 space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Product, Brand, or Event Theme</label>
-                      <input type="text" [(ngModel)]="aiKeyword" placeholder="e.g. Maker Filament PLA Red price drop" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                    </div>
+                  <!-- Notification Content Form Fields -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
                     <div class="space-y-1">
-                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Tone Variation</label>
-                      <select [(ngModel)]="aiTone" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                        <option value="Engaging">Engaging / Friendly</option>
-                        <option value="Urgent">Urgent / Flash</option>
-                        <option value="Professional">Professional</option>
-                        <option value="Emojis-packed">Playful & Emojis</option>
+                      <div class="flex justify-between items-center">
+                        <label class="block text-[9px] font-black text-zinc-400 uppercase">Notification Title *</label>
+                        <span class="text-[9px] font-mono text-zinc-400" [class.text-red-500]="(campaignForm.title || '').length > 50">
+                          {{ (campaignForm.title || '').length }}/50 recommended
+                        </span>
+                      </div>
+                      <input type="text" [(ngModel)]="campaignForm.title" placeholder="e.g. Flash Deal: 20% OFF ABS Filament" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none focus:border-orange-500">
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Destination Redirect Link / URL *</label>
+                      <input type="text" [(ngModel)]="campaignForm.actionUrl" placeholder="/category/filaments" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
+                    </div>
+
+                    <div class="md:col-span-2 space-y-1">
+                      <div class="flex justify-between items-center">
+                        <label class="block text-[9px] font-black text-zinc-400 uppercase">Notification Body *</label>
+                        <span class="text-[9px] font-mono text-zinc-400" [class.text-red-500]="(campaignForm.body || '').length > 120">
+                          {{ (campaignForm.body || '').length }}/120 recommended
+                        </span>
+                      </div>
+                      <textarea [(ngModel)]="campaignForm.body" rows="2" placeholder="e.g. Upgrade your 3D printing setup with premium Elegoo ABS. Special discount for next 24 hours only!" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500"></textarea>
+                    </div>
+
+                    <div class="md:col-span-2 space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Rich Image Banner URL (Recommended)</label>
+                      <input type="text" [(ngModel)]="campaignForm.image" placeholder="https://storage.googleapis.com/... or public image URL" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Action Button 1 (Text)</label>
+                      <input type="text" [(ngModel)]="campaignForm.actionBtn1Text" placeholder="Shop Now" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Action Button 1 (URL)</label>
+                      <input type="text" [(ngModel)]="campaignForm.actionBtn1Url" placeholder="/" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Action Button 2 (Text, Optional)</label>
+                      <input type="text" [(ngModel)]="campaignForm.actionBtn2Text" placeholder="View Deals" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500">
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Action Button 2 (URL, Optional)</label>
+                      <input type="text" [(ngModel)]="campaignForm.actionBtn2Url" placeholder="/deals" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
+                    </div>
+
+                    <!-- Priority & Interaction Settings -->
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Delivery Priority</label>
+                      <select [(ngModel)]="campaignForm.priority" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
+                        <option value="Normal">Normal Priority</option>
+                        <option value="High">High Priority (Urgent Flash)</option>
                       </select>
                     </div>
-                    <div class="md:col-span-3 flex justify-end">
-                      <button type="button" (click)="generateAIContent()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">Generate Suggestions</button>
+
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-zinc-400 uppercase">Deduplication Tag</label>
+                      <input type="text" [(ngModel)]="campaignForm.tag" placeholder="e.g. daily-offer-tag" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 font-mono">
                     </div>
                   </div>
-
-                  @if (generatedAiTitles().length > 0) {
-                    <div class="space-y-3 mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-4">
-                      <span class="block text-[10px] font-black uppercase text-orange-500">AI Copy Suggestions (Click to Apply)</span>
-                      <div class="space-y-2">
-                        @for (title of generatedAiTitles(); track title; let idx = $index) {
-                          <div (click)="applyAiSuggestion(title, generatedAiBodies()[idx])" class="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:border-orange-500/40 cursor-pointer transition-all space-y-1">
-                            <h4 class="text-xs font-black text-zinc-900 dark:text-white">{{ title }}</h4>
-                            <p class="text-[10px] text-zinc-400">{{ generatedAiBodies()[idx] }}</p>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
                 </div>
               }
 
-              <!-- STEP 5: ON-SPOT IMMEDIATE DISPATCH -->
+              <!-- STEP 4: REVIEW AND BILLING IMPACT -->
+              @if (wizardStep() === 4) {
+                <div class="space-y-4 animate-fadeIn">
+                  <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2">Step 4 — Review & Monthly Billing Impact</h3>
+
+                  <!-- Billing Impact Summary with Hover Pricing Tiers -->
+                  <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl space-y-2 relative group/steprate">
+                    <div class="flex justify-between items-center">
+                      <span class="text-[9px] font-black uppercase text-purple-500">Estimated Monthly Billing Impact</span>
+                      <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-purple-500/20 text-purple-600 dark:text-purple-300 flex items-center gap-1 cursor-help">
+                        <span>{{ getBillingTierLabelForVolume(getReachEstimate()) }} Tier</span>
+                        <mat-icon class="text-[10px]">info</mat-icon>
+                      </span>
+                    </div>
+                    <div class="flex items-baseline justify-between">
+                      <div>
+                        <h4 class="text-2xl font-black text-zinc-900 dark:text-white">
+                          ₹{{ (getReachEstimate() * getBillingRateForVolume(getReachEstimate())) | number:'1.2-2' }}
+                        </h4>
+                        <p class="text-[10px] text-zinc-400">
+                          {{ getReachEstimate() }} recipients &#64; <span class="font-mono font-bold text-purple-400">₹{{ getBillingRateForVolume(getReachEstimate()) }}</span> / notification
+                        </p>
+                      </div>
+                      <span class="text-[10px] text-zinc-400 font-bold">Consolidated on monthly invoice</span>
+                    </div>
+
+                    <!-- Detailed Hover Popover in Step 4 -->
+                    <div class="invisible group-hover/steprate:visible opacity-0 group-hover/steprate:opacity-100 transition-all duration-200 absolute right-4 top-12 z-50 w-80 bg-black border border-zinc-800 rounded-2xl p-4 shadow-2xl space-y-3 pointer-events-none">
+                      <div class="flex justify-between items-center text-[10px] font-black uppercase text-zinc-400 pb-2 border-b border-zinc-800">
+                        <span>Monthly volume per project</span>
+                        <span>Suggested charge</span>
+                      </div>
+                      <div class="space-y-1.5">
+                        @for (t of billingTiers; track t.label) {
+                          <div class="flex justify-between items-center py-1.5 px-2.5 rounded-xl text-xs"
+                               [ngClass]="getBillingTierLabelForVolume(getReachEstimate()) === t.label ? 'bg-purple-950/60 text-purple-300 font-black border border-purple-500/40' : 'text-zinc-300 bg-zinc-900/60'">
+                            <span>{{ t.label }}</span>
+                            <span class="font-mono font-black">{{ t.priceLabel }}</span>
+                          </div>
+                        }
+                      </div>
+                      <div class="pt-2 border-t border-zinc-800 text-[9px] text-zinc-400">
+                        Volume tiers apply automatically to aggregate calendar monthly dispatches.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Content Verification Summary -->
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                    <span class="block text-[10px] font-black uppercase text-zinc-400">Campaign Content Checklist</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span class="text-[9px] text-zinc-400 uppercase block font-black">Title</span>
+                        <span class="font-bold text-zinc-800 dark:text-white">{{ campaignForm.title || '(No title specified)' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-zinc-400 uppercase block font-black">Target URL</span>
+                        <span class="font-mono text-zinc-800 dark:text-white text-[11px]">{{ campaignForm.actionUrl || '/' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-zinc-400 uppercase block font-black">Dispatch Strategy</span>
+                        <span class="font-bold text-orange-500 uppercase">{{ campaignForm.scheduleMode === 'draft' ? 'Save as Draft' : 'Immediate Dispatch (Send Now)' }}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-zinc-400 uppercase block font-black">Audience Segment</span>
+                        <span class="font-bold text-emerald-500">{{ campaignForm.targetType }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- STEP 5: CONFIRM AND LAUNCH -->
               @if (wizardStep() === 5) {
                 <div class="space-y-4 animate-fadeIn">
                   <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
                     <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
-                      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      Review & On-Spot Immediate Dispatch
+                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Step 5 — Final Confirmation & Dispatch
                     </h3>
                     <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                      ⚡ On-Spot Send Only
+                      ⚡ Verified Web Push Relay
                     </span>
                   </div>
 
-                  <!-- Information Callout -->
-                  <div class="p-4 bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/60 dark:border-orange-900/30 rounded-2xl flex items-start gap-3">
-                    <mat-icon class="text-orange-500 text-lg shrink-0 mt-0.5">bolt</mat-icon>
+                  <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="text-zinc-400 uppercase font-black text-[9px]">Campaign Name:</span>
+                      <span class="font-bold text-zinc-900 dark:text-white">{{ campaignForm.name || 'Untitled Push Campaign' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                      <span class="text-zinc-400 uppercase font-black text-[9px]">Dispatch Strategy:</span>
+                      <span class="font-bold uppercase" [class]="campaignForm.scheduleMode === 'draft' ? 'text-zinc-400' : 'text-orange-500'">
+                        {{ campaignForm.scheduleMode === 'draft' ? 'Save as Inactive Draft' : 'Immediate Dispatch (Send Now)' }}
+                      </span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                      <span class="text-zinc-400 uppercase font-black text-[9px]">Relay Channel:</span>
+                      <span class="font-bold text-orange-500 uppercase">PWA Web Push</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                      <span class="text-zinc-400 uppercase font-black text-[9px]">Eligible Target Devices:</span>
+                      <span class="font-bold text-emerald-500">{{ getReachEstimate() }} Opted-In Devices</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                      <span class="text-zinc-400 uppercase font-black text-[9px]">Estimated Charge:</span>
+                      <span class="font-bold text-purple-500 font-mono">₹{{ (getReachEstimate() * getBillingRateForVolume(getReachEstimate())) | number:'1.2-2' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-start gap-3">
+                    <mat-icon class="text-orange-500 text-lg shrink-0 mt-0.5">check_circle</mat-icon>
                     <div class="space-y-1">
-                      <h4 class="text-xs font-black text-orange-600 dark:text-orange-400 uppercase">Instant Broadcast Dispatch</h4>
+                      <h4 class="text-xs font-black text-orange-600 dark:text-orange-400 uppercase">Idempotency & Duplicate Prevention</h4>
                       <p class="text-[11px] text-zinc-600 dark:text-zinc-400">
-                        This campaign will be broadcast <strong>on the spot</strong> to all active opted-in subscriber devices ({{ optedInDevicesCount() }} devices ready). Scheduling has been removed for immediate delivery.
+                        Double clicks are safely prevented on the server. Delivery status is monitored live in the Activity Feed and Logs tab.
                       </p>
                     </div>
                   </div>
-
-                  <!-- Campaign Summary Grid -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                    <div>
-                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Campaign Name</span>
-                      <span class="text-xs font-black text-zinc-800 dark:text-white">{{ campaignForm.name || 'Untitled Campaign' }}</span>
-                    </div>
-                    <div>
-                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Relay Channel</span>
-                      <span class="text-xs font-black uppercase text-orange-500">{{ selectedChannel() }}</span>
-                    </div>
-                    <div>
-                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Notification Title</span>
-                      <span class="text-xs font-bold text-zinc-800 dark:text-white truncate block">{{ campaignForm.title || '(No Title Specified)' }}</span>
-                    </div>
-                    <div>
-                      <span class="text-[9px] font-black uppercase text-zinc-400 block">Target Audience</span>
-                      <span class="text-xs font-black text-emerald-500">{{ getReachEstimate() }} Devices</span>
-                    </div>
-                  </div>
-
-                  <div class="border-t border-zinc-100 dark:border-zinc-800 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="flex items-center gap-2">
-                      <input type="checkbox" id="dnd-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
-                      <label for="dnd-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Do Not Disturb (10 PM - 7 AM)</label>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <input type="checkbox" id="cap-chk" [checked]="true" class="w-4 h-4 text-orange-600 rounded cursor-pointer">
-                      <label for="cap-chk" class="text-xs font-black uppercase text-zinc-400 cursor-pointer">Respect Frequency Capping (1/day)</label>
-                    </div>
-                  </div>
                 </div>
               }
 
-              <!-- Navigation buttons -->
-              <div class="flex justify-between pt-6 border-t border-zinc-150 dark:border-zinc-800 mt-6">
-                <button type="button" [disabled]="wizardStep() === 1" (click)="wizardStep.set(wizardStep() - 1)" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer disabled:opacity-50">Back</button>
-                <div class="flex gap-2">
-                  <button type="button" (click)="clearCampaignForm()" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer">Clear</button>
+              <!-- Wizard Stepper Controls -->
+              <div class="flex justify-between items-center pt-6 border-t border-zinc-150 dark:border-zinc-800 mt-6">
+                <button type="button" [disabled]="wizardStep() === 1" (click)="wizardStep.set(wizardStep() - 1)" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer disabled:opacity-40">
+                  Back
+                </button>
+                
+                <div class="flex items-center gap-2">
+                  <button type="button" (click)="clearCampaignForm()" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+                    Clear Form
+                  </button>
+
                   @if (wizardStep() < 5) {
-                    <button type="button" (click)="wizardStep.set(wizardStep() + 1)" class="px-6 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">Next</button>
+                    <button type="button" (click)="goToNextWizardStep()" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer transition-all">
+                      Next Step
+                    </button>
                   } @else {
-                    <button type="button" (click)="dispatchManualCampaign(); nestedMarketingTab.set('dashboard')" class="px-6 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-600/30"><mat-icon class="text-sm font-black">bolt</mat-icon> Dispatch On-Spot Now</button>
+                    <button type="button" [disabled]="isSubmittingCampaign()" (click)="submitCampaign()" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-600/30 transition-all disabled:opacity-50">
+                      @if (isSubmittingCampaign()) {
+                        <mat-icon class="text-sm animate-spin">refresh</mat-icon> {{ campaignForm.scheduleMode === 'draft' ? 'Saving Draft...' : 'Dispatching...' }}
+                      } @else if (campaignForm.scheduleMode === 'draft') {
+                        <mat-icon class="text-sm">save</mat-icon> Save Inactive Draft
+                      } @else {
+                        <mat-icon class="text-sm">bolt</mat-icon> Confirm & Launch Now
+                      }
+                    </button>
                   }
                 </div>
               </div>
+
             </div>
 
-            <!-- SIMULATORS & REACH SUMMARY SIDEBAR -->
-            <div class="space-y-4">
-              <!-- Live Reach estimator box -->
-              <div class="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-xs space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Reach Summary</h3>
-                <div class="flex items-baseline justify-between">
-                  <span class="text-xs text-zinc-400 font-bold uppercase">Estimated Reach</span>
-                  <div class="text-right">
-                    <h3 class="text-2xl font-black text-orange-500">{{ getReachEstimate() }}</h3>
-                    <span class="text-[9px] text-zinc-400 font-bold">Target Devices / Phones</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Preview device frame selector -->
-              <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800/40 p-4 rounded-2xl select-none">
-                <span class="text-xs font-black uppercase text-zinc-500">Live Preview</span>
-                <select [(ngModel)]="previewDevice" class="px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
-                  <option value="desktop">Desktop Web</option>
-                  <option value="mobile">Android Device</option>
-                  <option value="whatsapp">WhatsApp Mock</option>
-                </select>
-              </div>
-
-              <!-- Simulator Viewports -->
-              <div class="w-full flex items-center justify-center p-6 bg-zinc-100/50 dark:bg-zinc-950/20 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-[2.5rem] relative overflow-hidden" style="min-height: 380px;">
-                
-                @if (previewDevice() === 'desktop') {
-                  <div class="w-full max-w-sm bg-zinc-900 text-white p-4 rounded-xl shadow-xl flex gap-3 border border-neutral-700 relative transition-all duration-300">
-                    <img [src]="fcmConfig.defaultIcon || '/assets/icon.png'" class="w-10 h-10 rounded-md object-contain bg-zinc-950" />
-                    <div class="flex-1 overflow-hidden">
-                      <h4 class="text-xs font-black truncate">{{ campaignForm.title || "🔥 Today's Mega Offer" }}</h4>
-                      <p class="text-[10px] text-neutral-400 truncate mt-0.5">{{ campaignForm.body || "Compose notification body." }}</p>
-                      <span class="block text-[8px] text-zinc-550 mt-1.5 tracking-wide">3dgalaxy.com</span>
-                    </div>
-                  </div>
-                }
-
-                @if (previewDevice() === 'mobile') {
-                  <div class="w-64 h-[300px] bg-zinc-800 dark:bg-black rounded-[2.5rem] border-[6px] border-zinc-700 relative overflow-hidden flex flex-col justify-end p-2 shadow-xl">
-                    <div class="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 bg-zinc-700 rounded-full"></div>
-                    <div class="w-full bg-[#1c1c1e] text-white p-3 rounded-xl shadow-lg border border-neutral-800 flex items-start gap-2.5 mb-1 text-left">
-                      <img [src]="fcmConfig.defaultIcon || '/assets/icon.png'" class="w-8 h-8 rounded-lg object-contain bg-zinc-900" />
-                      <div class="flex-1 overflow-hidden space-y-0.5">
-                        <h4 class="text-[10px] font-black truncate">{{ campaignForm.title || "🔥 Today's Mega Offer" }}</h4>
-                        <p class="text-[8px] text-neutral-400 leading-normal">{{ campaignForm.body || "Compose notification body." }}</p>
-                        @if (campaignForm.image) {
-                          <img [src]="campaignForm.image" class="w-full h-20 object-cover rounded-lg mt-1" />
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-
-                @if (previewDevice() === 'whatsapp') {
-                  <div class="w-64 h-[360px] bg-[#efeae2] dark:bg-zinc-900 rounded-[2.5rem] border-[6px] border-zinc-700 relative overflow-hidden flex flex-col justify-end p-2 shadow-xl">
-                    <div class="absolute top-0 left-0 right-0 bg-[#075e54] text-white px-4 py-2 flex items-center gap-2 relative z-10 shrink-0">
-                      <mat-icon class="scale-75">arrow_back</mat-icon>
-                      <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-black text-[9px] uppercase">3D</div>
-                      <div class="leading-none flex-1 min-w-0">
-                        <h4 class="text-[9px] font-black truncate">3D Galaxy Support</h4>
-                        <span class="text-[7px] opacity-80">Official Business</span>
-                      </div>
-                    </div>
-                    
-                    <div class="flex-1 overflow-y-auto p-2 space-y-2 select-none flex flex-col justify-end">
-                      <div class="max-w-[85%] bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white p-2.5 rounded-xl shadow-md border border-neutral-250/20 relative self-start text-[9px]">
-                        @if (whatsappAttachmentType() === 'image' && whatsappAttachmentUrl()) {
-                          <img [src]="whatsappAttachmentUrl()" class="w-full h-20 object-cover rounded-lg mb-2" />
-                        }
-                        @if (selectedWhatsAppTemplate()?.headerText) {
-                          <div class="font-black border-b border-zinc-100 dark:border-zinc-700 pb-1 mb-1 text-zinc-750 dark:text-zinc-200 uppercase tracking-wider text-[8px]">{{ selectedWhatsAppTemplate()?.headerText }}</div>
-                        }
-                        <div class="leading-normal">{{ selectedWhatsAppTemplate()?.body || "Compose WhatsApp campaign details to preview." }}</div>
-                        @if (selectedWhatsAppTemplate()?.footer) {
-                          <div class="text-[7px] text-zinc-400 mt-1.5">{{ selectedWhatsAppTemplate()?.footer }}</div>
-                        }
-                        @if (selectedWhatsAppTemplate()?.buttons) {
-                          <div class="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-700 flex gap-2 justify-center">
-                            @for (btn of selectedWhatsAppTemplate()?.buttons; track btn.text) {
-                              <button class="flex-1 py-1.5 bg-[#f0f2f5] hover:bg-neutral-200 dark:bg-zinc-750 text-blue-600 dark:text-blue-400 rounded-lg text-[8px] font-bold border-none cursor-pointer">{{ btn.text }}</button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- NESTED TAB 3: VISUAL FLOW BUILDER -->
-        @if (nestedMarketingTab() === 'flows') {
-          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-            <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-              <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Visual Marketing Automation Builder</h3>
-                <p class="text-[10px] text-zinc-400 mt-1">Design automated trigger-based drip campaign flows across multi-channels.</p>
-              </div>
-              <button (click)="toast.success('Automation flow saved & deployed successfully!')" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-500/10"><mat-icon class="text-sm">save</mat-icon> Save Journey</button>
-            </div>
-
-            <!-- SVG Flow Editor Canvas -->
-            <div class="relative w-full bg-zinc-50 dark:bg-zinc-950 rounded-2rem p-8 border border-zinc-200 dark:border-zinc-850 flex flex-col items-center gap-6 overflow-hidden">
-              <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(214,81,8,0.02),transparent_65%)] pointer-events-none"></div>
+            <!-- Right Side: Genuine Live Campaign Preview (5 Cols on Wide) -->
+            <div class="xl:col-span-5 space-y-4">
               
-              @for (node of flowNodes(); track node.id; let idx = $index) {
-                <div class="w-full max-w-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow relative z-10 flex items-center gap-4 group">
-                  <div class="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0">
-                    <mat-icon>{{ node.icon || 'star' }}</mat-icon>
-                  </div>
-                  <div class="flex-1 overflow-hidden">
-                    <span class="block text-[8px] font-black uppercase text-zinc-400 tracking-wider">Step {{ idx + 1 }}: {{ node.type }}</span>
-                    <h4 class="text-xs font-black text-zinc-900 dark:text-white truncate">{{ node.title }}</h4>
-                    <p class="text-[10px] text-zinc-400 truncate">{{ node.subtitle }}</p>
-                  </div>
-                  <button (click)="deleteFlowStep(node.id)" class="text-zinc-400 hover:text-red-500 border-none bg-transparent cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"><mat-icon class="text-base">delete_outline</mat-icon></button>
+              <!-- Device Simulator Selector & Actions Bar -->
+              <div class="flex justify-between items-center bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black uppercase text-zinc-700 dark:text-zinc-200">Live Preview</span>
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 </div>
+                
+                <div class="flex items-center gap-2">
+                  <select [ngModel]="previewDevice()" (ngModelChange)="previewDevice.set($event)" class="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold outline-none cursor-pointer text-zinc-800 dark:text-white">
+                    <option value="desktop">Desktop Web (Chrome)</option>
+                    <option value="android">Android Chrome / PWA</option>
+                    <option value="mobile">Mobile Web (iOS Banner)</option>
+                    <option value="tablet">Tablet Viewport</option>
+                  </select>
+                  <button (click)="resetPreview()" title="Reset Preview Sample" class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-700 text-zinc-500 rounded-lg cursor-pointer">
+                    <mat-icon class="text-xs">restart_alt</mat-icon>
+                  </button>
+                </div>
+              </div>
 
-                @if (idx < flowNodes().length - 1) {
-                  <!-- Arrow Connection -->
-                  <div class="h-6 w-0.5 bg-dashed border-l-2 border-zinc-300 dark:border-zinc-800 relative z-0">
-                    <div class="absolute -bottom-1.5 -left-1 w-2.5 h-2.5 border-r border-b border-zinc-300 dark:border-zinc-800 rotate-45"></div>
+              <!-- Simulator Viewport Canvas -->
+              <div class="w-full flex items-center justify-center p-6 bg-zinc-100/60 dark:bg-zinc-950/40 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-3xl relative overflow-hidden" style="min-height: 420px;">
+                
+                <!-- SIMULATOR 1: DESKTOP WEB NOTIFICATION -->
+                @if (previewDevice() === 'desktop') {
+                  <div class="w-full max-w-sm bg-zinc-900 text-white rounded-2xl shadow-2xl border border-neutral-700 p-4 space-y-3 transition-all duration-300">
+                    <div class="flex items-start gap-3">
+                      <img [src]="campaignForm.icon || '/assets/icon.png'" (error)="onProductImgError($event)" class="w-9 h-9 rounded-lg object-contain bg-zinc-950 p-1 border border-neutral-800 shrink-0" />
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">3dgalaxy.in • now</span>
+                          <mat-icon class="text-xs text-zinc-500 cursor-pointer">close</mat-icon>
+                        </div>
+                        <h4 class="text-xs font-black truncate mt-0.5">{{ campaignForm.title || "🔥 Today's Mega Deal" }}</h4>
+                        <p class="text-[11px] text-zinc-400 leading-snug line-clamp-2 mt-0.5">{{ campaignForm.body || "Compose notification body to see how it renders on customer screens." }}</p>
+                      </div>
+                    </div>
+
+                    @if (campaignForm.image) {
+                      <div class="w-full h-36 rounded-xl overflow-hidden bg-black/40 border border-neutral-800">
+                        <img [src]="campaignForm.image" (error)="onProductImgError($event)" class="w-full h-full object-cover" />
+                      </div>
+                    }
+
+                    @if (campaignForm.actionBtn1Text || campaignForm.actionBtn2Text) {
+                      <div class="flex gap-2 pt-1 border-t border-neutral-800">
+                        @if (campaignForm.actionBtn1Text) {
+                          <button (click)="simulateActionClick(campaignForm.actionBtn1Text, campaignForm.actionBtn1Url)" class="flex-1 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer transition-all">
+                            {{ campaignForm.actionBtn1Text }}
+                          </button>
+                        }
+                        @if (campaignForm.actionBtn2Text) {
+                          <button (click)="simulateActionClick(campaignForm.actionBtn2Text, campaignForm.actionBtn2Url)" class="flex-1 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-[10px] font-black uppercase border-none cursor-pointer transition-all">
+                            {{ campaignForm.actionBtn2Text }}
+                          </button>
+                        }
+                      </div>
+                    }
                   </div>
                 }
-              }
 
-              <!-- Add Step control row -->
-              <div class="flex flex-wrap gap-2 pt-6 border-t border-zinc-200 dark:border-zinc-800/60 mt-4 w-full justify-center">
-                <button (click)="addFlowStep('action')" class="px-3 py-1.5 bg-orange-600/10 hover:bg-orange-600/15 border border-orange-500/20 text-orange-500 rounded-xl text-[10px] font-black uppercase cursor-pointer flex items-center gap-1"><mat-icon class="text-sm">add_circle</mat-icon> Action Step</button>
-                <button (click)="addFlowStep('delay')" class="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/15 border border-blue-500/20 text-blue-500 rounded-xl text-[10px] font-black uppercase cursor-pointer flex items-center gap-1"><mat-icon class="text-sm">schedule</mat-icon> Delay Step</button>
-                <button (click)="addFlowStep('condition')" class="px-3 py-1.5 bg-[#64748b]/10 hover:bg-[#64748b]/15 border border-neutral-500/20 text-neutral-600 dark:text-neutral-300 rounded-xl text-[10px] font-black uppercase cursor-pointer flex items-center gap-1"><mat-icon class="text-sm">alt_route</mat-icon> Condition Step</button>
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- NESTED TAB 4: HISTORY & LOGS -->
-        @if (nestedMarketingTab() === 'history') {
-          <div class="space-y-6 animate-fadeIn">
-            <!-- Search bar -->
-            <div class="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl flex items-center gap-3">
-              <mat-icon class="text-zinc-400">search</mat-icon>
-              <input type="text" placeholder="Search campaigns, templates, products or customers..." class="flex-1 bg-transparent border-none text-xs font-bold outline-none text-zinc-900 dark:text-white" />
-            </div>
-
-            <!-- Past Campaigns list table -->
-            <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Campaign History Logs</h3>
-              <div class="space-y-3">
-                @if (pastCampaigns().length === 0) {
-                  <div class="p-6 text-center text-xs text-zinc-400 font-bold uppercase border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
-                    No campaign history logs found in database. Dispatched campaigns will appear here.
-                  </div>
-                } @else {
-                  @for (c of pastCampaigns(); track c.id) {
-                    <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 group">
-                      <div class="space-y-1 flex-1 min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[8px] font-black uppercase">{{ c.type }}</span>
-                          <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded text-[8px] font-black uppercase">{{ c.status }}</span>
-                          <span class="text-[10px] text-zinc-400 font-bold">Dispatched: {{ c.date }}</span>
+                <!-- SIMULATOR 2: ANDROID CHROME / PWA -->
+                @if (previewDevice() === 'android') {
+                  <div class="w-72 bg-zinc-900 rounded-[2.5rem] border-[6px] border-zinc-700 shadow-2xl p-2.5 space-y-2 relative">
+                    <div class="w-20 h-3.5 bg-zinc-700 rounded-full mx-auto mb-2"></div>
+                    
+                    <div class="bg-[#1e1e24] text-white p-3.5 rounded-2xl border border-zinc-800 space-y-2.5">
+                      <div class="flex items-center justify-between text-[8px] text-zinc-400 font-bold uppercase tracking-wider">
+                        <div class="flex items-center gap-1.5">
+                          <img [src]="campaignForm.icon || '/assets/icon.png'" (error)="onProductImgError($event)" class="w-4 h-4 rounded-full" />
+                          <span>3D GALAXY PWA • now</span>
                         </div>
-                        <h4 class="text-xs font-black text-zinc-900 dark:text-white uppercase truncate">{{ c.name }}</h4>
-                        <div class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
-                          <span class="font-bold text-zinc-700 dark:text-zinc-300">{{ c.title }}</span>
-                          @if (c.body) {
-                            <span>•</span>
-                            <span class="text-zinc-400">{{ c.body }}</span>
+                        <mat-icon class="text-[12px] h-3 w-3">expand_more</mat-icon>
+                      </div>
+
+                      <div class="space-y-1">
+                        <h4 class="text-xs font-black truncate">{{ campaignForm.title || "🔥 Today's Mega Deal" }}</h4>
+                        <p class="text-[10px] text-zinc-400 leading-snug">{{ campaignForm.body || "Compose push body in the editor." }}</p>
+                      </div>
+
+                      @if (campaignForm.image) {
+                        <div class="w-full h-28 rounded-xl overflow-hidden bg-black border border-zinc-800">
+                          <img [src]="campaignForm.image" (error)="onProductImgError($event)" class="w-full h-full object-cover" />
+                        </div>
+                      }
+
+                      @if (campaignForm.actionBtn1Text || campaignForm.actionBtn2Text) {
+                        <div class="flex gap-2 pt-1 border-t border-zinc-800">
+                          @if (campaignForm.actionBtn1Text) {
+                            <button (click)="simulateActionClick(campaignForm.actionBtn1Text, campaignForm.actionBtn1Url)" class="flex-1 py-1 bg-white/10 hover:bg-white/20 text-orange-400 rounded-lg text-[9px] font-bold border-none cursor-pointer">
+                              {{ campaignForm.actionBtn1Text }}
+                            </button>
+                          }
+                          @if (campaignForm.actionBtn2Text) {
+                            <button (click)="simulateActionClick(campaignForm.actionBtn2Text, campaignForm.actionBtn2Url)" class="flex-1 py-1 bg-white/10 hover:bg-white/20 text-zinc-300 rounded-lg text-[9px] font-bold border-none cursor-pointer">
+                              {{ campaignForm.actionBtn2Text }}
+                            </button>
                           }
                         </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- SIMULATOR 3: MOBILE WEB (iOS LOCK-SCREEN BANNER) -->
+                @if (previewDevice() === 'mobile') {
+                  <div class="w-72 bg-gradient-to-b from-zinc-800 to-zinc-950 rounded-[2.5rem] border-[6px] border-zinc-700 shadow-2xl p-3 space-y-3 relative">
+                    <div class="w-24 h-4 bg-black rounded-full mx-auto"></div>
+                    <div class="text-center text-white py-4 space-y-0.5">
+                      <span class="text-3xl font-black font-mono">10:45</span>
+                      <span class="text-[9px] text-zinc-400 uppercase tracking-widest block font-bold">Sunday, October 25</span>
+                    </div>
+
+                    <div class="bg-white/15 backdrop-blur-md text-white p-3 rounded-2xl border border-white/20 space-y-1.5 shadow-lg">
+                      <div class="flex items-center justify-between text-[8px] text-zinc-300 uppercase tracking-wider font-bold">
+                        <div class="flex items-center gap-1.5">
+                          <span class="w-3.5 h-3.5 rounded-full bg-orange-500 flex items-center justify-center text-[7px] font-black">3D</span>
+                          <span>3D GALAXY</span>
+                        </div>
+                        <span>NOW</span>
                       </div>
+                      <h4 class="text-xs font-black truncate">{{ campaignForm.title || "Special Announcement" }}</h4>
+                      <p class="text-[10px] text-zinc-200 leading-snug line-clamp-2">{{ campaignForm.body || "Notification content simulation." }}</p>
+                      @if (campaignForm.image) {
+                        <img [src]="campaignForm.image" (error)="onProductImgError($event)" class="w-full h-20 object-cover rounded-lg mt-1 border border-white/10" />
+                      }
+                    </div>
+                  </div>
+                }
 
-                      <div class="flex items-center gap-4 shrink-0 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 border-t md:border-t-0 md:border-l border-zinc-200 dark:border-zinc-800 pt-3 md:pt-0 md:pl-4">
-                        <div class="grid grid-cols-4 gap-4 text-center">
-                          <div>
-                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Sent</span>
-                            <span class="font-black text-zinc-800 dark:text-white text-xs">{{ c.sentCount }}</span>
-                          </div>
-                          <div>
-                            <span class="text-[8px] block text-zinc-450 font-black uppercase">CTR</span>
-                            <span class="font-black text-blue-500 text-xs">{{ c.ctr }}%</span>
-                          </div>
-                          <div>
-                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Clicks</span>
-                            <span class="font-black text-indigo-500 text-xs">{{ c.clickedCount }}</span>
-                          </div>
-                          <div>
-                            <span class="text-[8px] block text-zinc-450 font-black uppercase">Revenue</span>
-                            <span class="font-black text-emerald-500 text-xs">₹{{ c.revenue | number }}</span>
-                          </div>
-                        </div>
+                <!-- SIMULATOR 4: TABLET VIEWPORT -->
+                @if (previewDevice() === 'tablet') {
+                  <div class="w-full max-w-md bg-zinc-900 rounded-2xl border-4 border-zinc-700 shadow-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                      <div class="flex items-center gap-2">
+                        <img [src]="campaignForm.icon || '/assets/icon.png'" (error)="onProductImgError($event)" class="w-6 h-6 rounded-md" />
+                        <span class="text-xs font-black text-white">3D Galaxy Web Push Relay</span>
+                      </div>
+                      <span class="text-[9px] text-zinc-400 font-mono">Tablet Notification Shade</span>
+                    </div>
 
-                        <div class="flex items-center gap-1.5 pl-2 border-l border-zinc-200 dark:border-zinc-800">
-                          <button (click)="useCampaignAsTemplate(c)" title="Send Again / Edit in Composer" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">send</mat-icon></button>
-                          <button (click)="duplicateCampaign(c)" title="Duplicate" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-orange-500 cursor-pointer"><mat-icon class="text-xs">content_copy</mat-icon></button>
-                          <button (click)="exportCampaign(c)" title="Export Config JSON" class="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 rounded-lg hover:text-blue-500 cursor-pointer"><mat-icon class="text-xs">download</mat-icon></button>
-                        </div>
+                    <div class="flex gap-4">
+                      @if (campaignForm.image) {
+                        <img [src]="campaignForm.image" (error)="onProductImgError($event)" class="w-28 h-24 object-cover rounded-xl border border-zinc-800 shrink-0" />
+                      }
+                      <div class="space-y-1 flex-1 min-w-0">
+                        <h4 class="text-xs font-black text-white truncate">{{ campaignForm.title || "Special Push Campaign" }}</h4>
+                        <p class="text-[11px] text-zinc-400 leading-snug">{{ campaignForm.body || "Preview how wide tablet notifications accommodate image thumbnails alongside text copy." }}</p>
+                        @if (campaignForm.actionUrl) {
+                          <span class="text-[9px] text-orange-500 font-mono block pt-1 truncate">{{ campaignForm.actionUrl }}</span>
+                        }
                       </div>
                     </div>
-                  }
+                  </div>
                 }
+
               </div>
+
+              <!-- Simulation Disclaimer Notice -->
+              <div class="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[10px] text-zinc-400 leading-normal">
+                <strong>Simulation Disclaimer:</strong> Notification styling, action button rendering, and banner placement vary by operating system (Windows, macOS, Android, iOS), browser permissions, and user system settings.
+              </div>
+
             </div>
+
           </div>
         }
       }
 
-      <!-- AUTO RULES PAGE -->
-      @if (activeSubTab() === 'rules') {
-        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-          <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Product Selection Rules (Daily Auto-Offer 5:00 PM IST)</h3>
-          
-          <form class="grid grid-cols-1 md:grid-cols-2 gap-6" (submit)="saveRulesConfig($event)">
-            
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Random Products Count per day</label>
-              <input type="number" [(ngModel)]="rulesConfig.randomProductCount" name="prodCount" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-            
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Stock Threshold (Min quantity in stock)</label>
-              <input type="number" [(ngModel)]="rulesConfig.stockThreshold" name="stockThresh" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Minimum Discount (%)</label>
-              <input type="number" [(ngModel)]="rulesConfig.minDiscountPercent" name="minDisc" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Maximum Discount (%)</label>
-              <input type="number" [(ngModel)]="rulesConfig.maxDiscountPercent" name="maxDisc" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Duplicate Prevention Limit (Days)</label>
-              <input type="number" [(ngModel)]="rulesConfig.duplicatePreventionDays" name="dupPrev" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-            
-            <div class="space-y-1">
-              <label class="block text-[9px] font-black text-zinc-400 uppercase">Maximum Notifications Per Day</label>
-              <input type="number" [(ngModel)]="rulesConfig.maxNotificationsPerDay" name="maxNotif" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-            </div>
-
-            <div class="md:col-span-2 flex justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-              <button type="button" (click)="triggerDailyOfferTest()" class="px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 rounded-xl text-xs font-black uppercase border-none cursor-pointer">Run Cron Job Now</button>
-              <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase cursor-pointer border-none flex items-center gap-1.5"><mat-icon class="text-sm">save</mat-icon> Save Rules</button>
-            </div>
-          </form>
-        </div>
-      }
-
-      <!-- CAMPAIGN TEMPLATES MANAGER -->
-      @if (activeSubTab() === 'templates') {
-        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
-          <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Marketing Notification Templates</h3>
-            <button (click)="openTemplateEditor(null)" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-[10px] font-black uppercase border-none cursor-pointer flex items-center gap-1"><mat-icon class="text-sm">add</mat-icon> New Template</button>
-          </div>
-
-          <!-- Template editor modal -->
-          @if (editingTemplate()) {
-            <div class="bg-zinc-50 dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-850 space-y-4">
-              <h4 class="text-xs font-black uppercase">{{ templateForm.id ? 'Edit Template' : 'Create Template' }}</h4>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Template Name</label>
-                  <input type="text" [(ngModel)]="templateForm.name" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-                <div class="space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Category</label>
-                  <select [(ngModel)]="templateForm.category" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer">
-                    <option value="Daily Deal">Daily Deal</option>
-                    <option value="Festival Offer">Festival Offer</option>
-                    <option value="Weekend Sale">Weekend Sale</option>
-                    <option value="Flash Sale">Flash Sale</option>
-                    <option value="Clearance Sale">Clearance Sale</option>
-                    <option value="Price Drop">Price Drop</option>
-                    <option value="New Arrival">New Arrival</option>
-                  </select>
-                </div>
-                <div class="md:col-span-2 space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Default Title</label>
-                  <input type="text" [(ngModel)]="templateForm.title" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-                <div class="md:col-span-2 space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Default Body Message</label>
-                  <textarea [(ngModel)]="templateForm.body" rows="3" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"></textarea>
-                </div>
-                <div class="space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Image URL (Optional)</label>
-                  <input type="text" [(ngModel)]="templateForm.image" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-                <div class="space-y-1">
-                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Redirect Click Action (Optional)</label>
-                  <input type="text" [(ngModel)]="templateForm.actionUrl" class="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
-                </div>
-              </div>
-
-              <div class="flex justify-end gap-2">
-                <button (click)="editingTemplate.set(false)" class="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-305 rounded-lg text-[10px] font-black uppercase cursor-pointer border-none">Cancel</button>
-                <button (click)="saveTemplate()" class="px-5 py-2 bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase cursor-pointer border-none">Save Template</button>
-              </div>
-            </div>
-          }
-
-          <!-- Templates Grid List -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @for (item of templatesList(); track item.id) {
-              <div class="bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-150 dark:border-zinc-850 flex flex-col justify-between gap-4">
-                <div class="space-y-2">
-                  <div class="flex justify-between items-start">
-                    <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-orange-500/10 text-orange-500">{{ item.category }}</span>
-                    <span class="text-xs font-black text-zinc-900 dark:text-white">{{ item.name }}</span>
-                  </div>
-                  <h4 class="text-xs font-bold text-zinc-700 dark:text-zinc-300">Title: {{ item.title }}</h4>
-                  <p class="text-[10px] text-zinc-450 dark:text-zinc-450 leading-relaxed">{{ item.body }}</p>
-                </div>
-
-                <div class="flex gap-2 justify-end border-t border-zinc-200/50 dark:border-zinc-800 pt-3">
-                  <button (click)="openTemplateEditor(item)" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-[9px] font-black uppercase rounded-lg border-none cursor-pointer">Edit</button>
-                  <button (click)="cloneTemplate(item)" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-[9px] font-black uppercase rounded-lg border-none cursor-pointer">Clone</button>
-                  <button (click)="deleteTemplate(item.id)" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[9px] font-black uppercase rounded-lg border-none cursor-pointer">Delete</button>
-                </div>
-              </div>
-            }
-          </div>
-
-        </div>
-      }
-
-      <!-- REGISTERED FCM SUBSCRIBER DEVICES TAB -->
-      @if (activeSubTab() === 'devices' || (activeSubTab() === 'manual-send' && nestedMarketingTab() === 'devices')) {
+      <!-- ======================================================== -->
+      <!-- SECTION 3: DEVICES & OPT-IN -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'devices') {
         <div class="space-y-6 animate-fadeIn">
-          <!-- Header Banner -->
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-            <div>
-              <h2 class="text-lg font-black uppercase tracking-wider text-zinc-900 dark:text-white flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-emerald-600/10 text-emerald-500 flex items-center justify-center"><mat-icon>devices</mat-icon></span>
-                FCM Registered Devices & Subscribers
-              </h2>
-              <p class="text-xs text-zinc-400 mt-1">Live inspection of all client devices registered with Firebase Cloud Messaging, with Opt-In / Opt-Out statuses.</p>
+          
+          <!-- Devices Stats Header -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase text-zinc-400">Total Registered Devices</span>
+              <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ subscriberDevices().length }}</h3>
+              <p class="text-[10px] text-zinc-400">In database</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <button (click)="loadSubscriberDevices()" [disabled]="loadingDevices()" class="px-3.5 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 transition-all">
-                <mat-icon class="text-sm" [class.animate-spin]="loadingDevices()">refresh</mat-icon> Refresh
-              </button>
-              <button (click)="exportDevicesCsv()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 transition-all shadow-sm">
-                <mat-icon class="text-sm">download</mat-icon> Export CSV
-              </button>
-            </div>
-          </div>
 
-          <!-- KPI Summary Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-              <span class="text-[9px] font-black uppercase text-zinc-400">Total FCM Devices</span>
-              <div class="flex items-baseline justify-between">
-                <h3 class="text-2xl font-black text-zinc-900 dark:text-white">{{ subscriberDevices().length }}</h3>
-                <span class="text-[9px] text-zinc-400 font-bold">Endpoints</span>
-              </div>
-            </div>
-            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-              <span class="text-[9px] font-black uppercase text-emerald-500">Opted In (Active)</span>
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase text-emerald-500">Active Opted-In</span>
               <div class="flex items-baseline justify-between">
                 <h3 class="text-2xl font-black text-emerald-500">{{ optedInDevicesCount() }}</h3>
-                <span class="text-[9px] text-emerald-500 font-bold">{{ optedInPercent() }}% Allowed</span>
+                <span class="text-xs font-bold text-emerald-500">{{ optedInPercent() }}%</span>
               </div>
+              <p class="text-[10px] text-zinc-400">Can receive push notifications</p>
             </div>
-            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-              <span class="text-[9px] font-black uppercase text-rose-500">Opted Out (Blocked)</span>
+
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase text-red-500">Opted-Out / Disabled</span>
               <div class="flex items-baseline justify-between">
-                <h3 class="text-2xl font-black text-rose-500">{{ optedOutDevicesCount() }}</h3>
-                <span class="text-[9px] text-rose-400 font-bold">{{ optedOutPercent() }}% Denied</span>
+                <h3 class="text-2xl font-black text-red-500">{{ optedOutDevicesCount() }}</h3>
+                <span class="text-xs font-bold text-red-500">{{ optedOutPercent() }}%</span>
               </div>
+              <p class="text-[10px] text-zinc-400">Excluded from campaigns</p>
             </div>
-            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-2">
-              <span class="text-[9px] font-black uppercase text-blue-500">Platform Distribution</span>
+
+            <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+              <span class="text-[9px] font-black uppercase text-blue-500">Platform Split</span>
               <div class="flex items-baseline justify-between">
-                <h3 class="text-base font-black text-blue-500">{{ desktopCount() }} Desktop / {{ mobileCount() }} Mobile</h3>
-                <span class="text-[9px] text-zinc-400 font-bold">Devices</span>
+                <span class="text-sm font-black text-zinc-800 dark:text-white">🖥️ {{ desktopCount() }}</span>
+                <span class="text-sm font-black text-zinc-800 dark:text-white">📱 {{ mobileCount() }}</span>
               </div>
+              <p class="text-[10px] text-zinc-400">Desktop vs Mobile Devices</p>
             </div>
           </div>
 
-          <!-- Filters & Search Toolbar -->
-          <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
-            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-              <!-- Status Filter Pills -->
-              <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
-                <button (click)="devicesStatusFilter.set('all')"
-                        [class]="devicesStatusFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
-                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all">
-                  All ({{ subscriberDevices().length }})
-                </button>
-                <button (click)="devicesStatusFilter.set('opted_in')"
-                        [class]="devicesStatusFilter() === 'opted_in' ? 'bg-white dark:bg-zinc-900 text-emerald-600 font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
-                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Opted In ({{ optedInDevicesCount() }})
-                </button>
-                <button (click)="devicesStatusFilter.set('opted_out')"
-                        [class]="devicesStatusFilter() === 'opted_out' ? 'bg-white dark:bg-zinc-900 text-rose-600 font-black shadow-xs' : 'text-zinc-500 dark:text-zinc-400 font-bold'"
-                        class="px-3 py-1.5 text-xs uppercase rounded-lg border-none cursor-pointer transition-all flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Opted Out ({{ optedOutDevicesCount() }})
-                </button>
+          <!-- Devices Table Container -->
+          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+              <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                  <button (click)="devicesStatusFilter.set('all')" [class]="devicesStatusFilter() === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white font-black' : 'text-zinc-500'" class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer">All ({{ subscriberDevices().length }})</button>
+                  <button (click)="devicesStatusFilter.set('opted_in')" [class]="devicesStatusFilter() === 'opted_in' ? 'bg-white dark:bg-zinc-900 text-emerald-500 font-black' : 'text-zinc-500'" class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer">Opted In ({{ optedInDevicesCount() }})</button>
+                  <button (click)="devicesStatusFilter.set('opted_out')" [class]="devicesStatusFilter() === 'opted_out' ? 'bg-white dark:bg-zinc-900 text-red-500 font-black' : 'text-zinc-500'" class="px-3 py-1 text-[10px] uppercase rounded-lg border-none cursor-pointer">Opted Out ({{ optedOutDevicesCount() }})</button>
+                </div>
               </div>
 
-              <!-- Search input -->
-              <div class="relative flex-1 max-w-md">
-                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">search</mat-icon>
-                <input type="text" [(ngModel)]="devicesSearchQuery" placeholder="Search by FCM token, user email, guest ID, browser, OS..." class="w-full pl-9 pr-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-orange-500 text-zinc-900 dark:text-white">
+              <div class="flex items-center gap-2">
+                <button (click)="exportDevicesCsv()" class="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 border-none cursor-pointer flex items-center gap-1">
+                  <mat-icon class="text-sm">download</mat-icon> Export CSV
+                </button>
+                <button (click)="loadSubscriberDevices()" class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 rounded-xl text-zinc-600 dark:text-zinc-300 border-none cursor-pointer">
+                  <mat-icon class="text-sm">refresh</mat-icon>
+                </button>
               </div>
             </div>
 
-            <!-- Secondary Dropdowns (Platform & Browser) -->
-            <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black uppercase text-zinc-400">Platform:</span>
-                <select [(ngModel)]="devicesPlatformFilter" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
-                  <option value="all">All Platforms</option>
-                  <option value="desktop">Desktop</option>
-                  <option value="mobile">Mobile</option>
-                  <option value="android">Android</option>
-                  <option value="ios">iOS</option>
-                </select>
+            <!-- Devices List Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase text-[9px] font-black">
+                    <th class="pb-3 pl-2">Device / OS</th>
+                    <th class="pb-3">Browser</th>
+                    <th class="pb-3">Opt-In Status</th>
+                    <th class="pb-3">User / Session</th>
+                    <th class="pb-3">Last Active</th>
+                    <th class="pb-3 text-right pr-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                  @if (filteredDevices().length === 0) {
+                    <tr>
+                      <td colspan="6" class="py-8 text-center text-zinc-400 font-bold uppercase">No devices found.</td>
+                    </tr>
+                  } @else {
+                    @for (d of filteredDevices(); track d.id) {
+                      <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                        <td class="py-3 pl-2 font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                          <mat-icon class="text-sm text-zinc-400">{{ d.device === 'mobile' ? 'smartphone' : 'laptop' }}</mat-icon>
+                          <span>{{ d.os || 'Unknown OS' }}</span>
+                        </td>
+                        <td class="py-3 font-medium text-zinc-700 dark:text-zinc-300">{{ d.browser || 'Chrome' }}</td>
+                        <td class="py-3">
+                          <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase"
+                                [ngClass]="d.notificationEnabled ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
+                            {{ d.notificationEnabled ? 'Opted In' : 'Disabled' }}
+                          </span>
+                        </td>
+                        <td class="py-3 text-zinc-500 font-mono text-[10px]">
+                          {{ d.user?.email || (d.guestId ? 'Guest: ' + d.guestId.substring(0, 10) : 'Anonymous') }}
+                        </td>
+                        <td class="py-3 text-zinc-400 font-mono text-[10px]">{{ formatDeviceDate(d.lastActive || d.createdAt) }}</td>
+                        <td class="py-3 text-right pr-2">
+                          <button (click)="sendDirectTestPush(d)" class="px-2.5 py-1 bg-orange-600/10 hover:bg-orange-600/20 text-orange-500 font-black rounded-lg text-[9px] uppercase border-none cursor-pointer">
+                            Ping Push
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ======================================================== -->
+      <!-- SECTION 4: MONTHLY BILLING & INVOICING -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'billing') {
+        <div class="space-y-6 animate-fadeIn">
+          
+          <!-- Month Selector & Actions Header -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+                <mat-icon>receipt_long</mat-icon>
+              </span>
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Marketing Monthly Billing</h3>
+                <p class="text-[11px] text-zinc-400">Aggregated usage per calendar month with automated invoice generation.</p>
               </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black uppercase text-zinc-400">Browser:</span>
-                <select [(ngModel)]="devicesBrowserFilter" class="px-2.5 py-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
-                  <option value="all">All Browsers</option>
-                  <option value="chrome">Chrome</option>
-                  <option value="safari">Safari</option>
-                  <option value="firefox">Firefox</option>
-                  <option value="edge">Edge</option>
-                </select>
-              </div>
-              <span class="text-zinc-400 text-[10px] ml-auto">Showing {{ filteredDevices().length }} of {{ subscriberDevices().length }} devices</span>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Calendar Month Dropdown -->
+              <select [ngModel]="selectedBillingMonth()" (ngModelChange)="onBillingMonthChange($event)" class="px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer text-zinc-900 dark:text-white">
+                @for (m of availableBillingMonths(); track m) {
+                  <option [value]="m">{{ formatMonthLabel(m) }}</option>
+                }
+              </select>
+
+              <button (click)="showBillingConfigModal.set(true)" class="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1">
+                <mat-icon class="text-sm">table_chart</mat-icon> Pricing Slabs
+              </button>
+
+              <button (click)="exportBillingCsv()" class="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1">
+                <mat-icon class="text-sm">download</mat-icon> Export Log
+              </button>
+
+              <button (click)="generateMonthlyInvoice()" [disabled]="isGeneratingInvoice()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50">
+                @if (isGeneratingInvoice()) {
+                  <mat-icon class="text-sm animate-spin">refresh</mat-icon>
+                } @else {
+                  <mat-icon class="text-sm">receipt</mat-icon>
+                }
+                Generate Monthly Invoice
+              </button>
             </div>
           </div>
 
-          <!-- Devices Data Table -->
-          <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
-            @if (loadingDevices()) {
-              <div class="p-12 text-center text-xs text-zinc-400 font-bold uppercase flex items-center justify-center gap-2">
-                <mat-icon class="animate-spin text-orange-500">sync</mat-icon> Loading Registered Devices...
+          <!-- Monthly Usage & Financials Summary Cards -->
+          @if (monthlyBillingData()) {
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              
+              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+                <span class="text-[9px] font-black uppercase text-zinc-400">Billable Dispatches</span>
+                <h3 class="text-2xl font-black text-purple-600 dark:text-purple-400">{{ monthlyBillingData()?.usage?.billableNotifications || 0 }}</h3>
+                <p class="text-[10px] text-zinc-400">Accepted by provider</p>
               </div>
-            } @else if (filteredDevices().length === 0) {
-              <div class="p-12 text-center text-xs text-zinc-400 font-bold uppercase space-y-2">
-                <mat-icon class="text-3xl text-zinc-400">phonelink_off</mat-icon>
-                <p>No FCM devices found matching the current filters.</p>
+
+              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1 relative group/rate cursor-help">
+                <div class="flex justify-between items-center">
+                  <span class="text-[9px] font-black uppercase text-zinc-400">Monthly Tier Rate</span>
+                  <span class="text-[8px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-bold uppercase">{{ monthlyBillingData()?.financials?.activeTier || '1–10,000' }}</span>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                  <h3 class="text-2xl font-black text-zinc-900 dark:text-white">₹{{ monthlyBillingData()?.financials?.unitRate || 0.05 }}</h3>
+                  <span class="text-[10px] text-zinc-400 font-bold">/ notif</span>
+                </div>
+                <p class="text-[10px] text-zinc-400 flex items-center gap-1">
+                  <span>Hover to view slab details</span>
+                  <mat-icon class="text-[11px] text-purple-400">info</mat-icon>
+                </p>
+
+                <!-- Detailed hover popover table -->
+                <div class="invisible group-hover/rate:visible opacity-0 group-hover/rate:opacity-100 transition-all duration-200 absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50 w-80 bg-black/95 backdrop-blur-md border border-zinc-800 rounded-2xl p-4 shadow-2xl space-y-3 pointer-events-none sm:pointer-events-auto">
+                  <div class="flex justify-between items-center text-[10px] font-black uppercase text-zinc-400 pb-2 border-b border-zinc-800">
+                    <span>Monthly notification volume</span>
+                    <span>Suggested charge</span>
+                  </div>
+                  <div class="space-y-1.5">
+                    @for (t of billingTiers; track t.label) {
+                      <div class="flex justify-between items-center py-1.5 px-2.5 rounded-xl text-xs transition-colors"
+                           [ngClass]="(monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label ? 'bg-purple-950/50 text-purple-300 font-black border border-purple-500/40' : 'text-zinc-300 bg-zinc-900/60'">
+                        <span class="flex items-center gap-1.5">
+                          @if ((monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label) {
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                          }
+                          {{ t.label }}
+                        </span>
+                        <span class="font-mono font-black">{{ t.priceLabel }}</span>
+                      </div>
+                    }
+                  </div>
+                  <div class="pt-2 border-t border-zinc-800/80 text-[9px] text-zinc-400">
+                    Authoritative non-editable tiered rate automatically applied based on calendar month volume.
+                  </div>
+                </div>
               </div>
-            } @else {
+
+              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+                <span class="text-[9px] font-black uppercase text-zinc-400">Total Usage Cost</span>
+                <div class="flex items-baseline justify-between">
+                  <h3 class="text-2xl font-black text-zinc-900 dark:text-white">₹{{ monthlyBillingData()?.financials?.totalAmount || monthlyBillingData()?.financials?.subtotal || 0 }}</h3>
+                </div>
+                <p class="text-[10px] text-zinc-400">Tier volume pricing (No tax)</p>
+              </div>
+
+              <div class="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-1">
+                <span class="text-[9px] font-black uppercase text-emerald-500">Monthly Total Payable</span>
+                <h3 class="text-2xl font-black text-emerald-500">₹{{ monthlyBillingData()?.financials?.totalAmount || 0 }}</h3>
+                <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase inline-block mt-0.5"
+                      [ngClass]="monthlyBillingData()?.invoice?.status === 'Generated' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-purple-500/10 text-purple-500'">
+                  {{ monthlyBillingData()?.invoice?.status || 'Estimated' }}
+                </span>
+              </div>
+
+            </div>
+
+            <!-- Previous Month Real Comparison -->
+            @if (monthlyBillingData()?.previousMonth) {
+              <div class="p-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-between text-xs">
+                <span class="font-bold text-zinc-500">Previous Period ({{ monthlyBillingData()?.previousMonth?.month }}):</span>
+                <span class="font-mono font-black text-zinc-800 dark:text-white">
+                  {{ monthlyBillingData()?.previousMonth?.billableNotifications }} dispatches — ₹{{ monthlyBillingData()?.previousMonth?.totalAmount }}
+                </span>
+              </div>
+            }
+
+            <!-- Invoices List Table -->
+            <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Generated Monthly Invoices</h3>
+              
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
-                  <thead class="bg-zinc-50 dark:bg-zinc-950/70 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase text-zinc-400 tracking-wider">
-                    <tr>
-                      <th class="py-3 px-4">Status</th>
-                      <th class="py-3 px-4">User / Identity</th>
-                      <th class="py-3 px-4">Device & OS</th>
-                      <th class="py-3 px-4">Browser</th>
-                      <th class="py-3 px-4">FCM Token Hash</th>
-                      <th class="py-3 px-4">Last Active</th>
-                      <th class="py-3 px-4 text-right">Actions</th>
+                  <thead>
+                    <tr class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase text-[9px] font-black">
+                      <th class="pb-3 pl-2">Invoice #</th>
+                      <th class="pb-3">Billing Cycle</th>
+                      <th class="pb-3">Billable Notifications</th>
+                      <th class="pb-3">Rate</th>
+                      <th class="pb-3">Total Amount</th>
+                      <th class="pb-3">Status</th>
+                      <th class="pb-3 text-right pr-2">Action</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                    @for (dev of filteredDevices(); track dev.id || dev.fcmToken) {
-                      <tr class="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors group">
-                        <!-- Status Badge (Opted In vs Opted Out) -->
-                        <td class="py-3 px-4 whitespace-nowrap">
-                          @if (dev.notificationEnabled) {
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                              OPTED IN
-                            </span>
-                          } @else {
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                              OPTED OUT
-                            </span>
-                          }
-                        </td>
-
-                        <!-- User / Identity -->
-                        <td class="py-3 px-4">
-                          @if (dev.user?.email) {
-                            <div class="font-bold text-zinc-800 dark:text-white flex items-center gap-1">
-                              <mat-icon class="text-xs text-blue-500">person</mat-icon>
-                              <span class="truncate max-w-[150px]">{{ dev.user.email }}</span>
-                            </div>
-                            <span class="text-[9px] text-zinc-400 block">{{ dev.user.firstName || '' }} {{ dev.user.lastName || '' }}</span>
-                          } @else {
-                            <div class="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 flex items-center gap-1">
-                              <mat-icon class="text-xs text-zinc-400">fingerprint</mat-icon>
-                              <span class="truncate max-w-[140px]">{{ dev.guestId || dev.sessionId || 'Guest Visitor' }}</span>
-                            </div>
-                            <span class="text-[9px] font-bold text-zinc-400 uppercase">Guest Session</span>
-                          }
-                        </td>
-
-                        <!-- Device & OS -->
-                        <td class="py-3 px-4 whitespace-nowrap">
-                          <div class="flex items-center gap-2">
-                            <mat-icon class="text-sm text-zinc-400">{{ (dev.device?.toLowerCase() === 'mobile' || dev.os?.toLowerCase().includes('android') || dev.os?.toLowerCase().includes('ios')) ? 'smartphone' : 'computer' }}</mat-icon>
-                            <div>
-                              <span class="font-bold text-zinc-800 dark:text-zinc-200 block">{{ dev.os || 'Unknown OS' }}</span>
-                              <span class="text-[9px] text-zinc-400 uppercase">{{ dev.device || 'Desktop' }}</span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <!-- Browser -->
-                        <td class="py-3 px-4 whitespace-nowrap">
-                          <span class="font-bold text-zinc-700 dark:text-zinc-300">{{ dev.browser || 'Browser' }}</span>
-                          @if (dev.environment) {
-                            <span class="ml-1.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase" [class]="dev.environment === 'production' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'">{{ dev.environment === 'production' ? 'PROD' : 'DEV' }}</span>
-                          }
-                        </td>
-
-                        <!-- FCM Token (Masked + Copy) -->
-                        <td class="py-3 px-4">
-                          <div class="flex items-center gap-1.5 font-mono text-[10px] bg-zinc-100 dark:bg-zinc-800/80 px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700/60 max-w-[180px]">
-                            <span class="truncate text-zinc-700 dark:text-zinc-300" [title]="dev.fcmToken">{{ dev.fcmToken ? (dev.fcmToken.slice(0, 8) + '...' + dev.fcmToken.slice(-6)) : 'No Token' }}</span>
-                            <button (click)="copyFcmToken(dev.fcmToken)" title="Copy Full Token" class="text-zinc-400 hover:text-orange-500 border-none bg-transparent cursor-pointer p-0 shrink-0">
-                              <mat-icon class="text-xs">content_copy</mat-icon>
-                            </button>
-                          </div>
-                        </td>
-
-                        <!-- Last Active -->
-                        <td class="py-3 px-4 whitespace-nowrap text-zinc-500 dark:text-zinc-400 text-[10px]">
-                          {{ formatDeviceDate(dev.lastActive || dev.createdAt) }}
-                        </td>
-
-                        <!-- Actions -->
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                          <div class="flex items-center justify-end gap-1.5">
-                            <button (click)="sendDirectTestPush(dev)" title="Send Test Push Notification" class="p-1.5 bg-orange-600/10 hover:bg-orange-600 text-orange-600 hover:text-white rounded-lg border-none cursor-pointer transition-all flex items-center justify-center">
-                              <mat-icon class="text-xs">send</mat-icon>
-                            </button>
-                            <button (click)="copyFcmToken(dev.fcmToken)" title="Copy Token" class="p-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-lg border-none cursor-pointer transition-all flex items-center justify-center">
-                              <mat-icon class="text-xs">content_copy</mat-icon>
-                            </button>
-                          </div>
+                    @if (billingInvoices().length === 0) {
+                      <tr>
+                        <td colspan="7" class="py-8 text-center text-zinc-400 font-bold uppercase">
+                          No official consolidated invoices generated yet. Click "Generate Monthly Invoice" above.
                         </td>
                       </tr>
+                    } @else {
+                      @for (inv of billingInvoices(); track inv.invoiceNumber) {
+                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                          <td class="py-3 pl-2 font-mono font-bold text-purple-600">{{ inv.invoiceNumber }}</td>
+                          <td class="py-3 font-medium">{{ inv.periodLabel || inv.month }}</td>
+                          <td class="py-3 font-mono">{{ inv.billableNotifications }}</td>
+                          <td class="py-3 font-mono">₹{{ inv.unitRate }}</td>
+                          <td class="py-3 font-mono font-bold text-emerald-500">₹{{ inv.totalAmount }}</td>
+                          <td class="py-3">
+                            <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-500">
+                              {{ inv.status || 'Generated' }}
+                            </span>
+                          </td>
+                          <td class="py-3 text-right pr-2">
+                            <button (click)="viewInvoice(inv)" class="px-2.5 py-1 bg-purple-600/10 hover:bg-purple-600/20 text-purple-500 font-black rounded-lg text-[9px] uppercase border-none cursor-pointer">
+                              View Invoice
+                            </button>
+                          </td>
+                        </tr>
+                      }
                     }
                   </tbody>
                 </table>
               </div>
-            }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ======================================================== -->
+      <!-- SECTION 5: ANALYTICS AND REPORTS -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'analytics') {
+        <div class="space-y-6 animate-fadeIn">
+          
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 15-day engagement bar chart -->
+            <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+              <div class="flex justify-between items-center">
+                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Engagement Trend (Last 15 Days)</h3>
+                <span class="text-[9px] font-bold text-zinc-400">Real Dispatches & Clicks</span>
+              </div>
+
+              <div class="h-56 flex items-end gap-3 pt-6 border-b border-zinc-200 dark:border-zinc-800">
+                @if (dailyTrends().length === 0) {
+                  <div class="w-full h-full flex items-center justify-center text-xs text-zinc-400 uppercase font-black">No Trend Data Found in Range</div>
+                } @else {
+                  @for (trend of dailyTrends(); track trend.date) {
+                    <div class="flex-1 flex flex-col items-center gap-2 group relative">
+                      <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-t-lg relative overflow-hidden" style="height: 140px;">
+                        <div class="bg-orange-500/35 absolute bottom-0 left-0 right-0 rounded-t-md" [style.height.%]="getSendsPercent(trend.sends)"></div>
+                        <div class="bg-orange-600 absolute bottom-0 left-1 right-1 rounded-t-md" [style.height.%]="getClicksPercent(trend.clicks)"></div>
+                      </div>
+                      <span class="text-[8px] font-black uppercase text-zinc-400">{{ trend.date | date:'dd MMM' }}</span>
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="flex items-center gap-4 justify-center text-[10px]">
+                <span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 bg-orange-500/35 rounded-xs"></span> Dispatches</span>
+                <span class="flex items-center gap-1.5 font-bold"><span class="w-2.5 h-2.5 bg-orange-600 rounded-xs"></span> Clicks</span>
+              </div>
+            </div>
+
+            <!-- Subscriber Split -->
+            <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Subscriber Audience Split</h3>
+              
+              <div class="space-y-5">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full"></span> Guest Devices</span>
+                  <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().guests }} Device(s)</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Registered Users</span>
+                  <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().registered }} Device(s)</span>
+                </div>
+                <div class="flex items-center justify-between text-xs border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                  <span class="font-black text-zinc-400 uppercase text-[9px] flex items-center gap-2"><span class="w-2 h-2 bg-red-500 rounded-full"></span> Opted Out Devices</span>
+                  <span class="font-black text-zinc-800 dark:text-white">{{ subscriberSplit().disabled }} Device(s)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ======================================================== -->
+      <!-- SECTION 9: LOGS & AUDIT -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'logs') {
+        <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6 animate-fadeIn">
+          <div class="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
+            <div>
+              <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">FCM Delivery Logs & System Audit</h3>
+              <p class="text-[10px] text-zinc-400 mt-1">Direct log trace of sent notifications, provider responses, and device delivery events.</p>
+            </div>
+            <button (click)="loadAuditLogs()" class="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 rounded-xl text-xs font-bold text-zinc-700 dark:text-zinc-300 border-none cursor-pointer flex items-center gap-1">
+              <mat-icon class="text-sm">refresh</mat-icon> Refresh Logs
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase text-[9px] font-black">
+                  <th class="pb-3 pl-2">Timestamp</th>
+                  <th class="pb-3">Title / Campaign</th>
+                  <th class="pb-3">Status</th>
+                  <th class="pb-3">Recipient Token</th>
+                  <th class="pb-3">Device / OS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-mono text-[11px]">
+                @if (auditLogs().length === 0) {
+                  <tr>
+                    <td colspan="5" class="py-8 text-center text-zinc-400 font-bold uppercase font-sans">No recent push logs found.</td>
+                  </tr>
+                } @else {
+                  @for (log of auditLogs(); track log.id) {
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                      <td class="py-3 pl-2 text-zinc-400 text-[10px]">{{ log.createdAt | date:'dd MMM yyyy, HH:mm:ss' }}</td>
+                      <td class="py-3 font-sans font-bold text-zinc-900 dark:text-white">{{ log.title || 'Notification' }}</td>
+                      <td class="py-3">
+                        <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase"
+                              [ngClass]="log.status === 'SENT' || log.status === 'DELIVERED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
+                          {{ log.status }}
+                        </span>
+                      </td>
+                      <td class="py-3 text-zinc-400 text-[10px] truncate max-w-xs">{{ log.fcmToken ? log.fcmToken.substring(0, 24) + '...' : 'N/A' }}</td>
+                      <td class="py-3 text-zinc-400 font-sans text-xs">{{ log.device?.browser || 'Browser' }} on {{ log.device?.os || 'OS' }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- ======================================================== -->
+      <!-- SECTION 10: FCM CREDENTIALS -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'fcm-config') {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+          <div class="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              Firebase Project Credentials Configuration
+            </h3>
+
+            <form (submit)="saveFCMConfig($event)" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Project ID</label>
+                  <input type="text" [(ngModel)]="fcmConfig.projectId" name="projectId" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Messaging Sender ID</label>
+                  <input type="text" [(ngModel)]="fcmConfig.messagingSenderId" name="senderId" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Web API Key</label>
+                  <input type="password" [(ngModel)]="fcmConfig.apiKey" name="apiKey" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">VAPID Public Key</label>
+                  <input type="text" [(ngModel)]="fcmConfig.vapidPublicKey" name="vapidKey" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none">
+                </div>
+
+                <div class="sm:col-span-2 space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Server Service Account JSON (Stored Securely)</label>
+                  <textarea [(ngModel)]="fcmConfig.serviceAccount" name="serviceAccount" rows="4" placeholder="{ 'type': 'service_account', ... }" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono outline-none"></textarea>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <button type="button" (click)="testFCMConnection()" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+                  Test FCM Connection
+                </button>
+                <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+                  Save Credentials
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-4">
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Direct Test Notification</h3>
+            <p class="text-xs text-zinc-400">Send an instant test ping to any specific device token to verify push delivery end-to-end.</p>
+            <button (click)="triggerTestPush()" class="w-full py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+              Send Manual Push Ping
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- ======================================================== -->
+      <!-- SECTION 11: POPUP DESIGNER -->
+      <!-- ======================================================== -->
+      @if (activeSubTab() === 'popup-designer') {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
+          <div class="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xs space-y-6">
+            <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white pb-2 border-b border-zinc-100 dark:border-zinc-800">Opt-In Modal Customizer</h3>
+            
+            <form (submit)="savePopupConfig($event)" class="space-y-4">
+              <div class="space-y-1">
+                <label class="block text-[9px] font-black text-zinc-400 uppercase">Modal Title</label>
+                <input type="text" [(ngModel)]="popupConfig.title" name="popupTitle" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+              </div>
+
+              <div class="space-y-1">
+                <label class="block text-[9px] font-black text-zinc-400 uppercase">Modal Description</label>
+                <textarea [(ngModel)]="popupConfig.description" name="popupDesc" rows="2" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none"></textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Allow Button Text</label>
+                  <input type="text" [(ngModel)]="popupConfig.allowText" name="allowText" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                </div>
+                <div class="space-y-1">
+                  <label class="block text-[9px] font-black text-zinc-400 uppercase">Cancel Button Text</label>
+                  <input type="text" [(ngModel)]="popupConfig.cancelText" name="cancelText" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none">
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <button type="button" (click)="triggerLivePreview()" class="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+                  Test Trigger on Browser
+                </button>
+                <button type="submit" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+                  Save Styling
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="bg-zinc-100/50 dark:bg-zinc-950/40 p-6 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800 flex items-center justify-center">
+            <div class="w-full max-w-sm p-6 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4"
+                 [style.background-color]="getPreviewBgColor()"
+                 [style.color]="getPreviewTextColor()">
+              <div class="flex items-center gap-3">
+                <img [src]="getPreviewLogoUrl()" class="w-10 h-10 rounded-xl object-contain" />
+                <h4 class="text-sm font-black">{{ popupConfig.title || 'Stay in the Loop!' }}</h4>
+              </div>
+              <p class="text-xs leading-relaxed opacity-80">{{ popupConfig.description || 'Get instant price drops, flash deals, and maker news directly to your device.' }}</p>
+              <div class="flex gap-2 pt-2">
+                <button type="button" class="flex-1 py-2 rounded-xl text-xs font-black uppercase border-none text-white cursor-pointer" [style.background-color]="popupConfig.buttonColor || '#f97316'">
+                  {{ popupConfig.allowText || 'Allow Push' }}
+                </button>
+                <button type="button" class="flex-1 py-2 bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 rounded-xl text-xs font-bold border-none cursor-pointer">
+                  {{ popupConfig.cancelText || 'Later' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       }
 
     </div>
+
+    <!-- MODAL 1: BILLING PRICING POLICY (NON-EDITABLE AUTHORITATIVE SLABS) -->
+    @if (showBillingConfigModal()) {
+      <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 w-full max-w-lg space-y-6 shadow-2xl animate-scaleIn">
+          <div class="flex justify-between items-center pb-3 border-b border-zinc-100 dark:border-zinc-800">
+            <div class="flex items-center gap-2">
+              <mat-icon class="text-purple-500">verified</mat-icon>
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-zinc-900 dark:text-white">Push Notification Pricing Policy</h3>
+                <p class="text-[10px] text-zinc-400">Authoritative volume tier schedule (Standard & Non-Editable)</p>
+              </div>
+            </div>
+            <button (click)="showBillingConfigModal.set(false)" class="text-zinc-400 hover:text-zinc-600 border-none bg-transparent cursor-pointer">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Exact Table Matching Image Specification -->
+          <div class="bg-black border border-zinc-800 rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center text-[10px] font-black uppercase text-zinc-400 pb-2 border-b border-zinc-800">
+              <span>Monthly notification volume per project</span>
+              <span>Suggested charge per notification</span>
+            </div>
+
+            <div class="space-y-2">
+              @for (t of billingTiers; track t.label) {
+                <div class="flex justify-between items-center py-2.5 px-3.5 rounded-xl transition-all"
+                     [ngClass]="(monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label ? 'bg-purple-950/40 border border-purple-500/50 text-white' : 'bg-zinc-900/70 border border-zinc-800/80 text-zinc-300'">
+                  <div class="flex items-center gap-2">
+                    @if ((monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label) {
+                      <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                    }
+                    <span class="font-bold text-xs">{{ t.label }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono font-black text-sm text-purple-400">{{ t.priceLabel }}</span>
+                    @if ((monthlyBillingData()?.financials?.activeTier || '1–10,000') === t.label) {
+                      <span class="text-[9px] uppercase px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">Active Tier</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-1 text-xs">
+            <div class="flex justify-between text-zinc-500">
+              <span class="text-[10px] font-bold uppercase">Billing Cycle:</span>
+              <span class="font-bold text-zinc-800 dark:text-zinc-200">Calendar Month (1st to Month-End)</span>
+            </div>
+            <div class="flex justify-between text-zinc-500">
+              <span class="text-[10px] font-bold uppercase">Billable Event:</span>
+              <span class="font-bold text-zinc-800 dark:text-zinc-200">Accepted Provider Deliveries</span>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t border-zinc-100 dark:border-zinc-800">
+            <button type="button" (click)="showBillingConfigModal.set(false)" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL 2: INVOICE VIEWER & PRINTABLE MODAL -->
+    @if (showInvoiceModal() && selectedInvoice()) {
+      <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 w-full max-w-2xl space-y-6 shadow-2xl animate-scaleIn">
+          <div class="flex justify-between items-start pb-4 border-b border-zinc-200 dark:border-zinc-800">
+            <div>
+              <span class="text-xs font-black uppercase tracking-wider text-purple-600">3D Galaxy Web Push Relay</span>
+              <h2 class="text-xl font-black text-zinc-900 dark:text-white mt-1">Monthly Billing Statement</h2>
+              <p class="text-xs text-zinc-400 font-mono">Invoice Ref: {{ selectedInvoice()?.invoiceNumber }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="printInvoice()" class="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-xl text-xs font-bold border-none cursor-pointer flex items-center gap-1">
+                <mat-icon class="text-xs">print</mat-icon> Print
+              </button>
+              <button (click)="showInvoiceModal.set(false)" class="text-zinc-400 hover:text-zinc-600 border-none bg-transparent cursor-pointer">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span class="text-[9px] text-zinc-400 font-black uppercase block">Billing Period</span>
+              <span class="font-bold text-zinc-800 dark:text-white">{{ selectedInvoice()?.periodLabel || selectedInvoice()?.month }}</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-zinc-400 font-black uppercase block">Project Entity</span>
+              <span class="font-bold text-zinc-800 dark:text-white">3D Galaxy Core Platform</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-zinc-400 font-black uppercase block">Generation Timestamp</span>
+              <span class="font-mono text-zinc-600 dark:text-zinc-400">{{ selectedInvoice()?.generatedAt ? (selectedInvoice()?.generatedAt | date:'medium') : 'Realtime Estimate' }}</span>
+            </div>
+            <div>
+              <span class="text-[9px] text-zinc-400 font-black uppercase block">Invoice Status</span>
+              <span class="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-500">{{ selectedInvoice()?.status || 'Generated' }}</span>
+            </div>
+          </div>
+
+          <!-- Breakdown table -->
+          <div class="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-50 dark:bg-zinc-950 text-zinc-400 uppercase text-[9px] font-black">
+                <tr>
+                  <th class="p-3">Description</th>
+                  <th class="p-3 text-right">Quantity</th>
+                  <th class="p-3 text-right">Unit Rate</th>
+                  <th class="p-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <tr>
+                  <td class="p-3 font-medium">PWA Web Push Accepted Deliveries</td>
+                  <td class="p-3 text-right font-mono">{{ selectedInvoice()?.billableNotifications }}</td>
+                  <td class="p-3 text-right font-mono">₹{{ selectedInvoice()?.unitRate }}</td>
+                  <td class="p-3 text-right font-mono">₹{{ selectedInvoice()?.totalAmount || selectedInvoice()?.subtotal }}</td>
+                </tr>
+                <tr class="bg-purple-500/5 font-black text-sm">
+                  <td colspan="3" class="p-3 text-right text-purple-600">Total Payable:</td>
+                  <td class="p-3 text-right text-purple-600 font-mono">₹{{ selectedInvoice()?.totalAmount || selectedInvoice()?.subtotal }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MODAL 3: CAMPAIGN PERFORMANCE & ANALYTICS DRAWER/MODAL -->
+    @if (selectedCampaignForAnalytics(); as camp) {
+      <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 w-full max-w-2xl space-y-5 shadow-2xl animate-scaleIn max-h-[90vh] overflow-y-auto">
+          
+          <!-- Modal Header -->
+          <div class="flex justify-between items-start pb-4 border-b border-zinc-100 dark:border-zinc-800">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded text-[9px] font-black uppercase">{{ camp.type }}</span>
+                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase"
+                      [ngClass]="camp.status === 'Sent' || camp.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'">
+                  {{ camp.status }}
+                </span>
+                @if (camp.priority === 'High') {
+                  <span class="px-1.5 py-0.5 bg-red-500/10 text-red-500 rounded text-[8px] font-black uppercase">High Priority</span>
+                }
+              </div>
+              <h3 class="text-sm font-black text-zinc-900 dark:text-white">{{ camp.name }}</h3>
+              <p class="text-[11px] text-zinc-400 flex items-center gap-1 font-mono">
+                <mat-icon class="text-[13px] h-3.5 w-3.5">schedule</mat-icon> Dispatched: {{ camp.date }}
+              </p>
+            </div>
+            <button (click)="closeCampaignAnalytics()" class="p-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600 border-none cursor-pointer">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <!-- Notification Preview Snippet -->
+          <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex items-start gap-3">
+            @if (camp.image) {
+              <img [src]="camp.image" (error)="onProductImgError($event)" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-zinc-200 dark:border-zinc-800" alt="Notification preview">
+            }
+            <div class="space-y-1 min-w-0 flex-1">
+              <h4 class="text-xs font-bold text-zinc-900 dark:text-white truncate">{{ camp.title }}</h4>
+              <p class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2">{{ camp.body }}</p>
+              <div class="pt-1 flex items-center gap-2 text-[10px] text-zinc-400 font-mono truncate">
+                <span class="text-orange-500 font-bold">Target Link:</span>
+                <span class="truncate">{{ camp.actionUrl }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance KPIs Grid (6 cards) -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono">
+            <!-- 1. Dispatched -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Dispatched</span>
+              <h4 class="text-lg font-black text-zinc-900 dark:text-white">{{ camp.sentCount }}</h4>
+              <span class="text-[9px] text-zinc-400 block">Total attempts</span>
+            </div>
+
+            <!-- 2. Delivered -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Delivered</span>
+              <h4 class="text-lg font-black text-orange-500">{{ camp.deliveredCount }}</h4>
+              <span class="text-[9px] text-emerald-500 font-bold block">{{ camp.deliveryRate }}% Delivery Rate</span>
+            </div>
+
+            <!-- 3. Opened -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Opens</span>
+              <h4 class="text-lg font-black text-purple-500">{{ camp.openedCount }}</h4>
+              <span class="text-[9px] text-purple-400 font-bold block">{{ camp.openRate }}% Open Rate</span>
+            </div>
+
+            <!-- 4. Clicks & CTR -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Clicks</span>
+              <h4 class="text-lg font-black text-blue-500">{{ camp.clickedCount }}</h4>
+              <span class="text-[9px] text-emerald-500 font-bold block">{{ camp.ctr }}% CTR</span>
+            </div>
+
+            <!-- 5. Conversions -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Conversions</span>
+              <h4 class="text-lg font-black text-emerald-600">{{ camp.conversionCount }}</h4>
+              <span class="text-[9px] text-zinc-400 block">{{ camp.conversionRate }}% Conv. Rate</span>
+            </div>
+
+            <!-- 6. Revenue Generated -->
+            <div class="bg-zinc-50 dark:bg-zinc-950 p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+              <span class="text-[8px] block text-zinc-400 font-black uppercase">Attributed Revenue</span>
+              <h4 class="text-lg font-black text-emerald-500">₹{{ camp.revenueGenerated | number:'1.2-2' }}</h4>
+              <span class="text-[9px] text-zinc-400 block">Direct purchases</span>
+            </div>
+          </div>
+
+          <!-- Interactive Funnel Progress Visualization -->
+          <div class="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-2">
+            <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-zinc-400">
+              <span>Conversion Funnel</span>
+              <span>Dispatched (100%) &rarr; Delivered &rarr; Opened &rarr; Clicked &rarr; Converted</span>
+            </div>
+            
+            <div class="w-full bg-zinc-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden flex">
+              <div class="bg-orange-500 h-full transition-all" [style.width.%]="camp.deliveryRate" title="Delivered: {{ camp.deliveryRate }}%"></div>
+              <div class="bg-purple-500 h-full transition-all" [style.width.%]="camp.openRate" title="Opened: {{ camp.openRate }}%"></div>
+              <div class="bg-blue-500 h-full transition-all" [style.width.%]="camp.ctr" title="Clicked: {{ camp.ctr }}%"></div>
+            </div>
+          </div>
+
+          <!-- Real-Time Testing & Attribution Actions -->
+          <div class="bg-purple-500/5 p-4 rounded-2xl border border-purple-500/20 space-y-3">
+            <div class="flex justify-between items-center">
+              <div>
+                <h5 class="text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">Live Interaction & Testing Suite</h5>
+                <p class="text-[10px] text-zinc-400">Simulate customer interactions or test in browser tab to verify attribution counters live</p>
+              </div>
+              @if (isSimulatingCampaignEvent()) {
+                <span class="text-[10px] text-purple-500 animate-pulse font-mono font-bold">Syncing event...</span>
+              }
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <button (click)="simulateCampaignInteraction(camp.id, 'click')" [disabled]="isSimulatingCampaignEvent()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1 shadow-xs transition-all disabled:opacity-50">
+                <mat-icon class="text-xs">touch_app</mat-icon> Simulate Click (+1)
+              </button>
+              <button (click)="simulateCampaignInteraction(camp.id, 'open')" [disabled]="isSimulatingCampaignEvent()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1 shadow-xs transition-all disabled:opacity-50">
+                <mat-icon class="text-xs">visibility</mat-icon> Simulate Open (+1)
+              </button>
+              <button (click)="simulateCampaignInteraction(camp.id, 'conversion', 1299)" [disabled]="isSimulatingCampaignEvent()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase border-none cursor-pointer flex items-center gap-1 shadow-xs transition-all disabled:opacity-50">
+                <mat-icon class="text-xs">shopping_bag</mat-icon> Simulate Order (+₹1299)
+              </button>
+              <button (click)="openAttributedUrlInNewTab(camp.actionUrl, camp.id)" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold border-none cursor-pointer flex items-center gap-1 transition-all">
+                <mat-icon class="text-xs">open_in_new</mat-icon> Test in Browser Tab
+              </button>
+              <button (click)="copyAttributedUrl(camp.actionUrl, camp.id)" class="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-xl text-xs font-bold border-none cursor-pointer flex items-center gap-1 transition-all">
+                <mat-icon class="text-xs">content_copy</mat-icon> Copy Link
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="flex justify-between items-center pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <span class="text-[10px] text-zinc-400 font-mono">Campaign ID: {{ camp.id }}</span>
+            <button (click)="closeCampaignAnalytics()" class="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-xs font-black uppercase border-none cursor-pointer">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
-    .cursor-pointer { cursor: pointer; }
-    .border-none { border: none; }
+    .animate-fadeIn { animation: fadeIn 0.25s ease-in-out; }
+    .animate-scaleIn { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
   `]
 })
 export class PushSettingsTabComponent {
@@ -1631,52 +1938,197 @@ export class PushSettingsTabComponent {
   public ds = inject(DatastoreService);
   public notif = inject(NotificationService);
 
-  getPreviewBgColor(): string {
-    if (this.popupConfig.syncWithTheme || this.popupConfig.backgroundColor === 'theme' || !this.popupConfig.backgroundColor) {
-      return this.ds.theme() === 'dark' ? '#18181b' : '#ffffff';
-    }
-    return this.popupConfig.backgroundColor;
-  }
+  fallbackProductImage = FALLBACK_PRODUCT_IMAGE;
 
-  getPreviewTextColor(): string {
-    if (this.popupConfig.syncWithTheme || this.popupConfig.textColor === 'theme' || !this.popupConfig.textColor) {
-      return this.ds.theme() === 'dark' ? '#f8fafc' : '#09090b';
-    }
-    return this.popupConfig.textColor;
-  }
-
-  getPreviewSubtextColor(): string {
-    return this.ds.theme() === 'dark' ? 'rgba(244, 244, 245, 0.75)' : 'rgba(24, 24, 27, 0.7)';
-  }
-
-  getPreviewLogoUrl(): string {
-    if (this.popupConfig.logoUrl && this.popupConfig.logoUrl.trim() !== '') {
-      return this.popupConfig.logoUrl.trim();
-    }
-    return '/3d-logo.png';
-  }
-
-  triggerLivePreview() {
-    this.notif.testTriggerPopup();
-    this.toast.info('Live notification popup preview triggered!');
-  }
-
-  activeSubTab = signal<string>('analytics');
-  previewDevice = signal<string>('desktop');
-
-  // Omnichannel Marketing Automation Hub Signals & State
-  nestedMarketingTab = signal<'dashboard' | 'builder' | 'devices' | 'flows' | 'history'>('dashboard');
+  // Active top-level subtab
+  activeSubTab = signal<'overview' | 'campaigns' | 'devices' | 'billing' | 'analytics' | 'logs' | 'fcm-config' | 'popup-designer'>('overview');
+  
+  // Campaigns mode: list vs 5-step wizard
+  campaignManagerMode = signal<'list' | 'wizard'>('list');
   wizardStep = signal<number>(1);
-  selectedChannel = signal<'push' | 'whatsapp' | 'both'>('push');
+  isSubmittingCampaign = signal<boolean>(false);
+  selectedCampaignForAnalytics = signal<any>(null);
+  isSimulatingCampaignEvent = signal<boolean>(false);
 
-  // FCM Registered Devices & Opt-In State
+  // Live preview device simulation
+  previewDevice = signal<'desktop' | 'android' | 'mobile' | 'tablet'>('desktop');
+  lastRefreshed = signal<string>(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+
+  // Product Search State
+  productSearchQuery = '';
+  productSearchTimer: any = null;
+  isSearchingProducts = signal<boolean>(false);
+  searchResults = signal<any[]>([]);
+  selectedProduct = signal<any>(null);
+
+  // Campaign Form Reactive State
+  campaignForm: any = {
+    name: '',
+    objective: 'Promotional',
+    category: 'Flash Sale',
+    description: '',
+    targetType: 'everyone',
+    targetPlatform: 'all',
+    title: '',
+    body: '',
+    image: '',
+    icon: '/assets/icon.png',
+    badge: '/assets/badge.png',
+    actionUrl: '/',
+    actionBtn1Text: 'Shop Now',
+    actionBtn1Url: '/',
+    actionBtn2Text: 'View Deals',
+    actionBtn2Url: '/deals',
+    priority: 'Normal',
+    requireInteraction: false,
+    tag: '',
+    scheduleMode: 'now' as 'now' | 'draft',
+    utmCampaign: ''
+  };
+
+  // Tiered Pricing Schedule (Authoritative & Non-Editable)
+  billingTiers = [
+    { minVolume: 1, maxVolume: 10000, rate: 0.05, label: '1–10,000', priceLabel: '₹0.05' },
+    { minVolume: 10001, maxVolume: 50000, rate: 0.04, label: '10,001–50,000', priceLabel: '₹0.04' },
+    { minVolume: 50001, maxVolume: 100000, rate: 0.03, label: '50,001–1,00,000', priceLabel: '₹0.03' },
+    { minVolume: 100001, maxVolume: Infinity, rate: 0.02, label: 'Above 1,00,000', priceLabel: '₹0.02' }
+  ];
+
+  getBillingRateForVolume(volume: number): number {
+    const vol = Math.max(1, volume || 0);
+    for (const t of this.billingTiers) {
+      if (vol >= t.minVolume && vol <= t.maxVolume) {
+        return t.rate;
+      }
+    }
+    return 0.05;
+  }
+
+  getBillingTierLabelForVolume(volume: number): string {
+    const vol = Math.max(1, volume || 0);
+    for (const t of this.billingTiers) {
+      if (vol >= t.minVolume && vol <= t.maxVolume) {
+        return t.label;
+      }
+    }
+    return '1–10,000';
+  }
+
+  // Monthly Billing State
+  monthlyBillingData = signal<any>(null);
+  selectedBillingMonth = signal<string>('');
+  availableBillingMonths = signal<string[]>([]);
+  billingInvoices = signal<any[]>([]);
+  billingConfig = signal<any>({
+    enabled: true,
+    currency: 'INR',
+    pricePerNotification: 0.05,
+    freeMonthlyAllowance: 0,
+    minimumMonthlyCharge: 0,
+    taxPercent: 0,
+    taxName: 'None'
+  });
+  showBillingConfigModal = signal<boolean>(false);
+  showInvoiceModal = signal<boolean>(false);
+  selectedInvoice = signal<any>(null);
+  isLoadingBilling = signal<boolean>(false);
+  isGeneratingInvoice = signal<boolean>(false);
+
+  // FCM Registered Devices State
   subscriberDevices = signal<any[]>([]);
   loadingDevices = signal<boolean>(false);
   devicesStatusFilter = signal<'all' | 'opted_in' | 'opted_out'>('all');
-  devicesPlatformFilter = signal<string>('all');
-  devicesBrowserFilter = signal<string>('all');
-  devicesSearchQuery = signal<string>('');
 
+  allCampaigns = signal<any[]>([]);
+  campaignFilter = signal<'all' | 'sent' | 'draft' | 'failed'>('all');
+  campaignCategoryFilter = signal<string>('all');
+  campaignDateFilter = signal<'all' | 'today' | '7days' | '30days'>('all');
+  campaignSortBy = signal<'newest' | 'oldest' | 'sends' | 'clicks' | 'ctr'>('newest');
+  campaignSearchQuery = signal<string>('');
+
+  campaignCounts = computed(() => {
+    const list = this.allCampaigns();
+    return {
+      all: list.length,
+      sent: list.filter(c => c.status === 'Sent' || c.status === 'Completed').length,
+      draft: list.filter(c => c.status === 'Draft').length,
+      failed: list.filter(c => c.status === 'Failed').length
+    };
+  });
+
+  availableCategories = computed(() => {
+    const list = this.allCampaigns();
+    const set = new Set<string>();
+    list.forEach(c => {
+      if (c.type) set.add(c.type.trim());
+    });
+    ['Flash Sale', 'Promotional', 'Transactional', 'Announcement', 'Cart Recovery'].forEach(cat => set.add(cat));
+    return Array.from(set);
+  });
+
+  hasActiveCampaignFilters = computed(() => {
+    return (
+      this.campaignSearchQuery().trim().length > 0 ||
+      this.campaignFilter() !== 'all' ||
+      this.campaignCategoryFilter() !== 'all' ||
+      this.campaignDateFilter() !== 'all' ||
+      this.campaignSortBy() !== 'newest'
+    );
+  });
+
+  resetCampaignFilters() {
+    this.campaignSearchQuery.set('');
+    this.campaignFilter.set('all');
+    this.campaignCategoryFilter.set('all');
+    this.campaignDateFilter.set('all');
+    this.campaignSortBy.set('newest');
+  }
+  analyticsSummary = signal<any>({
+    totalCampaigns: 0,
+    activeCampaigns: 0,
+    scheduledCampaigns: 0,
+    optedInDevices: 0,
+    notificationsQueued: 0,
+    notificationsSent: 0,
+    delivered: 0,
+    clicked: 0,
+    ctr: 0.0,
+    failedDeliveries: 0,
+    currentMonthBillableUsage: 0,
+    currentMonthEstimatedCharge: 0,
+    currency: 'INR',
+    previousMonth: null
+  });
+  subscriberSplit = signal<any>({ guests: 0, registered: 0, disabled: 0 });
+  dailyTrends = signal<any[]>([]);
+
+  // FCM & Popup Configs
+  fcmConfig = {
+    enabled: true,
+    projectId: '',
+    apiKey: '',
+    appId: '',
+    messagingSenderId: '',
+    vapidPublicKey: '',
+    serviceAccount: '',
+    defaultIcon: '/assets/icon.png',
+    defaultBadge: '/assets/badge.png',
+    defaultClickUrl: '/'
+  };
+
+  popupConfig: any = {
+    enabled: true,
+    title: 'Stay in the Loop!',
+    description: 'Get instant price drops, flash deals, and maker news directly to your device.',
+    allowText: 'Allow Push',
+    cancelText: 'Later',
+    logoUrl: '/3d-logo.png',
+    buttonColor: '#f97316'
+  };
+
+  auditLogs = signal<any[]>([]);
+
+  // Computed Values
   optedInDevicesCount = computed(() => this.subscriberDevices().filter(d => d.notificationEnabled === true).length);
   optedOutDevicesCount = computed(() => this.subscriberDevices().filter(d => d.notificationEnabled === false).length);
 
@@ -1709,264 +2161,495 @@ export class PushSettingsTabComponent {
   filteredDevices = computed(() => {
     let list = this.subscriberDevices();
     const status = this.devicesStatusFilter();
-    const platform = this.devicesPlatformFilter().toLowerCase();
-    const browser = this.devicesBrowserFilter().toLowerCase();
-    const q = this.devicesSearchQuery().toLowerCase().trim();
-
     if (status === 'opted_in') {
       list = list.filter(d => d.notificationEnabled === true);
     } else if (status === 'opted_out') {
       list = list.filter(d => d.notificationEnabled === false);
     }
-
-    if (platform !== 'all') {
-      list = list.filter(d => {
-        const dev = (d.device || '').toLowerCase();
-        const os = (d.os || '').toLowerCase();
-        if (platform === 'desktop') return dev === 'desktop' || os.includes('windows') || os.includes('mac') || os.includes('linux');
-        if (platform === 'mobile') return dev === 'mobile' || os.includes('android') || os.includes('ios');
-        return dev.includes(platform) || os.includes(platform);
-      });
-    }
-
-    if (browser !== 'all') {
-      list = list.filter(d => d.browser && d.browser.toLowerCase().includes(browser));
-    }
-
-    if (q) {
-      list = list.filter(d =>
-        (d.fcmToken && d.fcmToken.toLowerCase().includes(q)) ||
-        (d.browser && d.browser.toLowerCase().includes(q)) ||
-        (d.os && d.os.toLowerCase().includes(q)) ||
-        (d.guestId && d.guestId.toLowerCase().includes(q)) ||
-        (d.sessionId && d.sessionId.toLowerCase().includes(q)) ||
-        (d.user?.email && d.user.email.toLowerCase().includes(q)) ||
-        (d.environment && d.environment.toLowerCase().includes(q)) ||
-        (d.country && d.country.toLowerCase().includes(q))
-      );
-    }
-
     return list;
   });
 
-  whatsappTemplates = signal<any[]>([
-    {
-      name: 'order_status_update',
-      category: 'UTILITY',
-      language: 'en',
-      status: 'APPROVED',
-      headerType: 'Text',
-      headerText: 'Order Update',
-      body: 'Hello {{customerName}}, your order {{orderId}} status is now: {{orderStatus}}. Tracking link: {{trackingUrl}}',
-      footer: 'Thank you for shopping with 3D Galaxy!',
-      variables: ['customerName', 'orderId', 'orderStatus', 'trackingUrl'],
-      buttons: [{ type: 'URL', text: 'Track Order', url: '{{trackingUrl}}' }]
-    },
-    {
-      name: 'cart_recovery_offer',
-      category: 'MARKETING',
-      language: 'en',
-      status: 'APPROVED',
-      headerType: 'Image',
-      body: 'Hi {{customerName}}, we noticed you left items in your cart! Use coupon code {{couponCode}} to get an extra discount. Shop now: {{cartUrl}}',
-      footer: 'Offer expires in 48 hours',
-      variables: ['customerName', 'couponCode', 'cartUrl'],
-      buttons: [{ type: 'URL', text: 'Resume Checkout', url: '{{cartUrl}}' }]
-    },
-    {
-      name: 'price_drop_alert',
-      category: 'MARKETING',
-      language: 'en',
-      status: 'APPROVED',
-      headerType: 'Image',
-      body: 'Great news {{customerName}}! The price for {{productName}} has dropped to only {{productPrice}}! Order here: {{productUrl}}',
-      footer: 'Limited stock available',
-      variables: ['customerName', 'productName', 'productPrice', 'productUrl'],
-      buttons: [{ type: 'URL', text: 'Buy Now', url: '{{productUrl}}' }]
-    },
-    {
-      name: 'new_arrival_broadcast',
-      category: 'MARKETING',
-      language: 'en',
-      status: 'APPROVED',
-      headerType: 'Video',
-      body: 'Hello {{customerName}}, check out our latest arrival: {{productName}}! Category: {{productCategory}}, Brand: {{productBrand}}.',
-      footer: '3D Galaxy Innovation',
-      variables: ['customerName', 'productName', 'productCategory', 'productBrand'],
-      buttons: [{ type: 'URL', text: 'View Product', url: '{{productUrl}}' }]
-    }
-  ]);
-  selectedWhatsAppTemplate = signal<any>(null);
-  detectedVariables = signal<string[]>([]);
-  variableMappings = signal<Record<string, string>>({});
-  whatsappAttachmentType = signal<'image' | 'video' | 'document' | 'none'>('none');
-  whatsappAttachmentUrl = signal<string>('');
-
-  audienceSegmentFilters = {
-    optInOnly: true,
-    userTypes: { everyone: true, guests: false, registered: false, admins: false, vip: false, inactive: false, highValue: false },
-    platforms: { android: true, ios: true, web: true, pwa: true },
-    purchaseCountMin: 0,
-    totalSpendMin: 0,
-    state: '',
-    customSql: ''
-  };
-
-  aiKeyword = '';
-  aiTone = 'Engaging';
-  aiType = 'Flash Sale';
-  generatedAiTitles = signal<string[]>([]);
-  generatedAiBodies = signal<string[]>([]);
-
-  flowNodes = signal<any[]>([
-    { id: '1', type: 'trigger', title: 'User Abandons Cart', subtitle: 'Triggered when cart is idle for 30m', icon: 'shopping_cart' },
-    { id: '2', type: 'delay', title: 'Wait 30 Minutes', subtitle: 'Delay configuration', icon: 'schedule' },
-    { id: '3', type: 'condition', title: 'Cart Purchased?', subtitle: 'YES -> End Journey | NO -> Continue', icon: 'alt_route' },
-    { id: '4', type: 'action', title: 'Send PWA Push Notification', subtitle: 'Template: recovery_push_alert', icon: 'notifications_active' },
-    { id: '5', type: 'delay', title: 'Wait 24 Hours', subtitle: 'Post-push followup delay', icon: 'schedule' },
-    { id: '6', type: 'action', title: 'Send WhatsApp template', subtitle: 'Template: cart_recovery_offer', icon: 'textsms' }
-  ]);
-
-  campaignFormExt = {
-    description: '',
-    internalNotes: '',
-    campaignType: 'Flash Sale',
-    tags: 'july-sale, maker',
-    owner: 'Admin Panel User',
-    folder: 'General Campaigns',
-    ttlHours: 24,
-    badgeUrl: '/assets/badge.png',
-    sound: 'default',
-    category: 'deals',
-    analyticsTag: 'utm_camp_july'
-  };
-
-  allCampaigns = signal<any[]>([]);
-  activeScheduledCampaigns = signal<any[]>([]);
-  pastCampaigns = signal<any[]>([]);
-  campaignFilter = signal<'all' | 'sent'>('all');
-  campaignSearchQuery = signal<string>('');
-
   filteredCampaigns = computed(() => {
-    const filter = this.campaignFilter();
+    const status = this.campaignFilter();
+    const category = this.campaignCategoryFilter();
+    const dateRange = this.campaignDateFilter();
+    const sortBy = this.campaignSortBy();
     const query = this.campaignSearchQuery().toLowerCase().trim();
-    let list = this.allCampaigns();
+    let list = [...this.allCampaigns()];
 
-    if (filter === 'sent') {
+    // 1. Status Filter
+    if (status === 'sent') {
       list = list.filter(c => c.status === 'Sent' || c.status === 'Completed');
+    } else if (status === 'draft') {
+      list = list.filter(c => c.status === 'Draft');
+    } else if (status === 'failed') {
+      list = list.filter(c => c.status === 'Failed');
     }
 
+    // 2. Category Filter
+    if (category !== 'all') {
+      list = list.filter(c => (c.type || '').toLowerCase() === category.toLowerCase());
+    }
+
+    // 3. Search Query Filter
     if (query) {
-      list = list.filter(c => 
+      list = list.filter(c =>
         (c.name && c.name.toLowerCase().includes(query)) ||
         (c.title && c.title.toLowerCase().includes(query)) ||
         (c.body && c.body.toLowerCase().includes(query)) ||
-        (c.type && c.type.toLowerCase().includes(query))
+        (c.type && c.type.toLowerCase().includes(query)) ||
+        (c.actionUrl && c.actionUrl.toLowerCase().includes(query))
       );
     }
+
+    // 4. Date Range Filter
+    if (dateRange !== 'all') {
+      const now = new Date().getTime();
+      list = list.filter(c => {
+        if (!c.createdAt) return true;
+        const cTime = new Date(c.createdAt).getTime();
+        const diffMs = now - cTime;
+        if (dateRange === 'today') {
+          return diffMs <= 24 * 60 * 60 * 1000;
+        } else if (dateRange === '7days') {
+          return diffMs <= 7 * 24 * 60 * 60 * 1000;
+        } else if (dateRange === '30days') {
+          return diffMs <= 30 * 24 * 60 * 60 * 1000;
+        }
+        return true;
+      });
+    }
+
+    // 5. Sorting
+    list.sort((a, b) => {
+      if (sortBy === 'newest') {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tB - tA;
+      } else if (sortBy === 'oldest') {
+        const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tA - tB;
+      } else if (sortBy === 'sends') {
+        return (b.sentCount || 0) - (a.sentCount || 0);
+      } else if (sortBy === 'clicks') {
+        return (b.clickedCount || 0) - (a.clickedCount || 0);
+      } else if (sortBy === 'ctr') {
+        return (b.ctr || 0) - (a.ctr || 0);
+      }
+      return 0;
+    });
 
     return list;
   });
 
-  onWhatsAppTemplateSelect(name: string) {
-    const tmpl = this.whatsappTemplates().find(t => t.name === name);
-    this.selectedWhatsAppTemplate.set(tmpl || null);
-    if (tmpl) {
-      this.detectedVariables.set(tmpl.variables || []);
-      const mappings: Record<string, string> = {};
-      tmpl.variables.forEach((v: string) => {
-        if (v.toLowerCase().includes('name')) mappings[v] = 'Customer.firstName';
-        else if (v.toLowerCase().includes('id')) mappings[v] = 'Order.orderNumber';
-        else if (v.toLowerCase().includes('amount') || v.toLowerCase().includes('price')) mappings[v] = 'Order.totalAmount';
-        else if (v.toLowerCase().includes('status')) mappings[v] = 'Order.paymentStatus';
-        else if (v.toLowerCase().includes('url') || v.toLowerCase().includes('link')) mappings[v] = 'Order.trackingUrl';
-        else mappings[v] = 'Custom Text';
-      });
-      this.variableMappings.set(mappings);
-    } else {
-      this.detectedVariables.set([]);
-      this.variableMappings.set({});
+  constructor() {
+    this.initBillingMonths();
+    this.refreshAllHubData();
+  }
+
+  initBillingMonths() {
+    const months: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const formatted = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+      months.push(formatted);
     }
+    this.availableBillingMonths.set(months);
+    this.selectedBillingMonth.set(months[0]);
   }
 
-  getVariableMappingPlaceholder(v: string): string {
-    const m = this.variableMappings()[v];
-    if (m === 'Customer.firstName') return 'Customer First Name (e.g. John)';
-    if (m === 'Order.orderNumber') return 'Order Number (e.g. OD-2026-9812)';
-    if (m === 'Order.totalAmount') return 'Order Total Amount (e.g. ₹4,999.00)';
-    if (m === 'Order.paymentStatus') return 'Order Payment Status (e.g. PAID)';
-    if (m === 'Order.trackingUrl') return 'Order Tracking URL (e.g. 3dgalaxy.com/track/...)';
-    return 'Custom Text Value';
+  refreshAllHubData() {
+    this.loadCampaigns();
+    this.loadAnalytics();
+    this.loadMonthlyBilling();
+    this.loadBillingInvoices();
+    this.loadSubscriberDevices();
+    this.loadAuditLogs();
+    this.loadFCMConfig();
+    this.loadPopupConfig();
+    this.lastRefreshed.set(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
   }
 
-  generateAIContent() {
-    if (!this.aiKeyword) {
-      this.toast.error('Please enter a product name or keyword for AI generation.');
+  loadCampaigns() {
+    this.api.get<any>('/admin/push/campaigns?limit=100').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data && Array.isArray(res.data.list)) {
+          const mapped = res.data.list.map((c: any) => {
+            const an = Array.isArray(c.analytics) && c.analytics.length > 0 ? c.analytics[0] : (c.analytics || {});
+            const sent = Number(an.sentCount || 0);
+            const delivered = Number(an.deliveredCount || 0);
+            const opened = Number(an.openedCount || 0);
+            const clicked = Number(an.clickedCount || 0);
+            const conversions = Number(an.conversionCount || 0);
+            const revenue = Number(an.revenueGenerated || 0);
+
+            const deliveryRate = sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0;
+            const openRate = delivered > 0 ? Number(((opened / delivered) * 100).toFixed(1)) : (sent > 0 ? Number(((opened / sent) * 100).toFixed(1)) : 0);
+            const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
+            const convRate = clicked > 0 ? Number(((conversions / clicked) * 100).toFixed(1)) : 0;
+
+            return {
+              id: c.id,
+              name: c.name,
+              type: c.type || 'Promotional',
+              status: c.status || 'Sent',
+              title: c.title || '',
+              body: c.body || '',
+              image: c.image || null,
+              actionUrl: c.actionUrl || '/',
+              priority: c.priority || 'Normal',
+              sentCount: sent,
+              deliveredCount: delivered,
+              deliveryRate,
+              openedCount: opened,
+              openRate,
+              clickedCount: clicked,
+              ctr,
+              conversionCount: conversions,
+              conversionRate: convRate,
+              revenueGenerated: revenue,
+              date: c.createdAt ? new Date(c.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'N/A',
+              createdAt: c.createdAt || new Date().toISOString()
+            };
+          });
+          this.allCampaigns.set(mapped);
+        }
+      }
+    });
+  }
+
+  loadAnalytics() {
+    this.api.get<any>('/admin/push/analytics').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data) {
+          const s = res.data.summary;
+          this.analyticsSummary.set(s);
+          this.subscriberSplit.set({
+            guests: Math.max(0, (s.totalDevices || 0) - (s.unsubscribedUsers || 0) - (s.registeredUsers || 0)),
+            registered: s.registeredUsers || 0,
+            disabled: s.unsubscribedUsers || 0
+          });
+          this.dailyTrends.set(res.data.dailyTrends || []);
+        }
+      }
+    });
+  }
+
+  loadMonthlyBilling(month?: string) {
+    const targetMonth = month || this.selectedBillingMonth();
+    this.isLoadingBilling.set(true);
+    this.api.get<any>(`/admin/push/billing/monthly?month=${targetMonth}`).subscribe({
+      next: (res) => {
+        this.isLoadingBilling.set(false);
+        if (res && res.success && res.data) {
+          this.monthlyBillingData.set(res.data);
+          if (res.data.config) {
+            this.billingConfig.set(res.data.config);
+          }
+          this.loadBillingInvoices();
+        }
+      },
+      error: () => this.isLoadingBilling.set(false)
+    });
+  }
+
+  onBillingMonthChange(newMonth: string) {
+    this.selectedBillingMonth.set(newMonth);
+    this.loadMonthlyBilling(newMonth);
+    this.loadBillingInvoices();
+  }
+
+  loadBillingInvoices() {
+    this.api.get<any>('/admin/push/billing/invoices').subscribe({
+      next: (res) => {
+        if (res && res.success && Array.isArray(res.data)) {
+          this.billingInvoices.set(res.data);
+        }
+      }
+    });
+  }
+
+  saveBillingConfig(event?: Event) {
+    if (event) event.preventDefault();
+    this.api.post<any>('/admin/push/billing/config', this.billingConfig()).subscribe({
+      next: (res) => {
+        if (res && res.success) {
+          this.toast.success('Billing pricing and policy configuration saved!');
+          this.showBillingConfigModal.set(false);
+          this.loadMonthlyBilling();
+        }
+      },
+      error: (err) => this.toast.error('Failed to save billing configuration: ' + err.message)
+    });
+  }
+
+  generateMonthlyInvoice() {
+    const month = this.selectedBillingMonth();
+    this.isGeneratingInvoice.set(true);
+    this.api.post<any>('/admin/push/billing/generate-invoice', { month }).subscribe({
+      next: (res) => {
+        this.isGeneratingInvoice.set(false);
+        if (res && res.success) {
+          this.toast.success('Consolidated monthly invoice generated!');
+          this.selectedInvoice.set(res.data);
+          this.showInvoiceModal.set(true);
+          this.loadMonthlyBilling();
+          this.loadBillingInvoices();
+        }
+      },
+      error: (err) => {
+        this.isGeneratingInvoice.set(false);
+        this.toast.error('Failed to generate invoice: ' + err.message);
+      }
+    });
+  }
+
+  exportBillingCsv() {
+    const month = this.selectedBillingMonth();
+    window.open(`/api/admin/push/billing/export?month=${month}`, '_blank');
+    this.toast.success(`Exporting monthly billing usage CSV for ${month}...`);
+  }
+
+  viewInvoice(inv: any) {
+    this.selectedInvoice.set(inv);
+    this.showInvoiceModal.set(true);
+  }
+
+  printInvoice() {
+    window.print();
+  }
+
+  formatMonthLabel(mStr: string): string {
+    if (!mStr || !mStr.includes('-')) return mStr;
+    const [y, m] = mStr.split('-').map(Number);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${months[m - 1]} ${y}`;
+  }
+
+  // Audience reach calculation using real subscriber count
+  getReachEstimate(): number {
+    const eligible = this.subscriberDevices().filter(d => d.notificationEnabled === true);
+    if (eligible.length === 0) return this.optedInDevicesCount() || 0;
+    
+    let filtered = eligible;
+    if (this.campaignForm.targetPlatform === 'desktop') {
+      filtered = filtered.filter(d => {
+        const os = (d.os || '').toLowerCase();
+        return os.includes('windows') || os.includes('mac') || os.includes('linux');
+      });
+    } else if (this.campaignForm.targetPlatform === 'mobile') {
+      filtered = filtered.filter(d => {
+        const os = (d.os || '').toLowerCase();
+        return os.includes('android') || os.includes('ios');
+      });
+    }
+    return filtered.length || this.optedInDevicesCount();
+  }
+
+  refreshAudienceEstimate() {
+    this.loadSubscriberDevices();
+    this.toast.info('Recipients count updated from live device records.');
+  }
+
+  // Product Search UX with Debouncing & Fallback Placeholder
+  onProductSearchInput() {
+    if (this.productSearchTimer) clearTimeout(this.productSearchTimer);
+    this.productSearchTimer = setTimeout(() => {
+      this.searchProducts();
+    }, 300);
+  }
+
+  searchProducts() {
+    const q = this.productSearchQuery.trim();
+    if (!q) {
+      this.searchResults.set([]);
       return;
     }
-    const kw = this.aiKeyword;
-    const tone = this.aiTone;
-    this.generatedAiTitles.set([
-      `🔥 Limited Stock: ${kw} is almost gone!`,
-      `⚡ Weekend Special on ${kw} (Ends Soon)`,
-      `🎁 Exclusive Deal: Get 15% off your ${kw}`
-    ]);
-    this.generatedAiBodies.set([
-      `Hi customerName, we have a special ${tone} offer on ${kw} just for you! Click here to grab yours before stock runs out.`,
-      `Hey customerName, check out this amazing offer on ${kw}! Premium 3D quality guaranteed. Use code GALAXY15 at checkout.`,
-      `Attention makers! Get the genuine ${kw} with official warranty and free delivery across India. Order today!`
-    ]);
-    this.toast.success('AI suggestions generated successfully!');
+    this.isSearchingProducts.set(true);
+    this.api.get<any>('/admin/push/products/search', { q }).subscribe({
+      next: (res) => {
+        this.isSearchingProducts.set(false);
+        if (res && res.success && Array.isArray(res.data)) {
+          this.searchResults.set(res.data);
+        } else {
+          this.searchResults.set([]);
+        }
+      },
+      error: () => {
+        this.isSearchingProducts.set(false);
+        this.searchResults.set([]);
+      }
+    });
   }
 
-  applyAiSuggestion(title: string, body: string) {
-    this.campaignForm.title = title;
-    this.campaignForm.body = body;
-    this.toast.success('AI content applied to builder fields.');
+  clearProductSearch() {
+    this.productSearchQuery = '';
+    this.searchResults.set([]);
   }
 
-  getReachEstimate(): number {
-    let base = 1240;
-    const types = this.audienceSegmentFilters.userTypes;
-    if (types.guests && !types.registered) base = 400;
-    else if (types.registered && !types.guests) base = 840;
-    else if (types.vip) base = 150;
-    else if (types.inactive) base = 280;
-    else if (types.highValue) base = 90;
-
-    let platformMultiplier = 0;
-    if (this.audienceSegmentFilters.platforms.android) platformMultiplier += 0.5;
-    if (this.audienceSegmentFilters.platforms.ios) platformMultiplier += 0.25;
-    if (this.audienceSegmentFilters.platforms.web) platformMultiplier += 0.15;
-    if (this.audienceSegmentFilters.platforms.pwa) platformMultiplier += 0.1;
-
-    return Math.round(base * (platformMultiplier || 1));
+  selectProduct(p: any) {
+    this.selectedProduct.set(p);
+    const price = p.salePrice || p.basePrice || 0;
+    const origPrice = p.basePrice || price;
+    this.campaignForm.name = `Promo: ${p.name}`;
+    this.campaignForm.title = `🔥 Price Drop: ${p.name}`;
+    this.campaignForm.body = p.discountPercent && p.discountPercent > 0
+      ? `Get ${p.discountPercent}% OFF! Now at ₹${price} (was ₹${origPrice}). Limited stock available!`
+      : `Special Deal on ${p.name} at ₹${price}. Order now with fast shipping!`;
+    this.campaignForm.image = p.image || '';
+    this.campaignForm.actionUrl = p.productUrl || `/product/${p.sku || p.id}`;
+    this.campaignForm.actionBtn1Text = 'Order Now';
+    this.campaignForm.actionBtn1Url = p.productUrl || `/product/${p.sku || p.id}`;
+    this.searchResults.set([]);
+    this.productSearchQuery = '';
+    this.toast.success(`Loaded product "${p.name}" into campaign builder.`);
   }
 
-  addFlowStep(type: 'delay' | 'action' | 'condition') {
-    const id = String(this.flowNodes().length + 1);
-    let newNode = { id, type, title: '', subtitle: '', icon: '' };
-    if (type === 'delay') {
-      newNode = { id, type, title: 'Wait 2 Days', subtitle: 'Delay interval', icon: 'schedule' };
-    } else if (type === 'action') {
-      newNode = { id, type, title: 'Send Follow-up Alert', subtitle: 'Push / WhatsApp trigger', icon: 'notifications_active' };
-    } else if (type === 'condition') {
-      newNode = { id, type, title: 'Check User Segment', subtitle: 'Branching logic filter', icon: 'alt_route' };
+  clearSelectedProduct() {
+    this.selectedProduct.set(null);
+  }
+
+  onProductImgError(event: any) {
+    event.target.src = this.fallbackProductImage;
+  }
+
+  // Wizard navigation
+  getWizardStepName(step: number): string {
+    switch (step) {
+      case 1: return 'Campaign Details';
+      case 2: return 'Target Audience';
+      case 3: return 'Push Content & Preview';
+      case 4: return 'Review & Billing Impact';
+      case 5: return 'Review & Launch';
+      default: return '';
     }
-    this.flowNodes.update(nodes => [...nodes, newNode]);
-    this.toast.success('New flow node appended to customer journey.');
   }
 
-  deleteFlowStep(id: string) {
-    this.flowNodes.update(nodes => nodes.filter(n => n.id !== id));
-    this.toast.success('Node removed from flow.');
+  goToNextWizardStep() {
+    if (this.wizardStep() === 1 && !this.campaignForm.name) {
+      this.toast.error('Campaign Name is required.');
+      return;
+    }
+    if (this.wizardStep() === 3 && (!this.campaignForm.title || !this.campaignForm.body)) {
+      this.toast.error('Notification Title and Body are required.');
+      return;
+    }
+    this.wizardStep.set(this.wizardStep() + 1);
   }
 
   openCreateCampaignWizard() {
     this.clearCampaignForm();
-    this.activeSubTab.set('manual-send');
-    this.nestedMarketingTab.set('builder');
+    this.activeSubTab.set('campaigns');
+    this.campaignManagerMode.set('wizard');
     this.wizardStep.set(1);
+  }
+
+  clearCampaignForm() {
+    this.campaignForm = {
+      name: '',
+      objective: 'Promotional',
+      category: 'Flash Sale',
+      description: '',
+      targetType: 'everyone',
+      targetPlatform: 'all',
+      title: '',
+      body: '',
+      image: '',
+      icon: '/assets/icon.png',
+      badge: '/assets/badge.png',
+      actionUrl: '/',
+      actionBtn1Text: 'Shop Now',
+      actionBtn1Url: '/',
+      actionBtn2Text: 'View Deals',
+      actionBtn2Url: '/deals',
+      priority: 'Normal',
+      requireInteraction: false,
+      tag: '',
+      scheduleMode: 'now',
+      utmCampaign: ''
+    };
+    this.selectedProduct.set(null);
+  }
+
+  resetPreview() {
+    this.campaignForm.title = "🔥 3D Galaxy Flash Sale: 20% OFF ABS";
+    this.campaignForm.body = "Upgrade your prints with genuine Elegoo & Bambu supplies. Limited stock available.";
+    this.campaignForm.image = "https://storage.googleapis.com/ajr3dgalaxy.firebasestorage.app/product-import/1784443970788-192528383.webp";
+    this.campaignForm.actionUrl = "/category/filaments";
+    this.campaignForm.actionBtn1Text = "Shop Now";
+    this.campaignForm.actionBtn1Url = "/category/filaments";
+    this.campaignForm.actionBtn2Text = "Explore Deals";
+    this.campaignForm.actionBtn2Url = "/deals";
+    this.toast.info('Preview reset to sample state.');
+  }
+
+  simulateActionClick(btnText: string, url: string) {
+    this.toast.info(`[Simulation] Action Clicked: "${btnText}" -> Navigates to ${url || '/'}. No real notification sent.`);
+  }
+
+  submitCampaign() {
+    if (!this.campaignForm.title || !this.campaignForm.body) {
+      this.toast.error('Notification title and message body are required.');
+      return;
+    }
+
+    if (this.isSubmittingCampaign()) return; // Idempotency guard
+
+    this.isSubmittingCampaign.set(true);
+
+    const payload = {
+      name: this.campaignForm.name || `Push: ${this.campaignForm.title}`,
+      type: this.campaignForm.category || 'Promotional',
+      title: this.campaignForm.title,
+      body: this.campaignForm.body,
+      image: this.campaignForm.image || null,
+      icon: this.campaignForm.icon || '/assets/icon.png',
+      badge: this.campaignForm.badge || '/assets/badge.png',
+      actionUrl: this.campaignForm.actionUrl || '/',
+      ctaText: this.campaignForm.actionBtn1Text || 'Open',
+      priority: this.campaignForm.priority || 'Normal',
+      requireInteraction: !!this.campaignForm.requireInteraction,
+      tag: this.campaignForm.tag || undefined,
+      targetType: this.campaignForm.targetType || 'everyone',
+      status: 'Draft'
+    };
+
+    this.api.post<any>('/admin/push/campaign', payload).subscribe({
+      next: (createRes) => {
+        if (createRes && createRes.success) {
+          const campaignId = createRes.data.id;
+
+          if (this.campaignForm.scheduleMode === 'now') {
+            this.api.post<any>('/admin/push/send', { campaignId }).subscribe({
+              next: (sendRes) => {
+                this.isSubmittingCampaign.set(false);
+                this.toast.success(sendRes.message || 'Push broadcast queued for immediate dispatch!');
+                this.refreshAllHubData();
+                setTimeout(() => this.refreshAllHubData(), 1200);
+                setTimeout(() => this.refreshAllHubData(), 3000);
+                this.campaignManagerMode.set('list');
+              },
+              error: (err) => {
+                this.isSubmittingCampaign.set(false);
+                this.toast.error('Dispatch error: ' + (err.error?.message || err.message));
+                this.loadCampaigns();
+              }
+            });
+          } else {
+            this.isSubmittingCampaign.set(false);
+            this.toast.success('Campaign draft saved successfully.');
+            this.refreshAllHubData();
+            this.campaignManagerMode.set('list');
+          }
+        }
+      },
+      error: (err) => {
+        this.isSubmittingCampaign.set(false);
+        this.toast.error('Failed to create campaign: ' + (err.error?.message || err.message));
+      }
+    });
   }
 
   useCampaignAsTemplate(camp: any) {
@@ -1976,11 +2659,11 @@ export class PushSettingsTabComponent {
     this.campaignForm.image = camp.image || '';
     this.campaignForm.actionUrl = camp.actionUrl || '/';
     this.campaignForm.priority = camp.priority || 'Normal';
-    this.campaignFormExt.campaignType = camp.type || 'Promotional';
-    this.activeSubTab.set('manual-send');
-    this.nestedMarketingTab.set('builder');
+    this.campaignForm.category = camp.type || 'Promotional';
+    this.activeSubTab.set('campaigns');
+    this.campaignManagerMode.set('wizard');
     this.wizardStep.set(1);
-    this.toast.info('Campaign loaded into Omnichannel Wizard.');
+    this.toast.info('Campaign loaded into composer.');
   }
 
   duplicateCampaign(camp: any) {
@@ -1992,8 +2675,7 @@ export class PushSettingsTabComponent {
       sentCount: 0,
       deliveredCount: 0,
       clickedCount: 0,
-      ctr: 0,
-      revenue: 0
+      ctr: 0
     };
     this.allCampaigns.update(c => [dupe, ...c]);
     this.toast.success('Campaign duplicated as draft.');
@@ -2007,417 +2689,116 @@ export class PushSettingsTabComponent {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    this.toast.success('Campaign JSON structure exported successfully.');
+    this.toast.success('Campaign JSON structure exported.');
   }
 
-  // Stats signals
-  analyticsSummary = signal<any>({
-    totalDevices: 0,
-    delivered: 0,
-    ctr: 0.0,
-    revenueGenerated: 0
-  });
-  subscriberSplit = signal<any>({
-    guests: 0,
-    registered: 0,
-    disabled: 0
-  });
-  dailyTrends = signal<any[]>([]);
-
-  // Config signals
-  fcmConfig = {
-    enabled: false,
-    projectId: '',
-    apiKey: '',
-    appId: '',
-    messagingSenderId: '',
-    vapidPublicKey: '',
-    serviceAccount: '',
-    defaultIcon: '/assets/icon.png',
-    defaultBadge: '/assets/badge.png',
-    defaultClickUrl: '/'
-  };
-
-  popupConfig: any = {
-    enabled: true,
-    title: '',
-    description: '',
-    allowText: '',
-    cancelText: '',
-    logoUrl: '/3d-logo.png',
-    bannerUrl: '',
-    backgroundColor: 'theme',
-    textColor: 'theme',
-    syncWithTheme: true,
-    buttonColor: '#f97316',
-    borderRadius: 24,
-    animation: 'scale-in',
-    delayShow: 5,
-    scrollShow: 30,
-    showOnce: false,
-    hideExisting: true,
-    hideCheckout: true,
-    hidePayment: true,
-    reshowDays: 7
-  };
-
-  rulesConfig = {
-    randomProductCount: 3,
-    minDiscountPercent: 10,
-    maxDiscountPercent: 90,
-    categoriesInclude: [],
-    categoriesExclude: [],
-    brandsInclude: [],
-    brandsExclude: [],
-    stockThreshold: 5,
-    duplicatePreventionDays: 7,
-    maxNotificationsPerDay: 1
-  };
-
-  auditLogs = signal<any[]>([]);
-
-  // Campaign Form State
-  campaignForm = {
-    targetType: 'everyone',
-    title: '',
-    body: '',
-    image: '',
-    actionUrl: '',
-    priority: 'Normal',
-    name: '',
-    scheduleMode: 'now',
-    scheduledAt: ''
-  };
-  audienceCount = signal<number>(0);
-  productSearchQuery = '';
-  searchResults = signal<any[]>([]);
-
-  // Template signals
-  templatesList = signal<any[]>([]);
-  editingTemplate = signal<boolean>(false);
-  templateForm = {
-    id: '',
-    name: '',
-    category: 'Daily Deal',
-    title: '',
-    body: '',
-    image: '',
-    actionUrl: ''
-  };
-
-  constructor() {
-    this.loadAnalytics();
-    this.loadFCMConfig();
-    this.loadPopupConfig();
-    this.loadRulesConfig();
-    this.loadTemplates();
-    this.estimateAudience();
-    this.loadAuditLogs();
-    this.loadCampaigns();
-    this.loadSubscriberDevices();
-  }
-
-  // Loaders
-  loadCampaigns() {
-    this.api.get<any>('/admin/push/campaigns?limit=100').subscribe({
+  openCampaignAnalytics(campaign: any) {
+    this.selectedCampaignForAnalytics.set(campaign);
+    this.api.get<any>(`/admin/push/analytics?campaignId=${campaign.id}`).subscribe({
       next: (res) => {
-        if (res && res.success && res.data && Array.isArray(res.data.list)) {
-          const rawList: any[] = res.data.list;
+        if (res && res.success && res.data) {
+          const an = res.data;
+          const sent = Number(an.sentCount || 0);
+          const delivered = Number(an.deliveredCount || 0);
+          const opened = Number(an.openedCount || 0);
+          const clicked = Number(an.clickedCount || 0);
+          const conversions = Number(an.conversionCount || 0);
+          const revenue = Number(an.revenueGenerated || 0);
+          const deliveryRate = sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0;
+          const openRate = delivered > 0 ? Number(((opened / delivered) * 100).toFixed(1)) : (sent > 0 ? Number(((opened / sent) * 100).toFixed(1)) : 0);
+          const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
+          const convRate = clicked > 0 ? Number(((conversions / clicked) * 100).toFixed(1)) : 0;
 
-          const mapped = rawList.map((c: any) => {
-            const analyticsObj = Array.isArray(c.analytics) && c.analytics.length > 0
-              ? c.analytics[0]
-              : (c.analytics && typeof c.analytics === 'object' ? c.analytics : {});
-            const sent = Number(analyticsObj?.sentCount || 0);
-            const delivered = Number(analyticsObj?.deliveredCount || 0);
-            const clicked = Number(analyticsObj?.clickedCount || 0);
+          this.selectedCampaignForAnalytics.update(c => ({
+            ...c,
+            sentCount: sent,
+            deliveredCount: delivered,
+            deliveryRate,
+            openedCount: opened,
+            openRate,
+            clickedCount: clicked,
+            ctr,
+            conversionCount: conversions,
+            conversionRate: convRate,
+            revenueGenerated: revenue
+          }));
+        }
+      }
+    });
+  }
+
+  closeCampaignAnalytics() {
+    this.selectedCampaignForAnalytics.set(null);
+  }
+
+  simulateCampaignInteraction(campaignId: string, event: 'open' | 'click' | 'conversion', revenue?: number) {
+    this.isSimulatingCampaignEvent.set(true);
+    this.api.post<any>(`/admin/push/campaign/${campaignId}/simulate-event`, { event, revenue }).subscribe({
+      next: (res) => {
+        this.isSimulatingCampaignEvent.set(false);
+        this.toast.success(`Tracked 1 ${event.toUpperCase()} for campaign!`);
+        this.loadCampaigns();
+        this.loadAnalytics();
+        this.loadMonthlyBilling();
+        if (this.selectedCampaignForAnalytics()?.id === campaignId) {
+          const an = res.data?.analytics?.[0] || res.data?.analytics;
+          if (an) {
+            const sent = Number(an.sentCount || 0);
+            const delivered = Number(an.deliveredCount || 0);
+            const opened = Number(an.openedCount || 0);
+            const clicked = Number(an.clickedCount || 0);
+            const conversions = Number(an.conversionCount || 0);
+            const revenueVal = Number(an.revenueGenerated || 0);
+            const deliveryRate = sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0;
+            const openRate = delivered > 0 ? Number(((opened / delivered) * 100).toFixed(1)) : (sent > 0 ? Number(((opened / sent) * 100).toFixed(1)) : 0);
             const ctr = sent > 0 ? Number(((clicked / sent) * 100).toFixed(1)) : 0;
-            const revenue = Number(analyticsObj?.revenueGenerated || 0);
+            const convRate = clicked > 0 ? Number(((conversions / clicked) * 100).toFixed(1)) : 0;
 
-            return {
-              id: c.id,
-              name: c.name,
-              type: c.type || 'Promotional',
-              status: c.status || 'Sent',
-              title: c.title || '',
-              body: c.body || '',
-              image: c.image || null,
-              icon: c.icon || '/assets/icon.png',
-              actionUrl: c.actionUrl || '/',
-              ctaText: c.ctaText || null,
-              priority: c.priority || 'Normal',
+            this.selectedCampaignForAnalytics.update(c => ({
+              ...c,
               sentCount: sent,
               deliveredCount: delivered,
+              deliveryRate,
+              openedCount: opened,
+              openRate,
               clickedCount: clicked,
-              ctr: ctr,
-              revenue: revenue,
-              reach: sent || delivered || 0,
-              date: c.createdAt ? new Date(c.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A',
-              raw: c
-            };
-          });
-
-          this.allCampaigns.set(mapped);
-
-          const past = mapped.filter((c: any) => c.status === 'Completed' || c.status === 'Sent');
-          this.pastCampaigns.set(past);
-          this.activeScheduledCampaigns.set([]);
+              ctr,
+              conversionCount: conversions,
+              conversionRate: convRate,
+              revenueGenerated: revenueVal
+            }));
+          }
         }
       },
-      error: () => { }
-    });
-  }
-
-  loadAnalytics() {
-    this.api.get<any>('/admin/push/analytics').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          const s = res.data.summary;
-          this.analyticsSummary.set({
-            totalDevices: s.totalDevices || 0,
-            delivered: s.delivered || 0,
-            ctr: s.ctr || 0.0,
-            revenueGenerated: s.revenueGenerated || 0
-          });
-          this.subscriberSplit.set({
-            guests: (s.totalDevices || 0) - (s.unsubscribedUsers || 0) - (s.registeredUsers || 0), // estimation fallback
-            registered: s.registeredUsers || 0,
-            disabled: s.unsubscribedUsers || 0
-          });
-          this.dailyTrends.set(res.data.dailyTrends || []);
-        }
+      error: (err) => {
+        this.isSimulatingCampaignEvent.set(false);
+        this.toast.error('Simulation error: ' + (err.error?.message || err.message));
       }
     });
   }
 
-  loadFCMConfig() {
-    this.api.get<any>('/admin/push/config').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          this.fcmConfig = { ...this.fcmConfig, ...res.data };
-        }
-      }
-    });
-  }
-
-  loadPopupConfig() {
-    this.api.get<any>('/admin/push/popup-config').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          this.popupConfig = { ...this.popupConfig, ...res.data };
-        }
-      }
-    });
-  }
-
-  loadRulesConfig() {
-    this.api.get<any>('/settings').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          const rules = res.data.pushRulesSettings || {};
-          this.rulesConfig = { ...this.rulesConfig, ...rules };
-        }
-      }
-    });
-  }
-
-  loadAuditLogs() {
-    this.api.get<any>('/admin/fcm/logs').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          this.auditLogs.set(res.data || []);
-        }
-      }
-    });
-  }
-
-  loadTemplates() {
-    this.api.get<any>('/admin/push/templates').subscribe({
-      next: (res) => {
-        if (res && res.success && res.data) {
-          this.templatesList.set(res.data || []);
-        }
-      }
-    });
-  }
-
-  // Updators & Savers
-  saveFCMConfig(event: Event) {
-    event.preventDefault();
-    this.api.post<any>('/admin/push/config', this.fcmConfig).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toast.success('Firebase configuration saved successfully!');
-          this.loadAuditLogs();
-        }
-      },
-      error: (err) => this.toast.error('Failed to save config: ' + err.message)
-    });
-  }
-
-  savePopupConfig(event: Event) {
-    event.preventDefault();
-    this.api.post<any>('/admin/push/popup-config', this.popupConfig).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toast.success('Popup styling saved successfully!');
-          this.loadAuditLogs();
-        }
-      },
-      error: (err) => this.toast.error('Failed to save popup styling: ' + err.message)
-    });
-  }
-
-  saveRulesConfig(event: Event) {
-    event.preventDefault();
-    this.api.put<any>('/admin/settings', { pushRulesSettings: this.rulesConfig }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toast.success('Product selection rules saved!');
-          this.loadAuditLogs();
-        }
-      },
-      error: (err) => this.toast.error('Failed to save rules: ' + err.message)
-    });
-  }
-
-  // FCM config validations
-  validateFCMConfig() {
-    this.api.post<any>('/admin/push/config/validate', {
-      serviceAccount: this.fcmConfig.serviceAccount,
-      storageBucket: `${this.fcmConfig.projectId}.firebasestorage.app`
-    }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toast.success(res.message);
-        } else {
-          this.toast.error(res.message);
-        }
-      },
-      error: (err) => this.toast.error(err.error?.message || 'Validation failed.')
-    });
-  }
-
-  testFCMConnection() {
-    this.toast.info('Testing connection with Firebase servers...');
-    this.api.post<any>('/admin/push/config/validate', {
-      serviceAccount: this.fcmConfig.serviceAccount
-    }).subscribe({
-      next: (res) => {
-        if (res.success) this.toast.success('FCM API connection test successful!');
-      },
-      error: (err) => this.toast.error('Connection test failed: ' + err.error?.message)
-    });
-  }
-
-  triggerTestPush() {
-    const token = prompt('Enter recipient FCM Token to send test notification:');
-    if (!token) return;
-
-    this.api.post<any>('/admin/push/test', {
-      fcmToken: token,
-      title: '🔥 Live Connection Test Success!',
-      body: 'Your Firebase integration is fully active and delivering notifications.',
-      image: 'https://picsum.photos/seed/test/400/200',
-      actionUrl: '/'
-    }).subscribe({
-      next: (res) => {
-        if (res.success) this.toast.success('Test notification sent successfully!');
-      },
-      error: (err) => this.toast.error('Failed to send test push: ' + err.message)
-    });
-  }
-
-  // Campaign compose
-  estimateAudience() {
-    this.api.post<any>('/admin/push/audience/estimate', { targetType: this.campaignForm.targetType }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.audienceCount.set(res.data.count || 0);
-        }
-      }
-    });
-  }
-
-  searchProducts() {
-    if (!this.productSearchQuery) return;
-    this.api.get<any>('/admin/push/products/search', { q: this.productSearchQuery }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.searchResults.set(res.data || []);
-        }
-      }
-    });
-  }
-
-  selectProduct(product: any) {
-    this.campaignForm.title = `🔥 Price Drop Alert: ${product.name}`;
-    this.campaignForm.body = `Get ${product.discountPercent}% OFF! Only ₹${product.salePrice || product.basePrice} (was ₹${product.basePrice}). Shop Now!`;
-    this.campaignForm.image = product.image;
-    this.campaignForm.actionUrl = product.productUrl;
-    this.campaignForm.name = `Promo: ${product.name} drop`;
-    this.searchResults.set([]);
-    this.productSearchQuery = '';
-    this.toast.success('Product fields loaded into builder.');
-  }
-
-  clearCampaignForm() {
-    this.campaignForm = {
-      targetType: 'everyone',
-      title: '',
-      body: '',
-      image: '',
-      actionUrl: '',
-      priority: 'Normal',
-      name: '',
-      scheduleMode: 'now',
-      scheduledAt: ''
-    };
-    this.estimateAudience();
-  }
-
-  dispatchManualCampaign() {
-    if (!this.campaignForm.title || !this.campaignForm.body) {
-      this.toast.error('Title and message body are required.');
-      return;
+  copyAttributedUrl(url: string, campaignId: string) {
+    let fullUrl = url || '/';
+    if (!fullUrl.includes('utm_campaign=')) {
+      const sep = fullUrl.includes('?') ? '&' : '?';
+      fullUrl = `${fullUrl}${sep}utm_campaign=${encodeURIComponent(campaignId)}&utm_source=webpush&utm_medium=push`;
     }
-
-    const payload = {
-      name: this.campaignForm.name || `On-Spot Campaign: ${this.campaignForm.title}`,
-      type: 'Promotional',
-      title: this.campaignForm.title,
-      body: this.campaignForm.body,
-      image: this.campaignForm.image || null,
-      actionUrl: this.campaignForm.actionUrl || '/',
-      priority: this.campaignForm.priority,
-      audienceRules: { targetType: this.campaignForm.targetType },
-      scheduleMode: 'now',
-      scheduledAt: null
-    };
-
-    // First save campaign
-    this.api.post<any>('/admin/push/campaign', payload).subscribe({
-      next: (res) => {
-        if (res.success && res.data) {
-          const campaignId = res.data.id;
-
-          // Dispatch on-spot immediately
-          this.api.post<any>('/admin/push/send', { campaignId }).subscribe({
-            next: () => {
-              this.toast.success('On-spot broadcast campaign dispatched successfully to all opted-in FCM devices!');
-              this.clearCampaignForm();
-              this.loadAnalytics();
-              this.loadCampaigns();
-            },
-            error: (err) => this.toast.error('Failed to trigger broadcast dispatch: ' + err.message)
-          });
-        }
-      },
-      error: (err) => this.toast.error('Failed to create campaign: ' + err.message)
-    });
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const absolute = fullUrl.startsWith('http') ? fullUrl : `${origin}${fullUrl.startsWith('/') ? '' : '/'}${fullUrl}`;
+    navigator.clipboard.writeText(absolute);
+    this.toast.success('Attributed destination link copied to clipboard!');
   }
 
-  // Subscriber Devices Methods
+  openAttributedUrlInNewTab(url: string, campaignId: string) {
+    let fullUrl = url || '/';
+    if (!fullUrl.includes('utm_campaign=')) {
+      const sep = fullUrl.includes('?') ? '&' : '?';
+      fullUrl = `${fullUrl}${sep}utm_campaign=${encodeURIComponent(campaignId)}&utm_source=webpush&utm_medium=push`;
+    }
+    window.open(fullUrl, '_blank');
+  }
+
+  // Subscriber Devices Helpers
   loadSubscriberDevices() {
     this.loadingDevices.set(true);
     this.api.get<any>('/admin/notifications/devices').subscribe({
@@ -2427,19 +2808,8 @@ export class PushSettingsTabComponent {
           this.subscriberDevices.set(res.data);
         }
       },
-      error: (err) => {
-        this.loadingDevices.set(false);
-        console.error('Failed to load subscriber devices:', err);
-      }
+      error: () => this.loadingDevices.set(false)
     });
-  }
-
-  copyFcmToken(token: string) {
-    if (!token) return;
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(token);
-      this.toast.success('FCM Device Token copied to clipboard!');
-    }
   }
 
   sendDirectTestPush(dev: any) {
@@ -2450,7 +2820,7 @@ export class PushSettingsTabComponent {
     this.toast.info('Sending test notification to device...');
     this.api.post<any>('/admin/push/test', {
       fcmToken: dev.fcmToken,
-      title: '⚡ 3D Galaxy Test Push',
+      title: '⚡ 3D Galaxy Web Push Test',
       body: `Live test ping sent to ${dev.browser || 'Browser'} on ${dev.os || 'Device'}`,
       actionUrl: '/'
     }).subscribe({
@@ -2479,10 +2849,9 @@ export class PushSettingsTabComponent {
       `"${d.fcmToken || ''}"`
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `3dgalaxy_fcm_devices_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', `3dgalaxy_push_devices_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2505,102 +2874,116 @@ export class PushSettingsTabComponent {
     }
   }
 
-  triggerDailyOfferTest() {
-    this.toast.info('Triggering Daily offer automatic generation job...');
-    // We will invoke the daily offer scheduler routine directly from testing endpoint
-    this.api.post<any>('/admin/push/test', {
-      fcmToken: 'CRON_TRIGGER_DAILY_OFFER',
-      title: 'Run cron',
-      body: 'cron'
-    }).subscribe({
-      next: () => {
-        this.toast.success('Cron job completed successfully! Check analytics dashboard.');
-        setTimeout(() => this.loadAnalytics(), 2000);
-      },
-      error: (err) => this.toast.error('Cron dispatch trigger failed: ' + err.message)
-    });
-  }
-
-  triggerDailyOfferCronDirect() {
-    // Invoke cron
-    this.api.post<any>('/admin/push/test', {
-      fcmToken: 'CRON_TRIGGER',
-      title: 'Triggering auto cron',
-      body: 'daily'
-    }).subscribe({
-      next: () => this.toast.success('Cron job invoked successfully!')
-    });
-  }
-
-  // Templates CRUD
-  openTemplateEditor(tmpl: any) {
-    if (tmpl) {
-      this.templateForm = { ...tmpl };
-    } else {
-      this.templateForm = {
-        id: '',
-        name: '',
-        category: 'Daily Deal',
-        title: '',
-        body: '',
-        image: '',
-        actionUrl: ''
-      };
-    }
-    this.editingTemplate.set(true);
-  }
-
-  saveTemplate() {
-    if (!this.templateForm.name || !this.templateForm.title || !this.templateForm.body) {
-      this.toast.error('Please fill name, title and body.');
-      return;
-    }
-
-    const request = this.templateForm.id
-      ? this.api.put<any>(`/admin/push/templates/${this.templateForm.id}`, this.templateForm)
-      : this.api.post<any>('/admin/push/templates', this.templateForm);
-
-    request.subscribe({
+  // Logs & Audit
+  loadAuditLogs() {
+    this.api.get<any>('/admin/fcm/logs').subscribe({
       next: (res) => {
-        if (res.success) {
-          this.toast.success('Template saved successfully!');
-          this.editingTemplate.set(false);
-          this.loadTemplates();
-        }
-      },
-      error: (err) => this.toast.error('Failed to save template: ' + err.message)
-    });
-  }
-
-  cloneTemplate(tmpl: any) {
-    const cloned = {
-      ...tmpl,
-      id: '',
-      name: `${tmpl.name} (Clone)`
-    };
-    this.api.post<any>('/admin/push/templates', cloned).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toast.success('Template cloned!');
-          this.loadTemplates();
+        if (res && res.success && Array.isArray(res.data)) {
+          this.auditLogs.set(res.data);
         }
       }
     });
   }
 
-  deleteTemplate(id: string) {
-    if (!confirm('Are you sure you want to delete this template?')) return;
-    this.api.delete<any>(`/admin/push/templates/${id}`).subscribe({
+  // FCM Config & Test
+  loadFCMConfig() {
+    this.api.get<any>('/admin/push/config').subscribe({
       next: (res) => {
-        if (res.success) {
-          this.toast.success('Template deleted.');
-          this.loadTemplates();
+        if (res && res.success && res.data) {
+          this.fcmConfig = { ...this.fcmConfig, ...res.data };
         }
       }
     });
   }
 
-  // Graphical helpers
+  saveFCMConfig(event: Event) {
+    event.preventDefault();
+    this.api.post<any>('/admin/push/config', this.fcmConfig).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toast.success('Firebase configuration saved successfully!');
+        }
+      },
+      error: (err) => this.toast.error('Failed to save config: ' + err.message)
+    });
+  }
+
+  testFCMConnection() {
+    this.toast.info('Testing connection with Firebase servers...');
+    this.api.post<any>('/admin/push/config/validate', {
+      serviceAccount: this.fcmConfig.serviceAccount
+    }).subscribe({
+      next: (res) => {
+        if (res.success) this.toast.success('FCM API connection test successful!');
+      },
+      error: (err) => this.toast.error('Connection test failed: ' + err.error?.message)
+    });
+  }
+
+  triggerTestPush() {
+    const token = prompt('Enter recipient FCM Token to send test notification:');
+    if (!token) return;
+
+    this.api.post<any>('/admin/push/test', {
+      fcmToken: token,
+      title: '🔥 Live Push Connection Test Success!',
+      body: 'Your Web Push integration is fully active and delivering notifications.',
+      actionUrl: '/'
+    }).subscribe({
+      next: (res) => {
+        if (res.success) this.toast.success('Test notification sent successfully!');
+      },
+      error: (err) => this.toast.error('Failed to send test push: ' + err.message)
+    });
+  }
+
+  // Popup Designer
+  loadPopupConfig() {
+    this.api.get<any>('/admin/push/popup-config').subscribe({
+      next: (res) => {
+        if (res && res.success && res.data) {
+          this.popupConfig = { ...this.popupConfig, ...res.data };
+        }
+      }
+    });
+  }
+
+  savePopupConfig(event: Event) {
+    event.preventDefault();
+    this.api.post<any>('/admin/push/popup-config', this.popupConfig).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toast.success('Popup styling saved successfully!');
+        }
+      },
+      error: (err) => this.toast.error('Failed to save popup styling: ' + err.message)
+    });
+  }
+
+  triggerLivePreview() {
+    this.notif.testTriggerPopup();
+    this.toast.info('Live notification popup preview triggered in browser!');
+  }
+
+  getPreviewBgColor(): string {
+    if (this.popupConfig.backgroundColor === 'theme' || !this.popupConfig.backgroundColor) {
+      return this.ds.theme() === 'dark' ? '#18181b' : '#ffffff';
+    }
+    return this.popupConfig.backgroundColor;
+  }
+
+  getPreviewTextColor(): string {
+    if (this.popupConfig.textColor === 'theme' || !this.popupConfig.textColor) {
+      return this.ds.theme() === 'dark' ? '#f8fafc' : '#09090b';
+    }
+    return this.popupConfig.textColor;
+  }
+
+  getPreviewLogoUrl(): string {
+    return this.popupConfig.logoUrl?.trim() || '/3d-logo.png';
+  }
+
+  // Chart Helpers
   getSendsPercent(sends: number): number {
     if (!sends) return 0;
     const maxSends = Math.max(...this.dailyTrends().map(t => t.sends || 0), 10);

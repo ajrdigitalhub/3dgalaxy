@@ -10,6 +10,7 @@ import {
   handlePreviewServiceTemplate,
   handleManualRetry,
   handleCampaignBroadcast,
+  getAdminWhatsappCampaigns,
   handleMetaWebhook,
   handleMetaWebhookVerification,
   getAdminWhatsappConversations,
@@ -75,6 +76,7 @@ router.post('/admin/whatsapp/preview-status', authenticateToken, handlePreviewOr
 router.post('/admin/whatsapp/preview-service', authenticateToken, handlePreviewServiceTemplate);
 router.post('/admin/whatsapp/retry', authenticateToken, handleManualRetry);
 router.post('/admin/whatsapp/campaign', authenticateToken, handleCampaignBroadcast);
+router.get('/admin/whatsapp/campaigns', authenticateToken, getAdminWhatsappCampaigns);
 
 // Webhook Endpoints (Public - Meta WhatsApp Cloud API)
 // Supported paths: /api/webhooks/whatsapp and /api/whatsapp/webhook

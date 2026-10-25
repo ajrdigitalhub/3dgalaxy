@@ -74,6 +74,8 @@ function parseNotificationPayload(rawData) {
     tag = data.eventKey || data.tag || tag;
   }
 
+  const campaignId = (payload && payload.data?.campaignId) || (payload && payload.campaignId) || '';
+
   return {
     title,
     options: {
@@ -85,6 +87,7 @@ function parseNotificationPayload(rawData) {
       renotify: true,
       vibrate: [200, 100, 200],
       data: {
+        campaignId,
         click_action: clickAction,
         url: clickAction,
         environment: swEnv
@@ -109,6 +112,18 @@ self.addEventListener('push', (event) => {
     if (!parsed) {
       // Notification dropped due to cross-environment isolation
       return;
+    }
+
+    // Ping open/delivery receipt for campaign attribution
+    const campId = parsed.options?.data?.campaignId;
+    if (campId) {
+      try {
+        fetch(`${self.location.origin}/api/notifications/track-open`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaignId: campId, source: 'sw_push_event' })
+        }).catch(() => {});
+      } catch (e) {}
     }
 
     // Check if application window is open and focused in the foreground
@@ -152,6 +167,18 @@ messaging.onBackgroundMessage((payload) => {
     console.warn(`[firebase-messaging-sw.js] Background message dropped due to environment mismatch`);
     return;
   }
+
+  const campId = parsed.options?.data?.campaignId;
+  if (campId) {
+    try {
+      fetch(`${self.location.origin}/api/notifications/track-open`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId: campId, source: 'sw_background_msg' })
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
   // Only display if Firebase has not already displayed a notification payload
   if (!payload.notification) {
     return self.registration.showNotification(parsed.title, parsed.options);
@@ -162,6 +189,21 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const rawTarget = event.notification.data?.click_action || event.notification.data?.url || '/';
+  const campaignId = event.notification.data?.campaignId;
+
+  // Immediately track click event to backend API
+  if (campaignId) {
+    try {
+      fetch(`${self.location.origin}/api/notifications/track-click`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId: campaignId,
+          source: 'sw_notificationclick'
+        })
+      }).catch(() => {});
+    } catch (e) {}
+  }
 
   // Normalize target URL strictly to current origin to prevent cross-domain leaks
   let safeTargetUrl = '/';

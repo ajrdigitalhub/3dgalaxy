@@ -330,6 +330,16 @@ export class NotificationBellComponent {
     this.isOpen.update((val) => !val);
     if (this.isOpen()) {
       this.ns.fetchInbox();
+      // Track campaign opens for unread campaign items in inbox
+      try {
+        this.notifications().forEach((n: InboxNotification) => {
+          if (!n.isRead && n.actionUrl) {
+            const u = new URL(n.actionUrl, window.location.origin);
+            const campId = u.searchParams.get('utm_campaign');
+            if (campId) this.ns.trackCampaignOpen(campId);
+          }
+        });
+      } catch {}
     }
   }
 
@@ -363,6 +373,13 @@ export class NotificationBellComponent {
       this.ns.markAsRead(item.id);
     }
     if (item.actionUrl) {
+      try {
+        const u = new URL(item.actionUrl, window.location.origin);
+        const campId = u.searchParams.get('utm_campaign');
+        if (campId) {
+          this.ns.trackCampaignClick(campId);
+        }
+      } catch {}
       if (item.actionUrl.startsWith("http")) {
         window.open(item.actionUrl, "_blank");
       } else {

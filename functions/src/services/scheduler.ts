@@ -117,7 +117,6 @@ export const getRecommendedProducts = async (config: {
  * Fetch FCM target tokens based on segmentation rules
  */
 export const getAudienceTokens = async (audienceId: string | null, customRules?: any) => {
-  const currentEnv = getAppEnv();
   let rules = customRules;
 
   if (audienceId) {
@@ -129,21 +128,19 @@ export const getAudienceTokens = async (audienceId: string | null, customRules?:
     }
   }
 
-  if (!rules) {
-    // Default to all active device opt-ins in active environment
-    return await (prisma.notificationDevice as any).findMany({
-      where: { notificationEnabled: true, environment: currentEnv, tokenStatus: 'ACTIVE' },
-      include: { user: true }
-    });
-  }
-
-  const { targetType, os, browser, language, includeTags, excludeTags } = rules;
-
   const whereClause: any = {
     notificationEnabled: true,
-    environment: currentEnv,
     tokenStatus: 'ACTIVE',
   };
+
+  if (rules?.environment) {
+    whereClause.environment = rules.environment;
+  }
+
+  const targetType = rules?.targetType;
+  const os = rules?.os;
+  const browser = rules?.browser;
+  const language = rules?.language;
 
   if (targetType === 'registered') {
     whereClause.userId = { not: null };
@@ -300,9 +297,22 @@ export const queueCampaignMessages = async (campaignId: string) => {
         storeName: '3D Galaxy Hub'
       };
 
+      const appendUtmParams = (url: string, campId: string, src: string) => {
+        try {
+          if (!url) return '/';
+          if (url.includes('utm_campaign=')) return url;
+          const sep = url.includes('?') ? '&' : '?';
+          return `${url}${sep}utm_campaign=${encodeURIComponent(campId)}&utm_source=${encodeURIComponent(src)}&utm_medium=push`;
+        } catch {
+          return url || '/';
+        }
+      };
+
       const title = personalizeText(campaign.title, variables);
       const body = personalizeText(campaign.body, variables);
-      const actionUrl = personalizeText(campaign.actionUrl || '/', variables);
+      const rawActionUrl = personalizeText(campaign.actionUrl || '/', variables);
+      const actionUrl = appendUtmParams(rawActionUrl, campaign.id, 'webpush');
+      const deepLink = appendUtmParams(campaign.deepLink || rawActionUrl, campaign.id, 'webpush');
 
       const currentEnv = getAppEnv();
       const payload = {
@@ -313,7 +323,7 @@ export const queueCampaignMessages = async (campaignId: string) => {
         data: {
           campaignId: campaign.id,
           click_action: actionUrl,
-          deepLink: campaign.deepLink || '',
+          deepLink,
           ctaText: campaign.ctaText || 'Open',
           environment: currentEnv,
           appOrigin: getAppOrigin(),
@@ -336,6 +346,64 @@ export const queueCampaignMessages = async (campaignId: string) => {
     for (let i = 0; i < queueData.length; i += batchSize) {
       const chunk = queueData.slice(i, i + batchSize);
       await prisma.notificationQueue.createMany({ data: chunk });
+    }
+
+    // Create In-App Notification records so user notification bell receives it immediately
+    try {
+      const inAppNotifications: any[] = [];
+      const uniqueUserIds = Array.from(new Set(devices.map(d => d.userId).filter(Boolean))) as string[];
+      const guestIds = Array.from(new Set(devices.map(d => d.guestId).filter(Boolean))) as string[];
+      const inAppActionUrl = (url: string) => {
+        try {
+          if (!url) return '/';
+          if (url.includes('utm_campaign=')) return url;
+          const sep = url.includes('?') ? '&' : '?';
+          return `${url}${sep}utm_campaign=${encodeURIComponent(campaign.id)}&utm_source=inapp&utm_medium=push`;
+        } catch {
+          return url || '/';
+        }
+      };
+
+      for (const uid of uniqueUserIds) {
+        inAppNotifications.push({
+          userId: uid,
+          title: campaign.title,
+          body: campaign.body,
+          image: campaign.image || recProduct?.images?.[0] || null,
+          actionUrl: inAppActionUrl(campaign.actionUrl || '/'),
+          isRead: false
+        });
+      }
+
+      for (const gid of guestIds) {
+        inAppNotifications.push({
+          guestId: gid,
+          title: campaign.title,
+          body: campaign.body,
+          image: campaign.image || recProduct?.images?.[0] || null,
+          actionUrl: inAppActionUrl(campaign.actionUrl || '/'),
+          isRead: false
+        });
+      }
+
+      // Always create a global broadcast entry (userId: null, guestId: null) so any visiting customer sees it
+      inAppNotifications.push({
+        userId: null,
+        guestId: null,
+        title: campaign.title,
+        body: campaign.body,
+        image: campaign.image || recProduct?.images?.[0] || null,
+        actionUrl: inAppActionUrl(campaign.actionUrl || '/'),
+        isRead: false
+      });
+
+      for (let i = 0; i < inAppNotifications.length; i += 100) {
+        await prisma.notification.createMany({
+          data: inAppNotifications.slice(i, i + 100)
+        });
+      }
+    } catch (inAppErr) {
+      console.error('Failed to create in-app notification records for campaign:', inAppErr);
     }
 
     // Initialize/Create Analytics record if not exists
@@ -424,7 +492,7 @@ export const processNotificationQueue = async () => {
         const tokenChunk = tokens.slice(i, i + fcmBatchSize);
         const itemChunk = group.items.slice(i, i + fcmBatchSize);
 
-        const message = {
+        const message: any = {
           tokens: tokenChunk,
           notification: {
             title: group.payload.title,
@@ -437,6 +505,22 @@ export const processNotificationQueue = async () => {
             body: group.payload.body,
             image: group.payload.image || '',
             icon: group.payload.icon || ''
+          },
+          webpush: {
+            notification: {
+              title: group.payload.title,
+              body: group.payload.body,
+              icon: group.payload.icon || '/assets/icon.png',
+              image: group.payload.image || undefined,
+              badge: '/assets/badge.png',
+              data: {
+                campaignId: group.payload.data?.campaignId || campaignId || '',
+                click_action: group.payload.data?.click_action || '/'
+              }
+            },
+            fcmOptions: {
+              link: group.payload.data?.click_action || '/'
+            }
           }
         };
 
@@ -503,14 +587,31 @@ export const processNotificationQueue = async () => {
 
           // Update Campaign Analytics
           if (campaignId) {
-            await prisma.pushAnalytics.update({
+            await prisma.pushAnalytics.upsert({
               where: { campaignId },
-              data: {
+              create: {
+                campaignId,
+                sentCount: successCount + failureCount,
+                deliveredCount: successCount,
+                failedCount: failureCount
+              },
+              update: {
                 sentCount: { increment: successCount + failureCount },
                 deliveredCount: { increment: successCount },
                 failedCount: { increment: failureCount }
               }
             });
+
+            // If queue is now empty for this campaign, mark status as Completed
+            const remaining = await prisma.notificationQueue.count({
+              where: { campaignId, status: { in: ['Pending', 'Processing', 'QUEUED', 'PROCESSING'] } }
+            });
+            if (remaining === 0) {
+              await prisma.pushCampaign.update({
+                where: { id: campaignId },
+                data: { status: 'Sent' }
+              });
+            }
           }
         } catch (fcmError: any) {
           console.error('FCM Multicast error:', fcmError);
@@ -792,6 +893,13 @@ export const runScheduledMaintenance = async (jobType: string = 'full') => {
         await backupScheduler.checkBackupOverdueAndNotify();
         results.jobsExecuted.push('checkBackupOverdueAndNotify');
       }
+    }
+
+    // 7. Monthly push billing automatic invoice finalization & rollover
+    const { autoGenerateCompletedMonthInvoices } = require('../controllers/pushBilling');
+    if (typeof autoGenerateCompletedMonthInvoices === 'function') {
+      const invs = await autoGenerateCompletedMonthInvoices();
+      results.jobsExecuted.push({ name: 'autoGenerateCompletedMonthInvoices', invoicesCount: Array.isArray(invs) ? invs.length : 0 });
     }
 
     results.success = true;

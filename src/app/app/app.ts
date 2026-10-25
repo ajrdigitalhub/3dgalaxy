@@ -89,11 +89,20 @@ export class App {
         // Capture push notification clicks for attribution tracking
         if (isPlatformBrowser(this.platformId)) {
           const urlParams = new URL(window.location.href, window.location.origin).searchParams;
+          const utmCampaign = urlParams.get('utm_campaign') || urlParams.get('campaignId');
           const utmLog = urlParams.get('utm_log');
-          if (utmLog) {
-            this.api.post<any>('/notifications/track-click', { logId: utmLog }).subscribe({
-              error: (err) => console.error('Failed to track push click attribution:', err)
-            });
+          if (utmCampaign || utmLog) {
+            const trkKey = `push_trk_${utmCampaign || ''}_${utmLog || ''}`;
+            if (!sessionStorage.getItem(trkKey)) {
+              sessionStorage.setItem(trkKey, '1');
+              this.api.post<any>('/notifications/track-click', {
+                campaignId: utmCampaign,
+                logId: utmLog,
+                source: 'web_navigation'
+              }).subscribe({
+                error: (err) => console.error('Failed to track push click attribution:', err)
+              });
+            }
           }
         }
       }

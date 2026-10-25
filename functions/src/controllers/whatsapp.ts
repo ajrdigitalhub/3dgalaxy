@@ -1986,6 +1986,19 @@ export const handleCampaignBroadcast = async (req: Request, res: Response) => {
   }
 };
 
+// Get Admin WhatsApp Campaigns list
+export const getAdminWhatsappCampaigns = async (req: Request, res: Response) => {
+  try {
+    const campaigns = await prisma.whatsappCampaign.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return res.status(200).json(campaigns);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // Customer Notifications history
 export const getCustomerNotifications = async (req: AuthenticatedRequest, res: Response) => {
   try {

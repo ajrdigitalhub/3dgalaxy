@@ -422,12 +422,19 @@ export class AdminCommunicationTab {
       const active = this.admin.activeTab();
       if (active === 'whatsapp-logs') {
         this.subTab.set('logs');
-        this.loadLogs();
       } else if (active === 'whatsapp-campaign') {
         this.subTab.set('campaigns');
-        this.loadCampaigns();
       }
     }, { allowSignalWrites: true });
+
+    effect(() => {
+      const sub = this.subTab();
+      if (sub === 'logs') {
+        this.loadLogs();
+      } else if (sub === 'campaigns') {
+        this.loadCampaigns();
+      }
+    });
   }
 
   loadLogs() {
@@ -441,11 +448,15 @@ export class AdminCommunicationTab {
   }
 
   loadCampaigns() {
-    // Campaign history mock logs
-    this.campaigns.set([
-      { id: '1', title: 'Summer Offer Notification', status: 'Completed', sentCount: 184, deliveredCount: 172, readCount: 148, failedCount: 4 },
-      { id: '2', title: 'Diwali Wish Broadcast', status: 'Completed', sentCount: 220, deliveredCount: 200, readCount: 180, failedCount: 12 }
-    ]);
+    this.http.get<any[]>('/api/admin/whatsapp/campaigns').subscribe({
+      next: (data) => {
+        const list = (data as any).data !== undefined ? (data as any).data : data;
+        this.campaigns.set(Array.isArray(list) ? list : []);
+      },
+      error: () => {
+        this.campaigns.set([]);
+      },
+    });
   }
 
   filteredLogs = computed(() => {

@@ -605,23 +605,21 @@ export class NotificationService {
     }
 
     // 1. Fetch user notifications from /notifications
-    if (params.userId || params.guestId) {
-      this.api
-        .get<{
-          success: boolean;
-          data: InboxNotification[];
-        }>("/notifications", params)
-        .subscribe({
-          next: (res) => {
-            const isSuccess = res && (res.success || (res as any).status === "success");
-            const backendNotifs = isSuccess && Array.isArray(res.data) ? res.data : [];
-            this.mergeNotifications(backendNotifs, storeDefaults);
-          },
-          error: () => {
-            this.mergeNotifications([], storeDefaults);
-          },
-        });
-    }
+    this.api
+      .get<{
+        success: boolean;
+        data: InboxNotification[];
+      }>("/notifications", params)
+      .subscribe({
+        next: (res) => {
+          const isSuccess = res && (res.success || (res as any).status === "success");
+          const backendNotifs = isSuccess && Array.isArray(res.data) ? res.data : [];
+          this.mergeNotifications(backendNotifs, storeDefaults);
+        },
+        error: () => {
+          this.mergeNotifications([], storeDefaults);
+        },
+      });
 
     // 2. If logged in as Admin, also fetch admin notifications from /admin/notifications
     if (isAdmin) {
@@ -657,6 +655,9 @@ export class NotificationService {
       if (!deletedIds.has(n.id)) {
         map.set(n.id, {
           ...n,
+          category: n.category || "offer",
+          icon: n.icon || (n.category === 'system' ? 'notifications' : 'local_offer'),
+          badge: n.badge || "Offer",
           isRead: n.isRead || readIds.has(n.id),
         });
       }
@@ -700,6 +701,29 @@ export class NotificationService {
         error: () => {},
       });
     }
+  }
+
+  // Push Campaign Attribution
+  trackCampaignClick(campaignId: string, logId?: string) {
+    if (!campaignId && !logId) return;
+    this.api.post<any>("/notifications/track-click", {
+      campaignId,
+      logId,
+      source: "inapp_notification"
+    }).subscribe({
+      error: (e) => console.warn("Failed to track campaign click:", e)
+    });
+  }
+
+  trackCampaignOpen(campaignId: string, logId?: string) {
+    if (!campaignId && !logId) return;
+    this.api.post<any>("/notifications/track-open", {
+      campaignId,
+      logId,
+      source: "inapp_notification"
+    }).subscribe({
+      error: (e) => console.warn("Failed to track campaign open:", e)
+    });
   }
 
   // Delete notification
@@ -755,6 +779,9 @@ export class NotificationService {
             icon: newNotif.image || "/favicon.ico",
           });
         }
+
+        // Refetch inbox from backend to keep sync
+        this.fetchInbox();
       });
     } catch (err) {
       console.warn("Foreground notification listener setup skipped:", err);

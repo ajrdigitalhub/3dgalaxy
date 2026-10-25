@@ -78,11 +78,14 @@ import {
   scheduleCampaign,
   sendTestNotification,
   trackClick,
+  trackOpen,
   trackConversion,
+  simulateCampaignEvent,
   getCampaignAnalytics
 } from '../controllers/pushCampaign';
 
 router.post('/notifications/track-click', trackClick);
+router.post('/notifications/track-open', trackOpen);
 router.post('/notifications/track-conversion', trackConversion);
 
 router.post('/admin/push/ai-generate', adminGuard, generateAIContent);
@@ -101,5 +104,23 @@ router.post('/admin/push/send', adminGuard, sendCampaignNow);
 router.post('/admin/push/schedule', adminGuard, scheduleCampaign);
 router.get('/admin/push/analytics', adminGuard, getCampaignAnalytics);
 router.post('/admin/push/test', adminGuard, sendTestNotification);
+router.post('/admin/push/campaign/:id/simulate-event', adminGuard, simulateCampaignEvent);
+
+// --- Push Billing System Endpoints ---
+import {
+  getPushBillingConfig,
+  updatePushBillingConfig,
+  getMonthlyPushBillingUsage,
+  getPushBillingInvoices,
+  generateMonthlyPushInvoice,
+  exportPushBillingUsage
+} from '../controllers/pushBilling';
+
+router.get('/admin/push/billing/config', adminGuard, getPushBillingConfig);
+router.post('/admin/push/billing/config', adminGuard, updatePushBillingConfig);
+router.get('/admin/push/billing/monthly', adminGuard, getMonthlyPushBillingUsage);
+router.get('/admin/push/billing/invoices', adminGuard, getPushBillingInvoices);
+router.post('/admin/push/billing/generate-invoice', adminGuard, generateMonthlyPushInvoice);
+router.get('/admin/push/billing/export', adminGuard, exportPushBillingUsage);
 
 export default router;

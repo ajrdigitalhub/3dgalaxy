@@ -1,8 +1,8 @@
 # 3D Galaxy — Automated Regression & CI Validation Report
 
-**Generated:** 2026-10-25T05:30:04.639Z  
+**Generated:** 2026-10-25T18:27:56.831Z  
 **Status:** FAILED (DEPLOYMENT BLOCKED)  
-**Total Duration:** 18.00s  
+**Total Duration:** 21.74s  
 
 ---
 
@@ -23,37 +23,37 @@
 ### Cart, Pricing, COD & Variants Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 10 | **Failed:** 0
-- **Duration:** 2ms
+- **Duration:** 3ms
 
 
 ### Auth, Interceptors & Deduplication Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 6 | **Failed:** 0
-- **Duration:** 1ms
+- **Duration:** 0ms
 
 
 ### Media Preservation, Reviews & Backups Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 8 | **Failed:** 0
-- **Duration:** 1ms
+- **Duration:** 2ms
 
 
 ### Security Sanitization & Responsive Layout Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 1ms
+- **Duration:** 2ms
 
 
 ### Add to Cart Flow for Variant Products (50 Tests) (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 50 | **Failed:** 0
-- **Duration:** 7ms
+- **Duration:** 9ms
 
 
 ### Campaign Manager, Eligibility, Preview & FCM Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 3ms
+- **Duration:** 7ms
 
 
 ### Brand Synchronization, Complimentary Bundles & Filaments Unit Tests (UNIT)
@@ -71,49 +71,49 @@
 ### Marketing Tracking Credentials, Health & Sanitization Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 25 | **Failed:** 0
-- **Duration:** 5ms
+- **Duration:** 7ms
 
 
 ### Public Storefront & Guest Experience API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 7366ms
+- **Duration:** 8949ms
 
 
 ### Checkout, COD Validation & Payment API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 42ms
+- **Duration:** 79ms
 
 
 ### Admin Route Authorization & Security API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 11 | **Failed:** 0
-- **Duration:** 2639ms
+- **Duration:** 3723ms
 
 
 ### WhatsApp Webhooks & Automation API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 4 | **Failed:** 0
-- **Duration:** 730ms
+- **Duration:** 913ms
 
 
 ### TaskHub Observability & Health Integration API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 3514ms
+- **Duration:** 4325ms
 
 
 ### Customer Checkout Lifecycle Pipeline Test (INTEGRATION)
 - **Status:** ✅ PASSED
 - **Passed:** 1 | **Failed:** 0
-- **Duration:** 1800ms
+- **Duration:** 1798ms
 
 
 ### FCM Push Notifications Domain & Environment Isolation Tests (INTEGRATION)
 - **Status:** ❌ FAILED
 - **Passed:** 11 | **Failed:** 1
-- **Duration:** 1238ms
+- **Duration:** 1392ms
 
 Errors:
   - `Origin Normalization: Normalizes URLs, downcases host, strips trailing slashes: Expected values to be strictly equal:
@@ -127,7 +127,7 @@ Errors:
 ### Pre-Deployment Critical Smoke Tests (SMOKE)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 233ms
+- **Duration:** 476ms
 
 
 

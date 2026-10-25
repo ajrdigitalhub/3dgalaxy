@@ -388,24 +388,27 @@ export const getNotifications = async (req: Request, res: Response) => {
   try {
     let whereClause: any = {};
     if (userId) {
-      whereClause.userId = String(userId);
+      whereClause = {
+        OR: [
+          { userId: String(userId) },
+          { userId: null, guestId: null }
+        ]
+      };
     } else if (guestId) {
-      whereClause.guestId = String(guestId);
-      whereClause.userId = null; // Ensure we only get guest specific ones if not logged in
+      whereClause = {
+        OR: [
+          { guestId: String(guestId) },
+          { userId: null, guestId: null }
+        ]
+      };
     } else {
-      return res
-        .status(400)
-        .json({
-          status: "error",
-          success: false,
-          message: "Either userId or guestId is required.",
-          error: "Either userId or guestId is required.",
-        });
+      whereClause = { userId: null, guestId: null };
     }
 
     const list = await prisma.notification.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
+      take: 50
     });
 
     return res
