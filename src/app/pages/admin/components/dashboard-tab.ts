@@ -219,35 +219,43 @@ import { SalesAnalyticsComponent } from './sales-analytics/sales-analytics.compo
           </div>
 
           <div class="space-y-4">
-            @for (tp of getTopProducts(); track tp.id) {
-              <div class="flex items-center justify-between gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/25 p-2 rounded-2xl transition duration-200">
-                <div class="flex items-center gap-3 min-w-0 flex-1">
-                  <img 
-                    [src]="$any(tp.images[0]?.url || tp.images[0] || 'https://picsum.photos/100/100')" 
-                    alt="Rank product thumbnail" 
-                    class="h-10 w-10 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 shrink-0"
-                    referrerpolicy="no-referrer"
-                  />
-                  <div class="min-w-0 flex-1">
-                    <h5 class="text-xs font-black uppercase text-zinc-900 dark:text-white truncate" [title]="tp.name">
-                      {{ tp.name }}
-                    </h5>
-                    <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase font-sans truncate max-w-[90px]">
-                        {{ tp.brand }}
-                      </span>
-                      <span class="h-2.5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
-                      <span class="text-[9px] text-red-500 font-extrabold whitespace-nowrap">
-                        {{ tp.salesCount }} Sold
-                      </span>
+            @if (getTopProducts().length === 0) {
+              <div class="py-10 flex flex-col items-center justify-center text-center gap-1.5 text-zinc-400">
+                <mat-icon class="text-2xl text-zinc-300 dark:text-zinc-700">query_stats</mat-icon>
+                <p class="font-sans italic text-xs text-zinc-500 dark:text-zinc-400">No product sales recorded yet in the database.</p>
+                <span class="text-[10px] text-zinc-400 dark:text-zinc-500">Live rankings will appear automatically as orders are placed.</span>
+              </div>
+            } @else {
+              @for (tp of getTopProducts(); track tp.id) {
+                <div class="flex items-center justify-between gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/25 p-2 rounded-2xl transition duration-200">
+                  <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <img 
+                      [src]="$any(tp.images[0]?.url || tp.images[0] || 'https://picsum.photos/100/100')" 
+                      alt="Rank product thumbnail" 
+                      class="h-10 w-10 object-contain bg-zinc-50 dark:bg-zinc-950 rounded-xl border dark:border-zinc-800 shrink-0"
+                      referrerpolicy="no-referrer"
+                    />
+                    <div class="min-w-0 flex-1">
+                      <h5 class="text-xs font-black uppercase text-zinc-900 dark:text-white truncate" [title]="tp.name">
+                        {{ tp.name }}
+                      </h5>
+                      <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span class="text-[9px] text-zinc-400 dark:text-zinc-500 font-bold uppercase font-sans truncate max-w-[90px]">
+                          {{ tp.brand }}
+                        </span>
+                        <span class="h-2.5 w-px bg-zinc-200 dark:bg-zinc-800"></span>
+                        <span class="text-[9px] text-emerald-500 font-extrabold whitespace-nowrap">
+                          {{ tp.salesCount }} Sold
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  <div class="text-right shrink-0">
+                    <p class="text-xs font-mono font-bold text-zinc-900 dark:text-white">₹{{ tp.totalRevenue | number }}</p>
+                    <span class="text-[8px] text-zinc-400 font-medium block">Revenue</span>
+                  </div>
                 </div>
-                <div class="text-right shrink-0">
-                  <p class="text-xs font-mono font-bold text-zinc-900 dark:text-white">₹{{ tp.totalRevenue | number }}</p>
-                  <span class="text-[8px] text-zinc-400 font-medium block">Revenue</span>
-                </div>
-              </div>
+              }
             }
           </div>
         </div>
@@ -289,40 +297,51 @@ export class AdminDashboardTab {
   }
 
   getTopProducts() {
+    // 1. Check if backend /admin/dashboard returned verified topProducts from order items
+    const backendTop = this.admin.dashboardStats()?.topProducts;
+    if (Array.isArray(backendTop) && backendTop.length > 0) {
+      return backendTop.slice(0, 4);
+    }
+
+    // 2. Otherwise calculate accurately from real orders in the datastore
     const orders = this.admin.ds.orders() || [];
     const products = this.admin.ds.products() || [];
-    const salesMap: Record<string, number> = {};
+    const salesMap: Record<string, { count: number; revenue: number }> = {};
 
     orders.forEach(o => {
-      if (o.items) {
-        o.items.forEach((item: any) => {
-          salesMap[item.productId] = (salesMap[item.productId] || 0) + item.quantity;
+      const status = (o.status || '').toLowerCase();
+      if (status === 'cancelled' || status === 'refunded') return;
+
+      const items = o.items || (o as any).orderItems || [];
+      if (Array.isArray(items)) {
+        items.forEach((item: any) => {
+          const pid = item.productId || item.product_id || item.product?.id;
+          if (pid) {
+            const qty = Number(item.quantity || item.qty || 1);
+            const price = Number(item.unitPrice || item.price || (item.totalPrice ? item.totalPrice / qty : 0));
+            if (!salesMap[pid]) {
+              salesMap[pid] = { count: 0, revenue: 0 };
+            }
+            salesMap[pid].count += qty;
+            salesMap[pid].revenue += (item.totalPrice ? Number(item.totalPrice) : (price * qty));
+          }
         });
       }
     });
 
     const mapped = products.map(p => {
-      const salesCount = salesMap[p.id] || 0;
+      const stats = salesMap[p.id];
+      const salesCount = stats ? stats.count : 0;
+      const totalRevenue = stats ? stats.revenue : 0;
       return {
         ...p,
         salesCount,
-        totalRevenue: salesCount * p.sale_price
+        totalRevenue: Math.round(totalRevenue)
       };
     }).filter(p => p.salesCount > 0);
 
-    mapped.sort((a, b) => b.salesCount - a.salesCount);
+    mapped.sort((a, b) => b.salesCount !== a.salesCount ? (b.salesCount - a.salesCount) : (b.totalRevenue - a.totalRevenue));
 
-    if (mapped.length > 0) {
-      return mapped.slice(0, 4);
-    }
-
-    return products.slice(0, 4).map((p, idx) => {
-      const mockSales = [45, 32, 28, 19][idx] || 15;
-      return {
-        ...p,
-        salesCount: mockSales,
-        totalRevenue: mockSales * p.sale_price
-      };
-    });
+    return mapped.slice(0, 4);
   }
 }

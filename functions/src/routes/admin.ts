@@ -742,7 +742,8 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
       totalCustomers,
       revenueAgg,
       abandonedCarts,
-      pendingOrders
+      pendingOrders,
+      topItemsAgg
     ] = await withDbRetry(() => Promise.all([
       prisma.product.count(),
       prisma.order.count(),
@@ -765,8 +766,55 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
         where: {
           status: { in: ['pending', 'PENDING'] }
         }
+      }),
+      prisma.orderItem.groupBy({
+        by: ['productId'],
+        where: {
+          productId: { not: null },
+          order: {
+            status: { notIn: ['cancelled', 'CANCELLED'] }
+          }
+        },
+        _sum: {
+          quantity: true,
+          totalPrice: true
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc'
+          }
+        },
+        take: 5
       })
     ]));
+
+    let topProducts: any[] = [];
+    if (Array.isArray(topItemsAgg) && topItemsAgg.length > 0) {
+      const productIds = topItemsAgg.map(i => i.productId).filter(Boolean) as string[];
+      const prods = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          name: true,
+          images: true,
+          brand: { select: { name: true } }
+        }
+      });
+      const prodMap = new Map(prods.map(p => [p.id, p]));
+      topProducts = topItemsAgg.map(item => {
+        const p = item.productId ? prodMap.get(item.productId) : null;
+        const salesCount = item._sum.quantity || 0;
+        const totalRevenue = Number(item._sum.totalPrice || 0);
+        return {
+          id: item.productId,
+          name: p?.name || 'Unknown Product',
+          brand: (p as any)?.brand?.name || '3D Galaxy',
+          images: p?.images || [],
+          salesCount,
+          totalRevenue: Math.round(totalRevenue)
+        };
+      });
+    }
 
     const totalRevenue = revenueAgg._sum.totalAmount || 0;
     const payload = {
@@ -775,7 +823,8 @@ router.get('/dashboard', adminGuard, async (req: Request, res: Response) => {
       totalCustomers,
       totalRevenue,
       abandonedCarts,
-      pendingOrders
+      pendingOrders,
+      topProducts
     };
 
     sysCache.set(cacheKey, payload, 60); // 60s TTL
