@@ -1,6 +1,7 @@
 import axios from 'axios';
 import prisma from '../config/database';
 import { logger } from '../utils/logger';
+import { ENV } from '../config/env';
 import { WhatsAppConversationService } from './whatsappConversationService';
 import { getWhatsappSettings } from '../controllers/whatsapp';
 import {
@@ -51,7 +52,7 @@ const DEFAULT_QUICK_REPLIES: QuickReplyItem[] = [
     id: 'qr_stl',
     shortcut: '/quote',
     title: 'Custom STL Upload Request',
-    message: 'Please share your 3D CAD/STL file here or upload directly at https://3dgalaxy.co/services along with your preferred material.',
+    message: `Please share your 3D CAD/STL file here or upload directly at ${ENV.SITE_URL}/services along with your preferred material.`,
     category: 'Printing',
     isActive: true
   },

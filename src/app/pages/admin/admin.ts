@@ -487,7 +487,7 @@ export class AdminPanel implements OnInit {
 
   // System Configuration parameters
   storeName = signal("3D Galaxy India");
-  storeSupportEmail = signal("support@3dgalaxy.co.in");
+  storeSupportEmail = signal(environment.supportEmail || "support@3dgalaxy.co");
   taxRate = signal(18);
   serviceFeeRate = signal(150);
   isSaving = signal(false);
@@ -1049,21 +1049,21 @@ export class AdminPanel implements OnInit {
     {
       uid: "u1",
       name: "Anil Gupta",
-      email: "anil@3dgalaxy.co.in",
+      email: "anil@3dgalaxy.co",
       role: "super-admin",
       active: true,
     },
     {
       uid: "u2",
       name: "Rahul Dev",
-      email: "rahul.dev@3dgalaxy.co.in",
+      email: "rahul.dev@3dgalaxy.co",
       role: "admin",
       active: true,
     },
     {
       uid: "u3",
       name: "Megha Sen",
-      email: "megha@3dgalaxy.co.in",
+      email: "megha@3dgalaxy.co",
       role: "editor",
       active: false,
     },
@@ -1390,7 +1390,7 @@ export class AdminPanel implements OnInit {
     this.catIsFeatured.set(cat.isFeatured || false);
     this.catSeoTitle.set(cat.seoTitle || "");
     this.catSeoDescription.set(cat.seoDescription || "");
-    
+
     const charge = cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : cat.shipping_charge !== undefined && cat.shipping_charge !== null ? Number(cat.shipping_charge) : null;
     this.catShippingCharge.set(charge);
 
@@ -1409,7 +1409,7 @@ export class AdminPanel implements OnInit {
     if (Array.isArray(rawRules)) {
       rules = rawRules;
     } else if (typeof rawRules === 'string' && rawRules.trim()) {
-      try { rules = JSON.parse(rawRules); } catch (e) {}
+      try { rules = JSON.parse(rawRules); } catch (e) { }
     }
     this.catShippingRules.set(rules);
 
@@ -1731,7 +1731,7 @@ export class AdminPanel implements OnInit {
               : (typeof o.values === 'string' ? o.values.split(',').map((s: string) => s.trim()) : [])
           }));
         }
-      } catch {}
+      } catch { }
     }
 
     // Fallback: If options array is empty, reconstruct options from variant optionValues!
@@ -1892,97 +1892,97 @@ export class AdminPanel implements OnInit {
             this.pSale.set(
               detail.salePrice || detail.sale_price || p.sale_price || 0,
             );
-          this.pDealer.set(
-            detail.dealerPrice || detail.dealer_price || p.dealer_price || 0,
-          );
-          this.pStock.set(detail.stock || p.stock || 0);
+            this.pDealer.set(
+              detail.dealerPrice || detail.dealer_price || p.dealer_price || 0,
+            );
+            this.pStock.set(detail.stock || p.stock || 0);
 
-          const imgs = found.images || detail.images || [];
-          this.pImages.set(
-            imgs.map((img: any, i: number) => {
-              const url = typeof img === "string" ? img : img?.url;
-              return { url, isPrimary: i === 0 };
-            }),
-          );
+            const imgs = found.images || detail.images || [];
+            this.pImages.set(
+              imgs.map((img: any, i: number) => {
+                const url = typeof img === "string" ? img : img?.url;
+                return { url, isPrimary: i === 0 };
+              }),
+            );
 
-          const detailNormalized = this.normalizeOptionsAndVariants(
-            detail.options || found.options || p.options,
-            found.variants || detail.variants || p.variants
-          );
-          if (detailNormalized.options.length > 0) {
-            this.pOptions.set(detailNormalized.options);
+            const detailNormalized = this.normalizeOptionsAndVariants(
+              detail.options || found.options || p.options,
+              found.variants || detail.variants || p.variants
+            );
+            if (detailNormalized.options.length > 0) {
+              this.pOptions.set(detailNormalized.options);
+            }
+            if (detailNormalized.variants.length > 0) {
+              this.pVariants.set(detailNormalized.variants);
+            }
+
+            this.pSeoTitle.set(
+              master.seo?.title || master.seo?.seoTitle || detail.seoTitle || "",
+            );
+            this.pSeoDescription.set(
+              master.seo?.description ||
+              master.seo?.seoDescription ||
+              detail.seoDescription ||
+              "",
+            );
+            this.pSpecs.set(master.specifications || detail.specifications || []);
+            this.pFeatures.set(master.features || detail.features || []);
+            this.pFaqs.set(master.faqs || detail.faqs || []);
+            this.pDownloads.set(master.downloads || detail.downloads || []);
+            this.pWarranty.set(
+              master.warranty ||
+              detail.warranty || {
+                warrantyPeriod: "",
+                warrantyDescription: "",
+              },
+            );
+            this.pShipping.set(
+              master.shipping ||
+              detail.shipping || {
+                deliveryTime: "",
+                shippingCharges: 0,
+                shippingRegions: "",
+              },
+            );
+            this.pRelatedIds.set(
+              master.relatedProducts?.map((rp: any) =>
+                typeof rp === "string" ? rp : rp.relatedToId || rp.id,
+              ) || [],
+            );
+            this.pStatus.set(detail.status || p.status || "active");
+            this.pFeatured.set(detail.isFeatured || detail.featured || false);
+            this.pCodAvailable.set(detail.codAvailable !== false);
+            this.pBaseShippingCharge.set(
+              detail.baseShippingCharge ? Number(detail.baseShippingCharge) : 0,
+            );
+            this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
+            this.pEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(detail.estimatedDeliveryDays));
+            this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
+            this.pShippingMode.set(detail.shipping?.mode || (Number(detail.baseShippingCharge) > 0 ? "product_specific" : "default"));
+            this.pWeightInGrams.set(
+              detail.weightInGrams ? Number(detail.weightInGrams) : (detail.weight ? Number(detail.weight) : 0)
+            );
+            this.pBundleProducts.set(
+              detail.bundleProducts
+                ? typeof detail.bundleProducts === "string"
+                  ? JSON.parse(detail.bundleProducts)
+                  : detail.bundleProducts
+                : [],
+            );
+            this.pRecommendedFilaments.set(
+              detail.recommendedFilaments
+                ? typeof detail.recommendedFilaments === "string"
+                  ? JSON.parse(detail.recommendedFilaments)
+                  : detail.recommendedFilaments
+                : [],
+            );
           }
-          if (detailNormalized.variants.length > 0) {
-            this.pVariants.set(detailNormalized.variants);
-          }
-
-          this.pSeoTitle.set(
-            master.seo?.title || master.seo?.seoTitle || detail.seoTitle || "",
-          );
-          this.pSeoDescription.set(
-            master.seo?.description ||
-            master.seo?.seoDescription ||
-            detail.seoDescription ||
-            "",
-          );
-          this.pSpecs.set(master.specifications || detail.specifications || []);
-          this.pFeatures.set(master.features || detail.features || []);
-          this.pFaqs.set(master.faqs || detail.faqs || []);
-          this.pDownloads.set(master.downloads || detail.downloads || []);
-          this.pWarranty.set(
-            master.warranty ||
-            detail.warranty || {
-              warrantyPeriod: "",
-              warrantyDescription: "",
-            },
-          );
-          this.pShipping.set(
-            master.shipping ||
-            detail.shipping || {
-              deliveryTime: "",
-              shippingCharges: 0,
-              shippingRegions: "",
-            },
-          );
-          this.pRelatedIds.set(
-            master.relatedProducts?.map((rp: any) =>
-              typeof rp === "string" ? rp : rp.relatedToId || rp.id,
-            ) || [],
-          );
-          this.pStatus.set(detail.status || p.status || "active");
-          this.pFeatured.set(detail.isFeatured || detail.featured || false);
-          this.pCodAvailable.set(detail.codAvailable !== false);
-          this.pBaseShippingCharge.set(
-            detail.baseShippingCharge ? Number(detail.baseShippingCharge) : 0,
-          );
-          this.pEstimatedDeliveryDays.set(detail.estimatedDeliveryDays || 3);
-          this.pEstimatedDeliveryDaysInput.set(this.deliveryService.decodeDays(detail.estimatedDeliveryDays));
-          this.pFreeShippingEligible.set(detail.freeShippingEligible !== false);
-          this.pShippingMode.set(detail.shipping?.mode || (Number(detail.baseShippingCharge) > 0 ? "product_specific" : "default"));
-          this.pWeightInGrams.set(
-            detail.weightInGrams ? Number(detail.weightInGrams) : (detail.weight ? Number(detail.weight) : 0)
-          );
-          this.pBundleProducts.set(
-            detail.bundleProducts
-              ? typeof detail.bundleProducts === "string"
-                ? JSON.parse(detail.bundleProducts)
-                : detail.bundleProducts
-              : [],
-          );
-          this.pRecommendedFilaments.set(
-            detail.recommendedFilaments
-              ? typeof detail.recommendedFilaments === "string"
-                ? JSON.parse(detail.recommendedFilaments)
-                : detail.recommendedFilaments
-              : [],
-          );
-        }
-      },
-      error: (err) => {
-        console.error("Failed to load detailed specifications", err);
-        this.toastService.error("Error fetching complete specifications.");
-      },
-    });
+        },
+        error: (err) => {
+          console.error("Failed to load detailed specifications", err);
+          this.toastService.error("Error fetching complete specifications.");
+        },
+      });
     }
   }
 

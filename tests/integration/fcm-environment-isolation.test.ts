@@ -37,7 +37,7 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
 
   await test('Origin Normalization: Normalizes URLs, downcases host, strips trailing slashes', () => {
     assert.strictEqual(normalizeOrigin('https://3dgalaxy.co/'), 'https://3dgalaxy.co');
-    assert.strictEqual(normalizeOrigin('HTTPS://3DGALAXY.IN'), 'https://3dgalaxy.co');
+    assert.strictEqual(normalizeOrigin('HTTPS://3DGALAXY.CO'), 'https://3dgalaxy.co');
     assert.strictEqual(normalizeOrigin('http://localhost:4200/path?query=1'), 'http://localhost:4200');
     assert.strictEqual(normalizeOrigin('https://3dgalaxy.co:443'), 'https://3dgalaxy.co');
     assert.strictEqual(normalizeOrigin('http://localhost:80'), 'http://localhost');

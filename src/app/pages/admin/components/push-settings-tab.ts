@@ -982,7 +982,7 @@ const FALLBACK_PRODUCT_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w
                       <img [src]="campaignForm.icon || '/assets/icon.png'" (error)="onProductImgError($event)" class="w-9 h-9 rounded-lg object-contain bg-zinc-950 p-1 border border-neutral-800 shrink-0" />
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                          <span class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">3dgalaxy.in • now</span>
+                          <span class="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">3dgalaxy.co • now</span>
                           <mat-icon class="text-xs text-zinc-500 cursor-pointer">close</mat-icon>
                         </div>
                         <h4 class="text-xs font-black truncate mt-0.5">{{ campaignForm.title || "🔥 Today's Mega Deal" }}</h4>
@@ -2351,7 +2351,48 @@ export class PushSettingsTabComponent {
           this.loadBillingInvoices();
         }
       },
-      error: () => this.isLoadingBilling.set(false)
+      error: () => {
+        this.isLoadingBilling.set(false);
+        if (!this.monthlyBillingData()) {
+          const cfg = this.billingConfig();
+          this.monthlyBillingData.set({
+            billingMonth: targetMonth,
+            billingPeriodLabel: this.formatMonthLabel(targetMonth),
+            config: cfg,
+            usage: {
+              totalEvents: 0,
+              billableNotifications: 0,
+              successfulDispatches: 0,
+              confirmedDelivered: 0,
+              failedDispatches: 0,
+              clicksCount: 0,
+              freeAllowanceApplied: 0,
+              billableAfterAllowance: 0
+            },
+            financials: {
+              currency: cfg.currency || 'INR',
+              unitRate: 0.05,
+              activeTier: '1–10,000',
+              tierPriceLabel: '₹0.05',
+              tiers: cfg.tiers || [
+                { minVolume: 1, maxVolume: 10000, rate: 0.05, label: '1–10,000', priceLabel: '₹0.05' },
+                { minVolume: 10001, maxVolume: 50000, rate: 0.04, label: '10,001–50,000', priceLabel: '₹0.04' },
+                { minVolume: 50001, maxVolume: 100000, rate: 0.03, label: '50,001–1,00,000', priceLabel: '₹0.03' },
+                { minVolume: 100001, maxVolume: null, rate: 0.02, label: 'Above 1,00,000', priceLabel: '₹0.02' }
+              ],
+              usageSubtotal: 0,
+              minimumChargeApplied: false,
+              subtotal: 0,
+              taxPercent: 0,
+              taxName: 'None',
+              taxAmount: 0,
+              totalAmount: 0
+            },
+            previousMonth: null,
+            invoice: null
+          });
+        }
+      }
     });
   }
 
@@ -2366,6 +2407,11 @@ export class PushSettingsTabComponent {
       next: (res) => {
         if (res && res.success && Array.isArray(res.data)) {
           this.billingInvoices.set(res.data);
+        }
+      },
+      error: () => {
+        if (!this.billingInvoices().length) {
+          this.billingInvoices.set([]);
         }
       }
     });
