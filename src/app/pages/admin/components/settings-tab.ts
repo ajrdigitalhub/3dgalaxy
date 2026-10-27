@@ -3027,7 +3027,7 @@ import { HomeInstagramFeedComponent } from "../../home/components/home-instagram
                                   <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
                                 </div>
                                 <div class="mx-auto text-[10px] font-mono text-zinc-400 bg-zinc-900 px-3 py-0.5 rounded-full border border-zinc-800">
-                                  3dgalaxy.co/store
+                                  3dgalaxy.co.in/store
                                 </div>
                               </div>
                               <div class="relative w-full flex-1 flex items-center justify-center p-3">
@@ -5149,7 +5149,7 @@ import { HomeInstagramFeedComponent } from "../../home/components/home-instagram
                       [value]="draft().supportSettings?.email || ''"
                       (input)="setNested('supportSettings', 'email', $any($event.target).value)"
                       class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                      placeholder="e.g. support@3dgalaxy.com"
+                      placeholder="e.g. support@3dgalaxy.co.in"
                     />
                   </div>
                 </div>

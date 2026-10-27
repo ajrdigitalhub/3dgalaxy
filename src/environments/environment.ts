@@ -1,7 +1,7 @@
 export const environment = {
     production: false,
     siteName: '3D Galaxy',
-    supportEmail: 'support@3dgalaxy.co',
+    supportEmail: 'support@3dgalaxy.co.in',
     get adminUrl(): string {
         return `${this.siteUrl}/admin`;
     },
@@ -9,7 +9,7 @@ export const environment = {
         if (typeof window !== 'undefined' && window.location.origin) {
             return window.location.origin;
         }
-        return 'https://3dgalaxy.co';
+        return 'https://3dgalaxy.co.in';
     },
     get apiUrl(): string {
         if (typeof window !== 'undefined') {

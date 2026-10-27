@@ -167,9 +167,9 @@ export class PwaSettingsTabComponent implements OnInit {
 
   availableEnvironments = [
     { id: 'localhost', label: 'Local Development', hostPattern: 'localhost / 127.0.0.1' },
-    { id: 'dev', label: 'Development Node', hostPattern: '*.dev.3dgalaxy.co' },
-    { id: 'uat', label: 'UAT Staging', hostPattern: '*.uat.3dgalaxy.co' },
-    { id: 'production', label: 'Production Hub', hostPattern: '3dgalaxy.co / admin' }
+    { id: 'dev', label: 'Development Node', hostPattern: '*.dev.3dgalaxy.co.in' },
+    { id: 'uat', label: 'UAT Staging', hostPattern: '*.uat.3dgalaxy.co.in' },
+    { id: 'production', label: 'Production Hub', hostPattern: '3dgalaxy.co.in / admin' }
   ];
 
   ngOnInit() {

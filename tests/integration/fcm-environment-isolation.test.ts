@@ -48,6 +48,8 @@ export async function runFcmEnvironmentIsolationTests(client: AxiosInstance) {
 
   await test('Domain Isolation: Validates allowed origins for production, staging, development', () => {
     // Production checks
+    assert.strictEqual(isOriginAllowed('https://3dgalaxy.co.in', 'production'), true, '3dgalaxy.co.in must be allowed in production');
+    assert.strictEqual(isOriginAllowed('https://www.3dgalaxy.co.in', 'production'), true, 'www.3dgalaxy.co.in must be allowed in production');
     assert.strictEqual(isOriginAllowed('https://3dgalaxy.co', 'production'), true, '3dgalaxy.co must be allowed in production');
     assert.strictEqual(isOriginAllowed('https://www.3dgalaxy.co', 'production'), true, 'www.3dgalaxy.co must be allowed in production');
     assert.strictEqual(isOriginAllowed('https://3dgalaxy.com', 'production'), true, '3dgalaxy.com must be allowed in production');

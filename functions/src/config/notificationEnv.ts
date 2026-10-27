@@ -7,15 +7,15 @@ export type AppEnvironment = 'production' | 'staging' | 'development' | 'test';
  */
 const BASE_ALLOWLIST: Record<AppEnvironment, string[]> = {
   production: [
+    'https://3dgalaxy.co.in',
+    'https://www.3dgalaxy.co.in',
+    'https://admin.3dgalaxy.co.in',
     'https://3dgalaxy.co',
     'https://www.3dgalaxy.co',
     'https://admin.3dgalaxy.co',
     'https://3dgalaxy.in',
     'https://www.3dgalaxy.in',
     'https://admin.3dgalaxy.in',
-    'https://3dgalaxy.co.in',
-    'https://www.3dgalaxy.co.in',
-    'https://admin.3dgalaxy.co.in',
     'https://3dgalaxy.com',
   ],
   staging: [
@@ -115,9 +115,9 @@ export function getAppOrigin(): string {
   const currentEnv = getAppEnv();
   switch (currentEnv) {
     case 'production':
-      return 'https://3dgalaxy.co';
+      return 'https://3dgalaxy.co.in';
     case 'staging':
-      return 'https://staging.3dgalaxy.co';
+      return 'https://staging.3dgalaxy.co.in';
     case 'test':
       return 'http://127.0.0.1:51150';
     case 'development':

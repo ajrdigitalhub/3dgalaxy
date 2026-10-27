@@ -487,7 +487,7 @@ export class AdminPanel implements OnInit {
 
   // System Configuration parameters
   storeName = signal("3D Galaxy India");
-  storeSupportEmail = signal(environment.supportEmail || "support@3dgalaxy.co");
+  storeSupportEmail = signal(environment.supportEmail || "support@3dgalaxy.co.in");
   taxRate = signal(18);
   serviceFeeRate = signal(150);
   isSaving = signal(false);

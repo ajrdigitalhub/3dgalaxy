@@ -81,9 +81,12 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     ENV.CLIENT_URL,
     ENV.SITE_URL,
     ENV.ADMIN_APP_URL,
+    'https://3dgalaxy.co.in',
+    'https://www.3dgalaxy.co.in',
+    'https://admin.3dgalaxy.co.in',
     'https://3dgalaxy.co',
     'https://www.3dgalaxy.co',
-    'https://3dgalaxy.co/admin',
+    'https://admin.3dgalaxy.co',
     'https://ajr3dgalaxy.web.app'
   ].filter(Boolean);
 
