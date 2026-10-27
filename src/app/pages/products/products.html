@@ -272,11 +272,6 @@
             <span
               class="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Featured</span>
             }
-            @if (isFreeShippingApplicable(p)) {
-            <span
-              class="px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Free
-              Shipping</span>
-            }
             @if (p.stockStatus === 'PRE_ORDER') {
             <span
               class="px-2 py-0.5 bg-purple-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Pre
@@ -295,9 +290,16 @@
 
           <!-- Wishlist Heart Button -->
           <button
-            class="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-white/80 dark:bg-neutral-800/80 hover:bg-white dark:hover:bg-neutral-800 hover:text-red-500 dark:hover:text-red-400 text-neutral-400 flex items-center justify-center shadow-sm border-none cursor-pointer transition-colors"
-            title="Add to Wishlist">
-            <mat-icon class="scale-75">favorite_border</mat-icon>
+            type="button"
+            (click)="$event.preventDefault(); $event.stopPropagation(); toggleWishlist(p.id)"
+            class="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-white/90 dark:bg-neutral-800/90 hover:bg-white dark:hover:bg-neutral-800 flex items-center justify-center shadow-sm border-none cursor-pointer transition-all active:scale-90"
+            [class.text-rose-500]="wishlistIds().has(p.id)"
+            [class.text-neutral-400]="!wishlistIds().has(p.id)"
+            [attr.aria-label]="wishlistIds().has(p.id) ? 'Remove from Wishlist' : 'Add to Wishlist'"
+            [title]="wishlistIds().has(p.id) ? 'Remove from Wishlist' : 'Add to Wishlist'">
+            <mat-icon class="scale-75" [ngClass]="wishlistIds().has(p.id) ? 'text-rose-500' : 'text-neutral-400 dark:text-neutral-400 hover:text-rose-500'">
+              {{ wishlistIds().has(p.id) ? 'favorite' : 'favorite_border' }}
+            </mat-icon>
           </button>
 
           <!-- Product Image Frame -->

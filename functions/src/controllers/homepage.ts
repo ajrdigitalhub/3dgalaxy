@@ -8,6 +8,8 @@ import { mapProductFields } from './product';
 
 export const clearHomepageCache = () => {
   sysCache.del('consolidated_home_payload');
+  sysCache.del('consolidated_dynamic_homepage_payload');
+  sysCache.del('stale_consolidated_dynamic_homepage_payload');
   sysCache.del('featured_products_payload');
   sysCache.del('homepage_sections');
   sysCache.del('frontend_layout');
@@ -128,10 +130,19 @@ export const deleteHomepageSection = async (req: Request, res: Response) => {
 
 export const getConsolidatedHome = async (req: Request, res: Response) => {
   try {
+    const isBypass =
+      req.query.refresh === 'true' ||
+      req.query.bypassCache === 'true' ||
+      req.headers['x-bypass-cache'] === 'true' ||
+      req.headers['x-admin-portal'] === 'true' ||
+      (typeof req.headers['cache-control'] === 'string' && req.headers['cache-control'].includes('no-cache'));
+
     const cacheKey = 'consolidated_home_payload';
-    const cached = sysCache.get(cacheKey);
-    if (cached) {
-      return res.status(200).json(cached);
+    if (!isBypass) {
+      const cached = sysCache.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
     }
 
     const [settingsData, categories, brands, menuItems, products] = await Promise.all([
@@ -302,10 +313,19 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
 
 export const getDetailedDynamicHomepageData = async (req: Request, res: Response) => {
   try {
+    const isBypass =
+      req.query.refresh === 'true' ||
+      req.query.bypassCache === 'true' ||
+      req.headers['x-bypass-cache'] === 'true' ||
+      req.headers['x-admin-portal'] === 'true' ||
+      (typeof req.headers['cache-control'] === 'string' && req.headers['cache-control'].includes('no-cache'));
+
     const cacheKey = 'consolidated_dynamic_homepage_payload';
-    const cached = sysCache.get(cacheKey);
-    if (cached) {
-      return res.status(200).json(cached);
+    if (!isBypass) {
+      const cached = sysCache.get(cacheKey);
+      if (cached) {
+        return res.status(200).json(cached);
+      }
     }
 
     // 1. Fetch core database entities concurrently

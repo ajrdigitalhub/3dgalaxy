@@ -1498,10 +1498,15 @@ export class AdminPanel implements OnInit {
         this.toastService.success("Category added successfully!");
       }
       this.cancelCategoryEdit();
-    } catch {
-      this.toastService.error(
-        "Access Denied: You do not have permission to modify categories.",
-      );
+    } catch (err: any) {
+      console.error('Failed to save category:', err);
+      const errMsg =
+        err?.error?.details ||
+        err?.error?.message ||
+        err?.error?.error ||
+        err?.message ||
+        "Failed to save category. Please try again.";
+      this.toastService.error(errMsg);
     } finally {
       this.isSavingCategory.set(false);
     }

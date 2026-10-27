@@ -85,7 +85,16 @@ export class ApiService {
     }
 
     const headers = this.getHeaders();
-    const request$ = this.http.get<T>(`${this.baseUrl}${endpoint}`, { params, headers }).pipe(
+    let requestParams = params;
+
+    if (bypassCache) {
+      headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+      headers['Pragma'] = 'no-cache';
+      headers['X-Bypass-Cache'] = 'true';
+      requestParams = { ...(params || {}), _t: Date.now() };
+    }
+
+    const request$ = this.http.get<T>(`${this.baseUrl}${endpoint}`, { params: requestParams, headers }).pipe(
       retry({
         count: 3,
         delay: (error, retryCount) => {

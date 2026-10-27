@@ -10,17 +10,27 @@ export const cacheMiddleware = (durationInSeconds: number) => {
       return next();
     }
 
-    // Bypass cache if requested via query or header
-    if (req.query.refresh === 'true' || req.query.bypassCache === 'true' || req.headers['x-bypass-cache'] === 'true') {
+    // Bypass cache if requested via query or header, or if request originates from Admin Portal
+    const isBypass =
+      req.query.refresh === 'true' ||
+      req.query.bypassCache === 'true' ||
+      req.headers['x-bypass-cache'] === 'true' ||
+      req.headers['x-admin-portal'] === 'true' ||
+      (typeof req.headers['cache-control'] === 'string' && req.headers['cache-control'].includes('no-cache'));
+
+    if (isBypass) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.setHeader('X-Cache', 'BYPASS');
       return next();
     }
 
-    // Set HTTP Cache-Control headers for Firebase CDN, Cloud Run Edge & browser caching
+    // Set HTTP Cache-Control headers: max-age=0 prevents client browsers from blindly serving from disk cache,
+    // while s-maxage allows Edge/CDN shared caches (Firebase CDN / Cloud Run) to cache efficiently.
     res.setHeader(
       'Cache-Control',
-      `public, max-age=${durationInSeconds}, s-maxage=${durationInSeconds * 2}, stale-while-revalidate=60`
+      `public, max-age=0, s-maxage=${durationInSeconds}, must-revalidate`
     );
 
     const cacheKey = req.originalUrl || req.url;

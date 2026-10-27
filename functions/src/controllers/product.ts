@@ -20,6 +20,8 @@ export const clearProductCache = () => {
   sysCache.clearPattern('products_slug_');
   sysCache.clearPattern('products_id_');
   sysCache.del('consolidated_home_payload');
+  sysCache.del('consolidated_dynamic_homepage_payload');
+  sysCache.del('stale_consolidated_dynamic_homepage_payload');
   sysCache.del('featured_products_payload');
   sysCache.del('header_menu_data');
   // Invalidate explore-navigation cache so product changes take effect immediately

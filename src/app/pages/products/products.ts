@@ -18,8 +18,9 @@ import { DatastoreService, Product, Category } from "../../services/datastore";
 import { ApiService } from "../../services/api.service";
 import { LoadingService } from "../../core/services/loading.service";
 import { SkeletonProductCardComponent } from "../../shared/components/skeleton/skeleton-product-card/skeleton-product-card.component";
-import { Subject, ReplaySubject, combineLatest, of } from "rxjs";
+import { Subject, ReplaySubject, combineLatest, of, firstValueFrom } from "rxjs";
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from "rxjs/operators";
+import { ToastService } from "../../shared/components/toast/toast.service";
 
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { hasProductVariants } from "../../shared/utils/product.utils";
@@ -51,6 +52,8 @@ export class Products implements OnInit {
   document = inject(DOCUMENT);
   analytics = inject(AnalyticsService);
   shippingService = inject(ShippingService);
+  toastService = inject(ToastService);
+  wishlistIds = signal<Set<string>>(new Set());
 
   isFreeShippingApplicable(p: any): boolean {
     return this.shippingService.isFreeShippingApplicable(p);
@@ -128,7 +131,21 @@ export class Products implements OnInit {
   private filterRequest$ = new ReplaySubject<any>(1);
   private destroyRef = inject(DestroyRef);
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      const ready = this.ds.authReady();
+      const role = this.ds.userRole();
+
+      if (!ready) return;
+
+      if (role === "guest") {
+        this.wishlistIds.set(new Set());
+        return;
+      }
+
+      this.loadWishlist();
+    });
+  }
 
   ngOnInit() {
     // Set up switchMap request cancellation for product filters
@@ -779,5 +796,61 @@ export class Products implements OnInit {
       index: index !== undefined ? index + 1 : undefined
     });
     this.analytics.trackProductClick(item, listName);
+  }
+
+  async loadWishlist() {
+    if (!this.ds.authReady() || this.ds.userRole() === "guest") {
+      this.wishlistIds.set(new Set());
+      return;
+    }
+    try {
+      const res: any = await firstValueFrom(this.api.get<any>("/wishlist"));
+      if (res?.success && Array.isArray(res.data)) {
+        const ids = new Set<string>();
+        res.data.forEach((i: any) => {
+          if (i.productId) ids.add(i.productId);
+          else if (i.id) ids.add(i.id);
+        });
+        this.wishlistIds.set(ids);
+      }
+    } catch (e) {
+      console.error("Failed to load wishlist", e);
+    }
+  }
+
+  async toggleWishlist(productId: string) {
+    if (!productId) return;
+    if (this.ds.userRole() === "guest") {
+      this.toastService.info("Please log in to manage your wishlist");
+      this.router.navigate(["/login"]);
+      return;
+    }
+
+    const current = this.wishlistIds();
+    const isWishlisted = current.has(productId);
+    const newSet = new Set(current);
+
+    if (isWishlisted) {
+      newSet.delete(productId);
+    } else {
+      newSet.add(productId);
+    }
+    this.wishlistIds.set(newSet);
+
+    try {
+      if (isWishlisted) {
+        await firstValueFrom(this.api.delete(`/wishlist/${productId}`));
+        this.toastService.success("Removed from Wishlist");
+      } else {
+        await firstValueFrom(this.api.post("/wishlist", { productId }));
+        this.toastService.success("Added to Wishlist");
+      }
+    } catch (e) {
+      // Revert optimistic update
+      this.wishlistIds.set(current);
+      this.toastService.error(
+        isWishlisted ? "Failed to remove from wishlist" : "Failed to add to wishlist"
+      );
+    }
   }
 }

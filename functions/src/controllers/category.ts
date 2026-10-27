@@ -53,14 +53,22 @@ export const clearCategoryCache = () => {
 
 export const getCategoriesTree = async (req: Request, res: Response) => {
   try {
-    let tree = sysCache.get('categories_tree') as CategoryNode[];
+    const bypass =
+      req.headers['x-admin-portal'] === 'true' ||
+      req.query.refresh === 'true' ||
+      req.query.bypassCache === 'true' ||
+      req.headers['x-bypass-cache'] === 'true';
+
+    let tree = bypass ? null : (sysCache.get('categories_tree') as CategoryNode[]);
     if (!tree) {
       const all = await withDbRetry(() => prisma.category.findMany({
         where: { deletedAt: null },
         orderBy: { name: 'asc' },
       }));
       tree = buildCategoryTree(all, null);
-      sysCache.set('categories_tree', tree, 1800); // 30 minutes cache
+      if (!bypass) {
+        sysCache.set('categories_tree', tree, 1800); // 30 minutes cache
+      }
     }
     return res.status(200).json(tree);
   } catch (error: any) {
@@ -219,13 +227,21 @@ export const getDirectChildren = async (req: Request, res: Response) => {
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    let list = sysCache.get('categories_flat');
+    const bypass =
+      req.headers['x-admin-portal'] === 'true' ||
+      req.query.refresh === 'true' ||
+      req.query.bypassCache === 'true' ||
+      req.headers['x-bypass-cache'] === 'true';
+
+    let list = bypass ? null : sysCache.get('categories_flat');
     if (!list) {
       list = await withDbRetry(() => prisma.category.findMany({
         where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
       }));
-      sysCache.set('categories_flat', list, 1800);
+      if (!bypass) {
+        sysCache.set('categories_flat', list, 1800);
+      }
     }
     return res.status(200).json(list);
   } catch (error: any) {
@@ -348,10 +364,10 @@ export const updateCategory = async (req: Request, res: Response) => {
 
     const parentId = body.parentId !== undefined ? body.parentId : body.parent_id;
     if (parentId !== undefined) {
-      if (parentId && parentId !== 'null' && parentId !== 'undefined') {
-        updateData.parent = { connect: { id: parentId } };
+      if (parentId && parentId !== 'null' && parentId !== 'undefined' && parentId !== id) {
+        updateData.parentId = parentId;
       } else {
-        updateData.parent = { disconnect: true };
+        updateData.parentId = null;
       }
     }
 

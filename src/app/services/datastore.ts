@@ -1609,8 +1609,11 @@ export class DatastoreService {
   private featuredProductsCache$?: Observable<{ products: any[] }>;
 
   public loadConsolidatedHome(force = false) {
+    if (force) {
+      this.consolidatedHomeCache$ = undefined;
+    }
     if (force || !this.consolidatedHomeCache$) {
-      this.consolidatedHomeCache$ = this.api.get<any>('/homepage').pipe(
+      this.consolidatedHomeCache$ = this.api.get<any>('/homepage', force ? { refresh: 'true' } : null, force).pipe(
         catchError((err) => {
           console.error('Error loading consolidated home payload:', err);
           this.consolidatedHomeCache$ = undefined;
@@ -1770,7 +1773,7 @@ export class DatastoreService {
       this.categoriesCache$ = undefined;
     }
     if (force || !this.categoriesCache$) {
-      this.categoriesCache$ = this.api.get<Category[]>('/categories', null, force).pipe(
+      this.categoriesCache$ = this.api.get<Category[]>('/categories', force ? { refresh: 'true' } : null, force).pipe(
         shareReplay(1),
         catchError(err => {
           this.categoriesCache$ = undefined;
@@ -1827,7 +1830,7 @@ export class DatastoreService {
       this.brandsCache$ = undefined;
     }
     if (force || !this.brandsCache$) {
-      this.brandsCache$ = this.api.get<Brand[]>('/brands', null, force).pipe(
+      this.brandsCache$ = this.api.get<Brand[]>('/brands', force ? { refresh: 'true' } : null, force).pipe(
         shareReplay(1),
         catchError(err => {
           this.brandsCache$ = undefined;
@@ -1862,8 +1865,12 @@ export class DatastoreService {
   async addCategory(cat: Omit<Category, 'id'>) {
     return new Promise((resolve, reject) => {
       this.api.post('/categories', cat).subscribe({
-        next: (res) => {
-          this.api.clearCache();
+        next: (res: any) => {
+          const created = res?.data || res;
+          if (created && created.id) {
+            this.categories.update(cats => [created, ...cats]);
+          }
+          this.api.clearCache('categor');
           this.reloadCategories(true);
           this.loadConsolidatedHome(true);
           resolve(res);
@@ -1877,7 +1884,13 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.put(`/categories/${id}`, updated).subscribe({
         next: (res: any) => {
-          this.api.clearCache();
+          const updatedCat = res?.data || res;
+          if (updatedCat) {
+            this.categories.update(cats =>
+              cats.map(c => c.id === id ? { ...c, ...updatedCat } : c)
+            );
+          }
+          this.api.clearCache('categor');
           this.reloadCategories(true);
           this.loadConsolidatedHome(true);
           resolve(res);
@@ -1895,7 +1908,7 @@ export class DatastoreService {
     return new Promise((resolve, reject) => {
       this.api.delete(`/categories/${id}`).subscribe({
         next: (res) => {
-          this.api.clearCache();
+          this.api.clearCache('categor');
           this.reloadCategories(true);
           this.loadConsolidatedHome(true);
           resolve(res);

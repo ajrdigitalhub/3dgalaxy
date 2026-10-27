@@ -12,12 +12,12 @@ export const environment = {
         return 'https://3dgalaxy.co.in';
     },
     get apiUrl(): string {
-        // if (typeof window !== 'undefined') {
-        //     const host = window.location.hostname;
-        //     if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
-        //         return `http://${host}:4000/api`;
-        //     }
-        // }
+        if (typeof window !== 'undefined') {
+            const host = window.location.hostname;
+            if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
+                return `http://${host}:4000/api`;
+            }
+        }
         return "https://api-kcrj5xgpxa-uc.a.run.app/api";
     },
 };
