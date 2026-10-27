@@ -272,7 +272,7 @@
             <span
               class="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Featured</span>
             }
-            @if (p.freeShippingEligible) {
+            @if (isFreeShippingApplicable(p)) {
             <span
               class="px-2 py-0.5 bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm">Free
               Shipping</span>

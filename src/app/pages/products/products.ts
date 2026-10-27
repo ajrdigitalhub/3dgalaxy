@@ -25,6 +25,7 @@ import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe"
 import { hasProductVariants } from "../../shared/utils/product.utils";
 import { environment } from "../../../environments/environment";
 import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
+import { ShippingService } from "../../core/services/shipping.service";
 
 @Component({
   selector: "app-products",
@@ -49,6 +50,11 @@ export class Products implements OnInit {
   metaService = inject(Meta);
   document = inject(DOCUMENT);
   analytics = inject(AnalyticsService);
+  shippingService = inject(ShippingService);
+
+  isFreeShippingApplicable(p: any): boolean {
+    return this.shippingService.isFreeShippingApplicable(p);
+  }
 
   // API State Signals
   productsList = signal<any[]>([]);

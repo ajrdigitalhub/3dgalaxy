@@ -249,9 +249,12 @@ export class ShippingService {
 
       const price =
         variant?.salePrice ||
+        variant?.sale_price ||
         variant?.price ||
         prod.salePrice ||
+        prod.sale_price ||
         prod.basePrice ||
+        prod.mrp ||
         prod.price ||
         item.price ||
         0;
@@ -342,18 +345,21 @@ export class ShippingService {
       }
 
       const prodShipping = product.shipping || {};
-      const prodShippingMode = prodShipping.mode || (Number(product.baseShippingCharge) > 0 ? "product_specific" : "default");
+      const prodBaseCharge = product.baseShippingCharge !== undefined && product.baseShippingCharge !== null
+        ? product.baseShippingCharge
+        : product.base_shipping_charge;
+      const prodShippingMode = prodShipping.mode || (prodBaseCharge !== undefined && prodBaseCharge !== null && Number(prodBaseCharge) > 0 ? "product_specific" : "default");
 
       const hasProductCharge =
         enableProductShipping &&
         prodShippingMode === "product_specific" &&
-        product.baseShippingCharge !== null &&
-        product.baseShippingCharge !== undefined &&
-        Number(product.baseShippingCharge) > 0;
+        prodBaseCharge !== null &&
+        prodBaseCharge !== undefined &&
+        Number(prodBaseCharge) > 0;
 
       const isProductFree =
         enableProductShipping &&
-        (product.freeShippingEligible === true || prodShipping.freeShippingEligible === true) &&
+        (product.freeShippingEligible === true || product.free_shipping_eligible === true || prodShipping.freeShippingEligible === true) &&
         prodShippingMode === "product_specific";
 
       if (isProductFree) {
@@ -377,7 +383,7 @@ export class ShippingService {
           estimatedDays: itemDays,
         });
       } else if (hasProductCharge) {
-        const itemCharge = Number(product.baseShippingCharge);
+        const itemCharge = Number(prodBaseCharge);
         totalShippingCharge += itemCharge;
         sourcesUsed.add("PRODUCT");
         if (!primaryRule) {
@@ -807,20 +813,22 @@ export class ShippingService {
     return result;
   }
 
+  private freeShippingApplicabilityCache = new Map<string, boolean>();
+
   /**
    * Get single product shipping info for display on product page
    */
   public getProductShippingInfo(product: any, itemContext?: any) {
-    if (!product) {
+    if (!product || !product.id) {
       return {
         charge: 0,
-        source: "FREE_SHIPPING" as const,
+        source: "DEFAULT" as const,
         estimatedDays: 3,
-        isFree: true,
-        label: "Free Shipping",
+        isFree: false,
+        label: "Shipping calculated at checkout",
         appliedRule: {
-          type: "FREE_SHIPPING" as const,
-          name: "Free Shipping",
+          type: "DEFAULT_FLAT" as const,
+          name: "Standard Delivery",
         },
       };
     }
@@ -835,5 +843,28 @@ export class ShippingService {
       label: result.shippingLabel,
       appliedRule: result.appliedRule,
     };
+  }
+
+  /**
+   * Check if free shipping is applicable for a given product alone:
+   * Returns true ONLY if purchasing this product qualifies for free shipping
+   * (via explicit product-specific free shipping, free-shipping category, or product price meeting the free shipping threshold).
+   */
+  public isFreeShippingApplicable(product: any): boolean {
+    const price = product.salePrice ?? product.sale_price ?? product.basePrice ?? product.mrp ?? product.price ?? 0;
+    const charge = product.baseShippingCharge ?? product.base_shipping_charge ?? 0;
+    const mode = product.shipping?.mode ?? (Number(charge) > 0 ? "product_specific" : "default");
+    const pFree = product.freeShippingEligible ?? product.free_shipping_eligible ?? false;
+    const catId = product.categoryId || product.category_id || (typeof product.category === 'object' ? product.category?.id : product.category);
+    const cacheKey = `${product.id}_${price}_${mode}_${pFree}_${charge}_${catId}`;
+
+    if (this.freeShippingApplicabilityCache.has(cacheKey)) {
+      return this.freeShippingApplicabilityCache.get(cacheKey)!;
+    }
+
+    const info = this.getProductShippingInfo(product);
+    const isApplicable = info.isFree === true && info.charge === 0;
+    this.freeShippingApplicabilityCache.set(cacheKey, isApplicable);
+    return isApplicable;
   }
 }

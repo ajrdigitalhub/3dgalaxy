@@ -630,7 +630,7 @@
                       Popular
                     </span>
                   }
-                  @if (prod.freeShippingEligible) {
+                  @if (isFreeShippingApplicable(prod)) {
                     <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                       <mat-icon class="scale-[0.55] -mx-1">local_shipping</mat-icon> Free Shipping
                     </span>
@@ -707,7 +707,7 @@
                       Popular
                     </span>
                   }
-                  @if (prod.freeShippingEligible) {
+                  @if (isFreeShippingApplicable(prod)) {
                     <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                       <mat-icon class="scale-[0.55] -mx-1">local_shipping</mat-icon> Free Shipping
                     </span>

@@ -29,6 +29,7 @@ import { VariantTourGuideComponent } from "../../../shared/components/variant-to
 import { VariantTourService } from "../../../core/services/variant-tour.service";
 import { resolveEffectiveWeight } from "../../../shared/utils/weight.utils";
 import { ProductSearchSelectorComponent } from "../../../shared/components/product-search-selector/product-search-selector.component";
+import { ShippingService } from "../../../core/services/shipping.service";
 
 @Component({
   selector: "app-admin-catalog-tab",
@@ -2169,9 +2170,9 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
             <!-- PRODUCT LOOKUP SEARCH AND TABLE GRID -->
             <div class="space-y-4 font-sans">
               <div
-                class="flex bg-white dark:bg-zinc-900 p-2.5 border border-zinc-200 dark:border-zinc-900 rounded-xl"
+                class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-white dark:bg-zinc-900 p-2.5 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xs"
               >
-                <div class="flex-1 relative">
+                <div class="flex-1 relative min-w-[240px]">
                   <mat-icon
                     class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
                     >search</mat-icon
@@ -2183,8 +2184,48 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                       admin.searchQueryProducts.set($any($event.target).value)
                     "
                     placeholder="Search catalog by name, sku..."
-                    class="w-full pl-9 pr-4 py-2 bg-transparent text-xs font-bold border-none outline-none"
+                    class="w-full pl-9 pr-4 py-2 bg-transparent text-xs font-bold border-none outline-none text-zinc-900 dark:text-white"
                   />
+                </div>
+
+                <!-- Filter Chips: All / Free Ship Alone / Low Stock / Out of Stock -->
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+                  <button
+                    type="button"
+                    (click)="setProductFilterType('all')"
+                    [class]="productFilterType() === 'all'
+                      ? 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs transition-all'
+                      : 'px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors'"
+                  >
+                    All ({{ admin.ds.products()?.length || 0 }})
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setProductFilterType('free_shipping')"
+                    [class]="productFilterType() === 'free_shipping'
+                      ? 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider bg-teal-600 text-white shadow-xs transition-all'
+                      : 'px-3 py-1.5 rounded-lg text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-teal-500/10 border border-teal-500/20 transition-colors'"
+                  >
+                    Free Ship Alone ({{ freeShippingCount() }})
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setProductFilterType('low_stock')"
+                    [class]="productFilterType() === 'low_stock'
+                      ? 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider bg-amber-600 text-white shadow-xs transition-all'
+                      : 'px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20 transition-colors'"
+                  >
+                    Low Stock ({{ lowStockCount() }})
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setProductFilterType('out_of_stock')"
+                    [class]="productFilterType() === 'out_of_stock'
+                      ? 'px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs transition-all'
+                      : 'px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-colors'"
+                  >
+                    Out of Stock ({{ outOfStockCount() }})
+                  </button>
                 </div>
               </div>
 
@@ -2249,7 +2290,7 @@ import { ProductSearchSelectorComponent } from "../../../shared/components/produ
                                     SAVE ₹{{ getOfferSavings(p) }}
                                   </span>
                                 }
-                                @if (p.freeShippingEligible) {
+                                @if (isFreeShippingApplicable(p)) {
                                   <span class="px-1.5 py-0.2 bg-teal-500/10 text-teal-500 border border-teal-500/20 text-[8px] font-black rounded uppercase">
                                     FREE SHIP
                                   </span>
@@ -4640,6 +4681,7 @@ export class AdminCatalogTab {
   http = inject(HttpClient);
   api = inject(ApiService);
   tourService = inject(VariantTourService);
+  shippingService = inject(ShippingService);
   @Input({ required: true }) admin!: AdminPanel;
 
   // --- INCLUDED BUNDLE PRODUCTS POPUP MODAL SIGNALS ---
@@ -5808,9 +5850,45 @@ export class AdminCatalogTab {
   }
 
   private searchDebounceTimer: any = null;
+  productFilterType = signal<'all' | 'free_shipping' | 'low_stock' | 'out_of_stock'>('all');
+
+  setProductFilterType(type: 'all' | 'free_shipping' | 'low_stock' | 'out_of_stock') {
+    this.productFilterType.set(type);
+    this.currentPage.set(1);
+  }
+
+  isFreeShippingApplicable(p: any): boolean {
+    return this.shippingService.isFreeShippingApplicable(p);
+  }
+
+  freeShippingCount = computed(() => {
+    const list = this.admin.ds.products() || [];
+    return list.filter((p: any) => this.isFreeShippingApplicable(p)).length;
+  });
+
+  lowStockCount = computed(() => {
+    const list = this.admin.ds.products() || [];
+    return list.filter((p: any) => (p.stock || 0) > 0 && (p.stock || 0) <= 5).length;
+  });
+
+  outOfStockCount = computed(() => {
+    const list = this.admin.ds.products() || [];
+    return list.filter((p: any) => (p.stock || 0) <= 0).length;
+  });
 
   filteredProducts = computed(() => {
-    return this.admin.ds.products() || [];
+    const list = this.admin.ds.products() || [];
+    const filter = this.productFilterType();
+    if (filter === 'free_shipping') {
+      return list.filter((p: any) => this.isFreeShippingApplicable(p));
+    }
+    if (filter === 'low_stock') {
+      return list.filter((p: any) => (p.stock || 0) > 0 && (p.stock || 0) <= 5);
+    }
+    if (filter === 'out_of_stock') {
+      return list.filter((p: any) => (p.stock || 0) <= 0);
+    }
+    return list;
   });
 
   paginatedProducts = computed(() => {

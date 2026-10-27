@@ -12,6 +12,7 @@ import { DeliveryEstimatePipe } from '../../shared/pipes/delivery-estimate.pipe'
 import { DeliveryEstimateService } from '../../core/services/delivery-estimate.service';
 import { ShippingChargeSkeletonComponent } from '../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component';
 import { AnalyticsService, mapCartItemToAnalyticsItem, mapProductToAnalyticsItem } from '../../core/analytics';
+import { ShippingService } from '../../core/services/shipping.service';
 
 @Component({
   selector: 'app-cart-checkout',
@@ -27,6 +28,11 @@ export class CartCheckout implements OnInit {
   settingsService = inject(SettingsService);
   deliveryEstimateService = inject(DeliveryEstimateService);
   analytics = inject(AnalyticsService);
+  shippingService = inject(ShippingService);
+
+  isFreeShippingApplicable(p: any): boolean {
+    return this.shippingService.isFreeShippingApplicable(p);
+  }
 
   couponInputText = signal<string>('');
   showOffers = signal(false);
