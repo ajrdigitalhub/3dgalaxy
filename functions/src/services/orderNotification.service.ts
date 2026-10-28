@@ -244,7 +244,7 @@ export async function dispatchOrderNotifications(orderId: string): Promise<Notif
         eventKey: 'NEW_ORDER',
         title: pushTitle,
         body: pushBody,
-        deepLink: `/admin/orders`,
+        deepLink: `/admin/orders/${order.orderNumber || order.id}`,
         metadata: {
           orderId: order.id,
           orderNumber: order.orderNumber,

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
@@ -19,6 +19,17 @@ import { formatWhatsAppNumber, buildWhatsAppUrl } from '../../shared/utils/phone
 })
 export class Login implements OnInit {
   public ds = inject(DatastoreService);
+  private redirected = false;
+
+  constructor() {
+    effect(() => {
+      const ready = this.ds.authReady();
+      const profile = this.ds.userProfile();
+      if (ready && profile && !this.loading()) {
+        this.handleRedirect();
+      }
+    });
+  }
   public settingsService = inject(SettingsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -67,6 +78,19 @@ export class Login implements OnInit {
     if (emailParam) {
       this.registerForm.patchValue({ email: emailParam });
       this.loginForm.patchValue({ email: emailParam });
+    }
+
+    const returnUrlParam = this.route.snapshot.queryParams['returnUrl'];
+    if (returnUrlParam && typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        sessionStorage.setItem('auth_return_url', decodeURIComponent(returnUrlParam));
+      } catch (e) {
+        sessionStorage.setItem('auth_return_url', returnUrlParam);
+      }
+    }
+
+    if (this.ds.userProfile()) {
+      this.handleRedirect();
     }
   }
 
@@ -143,8 +167,24 @@ export class Login implements OnInit {
   }
 
   private handleRedirect() {
+    if (this.redirected) return;
+    this.redirected = true;
+
     let returnUrl = this.route.snapshot.queryParams['returnUrl'];
-    if (!returnUrl) {
+    if (!returnUrl && typeof window !== 'undefined' && window.sessionStorage) {
+      returnUrl = sessionStorage.getItem('auth_return_url');
+    }
+
+    if (returnUrl) {
+      try {
+        returnUrl = decodeURIComponent(returnUrl);
+      } catch (e) {}
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.removeItem('auth_return_url');
+      }
+    }
+
+    if (!returnUrl || returnUrl === '/login' || returnUrl === '/register' || returnUrl.startsWith('/login?') || returnUrl.startsWith('/register?')) {
       const profile = this.ds.userProfile();
       if (profile && (profile.role === 'admin' || profile.role === 'super-admin')) {
         returnUrl = '/admin';
@@ -152,9 +192,10 @@ export class Login implements OnInit {
         returnUrl = '/account';
       }
     }
+
     setTimeout(() => {
       this.router.navigateByUrl(returnUrl);
-    }, 1000);
+    }, 300);
   }
 
   get rawWhatsAppNumber(): string {
@@ -180,5 +221,12 @@ export class Login implements OnInit {
       '919876543210'
     );
     window.open(url, '_blank');
+  }
+
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img.getAttribute('data-error-handled')) return;
+    img.setAttribute('data-error-handled', 'true');
+    img.src = '/3d-logo.png';
   }
 }

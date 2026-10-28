@@ -74,8 +74,12 @@ export class AboutPage implements OnInit {
         email: contact.email || "galaxy.3d@hotmail.com",
         address:
           contact.address ||
-          "374/1 Budana Compound, Udyog Nagar Palda, Indore (M.P)- 452001",
-        workingHours: contact.workingHours || "Mon-Sat - 11:00 AM - 7:00 PM"
+          "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001",
+        workingHours: contact.workingHours || "Mon-Sat - 11:00 AM - 7:00 PM",
+        mapUrl:
+          contact.mapUrl ||
+          contact.googleMapUrl ||
+          "https://maps.app.goo.gl/Nu2hvW8yBzMUzZxQ7"
       },
       socialLinks: {
         facebook: social.facebook || "",
@@ -101,9 +105,26 @@ export class AboutPage implements OnInit {
     }
   }
 
-  getMapUrl(address: string): SafeResourceUrl {
-    const url = `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  getMapUrl(addressOrUrl: string): SafeResourceUrl {
+    const defaultQuery = "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001";
+    let query = (addressOrUrl || defaultQuery).trim();
+
+    if (query.includes('google.com/maps/embed')) {
+      return this.sanitizer.bypassSecurityTrustResourceUrl(query);
+    }
+
+    if (query.includes('maps.app.goo.gl') || query.includes('maps.google.com')) {
+      try {
+        const urlObj = new URL(query);
+        const qParam = urlObj.searchParams.get('q');
+        query = qParam || defaultQuery;
+      } catch {
+        query = defaultQuery;
+      }
+    }
+
+    const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
   }
 
   getSocialItems() {

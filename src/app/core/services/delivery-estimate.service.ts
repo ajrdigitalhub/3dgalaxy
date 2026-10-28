@@ -18,13 +18,13 @@ export class DeliveryEstimateService {
     return false;
   }
 
-  // Parse string configuration (e.g. "5-6" or "5" or "5-7" or "507") into encoded number (e.g. 506 or 507)
+  // Parse string configuration (e.g. "3-4" or "3" or "5-7" or "304") into encoded number (e.g. 304 or 507)
   public parseEstimateDays(estimateStr: string | number | null | undefined): number {
-    if (estimateStr === null || estimateStr === undefined || estimateStr === '') return 305; // Default 3-5 days
+    if (estimateStr === null || estimateStr === undefined || estimateStr === '') return 304; // Default 3-4 days transit
     if (typeof estimateStr === 'number') {
-      if (isNaN(estimateStr) || estimateStr <= 0) return 305;
+      if (isNaN(estimateStr) || estimateStr <= 0) return 304;
       if (estimateStr >= 100) return estimateStr;
-      if (estimateStr < 10) return estimateStr * 100 + (estimateStr + 2);
+      if (estimateStr < 10) return estimateStr * 100 + (estimateStr + 1); // e.g. 3 -> 304 (3-4 days), 4 -> 405 (4-5 days)
       return estimateStr;
     }
     const clean = String(estimateStr).trim();
@@ -45,15 +45,15 @@ export class DeliveryEstimateService {
       }
     }
     const val = parseInt(clean, 10);
-    if (isNaN(val) || val <= 0) return 305;
+    if (isNaN(val) || val <= 0) return 304;
     if (val >= 100) return val;
-    if (val < 10) return val * 100 + (val + 2);
+    if (val < 10) return val * 100 + (val + 1);
     return val;
   }
 
-  // Decodes an encoded number back to human-readable days string like "5-6" or "5"
+  // Decodes an encoded number back to human-readable days string like "3-4" or "3"
   public decodeDays(encoded: number | null | undefined): string {
-    if (encoded === undefined || encoded === null || isNaN(encoded)) return '3';
+    if (encoded === undefined || encoded === null || isNaN(encoded)) return '3-4';
     if (encoded >= 100) {
       const min = Math.floor(encoded / 100);
       const max = encoded % 100;
@@ -62,24 +62,34 @@ export class DeliveryEstimateService {
     return String(encoded);
   }
 
-  // Calculate actual min/max Date objects in client but timezone-adjusted to Asia/Kolkata
-  public calculateDeliveryDates(encodedDays: number, baseDate: Date = this.getISTDate()): { minDate: Date; maxDate: Date } {
-    let minDays = encodedDays;
-    let maxDays = encodedDays;
+  // Calculate actual min/max Date objects: Next-day dispatch (+1 day) + extra transit days (minDays to maxDays)
+  public calculateDeliveryDates(
+    encodedDays: number | string,
+    baseDate: Date = this.getISTDate(),
+    hasDispatched: boolean = false
+  ): { minDate: Date; maxDate: Date; minDays: number; maxDays: number } {
+    const encoded = typeof encodedDays === 'number' ? encodedDays : this.parseEstimateDays(encodedDays);
+    let minDays = 3;
+    let maxDays = 4;
 
-    if (encodedDays >= 100) {
-      minDays = Math.floor(encodedDays / 100);
-      maxDays = encodedDays % 105; // To prevent modulo side effects, just decode normally
-      maxDays = encodedDays % 100;
+    if (encoded >= 100) {
+      minDays = Math.floor(encoded / 100);
+      maxDays = encoded % 100;
+    } else if (encoded > 0 && encoded < 100) {
+      minDays = encoded;
+      maxDays = encoded + 1;
     }
 
+    // Dispatch is next day (+1 day) from purchase date if not already dispatched
+    const dispatchOffset = hasDispatched ? 0 : 1;
+
     const minDate = new Date(baseDate);
-    minDate.setDate(minDate.getDate() + minDays);
+    minDate.setDate(minDate.getDate() + dispatchOffset + minDays);
 
     const maxDate = new Date(baseDate);
-    maxDate.setDate(maxDate.getDate() + maxDays);
+    maxDate.setDate(maxDate.getDate() + dispatchOffset + maxDays);
 
-    return { minDate, maxDate };
+    return { minDate, maxDate, minDays, maxDays };
   }
 
   // Formats date as 'DD MMM YYYY' or 'DD MMM'
@@ -91,9 +101,22 @@ export class DeliveryEstimateService {
   }
 
   // Format dynamic delivery ranges
-  public formatDeliveryRange(encodedDays: number | string, desktopFormat: boolean = true, baseDate: Date = this.getISTDate()): string {
-    const encoded = typeof encodedDays === 'string' ? this.parseEstimateDays(encodedDays) : (Number(encodedDays) || 3);
-    const { minDate, maxDate } = this.calculateDeliveryDates(encoded, baseDate);
+  public formatDeliveryRange(
+    encodedDays: number | string,
+    desktopFormat: boolean = true,
+    baseDate: Date = this.getISTDate(),
+    hasDispatched: boolean = false
+  ): string {
+    if (typeof encodedDays === 'string') {
+      const clean = encodedDays.trim();
+      // If already a formatted range like "01 Nov 2026 – 02 Nov 2026" or "1 Nov 2026 – 2 Nov 2026"
+      if (/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(clean) && (clean.includes('–') || clean.includes('-'))) {
+        return clean.replace(/^Expected by\s+/i, '').trim();
+      }
+    }
+
+    const encoded = typeof encodedDays === 'number' ? encodedDays : this.parseEstimateDays(encodedDays);
+    const { minDate, maxDate } = this.calculateDeliveryDates(encoded, baseDate, hasDispatched);
     
     const minDayStr = minDate.getDate();
     const maxDayStr = maxDate.getDate();
@@ -109,10 +132,10 @@ export class DeliveryEstimateService {
 
     // Range
     if (desktopFormat) {
-      // "10 Aug 2026 – 11 Aug 2026"
+      // "1 Nov 2026 – 2 Nov 2026"
       return `${this.formatDate(minDate, true)} – ${this.formatDate(maxDate, true)}`;
     } else {
-      // Mobile: compact formatting: e.g. "10–11 Aug" or "30 Aug–02 Sep" or "10 Aug–11 Sep"
+      // Mobile: compact formatting: e.g. "1–2 Nov" or "31 Oct–2 Nov"
       if (minMonthStr === maxMonthStr && minYearStr === maxYearStr) {
         return `${minDayStr}–${maxDayStr} ${minMonthStr}`;
       } else {

@@ -277,32 +277,130 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
     return this.order?.orderNumber || this.order?.id || '';
   }
 
+  private getOrderDeliveryTransitDays(): { minDays: number; maxDays: number } {
+    let minDays = 3;
+    let maxDays = 4;
+    let foundCustom = false;
+
+    const items = this.order?.items || [];
+    if (Array.isArray(items) && items.length > 0) {
+      for (const item of items) {
+        const raw = item?.product?.estimatedDeliveryDays ??
+                    item?.estimatedDeliveryDays ??
+                    item?.product?.category?.estimatedDeliveryDays;
+        if (raw !== undefined && raw !== null && raw !== '') {
+          const encoded = this.deliveryEstimateService.parseEstimateDays(raw);
+          if (encoded >= 100) {
+            const itemMin = Math.floor(encoded / 100);
+            const itemMax = encoded % 100;
+            if (!foundCustom || itemMax > maxDays) {
+              minDays = itemMin;
+              maxDays = itemMax;
+              foundCustom = true;
+            }
+          }
+        }
+      }
+    }
+
+    if (!foundCustom && (this.order?.estimatedDeliveryDays || this.order?.estimatedDelivery)) {
+      const raw = this.order.estimatedDeliveryDays || this.order.estimatedDelivery;
+      const encoded = this.deliveryEstimateService.parseEstimateDays(raw);
+      if (encoded >= 100) {
+        minDays = Math.floor(encoded / 100);
+        maxDays = encoded % 100;
+      }
+    }
+
+    return { minDays, maxDays };
+  }
+
   get estimatedDeliveryDateRange(): string {
-    const est = this.order?.estimatedDelivery || this.order?.estimatedDeliveryDays;
-    if (!est) {
-      const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
-      return this.deliveryEstimateService.formatDeliveryRange(3, true, baseDate);
-    }
-
-    const str = String(est).trim();
-    // If it is already a formatted date range like "31 Aug 2026 – 03 Sep 2026" or "Expected by 31 Aug 2026 – 03 Sep 2026"
-    if (str.includes('–') || (str.includes('-') && /[a-zA-Z]/.test(str))) {
-      return str.replace(/^Expected by\s+/i, '').trim();
-    }
-
     const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
-    return this.deliveryEstimateService.formatDeliveryRange(est, true, baseDate);
+    const est = this.order?.estimatedDelivery;
+
+    // If order already has a formatted range string with both dates
+    if (typeof est === 'string' && est.trim().length >= 6) {
+      const str = est.trim().replace(/^Expected by\s+/i, '');
+      if (str.includes('–') || (str.includes('-') && /[a-zA-Z]/.test(str))) {
+        return str;
+      }
+    }
+
+    // Dynamic calculation: next-day shipping (+1 day) + extra transit days (min 3, max 4 default or product specific)
+    const { minDays, maxDays } = this.getOrderDeliveryTransitDays();
+    const encoded = minDays * 100 + maxDays;
+    return this.deliveryEstimateService.formatDeliveryRange(encoded, true, baseDate);
   }
 
   getStepDate(stepIndex: number): string {
     const baseDate = this.order?.createdAt ? new Date(this.order.createdAt) : new Date();
-    const d = new Date(baseDate);
 
-    const dayOffsets = [0, 1, 2, 3, 5];
-    const offset = dayOffsets[stepIndex] !== undefined ? dayOffsets[stepIndex] : stepIndex;
-    d.setDate(d.getDate() + offset);
+    // Step 0: Confirmed - Day of purchase
+    if (stepIndex === 0) {
+      return baseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    }
 
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    // Step 1: Preparing - Same day of purchase
+    if (stepIndex === 1) {
+      return baseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    }
+
+    // Step 2: Packed - Same day of purchase
+    if (stepIndex === 2) {
+      return baseDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    }
+
+    // Step 3: Shipped - Next day after purchase
+    if (stepIndex === 3) {
+      const shipment = this.order?.shipments?.[0] || this.order?.shipment;
+      if (shipment?.shipmentDate) {
+        const actualShipDate = new Date(shipment.shipmentDate);
+        if (!isNaN(actualShipDate.getTime())) {
+          return actualShipDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        }
+      }
+      const shipDate = new Date(baseDate);
+      shipDate.setDate(shipDate.getDate() + 1);
+      return shipDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    }
+
+    // Step 4: Delivered - Next day (+1) + 3 to 4 days extra for estimation delivery as default, based on product
+    if (stepIndex === 4) {
+      const shipment = this.order?.shipments?.[0] || this.order?.shipment;
+      let shipDate = new Date(baseDate);
+      shipDate.setDate(shipDate.getDate() + 1);
+      if (shipment?.shipmentDate) {
+        const actualShipDate = new Date(shipment.shipmentDate);
+        if (!isNaN(actualShipDate.getTime())) {
+          shipDate = actualShipDate;
+        }
+      }
+
+      const { minDays, maxDays } = this.getOrderDeliveryTransitDays();
+      const minDate = new Date(shipDate);
+      minDate.setDate(minDate.getDate() + minDays);
+
+      const maxDate = new Date(shipDate);
+      maxDate.setDate(maxDate.getDate() + maxDays);
+
+      const minMonth = minDate.toLocaleDateString('en-US', { month: 'short' });
+      const maxMonth = maxDate.toLocaleDateString('en-US', { month: 'short' });
+      const minDay = minDate.getDate();
+      const maxDay = maxDate.getDate();
+
+      if (minDate.getTime() === maxDate.getTime() || (minDay === maxDay && minMonth === maxMonth)) {
+        return `${minMonth} ${minDay}`;
+      }
+
+      if (minMonth === maxMonth) {
+        return `${minMonth} ${minDay} - ${maxDay}`;
+      }
+
+      return `${minMonth} ${minDay} - ${maxMonth} ${maxDay}`;
+    }
+
+    return '';
   }
 
   constructor() {

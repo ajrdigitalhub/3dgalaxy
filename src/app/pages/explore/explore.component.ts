@@ -566,7 +566,7 @@ export interface ExplorePagePayload {
 
                 <div class="pt-2 flex flex-wrap items-center gap-4">
                   <a
-                    [href]="cta.primaryButtonLink"
+                    [href]="getWhatsAppCtaLink(cta.primaryButtonLink)"
                     target="_blank"
                     class="px-6 py-3.5 bg-white hover:bg-slate-100 text-orange-600 font-black text-xs uppercase tracking-wider rounded-xl shadow-md hover:scale-105 transition-all no-underline inline-flex items-center gap-2"
                   >
@@ -747,6 +747,24 @@ export class ExplorePageComponent implements OnInit, OnDestroy {
   buyingGuides = computed(() => {
     return this.payload()?.config?.buyingGuides || [];
   });
+
+  getWhatsAppCtaLink(configuredLink?: string): string {
+    const adminPhone = this.ds.settingsService.whatsappSettings()?.adminPhoneNumber ||
+                       this.ds.settingsService.contact()?.phone ||
+                       this.ds.settingsService.settingsData()?.support_phone ||
+                       '9111381113';
+
+    let clean = String(adminPhone).replace(/[^\d]/g, '');
+    if (clean.length === 10) clean = '91' + clean;
+    if (!clean) clean = '919111381113';
+
+    if (configuredLink && !configuredLink.includes('9876543210') && !configuredLink.includes('undefined')) {
+      return configuredLink;
+    }
+
+    const defaultMsg = 'Hi 3D Galaxy Team, I need help choosing the right 3D printer or filament material.';
+    return `https://wa.me/${clean}?text=${encodeURIComponent(defaultMsg)}`;
+  }
 
   isSectionEnabled(sectionName: string): boolean {
     const order = this.payload()?.config?.sectionOrder;

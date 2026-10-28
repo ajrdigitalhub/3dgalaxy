@@ -235,6 +235,11 @@ export const routes: Routes = [
     data: { roles: ["Admin", "Manager", "super-admin", "admin"] },
   },
   {
+    path: "admin/order/:orderNumber",
+    redirectTo: "admin/orders/:orderNumber",
+    pathMatch: "full",
+  },
+  {
     path: "login",
     loadComponent: () => import("./pages/login/login").then((m) => m.Login),
   },

@@ -85,7 +85,7 @@ export class ShippingService {
     currency: 'INR',
     error: null,
     appliedRule: null,
-    estimatedDays: 3,
+    estimatedDays: 304,
     formattedWeight: '0 g',
     breakdown: [],
   });
@@ -103,7 +103,7 @@ export class ShippingService {
       currency: 'INR',
       error: null,
       appliedRule: null,
-      estimatedDays: 3,
+      estimatedDays: 304,
       formattedWeight: '0 g',
       breakdown: [],
     });
@@ -120,14 +120,14 @@ export class ShippingService {
       currency: 'INR',
       error: errorMessage,
       appliedRule: null,
-      estimatedDays: 3,
+      estimatedDays: 304,
       formattedWeight: '0 g',
       breakdown: [],
     });
   }
 
   private parseItemDays(val: any): number {
-    if (val === undefined || val === null || val === '') return 305;
+    if (val === undefined || val === null || val === '') return 304;
     let raw = val;
     if (typeof val === 'object') {
       raw = val.estimatedDeliveryDays ??
@@ -138,11 +138,11 @@ export class ShippingService {
             val.category?.estimatedDeliveryDays ??
             val.category?.estimated_delivery_days;
     }
-    if (raw === undefined || raw === null || raw === '') return 305;
+    if (raw === undefined || raw === null || raw === '') return 304;
     if (typeof raw === 'number') {
-      if (isNaN(raw) || raw <= 0) return 305;
+      if (isNaN(raw) || raw <= 0) return 304;
       if (raw >= 100) return raw;
-      if (raw < 10) return raw * 100 + (raw + 2);
+      if (raw < 10) return raw * 100 + (raw + 1);
       return raw;
     }
     const str = String(raw).trim();
@@ -159,9 +159,9 @@ export class ShippingService {
       }
     }
     const parsed = parseInt(str, 10);
-    if (isNaN(parsed) || parsed <= 0) return 305;
+    if (isNaN(parsed) || parsed <= 0) return 304;
     if (parsed >= 100) return parsed;
-    if (parsed < 10) return parsed * 100 + (parsed + 2);
+    if (parsed < 10) return parsed * 100 + (parsed + 1);
     return parsed;
   }
 
@@ -192,7 +192,7 @@ export class ShippingService {
         source: "FREE_SHIPPING",
         totalWeightGrams: 0,
         formattedWeight: "0 g",
-        estimatedDays: 3,
+        estimatedDays: 304,
         freeShipping: true,
         shippingLabel: "Free Shipping",
         appliedRule: {
@@ -308,7 +308,7 @@ export class ShippingService {
       totalCartSubtotal >= freeShippingThreshold;
 
     let totalShippingCharge = 0;
-    let maxEstimatedDays = 3;
+    let maxEstimatedDays = 304;
     let primaryRule: AppliedShippingRule | null = null;
     const breakdown: ShippingCalculationResult["breakdown"] = [];
     const sourcesUsed = new Set<"PRODUCT" | "CATEGORY" | "DEFAULT" | "FREE_SHIPPING">();
@@ -827,7 +827,7 @@ export class ShippingService {
       return {
         charge: 0,
         source: "DEFAULT" as const,
-        estimatedDays: 3,
+        estimatedDays: 304,
         isFree: false,
         label: "Shipping calculated at checkout",
         appliedRule: {

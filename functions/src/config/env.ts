@@ -34,7 +34,14 @@ export const ENV = {
   PG_CONN_TIMEOUT_MS: Number(process.env.PG_CONN_TIMEOUT_MS || 20000),
   SITE_URL: (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, ''),
   SITE_NAME: process.env.SITE_NAME || process.env.STORE_NAME || '3D Galaxy',
-  ADMIN_APP_URL: (process.env.ADMIN_APP_URL || process.env.ADMIN_URL || 'https://admin.3dgalaxy.co.in').replace(/\/+$/, ''),
+  ADMIN_APP_URL: (() => {
+    const siteBase = (process.env.APP_URL || process.env.SITE_URL || process.env.WEBSITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, '');
+    const configured = (process.env.ADMIN_APP_URL || process.env.ADMIN_URL || '').trim().replace(/\/+$/, '');
+    if (!configured || configured.includes('admin.3dgalaxy.') || configured === 'https://admin.3dgalaxy.co.in') {
+      return `${siteBase}/admin`;
+    }
+    return configured;
+  })(),
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@3dgalaxy.co.in',
   CLIENT_URL: (process.env.CLIENT_URL || 'http://localhost:4200').replace(/\/+$/, ''),
   BACKUP_MODULE_ENABLED: process.env.BACKUP_MODULE_ENABLED !== 'false',

@@ -28,7 +28,7 @@ export const invalidateHeaderMenuCache = () => {
 export const getHeaderMenuData = async (req: Request, res: Response) => {
   try {
     const cachedData = sysCache.get('header_menu_data');
-    if (cachedData) {
+    if (cachedData && req.query.refresh !== 'true') {
       return res.json({
         success: true,
         data: cachedData
@@ -41,7 +41,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       brandGroupCounts,
       allCategories,
       brandsRaw,
-      bestSellersRaw,
       settingRecord
     ] = await Promise.all([
       prisma.product.groupBy({
@@ -80,14 +79,6 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
           description: true
         },
         orderBy: { name: 'asc' }
-      }),
-      prisma.product.findMany({
-        where: { isActive: true, deletedAt: null },
-        include: {
-          variants: { where: { isActive: true } }
-        },
-        take: 12,
-        orderBy: { createdAt: 'desc' }
       }),
       prisma.setting.findUnique({
         where: { settingKey: 'header_menu_config' }
@@ -144,11 +135,97 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       productCount: brandCountMap.get(b.id) || 0
     })).sort((a, b) => b.productCount - a.productCount);
 
-    // Fetch reviews strictly targeted to the 12 best seller products (not whole table)
-    const bestSellerIds = bestSellersRaw.map(p => p.id);
-    const targetedReviews = bestSellerIds.length > 0
+    // Build category descendant IDs map for BFS traversal
+    const childrenMap = new Map<string | null, string[]>();
+    for (const cat of allCategories) {
+      const key = cat.parentId ?? null;
+      if (!childrenMap.has(key)) childrenMap.set(key, []);
+      childrenMap.get(key)!.push(cat.id);
+    }
+
+    const getDescendantIds = (rootId: string): string[] => {
+      const ids: string[] = [rootId];
+      const queue: string[] = [rootId];
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        for (const childId of childrenMap.get(curr) || []) {
+          ids.push(childId);
+          queue.push(childId);
+        }
+      }
+      return ids;
+    };
+
+    // Parallel fetch: top 6 products per root category + top 4 products per top 8 brands
+    const [catTopResults, brandTopResults] = await Promise.all([
+      Promise.all(
+        rootCategoriesRaw.map(async (rootCat) => {
+          const descendantIds = getDescendantIds(rootCat.id);
+          const prods = await prisma.product.findMany({
+            where: {
+              isActive: true,
+              deletedAt: null,
+              OR: [
+                { categoryId: { in: descendantIds } },
+                { productCategories: { some: { categoryId: { in: descendantIds } } } }
+              ]
+            },
+            include: {
+              variants: { where: { isActive: true } },
+              productCategories: { select: { categoryId: true } },
+              brand: { select: { id: true, name: true } }
+            },
+            orderBy: [
+              { isFeatured: 'desc' },
+              { createdAt: 'desc' }
+            ],
+            take: 6
+          });
+          return { rootId: rootCat.id, prods };
+        })
+      ),
+      Promise.all(
+        brandsRaw.slice(0, 8).map(async (brand) => {
+          const prods = await prisma.product.findMany({
+            where: {
+              isActive: true,
+              deletedAt: null,
+              brandId: brand.id
+            },
+            include: {
+              variants: { where: { isActive: true } },
+              productCategories: { select: { categoryId: true } },
+              brand: { select: { id: true, name: true } }
+            },
+            orderBy: [
+              { isFeatured: 'desc' },
+              { createdAt: 'desc' }
+            ],
+            take: 4
+          });
+          return { brandId: brand.id, prods };
+        })
+      )
+    ]);
+
+    // Deduplicate unique products across all results to fetch reviews
+    const uniqueProductsMap = new Map<string, any>();
+    for (const r of catTopResults) {
+      for (const p of r.prods) {
+        if (!uniqueProductsMap.has(p.id)) uniqueProductsMap.set(p.id, p);
+      }
+    }
+    for (const r of brandTopResults) {
+      for (const p of r.prods) {
+        if (!uniqueProductsMap.has(p.id)) uniqueProductsMap.set(p.id, p);
+      }
+    }
+    const uniqueProductIds = Array.from(uniqueProductsMap.keys());
+
+    // Fetch customer reviews strictly for the featured products
+    const targetedReviews = uniqueProductIds.length > 0
       ? await prisma.customerReview.findMany({
-          where: { productId: { in: bestSellerIds } },
+          where: { productId: { in: uniqueProductIds } },
           select: { productId: true, rating: true, reviewText: true }
         })
       : [];
@@ -165,7 +242,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       reviewsMap.get(cr.productId)!.push(Number(cr.rating || 5));
     }
 
-    const bestSellers = bestSellersRaw.map(p => {
+    const formatProductPreview = (p: any, rootCategoryId?: string): any => {
       const allRatings = reviewsMap.get(p.id) || [];
       let rating: number | null = null;
       let totalReviews = allRatings.length;
@@ -185,6 +262,15 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         } catch (e) {}
       }
 
+      const catIdSet = new Set<string>();
+      if (p.categoryId) catIdSet.add(p.categoryId);
+      if (rootCategoryId) catIdSet.add(rootCategoryId);
+      if (Array.isArray(p.productCategories)) {
+        p.productCategories.forEach((pc: any) => {
+          if (pc.categoryId) catIdSet.add(pc.categoryId);
+        });
+      }
+
       return {
         id: p.id,
         name: p.name,
@@ -195,8 +281,30 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
         rating,
         totalReviews,
         inStock: p.stock > 0,
-        categoryId: p.categoryId
+        categoryId: p.categoryId,
+        categoryIds: Array.from(catIdSet),
+        rootCategoryId: rootCategoryId || p.categoryId,
+        brandId: p.brandId || null,
+        brandName: p.brand?.name || null,
+        hasVariants: Boolean(p.variants && p.variants.length > 0),
+        variants: p.variants || []
       };
+    };
+
+    const categoryTopPicks: Record<string, any[]> = {};
+    catTopResults.forEach(r => {
+      categoryTopPicks[r.rootId] = r.prods.map(p => formatProductPreview(p, r.rootId));
+    });
+
+    const brandTopPicks: Record<string, any[]> = {};
+    brandTopResults.forEach(r => {
+      brandTopPicks[r.brandId] = r.prods.map(p => formatProductPreview(p));
+    });
+
+    // Populate bestSellers for backwards compatibility
+    const bestSellers = Array.from(uniqueProductsMap.values()).map(p => {
+      const matchCat = catTopResults.find(r => r.prods.some(cp => cp.id === p.id));
+      return formatProductPreview(p, matchCat?.rootId);
     });
 
     const config = settingRecord ? { ...DEFAULT_MENU_CONFIG, ...(settingRecord.settingData as object) } : DEFAULT_MENU_CONFIG;
@@ -206,6 +314,8 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       brands,
       featuredCategories: categoryTree.filter((c: any) => c.productCount > 0).slice(0, 4),
       bestSellers,
+      categoryTopPicks,
+      brandTopPicks,
       config
     };
 

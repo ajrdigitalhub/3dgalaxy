@@ -176,7 +176,7 @@ export class TrackingService {
     const baseDate = shipmentDateInput ? new Date(shipmentDateInput) : new Date();
 
     let maxMinDays = 3;
-    let maxMaxDays = 5;
+    let maxMaxDays = 4;
 
     if (items && Array.isArray(items) && items.length > 0) {
       for (const item of items) {
@@ -206,11 +206,12 @@ export class TrackingService {
       }
     }
 
+    const dispatchOffset = shipmentDateInput ? 0 : 1;
     const startDate = new Date(baseDate);
-    startDate.setDate(startDate.getDate() + maxMinDays);
+    startDate.setDate(startDate.getDate() + dispatchOffset + maxMinDays);
 
     const endDate = new Date(baseDate);
-    endDate.setDate(endDate.getDate() + maxMaxDays);
+    endDate.setDate(endDate.getDate() + dispatchOffset + maxMaxDays);
 
     const formatDate = (d: Date): string => {
       const day = d.getDate().toString().padStart(2, '0');

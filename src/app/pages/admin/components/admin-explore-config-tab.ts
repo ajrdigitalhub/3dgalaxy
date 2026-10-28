@@ -568,7 +568,7 @@ export class AdminExploreConfigTabComponent implements OnInit {
       title: 'Need Help Choosing?',
       subtitle: 'Talk to our senior experts',
       primaryButtonText: 'Chat on WhatsApp',
-      primaryButtonLink: 'https://wa.me/919876543210',
+      primaryButtonLink: 'https://wa.me/919111381113?text=Hi%2C%20I%20need%20expert%20guidance%20choosing%20the%20right%203D%20printer%20or%20material.',
       secondaryButtonText: 'Explore Services',
       secondaryButtonLink: '/slicer',
     },

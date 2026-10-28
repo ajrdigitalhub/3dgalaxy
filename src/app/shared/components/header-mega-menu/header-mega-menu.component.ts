@@ -38,6 +38,10 @@ export interface ProductPreview {
   totalReviews?: number;
   inStock: boolean;
   categoryId?: string;
+  categoryIds?: string[];
+  rootCategoryId?: string;
+  brandId?: string;
+  brandName?: string;
   hasVariants?: boolean;
   variants?: any[];
 }
@@ -47,6 +51,8 @@ export interface HeaderMenuPayload {
   brands: BrandNode[];
   featuredCategories: CategoryNode[];
   bestSellers: ProductPreview[];
+  categoryTopPicks?: Record<string, ProductPreview[]>;
+  brandTopPicks?: Record<string, ProductPreview[]>;
   config: {
     showProductCount: boolean;
     showBrandCount: boolean;
@@ -290,7 +296,7 @@ export interface HeaderMenuPayload {
             <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <span class="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1.5">
                 <mat-icon class="text-sm text-amber-500">star</mat-icon>
-                <span>Category Top Picks</span>
+                <span>{{ selectedRootCategory()?.name ? (selectedRootCategory()!.name + ' Top Picks') : 'Category Top Picks' }}</span>
               </span>
               <span class="text-[10px] font-bold text-slate-400">Handpicked</span>
             </div>
@@ -364,8 +370,12 @@ export interface HeaderMenuPayload {
                 }
               </div>
             } @else {
-              <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 dark:bg-[#181C23] rounded-2xl">
-                Explore our catalog to view top rated products.
+              <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 dark:bg-[#181C23] rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <mat-icon class="text-2xl text-slate-400 mb-1">category</mat-icon>
+                <p class="font-bold text-slate-500 dark:text-slate-400">Explore our {{ selectedRootCategory()?.name || 'catalog' }} collection.</p>
+                <a *ngIf="selectedRootCategory()" [routerLink]="['/category', selectedRootCategory()!.slug]" (click)="closeMenu()" class="text-orange-500 hover:underline mt-2 inline-block font-black text-[11px]">
+                  Browse All {{ selectedRootCategory()!.name }} Products →
+                </a>
               </div>
             }
           </div>
@@ -410,32 +420,145 @@ export interface HeaderMenuPayload {
 
         </div>
 
-        <!-- TAB 2: BRANDS VIEW (GRID WITH ALPHABETICAL FILTER) -->
+        <!-- TAB 2: BRANDS VIEW (GRID WITH ALPHABETICAL FILTER & BRAND TOP PICKS) -->
         <div *ngIf="!loading() && activeTab() === 'brands'" class="space-y-4 min-h-[26rem]">
           
-          <!-- Brands Grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 max-h-[26rem] overflow-y-auto pr-2 scrollbar-thin">
-            <div 
-              *ngFor="let b of filteredBrands()"
-              [routerLink]="['/products']"
-              [queryParams]="{ brand: b.name }"
-              (click)="closeMenu()"
-              class="group/brand p-4 bg-slate-50 dark:bg-[#181C23] hover:bg-white dark:hover:bg-[#202632] rounded-2xl border border-slate-200/60 dark:border-slate-800 hover:border-orange-500/40 shadow-xs transition-all cursor-pointer text-center space-y-2.5 flex flex-col items-center justify-center"
+          <!-- Brand Alphabet Filter -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-100 dark:border-slate-800 no-scrollbar">
+            <button
+              *ngFor="let letter of brandLetters"
+              type="button"
+              (click)="selectedBrandLetter.set(letter)"
+              [class]="selectedBrandLetter() === letter ? 'bg-orange-500 text-white font-black' : 'bg-slate-100 dark:bg-[#0F1115] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1C222D] font-bold'"
+              class="h-7 min-w-7 px-2.5 rounded-xl text-[10px] uppercase tracking-wider transition-all border-none cursor-pointer flex items-center justify-center shrink-0"
             >
-              <!-- Brand Logo Container -->
-              <div class="w-16 h-16 rounded-2xl bg-white dark:bg-[#0F1115] p-2.5 shadow-xs flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover/brand:scale-110 transition-transform">
-                <img *ngIf="b.logo" [src]="b.logo" [alt]="b.name" class="max-w-full max-h-full object-contain">
-                <mat-icon *ngIf="!b.logo" class="text-2xl text-slate-400">verified</mat-icon>
+              {{ letter }}
+            </button>
+          </div>
+
+          <div class="grid grid-cols-12 gap-5">
+            <!-- Brands Grid (Col-8) -->
+            <div class="col-span-12 lg:col-span-8 border-r border-slate-100 dark:border-slate-800/80 pr-2">
+              <div *ngIf="filteredBrands().length === 0" class="p-8 text-center text-xs text-slate-400">
+                No brands match your filter.
               </div>
-              
-              <div>
-                <span class="text-xs font-black uppercase text-slate-900 dark:text-white block truncate group-hover/brand:text-orange-500 transition-colors">
-                  {{ b.name }}
-                </span>
-                <span class="text-[9px] font-extrabold text-slate-400 block mt-0.5">
-                  {{ b.productCount }} Products
-                </span>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-[24rem] overflow-y-auto pr-2 scrollbar-thin">
+                <div 
+                  *ngFor="let b of filteredBrands()"
+                  (mouseenter)="onBrandHover(b)"
+                  (click)="closeMenu()"
+                  [routerLink]="['/products']"
+                  [queryParams]="{ brand: b.name }"
+                  [ngClass]="{
+                    'ring-2 ring-orange-500/40 border-orange-500/50 bg-white dark:bg-[#202632] shadow-sm': selectedBrand()?.id === b.id,
+                    'border-slate-200/60 dark:border-slate-800 bg-slate-50 dark:bg-[#181C23] hover:bg-white dark:hover:bg-[#202632]': selectedBrand()?.id !== b.id
+                  }"
+                  class="group/brand p-3.5 rounded-2xl border hover:border-orange-500/40 shadow-xs transition-all cursor-pointer text-center space-y-2 flex flex-col items-center justify-center"
+                >
+                  <!-- Brand Logo Container -->
+                  <div class="w-14 h-14 rounded-2xl bg-white dark:bg-[#0F1115] p-2 shadow-xs flex items-center justify-center border border-slate-100 dark:border-slate-800 group-hover/brand:scale-110 transition-transform">
+                    <img *ngIf="b.logo" [src]="b.logo" [alt]="b.name" class="max-w-full max-h-full object-contain">
+                    <mat-icon *ngIf="!b.logo" class="text-xl text-slate-400">verified</mat-icon>
+                  </div>
+                  
+                  <div>
+                    <span class="text-xs font-black uppercase text-slate-900 dark:text-white block truncate group-hover/brand:text-orange-500 transition-colors">
+                      {{ b.name }}
+                    </span>
+                    <span class="text-[9px] font-extrabold text-slate-400 block mt-0.5">
+                      {{ b.productCount }} Products
+                    </span>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <!-- Brand Top Picks (Col-4) -->
+            <div class="col-span-12 lg:col-span-4 space-y-3 max-h-[26rem] overflow-y-auto pr-2 scrollbar-thin">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span class="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <mat-icon class="text-sm text-blue-500">verified</mat-icon>
+                  <span>{{ selectedBrand()?.name ? (selectedBrand()!.name + ' Top Picks') : 'Brand Top Picks' }}</span>
+                </span>
+                <span class="text-[10px] font-bold text-slate-400">Featured</span>
+              </div>
+
+              <!-- Brand Product Cards List -->
+              @if (brandBestSellers().length > 0) {
+                <div class="space-y-2.5">
+                  @for (prod of brandBestSellers().slice(0, 3); track prod.id) {
+                    <div
+                      [routerLink]="['/product', prod.slug]"
+                      (click)="closeMenu()"
+                      class="group/prod p-2.5 bg-slate-50 dark:bg-[#181C23] hover:bg-white dark:hover:bg-[#202632] rounded-2xl border border-slate-200/60 dark:border-slate-800 hover:border-orange-500/40 cursor-pointer transition-all duration-150 flex items-center gap-3 shadow-xs"
+                    >
+                      <!-- Product Image -->
+                      <div class="w-16 h-16 rounded-xl bg-white dark:bg-[#0F1115] p-1.5 shrink-0 border border-slate-200/50 dark:border-slate-800 group-hover/prod:scale-105 transition-transform">
+                        <img [src]="getProductImage(prod)" [alt]="prod.name" class="w-full h-full object-contain">
+                      </div>
+
+                      <!-- Details -->
+                      <div class="min-w-0 flex-1 space-y-1">
+                        <h4 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover/prod:text-orange-500 transition-colors">
+                          {{ prod.name }}
+                        </h4>
+
+                        <!-- Rating Stars -->
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-amber-500">
+                          @if (prod.rating && prod.totalReviews) {
+                            @for (star of [1,2,3,4,5]; track star) {
+                              <span>{{ star <= Math.round(prod.rating) ? '★' : '☆' }}</span>
+                            }
+                            <span class="text-slate-700 dark:text-slate-300 font-extrabold ml-1">{{ prod.rating.toFixed(1) }}</span>
+                            <span class="text-[9px] text-slate-400 font-normal ml-0.5">({{ prod.totalReviews }})</span>
+                          } @else {
+                            <span class="text-[10px] font-normal text-slate-400">No reviews yet</span>
+                          }
+                        </div>
+
+                        <!-- Price Row -->
+                        <div class="flex items-baseline gap-2">
+                          <span class="text-xs font-black text-orange-600 dark:text-orange-400 font-mono">
+                            ₹{{ getSalePrice(prod) }}
+                          </span>
+                          @if (hasDiscount(prod)) {
+                            <span class="text-[10px] font-medium text-slate-400 line-through font-mono">
+                              ₹{{ prod.basePrice }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Quick Add / View Button -->
+                      @if (prod.hasVariants || (prod.variants && prod.variants.length > 0)) {
+                        <a
+                          [routerLink]="['/product', prod.slug]"
+                          class="h-8 px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#d65108] text-slate-700 dark:text-slate-200 hover:text-white flex items-center justify-center shrink-0 border-none cursor-pointer transition-all text-[10px] font-bold no-underline gap-1"
+                        >
+                          <mat-icon class="scale-75 text-[14px]">tune</mat-icon>
+                          <span>Select Variant</span>
+                        </a>
+                      } @else {
+                        <button
+                          type="button"
+                          (click)="quickAddToCart($event, prod)"
+                          aria-label="Add to cart"
+                          class="h-8 w-8 rounded-xl bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-white flex items-center justify-center shrink-0 border-none cursor-pointer transition-all"
+                        >
+                          <mat-icon class="scale-75 text-[16px]">shopping_cart</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 dark:bg-[#181C23] rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                  <p class="font-bold text-slate-500 dark:text-slate-400">Explore our catalog for {{ selectedBrand()?.name || 'this brand' }}.</p>
+                  <a *ngIf="selectedBrand()" [routerLink]="['/products']" [queryParams]="{ brand: selectedBrand()!.name }" (click)="closeMenu()" class="text-orange-500 hover:underline mt-2 inline-block font-black text-[11px]">
+                    Browse All {{ selectedBrand()!.name }} Products →
+                  </a>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -457,6 +580,7 @@ export class HeaderMegaMenuComponent implements OnInit {
   loading = computed<boolean>(() => !this.ds.headerMenuData() && this.ds.headerMenuLoading());
   activeTab = signal<'categories' | 'brands'>('categories');
   selectedRootCategory = signal<CategoryNode | null>(null);
+  selectedBrand = signal<BrandNode | null>(null);
   searchQuery = signal<string>('');
   selectedBrandLetter = signal<string>('ALL');
 
@@ -473,6 +597,12 @@ export class HeaderMegaMenuComponent implements OnInit {
           this.selectedRootCategory.set(data.categories[0]);
         }
       }
+      if (data?.brands && data.brands.length > 0) {
+        const currentBrand = this.selectedBrand();
+        if (!currentBrand || !data.brands.some(b => b.id === currentBrand.id)) {
+          this.selectedBrand.set(data.brands[0]);
+        }
+      }
     });
   }
 
@@ -482,7 +612,7 @@ export class HeaderMegaMenuComponent implements OnInit {
   }
 
   fetchHeaderMenu() {
-    this.ds.loadHeaderMenu();
+    this.ds.loadHeaderMenu(true);
   }
 
   // Category Specific Icon Mapping
@@ -543,7 +673,7 @@ export class HeaderMegaMenuComponent implements OnInit {
       basePrice: prod.basePrice,
       salePrice: prod.salePrice ?? undefined,
       stock: 50,
-      brand: '3D GALAXY',
+      brand: prod.brandName || '3D GALAXY',
       sku: 'SKU-' + prod.id,
       barcode: 'BC-' + prod.id,
       category_id: prod.categoryId || 'cat',
@@ -562,6 +692,10 @@ export class HeaderMegaMenuComponent implements OnInit {
 
   selectCategory(cat: CategoryNode) {
     this.selectedRootCategory.set(cat);
+  }
+
+  selectBrand(brand: BrandNode) {
+    this.selectedBrand.set(brand);
   }
 
   // Reactive Computed Filters
@@ -594,10 +728,120 @@ export class HeaderMegaMenuComponent implements OnInit {
   categoryBestSellers = computed(() => {
     const data = this.menuData();
     const root = this.selectedRootCategory();
-    if (!data || !data.bestSellers) return [];
-    if (!root) return data.bestSellers.slice(0, 3);
-    const filtered = data.bestSellers.filter(p => p.categoryId === root.id);
-    return filtered.length > 0 ? filtered.slice(0, 3) : data.bestSellers.slice(0, 3);
+    if (!data || !root) return [];
+
+    // 1. Direct server category top picks lookup
+    if (data.categoryTopPicks && Array.isArray(data.categoryTopPicks[root.id]) && data.categoryTopPicks[root.id].length > 0) {
+      return data.categoryTopPicks[root.id];
+    }
+
+    // 2. Build set of descendant category IDs (root + all subcategories)
+    const descendantIds = new Set<string>([root.id]);
+    if (root.children && root.children.length > 0) {
+      const queue = [...root.children];
+      while (queue.length > 0) {
+        const c = queue.shift()!;
+        descendantIds.add(c.id);
+        if (c.children && c.children.length > 0) queue.push(...c.children);
+      }
+    }
+
+    // 3. Filter data.bestSellers strictly by category
+    if (data.bestSellers && data.bestSellers.length > 0) {
+      const filtered = data.bestSellers.filter(p => {
+        if (p.rootCategoryId === root.id) return true;
+        if (p.categoryId && descendantIds.has(p.categoryId)) return true;
+        if (p.categoryIds && p.categoryIds.some(cid => descendantIds.has(cid))) return true;
+        return false;
+      });
+      if (filtered.length > 0) return filtered;
+    }
+
+    // 4. Fallback to datastore active products strictly matching this category
+    const dsProducts = this.ds.products();
+    if (dsProducts && dsProducts.length > 0) {
+      const rootSlug = (root.slug || root.name || '').toLowerCase();
+      const matched = dsProducts.filter(p => {
+        if (p.categoryId && descendantIds.has(p.categoryId)) return true;
+        const pCatId = p.categoryId || (p as any).category_id;
+        if (pCatId && descendantIds.has(pCatId)) return true;
+        if (p.category && (descendantIds.has(p.category.id) || (p.category.slug && p.category.slug.toLowerCase() === rootSlug))) return true;
+        return false;
+      });
+      if (matched.length > 0) {
+        return matched.slice(0, 4).map(p => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug || p.id,
+          image: (p.images && p.images.length > 0 ? (typeof p.images[0] === 'string' ? p.images[0] : (p.images[0] as any).url) : null),
+          basePrice: p.basePrice || p.mrp || 0,
+          salePrice: p.salePrice || p.sale_price || null,
+          rating: p.rating || null,
+          totalReviews: p.reviews?.length || 0,
+          inStock: (p.stock || 0) > 0,
+          categoryId: p.categoryId || (p as any).category_id,
+          categoryIds: [p.categoryId || (p as any).category_id].filter(Boolean) as string[],
+          rootCategoryId: root.id,
+          hasVariants: Boolean(p.variants && p.variants.length > 0),
+          variants: p.variants || []
+        }));
+      }
+    }
+
+    // Strictly NEVER fall back to unrelated products from other categories
+    return [];
+  });
+
+  brandBestSellers = computed(() => {
+    const data = this.menuData();
+    const brand = this.selectedBrand();
+    if (!data || !brand) return [];
+
+    // 1. Direct server brand top picks lookup
+    if (data.brandTopPicks && Array.isArray(data.brandTopPicks[brand.id]) && data.brandTopPicks[brand.id].length > 0) {
+      return data.brandTopPicks[brand.id];
+    }
+
+    // 2. Filter bestSellers by brandId or brandName
+    if (data.bestSellers && data.bestSellers.length > 0) {
+      const bName = (brand.name || '').toLowerCase();
+      const filtered = data.bestSellers.filter(p => 
+        p.brandId === brand.id || 
+        (p.brandName && p.brandName.toLowerCase() === bName)
+      );
+      if (filtered.length > 0) return filtered;
+    }
+
+    // 3. Fallback to datastore products strictly matching this brand
+    const dsProducts = this.ds.products();
+    if (dsProducts && dsProducts.length > 0) {
+      const bName = (brand.name || '').toLowerCase();
+      const matched = dsProducts.filter(p => {
+        const pBrand = (p.brand || '').toLowerCase();
+        const pBrandId = p.brandId || (p as any).brand_id;
+        return pBrand === bName || pBrandId === brand.id;
+      });
+      if (matched.length > 0) {
+        return matched.slice(0, 4).map(p => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug || p.id,
+          image: (p.images && p.images.length > 0 ? (typeof p.images[0] === 'string' ? p.images[0] : (p.images[0] as any).url) : null),
+          basePrice: p.basePrice || p.mrp || 0,
+          salePrice: p.salePrice || p.sale_price || null,
+          rating: p.rating || null,
+          totalReviews: p.reviews?.length || 0,
+          inStock: (p.stock || 0) > 0,
+          categoryId: p.categoryId || p.category_id,
+          brandId: brand.id,
+          brandName: brand.name,
+          hasVariants: Boolean(p.variants && p.variants.length > 0),
+          variants: p.variants || []
+        }));
+      }
+    }
+
+    return [];
   });
 
   // Hover & Navigation Handlers
@@ -605,6 +849,13 @@ export class HeaderMegaMenuComponent implements OnInit {
     if (this.hoverTimeout) clearTimeout(this.hoverTimeout);
     this.hoverTimeout = setTimeout(() => {
       this.selectedRootCategory.set(category);
+    }, 50);
+  }
+
+  onBrandHover(brand: BrandNode) {
+    if (this.hoverTimeout) clearTimeout(this.hoverTimeout);
+    this.hoverTimeout = setTimeout(() => {
+      this.selectedBrand.set(brand);
     }, 50);
   }
 

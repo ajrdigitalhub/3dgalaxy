@@ -873,7 +873,8 @@ export class NotificationService {
       const websiteName = settings.storeName || whatsappSettings.storeName || ENV.SITE_NAME;
       const siteUrl = whatsappSettings.siteUrl || ENV.SITE_URL;
       const trackUrl = `${siteUrl}/services/track?trk=${trackingNumber}`;
-      const adminBaseUrl = whatsappSettings.adminUrl || ENV.ADMIN_APP_URL;
+      let adminBaseUrl = (whatsappSettings.adminUrl || ENV.ADMIN_APP_URL || '').trim().replace(/\/+$/, '');
+      if (adminBaseUrl.includes('admin.3dgalaxy.') || adminBaseUrl === 'https://admin.3dgalaxy.co.in') { adminBaseUrl = `${siteUrl}/admin`; }
       const adminPortalUrl = `${adminBaseUrl}/services/${enquiry.id}`;
 
       // 1. NOTIFY CUSTOMER

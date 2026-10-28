@@ -142,7 +142,7 @@ export class DeliveryEstimateService {
 
     // 2. Query products/items for maximum estimated delivery days
     let minDaysMax = 3;
-    let maxDaysMax = 5;
+    let maxDaysMax = 4;
     const items = order?.items || [];
 
     if (items.length > 0) {
@@ -176,8 +176,10 @@ export class DeliveryEstimateService {
       }
     }
 
-    const minDate = this.addDays(resolvedBaseDate, minDaysMax);
-    const maxDate = this.addDays(resolvedBaseDate, maxDaysMax);
+    const hasDispatched = Boolean(order?.status?.toLowerCase() === 'shipped' || order?.shipments?.[0]?.shipmentDate);
+    const dispatchOffset = hasDispatched ? 0 : 1;
+    const minDate = this.addDays(resolvedBaseDate, dispatchOffset + minDaysMax);
+    const maxDate = this.addDays(resolvedBaseDate, dispatchOffset + maxDaysMax);
     const minFormatted = this.formatDate(minDate);
     const maxFormatted = this.formatDate(maxDate);
 

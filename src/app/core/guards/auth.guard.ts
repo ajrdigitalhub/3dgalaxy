@@ -2,6 +2,16 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { DatastoreService } from '../../services/datastore';
 
+const saveReturnUrl = (url: string) => {
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage && url) {
+      sessionStorage.setItem('auth_return_url', url);
+    }
+  } catch (e) {
+    // Non-fatal if sessionStorage is blocked
+  }
+};
+
 const waitForAuthReady = (ds: DatastoreService, timeoutMs = 2500): Promise<void> => {
   if (ds.authReady()) return Promise.resolve();
   return new Promise<void>((resolve) => {
@@ -25,7 +35,8 @@ export const authGuard: CanActivateFn = async (route, state) => {
     return true;
   }
 
-  // Redirect to login page cleanly using UrlTree
+  saveReturnUrl(state.url);
+  // Redirect to login page cleanly using UrlTree with returnUrl param
   return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };
 
@@ -39,18 +50,21 @@ export const roleGuard: CanActivateFn = async (route, state) => {
   const role = ds.userRole();
 
   if (!profile) {
+    saveReturnUrl(state.url);
     return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
   }
 
   const allowedRoles = (route.data && route.data['roles']) as string[] | undefined;
 
-  if (allowedRoles) {
-    // Map internal lowercase role names to requested format if needed
-    // or just check if it matches.
-    const normalizedRole = role === 'super-admin' ? 'Super Admin' : (role.charAt(0).toUpperCase() + role.slice(1));
-    
-    // Super Admin has all access
-    if (normalizedRole === 'Super Admin' || allowedRoles.includes(normalizedRole) || allowedRoles.includes(role)) {
+  if (allowedRoles && allowedRoles.length > 0) {
+    const rLower = (role || '').trim().toLowerCase().replace(/[\s\-_]/g, '');
+    const isSuperAdmin = rLower === 'superadmin';
+    const isAllowed = isSuperAdmin || allowedRoles.some(ar => {
+      const arLower = ar.trim().toLowerCase().replace(/[\s\-_]/g, '');
+      return arLower === rLower;
+    });
+
+    if (isAllowed) {
       return true;
     }
 

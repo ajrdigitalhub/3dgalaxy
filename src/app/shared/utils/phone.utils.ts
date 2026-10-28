@@ -4,7 +4,7 @@
  */
 export function formatWhatsAppNumber(
   phone: string | number | undefined | null,
-  defaultFallback: string = '919876543210'
+  defaultFallback: string = '919111381113'
 ): string {
   let clean = String(phone || '').replace(/[^0-9]/g, '');
   
@@ -30,7 +30,7 @@ export function formatWhatsAppNumber(
 export function buildWhatsAppUrl(
   phone: string | number | undefined | null,
   message: string = '',
-  defaultFallback: string = '919876543210'
+  defaultFallback: string = '919111381113'
 ): string {
   const cleanPhone = formatWhatsAppNumber(phone, defaultFallback);
   const encodedMsg = encodeURIComponent(message || '');

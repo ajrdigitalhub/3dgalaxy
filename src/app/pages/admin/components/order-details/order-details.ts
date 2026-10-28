@@ -232,12 +232,17 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   private getHeaders() {
-    const token = localStorage.getItem('token');
-    return {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    const token = (typeof window !== 'undefined' && typeof localStorage !== 'undefined')
+      ? (localStorage.getItem('access_token') || localStorage.getItem('token') || '')
+      : '';
+    const headers: Record<string, string> = {
+      'x-admin-portal': 'true'
     };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-access-token'] = token;
+    }
+    return { headers };
   }
 
   openCancelModal() {
@@ -272,9 +277,10 @@ export class OrderDetailsComponent implements OnInit {
       })
     ).subscribe(res => {
       if (res) {
-        this.order.set(res);
-        if (res.customer?.id) {
-          this.fetchCustomerHistory(res.customer.id);
+        const orderData = res.order || res.data || res;
+        this.order.set(orderData);
+        if (orderData.customer?.id) {
+          this.fetchCustomerHistory(orderData.customer.id);
         }
       }
       this.loading.set(false);

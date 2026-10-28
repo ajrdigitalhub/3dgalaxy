@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { sysCache } from '../config/cache';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const DEFAULT_EXPLORE_CONFIG = {
   general: {
@@ -143,7 +144,7 @@ export const DEFAULT_EXPLORE_CONFIG = {
     title: 'Need Help Choosing the Right Printer or Material?',
     subtitle: 'Our senior additive manufacturing engineers are available 24/7 to guide your purchase.',
     primaryButtonText: 'Talk to Our Experts on WhatsApp',
-    primaryButtonLink: 'https://wa.me/919876543210',
+    primaryButtonLink: 'https://wa.me/919111381113?text=Hi%2C%20I%20need%20expert%20guidance%20choosing%20the%20right%203D%20printer%20or%20material.',
     secondaryButtonText: 'Explore 3D Slicing Service',
     secondaryButtonLink: '/slicer',
   },
@@ -559,6 +560,23 @@ export const getExploreNavigationData = async (req: Request, res: Response) => {
         const config = settingRecord
           ? { ...DEFAULT_EXPLORE_CONFIG, ...(settingRecord.settingData as object) }
           : DEFAULT_EXPLORE_CONFIG;
+
+        try {
+          const appSettings = await getSettingsService().catch(() => null);
+          const adminPhone = appSettings?.whatsappSettings?.adminPhoneNumber ||
+                             appSettings?.contact?.phone ||
+                             appSettings?.supportSettings?.whatsappNumber ||
+                             '9111381113';
+          let cleanAdminPhone = String(adminPhone).replace(/[^\d]/g, '');
+          if (cleanAdminPhone.length === 10) cleanAdminPhone = '91' + cleanAdminPhone;
+          if (!cleanAdminPhone) cleanAdminPhone = '919111381113';
+
+          if (config.bottomCta) {
+            if (!config.bottomCta.primaryButtonLink || config.bottomCta.primaryButtonLink.includes('9876543210')) {
+              config.bottomCta.primaryButtonLink = `https://wa.me/${cleanAdminPhone}?text=${encodeURIComponent('Hi, I need expert guidance choosing the right 3D printer or material.')}`;
+            }
+          }
+        } catch (e) {}
 
         const payload = await buildExplorePayload(config as typeof DEFAULT_EXPLORE_CONFIG);
 

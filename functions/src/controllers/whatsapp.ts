@@ -268,8 +268,8 @@ export const triggerWhatsAppNotification = async (
         itemsSummary = 'Order Items';
       }
 
-      const adminBaseUrl = settings.adminUrl || ENV.ADMIN_APP_URL;
-      const adminPortalUrl = order ? `${adminBaseUrl}/orders/${order.id}` : adminBaseUrl;
+      const adminBaseUrl = (settings.adminUrl || ENV.ADMIN_APP_URL || '').replace(/\/+$/, '');
+      const adminPortalUrl = order ? WhatsAppNotificationService.resolveAdminOrderUrl(order, settings.adminUrl) : `${ENV.SITE_URL}/admin`;
 
       components = sanitizeComponents([
         {

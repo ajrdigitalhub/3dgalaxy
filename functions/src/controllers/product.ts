@@ -2137,6 +2137,22 @@ export const updateProduct = async (req: Request, res: Response) => {
 
       const finalStock = hasExplicitVariantStock ? totalCalculatedVariantStock : (stock !== undefined ? parseInt(stock, 10) : undefined);
 
+      // Synchronize single/default variant prices with product prices
+      const existingVariants = await tx.productVariant.findMany({ where: { productId: id } });
+      if (existingVariants.length === 1) {
+        const singleVar = existingVariants[0];
+        const vName = (singleVar.name || '').trim().toLowerCase();
+        if (vName === 'default title' || vName === 'default' || vName === 'standard' || existingVariants.length <= 1) {
+          await tx.productVariant.update({
+            where: { id: singleVar.id },
+            data: {
+              price: mrp ? parseFloat(mrp) : (price ? parseFloat(price) : singleVar.price),
+              salePrice: resolvedSalePrice !== undefined && resolvedSalePrice !== null ? parseFloat(resolvedSalePrice) : undefined,
+            }
+          });
+        }
+      }
+
       const p = await tx.product.update({
         where: { id },
         data: {
@@ -2278,6 +2294,23 @@ export const quickUpdateProduct = async (req: Request, res: Response) => {
     }
 
     updateData.updatedAt = new Date();
+
+    if (updateData.salePrice !== undefined || updateData.basePrice !== undefined || updateData.dealerPrice !== undefined) {
+      const vars = await prisma.productVariant.findMany({ where: { productId } });
+      if (vars.length === 1) {
+        const singleVar = vars[0];
+        const vName = (singleVar.name || '').trim().toLowerCase();
+        if (vName === 'default title' || vName === 'default' || vName === 'standard' || vars.length <= 1) {
+          await prisma.productVariant.update({
+            where: { id: singleVar.id },
+            data: {
+              price: updateData.basePrice !== undefined ? updateData.basePrice : singleVar.price,
+              salePrice: updateData.salePrice !== undefined ? updateData.salePrice : singleVar.salePrice,
+            }
+          });
+        }
+      }
+    }
 
     const updated = await prisma.product.update({
       where: { id: productId },

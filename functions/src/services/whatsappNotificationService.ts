@@ -905,6 +905,25 @@ export class WhatsAppNotificationService {
   /**
    * Centralized method to send Admin Order WhatsApp Notification using template order_confirmation_admin_3dgal
    */
+  /**
+   * Helper to build clean, canonical Admin Portal order link:
+   * e.g. https://3dgalaxy.co.in/admin/orders/3DX0009
+   */
+  public static resolveAdminOrderUrl(order: any, customAdminUrl?: string): string {
+    const siteBase = (ENV.SITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, '');
+    let base = (customAdminUrl || ENV.ADMIN_APP_URL || `${siteBase}/admin`).trim().replace(/\/+$/, '');
+
+    // Normalize legacy admin subdomain or missing admin path
+    if (!base || base.includes('admin.3dgalaxy.') || base === 'https://admin.3dgalaxy.co.in') {
+      base = `${siteBase}/admin`;
+    } else if (!base.endsWith('/admin') && !base.includes('/admin/')) {
+      base = `${base}/admin`;
+    }
+
+    const orderRef = order?.orderNumber || order?.id || 'N/A';
+    return `${base}/orders/${orderRef}`;
+  }
+
   public static async sendAdminOrderNotification(
     order: any,
     extraParams: any = {}
@@ -914,10 +933,10 @@ export class WhatsAppNotificationService {
       const whatsappSettings = settingsObj?.whatsappSettings || {};
 
       const siteName = settingsObj?.storeName || whatsappSettings?.storeName || ENV.SITE_NAME;
-      const adminBaseUrl = extraParams?.adminUrl || whatsappSettings?.adminUrl || ENV.ADMIN_APP_URL;
+      const orderUrl = WhatsAppNotificationService.resolveAdminOrderUrl(order, extraParams?.adminUrl || whatsappSettings?.adminUrl);
+      const adminBaseUrl = (extraParams?.adminUrl || whatsappSettings?.adminUrl || ENV.ADMIN_APP_URL).replace(/\/+$/, '');
 
       const orderId = order?.orderNumber || order?.id || 'N/A';
-      const orderUrl = `${adminBaseUrl}/orders/${order?.id || orderId}`;
 
       // Customer Details
       const customerName = this.extractCustomerName(order, extraParams);

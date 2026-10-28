@@ -63,9 +63,10 @@ const defaultSettings = {
   },
   aboutPage: {},
   contact: {
-    phone: "",
-    email: "",
-    address: "",
+    phone: "+91 9111381113",
+    email: "galaxy.3d@hotmail.com",
+    address: "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001",
+    mapUrl: "https://maps.app.goo.gl/Nu2hvW8yBzMUzZxQ7",
   },
   paymentGatewaySettings: {
     razorpayEnabled: true,

@@ -212,6 +212,7 @@ export interface Product {
   subcategory_id?: string;
   brand: string;
   brandId?: string;
+  brand_id?: string;
   description: string;
   long_description?: string;
   mrp: number;
@@ -479,6 +480,10 @@ export interface HeaderMenuProductPreview {
   totalReviews?: number;
   inStock: boolean;
   categoryId?: string;
+  categoryIds?: string[];
+  rootCategoryId?: string;
+  brandId?: string;
+  brandName?: string;
   hasVariants?: boolean;
   variants?: any[];
 }
@@ -488,6 +493,8 @@ export interface HeaderMenuPayload {
   brands: HeaderMenuBrandNode[];
   featuredCategories: HeaderMenuCategoryNode[];
   bestSellers: HeaderMenuProductPreview[];
+  categoryTopPicks?: Record<string, HeaderMenuProductPreview[]>;
+  brandTopPicks?: Record<string, HeaderMenuProductPreview[]>;
   config: {
     showProductCount: boolean;
     showBrandCount: boolean;
@@ -1420,6 +1427,7 @@ export class DatastoreService {
           const refreshToken = res?.refreshToken || res?.data?.refreshToken;
           if (accessToken) {
             localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('token', accessToken);
             if (refreshToken) {
               localStorage.setItem('refresh_token', refreshToken);
             }
@@ -1435,6 +1443,7 @@ export class DatastoreService {
 
   private clearSession() {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('token');
     localStorage.removeItem('refresh_token');
     this.userProfile.set(null);
     this.currentUser.set(null);
@@ -1501,6 +1510,7 @@ export class DatastoreService {
           if (res && res.success && res.data) {
             const data = res.data;
             localStorage.setItem('access_token', data.accessToken);
+            localStorage.setItem('token', data.accessToken);
             localStorage.setItem('refresh_token', data.refreshToken);
             
             const u = data.user;
@@ -1545,6 +1555,7 @@ export class DatastoreService {
 
           if (accessToken) {
             localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('token', accessToken);
           }
           if (refreshToken) {
             localStorage.setItem('refresh_token', refreshToken);
@@ -1807,7 +1818,7 @@ export class DatastoreService {
       productCount: b.productCount || 0
     }));
 
-    const bestSellers: HeaderMenuProductPreview[] = rawBestSellers.slice(0, 12).map((p: any) => {
+    const bestSellers: HeaderMenuProductPreview[] = rawBestSellers.slice(0, 24).map((p: any) => {
       let primaryImage = null;
       if (p.images) {
         try {
@@ -1818,6 +1829,8 @@ export class DatastoreService {
           }
         } catch (e) {}
       }
+      const catId = p.categoryId || p.category_id;
+      const bId = p.brandId || p.brand_id;
       return {
         id: p.id,
         name: p.name,
@@ -1828,7 +1841,10 @@ export class DatastoreService {
         rating: p.rating || 4.8,
         totalReviews: p.reviewCount || p.totalReviews || 12,
         inStock: (p.stock || 0) > 0,
-        categoryId: p.categoryId || p.category_id,
+        categoryId: catId,
+        categoryIds: catId ? [catId] : [],
+        brandId: bId,
+        brandName: p.brand || p.brandName,
         hasVariants: Boolean(p.variants && p.variants.length > 0),
         variants: p.variants || []
       };

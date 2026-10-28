@@ -1312,15 +1312,35 @@ export const handleAdminRefund = async (req: Request, res: Response) => {
   }
 };
 
+const isDefaultVariant = (v: any, totalVariantsCount?: number): boolean => {
+  if (!v) return true;
+  if (totalVariantsCount !== undefined && totalVariantsCount <= 1) return true;
+  const n = String(v.name || v.title || '').trim().toLowerCase();
+  return (
+    n === 'default title' ||
+    n === 'default' ||
+    n === 'default variant' ||
+    n === 'standard' ||
+    n === 'title' ||
+    n === 'variant' ||
+    n === 'variant name' ||
+    n === 'variant title' ||
+    n === 'undefined' ||
+    n === 'null'
+  );
+};
+
 export const calculateEffectiveItemPrice = (prod: any, item: any, customerType?: string): number => {
   // Free bundle products or promotional items
   if (item.isFree === true || item.configurationType === 'free_bundle' || item.configurationType === 'free_included') {
     return 0;
   }
 
-  const basePrice = Number(prod.salePrice || prod.basePrice || 0);
-  const dealerPrice = prod.dealerPrice ? Number(prod.dealerPrice) : basePrice;
-  const defaultPrice = customerType === 'DEALER' ? dealerPrice : basePrice;
+  const prodSale = (prod.salePrice !== undefined && prod.salePrice !== null && !isNaN(Number(prod.salePrice)) && Number(prod.salePrice) > 0)
+    ? Number(prod.salePrice)
+    : Number(prod.basePrice || 0);
+  const dealerPrice = prod.dealerPrice ? Number(prod.dealerPrice) : prodSale;
+  const defaultPrice = customerType === 'DEALER' ? dealerPrice : prodSale;
 
   // 1. If bundle or bundle tier selected
   if (item.bundleDetails || item.configurationType === 'bundle' || item.bundleTier) {
@@ -1383,7 +1403,15 @@ export const calculateEffectiveItemPrice = (prod: any, item: any, customerType?:
   if (item.variantId && prod.variants && Array.isArray(prod.variants)) {
     const v = prod.variants.find((vr: any) => vr.id === item.variantId);
     if (v) {
-      return Number(v.salePrice || v.price || defaultPrice);
+      const isDefault = isDefaultVariant(v, prod.variants.length);
+      if (isDefault) {
+        // Default variant represents the product itself: sync with actual product sale price!
+        return defaultPrice;
+      }
+      const vSale = (v.salePrice !== undefined && v.salePrice !== null && !isNaN(Number(v.salePrice)) && Number(v.salePrice) > 0)
+        ? Number(v.salePrice)
+        : (v.price !== undefined && v.price !== null && !isNaN(Number(v.price)) && Number(v.price) > 0 ? Number(v.price) : defaultPrice);
+      return vSale;
     }
   }
 
