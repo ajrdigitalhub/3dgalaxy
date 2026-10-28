@@ -12,8 +12,9 @@ export interface ResolvedTemplateResult {
     orderAmount: string;
     paymentMethod: string;
     paymentStatus: string;
-    estimatedDeliveryDate: string;
     orderUrl: string;
+    processingTime: string;
+    estimatedDeliveryDate: string;
     siteName: string;
   };
   rawValues: {
@@ -93,20 +94,21 @@ export class NotificationTemplateResolver {
     const isCancelled = orderStatusUpper === 'CANCELLED' || orderStatusUpper === 'CANCELED';
     const isFailed = paymentStatusUpper === 'FAILED' || orderStatusUpper === 'PAYMENT_FAILED';
 
-    // Dynamic Delivery Date Calculation
+    // Dynamic Processing Time & Delivery Date Calculation
+    const processingTime = extraParams?.processingTime || extraParams?.orderProcessingTime || whatsappSettings?.orderProcessingTime || whatsappSettings?.processingTime || '24 - 48 Hours';
     const estimatedDeliveryDate = await DeliveryEstimateService.calculateOrderDeliveryEstimate(order);
 
     // Business Rules Execution:
     // CASE 4: Cancelled Order -> No Order Confirmation
     if (isCancelled) {
       console.log(`[NotificationTemplateResolver] Suppressing order confirmation for cancelled order ${orderId}`);
-      return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', estimatedDeliveryDate, orderUrl, siteName, isCod, isPaid, isCancelled, isFailed);
+      return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', orderUrl, processingTime, estimatedDeliveryDate, siteName, isCod, isPaid, isCancelled, isFailed);
     }
 
     // CASE 3: Payment Failed -> No Order Confirmation
     if (isFailed) {
       console.log(`[NotificationTemplateResolver] Suppressing order confirmation for failed payment on order ${orderId}`);
-      return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', estimatedDeliveryDate, orderUrl, siteName, isCod, isPaid, isCancelled, isFailed);
+      return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', orderUrl, processingTime, estimatedDeliveryDate, siteName, isCod, isPaid, isCancelled, isFailed);
     }
 
     // CASE 1: Cash on Delivery (COD) Order
@@ -124,8 +126,9 @@ export class NotificationTemplateResolver {
         orderAmount,
         formattedMethod,
         formattedStatus,
-        estimatedDeliveryDate,
         orderUrl,
+        processingTime,
+        estimatedDeliveryDate,
         siteName,
         isCod,
         isPaid,
@@ -141,6 +144,7 @@ export class NotificationTemplateResolver {
       let formattedMethod = 'Online Payment';
       if (rawMethod.includes('razorpay')) formattedMethod = 'Online Payment (Razorpay)';
       else if (rawMethod.includes('phonepe')) formattedMethod = 'Online Payment (PhonePe)';
+      else if (rawMethod.includes('cashfree')) formattedMethod = 'Online Payment (Cashfree)';
       else if (rawMethod.includes('upi')) formattedMethod = 'UPI Payment';
       else if (rawMethod.includes('card') || rawMethod.includes('credit') || rawMethod.includes('debit')) formattedMethod = 'Card Payment';
       else if (rawMethod.includes('netbanking')) formattedMethod = 'Net Banking';
@@ -158,8 +162,9 @@ export class NotificationTemplateResolver {
         orderAmount,
         formattedMethod,
         formattedStatus,
-        estimatedDeliveryDate,
         orderUrl,
+        processingTime,
+        estimatedDeliveryDate,
         siteName,
         isCod,
         isPaid,
@@ -168,7 +173,7 @@ export class NotificationTemplateResolver {
       );
     }
 
-    return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', estimatedDeliveryDate, orderUrl, siteName, isCod, isPaid, isCancelled, isFailed);
+    return this.buildResult(false, '', 'NONE', customerName, orderId, orderAmount, '', '', orderUrl, processingTime, estimatedDeliveryDate, siteName, isCod, isPaid, isCancelled, isFailed);
   }
 
   private static buildResult(
@@ -180,8 +185,9 @@ export class NotificationTemplateResolver {
     orderAmount: string,
     paymentMethod: string,
     paymentStatus: string,
-    estimatedDeliveryDate: string,
     orderUrl: string,
+    processingTime: string,
+    estimatedDeliveryDate: string,
     siteName: string,
     isCod: boolean,
     isPaid: boolean,
@@ -198,8 +204,9 @@ export class NotificationTemplateResolver {
         orderAmount,
         paymentMethod,
         paymentStatus,
-        estimatedDeliveryDate,
         orderUrl,
+        processingTime,
+        estimatedDeliveryDate,
         siteName,
       },
       rawValues: {

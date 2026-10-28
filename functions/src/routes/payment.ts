@@ -3,6 +3,7 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
   createCashfreeOrder,
+  verifyCashfreePayment,
   createCODOrder,
   createOrderAndPayment,
   handleRazorpayWebhook,
@@ -28,11 +29,14 @@ router.post('/payment/create', optionalAuthenticateToken, createOrderAndPayment)
 router.post('/checkout', optionalAuthenticateToken, createOrderAndPayment);
 router.post('/payment/verify-payment', optionalAuthenticateToken, verifyRazorpayPayment);
 router.post('/payment/verify', optionalAuthenticateToken, verifyRazorpayPayment);
+router.post('/payment/cashfree/verify', optionalAuthenticateToken, verifyCashfreePayment);
+router.post('/payment/verify-cashfree', optionalAuthenticateToken, verifyCashfreePayment);
 
 // Authenticated / Guest payment endpoints (legacy/specific)
 router.post('/payments/razorpay/create-order', optionalAuthenticateToken, createRazorpayOrder);
 router.post('/payments/razorpay/verify', optionalAuthenticateToken, verifyRazorpayPayment);
 router.post('/payments/cashfree/create-order', optionalAuthenticateToken, createCashfreeOrder);
+router.post('/payments/cashfree/verify', optionalAuthenticateToken, verifyCashfreePayment);
 router.post('/payments/cod/create-order', optionalAuthenticateToken, createCODOrder);
 router.get('/payments/history', authenticateToken, getCustomerHistory);
 router.get('/payments/history/:transactionId', authenticateToken, getCustomerTransaction);

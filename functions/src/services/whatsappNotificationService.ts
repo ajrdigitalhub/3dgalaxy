@@ -1185,46 +1185,32 @@ export class WhatsAppNotificationService {
         }
       }
 
-      // 2. Build 8 Body Component Variables for COD/Prepaid templates:
-      // {{1}} customerName, {{2}} orderId, {{3}} orderAmount, {{4}} paymentMethod, {{5}} paymentStatus, {{6}} estimatedDeliveryDate, {{7}} orderUrl, {{8}} siteName
+      // 2. Build 8 Body Component Variables for Customer Order Confirmation templates:
+      // Meta Template Variable Mapping:
+      // {{1}} customerName (e.g. Jayakumar R)
+      // {{2}} orderId (e.g. 3DX0014)
+      // {{3}} orderAmount (e.g. 2.00)
+      // {{4}} paymentMethod (e.g. CASHFREE / Online Payment)
+      // {{5}} paymentStatus (e.g. Paid ✅)
+      // {{6}} orderUrl (under '🔗 View Order Details')
+      // {{7}} processingTime (after '📦 Processing Time: ')
+      // {{8}} estimatedDeliveryDate (after '🚚 Estimated Delivery: ')
       const vars = resolved.variables;
-      let components: any[] = [];
-
-      if (templateName.includes('cod') || templateName.includes('paid') || templateName.includes('prepaid')) {
-        components = sanitizeComponents([
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderAmount, '0.00') },
-              { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
-              { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
-              { type: 'text', text: sanitizeTemplateParam(vars.estimatedDeliveryDate, '3-5 Business Days') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, `${ENV.SITE_URL}/account/orders`) },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) }
-            ]
-          }
-        ]);
-      } else {
-        // Fallback for legacy order_confirmation_client_3dgal template (8 variables):
-        // {{1}} customerName, {{2}} siteName, {{3}} orderId, {{4}} orderAmount, {{5}} paymentMethod, {{6}} paymentStatus, {{7}} orderUrl, {{8}} siteName
-        components = sanitizeComponents([
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') },
-              { type: 'text', text: sanitizeTemplateParam(`₹${vars.orderAmount}`, '₹0.00') },
-              { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') },
-              { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') },
-              { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, `${ENV.SITE_URL}/account/orders`) },
-              { type: 'text', text: sanitizeTemplateParam(vars.siteName, ENV.SITE_NAME) }
-            ]
-          }
-        ]);
-      }
+      const components = sanitizeComponents([
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: sanitizeTemplateParam(vars.customerName, 'Customer') }, // {{1}}
+            { type: 'text', text: sanitizeTemplateParam(vars.orderId, 'N/A') }, // {{2}}
+            { type: 'text', text: sanitizeTemplateParam(vars.orderAmount, '0.00') }, // {{3}}
+            { type: 'text', text: sanitizeTemplateParam(vars.paymentMethod, 'Online Payment') }, // {{4}}
+            { type: 'text', text: sanitizeTemplateParam(vars.paymentStatus, 'Pending') }, // {{5}}
+            { type: 'text', text: sanitizeTemplateParam(vars.orderUrl, `${ENV.SITE_URL}/account/orders`) }, // {{6}} View Order Details URL
+            { type: 'text', text: sanitizeTemplateParam(vars.processingTime || '24 - 48 Hours', '24 - 48 Hours') }, // {{7}} Processing Time
+            { type: 'text', text: sanitizeTemplateParam(vars.estimatedDeliveryDate, '3-5 Business Days') } // {{8}} Estimated Delivery
+          ]
+        }
+      ]);
 
       const requestPayload = {
         messaging_product: 'whatsapp',

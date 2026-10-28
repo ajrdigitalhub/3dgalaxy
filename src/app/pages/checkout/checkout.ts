@@ -917,7 +917,7 @@ export class CheckoutComponent implements OnInit {
 
       const returnUrl = `${window.location.origin}/order-success?orderId=${
         orderData.orderId || orderData.checkoutId
-      }`;
+      }&checkoutId=${orderData.checkoutId || orderData.orderId}`;
 
       cashfree.checkout({
         paymentSessionId: sessionId,

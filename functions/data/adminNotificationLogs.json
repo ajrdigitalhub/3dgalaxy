@@ -1,5 +1,41 @@
 [
   {
+    "id": "ae69f9ef-166b-48b2-8c8b-5ac213d038f7",
+    "title": "🛒 Order Confirmed",
+    "body": "Jayakumar R placed Order #3DX0014 for ₹2.00. Payment Received",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders/3DX0014",
+    "data": {
+      "orderId": "e37fea9e-2ea3-4f06-a41e-9cde5e3349ec",
+      "orderNumber": "3DX0014",
+      "totalAmount": "2",
+      "customerName": "Jayakumar R",
+      "paymentMethod": "CASHFREE",
+      "paymentStatus": "Paid"
+    },
+    "sentAt": "2026-10-28T18:51:00.158Z",
+    "isRead": false
+  },
+  {
+    "id": "fec915ae-062c-4bc3-a21d-a796983b7012",
+    "title": "🛒 Order Confirmed",
+    "body": "Jay Badade placed Order #3DX0012 for ₹11400.00. Payment Received",
+    "type": "orders",
+    "eventKey": "NEW_ORDER",
+    "deepLink": "/admin/orders/3DX0012",
+    "data": {
+      "orderId": "1ed8fe97-1ca6-48b9-a66c-d3ac66151fdc",
+      "orderNumber": "3DX0012",
+      "totalAmount": "11400",
+      "customerName": "Jay Badade",
+      "paymentMethod": "CASHFREE",
+      "paymentStatus": "Paid"
+    },
+    "sentAt": "2026-10-28T17:31:00.987Z",
+    "isRead": false
+  },
+  {
     "id": "9fc1171f-c8fa-4274-910e-2b31758f5c48",
     "title": "Database Backup Completed",
     "body": "Automatic database backup completed successfully. Size: 0.66 MB, Tables: 60.",

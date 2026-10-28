@@ -1761,6 +1761,20 @@ export class DatastoreService {
             this.featuredProducts.set(mappedFeatured);
             if (this.products().length === 0) {
               this.products.set(mappedFeatured);
+            } else {
+              const featMap = new Map<string, Product>();
+              for (const f of mappedFeatured) {
+                if (f && f.id) featMap.set(f.id, f);
+              }
+              this.products.update((current) =>
+                current.map((p) => {
+                  const m = featMap.get(p.id);
+                  if (m && (!p.description || p.description.length === 0) && m.description) {
+                    return { ...p, description: m.description, long_description: m.long_description };
+                  }
+                  return p;
+                })
+              );
             }
           }
 
@@ -2437,7 +2451,7 @@ export class DatastoreService {
             brand: (p.brand && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.brand)) ? p.brand : '',
             description: p.description || '',
             shortDescription: p.shortDescription || p.short_description || p.description || '',
-            long_description: p.description || '',
+            long_description: p.long_description || p.longDescription || p.description || '',
             mrp: p.mrp || 0,
             sale_price: p.salePrice || p.mrp || 0,
             dealer_price: p.dealerPrice || p.salePrice || p.mrp || 0,

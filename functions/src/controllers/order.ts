@@ -411,17 +411,200 @@ export const getOrderById = async (req: any, res: Response) => {
       });
     }
 
-    if (!order && isUuid) {
-      const checkout = await prisma.abandonedCheckout.findUnique({
-        where: { id: rawId },
+    if (!order) {
+      let checkout = await prisma.abandonedCheckout.findFirst({
+        where: {
+          OR: [
+            ...(isUuid ? [{ id: rawId }] : []),
+            { sessionId: rawId }
+          ]
+        }
       });
-      if (checkout && checkout.recoveredOrderId) {
-        const recovered = await prisma.order.findUnique({
-          where: { id: checkout.recoveredOrderId },
-          include: standardIncludes,
-        });
-        if (recovered) {
-          order = recovered;
+
+      if (!checkout) {
+        // Also check if rawId matches transaction_history gatewayOrderId or gatewayTransactionId
+        try {
+          const tx = await prisma.transactionHistory.findFirst({
+            where: {
+              OR: [
+                { gatewayOrderId: rawId },
+                { gatewayTransactionId: rawId }
+              ]
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+          if (tx && tx.orderId) {
+            order = await prisma.order.findUnique({
+              where: { id: tx.orderId },
+              include: standardIncludes,
+            });
+          } else if (tx) {
+            const txOrderId = (tx.requestPayload as any)?.order_id;
+            checkout = await prisma.abandonedCheckout.findFirst({
+              where: {
+                OR: [
+                  ...(txOrderId ? [{ sessionId: txOrderId }] : []),
+                  { sessionId: tx.gatewayOrderId },
+                  ...(tx.customerId ? [{ customerId: tx.customerId }] : [])
+                ]
+              },
+              orderBy: { createdAt: 'desc' }
+            });
+          }
+        } catch (txLookupErr) {}
+      }
+
+      if (checkout) {
+        if (checkout.recoveredOrderId) {
+          const recovered = await prisma.order.findUnique({
+            where: { id: checkout.recoveredOrderId },
+            include: standardIncludes,
+          });
+          if (recovered) {
+            order = recovered;
+          }
+        } else if (checkout.paymentMethod === 'CASHFREE') {
+          // Automatic on-the-fly reconciliation with Cashfree
+          try {
+            const { getSettingsService } = await import('../modules/settings/settings.service');
+            const { processOrderCreation } = await import('./payment');
+            const settings = await getSettingsService();
+            const cfConfig = settings?.paymentGatewaySettings?.paymentMethods?.cashfree;
+            if (cfConfig && cfConfig.appId && cfConfig.secretKey) {
+              const baseUrl = cfConfig.sandbox ? 'https://sandbox.cashfree.com/pg' : 'https://api.cashfree.com/pg';
+
+              // Build candidate Cashfree merchant order IDs to check
+              const candidateIds = [
+                req.query?.order_id as string,
+                (checkout.checkoutData as any)?.merchantOrderId,
+                (checkout.checkoutData as any)?.checkoutSessionId,
+                checkout.sessionId
+              ].filter(Boolean).map(String);
+
+              if (!candidateIds.some(id => id.startsWith('chk_'))) {
+                try {
+                  const tx = await prisma.transactionHistory.findFirst({
+                    where: {
+                      OR: [
+                        { gatewayOrderId: checkout.sessionId },
+                        { gatewayTransactionId: checkout.sessionId },
+                        ...(checkout.customerId ? [{ customerId: checkout.customerId }] : [])
+                      ]
+                    },
+                    orderBy: { createdAt: 'desc' }
+                  });
+                  const txOrderId = (tx?.requestPayload as any)?.order_id;
+                  if (txOrderId && !candidateIds.includes(txOrderId)) {
+                    candidateIds.unshift(txOrderId);
+                  }
+                } catch (txErr) {}
+              }
+
+              let successfulOrderId: string | null = null;
+              let cfData: any = null;
+
+              for (const idToCheck of candidateIds) {
+                try {
+                  const cfRes = await fetch(`${baseUrl}/orders/${idToCheck}`, {
+                    headers: {
+                      'x-client-id': cfConfig.appId,
+                      'x-client-secret': cfConfig.secretKey,
+                      'x-api-version': '2023-08-01'
+                    }
+                  });
+                  if (cfRes.ok) {
+                    const resJson: any = await cfRes.json();
+                    if (resJson && (resJson.order_status === 'PAID' || resJson.order_status === 'ACTIVE')) {
+                      successfulOrderId = idToCheck;
+                      cfData = resJson;
+                      break;
+                    }
+                  }
+                } catch (e) {}
+              }
+
+              if (cfData) {
+                let gatewayPaymentId = String(cfData.cf_order_id || '');
+                let isPaymentSuccess = cfData.order_status === 'PAID';
+
+                try {
+                  const payRes = await fetch(`${baseUrl}/orders/${successfulOrderId}/payments`, {
+                    headers: {
+                      'x-client-id': cfConfig.appId,
+                      'x-client-secret': cfConfig.secretKey,
+                      'x-api-version': '2023-08-01'
+                    }
+                  });
+                  if (payRes.ok) {
+                    const payList: any = await payRes.json();
+                    const successPay = Array.isArray(payList) ? payList.find((p: any) => p.payment_status === 'SUCCESS') : null;
+                    if (successPay) {
+                      isPaymentSuccess = true;
+                      if (successPay.cf_payment_id) {
+                        gatewayPaymentId = String(successPay.cf_payment_id);
+                      }
+                    }
+                  }
+                } catch (e) {}
+
+                if (isPaymentSuccess) {
+                  const payload = (checkout.checkoutData as any) || {};
+                  if (payload && payload.items) {
+                    const created = await prisma.$transaction(async (tx) => {
+                      const newOrd = await processOrderCreation(tx, {
+                        ...payload,
+                        orderId: checkout.id,
+                        paymentStatus: 'PAID',
+                        paymentMethod: 'CASHFREE',
+                        paymentGateway: 'cashfree',
+                        paymentId: gatewayPaymentId,
+                        transactionId: gatewayPaymentId,
+                        gatewayResponse: cfData,
+                        paidAmount: payload.totalAmount
+                      });
+
+                      await tx.abandonedCheckout.update({
+                        where: { id: checkout.id },
+                        data: {
+                          paymentStatus: 'PAID',
+                          checkoutStep: 'COMPLETED',
+                          recoveryStatus: 'Converted',
+                          recoveredOrderId: newOrd.id
+                        }
+                      });
+
+                      await tx.transactionHistory.updateMany({
+                        where: {
+                          OR: [
+                            { gatewayOrderId: checkout.sessionId },
+                            { gatewayOrderId: successfulOrderId || '' },
+                            { gatewayTransactionId: String(cfData.cf_order_id || '') }
+                          ]
+                        },
+                        data: {
+                          orderId: newOrd.id,
+                          status: 'Captured',
+                          paymentStatus: 'PAID',
+                          gatewayPaymentId
+                        }
+                      }).catch(() => {});
+
+                      return newOrd;
+                    });
+
+                    order = await prisma.order.findUnique({
+                      where: { id: created.id },
+                      include: standardIncludes,
+                    });
+
+                    dispatchOrderNotifications(created.id).catch(e => console.error('[OrderReconcile] Notification error:', e));
+                  }
+                }
+              }
+            }
+          } catch (reconcileErr) {
+            console.error('[OrderReconciliation] Error reconciling Cashfree order:', reconcileErr);
+          }
         }
       }
     }

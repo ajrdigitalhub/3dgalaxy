@@ -4,19 +4,16 @@ import {
   inject,
   signal,
   computed,
-  effect,
-  ElementRef,
-  viewChild,
   PLATFORM_ID,
   HostListener,
   OnInit,
+  OnDestroy,
 } from "@angular/core";
 import { isPlatformBrowser, CommonModule } from "@angular/common";
-import { DomSanitizer } from "@angular/platform-browser";
+import { DomSanitizer, SafeHtml } from "@angular/platform-browser";
 import { RouterModule, Router } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
 import { DatastoreService, Product } from "../../../services/datastore";
-import { animate } from "motion";
 import { TiltDirective } from "../../../shared/directives/tilt.directive";
 import { ToastService } from "../../../shared/components/toast/toast.service";
 import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analytics";
@@ -27,67 +24,49 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
   imports: [CommonModule, RouterModule, MatIconModule, TiltDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- FEATURED PRODUCTS SHOWCASE SECTION (Minimal White Card Stage) -->
+    <!-- FEATURED PRODUCTS SHOWCASE SECTION -->
     <section
-      #showcaseContainer
       id="featured-showcase-section"
       (mouseenter)="isHovered.set(true)"
       (mouseleave)="isHovered.set(false)"
-      class="w-[85vw] max-w-[1600px] mx-auto px-6 py-12 md:px-12 md:py-16 bg-white dark:bg-neutral-900 rounded-[20px] shadow-2xl shadow-neutral-200/50 dark:shadow-none space-y-10 overflow-hidden relative border border-neutral-100 dark:border-neutral-800 animate-fadeIn select-none"
+      class="w-[88vw] max-w-[1560px] mx-auto px-6 py-10 md:px-12 md:py-14 bg-white dark:bg-neutral-900 rounded-[24px] shadow-xl shadow-neutral-200/40 dark:shadow-none overflow-hidden relative border border-neutral-100 dark:border-neutral-800 select-none transition-colors duration-300"
     >
-      <!-- Active Carousel Slide -->
+      <!-- Active Carousel Stage -->
       <div
-        class="relative w-full min-h-[500px] flex items-center justify-center"
+        class="relative w-full min-h-[460px] md:min-h-[500px] flex items-center justify-center"
         (mousedown)="onMouseDown($event)"
-        (mousemove)="onMouseMove($event)"
-        (mouseup)="onMouseUp()"
+        (mouseup)="onMouseUp($event)"
         (touchstart)="onTouchStart($event)"
         (touchend)="onTouchEnd($event)"
       >
         @if (featuredProducts().length === 0) {
           <!-- Shimmer Loading Stage -->
-          <div
-            class="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
-          >
+          <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div class="lg:col-span-6 flex justify-center">
-              <div
-                class="w-[80%] aspect-square bg-neutral-100 dark:bg-neutral-800 rounded-3xl animate-pulse"
-              ></div>
+              <div class="w-[80%] aspect-square bg-neutral-100 dark:bg-neutral-800 rounded-3xl animate-pulse"></div>
             </div>
             <div class="lg:col-span-6 space-y-6">
-              <div
-                class="h-6 w-32 bg-neutral-100 dark:bg-neutral-800 rounded-full animate-pulse"
-              ></div>
-              <div
-                class="h-16 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"
-              ></div>
-              <div
-                class="h-24 w-full bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"
-              ></div>
-              <div
-                class="h-12 w-40 bg-neutral-100 dark:bg-neutral-800 rounded-xl animate-pulse"
-              ></div>
+              <div class="h-6 w-32 bg-neutral-100 dark:bg-neutral-800 rounded-full animate-pulse"></div>
+              <div class="h-14 w-3/4 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"></div>
+              <div class="h-20 w-full bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse"></div>
+              <div class="h-10 w-44 bg-neutral-100 dark:bg-neutral-800 rounded-xl animate-pulse"></div>
             </div>
           </div>
         } @else {
           <!-- Slides Loop -->
           @for (
             product of featuredProducts();
-            track product.id || $index;
+            track product.id || product.slug || $index;
             let idx = $index
           ) {
             <div
-              [class]="
-                currentSlide() === idx
-                  ? 'opacity-100 block relative z-10 w-full'
-                  : 'opacity-0 hidden absolute inset-0 pointer-events-none z-0'
-              "
-              class="transition-opacity duration-700 ease-in-out w-full"
+              class="w-full transition-all duration-500 ease-out"
+              [class.block]="currentSlide() === idx"
+              [class.hidden]="currentSlide() !== idx"
+              [class.showcase-active-slide]="currentSlide() === idx"
             >
-              <div
-                class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center w-full"
-              >
-                <!-- IMAGE COLUMN (order-1 stacks first on mobile/tablet) -->
+              <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center w-full">
+                <!-- IMAGE COLUMN -->
                 <div
                   [class]="
                     (idx % 2 === 0
@@ -98,98 +77,98 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
                   appTilt
                   [tiltMax]="5"
                 >
-                  <div
-                    class="relative max-h-[450px] lg:max-h-[550px] w-full flex justify-center items-center p-4"
-                  >
+                  <div class="showcase-image-wrap relative max-h-[420px] lg:max-h-[520px] w-full flex justify-center items-center p-2 sm:p-4">
                     <img
-                      [src]="
-                        (product.images && product.images[0]) ||
-                        'https://picsum.photos/seed/' +
-                          (product.slug || 'product') +
-                          '/800/800'
-                      "
+                      [src]="getProductImage(product)"
                       [alt]="product.name"
-                      class="max-h-[380px] lg:max-h-[500px] w-auto object-contain hover:scale-105 transition-transform duration-700 ease-out drop-shadow-2xl animate-float-slow gpu-accelerated cursor-pointer"
+                      class="max-h-[320px] sm:max-h-[400px] lg:max-h-[460px] w-auto max-w-full object-contain hover:scale-105 transition-transform duration-500 ease-out drop-shadow-2xl animate-float-slow cursor-pointer"
                       (click)="navigateToProduct(product.slug)"
                       (error)="onImageError($event)"
                     />
                   </div>
                 </div>
 
-                <!-- CONTENT COLUMN (order-2 stacks second on mobile/tablet) -->
+                <!-- CONTENT COLUMN -->
                 <div
                   [class]="
                     (idx % 2 === 0
                       ? 'lg:col-span-6 lg:order-2'
                       : 'lg:col-span-6 lg:order-1') +
-                    ' order-2 space-y-6 text-left flex flex-col justify-center w-full px-2 lg:px-8'
+                    ' order-2 space-y-4 md:space-y-5 text-left flex flex-col justify-center w-full px-2 lg:px-6'
                   "
                 >
-                  <span
-                    class="showcase-anim text-xs font-black uppercase tracking-[0.3em] text-[#d65108] font-display block select-none"
-                  >
-                    {{ product.brand || "3D GALAXY" }}
-                  </span>
+                  <!-- Brand Pill -->
+                  <div class="showcase-brand flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.25em] bg-orange-500/10 text-[#d65108] border border-orange-500/20 font-display">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#d65108] animate-pulse"></span>
+                      {{ product.brand || "3D GALAXY" }}
+                    </span>
+                    @if (isExclusiveProduct(product)) {
+                      <span class="inline-flex items-center px-2.5 py-0.8 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                        Exclusive
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Product Name -->
                   <h3
-                    class="showcase-anim text-3xl md:text-4xl lg:text-5xl font-black text-neutral-900 dark:text-white tracking-tighter leading-tight font-display select-none"
+                    (click)="navigateToProduct(product.slug)"
+                    class="showcase-title text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-neutral-900 dark:text-white tracking-tight leading-[1.15] font-display cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     {{ product.name }}
                   </h3>
+
+                  <!-- Tags -->
                   @if (product.tags && product.tags.length) {
-                    <div class="showcase-anim flex flex-wrap gap-2 mt-4">
+                    <div class="showcase-tags flex flex-wrap gap-1.5 pt-1">
                       @for (tag of (product.tags || []).slice(0, 4); track tag) {
-                        <span
-                          class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200"
-                        >
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-700/60">
                           {{ tag }}
                         </span>
                       }
                     </div>
                   }
-                  <p
-                    class="showcase-anim text-sm md:text-base text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed max-w-xl select-none line-clamp-4 mt-4"
-                    [innerHTML]="safeHtml(product.description || product.shortDescription || '')"
-                  ></p>
 
-                  <div
-                    class="showcase-anim flex items-baseline gap-3 select-none"
-                  >
-                    @if (
-                      product.sale_price || product.salePrice;
-                      as salePrice
-                    ) {
-                      <span
-                        class="text-3xl font-black text-neutral-900 dark:text-white font-mono"
-                      >
-                        ₹{{ salePrice | number: "1.0-0" }}
+                  <!-- Description (Overview Page, Max 3-4 lines without images) -->
+                  @if (getOverviewDescription(product); as overviewDesc) {
+                    <p
+                      class="showcase-desc text-xs sm:text-sm md:text-base text-neutral-600 dark:text-neutral-400 font-medium leading-relaxed max-w-xl line-clamp-3 md:line-clamp-4 select-none"
+                    >
+                      {{ overviewDesc }}
+                    </p>
+                  }
+
+                  <!-- Pricing Block -->
+                  <div class="showcase-price flex flex-wrap items-baseline gap-3 pt-2">
+                    <span class="text-3xl sm:text-4xl font-black text-neutral-900 dark:text-white font-mono tracking-tight">
+                      ₹{{ getSalePrice(product) | number: "1.0-0" }}
+                    </span>
+
+                    @if (getMrpPrice(product); as mrp) {
+                      <span class="text-base sm:text-lg text-neutral-400 dark:text-neutral-500 line-through font-mono">
+                        ₹{{ mrp | number: "1.0-0" }}
                       </span>
-                      @if (product.mrp && product.mrp > salePrice) {
-                        <span
-                          class="text-lg text-neutral-400 line-through font-mono"
-                        >
-                          ₹{{ product.mrp | number: "1.0-0" }}
+                      @if (getDiscountPercentage(product); as pct) {
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          {{ pct }}% OFF
                         </span>
                       }
-                    } @else {
-                      <span
-                        class="text-3xl font-black text-neutral-900 dark:text-white font-mono"
-                      >
-                        ₹{{ product.mrp | number: "1.0-0" }}
-                      </span>
                     }
                   </div>
 
-                  <div class="showcase-anim flex items-center gap-4 pt-4">
+                  <!-- Action Buttons -->
+                  <div class="showcase-actions flex flex-wrap items-center gap-3 pt-3">
                     <button
                       (click)="buyNow(product)"
-                      class="px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-blue-500/20 active:scale-95 flex items-center gap-2 border-none"
+                      type="button"
+                      class="px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-95 flex items-center gap-2 border-none"
                     >
                       <mat-icon class="scale-90">shopping_cart</mat-icon>
-                      Buy Now
+                      <span>Buy Now</span>
                     </button>
                     <a
                       [routerLink]="['/product', product.slug]"
-                      class="px-6 py-3.5 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2"
+                      class="px-6 py-3 border border-neutral-200 dark:border-neutral-700/80 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer no-underline"
                     >
                       <span>View Details</span>
                       <mat-icon class="scale-75">arrow_forward</mat-icon>
@@ -202,18 +181,38 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
         }
       </div>
 
-      <!-- Navigation Dots -->
+      <!-- Arrow Controls (Left & Right) -->
       @if (featuredProducts().length > 1) {
-        <div
-          class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20"
+        <button
+          (click)="prev()"
+          type="button"
+          class="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 text-neutral-700 dark:text-neutral-200 shadow-md hover:bg-neutral-100 dark:hover:bg-neutral-700 items-center justify-center transition-all cursor-pointer z-20 active:scale-90"
+          aria-label="Previous featured product"
         >
+          <mat-icon class="scale-90">chevron_left</mat-icon>
+        </button>
+
+        <button
+          (click)="next()"
+          type="button"
+          class="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 text-neutral-700 dark:text-neutral-200 shadow-md hover:bg-neutral-100 dark:hover:bg-neutral-700 items-center justify-center transition-all cursor-pointer z-20 active:scale-90"
+          aria-label="Next featured product"
+        >
+          <mat-icon class="scale-90">chevron_right</mat-icon>
+        </button>
+      }
+
+      <!-- Navigation Dots & Progress Bar Indicator -->
+      @if (featuredProducts().length > 1) {
+        <div class="flex items-center justify-center gap-2 pt-2 z-20">
           @for (dot of featuredProducts(); track $index) {
             <button
               (click)="setSlide($index)"
+              type="button"
               [class]="
                 currentSlide() === $index
-                  ? 'w-8 bg-blue-600'
-                  : 'w-2 bg-neutral-300 dark:bg-neutral-700 hover:bg-neutral-400'
+                  ? 'w-8 bg-blue-600 dark:bg-blue-500 shadow-xs shadow-blue-500/50'
+                  : 'w-2 bg-neutral-300 dark:bg-neutral-700 hover:bg-neutral-400 dark:hover:bg-neutral-600'
               "
               class="h-2 rounded-full transition-all duration-300 border-none cursor-pointer p-0"
               [attr.aria-label]="'Go to slide ' + ($index + 1)"
@@ -225,22 +224,69 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
   `,
   styles: [
     `
-      @keyframes float {
+      @keyframes floatSmooth {
         0%,
         100% {
           transform: translateY(0);
         }
         50% {
-          transform: translateY(-10px);
+          transform: translateY(-8px);
         }
       }
+
       .animate-float-slow {
-        animation: float 6s ease-in-out infinite;
+        animation: floatSmooth 5s ease-in-out infinite;
+        will-change: transform;
+      }
+
+      /* Hardware Accelerated Slide Stagger Animations */
+      .showcase-active-slide .showcase-brand {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+      }
+      .showcase-active-slide .showcase-title {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+      }
+      .showcase-active-slide .showcase-tags {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+      }
+      .showcase-active-slide .showcase-desc {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+      }
+      .showcase-active-slide .showcase-price {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.20s both;
+      }
+      .showcase-active-slide .showcase-actions {
+        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both;
+      }
+      .showcase-active-slide .showcase-image-wrap {
+        animation: showcaseImageIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes showcaseSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes showcaseImageIn {
+        from {
+          opacity: 0;
+          transform: scale(0.94) translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
       }
     `,
   ],
 })
-export class HomeFeaturedShowcaseComponent implements OnInit {
+export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
   ds = inject(DatastoreService);
   toastService = inject(ToastService);
   router = inject(Router);
@@ -248,30 +294,51 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
   analytics = inject(AnalyticsService);
   private sanitizer = inject(DomSanitizer);
 
-  safeHtml(html: string) {
+  safeHtml(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(html || "");
   }
 
-  showcaseContainer = viewChild<ElementRef>("showcaseContainer");
-
   currentSlide = signal<number>(0);
   isHovered = signal<boolean>(false);
+  descriptionCache = signal<Record<string, string>>({});
+  private fetchingDescriptions = new Set<string>();
 
   // Filters catalog list for products marked as featured
   featuredProducts = computed(() => {
-    const list = this.ds.products().filter((p) => p.isFeatured || p.featured);
-    // Dynamic fallback so showcase isn't empty
+    // 1. Prioritize ds.featuredProducts() which contains the rich featured products
+    const feat = this.ds.featuredProducts();
+    if (feat.length > 0) return feat;
+
+    // 2. Fall back to products marked as featured
+    const list = this.ds.products().filter((p) => p.isFeatured || p.featured || (p as any).is_featured);
     return list.length > 0 ? list : this.ds.products().slice(0, 3);
   });
 
   private startX = 0;
-  private autoPlayTimer: any;
+  private autoPlayTimer: any = null;
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
+      this.ds.reloadFeaturedProducts();
       this.startAutoplay();
+      document.addEventListener("visibilitychange", this.handleVisibilityChange);
     }
   }
+
+  ngOnDestroy() {
+    this.stopAutoplay();
+    if (isPlatformBrowser(this.platformId)) {
+      document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+    }
+  }
+
+  private handleVisibilityChange = () => {
+    if (document.hidden) {
+      this.stopAutoplay();
+    } else {
+      this.startAutoplay();
+    }
+  };
 
   startAutoplay() {
     this.stopAutoplay();
@@ -279,12 +346,13 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
       if (!this.isHovered() && this.featuredProducts().length > 1) {
         this.next();
       }
-    }, 2000); // 2 seconds auto-scroll delay
+    }, 4500); // 4.5 seconds comfortable auto-scroll delay
   }
 
   stopAutoplay() {
     if (this.autoPlayTimer) {
       clearInterval(this.autoPlayTimer);
+      this.autoPlayTimer = null;
     }
   }
 
@@ -292,21 +360,17 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
     const total = this.featuredProducts().length;
     if (total <= 1) return;
     this.currentSlide.update((c) => (c + 1) % total);
-    this.animateSlide("next");
   }
 
   prev() {
     const total = this.featuredProducts().length;
     if (total <= 1) return;
     this.currentSlide.update((c) => (c - 1 + total) % total);
-    this.animateSlide("prev");
   }
 
   setSlide(idx: number) {
     if (idx === this.currentSlide()) return;
-    const dir = idx > this.currentSlide() ? "next" : "prev";
     this.currentSlide.set(idx);
-    this.animateSlide(dir);
   }
 
   navigateToProduct(slug: string) {
@@ -314,59 +378,172 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
     this.router.navigate(["/product", slug]);
   }
 
-  private animateSlide(dir: "next" | "prev") {
-    const container = this.showcaseContainer()?.nativeElement;
-    if (!container) return;
+  isExclusiveProduct(product: Product): boolean {
+    return !!(product.isExclusive || (product as any).is_exclusive);
+  }
 
-    const textElements = container.querySelectorAll(".showcase-anim");
-    const imageElement = container.querySelector("img.animate-float-slow");
+  /**
+   * Retrieves description exclusively from the admin "Long description / Overview page" production field.
+   * Strips/skips any embedded images and limits cleanly to max 3-4 lines (~260 chars).
+   */
+  getOverviewDescription(product: Product): string {
+    if (!product) return "";
+    const key = product.id || product.slug;
 
-    // Reset styles to left side (-30px for text, -50px for image) for left-to-right slide in
-    animate(
-      textElements,
-      { opacity: 0, x: -30, filter: "blur(5px)" },
-      { duration: 0 },
-    );
-    if (imageElement) {
-      animate(
-        imageElement,
-        { opacity: 0, x: -50, scale: 0.95, rotate: 0 },
-        { duration: 0 },
-      );
+    // 1. Check local cache
+    if (key && this.descriptionCache()[key]) {
+      return this.descriptionCache()[key];
     }
 
-    // Determine motion props
-    let textProps: any = {
-      opacity: [0, 1],
-      x: [-30, 0],
-      filter: ["blur(5px)", "blur(0px)"],
-    };
-    let imageProps: any = { opacity: [0, 1], x: [-50, 0], scale: [0.95, 1] };
+    // 2. Check product's own description fields
+    const raw =
+      (product as any).long_description ||
+      (product as any).longDescription ||
+      product.description ||
+      (product as any).short_description ||
+      product.shortDescription ||
+      "";
+    if (raw && typeof raw === "string" && raw.trim().length > 0) {
+      const excerpt = this.extractOverviewExcerpt(raw);
+      if (excerpt) {
+        if (key) {
+          this.descriptionCache.update((c) => ({ ...c, [key]: excerpt }));
+        }
+        return excerpt;
+      }
+    }
 
-    // Animate text elements with a staggered reveal
-    textElements.forEach((el: any, index: number) => {
-      animate(el, textProps, {
-        duration: 0.8,
-        delay: index * 0.08,
-        ease: [0.16, 1, 0.3, 1],
-      });
+    // 3. Check if datastore's featuredProducts has rich data for this item
+    const featMatch = this.ds
+      .featuredProducts()
+      .find((p) => (product.id && p.id === product.id) || (product.slug && p.slug === product.slug));
+    if (featMatch) {
+      const featRaw =
+        (featMatch as any).long_description ||
+        (featMatch as any).longDescription ||
+        featMatch.description ||
+        (featMatch as any).short_description ||
+        featMatch.shortDescription ||
+        "";
+      if (featRaw && typeof featRaw === "string" && featRaw.trim().length > 0) {
+        const excerpt = this.extractOverviewExcerpt(featRaw);
+        if (excerpt) {
+          if (key) {
+            this.descriptionCache.update((c) => ({ ...c, [key]: excerpt }));
+          }
+          return excerpt;
+        }
+      }
+    }
+
+    // 4. If description was omitted from lightweight homepage payload, fetch on demand
+    this.fetchDescriptionIfNeeded(product);
+
+    return "";
+  }
+
+  private fetchDescriptionIfNeeded(product: Product) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const key = product.id || product.slug;
+    if (!key || this.fetchingDescriptions.has(key)) return;
+    this.fetchingDescriptions.add(key);
+
+    const slug = product.slug || product.id;
+    this.ds.api.get<any>(`/products/${slug}`).subscribe({
+      next: (res) => {
+        const item = res?.data?.product || res?.product || res?.data || res;
+        const raw =
+          item?.long_description ||
+          item?.longDescription ||
+          item?.description ||
+          item?.short_description ||
+          item?.shortDescription ||
+          "";
+        if (raw) {
+          const excerpt = this.extractOverviewExcerpt(raw);
+          if (excerpt) {
+            this.descriptionCache.update((prev) => ({ ...prev, [key]: excerpt }));
+          }
+        }
+      },
+      error: () => {},
     });
+  }
 
-    // Animate large image frame with floating effect and rotation
-    if (imageElement) {
-      const rotateVal = dir === "next" ? [3, 0] : [-3, 0];
-      animate(
-        imageElement,
-        {
-          ...imageProps,
-          rotate: rotateVal,
-        },
-        {
-          duration: 1.0,
-          ease: [0.16, 1, 0.3, 1],
-        },
-      );
+  private extractOverviewExcerpt(html: string): string {
+    if (!html || typeof html !== "string") return "";
+
+    let cleaned = html
+      // 1. Remove images, pictures, figures, svgs
+      .replace(/<picture\b[^>]*>[\s\S]*?<\/picture>/gi, "")
+      .replace(/<figure\b[^>]*>[\s\S]*?<\/figure>/gi, "")
+      .replace(/<img\b[^>]*\/?>/gi, "")
+      .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, "")
+      .replace(/!\[.*?\]\(.*?\)/g, "")
+      // 2. Remove tables, scripts, styles
+      .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, "")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      // 3. Replace headings or block ends with space
+      .replace(/<\/(h[1-6]|p|div|li|tr)>/gi, " ")
+      .replace(/<br\s*\/?>/gi, " ")
+      // 4. Strip remaining HTML tags
+      .replace(/<[^>]*>/g, " ")
+      // 5. Unescape common HTML entities
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      // 6. Normalize whitespace
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!cleaned) return "";
+
+    // Target ~240-280 chars (approx 3 to 4 lines of clean readable prose)
+    const targetLength = 260;
+    if (cleaned.length > targetLength) {
+      let truncated = cleaned.slice(0, targetLength);
+      const lastSpace = truncated.lastIndexOf(" ");
+      if (lastSpace > targetLength * 0.75) {
+        truncated = truncated.slice(0, lastSpace);
+      }
+      truncated = truncated.replace(/[,\s;:.-]+$/, "");
+      cleaned = truncated + "...";
     }
+
+    return cleaned;
+  }
+
+  getProductImage(product: Product): string {
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      const first = product.images[0];
+      if (typeof first === "string" && first.trim()) return first;
+      if (first && typeof first === "object" && first.url) return first.url;
+    }
+    if ((product as any).primaryImage) return (product as any).primaryImage;
+    if ((product as any).image) return (product as any).image;
+    return `https://picsum.photos/seed/${product.slug || product.id || "product"}/800/800`;
+  }
+
+  getSalePrice(product: Product): number {
+    const price = product.salePrice ?? product.sale_price ?? (product as any).base_price ?? product.basePrice ?? (product as any).price ?? product.mrp ?? 0;
+    return Math.max(0, Number(price) || 0);
+  }
+
+  getMrpPrice(product: Product): number | null {
+    const mrp = Number(product.mrp ?? (product as any).base_price ?? product.basePrice ?? 0);
+    const sale = this.getSalePrice(product);
+    return mrp > sale ? mrp : null;
+  }
+
+  getDiscountPercentage(product: Product): number {
+    const mrp = this.getMrpPrice(product);
+    const sale = this.getSalePrice(product);
+    if (!mrp || mrp <= sale) return 0;
+    return Math.round(((mrp - sale) / mrp) * 100);
   }
 
   // Keyboard navigation
@@ -396,18 +573,13 @@ export class HomeFeaturedShowcaseComponent implements OnInit {
     this.startX = e.clientX;
   }
 
-  onMouseMove(e: MouseEvent) {
-    // Optional drag threshold logic
-  }
-
-  onMouseUp(e?: MouseEvent) {
-    if (!e) return;
+  onMouseUp(e: MouseEvent) {
     const endX = e.clientX;
     this.handleSwipe(this.startX, endX);
   }
 
   private handleSwipe(start: number, end: number) {
-    const threshold = 50;
+    const threshold = 40;
     const diff = start - end;
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {

@@ -632,6 +632,275 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
   }
 };
 
+// Cashfree Payment Verification
+export const verifyCashfreePayment = async (req: Request, res: Response) => {
+  const checkoutId = req.body.checkoutId || req.body.orderId || req.body.dbOrderId || req.body.id;
+  const merchantOrderId = req.body.order_id || req.body.merchantOrderId;
+  const cfOrderId = req.body.cfOrderId || req.body.cf_order_id;
+
+  if (!checkoutId && !merchantOrderId && !cfOrderId) {
+    return res.status(400).json({ error: 'Checkout ID or Order ID is required' });
+  }
+
+  try {
+    const isUuid = isValidUuid(checkoutId);
+    const standardIncludes = {
+      customer: { include: { user: true } },
+      shippingAddress: true,
+      billingAddress: true,
+      items: { include: { product: true, variant: true } },
+      payments: true,
+      shipments: { orderBy: { createdAt: 'desc' as const } }
+    };
+
+    // 1. Check if Order already exists
+    if (isUuid) {
+      const existingOrder = await prisma.order.findUnique({
+        where: { id: checkoutId },
+        include: standardIncludes,
+      });
+      if (existingOrder && (existingOrder.paymentStatus === 'PAID' || existingOrder.status === 'CONFIRMED')) {
+        return res.status(200).json({
+          success: true,
+          orderId: existingOrder.id,
+          order: existingOrder,
+        });
+      }
+    }
+
+    // 2. Find Abandoned Checkout
+    let checkout = await prisma.abandonedCheckout.findFirst({
+      where: {
+        OR: [
+          ...(isUuid ? [{ id: checkoutId }] : []),
+          ...(merchantOrderId ? [{ sessionId: String(merchantOrderId) }] : []),
+          ...(checkoutId ? [{ sessionId: String(checkoutId) }] : []),
+        ]
+      }
+    });
+
+    if (!checkout && (cfOrderId || merchantOrderId || checkoutId)) {
+      const searchTerms = [cfOrderId, merchantOrderId, checkoutId].filter(Boolean).map(String);
+      const tx = await prisma.transactionHistory.findFirst({
+        where: {
+          OR: [
+            ...searchTerms.map(t => ({ gatewayOrderId: t })),
+            ...searchTerms.map(t => ({ gatewayTransactionId: t }))
+          ]
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (tx && tx.orderId) {
+        const ord = await prisma.order.findUnique({
+          where: { id: tx.orderId },
+          include: standardIncludes
+        });
+        if (ord) {
+          return res.status(200).json({ success: true, orderId: ord.id, order: ord });
+        }
+      }
+      if (tx) {
+        const txOrderId = (tx.requestPayload as any)?.order_id;
+        checkout = await prisma.abandonedCheckout.findFirst({
+          where: {
+            OR: [
+              ...(txOrderId ? [{ sessionId: txOrderId }] : []),
+              { sessionId: tx.gatewayOrderId },
+              ...(tx.customerId ? [{ customerId: tx.customerId }] : [])
+            ]
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+      }
+    }
+
+    if (!checkout) {
+      return res.status(404).json({ error: 'Checkout session not found' });
+    }
+
+    if (checkout.recoveredOrderId) {
+      const recovered = await prisma.order.findUnique({
+        where: { id: checkout.recoveredOrderId },
+        include: standardIncludes,
+      });
+      if (recovered) {
+        return res.status(200).json({
+          success: true,
+          orderId: recovered.id,
+          order: recovered,
+        });
+      }
+    }
+
+    // 3. Verify with Cashfree PG API
+    const settings = await getPaymentSettings();
+    const cfConfig = settings.paymentMethods?.cashfree;
+    if (!cfConfig || !cfConfig.appId || !cfConfig.secretKey) {
+      return res.status(500).json({ error: 'Cashfree keys not configured' });
+    }
+
+    const baseUrl = cfConfig.sandbox
+      ? 'https://sandbox.cashfree.com/pg'
+      : 'https://api.cashfree.com/pg';
+
+    const candidateIds = [
+      merchantOrderId,
+      (checkout.checkoutData as any)?.merchantOrderId,
+      (checkout.checkoutData as any)?.checkoutSessionId,
+      checkout.sessionId,
+      cfOrderId
+    ].filter(Boolean).map(String);
+
+    if (!candidateIds.some(id => id.startsWith('chk_'))) {
+      try {
+        const tx = await prisma.transactionHistory.findFirst({
+          where: {
+            OR: [
+              { gatewayOrderId: checkout.sessionId },
+              { gatewayTransactionId: checkout.sessionId },
+              ...(checkout.customerId ? [{ customerId: checkout.customerId }] : [])
+            ]
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        const txOrderId = (tx?.requestPayload as any)?.order_id;
+        if (txOrderId && !candidateIds.includes(txOrderId)) {
+          candidateIds.unshift(txOrderId);
+        }
+      } catch (txErr) {}
+    }
+
+    let successfulOrderId: string | null = null;
+    let cfData: any = null;
+
+    for (const idToCheck of candidateIds) {
+      try {
+        const cfRes = await fetch(`${baseUrl}/orders/${idToCheck}`, {
+          headers: {
+            'x-client-id': cfConfig.appId,
+            'x-client-secret': cfConfig.secretKey,
+            'x-api-version': '2023-08-01',
+          }
+        });
+        if (cfRes.ok) {
+          const resJson: any = await cfRes.json();
+          if (resJson && (resJson.order_status === 'PAID' || resJson.order_status === 'ACTIVE')) {
+            successfulOrderId = idToCheck;
+            cfData = resJson;
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!cfData) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unable to verify order with Cashfree. Please try again or contact support.'
+      });
+    }
+
+    // Check payment capture
+    let gatewayPaymentId = String(cfData.cf_order_id || '');
+    let isPaymentSuccess = cfData.order_status === 'PAID';
+
+    try {
+      const payRes = await fetch(`${baseUrl}/orders/${successfulOrderId}/payments`, {
+        headers: {
+          'x-client-id': cfConfig.appId,
+          'x-client-secret': cfConfig.secretKey,
+          'x-api-version': '2023-08-01',
+        }
+      });
+      if (payRes.ok) {
+        const payList: any = await payRes.json();
+        const successPay = Array.isArray(payList) ? payList.find((p: any) => p.payment_status === 'SUCCESS') : null;
+        if (successPay) {
+          isPaymentSuccess = true;
+          if (successPay.cf_payment_id) {
+            gatewayPaymentId = String(successPay.cf_payment_id);
+          }
+        }
+      }
+    } catch (e) {}
+
+    if (!isPaymentSuccess) {
+      return res.status(400).json({
+        success: false,
+        error: `Payment is not completed. Cashfree status: ${cfData.order_status}`,
+        orderStatus: cfData.order_status
+      });
+    }
+
+    // 4. Create Order atomically
+    const payload = (checkout.checkoutData as any) || {};
+    if (!payload.items || payload.items.length === 0) {
+      return res.status(400).json({ error: 'Checkout data contains no items' });
+    }
+
+    const createdOrder = await prisma.$transaction(async (tx) => {
+      const newOrd = await processOrderCreation(tx, {
+        ...payload,
+        orderId: checkout.id,
+        paymentStatus: 'PAID',
+        paymentMethod: 'CASHFREE',
+        paymentGateway: 'cashfree',
+        paymentId: gatewayPaymentId,
+        transactionId: gatewayPaymentId,
+        gatewayResponse: cfData,
+        paidAmount: payload.totalAmount
+      });
+
+      await tx.abandonedCheckout.update({
+        where: { id: checkout.id },
+        data: {
+          paymentStatus: 'PAID',
+          checkoutStep: 'COMPLETED',
+          recoveryStatus: 'Converted',
+          recoveredOrderId: newOrd.id,
+        }
+      });
+
+      await tx.transactionHistory.updateMany({
+        where: {
+          OR: [
+            { gatewayOrderId: checkout.sessionId },
+            { gatewayOrderId: successfulOrderId || '' },
+            { gatewayTransactionId: String(cfData.cf_order_id || '') }
+          ]
+        },
+        data: {
+          orderId: newOrd.id,
+          status: 'Captured',
+          paymentStatus: 'PAID',
+          gatewayPaymentId: gatewayPaymentId
+        }
+      }).catch(() => {});
+
+      return newOrd;
+    });
+
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: createdOrder.id },
+      include: standardIncludes,
+    });
+
+    dispatchOrderNotifications(createdOrder.id).catch(err => {
+      console.error('[CashfreeVerify] Notification pipeline error:', err);
+    });
+
+    return res.status(200).json({
+      success: true,
+      orderId: fullOrder ? fullOrder.id : createdOrder.id,
+      order: fullOrder || createdOrder,
+    });
+
+  } catch (error: any) {
+    console.error('[Cashfree Verify Error]:', error);
+    return res.status(500).json({ error: error.message || 'Payment verification failed' });
+  }
+};
+
 // Cashfree Order Creation
 export const createCashfreeOrder = async (req: Request, res: Response) => {
   const { orderId } = req.body;
@@ -674,6 +943,8 @@ export const createCashfreeOrder = async (req: Request, res: Response) => {
       customer_email: order.customer?.user?.email || 'guest@example.com',
     };
 
+    const backendOrigin = (process.env.APP_URL || process.env.SITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, '');
+
     const payload = {
       order_amount: Number(order.totalAmount),
       order_currency: settings.currency || 'INR',
@@ -681,6 +952,7 @@ export const createCashfreeOrder = async (req: Request, res: Response) => {
       customer_details: customerDetails,
       order_meta: {
         return_url: `${(req.headers.origin || 'http://localhost:4200').replace(/^http:\/\//i, 'https://')}/order-success?order_id=${order.id}`,
+        notify_url: `${backendOrigin}/api/webhooks/cashfree`,
       },
     };
 
@@ -932,18 +1204,27 @@ export const handleCashfreeWebhook = async (req: Request, res: Response) => {
     const order = data?.order;
     const payment = data?.payment;
 
-    if (order && payment && payment.payment_status === 'SUCCESS') {
-      const gatewayOrderId = String(order.cf_order_id);
-      const gatewayPaymentId = String(payment.cf_payment_id);
+    if (order && payment && (payment.payment_status === 'SUCCESS' || payment.payment_status === 'PAID')) {
+      const cfOrderId = String(order.cf_order_id || '');
+      const merchantOrderId = String(order.order_id || '');
+      const gatewayPaymentId = String(payment.cf_payment_id || '');
+
+      const searchOrderIds = [cfOrderId, merchantOrderId].filter(Boolean);
 
       const transaction = await prisma.transactionHistory.findFirst({
-        where: { gatewayOrderId },
+        where: {
+          OR: [
+            ...searchOrderIds.map(id => ({ gatewayOrderId: id })),
+            ...searchOrderIds.map(id => ({ gatewayTransactionId: id }))
+          ]
+        },
+        orderBy: { createdAt: 'desc' }
       });
       const checkout = await prisma.abandonedCheckout.findFirst({
         where: {
           OR: [
-            { sessionId: gatewayOrderId },
-            ...(isValidUuid(gatewayOrderId) ? [{ id: gatewayOrderId }] : [])
+            ...searchOrderIds.map(id => ({ sessionId: id })),
+            ...searchOrderIds.filter(isValidUuid).map(id => ({ id }))
           ]
         }
       });
@@ -1901,6 +2182,8 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         ? 'https://sandbox.cashfree.com/pg/orders'
         : 'https://api.cashfree.com/pg/orders';
 
+      const backendOrigin = (process.env.APP_URL || process.env.SITE_URL || 'https://3dgalaxy.co.in').replace(/\/+$/, '');
+
       const payload = {
         order_amount: Number(calculatedTotal),
         order_currency: settings.currency || 'INR',
@@ -1913,6 +2196,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
         },
         order_meta: {
           return_url: `${(req.headers.origin || 'http://localhost:4200').replace(/^http:\/\//i, 'https://')}/order-success?orderId=${checkoutSessionId}`,
+          notify_url: `${backendOrigin}/api/webhooks/cashfree`,
         },
         order_note: `Shipping to: ${resolvedName} (${resolvedPhone}) - ${formattedAddressStr}`
       };
@@ -1934,12 +2218,15 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       }
 
       gatewayOrderId = cfData.cf_order_id;
-      checkoutPayload.gatewayOrderId = gatewayOrderId;
+      checkoutPayload.gatewayOrderId = String(gatewayOrderId);
+      checkoutPayload.merchantOrderId = checkoutSessionId;
+      checkoutPayload.checkoutSessionId = checkoutSessionId;
+      checkoutPayload.cfOrderId = String(gatewayOrderId);
 
       const abandonedCheckout = await prisma.abandonedCheckout.create({
         data: {
           customerId: isValidUuid(customerIdToUse) ? customerIdToUse : null,
-          sessionId: String(gatewayOrderId || checkoutSessionId),
+          sessionId: String(checkoutSessionId),
           email: resolvedEmail,
           mobile: resolvedPhone,
           customerName: resolvedName,
@@ -1962,7 +2249,8 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
             customerId: isValidUuid(customerIdToUse) ? customerIdToUse : undefined,
             paymentMethod: 'CASHFREE',
             gatewayName: 'cashfree',
-            gatewayOrderId: String(gatewayOrderId),
+            gatewayOrderId: String(checkoutSessionId),
+            gatewayTransactionId: String(gatewayOrderId),
             amount: calculatedTotal,
             currency: settings.currency || 'INR',
             status: 'Initiated',
@@ -1983,6 +2271,7 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
           cfOrderId: cfData.cf_order_id,
           orderId: abandonedCheckout.id,
           checkoutId: abandonedCheckout.id,
+          sessionId: checkoutSessionId,
           sandbox: Boolean(sandbox),
         }
       });

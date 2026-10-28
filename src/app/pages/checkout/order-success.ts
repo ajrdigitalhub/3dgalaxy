@@ -449,16 +449,43 @@ export class OrderSuccessComponent implements AfterViewInit, OnDestroy {
 
   private async loadOrderFromApi(orderId: string) {
     this.isLoading.set(true);
+    const queryOrderId = this.route.snapshot.queryParamMap.get('order_id');
+    const queryCheckoutId = this.route.snapshot.queryParamMap.get('checkoutId') || this.route.snapshot.queryParamMap.get('orderId');
+
     try {
-      const res: any = await firstValueFrom(this.api.get<any>(`/orders/${orderId}`));
+      const queryParams: any = {};
+      if (queryOrderId) queryParams.order_id = queryOrderId;
+      if (queryCheckoutId) queryParams.checkoutId = queryCheckoutId;
+
+      const res: any = await firstValueFrom(this.api.get<any>(`/orders/${orderId}`, { params: queryParams }));
       const fetchedOrder = res?.data || res;
       if (fetchedOrder && (fetchedOrder.id || fetchedOrder.orderNumber)) {
         this.order = fetchedOrder;
         this.resolveCustomerName();
         this.trackPurchaseIfEligible();
+        return;
       }
     } catch (err) {
-      console.error('Failed to load order details from API:', err);
+      console.warn('Initial order lookup failed, attempting Cashfree verify fallback:', err);
+      if (queryOrderId || queryCheckoutId) {
+        try {
+          const verifyRes: any = await firstValueFrom(this.api.post<any>('/payment/cashfree/verify', {
+            checkoutId: queryCheckoutId || orderId,
+            order_id: queryOrderId,
+            orderId: orderId
+          }));
+          const verifiedOrder = verifyRes?.data?.order || verifyRes?.order || verifyRes?.data;
+          if (verifiedOrder && (verifiedOrder.id || verifiedOrder.orderNumber)) {
+            this.order = verifiedOrder;
+            this.resolveCustomerName();
+            this.trackPurchaseIfEligible();
+            return;
+          }
+        } catch (verifyErr) {
+          console.error('Cashfree verify fallback error:', verifyErr);
+        }
+      }
+
       if (!this.order) {
         this.order = { id: orderId };
         this.resolveCustomerName();
