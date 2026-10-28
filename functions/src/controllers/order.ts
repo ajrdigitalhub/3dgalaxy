@@ -525,9 +525,9 @@ export const createOrder = async (req: any, res: Response) => {
     req.headers['x-mock-mode'] === 'true' ||
     process.env.MOCK_ORDER_MODE === 'true' ||
     req.body.isMockTest === true ||
-    (typeof req.body.notes === 'string' && (req.body.notes.includes('TEST') || req.body.notes.includes('AUTOMATED_DEPLOYMENT_TEST'))) ||
-    (typeof req.body.email === 'string' && (req.body.email.endsWith('.test') || req.body.email.includes('3dgalaxytest'))) ||
-    (typeof req.user?.email === 'string' && (req.user.email.endsWith('.test') || req.user.email.includes('3dgalaxytest')));
+    (typeof req.body.notes === 'string' && (req.body.notes === '__AUTOMATED_DEPLOYMENT_TEST__' || req.body.notes === '__DEPLOYMENT_TEST__')) ||
+    (typeof req.body.email === 'string' && (req.body.email.endsWith('.internal.test') || req.body.email === 'deployment_test@3dgalaxy.test')) ||
+    (typeof req.user?.email === 'string' && (req.user.email.endsWith('.internal.test') || req.user.email === 'deployment_test@3dgalaxy.test'));
 
   if (isMockTest) {
     if (!items || !Array.isArray(items) || items.length === 0 || !shippingAddress || !paymentMethod) {

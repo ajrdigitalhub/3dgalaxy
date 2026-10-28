@@ -1,16 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger, resolveModule } from '../utils/logger';
 import { taskhubErrorForwarder } from '../modules/integration/taskhubErrorForwarder';
 
 export function globalErrorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const statusCode = err.status || err.statusCode || 500;
-  const requestId = req.requestId || (res.getHeader('X-Request-ID') as string) || 'N/A';
+  const requestId = req.requestId || (res.getHeader('X-Request-ID') as string) || (req.headers['x-request-id'] as string) || 'N/A';
   const route = req.originalUrl || req.url;
   const method = req.method;
   const userId = (req as any).user?.id || (req as any).customer?.id;
 
   const errorMessage = err.message || 'Internal Server Error';
   const errorCode = err.code || err.errorCode || 'UNHANDLED_SERVER_ERROR';
+  const resolvedModule = err.module ? String(err.module).toUpperCase() : resolveModule(undefined, route);
 
   // Log detailed error stack and context internally
   logger.error(`Unhandled Exception on ${method} ${route}: ${errorMessage}`, err, {
@@ -20,14 +21,17 @@ export function globalErrorHandler(err: any, req: Request, res: Response, _next:
     method,
     statusCode,
     errorCode,
-    module: err.module || 'SERVER'
+    module: resolvedModule
   }, {
     requestId,
     userId,
     route,
     method,
     statusCode,
-    errorCode
+    errorCode,
+    module: resolvedModule,
+    errorName: err.name || 'UnhandledError',
+    source: 'API'
   });
 
   // Asynchronously forward to TaskHub error ingestion endpoint if configured

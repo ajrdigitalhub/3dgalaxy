@@ -1,14 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 
-export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR';
+export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'FATAL';
 
 export interface LogEntry {
+  id?: string;
   timestamp: string;
   level: LogLevel;
   service: string;
   environment: string;
+  module?: string;
   requestId?: string;
+  traceId?: string;
   userId?: string;
   route?: string;
   method?: string;
@@ -16,9 +19,16 @@ export interface LogEntry {
   durationMs?: number;
   message: string;
   errorCode?: string;
+  errorName?: string;
   errorStack?: string;
-  module?: string;
+  stackTrace?: string;
+  orderId?: string;
+  paymentId?: string;
+  campaignId?: string;
+  source?: string;
+  context?: Record<string, any>;
   metadata?: Record<string, any>;
+  createdAt?: string;
   [key: string]: any;
 }
 
@@ -85,6 +95,34 @@ export function maskSensitiveData(data: any): any {
   return data;
 }
 
+
+/**
+ * Standardized module classifier across HTTP routes and business services
+ */
+export function resolveModule(explicitModule?: string, route?: string, service?: string): string {
+  if (explicitModule && explicitModule.toUpperCase() !== 'HTTP' && explicitModule.toUpperCase() !== 'SERVER') {
+    return explicitModule.toUpperCase();
+  }
+  if (route) {
+    const cleanRoute = route.toLowerCase().split('?')[0];
+    if (cleanRoute.includes('/api/orders') || cleanRoute.includes('/api/checkout')) return 'ORDER';
+    if (cleanRoute.includes('/api/cart')) return 'CART';
+    if (cleanRoute.includes('/api/payment') || cleanRoute.includes('/api/razorpay') || cleanRoute.includes('/api/cashfree') || cleanRoute.includes('/api/phonepe') || cleanRoute.includes('/webhook/razorpay')) return 'PAYMENT';
+    if (cleanRoute.includes('/api/auth') || cleanRoute.includes('/customer/auth') || cleanRoute.includes('/admin/auth')) return 'AUTH';
+    if (cleanRoute.includes('/api/products') || cleanRoute.includes('/api/categories') || cleanRoute.includes('/api/brands') || cleanRoute.includes('/api/inventory')) return 'PRODUCT';
+    if (cleanRoute.includes('/api/notifications') || cleanRoute.includes('/api/push') || cleanRoute.includes('/api/fcm')) return 'NOTIFICATION';
+    if (cleanRoute.includes('/api/whatsapp')) return 'WHATSAPP';
+    if (cleanRoute.includes('/api/service-requests') || cleanRoute.includes('/api/services')) return 'SERVICE';
+    if (cleanRoute.includes('/api/logs/client')) return 'FRONTEND';
+    if (cleanRoute.includes('/api/admin')) return 'ADMIN';
+    if (cleanRoute.includes('/api/health') || cleanRoute.includes('/api/settings')) return 'SYSTEM';
+  }
+  if (service && service !== '3dgalaxy-backend') {
+    return service.toUpperCase();
+  }
+  return explicitModule ? explicitModule.toUpperCase() : 'HTTP';
+}
+
 class Logger {
   private logsDir: string;
   private serviceName: string;
@@ -98,7 +136,8 @@ class Logger {
     DEBUG: 10,
     INFO: 20,
     WARN: 30,
-    ERROR: 40
+    ERROR: 40,
+    FATAL: 50
   };
 
   constructor() {
@@ -188,23 +227,51 @@ class Logger {
 
     this.cleanOldLogs();
 
-    const sanitizedMetadata = entry.metadata ? maskSensitiveData(entry.metadata) : undefined;
+    const meta = entry.metadata || entry.context || {};
+    const nestedMeta = meta.metadata || {};
+
+    const requestId = entry.requestId || meta.requestId || nestedMeta.requestId || undefined;
+    const route = entry.route || meta.route || nestedMeta.route || undefined;
+    const method = entry.method || meta.method || nestedMeta.method || undefined;
+    const statusCode = entry.statusCode !== undefined ? entry.statusCode : (meta.statusCode !== undefined ? meta.statusCode : nestedMeta.statusCode);
+    const durationMs = entry.durationMs !== undefined ? entry.durationMs : (meta.durationMs !== undefined ? meta.durationMs : nestedMeta.durationMs);
+    const userId = entry.userId || meta.userId || nestedMeta.userId || undefined;
+    const orderId = entry.orderId || meta.orderId || nestedMeta.orderId || undefined;
+    const paymentId = entry.paymentId || meta.paymentId || nestedMeta.paymentId || undefined;
+    const campaignId = entry.campaignId || meta.campaignId || nestedMeta.campaignId || undefined;
+    const errorCode = entry.errorCode || meta.errorCode || nestedMeta.errorCode || undefined;
+    const errorName = entry.errorName || meta.errorName || nestedMeta.errorName || undefined;
+    const errorStack = entry.errorStack || entry.stackTrace || meta.errorStack || meta.stackTrace || nestedMeta.errorStack || undefined;
+
+    const resolvedModule = resolveModule(entry.module || meta.module, route, entry.service);
+    const logId = entry.id || `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const timestamp = entry.timestamp || new Date().toISOString();
+
+    const sanitizedMetadata = meta ? maskSensitiveData(meta) : undefined;
+
     const finalEntry: LogEntry = {
-      timestamp: entry.timestamp || new Date().toISOString(),
+      id: logId,
+      timestamp,
       level: entry.level,
       service: this.serviceName,
       environment: this.environment,
-      ...(entry.requestId ? { requestId: entry.requestId } : {}),
-      ...(entry.userId ? { userId: entry.userId } : {}),
-      ...(entry.route ? { route: entry.route } : {}),
-      ...(entry.method ? { method: entry.method } : {}),
-      ...(entry.statusCode !== undefined ? { statusCode: entry.statusCode } : {}),
-      ...(entry.durationMs !== undefined ? { durationMs: entry.durationMs } : {}),
-      ...(entry.module ? { module: entry.module } : {}),
+      module: resolvedModule,
+      ...(requestId ? { requestId } : {}),
+      ...(userId ? { userId } : {}),
+      ...(route ? { route } : {}),
+      ...(method ? { method } : {}),
+      ...(statusCode !== undefined ? { statusCode: Number(statusCode) } : {}),
+      ...(durationMs !== undefined ? { durationMs: Number(durationMs) } : {}),
       message: entry.message,
-      ...(entry.errorCode ? { errorCode: entry.errorCode } : {}),
-      ...(entry.errorStack ? { errorStack: entry.errorStack } : {}),
-      ...(sanitizedMetadata && Object.keys(sanitizedMetadata).length > 0 ? { metadata: sanitizedMetadata } : {})
+      ...(errorCode ? { errorCode } : {}),
+      ...(errorName ? { errorName } : {}),
+      ...(errorStack ? { errorStack, stackTrace: errorStack } : {}),
+      ...(orderId ? { orderId } : {}),
+      ...(paymentId ? { paymentId } : {}),
+      ...(campaignId ? { campaignId } : {}),
+      source: entry.source || (method === 'CLIENT' ? 'FRONTEND' : 'API'),
+      createdAt: timestamp,
+      ...(sanitizedMetadata && Object.keys(sanitizedMetadata).length > 0 ? { metadata: sanitizedMetadata, context: sanitizedMetadata } : {})
     };
 
     const logLine = JSON.stringify(finalEntry) + '\n';
@@ -215,7 +282,7 @@ class Logger {
     fs.appendFile(appLogPath, logLine, () => { });
 
     // Write to error/warn log if applicable
-    if (finalEntry.level === 'ERROR') {
+    if (finalEntry.level === 'ERROR' || finalEntry.level === 'FATAL') {
       const errLogPath = this.getLogFilePath('error', dateStr);
       fs.appendFile(errLogPath, logLine, () => { });
     } else if (finalEntry.level === 'WARN') {
@@ -225,11 +292,12 @@ class Logger {
 
     // Stdout / Stderr output
     if (this.environment === 'development') {
-      const icon = finalEntry.level === 'ERROR' ? '❌' : finalEntry.level === 'WARN' ? '⚠️' : finalEntry.level === 'INFO' ? 'ℹ️' : '🔍';
+      const isErr = finalEntry.level === 'ERROR' || finalEntry.level === 'FATAL';
+      const icon = isErr ? '❌' : finalEntry.level === 'WARN' ? '⚠️' : finalEntry.level === 'INFO' ? 'ℹ️' : '🔍';
       const reqIdStr = finalEntry.requestId ? ` [${finalEntry.requestId}]` : '';
       const modStr = finalEntry.module ? ` [${finalEntry.module}]` : '';
       const formatted = `${icon} [${finalEntry.timestamp}] ${finalEntry.level}${reqIdStr}${modStr}: ${finalEntry.message}`;
-      if (finalEntry.level === 'ERROR') {
+      if (isErr) {
         console.error(formatted, finalEntry.errorStack || finalEntry.metadata || '');
       } else if (finalEntry.level === 'WARN') {
         console.warn(formatted, finalEntry.metadata || '');
@@ -237,7 +305,7 @@ class Logger {
         console.log(formatted);
       }
     } else {
-      if (finalEntry.level === 'ERROR') {
+      if (finalEntry.level === 'ERROR' || finalEntry.level === 'FATAL') {
         process.stderr.write(logLine);
       } else {
         process.stdout.write(logLine);
@@ -279,6 +347,10 @@ class Logger {
       metadata: meta,
       ...extra
     });
+  }
+
+  public fatal(message: string, error?: any, meta: Record<string, any> = {}, extra: Partial<LogEntry> = {}) {
+    this.error(message, error, meta, { ...extra, level: 'FATAL' });
   }
 
   public error(message: string, error?: any, meta: Record<string, any> = {}, extra: Partial<LogEntry> = {}) {

@@ -10,7 +10,7 @@ import { generateNextOrderNumber } from '../utils/orderNumber';
 import { logger } from '../utils/logger';
 
 // Helper to validate UUID format
-const isValidUuid = (val: any): boolean => {
+const isValidUuid = (val: any): val is string => {
   if (!val || typeof val !== 'string') return false;
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
 };
@@ -441,9 +441,10 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
     const keySecret = (rzConfig.keySecret && rzConfig.keySecret.trim()) || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
 
     const isMock = razorpay_signature === 'mock_signature' || (razorpay_order_id && razorpay_order_id.startsWith('order_mock_'));
+    const isPlaceholderSecret = !keySecret || keySecret === '12345678' || keySecret === 'YOUR_KEY_SECRET';
     
-    // Timing-Safe Signature Verification
-    if (keySecret && razorpay_signature && !isMock && razorpay_order_id) {
+    // Timing-Safe Signature Verification (only when a genuine keySecret is configured and a server razorpay order exists)
+    if (!isPlaceholderSecret && keySecret && razorpay_signature && !isMock && razorpay_order_id && !razorpay_order_id.startsWith('order_mock_')) {
       const generated = crypto
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -475,31 +476,7 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       }
     }
 
-    const isMockTest = 
-      req.headers['x-mock-test'] === 'true' ||
-      req.headers['x-mock-mode'] === 'true' ||
-      process.env.MOCK_ORDER_MODE === 'true' ||
-      req.body.isMockTest === true ||
-      isMock;
-
-    if (isMockTest) {
-      const searchCheckoutId = req.body.checkoutId || req.body.dbOrderId || req.body.orderId;
-      const mockVerifiedOrderId = searchCheckoutId || 'mock_order_' + Math.random().toString(36).substring(2, 10);
-      const mockOrderNumber = '3DX-MOCK-' + Math.floor(1000 + Math.random() * 9000);
-      return res.status(200).json({
-        success: true,
-        isMock: true,
-        data: {
-          id: mockVerifiedOrderId,
-          orderId: mockVerifiedOrderId,
-          orderNumber: mockOrderNumber,
-          paymentStatus: 'PAID',
-          message: 'Mock payment verified successfully. Zero database records inserted.'
-        }
-      });
-    }
-
-    const searchCheckoutId = req.body.checkoutId || req.body.dbOrderId;
+    const searchCheckoutId = req.body.checkoutId || req.body.dbOrderId || req.body.orderId;
 
     // Find the transaction record or abandoned checkout record with robust multi-field lookup
     let transaction = await prisma.transactionHistory.findFirst({
@@ -533,16 +510,57 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       });
     }
 
+    // Explicit mock testing mode ONLY if no live checkout or transaction exists in database
+    const isMockTest = 
+      (req.headers['x-mock-test'] === 'true' ||
+       req.headers['x-mock-mode'] === 'true' ||
+       process.env.MOCK_ORDER_MODE === 'true' ||
+       req.body.isMockTest === true) &&
+      !checkout && !transaction;
+
+    if (isMockTest) {
+      const mockVerifiedOrderId = (searchCheckoutId && isValidUuid(searchCheckoutId)) ? searchCheckoutId : 'mock_order_' + Math.random().toString(36).substring(2, 10);
+      const mockOrderNumber = '3DX-MOCK-' + Math.floor(1000 + Math.random() * 9000);
+      return res.status(200).json({
+        success: true,
+        isMock: true,
+        data: {
+          id: mockVerifiedOrderId,
+          orderId: mockVerifiedOrderId,
+          orderNumber: mockOrderNumber,
+          paymentStatus: 'PAID',
+          message: 'Mock test payment verified successfully.'
+        }
+      });
+    }
+
     if (!transaction && !checkout) {
       return res.status(404).json({ error: 'Payment session transaction record not found' });
     }
 
-    if (transaction?.orderId) {
-      const existingOrder = isValidUuid(transaction.orderId)
-        ? await prisma.order.findUnique({ where: { id: transaction.orderId } })
-        : null;
-      if (existingOrder) {
-        return res.status(200).json({ success: true, message: 'Payment already processed', data: { orderId: existingOrder.id } });
+    const targetOrderId = (checkout?.id && isValidUuid(checkout.id)) ? checkout.id : undefined;
+
+    // Check if order was already created (Idempotency)
+    if (targetOrderId || transaction?.orderId) {
+      const existingOrderId = targetOrderId || (transaction?.orderId || undefined);
+      if (existingOrderId && isValidUuid(existingOrderId)) {
+        const existingOrder = await prisma.order.findUnique({
+          where: { id: existingOrderId },
+          include: { items: true, payments: true }
+        });
+        if (existingOrder) {
+          return res.status(200).json({
+            success: true,
+            message: 'Payment already processed and order exists',
+            data: {
+              id: existingOrder.id,
+              orderId: existingOrder.id,
+              orderNumber: existingOrder.orderNumber,
+              paymentStatus: existingOrder.paymentStatus,
+              order: existingOrder
+            }
+          });
+        }
       }
     }
 
@@ -550,8 +568,6 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
     if (!payload || !payload.items) {
       return res.status(400).json({ error: 'Checkout payload unavailable for order creation' });
     }
-
-    const targetOrderId = (checkout?.id && isValidUuid(checkout.id)) ? checkout.id : undefined;
 
     // Wrap in a transaction to create Order, Payment, update TransactionHistory & AbandonedCheckout
     const createdOrder = await prisma.$transaction(async (tx) => {
@@ -600,7 +616,17 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
       console.error('[RazorpayVerify] Notification pipeline error:', notifErr);
     });
 
-    return res.status(200).json({ success: true, data: { orderId: createdOrder.id } });
+    return res.status(200).json({
+      success: true,
+      message: 'Payment verified and order created successfully',
+      data: {
+        id: createdOrder.id,
+        orderId: createdOrder.id,
+        orderNumber: createdOrder.orderNumber,
+        paymentStatus: 'PAID',
+        order: createdOrder
+      }
+    });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -1399,8 +1425,8 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
       req.headers['x-mock-mode'] === 'true' ||
       process.env.MOCK_ORDER_MODE === 'true' ||
       req.body.isMockTest === true ||
-      (typeof notes === 'string' && (notes.includes('AUTOMATED_DEPLOYMENT_TEST') || notes.includes('DEPLOYMENT_TEST') || notes.includes('TEST'))) ||
-      (typeof resolvedEmail === 'string' && (resolvedEmail.endsWith('.test') || resolvedEmail.includes('3dgalaxytest')));
+      (typeof notes === 'string' && (notes === '__AUTOMATED_DEPLOYMENT_TEST__' || notes === '__DEPLOYMENT_TEST__')) ||
+      (typeof resolvedEmail === 'string' && (resolvedEmail.endsWith('.internal.test') || resolvedEmail === 'deployment_test@3dgalaxy.test'));
 
     if (isMockTest) {
       const mockOrderId = 'mock_order_' + Math.random().toString(36).substring(2, 10);

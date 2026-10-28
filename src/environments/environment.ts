@@ -1,5 +1,5 @@
 export const environment = {
-    production: false,
+    production: true,
     siteName: '3D Galaxy',
     supportEmail: 'support@3dgalaxy.co.in',
     get adminUrl(): string {

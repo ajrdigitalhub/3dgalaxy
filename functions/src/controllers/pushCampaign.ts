@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
+import { logger } from '../utils/logger';
 import { generateCampaignContent } from '../services/gemini';
 import { getAudienceTokens, queueCampaignMessages, processNotificationQueue, getRecommendedProducts } from '../services/scheduler';
 import { getFirebaseAdmin } from '../config/firebase';
@@ -474,6 +475,11 @@ export const sendTestNotification = async (req: Request, res: Response) => {
 // ==========================================
 // 7. Click & Conversion Tracking
 // ==========================================
+const isValidUuid = (val: any): boolean => {
+  if (typeof val !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val.trim());
+};
+
 export const trackClick = async (req: Request, res: Response) => {
   const { logId, campaignId, userId, guestId, fcmToken, source } = req.body;
   if (!logId && !campaignId) {
@@ -481,18 +487,20 @@ export const trackClick = async (req: Request, res: Response) => {
   }
 
   try {
-    let targetCampaignId = campaignId;
+    let targetCampaignId = campaignId ? String(campaignId).trim() : undefined;
+    const validLogId = isValidUuid(logId) ? String(logId).trim() : undefined;
+    const validUserId = isValidUuid(userId) ? String(userId).trim() : undefined;
 
-    if (logId) {
+    if (validLogId) {
       const log = await prisma.pushLog.findUnique({
-        where: { id: logId }
+        where: { id: validLogId }
       });
 
       if (log) {
-        targetCampaignId = targetCampaignId || log.campaignId;
+        targetCampaignId = targetCampaignId || (log.campaignId || undefined);
         if (log.status !== 'CLICKED') {
           await prisma.pushLog.update({
-            where: { id: logId },
+            where: { id: validLogId },
             data: {
               status: 'CLICKED',
               clickedAt: new Date()
@@ -500,60 +508,88 @@ export const trackClick = async (req: Request, res: Response) => {
           });
         }
       }
-    } else if (targetCampaignId) {
-      // Find an existing log for this campaign to mark as CLICKED
-      const existingLog = await prisma.pushLog.findFirst({
-        where: {
-          campaignId: targetCampaignId,
-          status: { not: 'CLICKED' },
-          ...(fcmToken ? { fcmToken } : userId ? { userId } : guestId ? { guestId } : {})
-        },
-        orderBy: { createdAt: 'desc' }
+    }
+
+    const isPushCampaignUuid = Boolean(targetCampaignId && isValidUuid(targetCampaignId));
+
+    if (isPushCampaignUuid) {
+      const campaignExists = await prisma.pushCampaign.findUnique({
+        where: { id: targetCampaignId },
+        select: { id: true }
       });
 
-      if (existingLog) {
-        await prisma.pushLog.update({
-          where: { id: existingLog.id },
-          data: {
-            status: 'CLICKED',
-            clickedAt: new Date()
-          }
+      if (campaignExists) {
+        const existingLog = await prisma.pushLog.findFirst({
+          where: {
+            campaignId: targetCampaignId!,
+            status: { not: 'CLICKED' },
+            ...(fcmToken ? { fcmToken } : validUserId ? { userId: validUserId } : guestId ? { guestId } : {})
+          },
+          orderBy: { createdAt: 'desc' }
         });
-      } else {
-        // Create an attribution log
-        await prisma.pushLog.create({
-          data: {
-            campaignId: targetCampaignId,
-            userId: userId || null,
-            guestId: guestId || null,
-            fcmToken: fcmToken || `click_attr_${source || 'web'}`,
-            status: 'CLICKED',
-            clickedAt: new Date(),
-            deliveredAt: new Date()
+
+        if (existingLog) {
+          await prisma.pushLog.update({
+            where: { id: existingLog.id },
+            data: {
+              status: 'CLICKED',
+              clickedAt: new Date()
+            }
+          });
+        } else {
+          await prisma.pushLog.create({
+            data: {
+              campaignId: targetCampaignId!,
+              userId: validUserId || null,
+              guestId: guestId || null,
+              fcmToken: fcmToken || `click_attr_${source || 'web'}`,
+              status: 'CLICKED',
+              clickedAt: new Date(),
+              deliveredAt: new Date()
+            }
+          }).catch(() => {});
+        }
+
+        await prisma.pushAnalytics.upsert({
+          where: { campaignId: targetCampaignId! },
+          create: {
+            campaignId: targetCampaignId!,
+            sentCount: 1,
+            deliveredCount: 1,
+            openedCount: 1,
+            clickedCount: 1
+          },
+          update: {
+            clickedCount: { increment: 1 }
           }
         }).catch(() => {});
+
+        return res.status(200).json({ status: 'success', success: true, message: 'Click tracked.', type: 'push_campaign' });
       }
     }
 
-    if (targetCampaignId) {
-      await prisma.pushAnalytics.upsert({
-        where: { campaignId: targetCampaignId },
-        create: {
-          campaignId: targetCampaignId,
-          sentCount: 1,
-          deliveredCount: 1,
-          openedCount: 1,
-          clickedCount: 1
-        },
-        update: {
-          clickedCount: { increment: 1 }
-        }
-      });
-    }
+    // Marketing or organic attribution (non-push UUID, e.g. 'sag_organic', or external campaign)
+    logger.info(`Attribution click recorded: campaign=${targetCampaignId || 'none'}, source=${source || 'web_navigation'}`, {
+      campaignId: targetCampaignId!,
+      source: source || 'web_navigation',
+      logId: logId || undefined,
+      guestId: guestId || undefined,
+      userId: validUserId || undefined
+    }, {
+      module: 'NOTIFICATION',
+      campaignId: targetCampaignId!,
+      userId: validUserId
+    });
 
-    return res.status(200).json({ status: 'success', success: true, message: 'Click tracked.' });
+    return res.status(200).json({ status: 'success', success: true, message: 'Click tracked.', type: 'marketing_attribution' });
   } catch (error: any) {
-    console.error('Error tracking push click:', error);
+    logger.error('Error tracking push click attribution:', error, {
+      body: req.body,
+      route: req.originalUrl
+    }, {
+      module: 'NOTIFICATION',
+      errorCode: 'CLICK_TRACKING_FAILED'
+    });
     return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
@@ -565,18 +601,20 @@ export const trackOpen = async (req: Request, res: Response) => {
   }
 
   try {
-    let targetCampaignId = campaignId;
+    let targetCampaignId = campaignId ? String(campaignId).trim() : undefined;
+    const validLogId = isValidUuid(logId) ? String(logId).trim() : undefined;
+    const validUserId = isValidUuid(userId) ? String(userId).trim() : undefined;
 
-    if (logId) {
+    if (validLogId) {
       const log = await prisma.pushLog.findUnique({
-        where: { id: logId }
+        where: { id: validLogId }
       });
 
       if (log) {
-        targetCampaignId = targetCampaignId || log.campaignId;
+        targetCampaignId = targetCampaignId || (log.campaignId || undefined);
         if (log.status !== 'CLICKED' && log.status !== 'OPENED') {
           await prisma.pushLog.update({
-            where: { id: logId },
+            where: { id: validLogId },
             data: {
               status: 'OPENED',
               openedAt: new Date()
@@ -584,45 +622,64 @@ export const trackOpen = async (req: Request, res: Response) => {
           });
         }
       }
-    } else if (targetCampaignId) {
-      const existingLog = await prisma.pushLog.findFirst({
-        where: {
-          campaignId: targetCampaignId,
-          status: { in: ['SENT', 'DELIVERED'] },
-          ...(fcmToken ? { fcmToken } : userId ? { userId } : guestId ? { guestId } : {})
-        },
-        orderBy: { createdAt: 'desc' }
+    }
+
+    const isPushCampaignUuid = Boolean(targetCampaignId && isValidUuid(targetCampaignId));
+    if (isPushCampaignUuid) {
+      const campaignExists = await prisma.pushCampaign.findUnique({
+        where: { id: targetCampaignId },
+        select: { id: true }
       });
 
-      if (existingLog) {
-        await prisma.pushLog.update({
-          where: { id: existingLog.id },
-          data: {
-            status: 'OPENED',
-            openedAt: new Date()
-          }
+      if (campaignExists) {
+        const existingLog = await prisma.pushLog.findFirst({
+          where: {
+            campaignId: targetCampaignId!,
+            status: { in: ['SENT', 'DELIVERED'] },
+            ...(fcmToken ? { fcmToken } : validUserId ? { userId: validUserId } : guestId ? { guestId } : {})
+          },
+          orderBy: { createdAt: 'desc' }
         });
+
+        if (existingLog) {
+          await prisma.pushLog.update({
+            where: { id: existingLog.id },
+            data: {
+              status: 'OPENED',
+              openedAt: new Date()
+            }
+          });
+        }
+
+        await prisma.pushAnalytics.upsert({
+          where: { campaignId: targetCampaignId! },
+          create: {
+            campaignId: targetCampaignId!,
+            sentCount: 1,
+            deliveredCount: 1,
+            openedCount: 1
+          },
+          update: {
+            openedCount: { increment: 1 }
+          }
+        }).catch(() => {});
+
+        return res.status(200).json({ status: 'success', success: true, message: 'Open tracked.', type: 'push_campaign' });
       }
     }
 
-    if (targetCampaignId) {
-      await prisma.pushAnalytics.upsert({
-        where: { campaignId: targetCampaignId },
-        create: {
-          campaignId: targetCampaignId,
-          sentCount: 1,
-          deliveredCount: 1,
-          openedCount: 1
-        },
-        update: {
-          openedCount: { increment: 1 }
-        }
-      });
-    }
+    logger.info(`Attribution open recorded: campaign=${targetCampaignId || 'none'}, source=${source || 'web'}`, {
+      campaignId: targetCampaignId!,
+      source: source || 'web',
+      logId: logId || undefined
+    }, {
+      module: 'NOTIFICATION',
+      campaignId: targetCampaignId
+    });
 
-    return res.status(200).json({ status: 'success', success: true, message: 'Open tracked.' });
+    return res.status(200).json({ status: 'success', success: true, message: 'Open tracked.', type: 'marketing_attribution' });
   } catch (error: any) {
-    console.error('Error tracking push open:', error);
+    logger.error('Error tracking push open attribution:', error, { body: req.body }, { module: 'NOTIFICATION', errorCode: 'OPEN_TRACKING_FAILED' });
     return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
@@ -634,17 +691,18 @@ export const trackConversion = async (req: Request, res: Response) => {
   }
 
   try {
-    let targetCampaignId = campaignId;
+    let targetCampaignId = campaignId ? String(campaignId).trim() : undefined;
+    const validLogId = isValidUuid(logId) ? String(logId).trim() : undefined;
 
-    if (logId) {
+    if (validLogId) {
       const log = await prisma.pushLog.findUnique({
-        where: { id: logId }
+        where: { id: validLogId }
       });
 
       if (log) {
-        targetCampaignId = targetCampaignId || log.campaignId;
+        targetCampaignId = targetCampaignId || (log.campaignId || undefined);
         await prisma.pushLog.update({
-          where: { id: logId },
+          where: { id: validLogId },
           data: {
             status: 'CONVERTED',
             convertedAt: new Date()
@@ -653,24 +711,45 @@ export const trackConversion = async (req: Request, res: Response) => {
       }
     }
 
-    if (targetCampaignId) {
-      const rev = Number(revenue || 0);
-      await prisma.pushAnalytics.upsert({
-        where: { campaignId: targetCampaignId },
-        create: {
-          campaignId: targetCampaignId,
-          conversionCount: 1,
-          revenueGenerated: rev
-        },
-        update: {
-          conversionCount: { increment: 1 },
-          revenueGenerated: { increment: rev }
-        }
+    const isPushCampaignUuid = Boolean(targetCampaignId && isValidUuid(targetCampaignId));
+    if (isPushCampaignUuid) {
+      const campaignExists = await prisma.pushCampaign.findUnique({
+        where: { id: targetCampaignId },
+        select: { id: true }
       });
+
+      if (campaignExists) {
+        const rev = Number(revenue || 0);
+        await prisma.pushAnalytics.upsert({
+          where: { campaignId: targetCampaignId! },
+          create: {
+            campaignId: targetCampaignId!,
+            conversionCount: 1,
+            revenueGenerated: rev
+          },
+          update: {
+            conversionCount: { increment: 1 },
+            revenueGenerated: { increment: rev }
+          }
+        }).catch(() => {});
+
+        return res.status(200).json({ status: 'success', success: true, message: 'Conversion tracked.', type: 'push_campaign' });
+      }
     }
 
-    return res.status(200).json({ status: 'success', success: true, message: 'Conversion tracked.' });
+    logger.info(`Attribution conversion recorded: campaign=${targetCampaignId || 'none'}, orderId=${orderId}, rev=${revenue}`, {
+      campaignId: targetCampaignId!,
+      orderId,
+      revenue
+    }, {
+      module: 'NOTIFICATION',
+      campaignId: targetCampaignId!,
+      orderId
+    });
+
+    return res.status(200).json({ status: 'success', success: true, message: 'Conversion tracked.', type: 'marketing_attribution' });
   } catch (error: any) {
+    logger.error('Error tracking conversion attribution:', error, { body: req.body }, { module: 'NOTIFICATION', errorCode: 'CONVERSION_TRACKING_FAILED' });
     return res.status(500).json({ status: 'error', success: false, message: error.message });
   }
 };
