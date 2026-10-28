@@ -34,6 +34,10 @@ export class CartCheckout implements OnInit {
     return this.shippingService.isFreeShippingApplicable(p);
   }
 
+  isFreeItem(item: any): boolean {
+    return this.ds.isFreeItem(item);
+  }
+
   couponInputText = signal<string>('');
   showOffers = signal(false);
 

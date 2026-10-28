@@ -36,6 +36,7 @@ import { GlobalErrorHandler } from "./services/global-error-handler";
 import { DATE_PIPE_DEFAULT_OPTIONS } from "@angular/common";
 import { routes } from "./app.routes";
 import { SettingsService } from "./core/services/settings.service";
+import { DatastoreService } from "./services/datastore";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -48,6 +49,9 @@ export const appConfig: ApplicationConfig = {
       if (typeof window !== 'undefined') {
         settingsService.loadSettings();
       }
+      const datastore = inject(DatastoreService);
+      datastore.loadHeaderMenu();
+      datastore.loadConsolidatedHome();
     }),
     provideAnalytics({
       enabled: true,

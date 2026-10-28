@@ -37,8 +37,8 @@ export const generateAndSaveSupportRequest = async (req: Request, res: Response)
       email: "3dgalaxy@hotmail.com",
       businessHours: "9 AM - 6 PM",
       autoReply: "Thank you for contacting support! We will get back to you shortly.",
-      returnPolicyUrl: "/return-policy",
-      refundPolicyUrl: "/refund-policy",
+      returnPolicyUrl: "/pages/return-policy",
+      refundPolicyUrl: "/policies/refund-policy",
       returnWindowDays: 10,
       refundWindowDays: 10
     };

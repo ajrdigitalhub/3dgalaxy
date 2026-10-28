@@ -642,7 +642,10 @@
                     <h4 class="text-xs font-bold text-neutral-900 dark:text-white truncate">
                       {{ item.product.name }}
                     </h4>
-                    @if (item.product.codAvailable === false) {
+                    @if (isFreeItem(item)) {
+                    <span
+                      class="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">Free Included</span>
+                    } @else if (item.product.codAvailable === false) {
                     <span
                       class="inline-flex items-center text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded">No
                       COD</span>
@@ -666,13 +669,15 @@
                   } @else if (item.variant) {
                   <span class="text-[10px] text-neutral-400 font-medium uppercase">{{ ds.getVariantDisplayName(item.variant, item.product?.sku) || item.variant?.name }}</span>
                   }
+                  @if (!isFreeItem(item)) {
                   <div class="text-[10px] text-neutral-550 dark:text-neutral-400 font-bold flex items-center gap-1.5 mt-0.5">
                     <span>Delivery:</span>
                     <span class="text-neutral-800 dark:text-neutral-200">{{ getItemDeliveryDays(item) | deliveryEstimate:'desktop' }}</span>
                   </div>
+                  }
                   <p class="text-[10px] text-neutral-500 font-semibold mt-0.5 flex items-center gap-2">
                     <span>Qty: {{ item.quantity }}</span>
-                    @if (getItemWeight(item)) {
+                    @if (!isFreeItem(item) && getItemWeight(item)) {
                     <span class="text-amber-600 dark:text-amber-400 font-mono font-bold">⚖ {{ getItemWeight(item) }}</span>
                     }
                   </p>

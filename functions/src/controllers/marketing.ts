@@ -200,6 +200,22 @@ const sanitizeCdata = (val?: string | null): string => {
   return String(val).replace(/\]\]>/g, ']]&gt;').trim();
 };
 
+const stripHtml = (html?: string | null): string => {
+  if (!html) return '';
+  return String(html)
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 /**
  * Intelligent Image Resolver for Google Merchant & Local Inventory Feeds:
  * - Scans p.images (objects, strings, relative paths, storage paths)
@@ -379,10 +395,13 @@ export const generateGoogleMerchantFeedXml = async (req: Request, res: Response)
       const hasGtinOrMpn = !!(p.sku || (p as any).barcode);
       const shippingPrice = p.freeShippingEligible ? 0 : Number(p.baseShippingCharge || 0);
 
+      const rawDesc = p.shortDescription || p.description || p.name;
+      const cleanDesc = sanitizeCdata(stripHtml(rawDesc)) || sanitizeCdata(p.name);
+
       xml += `    <item>\n`;
       xml += `      <g:id>${p.id}</g:id>\n`;
       xml += `      <g:title><![CDATA[${sanitizeCdata(p.name)}]]></g:title>\n`;
-      xml += `      <g:description><![CDATA[${sanitizeCdata(p.description || p.shortDescription || p.name)}]]></g:description>\n`;
+      xml += `      <g:description><![CDATA[${cleanDesc}]]></g:description>\n`;
       xml += `      <g:link>${baseUrl}/product/${p.slug}</g:link>\n`;
       xml += `      <g:image_link>${mainImage}</g:image_link>\n`;
       additionalImages.forEach(img => {
@@ -468,7 +487,7 @@ export const generateGoogleMerchantFeedJson = async (req: Request, res: Response
         return {
           id: p.id,
           title: p.name,
-          description: p.description || p.shortDescription || p.name,
+          description: stripHtml(p.shortDescription || p.description) || p.name,
           link: `${baseUrl}/product/${p.slug}`,
           image_link: mainImage,
           additional_image_links: additionalImages,

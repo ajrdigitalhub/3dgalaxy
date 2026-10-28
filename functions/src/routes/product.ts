@@ -2,14 +2,15 @@ import { Router } from 'express';
 import { getProducts, getProductById, getProductBySlug, createProduct, updateProduct, deleteProduct, quickUpdateProduct, quickUpdateVariant, getProductVariants } from '../controllers/product';
 import { getProductImages, uploadProductImages, uploadProductImagesBySlug, deleteProductImage, setPrimaryImage, reorderImages } from '../controllers/productImage';
 import { authenticateToken, requireRole } from '../middleware/auth';
+import { cacheMiddleware } from '../middleware/cache';
 import prisma from '../config/database';
 
 const router = Router();
 
-router.get('/', getProducts);
-router.get('/slug/:slug', getProductBySlug);
-router.get('/:id', getProductById);
-router.get('/:id/variants', getProductVariants);
+router.get('/', cacheMiddleware(300), getProducts);
+router.get('/slug/:slug', cacheMiddleware(600), getProductBySlug);
+router.get('/:id', cacheMiddleware(600), getProductById);
+router.get('/:id/variants', cacheMiddleware(600), getProductVariants);
 
 router.post('/', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), createProduct);
 router.put('/:id', authenticateToken, requireRole(['Admin', 'Manager', 'Super Admin']), updateProduct);

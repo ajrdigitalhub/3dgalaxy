@@ -25,6 +25,7 @@ router.get('/marketing/config', cacheMiddleware(300), getMarketingConfig);
 router.post('/marketing/meta-capi', sendMetaCapiEvent);
 
 // Public Product Feed Generator Endpoints (Google Merchant, Local Inventory & Meta Catalog)
+router.get('/google-merchant.xml', cacheMiddleware(900), generateGoogleMerchantFeedXml);
 router.get('/marketing/feeds/google-merchant.xml', cacheMiddleware(900), generateGoogleMerchantFeedXml);
 router.get('/marketing/feeds/google-merchant.json', cacheMiddleware(900), generateGoogleMerchantFeedJson);
 router.get('/marketing/feeds/google-local-inventory.xml', cacheMiddleware(900), generateGoogleLocalInventoryFeedXml);

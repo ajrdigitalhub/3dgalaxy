@@ -5189,7 +5189,7 @@ import { HomeInstagramFeedComponent } from "../../home/components/home-instagram
                       [value]="draft().supportSettings?.returnPolicyUrl || ''"
                       (input)="setNested('supportSettings', 'returnPolicyUrl', $any($event.target).value)"
                       class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                      placeholder="e.g. /return-policy"
+                      placeholder="e.g. /pages/return-policy"
                     />
                   </div>
 
@@ -5201,7 +5201,7 @@ import { HomeInstagramFeedComponent } from "../../home/components/home-instagram
                       [value]="draft().supportSettings?.refundPolicyUrl || ''"
                       (input)="setNested('supportSettings', 'refundPolicyUrl', $any($event.target).value)"
                       class="w-full px-4 py-2 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
-                      placeholder="e.g. /refund-policy"
+                      placeholder="e.g. /policies/refund-policy"
                     />
                   </div>
                 </div>

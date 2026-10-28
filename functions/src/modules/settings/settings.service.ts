@@ -14,11 +14,11 @@ const defaultSettings = {
         title: "Policies",
         isActive: true,
         links: [
-          { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
-          { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
-          { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
-          { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
-          { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+          { id: "ref-policy", title: "Refund Policy", url: "/policies/refund-policy", isActive: true, openInNewTab: false },
+          { id: "ret-policy", title: "Return Policy", url: "/pages/return-policy", isActive: true, openInNewTab: false },
+          { id: "priv-policy", title: "Privacy Policy", url: "/policies/privacy-policy", isActive: true, openInNewTab: false },
+          { id: "tos-policy", title: "Terms of Service", url: "/policies/terms-of-service", isActive: true, openInNewTab: false },
+          { id: "ship-policy", title: "Shipping Policy", url: "/policies/shipping-policy", isActive: true, openInNewTab: false },
           { id: "abt-policy", title: "About Us", url: "/about", isActive: true, openInNewTab: false }
         ]
       },
@@ -218,8 +218,8 @@ const defaultSettings = {
     email: "3dgalaxy@hotmail.com",
     businessHours: "9 AM - 6 PM",
     autoReply: "Thank you for contacting support! We will get back to you shortly.",
-    returnPolicyUrl: "/return-policy",
-    refundPolicyUrl: "/refund-policy",
+    returnPolicyUrl: "/pages/return-policy",
+    refundPolicyUrl: "/policies/refund-policy",
     returnWindowDays: 10,
     refundWindowDays: 10
   },

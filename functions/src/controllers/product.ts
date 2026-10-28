@@ -786,27 +786,32 @@ const getCategoryPath = async (categoryId: string | null): Promise<string[]> => 
   const cached = sysCache.get(cacheKey);
   if (cached) return cached;
 
+  const allCats = await getAllDbCategoriesCached();
+  const catMap = new Map<string, any>(allCats.map(c => [c.id, c]));
+
   const path: string[] = [];
   let currentId: string | null = categoryId;
   const visited = new Set<string>();
 
   while (currentId && !visited.has(currentId)) {
     visited.add(currentId);
-    const cat: any = await prisma.category.findUnique({
-      where: { id: currentId },
-      select: { name: true, parentId: true },
-    });
+    const cat = catMap.get(currentId);
     if (!cat) break;
     path.unshift(cat.name);
     currentId = cat.parentId;
   }
-  sysCache.set(cacheKey, path, 1800); // Cache category path for 30 minutes
+  sysCache.set(cacheKey, path, 3600); // Cache category path for 1 hour
   return path;
 };
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const cacheKey = 'products_list_' + JSON.stringify(req.query);
+    const sortedKeys = Object.keys(req.query).sort();
+    const normalizedQuery: Record<string, any> = {};
+    for (let i = 0; i < sortedKeys.length; i++) {
+      normalizedQuery[sortedKeys[i]] = req.query[sortedKeys[i]];
+    }
+    const cacheKey = 'products_list_' + JSON.stringify(normalizedQuery);
     const cachedResponse = sysCache.get(cacheKey);
     if (cachedResponse) {
       return res.status(200).json(cachedResponse);
@@ -840,32 +845,58 @@ export const getProducts = async (req: Request, res: Response) => {
     const allMapped = await getAllMappedProductsCached();
     const allDbCategories = await getAllDbCategoriesCached();
 
-    // Helper to check if a category belongs to a parent (by ID, slug, or name)
+    // Pre-index categories into O(1) Maps
+    const catById = new Map<string, any>();
+    const catBySlug = new Map<string, any>();
+    const catByName = new Map<string, any>();
+    const childrenByParentId = new Map<string, string[]>();
+
+    for (let i = 0; i < allDbCategories.length; i++) {
+      const c = allDbCategories[i];
+      if (c.id) catById.set(c.id, c);
+      if (c.slug) catBySlug.set(c.slug.toLowerCase(), c);
+      if (c.name) catByName.set(c.name.toLowerCase(), c);
+      if (c.parentId) {
+        let arr = childrenByParentId.get(c.parentId);
+        if (!arr) {
+          arr = [];
+          childrenByParentId.set(c.parentId, arr);
+        }
+        arr.push(c.id);
+      }
+    }
+
+    const descendantMemo = new Map<string, Set<string>>();
+    const getDescendantSet = (rawVal: string): Set<string> => {
+      const normalized = rawVal.toLowerCase().trim();
+      if (descendantMemo.has(normalized)) return descendantMemo.get(normalized)!;
+
+      const target = catById.get(rawVal) || catBySlug.get(normalized) || catByName.get(normalized);
+      const set = new Set<string>();
+      if (target) {
+        const stack = [target.id];
+        while (stack.length > 0) {
+          const curr = stack.pop()!;
+          set.add(curr);
+          const children = childrenByParentId.get(curr);
+          if (children) {
+            for (let i = 0; i < children.length; i++) {
+              stack.push(children[i]);
+            }
+          }
+        }
+      } else {
+        set.add(rawVal);
+      }
+      descendantMemo.set(normalized, set);
+      return set;
+    };
+
     const isCategoryChildOf = (cat: any, parentSlugOrId: string): boolean => {
       if (!cat) return false;
       const catId = typeof cat === 'object' ? cat.id : String(cat);
-      const catSlug = typeof cat === 'object' ? cat.slug : String(cat);
-      const catName = typeof cat === 'object' ? (cat.name || '') : String(cat);
-      if (catId === parentSlugOrId || catSlug === parentSlugOrId || (catName && catName.toLowerCase() === parentSlugOrId.toLowerCase())) return true;
-
-      const targetCat = allDbCategories.find(c =>
-        c.id === parentSlugOrId ||
-        c.slug === parentSlugOrId ||
-        (c.name && c.name.toLowerCase() === parentSlugOrId.toLowerCase())
-      );
-      if (!targetCat) return false;
-
-      const getDescendantIds = (parentId: string): string[] => {
-        const children = allDbCategories.filter(c => c.parentId === parentId);
-        let ids: string[] = [parentId];
-        for (const child of children) {
-          ids = ids.concat(getDescendantIds(child.id));
-        }
-        return ids;
-      };
-
-      const validIds = getDescendantIds(targetCat.id);
-      return validIds.includes(catId);
+      const allowedSet = getDescendantSet(parentSlugOrId);
+      return allowedSet.has(catId);
     };
 
     // Filter products
@@ -1053,7 +1084,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
         let currentParentId = cat.parentId;
         while (currentParentId) {
-          const parentCat = allDbCategories.find(c => c.id === currentParentId);
+          const parentCat = catById.get(currentParentId);
           if (!parentCat) break;
           if (!countedInProd.has(parentCat.id)) {
             countedInProd.add(parentCat.id);
@@ -1170,11 +1201,72 @@ export const getProducts = async (req: Request, res: Response) => {
       }
     };
 
-    sysCache.set(cacheKey, finalResponse, 300);
+    sysCache.set(cacheKey, finalResponse, 1800);
     return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to find products in catalog', details: error.message });
   }
+};
+
+const leanRelationProduct = (p: any): any => {
+  if (!p) return null;
+  const mapped = mapProductFields(p);
+  const {
+    description,
+    features,
+    downloads,
+    faqs,
+    specifications,
+    warranty,
+    relatedProducts,
+    bundleProducts,
+    recommendedFilaments,
+    customerReviews,
+    mediaLibrary,
+    ...lean
+  } = mapped;
+
+  const rawShort = mapped.shortDescription || (typeof description === 'string' ? description : '');
+  const cleanShort = typeof rawShort === 'string'
+    ? rawShort.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
+    : '';
+
+  const leanVariants = Array.isArray(mapped.variants)
+    ? mapped.variants.map((v: any) => ({
+        id: v.id,
+        productId: v.productId,
+        name: v.name,
+        sku: v.sku,
+        price: v.price ?? v.basePrice ?? 0,
+        salePrice: v.salePrice ?? v.price ?? 0,
+        dealerPrice: v.dealerPrice,
+        stock: v.stock ?? 0,
+        weight: v.weight,
+        isDefault: !!v.isDefault,
+        isActive: v.isActive !== false,
+        variantSlug: v.variantSlug,
+        optionValues: v.optionValues,
+        primaryImage: v.primaryImage || (Array.isArray(v.images) && v.images[0] ? (typeof v.images[0] === 'string' ? v.images[0] : v.images[0].url) : null)
+      }))
+    : [];
+
+  const rawImages = Array.isArray(mapped.images) ? mapped.images : [];
+  const cleanImages = rawImages.slice(0, 4).map((img: any) => {
+    if (typeof img === 'string') return img;
+    return {
+      id: img.id,
+      url: img.url || img.imageUrl || '',
+      isPrimary: !!img.isPrimary
+    };
+  });
+
+  return {
+    ...lean,
+    shortDescription: cleanShort,
+    variants: leanVariants,
+    images: cleanImages,
+    mediaLibrary: undefined
+  };
 };
 
 const populateProductRelations = async (item: any) => {
@@ -1187,11 +1279,80 @@ const populateProductRelations = async (item: any) => {
   const relatedList = safeParseArray(item.relatedProducts);
   const relatedIds = relatedList.map((x: any) => typeof x === 'string' ? x : (x?.id || x?.productId || x?.relatedToId)).filter(Boolean);
 
-  const [dbBundleProducts, recommendedFilaments, relatedProducts] = await Promise.all([
+  let cachedAll = sysCache.get('all_mapped_products') as any[];
+  if (!cachedAll || cachedAll.length === 0) {
+    try {
+      cachedAll = await getAllMappedProductsCached();
+    } catch {
+      cachedAll = [];
+    }
+  }
+
+  if (cachedAll && cachedAll.length > 0) {
+    const prodMap = new Map<string, any>();
+    for (let i = 0; i < cachedAll.length; i++) {
+      if (cachedAll[i].id) prodMap.set(cachedAll[i].id.toLowerCase(), cachedAll[i]);
+    }
+
+    const dbBundleProducts = bundleIds.map(id => prodMap.get(id.toLowerCase())).filter(Boolean);
+    const recommendedFilaments = filamentIds.map(id => prodMap.get(id.toLowerCase())).filter(Boolean);
+    let relatedProducts = relatedIds.map(id => prodMap.get(id.toLowerCase())).filter(Boolean);
+
+    if (relatedProducts.length === 0 && item.categoryId) {
+      relatedProducts = cachedAll
+        .filter(p => p.categoryId === item.categoryId && p.id !== item.id)
+        .slice(0, 8);
+    }
+
+    const bundleProducts = bundleList.map((rawBundle: any) => {
+      const rawId = typeof rawBundle === 'string' ? rawBundle : (rawBundle?.id || rawBundle?.productId);
+      const dbProd = rawId ? prodMap.get(String(rawId).toLowerCase()) : null;
+      const qty = (typeof rawBundle === 'object' && rawBundle?.quantity !== undefined)
+        ? Math.max(1, parseInt(rawBundle.quantity, 10) || 1)
+        : 1;
+
+      if (dbProd) {
+        return {
+          ...dbProd,
+          quantity: qty
+        };
+      }
+      if (typeof rawBundle === 'object' && rawBundle.name) {
+        return {
+          ...rawBundle,
+          quantity: qty
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    return {
+      bundleProducts,
+      recommendedFilaments,
+      relatedProducts
+    };
+  }
+
+  // Fallback to database queries in parallel
+  const [dbBundleProducts, recommendedFilaments, initialRelated] = await Promise.all([
     bundleIds.length > 0 ? prisma.product.findMany({ where: { id: { in: bundleIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
     filamentIds.length > 0 ? prisma.product.findMany({ where: { id: { in: filamentIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([]),
     relatedIds.length > 0 ? prisma.product.findMany({ where: { id: { in: relatedIds }, deletedAt: null }, include: { brand: true, category: true, variants: { where: { isActive: true } } } }) : Promise.resolve([])
   ]);
+
+  let relatedProducts = initialRelated;
+  if (relatedProducts.length === 0 && item.categoryId) {
+    relatedProducts = await prisma.product.findMany({
+      where: {
+        categoryId: item.categoryId,
+        id: { not: item.id },
+        deletedAt: null,
+        isActive: true,
+      },
+      take: 8,
+      include: { brand: true, category: true, variants: { where: { isActive: true } } },
+    });
+  }
 
   const bundleProducts = bundleList.map((rawBundle: any) => {
     const rawId = typeof rawBundle === 'string' ? rawBundle : (rawBundle?.id || rawBundle?.productId);
@@ -1225,7 +1386,7 @@ const populateProductRelations = async (item: any) => {
 export const getProductBySlug = async (req: Request, res: Response) => {
   const { slug } = req.params;
   try {
-    const cacheKey = 'products_slug_' + slug;
+    const cacheKey = 'products_slug_' + String(slug).toLowerCase().trim();
     const cachedResponse = sysCache.get(cacheKey);
     if (cachedResponse) {
       return res.status(200).json(cachedResponse);
@@ -1256,18 +1417,12 @@ export const getProductBySlug = async (req: Request, res: Response) => {
 
     const relations = await populateProductRelations(item);
 
-    if (relations.relatedProducts.length === 0 && item.categoryId) {
-      relations.relatedProducts = await prisma.product.findMany({
-        where: {
-          categoryId: item.categoryId,
-          id: { not: item.id },
-          deletedAt: null,
-          isActive: true,
-        },
-        take: 8,
-        include: { brand: true, category: true, variants: { where: { isActive: true } } },
-      });
-    }
+    const mappedBundleProducts = relations.bundleProducts.map((p: any) => ({
+      ...leanRelationProduct(p),
+      quantity: p.quantity !== undefined ? p.quantity : 1
+    }));
+    const mappedRecommendedFilaments = relations.recommendedFilaments.map((p: any) => leanRelationProduct(p));
+    const mappedRelatedProducts = relations.relatedProducts.map((p: any) => leanRelationProduct(p));
 
     const masterData = {
       images: safeParseArray(item.images),
@@ -1278,7 +1433,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       seo: safeParseObject(item.seo) || {},
       shipping: safeParseObject(item.shipping) || {},
       warranty: safeParseObject(item.warranty) || {},
-      relatedProducts: relations.relatedProducts
+      relatedProducts: mappedRelatedProducts
     };
 
     const mappedReviews = (item.customerReviews || []).map((review: any) => {
@@ -1325,12 +1480,9 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       ...item,
       reviews: mappedReviews,
       categoryPath: catPath,
-      bundleProducts: relations.bundleProducts.map((p: any) => ({
-        ...mapProductFields(p),
-        quantity: p.quantity !== undefined ? p.quantity : 1
-      })),
-      recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
-      relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
+      bundleProducts: mappedBundleProducts,
+      recommendedFilaments: mappedRecommendedFilaments,
+      relatedProducts: mappedRelatedProducts
     });
 
     const finalResponse = {
@@ -1384,7 +1536,7 @@ export const getProductBySlug = async (req: Request, res: Response) => {
       }
     };
 
-    sysCache.set(cacheKey, finalResponse, 300);
+    sysCache.set(cacheKey, finalResponse, 1800);
     return res.status(200).json(finalResponse);
   } catch (error: any) {
     return res.status(500).json({ error: 'Failed to fetch product', details: error.message });
@@ -1433,6 +1585,13 @@ export const getProductById = async (req: Request, res: Response) => {
 
     const relations = await populateProductRelations(item);
 
+    const mappedBundleProducts = relations.bundleProducts.map((p: any) => ({
+      ...leanRelationProduct(p),
+      quantity: p.quantity !== undefined ? p.quantity : 1
+    }));
+    const mappedRecommendedFilaments = relations.recommendedFilaments.map((p: any) => leanRelationProduct(p));
+    const mappedRelatedProducts = relations.relatedProducts.map((p: any) => leanRelationProduct(p));
+
     const masterData = {
       images: safeParseArray(item.images),
       specifications: safeParseArray(item.specifications),
@@ -1442,19 +1601,16 @@ export const getProductById = async (req: Request, res: Response) => {
       seo: safeParseObject(item.seo) || {},
       shipping: safeParseObject(item.shipping) || {},
       warranty: safeParseObject(item.warranty) || {},
-      relatedProducts: relations.relatedProducts
+      relatedProducts: mappedRelatedProducts
     };
 
     const catPath = await getCategoryPath(item.categoryId);
     const mappedProduct = mapProductFields({
       ...item,
       categoryPath: catPath,
-      bundleProducts: relations.bundleProducts.map((p: any) => ({
-        ...mapProductFields(p),
-        quantity: p.quantity !== undefined ? p.quantity : 1
-      })),
-      recommendedFilaments: relations.recommendedFilaments.map(p => mapProductFields(p)),
-      relatedProducts: relations.relatedProducts.map(p => mapProductFields(p))
+      bundleProducts: mappedBundleProducts,
+      recommendedFilaments: mappedRecommendedFilaments,
+      relatedProducts: mappedRelatedProducts
     });
 
     const finalResponse = {

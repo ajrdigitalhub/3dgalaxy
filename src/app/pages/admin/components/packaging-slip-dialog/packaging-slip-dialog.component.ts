@@ -672,12 +672,12 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
 
   // Form State Signals
   easyId = signal('ESUS2026217234');
-  orderNumber = signal('#ORD-2026-217234');
+  orderNumber = signal('#3DX000X');
   dateStr = signal('August 7, 2026');
   trackingNumber = signal('');
 
   shipToName = signal('admin123 R');
-  shipToPhone = signal('8870107785');
+  shipToPhone = signal('9999999999');
   shipToStreet = signal('office | 8 8 8, Mettu Street, pathirapuliyur village');
   shipToCityStateZip = signal('tindivanam, Tamil Nadu - 604304');
   shipToCountry = signal('India');
@@ -773,7 +773,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
 
     let addr: any = ord.shippingAddress || {};
     if (typeof ord.shippingAddress === 'string') {
-      try { addr = JSON.parse(ord.shippingAddress); } catch (e) {}
+      try { addr = JSON.parse(ord.shippingAddress); } catch (e) { }
     }
 
     this.shipToName.set(addr.name || [ord.customer?.user?.firstName, ord.customer?.user?.lastName].filter(Boolean).join(' ') || ord.customerName || 'Valued Customer');
@@ -786,7 +786,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
     const shipmentObj = (ord.shipments && ord.shipments.length > 0) ? ord.shipments[0] : (typeof ord.shipment === 'object' ? ord.shipment : null);
     const resolvedTracking = ord.trackingNumber || shipmentObj?.trackingNumber || ord.awbNumber || shipmentObj?.awbNumber || '';
     this.trackingNumber.set(resolvedTracking);
-    
+
     const shipAmt = ord.shippingAmount !== undefined && ord.shippingAmount !== null ? Number(ord.shippingAmount) : 0;
     this.shippingCost.set(shipAmt);
 
@@ -914,7 +914,7 @@ export class PackagingSlipDialogComponent implements OnInit, OnDestroy {
     const payload = this.buildPayload();
     const targetId = this.order?.id || this.orderNumber()?.replace('#', '') || 'slip';
     const printElement = document.getElementById('printable-packing-slip-sheet');
-    
+
     if (printElement) {
       try {
         if (typeof (window as any).html2pdf === 'undefined') {

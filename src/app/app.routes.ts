@@ -256,44 +256,107 @@ export const routes: Routes = [
         (m) => m.ResetPassword,
       ),
   },
+  // --- Policy Pages ---
   {
-    path: "terms",
-    loadComponent: () =>
-      import("./pages/terms/terms").then((m) => m.TermsAndConditions),
-  },
-  {
-    path: "terms-of-service",
-    loadComponent: () =>
-      import("./pages/terms/terms").then((m) => m.TermsAndConditions),
-  },
-  {
-    path: "privacy-policy",
+    path: "policies/privacy-policy",
+    title: "Privacy Policy - 3D Galaxy",
     loadComponent: () =>
       import("./pages/privacy-policy/privacy-policy").then(
         (m) => m.PrivacyPolicyComponent,
       ),
   },
   {
-    path: "returns",
+    path: "policies/refund-policy",
+    title: "Refund Policy - 3D Galaxy",
     loadComponent: () =>
       import("./pages/returns/returns").then((m) => m.ReturnPolicy),
   },
   {
-    path: "return-policy",
+    path: "pages/return-policy",
+    title: "Return Policy - 3D Galaxy",
     loadComponent: () =>
       import("./pages/returns/returns").then((m) => m.ReturnPolicy),
   },
   {
-    path: "refund-policy",
+    path: "policies/terms-of-service",
+    title: "Terms of Service - 3D Galaxy",
     loadComponent: () =>
-      import("./pages/returns/returns").then((m) => m.ReturnPolicy),
+      import("./pages/terms/terms").then((m) => m.TermsAndConditions),
   },
   {
-    path: "shipping-policy",
+    path: "policies/shipping-policy",
+    title: "Shipping Policy - 3D Galaxy",
     loadComponent: () =>
       import("./pages/shipping/shipping").then(
         (m) => m.ShippingPolicyComponent,
       ),
+  },
+
+  // Policy Legacy Redirects & Aliases
+  {
+    path: "policies/return-policy",
+    redirectTo: "pages/return-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "pages/refund-policy",
+    redirectTo: "policies/refund-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "pages/privacy-policy",
+    redirectTo: "policies/privacy-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "pages/terms-of-service",
+    redirectTo: "policies/terms-of-service",
+    pathMatch: "full",
+  },
+  {
+    path: "pages/shipping-policy",
+    redirectTo: "policies/shipping-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "privacy-policy",
+    redirectTo: "policies/privacy-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "terms",
+    redirectTo: "policies/terms-of-service",
+    pathMatch: "full",
+  },
+  {
+    path: "terms-of-service",
+    redirectTo: "policies/terms-of-service",
+    pathMatch: "full",
+  },
+  {
+    path: "policies/terms",
+    redirectTo: "policies/terms-of-service",
+    pathMatch: "full",
+  },
+  {
+    path: "returns",
+    redirectTo: "pages/return-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "return-policy",
+    redirectTo: "pages/return-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "refund-policy",
+    redirectTo: "policies/refund-policy",
+    pathMatch: "full",
+  },
+  {
+    path: "shipping-policy",
+    redirectTo: "policies/shipping-policy",
+    pathMatch: "full",
   },
   { path: "**", redirectTo: "" },
 ];

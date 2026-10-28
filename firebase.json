@@ -35,6 +35,20 @@
         }
       },
       {
+        "source": "/sitemap.xml",
+        "run": {
+          "serviceId": "api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/google-merchant.xml",
+        "run": {
+          "serviceId": "api",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

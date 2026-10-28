@@ -1,40 +1,85 @@
 <div class="space-y-8 animate-fadeIn">
   <div class="relative bg-neutral-100 dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 overflow-hidden border border-neutral-200 dark:border-neutral-800">
     <div class="absolute -right-20 -top-20 opacity-5 sm:opacity-10 text-neutral-900 dark:text-white pointer-events-none">
-      <mat-icon class="text-[20rem] h-auto w-auto">cached</mat-icon>
+      <mat-icon class="text-[20rem] h-auto w-auto">{{ isRefundOnly ? 'money_off' : 'cached' }}</mat-icon>
     </div>
     
     <div class="relative max-w-3xl space-y-4">
-      <h1 class="text-3xl sm:text-5xl font-sans font-black tracking-tighter text-neutral-900 dark:text-white">Refund Policy</h1>
+      <h1 class="text-3xl sm:text-5xl font-sans font-black tracking-tighter text-neutral-900 dark:text-white">
+        {{ isRefundOnly ? 'Refund Policy' : 'Return Policy' }}
+      </h1>
       <p class="text-neutral-500 font-medium max-w-xl text-sm sm:text-base leading-relaxed">
-        Learn about our return and refund policies.
+        {{ isRefundOnly ? 'Learn about our refund, cancellation, and replacement policies.' : 'Learn about our return, replacement, and exchange policies.' }}
       </p>
+
+      <div class="flex flex-wrap items-center gap-2 pt-2">
+        <a [routerLink]="['/pages/return-policy']"
+          [class]="isReturnOnly && !isRefundOnly ? 'px-4 py-1.5 rounded-full text-xs font-bold bg-[#d65108] text-white transition-all shadow-sm' : 'px-4 py-1.5 rounded-full text-xs font-bold bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-all'">
+          Return Policy
+        </a>
+        <a [routerLink]="['/policies/refund-policy']"
+          [class]="isRefundOnly ? 'px-4 py-1.5 rounded-full text-xs font-bold bg-[#d65108] text-white transition-all shadow-sm' : 'px-4 py-1.5 rounded-full text-xs font-bold bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-all'">
+          Refund Policy
+        </a>
+      </div>
     </div>
   </div>
 
   <div class="max-w-4xl space-y-8 pb-12">
-    <!-- Return Policy -->
-    <section class="space-y-4">
-      <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-        <mat-icon class="text-blue-500">assignment_return</mat-icon> Return Policy
-      </h2>
-      <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
-        <p class="text-base leading-relaxed">
-          We do not accept any return requests we only offer a replacement in 3d galaxy.
-        </p>
-      </div>
-    </section>
+    @if (isRefundOnly) {
+      <!-- Refund Policy First -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+          <mat-icon class="text-[#d65108]">money_off</mat-icon> Refund Policy
+        </h2>
+        <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-3">
+          <p class="text-base leading-relaxed">
+            We do not offer any refunds. In case the customer receives any wrong or defective product we allow replacement for that product. To replace product please contact customer support.
+          </p>
+          <p class="text-sm text-neutral-500">
+            For details on how replacements and return shipping are handled, please review our <a [routerLink]="['/pages/return-policy']" class="text-[#d65108] font-bold hover:underline">Return Policy</a>.
+          </p>
+        </div>
+      </section>
 
-    <!-- Refund Policy -->
-    <section class="space-y-4">
-      <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-        <mat-icon class="text-blue-500">money_off</mat-icon> Refund Policy
-      </h2>
-      <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
-        <p class="text-base leading-relaxed">
-          We do not offer any refunds. In case the customer receives any wrong or defective product we allow replacement for that product. To replace product please contact customer support.
-        </p>
-      </div>
-    </section>
+      <!-- Return Policy Summary -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+          <mat-icon class="text-neutral-500">assignment_return</mat-icon> Return & Replacement Policy
+        </h2>
+        <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+          <p class="text-base leading-relaxed">
+            We do not accept any return requests we only offer a replacement in 3d galaxy.
+          </p>
+        </div>
+      </section>
+    } @else {
+      <!-- Return Policy First -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+          <mat-icon class="text-[#d65108]">assignment_return</mat-icon> Return Policy
+        </h2>
+        <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-3">
+          <p class="text-base leading-relaxed">
+            We do not accept any return requests we only offer a replacement in 3d galaxy.
+          </p>
+          <p class="text-sm text-neutral-500">
+            To understand how replacements are processed instead of cash refunds, please view our <a [routerLink]="['/policies/refund-policy']" class="text-[#d65108] font-bold hover:underline">Refund Policy</a>.
+          </p>
+        </div>
+      </section>
+
+      <!-- Refund Policy Summary -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+          <mat-icon class="text-neutral-500">money_off</mat-icon> Refund Policy
+        </h2>
+        <div class="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-400 p-6 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+          <p class="text-base leading-relaxed">
+            We do not offer any refunds. In case the customer receives any wrong or defective product we allow replacement for that product. To replace product please contact customer support.
+          </p>
+        </div>
+      </section>
+    }
   </div>
 </div>

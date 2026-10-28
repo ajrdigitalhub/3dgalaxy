@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -453,8 +453,8 @@ export class HeaderMegaMenuComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
 
   isOpen = signal<boolean>(false);
-  loading = signal<boolean>(true);
-  menuData = signal<HeaderMenuPayload | null>(null);
+  menuData = computed<HeaderMenuPayload | null>(() => this.ds.headerMenuData());
+  loading = computed<boolean>(() => !this.ds.headerMenuData() && this.ds.headerMenuLoading());
   activeTab = signal<'categories' | 'brands'>('categories');
   selectedRootCategory = signal<CategoryNode | null>(null);
   searchQuery = signal<string>('');
@@ -464,26 +464,25 @@ export class HeaderMegaMenuComponent implements OnInit {
 
   private hoverTimeout: any = null;
 
+  constructor() {
+    effect(() => {
+      const data = this.menuData();
+      if (data?.categories && data.categories.length > 0) {
+        const current = this.selectedRootCategory();
+        if (!current || !data.categories.some(c => c.id === current.id)) {
+          this.selectedRootCategory.set(data.categories[0]);
+        }
+      }
+    });
+  }
+
   ngOnInit() {
-    // Menu data is loaded lazily on user interaction (hover or click)
+    // Menu data is preloaded at application startup before homepage rendering
+    this.ds.loadHeaderMenu();
   }
 
   fetchHeaderMenu() {
-    if (this.menuData()) return;
-    this.api.get<any>('/header-menu').subscribe({
-      next: (res) => {
-        if (res && res.data) {
-          this.menuData.set(res.data);
-          if (res.data.categories && res.data.categories.length > 0) {
-            this.selectedRootCategory.set(res.data.categories[0]);
-          }
-        }
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-      }
-    });
+    this.ds.loadHeaderMenu();
   }
 
   // Category Specific Icon Mapping
@@ -612,7 +611,6 @@ export class HeaderMegaMenuComponent implements OnInit {
   private closeTimeout: any = null;
 
   onMouseEnter() {
-    this.fetchHeaderMenu();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;
@@ -642,7 +640,6 @@ export class HeaderMegaMenuComponent implements OnInit {
   }
 
   toggleMenu() {
-    this.fetchHeaderMenu();
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
       this.closeTimeout = null;

@@ -9,11 +9,11 @@ export const DEFAULT_FOOTER_GROUPS = [
     title: "Policies",
     isActive: true,
     links: [
-      { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
-      { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
-      { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
-      { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
-      { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+      { id: "ref-policy", title: "Refund Policy", url: "/policies/refund-policy", isActive: true, openInNewTab: false },
+      { id: "ret-policy", title: "Return Policy", url: "/pages/return-policy", isActive: true, openInNewTab: false },
+      { id: "priv-policy", title: "Privacy Policy", url: "/policies/privacy-policy", isActive: true, openInNewTab: false },
+      { id: "tos-policy", title: "Terms of Service", url: "/policies/terms-of-service", isActive: true, openInNewTab: false },
+      { id: "ship-policy", title: "Shipping Policy", url: "/policies/shipping-policy", isActive: true, openInNewTab: false },
       { id: "abt-policy", title: "About Us", url: "/about", isActive: true, openInNewTab: false }
     ]
   },
@@ -416,6 +416,23 @@ export class SettingsService {
       const footerObj = { ...d.footer };
       if (!footerObj.groups || footerObj.groups.length === 0) {
         footerObj.groups = DEFAULT_FOOTER_GROUPS;
+      } else {
+        const legacyPolicyMap: Record<string, string> = {
+          '/privacy-policy': '/policies/privacy-policy',
+          '/refund-policy': '/policies/refund-policy',
+          '/return-policy': '/pages/return-policy',
+          '/returns': '/pages/return-policy',
+          '/terms': '/policies/terms-of-service',
+          '/terms-of-service': '/policies/terms-of-service',
+          '/shipping-policy': '/policies/shipping-policy',
+        };
+        footerObj.groups = footerObj.groups.map((g: any) => ({
+          ...g,
+          links: (g.links || []).map((l: any) => ({
+            ...l,
+            url: legacyPolicyMap[l.url] || l.url,
+          })),
+        }));
       }
       this.footer.set(footerObj);
     }

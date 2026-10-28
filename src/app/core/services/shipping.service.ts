@@ -243,6 +243,10 @@ export class ShippingService {
     for (const item of cartItems) {
       const prod = item.product || item;
       if (!prod) continue;
+      // Free included products do not add to shipping costs, weight calculations, or cart subtotal
+      if (item.isFree || item.configurationType === 'free_bundle' || prod.isFree) {
+        continue;
+      }
 
       const qty = Math.max(1, Number(item.quantity) || 1);
       const variant = item.variant || null;

@@ -79,6 +79,10 @@ export class CheckoutComponent implements OnInit {
     return res.totalGrams > 0 ? res.display : '';
   }
 
+  isFreeItem(item: any): boolean {
+    return this.ds.isFreeItem(item);
+  }
+
   getItemDeliveryDays(item: any): number | string {
     const p = item?.product || item;
     const raw = p?.estimatedDeliveryDays ?? p?.estimated_delivery_days ?? p?.shipping?.estimatedDays ?? p?.shipping?.deliveryDays ?? this.shippingDetails().estimatedDays;

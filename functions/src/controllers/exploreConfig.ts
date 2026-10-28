@@ -239,6 +239,40 @@ function formatProduct(p: any, reviewsMap: Map<string, number[]>) {
   };
 }
 
+export function getExploreCategoryIcon(name: string): string {
+  const n = (name || '').toLowerCase();
+  if (n.includes('accessory') || n.includes('accessories') || n.includes('hardware')) return 'build';
+  if (n.includes('bed') || n.includes('plate') || n.includes('pei')) return 'layers';
+  if (n.includes('nozzle') || n.includes('hotend')) return 'tune';
+  if (n.includes('extruder') || n.includes('feeder')) return 'settings_input_component';
+  if (n.includes('part') || n.includes('spare')) return 'build';
+  if (n.includes('filament') || n.includes('material') || n.includes('pla') || n.includes('abs') || n.includes('petg')) return 'texture';
+  if (n.includes('resin')) return 'science';
+  if (n.includes('printer')) return 'precision_manufacturing';
+  if (n.includes('pen')) return 'edit';
+  if (n.includes('scanner')) return 'document_scanner';
+  if (n.includes('laser') || n.includes('engraver')) return 'auto_awesome';
+  return 'category';
+}
+
+export function getDefaultExploreCategoryDesc(name: string): string {
+  const n = (name || '').toLowerCase();
+  if (n.includes('accessory') || n.includes('accessories') || n.includes('upgrade')) return 'Build Plates, Tools & Upgrades';
+  if (n.includes('part') || n.includes('spare') || n.includes('nozzle') || n.includes('extruder')) return 'Original Nozzles, Hotends & Extruders';
+  if (n.includes('filament') || n.includes('material')) return 'PLA, PETG, ABS, TPU & Carbon Fiber';
+  if (n.includes('resin')) return 'Precision 8K & Engineering Liquid Resins';
+  if (n.includes('printer')) return 'High-speed FDM & Resin 3D Printers';
+  if (n.includes('pen')) return 'Creative 3D Drawing & Extrusion Pens';
+  return `Explore ${name} equipment & materials`;
+}
+
+export function getDefaultExploreCategoryImg(name: string): string {
+  const n = (name || '').toLowerCase();
+  if (n.includes('printer')) return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
+  if (n.includes('filament')) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+  return 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?q=80&w=600&auto=format&fit=crop';
+}
+
 /**
  * Executes all database work needed to build the explore-navigation payload.
  * All independent queries are parallelised with Promise.all.
@@ -248,7 +282,7 @@ async function buildExplorePayload(config: typeof DEFAULT_EXPLORE_CONFIG): Promi
   const limitPerCategory = (config as any).categorySectionsConfig?.productsPerCategory || 6;
 
   // ── A: Category counts + category structure in parallel ──────────────────
-  const [categoryGroupCounts, rootCategories, allDbCategories] = await Promise.all([
+  const [categoryGroupCounts, rootCategories, allDbCategories, featuredCategoriesDb, appSettingsRecord] = await Promise.all([
     // Count of active products per categoryId (used for productCount totals)
     prisma.product.groupBy({
       by: ['categoryId'],
@@ -258,13 +292,23 @@ async function buildExplorePayload(config: typeof DEFAULT_EXPLORE_CONFIG): Promi
     // Root categories with only the fields we display
     prisma.category.findMany({
       where: { isActive: true, deletedAt: null, parentId: null },
-      select: { id: true, name: true, slug: true, description: true, image: true, banner: true, sortOrder: true },
+      select: { id: true, name: true, slug: true, description: true, image: true, banner: true, sortOrder: true, isFeatured: true, icon: true },
       orderBy: { sortOrder: 'asc' },
     }),
-    // All active category IDs+parentIds for BFS descendant lookup
+    // All active category IDs+parentIds for BFS descendant lookup + details
     prisma.category.findMany({
       where: { isActive: true, deletedAt: null },
-      select: { id: true, parentId: true },
+      select: { id: true, parentId: true, name: true, slug: true, description: true, image: true, banner: true, isFeatured: true, icon: true },
+    }),
+    // Active categories explicitly marked as featured in DB
+    prisma.category.findMany({
+      where: { isActive: true, deletedAt: null, isFeatured: true },
+      select: { id: true, name: true, slug: true, description: true, image: true, banner: true, sortOrder: true, isFeatured: true, icon: true },
+      orderBy: { sortOrder: 'asc' },
+    }),
+    // App settings to check homepageSections.featuredCategories
+    prisma.setting.findUnique({
+      where: { settingKey: 'app_settings' },
     }),
   ]);
 
@@ -434,11 +478,45 @@ async function buildExplorePayload(config: typeof DEFAULT_EXPLORE_CONFIG): Promi
       `https://ui-avatars.com/api/?name=${encodeURIComponent(b.name)}&background=0D1017&color=F97316&size=128`,
   }));
 
-  // newArrivals reuses trendingRaw (same newest-first query) — eliminates duplicate DB call
+  // ── Build dynamic featured categories based on selected / featured in DB ──
+  const settingSelectedSlugs = (
+    (appSettingsRecord?.settingData as any)?.homePageSections?.featuredCategories || []
+  ).map((s: string) => String(s).toLowerCase().trim()).filter(Boolean);
+
+  let dynamicFeaturedList = featuredCategoriesDb;
+  if (settingSelectedSlugs.length > 0) {
+    const fromSettings = allDbCategories.filter((c: any) =>
+      settingSelectedSlugs.includes(c.slug.toLowerCase()) || settingSelectedSlugs.includes(c.id.toLowerCase())
+    );
+    if (fromSettings.length > 0) {
+      dynamicFeaturedList = fromSettings as any;
+    }
+  }
+
+  // Fallback: If no categories are explicitly marked as featured, use active root categories
+  if (dynamicFeaturedList.length === 0) {
+    dynamicFeaturedList = rootCategories.slice(0, 6) as any;
+  }
+
+  const dynamicFeaturedCategoriesConfig = dynamicFeaturedList.map((cat: any) => {
+    return {
+      name: cat.name,
+      slug: cat.slug || cat.id,
+      icon: (cat.icon && cat.icon !== 'folder') ? cat.icon : getExploreCategoryIcon(cat.name),
+      description: cat.description || getDefaultExploreCategoryDesc(cat.name),
+      image: cat.image || cat.banner || getDefaultExploreCategoryImg(cat.name),
+    };
+  });
+
+  const effectiveConfig = {
+    ...config,
+    featuredCategoriesConfig: dynamicFeaturedCategoriesConfig,
+  };
+
   const effectiveBestSellers = bestSellersRaw.length > 0 ? bestSellersRaw : trendingRaw;
 
   return {
-    config,
+    config: effectiveConfig,
     categorySections,
     trendingProducts: trendingRaw.map((p: any) => formatProduct(p, reviewsMap)),
     bestSellers: effectiveBestSellers.map((p: any) => formatProduct(p, reviewsMap)),

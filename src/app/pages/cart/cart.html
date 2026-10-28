@@ -78,7 +78,12 @@
           >
             <!-- Dynamic Highlight Chips (Flipkart style) -->
             <div class="absolute top-4 right-4 sm:top-6 sm:right-6 flex gap-2">
-              @if (ds.isCodAvailable(item.product) && (!item.variant || item.variant.codAvailable !== false)) {
+              @if (isFreeItem(item)) {
+              <span
+                class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 border border-emerald-500/20"
+                ><mat-icon class="scale-[0.55] -mx-0.5">card_giftcard</mat-icon> Free Included</span
+              >
+              } @else if (ds.isCodAvailable(item.product) && (!item.variant || item.variant.codAvailable !== false)) {
               <span
                 class="px-2 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-wider rounded-md flex items-center gap-1 border border-emerald-500/20"
                 ><mat-icon class="scale-[0.5] -mx-1">local_shipping</mat-icon> ✅ COD
@@ -155,31 +160,33 @@
                   <p class="text-[10px] font-mono text-neutral-400 mt-0.5">
                     SKU: {{ item.variant?.sku || item.product.sku }}
                   </p>
-                  @if (item.selectedWeightValue) {
-                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    <span class="inline-flex items-center gap-1 text-[10px] font-mono font-black text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-900/60">
-                      <mat-icon class="scale-[0.55] -mx-1 text-indigo-500">scale</mat-icon>
-                      Weight: {{ item.selectedWeightValue }} {{ item.selectedWeightUnit || 'kg' }} {{ item.isCustomWeight ? '(Custom)' : '' }}
-                    </span>
-                    <span class="text-[10px] font-bold text-slate-500">
-                      (Line Mass: {{ calculateLineWeightDisplay(item) }})
-                    </span>
-                  </div>
-                  } @else if (getItemWeight(item)) {
-                  <div class="mt-1">
-                    <span class="inline-flex items-center gap-1 text-[10px] font-mono font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-900/40">
-                      <mat-icon class="scale-[0.55] -mx-1 text-amber-500">scale</mat-icon> Weight: {{ getItemWeight(item) }}
-                    </span>
-                  </div>
+                  @if (!isFreeItem(item)) {
+                    @if (item.selectedWeightValue) {
+                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span class="inline-flex items-center gap-1 text-[10px] font-mono font-black text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-900/60">
+                        <mat-icon class="scale-[0.55] -mx-1 text-indigo-500">scale</mat-icon>
+                        Weight: {{ item.selectedWeightValue }} {{ item.selectedWeightUnit || 'kg' }} {{ item.isCustomWeight ? '(Custom)' : '' }}
+                      </span>
+                      <span class="text-[10px] font-bold text-slate-500">
+                        (Line Mass: {{ calculateLineWeightDisplay(item) }})
+                      </span>
+                    </div>
+                    } @else if (getItemWeight(item)) {
+                    <div class="mt-1">
+                      <span class="inline-flex items-center gap-1 text-[10px] font-mono font-black text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-900/40">
+                        <mat-icon class="scale-[0.55] -mx-1 text-amber-500">scale</mat-icon> Weight: {{ getItemWeight(item) }}
+                      </span>
+                    </div>
+                    }
+                    
+                    <div class="mt-2 text-xs text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5">
+                      <mat-icon class="scale-[0.65] text-neutral-400 -mx-0.5">local_shipping</mat-icon>
+                      <span>Estimated Delivery:</span>
+                      <strong class="text-neutral-800 dark:text-neutral-200">
+                        {{ getItemDeliveryDays(item) | deliveryEstimate:'desktop' }}
+                      </strong>
+                    </div>
                   }
-                  
-                  <div class="mt-2 text-xs text-neutral-500 dark:text-neutral-400 font-semibold flex items-center gap-1.5">
-                    <mat-icon class="scale-[0.65] text-neutral-400 -mx-0.5">local_shipping</mat-icon>
-                    <span>Estimated Delivery:</span>
-                    <strong class="text-neutral-800 dark:text-neutral-200">
-                      {{ getItemDeliveryDays(item) | deliveryEstimate:'desktop' }}
-                    </strong>
-                  </div>
                 </div>
 
                 <!-- Pricing -->

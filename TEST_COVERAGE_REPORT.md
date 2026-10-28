@@ -1,8 +1,8 @@
 # 3D Galaxy — Automated Regression & CI Validation Report
 
-**Generated:** 2026-10-27T12:43:32.433Z  
+**Generated:** 2026-10-27T21:30:53.873Z  
 **Status:** PASSED (CI APPROVED)  
-**Total Duration:** 35.10s  
+**Total Duration:** 38.23s  
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Test Level | Total Cases | Passed | Failed | Skipped | Pass Rate |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Level 1 — Unit Tests** | 151 | 151 | 0 | 0 | 100% |
+| **Level 1 — Unit Tests** | 161 | 161 | 0 | 0 | 100% |
 | **Level 2 — API Tests** | 52 | 52 | 0 | 0 | 100% |
 | **Level 3 — Integration Tests** | 13 | 13 | 0 | 0 | 100% |
 | **Level 4 — Smoke Tests (Section 41)** | 14 | 14 | 0 | 0 | 100% |
-| **TOTAL OVERALL** | **230** | **230** | **0** | **0** | **100.0%** |
+| **TOTAL OVERALL** | **240** | **240** | **0** | **0** | **100.0%** |
 
 ---
 
@@ -23,103 +23,109 @@
 ### Cart, Pricing, COD & Variants Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 10 | **Failed:** 0
-- **Duration:** 11ms
+- **Duration:** 2ms
 
 
 ### Auth, Interceptors & Deduplication Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 6 | **Failed:** 0
-- **Duration:** 7ms
+- **Duration:** 2ms
 
 
 ### Media Preservation, Reviews & Backups Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 8 | **Failed:** 0
-- **Duration:** 14ms
+- **Duration:** 4ms
 
 
 ### Security Sanitization & Responsive Layout Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 17ms
+- **Duration:** 3ms
 
 
 ### Add to Cart Flow for Variant Products (50 Tests) (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 50 | **Failed:** 0
-- **Duration:** 35ms
+- **Duration:** 17ms
 
 
 ### Campaign Manager, Eligibility, Preview & FCM Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 7ms
+- **Duration:** 6ms
 
 
 ### Brand Synchronization, Complimentary Bundles & Filaments Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 22 | **Failed:** 0
-- **Duration:** 15ms
+- **Duration:** 12ms
 
 
 ### Instagram Live Feed, Media Normalization & Security Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 7 | **Failed:** 0
-- **Duration:** 5ms
+- **Duration:** 2ms
 
 
 ### Marketing Tracking Credentials, Health & Sanitization Unit Tests (UNIT)
 - **Status:** ✅ PASSED
 - **Passed:** 25 | **Failed:** 0
-- **Duration:** 9ms
+- **Duration:** 8ms
+
+
+### E-commerce SEO Engine, Canonical & Feeds Unit Tests (UNIT)
+- **Status:** ✅ PASSED
+- **Passed:** 10 | **Failed:** 0
+- **Duration:** 7ms
 
 
 ### Public Storefront & Guest Experience API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 15143ms
+- **Duration:** 15414ms
 
 
 ### Checkout, COD Validation & Payment API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 5 | **Failed:** 0
-- **Duration:** 139ms
+- **Duration:** 62ms
 
 
 ### Admin Route Authorization & Security API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 11 | **Failed:** 0
-- **Duration:** 4747ms
+- **Duration:** 3452ms
 
 
 ### WhatsApp Webhooks & Automation API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 4 | **Failed:** 0
-- **Duration:** 1613ms
+- **Duration:** 1379ms
 
 
 ### TaskHub Observability & Health Integration API Tests (API)
 - **Status:** ✅ PASSED
 - **Passed:** 18 | **Failed:** 0
-- **Duration:** 6546ms
+- **Duration:** 12089ms
 
 
 ### Customer Checkout Lifecycle Pipeline Test (INTEGRATION)
 - **Status:** ✅ PASSED
 - **Passed:** 1 | **Failed:** 0
-- **Duration:** 3237ms
+- **Duration:** 1963ms
 
 
 ### FCM Push Notifications Domain & Environment Isolation Tests (INTEGRATION)
 - **Status:** ✅ PASSED
 - **Passed:** 12 | **Failed:** 0
-- **Duration:** 2431ms
+- **Duration:** 2265ms
 
 
 ### Pre-Deployment Critical Smoke Tests (SMOKE)
 - **Status:** ✅ PASSED
 - **Passed:** 14 | **Failed:** 0
-- **Duration:** 270ms
+- **Duration:** 1430ms
 
 
 

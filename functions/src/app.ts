@@ -213,6 +213,8 @@ app.use(
 
 // API Routing Configurations
 app.use("/", sitemapRoutes);
+app.use("/api", sitemapRoutes);
+app.use("/", marketingRoutes);
 app.get("/api/home", cacheMiddleware(300), getConsolidatedHome);
 app.get(
   "/api/home/featured-products",

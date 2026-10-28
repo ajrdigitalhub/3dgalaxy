@@ -7,6 +7,7 @@ import {
   ElementRef,
   ViewChild,
   effect,
+  DestroyRef,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { of } from "rxjs";
@@ -41,6 +42,7 @@ import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
 import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
+import { SeoService } from "../../core/services/seo.service";
 
 @Component({
   selector: "app-product-detail",
@@ -1409,6 +1411,8 @@ export class ProductDetail {
   titleService = inject(Title);
   metaService = inject(Meta);
   document = inject(DOCUMENT);
+  seoService = inject(SeoService);
+  destroyRef = inject(DestroyRef);
 
   isWeightBasedProduct(p: any): boolean {
     if (!p) return false;
@@ -1698,6 +1702,19 @@ export class ProductDetail {
       }
     });
 
+    effect(() => {
+      const prod = this.product();
+      const variant = this.selectedVariant();
+      if (prod && (prod.slug || prod.id)) {
+        this.seoService.setProductSeo(prod, variant);
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.seoService.removeJsonLd('product');
+      this.seoService.removeJsonLd('breadcrumbs');
+    });
+
     this.route.params
       .pipe(
         takeUntilDestroyed(),
@@ -1723,45 +1740,8 @@ export class ProductDetail {
             this.initializeDefaultVariant(matched);
             this.saveToRecentlyViewed(matched);
 
-            // Update SEO
-            const pageTitle =
-              (matched as any).seoTitle ||
-              `Buy ${matched.brand} ${matched.name} Online (Best Price) | 3D Galaxy`;
-            const pageDesc =
-              (matched as any).seoDescription ||
-              `Get genuine ${matched.brand} ${matched.name} in India. OEM warranty, bulk dealer pricing, and fast shipping options. Check out specifications and reviews.`;
-            this.titleService.setTitle(pageTitle);
-            this.metaService.updateTag({
-              name: "description",
-              content: pageDesc,
-            });
-            this.metaService.updateTag({
-              property: "og:title",
-              content: pageTitle,
-            });
-            this.metaService.updateTag({
-              property: "og:description",
-              content: pageDesc,
-            });
-            if (firstImg) {
-              this.metaService.updateTag({
-                property: "og:image",
-                content: firstImg,
-              });
-            }
-
-            let link: HTMLLinkElement | null = this.document.querySelector(
-              "link[rel='canonical']",
-            );
-            if (!link) {
-              link = this.document.createElement("link");
-              link.setAttribute("rel", "canonical");
-              this.document.head.appendChild(link);
-            }
-            link.setAttribute(
-              "href",
-              `${environment.siteUrl}/product/${matched.slug}`,
-            );
+            // Preliminary SEO synchronization from cached store data
+            this.seoService.setProductSeo(matched, this.selectedVariant());
           }
 
           return this.api.get<any>(`/products/slug/${slugStr}`).pipe(
@@ -1790,6 +1770,7 @@ export class ProductDetail {
           };
           this.fetchedProduct.set(merged);
           this.initializeDefaultVariant(merged);
+          this.seoService.setProductSeo(merged, this.selectedVariant());
           try {
             const trackingItem = mapProductToAnalyticsItem(merged, 1, this.selectedVariant());
             this.analytics.trackViewItem(trackingItem);

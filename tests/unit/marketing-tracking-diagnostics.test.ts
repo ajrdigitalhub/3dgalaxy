@@ -273,7 +273,7 @@ export async function runMarketingTrackingUnitTests() {
       return true; // Dispatched
     }
 
-    const testTxId = 'ORD-2026-9901';
+    const testTxId = '3DX000X';
 
     // First attempt: must dispatch
     const firstDispatch = recordPurchase(testTxId);

@@ -13,6 +13,7 @@ import { runCampaignManagerAndPushUnitTests } from '../unit/campaign-manager-and
 import { runProductBrandBundleFilamentUnitTests } from '../unit/product-brand-bundle-filament.test';
 import { runInstagramFeedUnitTests } from '../unit/instagram-feed.test';
 import { runMarketingTrackingUnitTests } from '../unit/marketing-tracking-diagnostics.test';
+import { runSeoEngineAndFeedsUnitTests } from '../unit/seo-engine-and-feeds.test';
 import { runPublicStorefrontApiTests } from '../api/public-storefront-api.test';
 import { runCheckoutAndOrdersApiTests } from '../api/checkout-orders-api.test';
 import { runAdminManagementApiTests } from '../api/admin-management-api.test';
@@ -101,6 +102,12 @@ async function main() {
     const dMkt = Date.now() - sMkt;
     suites.push({ name: 'Marketing Tracking Credentials, Health & Sanitization Unit Tests', category: 'UNIT', ...rMkt, durationMs: dMkt });
     console.log(`  ✓ Marketing Tracking Credentials & Health Suite: ${rMkt.passed} passed, ${rMkt.failed} failed (${dMkt}ms)`);
+
+    const sSeo = Date.now();
+    const rSeo = await runSeoEngineAndFeedsUnitTests();
+    const dSeo = Date.now() - sSeo;
+    suites.push({ name: 'E-commerce SEO Engine, Canonical & Feeds Unit Tests', category: 'UNIT', ...rSeo, durationMs: dSeo });
+    console.log(`  ✓ E-Commerce SEO Engine, Canonical & Feeds Suite: ${rSeo.passed} passed, ${rSeo.failed} failed (${dSeo}ms)`);
   }
 
   // LEVEL 2: API TESTS

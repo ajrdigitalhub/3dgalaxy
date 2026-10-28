@@ -180,8 +180,38 @@ export class App {
     }
   }
 
-  // Categories Hierarchy for Nav
-  rootCategories = computed(() => this.ds.categories().filter(c => !c.parent_id));
+  // Categories Hierarchy for Mobile Side Nav: only allowed / featured collections & categories
+  rootCategories = computed(() => {
+    const all = this.ds.categories() || [];
+    
+    // Strict filter for true root categories (neither parentId nor parent_id present)
+    const validRoots = all.filter(c => {
+      const pId = c.parentId || c.parent_id;
+      const isRoot = !pId || pId === 'null' || pId === 'undefined';
+      const isNotUncategorized = c.slug !== 'uncategorized' && c.name?.toLowerCase() !== 'uncategorized';
+      const isActive = c.isActive !== false && (c as any).status !== 'inactive';
+      return isRoot && isNotUncategorized && isActive;
+    });
+
+    // Check if categories are designated as featured in DB or settings
+    const settingsFeat = this.settingsService.homepageSections()?.featuredCategories ||
+                         (this.settingsService.settingsData() as any)?.homePageSections?.featuredCategories ||
+                         [];
+    const featuredSlugs = Array.isArray(settingsFeat) 
+      ? settingsFeat.map((s: string) => String(s).toLowerCase().trim()) 
+      : [];
+
+    const featured = validRoots.filter(c => 
+      c.isFeatured === true || 
+      (c as any).is_featured === true || 
+      (c as any).is_featured === 'true' ||
+      featuredSlugs.includes(c.slug?.toLowerCase()) ||
+      featuredSlugs.includes(c.id?.toLowerCase())
+    );
+
+    // If featured categories are marked/configured, show them; otherwise show verified root categories
+    return featured.length > 0 ? featured : validRoots;
+  });
   
   categoryIconMap: Record<string, string> = {
     'cat-1': 'precision_manufacturing', // 3D Printers
@@ -397,14 +427,27 @@ export class App {
     return this.ds.cart().reduce((sum, item) => sum + item.quantity, 0);
   });
 
-  getIcon(catId: string): string {
-    const icons: Record<string, string> = {
-      'cat-1': 'precision_manufacturing',
-      'cat-2': 'grain',
-      'cat-3': 'science',
-      'cat-4': 'settings'
-    };
-    return icons[catId] || 'category';
+  getCategoryIcon(name: string, catId?: string): string {
+    const n = (name || '').toLowerCase();
+    if (n.includes('printer') || n.includes('3d printer')) return 'precision_manufacturing';
+    if (n.includes('filament') || n.includes('material') || n.includes('pla') || n.includes('abs') || n.includes('petg')) return 'texture';
+    if (n.includes('resin')) return 'science';
+    if (n.includes('pen') || n.includes('3d pen')) return 'edit';
+    if (n.includes('bed') || n.includes('print bed') || n.includes('plate') || n.includes('pei')) return 'layers';
+    if (n.includes('nozzle') || n.includes('hotend') || n.includes('heatbreak')) return 'tune';
+    if (n.includes('extruder') || n.includes('feeder')) return 'settings_input_component';
+    if (n.includes('electronic') || n.includes('board') || n.includes('pcb') || n.includes('sensor')) return 'memory';
+    if (n.includes('hardware') || n.includes('accessory') || n.includes('accessories') || n.includes('part')) return 'build';
+    if (n.includes('tool') || n.includes('maintenance') || n.includes('repair')) return 'handyman';
+    if (n.includes('laser') || n.includes('cnc')) return 'auto_awesome';
+    if (n.includes('scanner')) return 'document_scanner';
+    return 'category';
+  }
+
+  getIcon(catId: string, name?: string): string {
+    if (name) return this.getCategoryIcon(name, catId);
+    const found = this.ds.categories().find(c => c.id === catId);
+    return this.getCategoryIcon(found?.name || '', catId);
   }
 
   // Pre-computed maps aliased from DatastoreService

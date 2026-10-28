@@ -1,0 +1,38 @@
+# 3D Galaxy Robots.txt
+# Technical SEO: Crawl & Index Directives
+User-agent: *
+Allow: /
+Allow: /product/
+Allow: /category/
+Allow: /brand/
+Allow: /explore
+Allow: /products
+Allow: /slicer
+Allow: /about
+Allow: /policies/
+Allow: /pages/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Disallow private user accounts, cart/checkout flows, and administrative surfaces
+Disallow: /admin/
+Disallow: /admin
+Disallow: /account/
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /api/
+Disallow: /order-success
+Disallow: /order-confirmation
+
+# Allow explicit access to public sitemaps and shopping feeds
+Allow: /api/sitemap.xml
+Allow: /api/marketing/feeds/google-merchant.xml
+
+# Authoritative XML Sitemap location
+Sitemap: https://3dgalaxy.co.in/sitemap.xml

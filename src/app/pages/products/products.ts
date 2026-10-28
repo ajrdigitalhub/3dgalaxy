@@ -27,6 +27,7 @@ import { hasProductVariants } from "../../shared/utils/product.utils";
 import { environment } from "../../../environments/environment";
 import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
 import { ShippingService } from "../../core/services/shipping.service";
+import { SeoService } from "../../core/services/seo.service";
 
 @Component({
   selector: "app-products",
@@ -53,6 +54,7 @@ export class Products implements OnInit {
   analytics = inject(AnalyticsService);
   shippingService = inject(ShippingService);
   toastService = inject(ToastService);
+  seoService = inject(SeoService);
   wishlistIds = signal<Set<string>>(new Set());
 
   isFreeShippingApplicable(p: any): boolean {
@@ -145,6 +147,11 @@ export class Products implements OnInit {
 
       this.loadWishlist();
     });
+
+    this.destroyRef.onDestroy(() => {
+      this.seoService.removeJsonLd('category');
+      this.seoService.removeJsonLd('breadcrumbs');
+    });
   }
 
   ngOnInit() {
@@ -203,10 +210,19 @@ export class Products implements OnInit {
           }
 
           const name = cat ? cat.name : slug.replace(/-/g, " ");
+          const fullTitle = `${name} | Buy Online at Best Price in India | 3D Galaxy`;
+          const fullDesc = `Shop genuine ${name} at India's lowest prices. Explore authorized 3D printers, filaments, and parts with warranty & fast dispatch.`;
           this.setSeoTags(
-            name,
-            `Shop premium ${name} at India's lowest prices. Explore authorized FDM printers, high-grade filaments, and spare parts. Fast shipping & expert support!`,
+            fullTitle,
+            fullDesc,
             `category/${slug}`,
+            {
+              id: cat?.id,
+              name: name,
+              slug: slug,
+              description: fullDesc,
+              image: cat?.image || (cat as any)?.bannerImage
+            }
           );
         } else if (params["brandSlug"]) {
           const bSlug = params["brandSlug"];
@@ -221,10 +237,19 @@ export class Products implements OnInit {
           }
 
           const name = b ? b.name : bSlug;
+          const fullTitle = `Buy Original ${name} Products Online | 3D Galaxy India`;
+          const fullDesc = `Get authorized ${name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`;
           this.setSeoTags(
-            `Buy Original ${name} Products Online | 3D Galaxy India`,
-            `Get authorized ${name} 3D printers, parts & accessories at the best rates in India. 100% genuine products with manufacturer warranty & fast delivery.`,
+            fullTitle,
+            fullDesc,
             `brand/${bSlug}`,
+            {
+              id: b?.id,
+              name: name,
+              slug: bSlug,
+              description: fullDesc,
+              image: (b as any)?.image || (b as any)?.logo
+            }
           );
         } else {
           this.setSeoTags(
@@ -253,20 +278,29 @@ export class Products implements OnInit {
 
   }
 
-  setSeoTags(title: string, desc: string, path: string) {
+  setSeoTags(title: string, desc: string, path: string, categoryData?: any) {
+    const canonicalPath = path.startsWith('/') ? path : `/${path}`;
     this.titleService.setTitle(title);
     this.metaService.updateTag({ name: "description", content: desc });
-    this.metaService.updateTag({ property: "og:title", content: title });
+    this.metaService.updateTag({ name: "robots", content: "index, follow" });
 
-    let link: HTMLLinkElement | null = this.document.querySelector(
-      "link[rel='canonical']",
-    );
-    if (!link) {
-      link = this.document.createElement("link");
-      link.setAttribute("rel", "canonical");
-      this.document.head.appendChild(link);
+    this.seoService.setCanonicalUrl(canonicalPath);
+    this.seoService.setSocialMetadata({
+      title,
+      description: desc,
+      url: canonicalPath,
+      image: categoryData?.image || 'https://3dgalaxy.co.in/3d-logo.png',
+      type: 'website'
+    });
+
+    if (categoryData) {
+      this.seoService.setCategorySeo(categoryData);
+    } else {
+      this.seoService.setBreadcrumbsSeo([
+        { name: 'Home', url: '/' },
+        { name: title.split('|')[0].trim(), url: canonicalPath }
+      ]);
     }
-    link.setAttribute("href", `${environment.siteUrl}/${path}`);
   }
 
   syncParamsToSignals(params: any) {

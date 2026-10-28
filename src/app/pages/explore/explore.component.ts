@@ -224,23 +224,30 @@ export interface ExplorePagePayload {
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 @for (fCat of featuredCategories(); track fCat.name) {
                   <a
                     [routerLink]="['/category', fCat.slug]"
                     class="group/fcat relative rounded-3xl overflow-hidden h-56 sm:h-64 bg-slate-900 text-white p-5 flex flex-col justify-end no-underline shadow-lg hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 hover:-translate-y-2 border border-slate-200/60 dark:border-slate-800/80 cursor-pointer"
                   >
                     <!-- Category Card Image -->
-                    <img [src]="fCat.image" [alt]="fCat.name" class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover/fcat:scale-110 transition-transform duration-500" />
+                    <img 
+                      [src]="fCat.image" 
+                      [alt]="fCat.name" 
+                      class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover/fcat:scale-110 transition-transform duration-500" 
+                      loading="lazy" 
+                      referrerpolicy="no-referrer"
+                      (error)="$any($event.target).style.display = 'none'"
+                    />
                     
                     <!-- Gradient Overlay -->
-                    <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/50 to-transparent"></div>
+                    <div class="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
                     <div class="absolute inset-0 bg-orange-500/15 opacity-0 group-hover/fcat:opacity-100 transition-opacity"></div>
 
                     <!-- Card Info -->
                     <div class="relative z-10 space-y-1.5">
                       <div class="w-9 h-9 rounded-2xl bg-orange-500/20 text-orange-400 backdrop-blur-md border border-orange-500/40 flex items-center justify-center mb-2 group-hover/fcat:scale-110 group-hover/fcat:bg-orange-500 group-hover/fcat:text-white transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]">
-                        <mat-icon class="text-base">{{ fCat.icon || 'category' }}</mat-icon>
+                        <mat-icon class="text-base">{{ fCat.icon || getCategoryIcon(fCat.name) }}</mat-icon>
                       </div>
                       <h3 class="text-xs sm:text-sm font-black uppercase text-white leading-tight group-hover/fcat:text-orange-400 transition-colors">
                         {{ fCat.name }}
@@ -591,6 +598,7 @@ export class ExplorePageComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private toast = inject(ToastService);
   private platformId = inject(PLATFORM_ID);
+  public ds = inject(DatastoreService);
 
   loading = signal<boolean>(true);
   payload = signal<ExplorePagePayload | null>(null);
@@ -632,13 +640,100 @@ export class ExplorePageComponent implements OnInit, OnDestroy {
     }, 5000);
   }
 
+  getCategoryIcon(name: string): string {
+    const n = (name || '').toLowerCase();
+    if (n.includes('accessory') || n.includes('accessories') || n.includes('hardware')) return 'build';
+    if (n.includes('bed') || n.includes('plate') || n.includes('pei')) return 'layers';
+    if (n.includes('nozzle') || n.includes('hotend')) return 'tune';
+    if (n.includes('extruder') || n.includes('feeder')) return 'settings_input_component';
+    if (n.includes('part') || n.includes('spare')) return 'build';
+    if (n.includes('filament') || n.includes('material') || n.includes('pla') || n.includes('abs') || n.includes('petg')) return 'texture';
+    if (n.includes('resin')) return 'science';
+    if (n.includes('printer')) return 'precision_manufacturing';
+    if (n.includes('pen')) return 'edit';
+    if (n.includes('scanner')) return 'document_scanner';
+    if (n.includes('laser') || n.includes('engraver')) return 'auto_awesome';
+    return 'category';
+  }
+
+  getDefaultDescription(name: string): string {
+    const n = (name || '').toLowerCase();
+    if (n.includes('accessory') || n.includes('accessories') || n.includes('upgrade')) return 'Build Plates, Tools & Upgrades';
+    if (n.includes('part') || n.includes('spare') || n.includes('nozzle') || n.includes('extruder')) return 'Original Nozzles, Hotends & Extruders';
+    if (n.includes('filament') || n.includes('material')) return 'PLA, PETG, ABS, TPU & Carbon Fiber';
+    if (n.includes('resin')) return 'Precision 8K & Engineering Liquid Resins';
+    if (n.includes('printer')) return 'High-speed FDM & Resin 3D Printers';
+    if (n.includes('pen')) return 'Creative 3D Drawing & Extrusion Pens';
+    return `Explore ${name} equipment & materials`;
+  }
+
+  getDefaultImage(name: string): string {
+    const n = (name || '').toLowerCase();
+    if (n.includes('printer')) return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=600&auto=format&fit=crop';
+    if (n.includes('filament')) return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop';
+    return 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?q=80&w=600&auto=format&fit=crop';
+  }
+
   // Computed Helpers
   heroSlides = computed(() => {
     return this.payload()?.config?.heroBanners || [];
   });
 
   featuredCategories = computed(() => {
-    return this.payload()?.config?.featuredCategoriesConfig || [];
+    // 1. Check live reactive categories from DatastoreService
+    const allCats = this.ds.categories() || [];
+    const settingsFeat = this.ds.settingsService.homepageSections()?.featuredCategories ||
+                         (this.ds.settingsService.settingsData() as any)?.homePageSections?.featuredCategories ||
+                         [];
+    const featuredSlugs = Array.isArray(settingsFeat)
+      ? settingsFeat.map((s: string) => String(s).toLowerCase().trim())
+      : [];
+
+    // Filter categories that are active and designated as featured
+    let dynamicCats = allCats.filter(c => {
+      const isActive = c.isActive !== false && (c as any).status !== 'inactive';
+      const isFeat = c.isFeatured === true || (c as any).is_featured === true || (c as any).is_featured === 'true';
+      const isSelectedInSettings = featuredSlugs.includes(c.slug?.toLowerCase()) || featuredSlugs.includes(c.id?.toLowerCase());
+      return isActive && (isFeat || isSelectedInSettings);
+    });
+
+    // 2. If no categories from DatastoreService match featured, check backend payload
+    if (dynamicCats.length === 0) {
+      const payloadCats = this.payload()?.config?.featuredCategoriesConfig;
+      if (Array.isArray(payloadCats) && payloadCats.length > 0) {
+        return payloadCats.map(fc => ({
+          ...fc,
+          icon: fc.icon || this.getCategoryIcon(fc.name),
+          image: fc.image || this.getDefaultImage(fc.name),
+          description: fc.description || this.getDefaultDescription(fc.name),
+        }));
+      }
+
+      // Fallback: take active root categories
+      dynamicCats = allCats.filter(c => {
+        const pId = c.parentId || c.parent_id;
+        const isRoot = !pId || pId === 'null' || pId === 'undefined';
+        const isNotUncat = c.slug !== 'uncategorized' && c.name?.toLowerCase() !== 'uncategorized';
+        const isActive = c.isActive !== false && (c as any).status !== 'inactive';
+        return isRoot && isNotUncat && isActive;
+      });
+    }
+
+    // 3. Map dynamic categories to featured category card format
+    return dynamicCats.map(c => {
+      const configMatch = this.payload()?.config?.featuredCategoriesConfig?.find(
+        fc => fc.slug === c.slug || fc.name?.toLowerCase() === c.name?.toLowerCase()
+      );
+
+      return {
+        id: c.id,
+        name: c.name,
+        slug: c.slug || c.id,
+        icon: (c.icon && c.icon !== 'folder') ? c.icon : (configMatch?.icon || this.getCategoryIcon(c.name)),
+        description: c.description || configMatch?.description || this.getDefaultDescription(c.name),
+        image: c.image || (c as any).banner || configMatch?.image || this.getDefaultImage(c.name),
+      };
+    });
   });
 
   categorySections = computed(() => {

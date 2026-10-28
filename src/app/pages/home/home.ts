@@ -10,6 +10,7 @@ import { CommonModule } from "@angular/common";
 import { Title, Meta } from "@angular/platform-browser";
 import { DatastoreService } from "../../services/datastore";
 import { LoadingService } from "../../core/services/loading.service";
+import { SeoService } from "../../core/services/seo.service";
 
 // Import subcomponents
 import { HomeHeroComponent } from "./components/home-hero.component";
@@ -79,6 +80,7 @@ export class Home {
   loadingService = inject(LoadingService);
   titleService = inject(Title);
   metaService = inject(Meta);
+  seoService = inject(SeoService);
 
   loading = computed(() => this.ds.homepageLoading());
 
@@ -102,25 +104,8 @@ export class Home {
   constructor() {
     const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-    // Set dynamic sales-focused SEO tags
-    this.titleService.setTitle(
-      "3D Galaxy | Buy 3D Printers, Filaments & Custom 3D Printing Service Online",
-    );
-    this.metaService.updateTag({
-      name: "description",
-      content:
-        "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!",
-    });
-    this.metaService.updateTag({
-      property: "og:title",
-      content:
-        "3D Galaxy | Buy 3D Printers, Filaments & 3D Printing Services Online",
-    });
-    this.metaService.updateTag({
-      property: "og:description",
-      content:
-        "Shop professional 3D printers, high-grade filaments & spare parts at India's lowest prices. Get instant online slicing quotes for custom SLA & FDM 3D printing. Upload STL now & save 15% on bulk dealer orders!",
-    });
+    // Authoritative home SEO, OpenGraph, Twitter, and Organization/WebSite JSON-LD
+    this.seoService.setHomeSeo();
 
     // Record top impressions when component boots
     if (isBrowser) {

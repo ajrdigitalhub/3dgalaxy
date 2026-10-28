@@ -1,5 +1,23 @@
 [
   {
+    "id": "9fc1171f-c8fa-4274-910e-2b31758f5c48",
+    "title": "Database Backup Completed",
+    "body": "Automatic database backup completed successfully. Size: 0.66 MB, Tables: 60.",
+    "type": "system",
+    "eventKey": "BACKUP_SUCCESS",
+    "deepLink": "/admin/settings/backups",
+    "data": {
+      "backupId": "84934832-0bc6-4789-9c41-dabba5c6ede5",
+      "fileSize": 688939,
+      "backupName": "3dgalaxy-db-backup-2026-10-28-020000.zip",
+      "durationMs": 29272,
+      "tableCount": 60,
+      "storagePath": "db_backups/2026-10-28/3dgalaxy-db-backup-2026-10-28-020000.zip"
+    },
+    "sentAt": "2026-10-27T20:30:35.591Z",
+    "isRead": false
+  },
+  {
     "id": "de80a7ae-2329-474b-8842-8bfc5e642003",
     "title": "🛒 Order Confirmed",
     "body": "Jayakumar R placed Order #3DX0073 for ₹2240.00. Payment Pending (COD)",

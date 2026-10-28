@@ -145,7 +145,7 @@ import { LoadingService } from '../../core/services/loading.service';
                         <input 
                           type="text" 
                           [(ngModel)]="orderNumber" 
-                          placeholder="e.g. ORD-2026-123456" 
+                          placeholder="e.g. 3DX000X" 
                           class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg sm:rounded-xl pl-8 sm:pl-9 pr-3 py-2 text-[11px] sm:text-sm focus:ring-2 focus:ring-[#d65108] focus:border-[#d65108] outline-none font-semibold text-neutral-850 dark:text-neutral-100 transition-all"
                         >
                       </div>
@@ -831,7 +831,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     try {
       const res = await this.api.post<any>('/orders/track', { orderNumber: num, email: mail }).toPromise();
       const fetchedOrder = res[1] || res;
-      
+
       this.order.set(fetchedOrder);
       this.currentState.set('success');
       this.triggerHorn();
@@ -852,7 +852,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     if (!o) return [];
 
     const status = (o.status || '').toLowerCase();
-    
+
     const steps = [
       { key: 'confirmed', label: 'Order Confirmed', description: 'Your order has been verified and accepted.' },
       { key: 'packed', label: 'Packed', description: 'Order items have been boxed and are ready for transit.' },
@@ -902,7 +902,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getShippingAddressText(): string {
     const o = this.order();
     if (!o) return 'N/A';
-    
+
     if (o.guestAddress) {
       try {
         const parsed = JSON.parse(o.guestAddress);

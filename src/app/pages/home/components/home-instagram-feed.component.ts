@@ -206,19 +206,30 @@ export interface InstagramFeedPayload {
             </div>
           </div>
 
-          <!-- 3. Responsive Post Grid (Screenshot 2: 5 Columns Desktop, 3 Tablet, 2 Mobile) -->
+          <!-- 3. Responsive Post Display (Horizontal swipe on Mobile, 3-5 Column Grid on Tablet/Desktop) -->
           @if (loading() && (!effectivePosts() || effectivePosts().length === 0)) {
             <!-- Skeleton Loading State -->
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4.5">
+            <div class="flex md:grid md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4.5 overflow-x-auto md:overflow-visible no-scrollbar snap-x pb-4 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 touch-pan-x">
               @for (n of skeletonArray(); track n) {
-                <div class="aspect-square sm:aspect-[4/5] rounded-2xl bg-neutral-200 dark:bg-neutral-800 animate-pulse"></div>
+                <div class="w-[72vw] max-w-[270px] sm:w-[48vw] sm:max-w-[320px] md:w-auto md:max-w-none shrink-0 md:shrink aspect-[4/5] rounded-2xl bg-neutral-200 dark:bg-neutral-800 animate-pulse snap-start"></div>
               }
             </div>
           } @else if (effectivePosts().length > 0) {
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4.5">
+            <!-- Mobile Horizontal Scroll Hint -->
+            <div class="flex md:hidden items-center justify-between px-1 mb-2.5 text-[11px] font-bold text-neutral-500 dark:text-neutral-400">
+              <span class="flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
+                <span>Recent Posts & Reels</span>
+              </span>
+              <span class="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-pink-500 dark:text-pink-400 font-extrabold">
+                Swipe &rarr;
+              </span>
+            </div>
+
+            <div class="flex md:grid md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4.5 overflow-x-auto md:overflow-visible no-scrollbar snap-x snap-mandatory scroll-smooth pb-4 pt-1 -mx-4 px-4 sm:mx-0 sm:px-0 touch-pan-x">
               @for (post of effectivePosts(); track post.id) {
                 <div
-                  class="group relative aspect-square sm:aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col"
+                  class="group relative w-[72vw] max-w-[270px] sm:w-[48vw] sm:max-w-[320px] md:w-auto md:max-w-none shrink-0 md:shrink aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col snap-start"
                   (click)="openPostModal(post)"
                   [title]="post.caption || 'Click to view post details'"
                 >
@@ -237,47 +248,47 @@ export interface InstagramFeedPayload {
                   >
                     <svg class="w-3 h-3 fill-current shrink-0 text-white" viewBox="0 0 24 24">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                    </svg>
-                    <span class="truncate max-w-[100px]">{{ displayProfile().name || displayProfile().username || '3D Galaxy' }}</span>
-                  </div>
-
-                  <!-- Top Right Indicator: Video/Reel or Carousel Album -->
-                  @if (post.mediaType === 'VIDEO') {
-                    <div
-                      class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-md z-10 pointer-events-none"
-                      title="Reel / Video"
-                    >
-                      <svg class="w-3.5 h-3.5 fill-current ml-0.5" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  } @else if (post.mediaType === 'CAROUSEL_ALBUM') {
-                    <div
-                      class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-md z-10 pointer-events-none"
-                      title="Carousel Album"
-                    >
-                      <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
-                      </svg>
-                    </div>
-                  }
-
-                  <!-- Bottom Gradient Overlay: Timestamp + Caption Preview -->
-                  <div
-                    class="absolute inset-x-0 bottom-0 pt-12 pb-3 px-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col justify-end z-10 pointer-events-none"
-                  >
-                    <!-- Time Ago -->
-                    <span class="text-[10px] sm:text-[11px] font-medium text-neutral-300 text-right mb-1">
-                      {{ formatRelativeTime(post.timestamp) }}
-                    </span>
-                    <!-- Caption Preview -->
-                    <p class="text-[11px] sm:text-xs text-white line-clamp-2 leading-relaxed drop-shadow">
-                      {{ post.caption || 'View post on Instagram' }}
-                    </p>
-                  </div>
+                  </svg>
+                  <span class="truncate max-w-[100px]">{{ displayProfile().name || displayProfile().username || '3D Galaxy' }}</span>
                 </div>
-              }
-            </div>
+
+                <!-- Top Right Indicator: Video/Reel or Carousel Album -->
+                @if (post.mediaType === 'VIDEO') {
+                  <div
+                    class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-md z-10 pointer-events-none"
+                    title="Reel / Video"
+                  >
+                    <svg class="w-3.5 h-3.5 fill-current ml-0.5" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                } @else if (post.mediaType === 'CAROUSEL_ALBUM') {
+                  <div
+                    class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-md z-10 pointer-events-none"
+                    title="Carousel Album"
+                  >
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
+                    </svg>
+                  </div>
+                }
+
+                <!-- Bottom Gradient Overlay: Timestamp + Caption Preview -->
+                <div
+                  class="absolute inset-x-0 bottom-0 pt-12 pb-3 px-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col justify-end z-10 pointer-events-none"
+                >
+                  <!-- Time Ago -->
+                  <span class="text-[10px] sm:text-[11px] font-medium text-neutral-300 text-right mb-1">
+                    {{ formatRelativeTime(post.timestamp) }}
+                  </span>
+                  <!-- Caption Preview -->
+                  <p class="text-[11px] sm:text-xs text-white line-clamp-2 leading-relaxed drop-shadow">
+                    {{ post.caption || 'View post on Instagram' }}
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
           } @else if (hasError()) {
             <!-- Error State -->
             <div class="p-8 text-center rounded-3xl bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-300 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 max-w-lg mx-auto">

@@ -447,6 +447,63 @@ export interface SocialPost {
   products_tagged: string[]; // product slugs or ids
 }
 
+export interface HeaderMenuCategoryNode {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string | null;
+  icon?: string;
+  description?: string | null;
+  productCount: number;
+  children: HeaderMenuCategoryNode[];
+}
+
+export interface HeaderMenuBrandNode {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  description?: string | null;
+  isFeatured?: boolean;
+  productCount: number;
+}
+
+export interface HeaderMenuProductPreview {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string | null;
+  basePrice: number;
+  salePrice?: number | null;
+  rating: number | null;
+  totalReviews?: number;
+  inStock: boolean;
+  categoryId?: string;
+  hasVariants?: boolean;
+  variants?: any[];
+}
+
+export interface HeaderMenuPayload {
+  categories: HeaderMenuCategoryNode[];
+  brands: HeaderMenuBrandNode[];
+  featuredCategories: HeaderMenuCategoryNode[];
+  bestSellers: HeaderMenuProductPreview[];
+  config: {
+    showProductCount: boolean;
+    showBrandCount: boolean;
+    showBestSellers: boolean;
+    showNewArrivals: boolean;
+    hideEmptyCategories: boolean;
+    promotionalBanner: {
+      title: string;
+      subtitle: string;
+      ctaText: string;
+      link: string;
+      image: string;
+    };
+  };
+}
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -736,6 +793,8 @@ export class DatastoreService {
   categoriesLoading = signal<boolean>(true);
   bannersLoading = signal<boolean>(true);
   productsLoading = signal<boolean>(true);
+  headerMenuData = signal<HeaderMenuPayload | null>(null);
+  headerMenuLoading = signal<boolean>(false);
   
   // Local UI State
   cart = signal<CartItem[]>([]);
@@ -766,6 +825,14 @@ export class DatastoreService {
       return Boolean(p.is_cod_available);
     }
     return true;
+  }
+
+  isFreeItem(item: any): boolean {
+    if (!item) return false;
+    if (item.isFree === true || item.product?.isFree === true) return true;
+    if (item.configurationType === 'free_bundle') return true;
+    if (this.getItemPrice(item) === 0) return true;
+    return false;
   }
 
   setBuyNowItem(item: {
@@ -855,12 +922,13 @@ export class DatastoreService {
     return this.groupedCartItems() || [];
   });
 
-  // Checks if all items in active checkout support COD
+  // Checks if all items in active checkout support COD (ignoring free included items)
   areAllProductsCodAvailable = computed(() => {
     const items = this.activeCheckoutItems();
     if (!items || items.length === 0) return false;
 
     return items.every((item: any) => {
+      if (this.isFreeItem(item)) return true;
       const p = item.product;
       const v = item.variant;
       const pCod = this.isCodAvailable(p);
@@ -1607,6 +1675,7 @@ export class DatastoreService {
   private advertisementsCache$?: Observable<any>;
   private pagesCache$?: Observable<any>;
   private featuredProductsCache$?: Observable<{ products: any[] }>;
+  private headerMenuCache$?: Observable<any>;
 
   public loadConsolidatedHome(force = false) {
     if (force) {
@@ -1686,7 +1755,138 @@ export class DatastoreService {
 
           // 5. Store consolidated dynamic payload
           this.homepageData.set(d);
+
+          // 6. Synchronize header menu from already called homepage data (instant availability)
+          this.syncHeaderMenuFromHomeData(d);
         }
+      }
+    });
+  }
+
+  public syncHeaderMenuFromHomeData(d: any) {
+    if (this.headerMenuData()) return; // Keep server-computed header-menu if already loaded
+    const rawCats = d.categories || d.featuredCategories || [];
+    const rawBrands = d.brands || [];
+    const rawBestSellers = d.bestSellers || d.featuredProducts || d.products || [];
+
+    const rootCats = rawCats.filter((c: any) => !c.parentId && !c.parent_id);
+    const categoryTree: HeaderMenuCategoryNode[] = rootCats.map((cat: any) => {
+      const children = rawCats
+        .filter((sub: any) => (sub.parentId || sub.parent_id) === cat.id)
+        .map((sub: any) => ({
+          id: sub.id,
+          name: sub.name,
+          slug: sub.slug || sub.id,
+          image: sub.image || null,
+          icon: sub.icon || 'category',
+          description: sub.description || null,
+          productCount: sub.productCount || 0,
+          children: []
+        }));
+
+      return {
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug || cat.id,
+        image: cat.image || null,
+        icon: cat.icon || 'category',
+        description: cat.description || null,
+        isFeatured: Boolean(cat.isFeatured),
+        productCount: cat.productCount || children.reduce((acc: number, ch: any) => acc + (ch.productCount || 0), 0),
+        children
+      };
+    });
+
+    const brands: HeaderMenuBrandNode[] = rawBrands.map((b: any) => ({
+      id: b.id,
+      name: b.name,
+      slug: b.slug || b.id,
+      logo: b.logo || null,
+      description: b.description || null,
+      isFeatured: false,
+      productCount: b.productCount || 0
+    }));
+
+    const bestSellers: HeaderMenuProductPreview[] = rawBestSellers.slice(0, 12).map((p: any) => {
+      let primaryImage = null;
+      if (p.images) {
+        try {
+          const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            const first = imgs[0];
+            primaryImage = typeof first === 'string' ? first : first.url;
+          }
+        } catch (e) {}
+      }
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug || p.id,
+        image: primaryImage || p.primaryImage || `https://picsum.photos/seed/${p.slug || p.id}/300/300`,
+        basePrice: Number(p.basePrice || p.mrp || 0),
+        salePrice: p.salePrice ? Number(p.salePrice) : null,
+        rating: p.rating || 4.8,
+        totalReviews: p.reviewCount || p.totalReviews || 12,
+        inStock: (p.stock || 0) > 0,
+        categoryId: p.categoryId || p.category_id,
+        hasVariants: Boolean(p.variants && p.variants.length > 0),
+        variants: p.variants || []
+      };
+    });
+
+    const fallbackConfig = {
+      showProductCount: true,
+      showBrandCount: true,
+      showBestSellers: true,
+      showNewArrivals: true,
+      hideEmptyCategories: false,
+      promotionalBanner: {
+        title: 'Summer 3D Printing Sale',
+        subtitle: 'Up to 25% OFF Bambu Lab & Creality Printers',
+        ctaText: 'Shop Printers Now',
+        link: '/category/3d-printers',
+        image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?q=80&w=800&auto=format&fit=crop'
+      }
+    };
+
+    this.headerMenuData.set({
+      categories: categoryTree,
+      brands,
+      featuredCategories: categoryTree.filter(c => c.productCount > 0).slice(0, 4),
+      bestSellers,
+      config: fallbackConfig
+    });
+  }
+
+  public loadHeaderMenu(force = false) {
+    if (this.headerMenuData() && !force) {
+      return;
+    }
+    if (force) {
+      this.headerMenuCache$ = undefined;
+    }
+    if (force || !this.headerMenuCache$) {
+      this.headerMenuLoading.set(true);
+      this.headerMenuCache$ = this.api.get<any>('/header-menu', force ? { refresh: 'true' } : null, force).pipe(
+        catchError((err) => {
+          console.error('Error loading header-menu:', err);
+          this.headerMenuCache$ = undefined;
+          this.headerMenuLoading.set(false);
+          return of(null);
+        }),
+        shareReplay(1)
+      );
+    }
+
+    this.headerMenuCache$.subscribe({
+      next: (res) => {
+        this.headerMenuLoading.set(false);
+        if (res && res.data) {
+          this.headerMenuData.set(res.data);
+        }
+      },
+      error: () => {
+        this.headerMenuLoading.set(false);
       }
     });
   }
@@ -1694,6 +1894,7 @@ export class DatastoreService {
   private initRealtimeSync() {
     // Consolidated /home loader provides categories, brands, navigation & featured products
     this.loadConsolidatedHome();
+    this.loadHeaderMenu();
 
 
 
@@ -2951,6 +3152,7 @@ export class DatastoreService {
       : `Add ₹${freeShippingRemainingAmount.toLocaleString('en-IN')} more for FREE shipping`;
 
     const areAllProductsCodAvailable = rawItems && rawItems.length > 0 && rawItems.every((item: any) => {
+      if (this.isFreeItem(item)) return true;
       const p = item.product;
       const v = item.variant;
       const pCod = this.isCodAvailable(p);

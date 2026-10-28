@@ -26,11 +26,11 @@ async function main() {
             title: "Policies",
             isActive: true,
             links: [
-              { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
-              { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
-              { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
-              { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
-              { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+              { id: "ref-policy", title: "Refund Policy", url: "/policies/refund-policy", isActive: true, openInNewTab: false },
+              { id: "ret-policy", title: "Return Policy", url: "/pages/return-policy", isActive: true, openInNewTab: false },
+              { id: "priv-policy", title: "Privacy Policy", url: "/policies/privacy-policy", isActive: true, openInNewTab: false },
+              { id: "tos-policy", title: "Terms of Service", url: "/policies/terms-of-service", isActive: true, openInNewTab: false },
+              { id: "ship-policy", title: "Shipping Policy", url: "/policies/shipping-policy", isActive: true, openInNewTab: false },
               { id: "abt-policy", title: "About Us", url: "/about-us", isActive: true, openInNewTab: false }
             ]
           },
@@ -77,11 +77,11 @@ async function main() {
         title: "Policies",
         isActive: true,
         links: [
-          { id: "ref-policy", title: "Refund Policy", url: "/refund-policy", isActive: true, openInNewTab: false },
-          { id: "ret-policy", title: "Return Policy", url: "/return-policy", isActive: true, openInNewTab: false },
-          { id: "priv-policy", title: "Privacy Policy", url: "/privacy-policy", isActive: true, openInNewTab: false },
-          { id: "tos-policy", title: "Terms of Service", url: "/terms-of-service", isActive: true, openInNewTab: false },
-          { id: "ship-policy", title: "Shipping Policy", url: "/shipping-policy", isActive: true, openInNewTab: false },
+          { id: "ref-policy", title: "Refund Policy", url: "/policies/refund-policy", isActive: true, openInNewTab: false },
+          { id: "ret-policy", title: "Return Policy", url: "/pages/return-policy", isActive: true, openInNewTab: false },
+          { id: "priv-policy", title: "Privacy Policy", url: "/policies/privacy-policy", isActive: true, openInNewTab: false },
+          { id: "tos-policy", title: "Terms of Service", url: "/policies/terms-of-service", isActive: true, openInNewTab: false },
+          { id: "ship-policy", title: "Shipping Policy", url: "/policies/shipping-policy", isActive: true, openInNewTab: false },
           { id: "abt-policy", title: "About Us", url: "/about-us", isActive: true, openInNewTab: false }
         ]
       },
