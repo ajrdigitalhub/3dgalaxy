@@ -109,4 +109,22 @@ export class SearchComponent implements OnInit {
   performSearch(q: string) {
     this.searchSubject.next(q);
   }
+
+  activePrice(p: any): number {
+    if (!p) return 0;
+    return Number(p.salePrice || p.sale_price || p.activePrice || p.basePrice || p.price || 0);
+  }
+
+  getMrp(p: any): number {
+    if (!p) return 0;
+    return Number(p.basePrice || p.mrp || p.price || 0);
+  }
+
+  mrpDiscountPercent(p: any): number {
+    const sale = this.activePrice(p);
+    const mrp = this.getMrp(p);
+    if (!mrp || mrp <= sale) return 0;
+    return Math.round(((mrp - sale) / mrp) * 100);
+  }
+
 }

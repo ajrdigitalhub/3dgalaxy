@@ -1467,12 +1467,22 @@ export class ProductDetail {
       }
 
       const variant = this.selectedVariant();
-      const dealerPrice = variant
-        ? (variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price)
-        : (p?.dealerPrice || p?.dealer_price || p?.salePrice || p?.basePrice);
-      const salePrice = variant
-        ? (variant.salePrice ?? variant.price)
-        : (p?.salePrice || p?.sale_price || p?.basePrice);
+      const hasReal = this.hasRealVariants(p);
+      const isDefaultVar = !variant || !hasReal || this.isDefaultVariantName(variant?.name);
+
+      let salePrice: any;
+      if (isDefaultVar) {
+        salePrice = p?.salePrice ?? p?.sale_price ?? variant?.salePrice ?? variant?.price ?? p?.basePrice;
+      } else {
+        salePrice = variant?.salePrice ?? variant?.price ?? p?.salePrice ?? p?.sale_price ?? p?.basePrice;
+      }
+
+      let dealerPrice: any;
+      if (isDefaultVar) {
+        dealerPrice = p?.dealerPrice ?? p?.dealer_price ?? variant?.dealerPrice ?? variant?.dealer_price ?? salePrice;
+      } else {
+        dealerPrice = variant?.dealerPrice ?? variant?.dealer_price ?? p?.dealerPrice ?? p?.dealer_price ?? salePrice;
+      }
 
       return this.isDealerActive() ? Number(dealerPrice || 0) : Number(salePrice || 0);
     }
@@ -1523,6 +1533,12 @@ export class ProductDetail {
       }
 
       const variant = this.selectedVariant();
+      const hasReal = this.hasRealVariants(p);
+      const isDefaultVar = !variant || !hasReal || this.isDefaultVariantName(variant?.name);
+
+      if (isDefaultVar) {
+        return Number(p?.mrp || p?.basePrice || variant?.price || variant?.mrp || 0);
+      }
       if (variant) return Number(variant.mrp || variant.price || p?.mrp || p?.basePrice || 0);
       return Number(p?.mrp || p?.basePrice || p?.sale_price || 0);
     }
@@ -1530,6 +1546,12 @@ export class ProductDetail {
     // Dynamic MRP calculation for related / external products
     const variants = Array.isArray(p.variants) ? p.variants : [];
     const defaultVariant = variants.find((v: any) => v.isDefault) || (variants.length > 0 ? variants[0] : null);
+    const hasRealExt = this.hasRealVariants(p);
+    const isDefaultVarExt = !defaultVariant || !hasRealExt || this.isDefaultVariantName(defaultVariant?.name);
+
+    if (isDefaultVarExt) {
+      return Number(p?.mrp || p?.basePrice || defaultVariant?.price || defaultVariant?.mrp || 0);
+    }
     if (defaultVariant && (defaultVariant.mrp || defaultVariant.price)) {
       return Number(defaultVariant.mrp || defaultVariant.price || p?.mrp || p?.basePrice || 0);
     }

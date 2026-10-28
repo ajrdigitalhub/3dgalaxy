@@ -2985,13 +2985,19 @@ export class DatastoreService {
     const variant = item.variant;
     const role = this.userRole();
     const isDealer = role === 'admin' || role === 'super-admin' || (this.activeUser()?.rewardPoints || 0) > 300;
+    const isDefaultVar = !variant || (variant.name && this.isDefaultVariantName(variant.name)) || (Array.isArray(p.variants) && p.variants.length <= 1);
     let price = isDealer
       ? (p.dealerPrice || p.dealer_price || p.basePrice || 0)
       : (p.salePrice || p.sale_price || p.basePrice || 0);
-    if (variant) {
+    if (variant && !isDefaultVar) {
       const vDealer = variant.dealerPrice ?? variant.dealer_price ?? variant.salePrice ?? variant.price;
       const vSale = variant.salePrice ?? variant.price;
       const vPrice = isDealer ? vDealer : vSale;
+      if (vPrice !== undefined && vPrice !== null && !isNaN(Number(vPrice)) && Number(vPrice) > 0) {
+        price = Number(vPrice);
+      }
+    } else if (variant && isDefaultVar && price <= 0) {
+      const vPrice = isDealer ? (variant.dealerPrice ?? variant.price) : (variant.salePrice ?? variant.price);
       if (vPrice !== undefined && vPrice !== null && !isNaN(Number(vPrice)) && Number(vPrice) > 0) {
         price = Number(vPrice);
       }

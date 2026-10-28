@@ -147,10 +147,10 @@
 
               <!-- Offer & Status Badges -->
               <div class="absolute top-3 left-3 z-20 flex flex-col gap-1">
-                @if (p.basePrice && p.salePrice && p.basePrice > p.salePrice) {
+                @if (getMrp(p) > activePrice(p)) {
                 <div
                   class="bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded shadow-sm tracking-wider">
-                  {{ Math.round(((p.basePrice - p.salePrice) / p.basePrice) * 100) }}% OFF
+                  {{ mrpDiscountPercent(p) }}% OFF
                 </div>
                 }
                 @if (p.stock === 0 || p.stockStatus === 'OUT_OF_STOCK') {
@@ -194,10 +194,10 @@
               </div>
 
               <div class="flex items-center gap-2 mt-auto">
-                <span class="font-black text-sm text-neutral-900 dark:text-white">{{ (p.salePrice || p.basePrice) |
+                <span class="font-black text-sm text-neutral-900 dark:text-white">{{ activePrice(p) |
                   currency:'INR':'symbol':'1.0-0' }}</span>
-                @if (p.salePrice && p.basePrice && p.basePrice > p.salePrice) {
-                <span class="text-xs text-neutral-400 line-through font-medium">{{ p.basePrice |
+                @if (getMrp(p) > activePrice(p)) {
+                <span class="text-xs text-neutral-400 line-through font-medium">{{ getMrp(p) |
                   currency:'INR':'symbol':'1.0-0' }}</span>
                 }
               </div>
