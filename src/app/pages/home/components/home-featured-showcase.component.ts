@@ -160,10 +160,12 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
                   <div class="showcase-actions flex flex-wrap items-center gap-3 pt-3">
                     <a
                       [routerLink]="['/product', product.slug]"
-                      class="px-6 py-3 border border-neutral-200 dark:border-neutral-700/80 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer no-underline"
+                      class="inline-flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-white text-neutral-900 dark:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-xs hover:shadow-md cursor-pointer no-underline group"
                     >
                       <span>View Details</span>
-                      <mat-icon class="scale-75">arrow_forward</mat-icon>
+                      <svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                      </svg>
                     </a>
                   </div>
                 </div>
@@ -181,7 +183,9 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
           class="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 text-neutral-700 dark:text-neutral-200 shadow-md hover:bg-neutral-100 dark:hover:bg-neutral-700 items-center justify-center transition-all cursor-pointer z-20 active:scale-90"
           aria-label="Previous featured product"
         >
-          <mat-icon class="scale-90">chevron_left</mat-icon>
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+          </svg>
         </button>
 
         <button
@@ -190,7 +194,9 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
           class="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/80 dark:border-neutral-700/80 text-neutral-700 dark:text-neutral-200 shadow-md hover:bg-neutral-100 dark:hover:bg-neutral-700 items-center justify-center transition-all cursor-pointer z-20 active:scale-90"
           aria-label="Next featured product"
         >
-          <mat-icon class="scale-90">chevron_right</mat-icon>
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+          </svg>
         </button>
       }
 
@@ -203,7 +209,7 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
               type="button"
               [class]="
                 currentSlide() === $index
-                  ? 'w-8 bg-blue-600 dark:bg-blue-500 shadow-xs shadow-blue-500/50'
+                  ? 'w-8 bg-[#d65108] shadow-xs shadow-orange-500/50'
                   : 'w-2 bg-neutral-300 dark:bg-neutral-700 hover:bg-neutral-400 dark:hover:bg-neutral-600'
               "
               class="h-2 rounded-full transition-all duration-300 border-none cursor-pointer p-0"
@@ -232,26 +238,29 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
       }
 
       /* Hardware Accelerated Slide Stagger Animations */
+      .showcase-brand, .showcase-title, .showcase-tags, .showcase-desc, .showcase-price, .showcase-actions {
+        opacity: 1;
+      }
       .showcase-active-slide .showcase-brand {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.02s ease-out;
       }
       .showcase-active-slide .showcase-title {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.04s ease-out;
       }
       .showcase-active-slide .showcase-tags {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.06s ease-out;
       }
       .showcase-active-slide .showcase-desc {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.08s ease-out;
       }
       .showcase-active-slide .showcase-price {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.20s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.10s ease-out;
       }
       .showcase-active-slide .showcase-actions {
-        animation: showcaseSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both;
+        animation: showcaseSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.12s ease-out;
       }
       .showcase-active-slide .showcase-image-wrap {
-        animation: showcaseImageIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: showcaseImageIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) ease-out;
       }
 
       @keyframes showcaseSlideIn {
@@ -292,8 +301,7 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
 
   currentSlide = signal<number>(0);
   isHovered = signal<boolean>(false);
-  descriptionCache = signal<Record<string, string>>({});
-  private fetchingDescriptions = new Set<string>();
+  private excerptCache = new Map<string, string>();
 
   // Filters catalog list for products marked as featured
   featuredProducts = computed(() => {
@@ -380,11 +388,11 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
    */
   getOverviewDescription(product: Product): string {
     if (!product) return "";
-    const key = product.id || product.slug;
+    const key = product.id || product.slug || product.name;
 
-    // 1. Check local cache
-    if (key && this.descriptionCache()[key]) {
-      return this.descriptionCache()[key];
+    // 1. Check in-memory map cache (safe for template evaluation)
+    if (key && this.excerptCache.has(key)) {
+      return this.excerptCache.get(key)!;
     }
 
     // 2. Check product's own description fields
@@ -398,9 +406,7 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
     if (raw && typeof raw === "string" && raw.trim().length > 0) {
       const excerpt = this.extractOverviewExcerpt(raw);
       if (excerpt) {
-        if (key) {
-          this.descriptionCache.update((c) => ({ ...c, [key]: excerpt }));
-        }
+        if (key) this.excerptCache.set(key, excerpt);
         return excerpt;
       }
     }
@@ -420,46 +426,13 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
       if (featRaw && typeof featRaw === "string" && featRaw.trim().length > 0) {
         const excerpt = this.extractOverviewExcerpt(featRaw);
         if (excerpt) {
-          if (key) {
-            this.descriptionCache.update((c) => ({ ...c, [key]: excerpt }));
-          }
+          if (key) this.excerptCache.set(key, excerpt);
           return excerpt;
         }
       }
     }
 
-    // 4. If description was omitted from lightweight homepage payload, fetch on demand
-    this.fetchDescriptionIfNeeded(product);
-
     return "";
-  }
-
-  private fetchDescriptionIfNeeded(product: Product) {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const key = product.id || product.slug;
-    if (!key || this.fetchingDescriptions.has(key)) return;
-    this.fetchingDescriptions.add(key);
-
-    const slug = product.slug || product.id;
-    this.ds.api.get<any>(`/products/${slug}`).subscribe({
-      next: (res) => {
-        const item = res?.data?.product || res?.product || res?.data || res;
-        const raw =
-          item?.long_description ||
-          item?.longDescription ||
-          item?.description ||
-          item?.short_description ||
-          item?.shortDescription ||
-          "";
-        if (raw) {
-          const excerpt = this.extractOverviewExcerpt(raw);
-          if (excerpt) {
-            this.descriptionCache.update((prev) => ({ ...prev, [key]: excerpt }));
-          }
-        }
-      },
-      error: () => {},
-    });
   }
 
   private extractOverviewExcerpt(html: string): string {
@@ -521,14 +494,25 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
   }
 
   getSalePrice(product: Product): number {
-    const price = product.salePrice ?? product.sale_price ?? (product as any).base_price ?? product.basePrice ?? (product as any).price ?? product.mrp ?? 0;
+    if (!product) return 0;
+    let price = product.salePrice ?? product.sale_price ?? (product as any).base_price ?? product.basePrice ?? (product as any).price ?? product.mrp;
+    if ((price === undefined || price === null || Number(price) === 0) && product.variants && product.variants.length > 0) {
+      const v = product.variants[0];
+      price = v.salePrice ?? v.price ?? (v as any).mrp;
+    }
     return Math.max(0, Number(price) || 0);
   }
 
   getMrpPrice(product: Product): number | null {
-    const mrp = Number(product.mrp ?? (product as any).base_price ?? product.basePrice ?? 0);
+    if (!product) return null;
+    let mrp = (product as any).mrp ?? (product as any).base_price ?? product.basePrice;
+    if ((mrp === undefined || mrp === null || Number(mrp) === 0) && product.variants && product.variants.length > 0) {
+      const v = product.variants[0];
+      mrp = (v as any).mrp ?? v.price;
+    }
     const sale = this.getSalePrice(product);
-    return mrp > sale ? mrp : null;
+    const mrpNum = Number(mrp) || 0;
+    return mrpNum > sale ? mrpNum : null;
   }
 
   getDiscountPercentage(product: Product): number {
