@@ -1128,9 +1128,19 @@ export const createOrder = async (req: any, res: Response) => {
       }
 
       // Calculate dynamic shipping using Centralized Shipping Engine
-      const shippingCalc = await ShippingService.calculateShipping(parsedItems);
+      const appSettings = (await getSettingsService()) || {};
+      const orderShippingSettings = appSettings.shippingSettings || {};
+      const orderFreeShippingThreshold = orderShippingSettings.freeShippingThreshold !== undefined && orderShippingSettings.freeShippingThreshold !== null && !isNaN(Number(orderShippingSettings.freeShippingThreshold))
+        ? Number(orderShippingSettings.freeShippingThreshold)
+        : (orderShippingSettings.freeShippingMinSpent !== undefined && orderShippingSettings.freeShippingMinSpent !== null && !isNaN(Number(orderShippingSettings.freeShippingMinSpent))
+          ? Number(orderShippingSettings.freeShippingMinSpent)
+          : 3500);
+
+      const shippingCalc = await ShippingService.calculateShipping(parsedItems, undefined, subtotal);
       let shippingAmount = shippingCalc.shippingCharge;
-      if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof req.body.shippingAmount === 'number' && req.body.shippingAmount > 0) {
+      if (shippingCalc.freeShipping || (orderFreeShippingThreshold > 0 && subtotal >= orderFreeShippingThreshold)) {
+        shippingAmount = 0;
+      } else if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof req.body.shippingAmount === 'number' && req.body.shippingAmount > 0) {
         shippingAmount = Number(req.body.shippingAmount);
       }
       const shippingSource = shippingCalc.source;

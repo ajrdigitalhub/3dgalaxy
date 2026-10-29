@@ -70,6 +70,9 @@ export class SearchComponent implements OnInit {
     ).subscribe((res: any) => {
       this.loading.set(false);
       if (res && res.success && res.data) {
+        if (Array.isArray(res.data.products)) {
+          res.data.products = this.ds.sortInStockFirst(res.data.products);
+        }
         this.results.set(res.data);
       }
     });

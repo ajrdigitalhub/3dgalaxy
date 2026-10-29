@@ -1938,9 +1938,18 @@ export const createOrderAndPayment = async (req: any, res: Response) => {
     }
 
     // Server-side authoritative calculation
-    const shippingResult = await ShippingService.calculateShipping(parsedItems.length > 0 ? parsedItems : items);
+    const shippingSettings = (await getSettingsService())?.shippingSettings || {};
+    const freeShippingThreshold = shippingSettings.freeShippingThreshold !== undefined && shippingSettings.freeShippingThreshold !== null && !isNaN(Number(shippingSettings.freeShippingThreshold))
+      ? Number(shippingSettings.freeShippingThreshold)
+      : (shippingSettings.freeShippingMinSpent !== undefined && shippingSettings.freeShippingMinSpent !== null && !isNaN(Number(shippingSettings.freeShippingMinSpent))
+        ? Number(shippingSettings.freeShippingMinSpent)
+        : 3500);
+
+    const shippingResult = await ShippingService.calculateShipping(parsedItems.length > 0 ? parsedItems : items, undefined, subtotal);
     let shippingAmount = shippingResult.shippingCharge;
-    if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof frontendShippingAmount === 'number' && !isNaN(frontendShippingAmount) && frontendShippingAmount > 0) {
+    if (shippingResult.freeShipping || (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold)) {
+      shippingAmount = 0;
+    } else if ((shippingAmount === 0 || isNaN(shippingAmount)) && typeof frontendShippingAmount === 'number' && !isNaN(frontendShippingAmount) && frontendShippingAmount > 0) {
       shippingAmount = Number(frontendShippingAmount);
     }
     const taxAmount = 0;

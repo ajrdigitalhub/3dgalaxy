@@ -307,11 +307,11 @@ export class HomeFeaturedShowcaseComponent implements OnInit, OnDestroy {
   featuredProducts = computed(() => {
     // 1. Prioritize ds.featuredProducts() which contains the rich featured products
     const feat = this.ds.featuredProducts();
-    if (feat.length > 0) return feat;
+    if (feat.length > 0) return this.ds.sortInStockFirst(feat);
 
     // 2. Fall back to products marked as featured
     const list = this.ds.products().filter((p) => p.isFeatured || p.featured || (p as any).is_featured);
-    return list.length > 0 ? list : this.ds.products().slice(0, 3);
+    return this.ds.sortInStockFirst(list.length > 0 ? list : this.ds.products().slice(0, 3));
   });
 
   private startX = 0;

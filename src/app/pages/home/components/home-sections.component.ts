@@ -245,8 +245,8 @@ export class HomeCategoryViewFilamentComponent {
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
 
-    return this.ds.products()
-      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+    return this.ds.sortInStockFirst(this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || '')))
       .slice(0, 6);
   });
 
@@ -377,8 +377,8 @@ export class HomeCategoryViewSparePartsComponent {
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
 
-    return this.ds.products()
-      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+    return this.ds.sortInStockFirst(this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || '')))
       .slice(0, 6);
   });
 
@@ -509,8 +509,8 @@ export class HomeCategoryView3DPrinterComponent {
       .map((c) => c.id);
     const targetIds = [cat.id, ...childIds];
 
-    return this.ds.products()
-      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || ''))
+    return this.ds.sortInStockFirst(this.ds.products()
+      .filter((p) => targetIds.includes(p.categoryId || p.category_id || p.category?.id || '')))
       .slice(0, 6);
   });
 
@@ -1783,7 +1783,7 @@ export class HomeCategoryShowcaseRowComponent {
       })
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-    matched = matched.slice(0, 5);
+    matched = this.ds.sortInStockFirst(matched).slice(0, 5);
 
     return matched;
   });
@@ -1885,7 +1885,7 @@ export class HomeCategoryShowcaseRowComponent {
 })
 export class HomeFlashDealsComponent {
   ds = inject(DatastoreService);
-  deals = computed(() => this.ds.homepageData()?.flashDeals || []);
+  deals = computed<any[]>(() => this.ds.sortInStockFirst<any>(this.ds.homepageData()?.flashDeals || []));
   countdown = signal('02h 44m 12s');
 
   constructor() {
@@ -2132,26 +2132,26 @@ export class HomeBestSellersComponent implements OnInit, OnDestroy {
   private autoScrollTimer: any = null;
   private touchStartX = 0;
 
-  topProducts = computed(() => {
+  topProducts = computed<any[]>(() => {
     const hpData = this.ds.homepageData();
     if (hpData?.topSoldProducts && hpData.topSoldProducts.length > 0) {
-      return hpData.topSoldProducts;
+      return this.ds.sortInStockFirst(hpData.topSoldProducts);
     }
     if (hpData?.bestSellers && hpData.bestSellers.length > 0) {
       const first = hpData.bestSellers[0];
       if (first && first.salesCount !== undefined) {
-        return hpData.bestSellers;
+        return this.ds.sortInStockFirst(hpData.bestSellers);
       }
       const mockSales = [45, 32, 28, 19, 15, 12, 10, 8];
-      return hpData.bestSellers.map((p: any, idx: number) => ({
+      return this.ds.sortInStockFirst(hpData.bestSellers.map((p: any, idx: number) => ({
         ...p,
         salesCount: p.salesCount || mockSales[idx] || 10,
         totalRevenue: p.totalRevenue || ((p.salesCount || mockSales[idx] || 10) * (p.salePrice || p.mrp || 500)),
         brand: p.brand || '3D GALAXY'
-      }));
+      })));
     }
 
-    const products = this.ds.products() || [];
+    const products = this.ds.sortInStockFirst(this.ds.products() || []);
     const mockSales = [45, 32, 28, 19, 15, 12, 10, 8];
     return products.slice(0, 8).map((p: any, idx: number) => {
       const sales = mockSales[idx] || 10;
@@ -2397,7 +2397,7 @@ export class HomeBestSellersComponent implements OnInit, OnDestroy {
 })
 export class HomeTrendingProductsComponent {
   ds = inject(DatastoreService);
-  items = computed(() => this.ds.homepageData()?.trendingProducts || []);
+  items = computed<any[]>(() => this.ds.sortInStockFirst<any>(this.ds.homepageData()?.trendingProducts || []));
 
   handleImageError(event: any) {
     if (event.target) {
@@ -2475,7 +2475,7 @@ export class HomeTrendingProductsComponent {
 })
 export class HomeNewArrivalsComponent {
   ds = inject(DatastoreService);
-  items = computed(() => this.ds.homepageData()?.newArrivals || []);
+  items = computed<any[]>(() => this.ds.sortInStockFirst<any>(this.ds.homepageData()?.newArrivals || []));
 
   handleImageError(event: any) {
     if (event.target) {

@@ -68,7 +68,8 @@ export class ShippingService {
    */
   static async calculateShipping(
     items: Array<{ productId: string; variantId?: string | null; quantity?: number; weightInGrams?: number }>,
-    customGlobalSettings?: any
+    customGlobalSettings?: any,
+    overrideCartSubtotal?: number
   ): Promise<ShippingCalculationResult> {
     if (!items || items.length === 0) {
       return {
@@ -231,10 +232,15 @@ export class ShippingService {
       }
     }
 
+    const effectiveSubtotalForFreeShipping =
+      overrideCartSubtotal !== undefined && overrideCartSubtotal !== null && !isNaN(Number(overrideCartSubtotal)) && Number(overrideCartSubtotal) > 0
+        ? Math.max(totalCartSubtotal, Number(overrideCartSubtotal))
+        : totalCartSubtotal;
+
     const isGlobalThresholdMet =
       freeShippingThreshold !== null &&
       freeShippingThreshold > 0 &&
-      totalCartSubtotal >= freeShippingThreshold;
+      effectiveSubtotalForFreeShipping >= freeShippingThreshold;
 
     let totalShippingCharge = 0;
     let maxEstimatedDays = 3;
@@ -665,14 +671,19 @@ export class ShippingService {
     }
 
     // Free shipping threshold waiver check on overall cart
-    if (isGlobalThresholdMet && totalShippingCharge > 0) {
+    if (isGlobalThresholdMet) {
       totalShippingCharge = 0;
       primaryRule = {
         type: 'FREE_SHIPPING',
-        name: `Free Shipping (Orders above ₹${freeShippingThreshold})`,
+        name: `Free Shipping (Orders above ₹${freeShippingThreshold.toLocaleString('en-IN')})`,
       };
       sourcesUsed.clear();
       sourcesUsed.add('FREE_SHIPPING');
+      for (const b of breakdown) {
+        b.charge = 0;
+        b.source = 'FREE_SHIPPING';
+        b.ruleName = `Free Shipping (Orders above ₹${freeShippingThreshold.toLocaleString('en-IN')})`;
+      }
     }
 
     // Determine aggregate shipping source

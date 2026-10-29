@@ -1752,12 +1752,12 @@ export class DatastoreService {
 
           // 4. Featured Products & Full Homepage Products List
           if (d.products && Array.isArray(d.products) && d.products.length > 0) {
-            const mappedProducts = d.products.map((p: any) => this.mapProductFromServer(p));
+            const mappedProducts: Product[] = this.sortInStockFirst<Product>(d.products.map((p: any) => this.mapProductFromServer(p)));
             this.products.set(mappedProducts);
           }
 
           if (d.featuredProducts && Array.isArray(d.featuredProducts)) {
-            const mappedFeatured = d.featuredProducts.map((p: any) => this.mapProductFromServer(p));
+            const mappedFeatured: Product[] = this.sortInStockFirst<Product>(d.featuredProducts.map((p: any) => this.mapProductFromServer(p)));
             this.featuredProducts.set(mappedFeatured);
             if (this.products().length === 0) {
               this.products.set(mappedFeatured);
@@ -2250,6 +2250,31 @@ export class DatastoreService {
     });
   }
 
+  public isProductOutOfStock(p: any): boolean {
+    if (!p) return false;
+    if (p.stockStatus === 'OUT_OF_STOCK' || p.stock_status === 'OUT_OF_STOCK') return true;
+    if (p.status === 'out_of_stock') return true;
+    if (p.availability === 'out_of_stock') return true;
+    const stockVal = p.stock !== undefined && p.stock !== null ? Number(p.stock) : (p.inventory?.stock !== undefined ? Number(p.inventory.stock) : undefined);
+    if (stockVal !== undefined && !isNaN(stockVal) && stockVal <= 0) {
+      if (Array.isArray(p.variants) && p.variants.length > 0) {
+        const hasInStockVariant = p.variants.some((v: any) => v.isActive !== false && v.stock !== undefined && v.stock !== null && Number(v.stock) > 0);
+        return !hasInStockVariant;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  public sortInStockFirst<T extends any>(items: T[]): T[] {
+    if (!Array.isArray(items) || items.length <= 1) return items;
+    return [...items].sort((a: any, b: any) => {
+      const aOos = this.isProductOutOfStock(a) ? 1 : 0;
+      const bOos = this.isProductOutOfStock(b) ? 1 : 0;
+      return aOos - bOos;
+    });
+  }
+
   public mapProductFromServer(p: any): Product {
     let brandVal = typeof p.brand === 'object' ? p.brand?.name : (p.brand || '');
     const brandIdVal = p.brandId || (typeof p.brand === 'object' ? p.brand?.id : undefined);
@@ -2416,7 +2441,7 @@ export class DatastoreService {
       next: (res) => { 
         const list = res?.products || res?.data || (Array.isArray(res) ? res : []);
         if (list) {
-           this.products.set(list.map((p: any) => this.mapProductFromServer(p)));
+           this.products.set(this.sortInStockFirst(list.map((p: any) => this.mapProductFromServer(p))));
         } 
       },
       error: (e) => console.error(e)
@@ -2441,7 +2466,7 @@ export class DatastoreService {
     this.featuredProductsCache$.subscribe({
       next: (res) => {
         if (res && res.products) {
-          this.featuredProducts.set(res.products.map((p: any) => ({
+          const mappedFeat = res.products.map((p: any) => ({
             id: p.id,
             name: p.name,
             slug: p.slug,
@@ -2475,7 +2500,8 @@ export class DatastoreService {
             isExclusive: p.isExclusive,
             codAvailable: p.codAvailable,
             freeShippingEligible: p.freeShippingEligible
-          } as Product)));
+          } as Product));
+          this.featuredProducts.set(this.sortInStockFirst(mappedFeat));
         }
         this.featuredProductsLoading.set(false);
       },
@@ -3159,7 +3185,7 @@ export class DatastoreService {
 
     const shippingState = this.shippingService.calculationState();
     const shippingResult = rawItems && rawItems.length > 0
-      ? this.shippingService.calculateCartShipping(rawItems)
+      ? this.shippingService.calculateCartShipping(rawItems, false, subtotal)
       : {
           shippingCharge: 0,
           source: 'FREE_SHIPPING' as const,
@@ -3169,8 +3195,17 @@ export class DatastoreService {
           estimatedDays: 3,
         };
 
-    const shippingCharge = shippingResult.shippingCharge;
-    const isFreeShipping = shippingResult.freeShipping;
+    const isThresholdMet = Boolean(freeShippingThreshold > 0 && subtotal >= freeShippingThreshold);
+    const isFreeShipping = shippingResult.freeShipping || isThresholdMet;
+    const shippingCharge = isFreeShipping ? 0 : shippingResult.shippingCharge;
+    const shippingLabel = isFreeShipping ? 'Free' : shippingResult.shippingLabel;
+    const shippingSource = isFreeShipping ? ('FREE_SHIPPING' as const) : shippingResult.source;
+    const appliedShippingRule = isThresholdMet && (!shippingResult.freeShipping || !shippingResult.appliedRule)
+      ? {
+          type: 'FREE_SHIPPING' as const,
+          name: `Free Shipping (Orders above ₹${freeShippingThreshold.toLocaleString('en-IN')})`,
+        }
+      : (shippingResult.appliedRule || (isFreeShipping ? { type: 'FREE_SHIPPING' as const, name: 'Free Shipping' } : null));
     const shippingStatus = rawItems && rawItems.length > 0
       ? (shippingState.status !== 'idle' ? shippingState.status : (isFreeShipping ? 'free' : 'success'))
       : 'free';
@@ -3231,10 +3266,10 @@ export class DatastoreService {
         displayWeight
       },
       shippingCharge,
-      shippingSource: shippingResult.source,
+      shippingSource,
       isFreeShipping,
-      shippingLabel: shippingResult.shippingLabel,
-      appliedShippingRule: shippingResult.appliedRule,
+      shippingLabel,
+      appliedShippingRule,
       estimatedDeliveryDays: shippingResult.estimatedDays,
       formattedDeliveryRange: this.deliveryEstimateService.formatDeliveryRange(shippingResult.estimatedDays),
       shippingStatus,

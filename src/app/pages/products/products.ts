@@ -169,7 +169,7 @@ export class Products implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe((res: any) => {
       const products = res?.products || [];
-      this.productsList.set(products);
+      this.productsList.set(this.ds.sortInStockFirst(products));
       this.totalProducts.set(res?.total || 0);
       this.totalPages.set(res?.totalPages || 1);
       if (res?.availableFilters) {

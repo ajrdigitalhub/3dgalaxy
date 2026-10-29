@@ -21,6 +21,7 @@ const buildCategoryTree = (
 ): CategoryNode[] => {
   return categories
     .filter(cat => cat.parentId === parentId)
+    .sort((a, b) => (Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0)))
     .map(cat => ({
       id: cat.id,
       name: cat.name,
@@ -63,7 +64,7 @@ export const getCategoriesTree = async (req: Request, res: Response) => {
     if (!tree) {
       const all = await withDbRetry(() => prisma.category.findMany({
         where: { deletedAt: null },
-        orderBy: { name: 'asc' },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       }));
       tree = buildCategoryTree(all, null);
       if (!bypass) {
@@ -215,7 +216,7 @@ export const getDirectChildren = async (req: Request, res: Response) => {
     if (!list) {
       list = await withDbRetry(() => prisma.category.findMany({
         where: { parentId: targetParentId },
-        orderBy: { name: 'asc' },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       }));
       sysCache.set(cacheKey, list, 1800);
     }
@@ -237,7 +238,7 @@ export const getCategories = async (req: Request, res: Response) => {
     if (!list) {
       list = await withDbRetry(() => prisma.category.findMany({
         where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       }));
       if (!bypass) {
         sysCache.set('categories_flat', list, 1800);
@@ -534,3 +535,33 @@ export const toggleCategoryProductFeatured = async (req: Request, res: Response)
   }
 };
 
+
+
+export const reorderCategories = async (req: Request, res: Response) => {
+  try {
+    const orders = req.body.orders || req.body;
+    if (!Array.isArray(orders) || orders.length === 0) {
+      return res.status(400).json({ error: 'Array of category orders is required' });
+    }
+
+    const updates = orders
+      .filter((item: any) => item && (item.id || item.categoryId))
+      .map((item: any) => {
+        const catId = item.id || item.categoryId;
+        const sOrder = Number(item.sortOrder !== undefined ? item.sortOrder : (item.display_order ?? item.order)) || 0;
+        return prisma.category.update({
+          where: { id: catId },
+          data: { sortOrder: sOrder },
+        });
+      });
+
+    if (updates.length > 0) {
+      await prisma.$transaction(updates);
+    }
+
+    clearCategoryCache();
+    return res.status(200).json({ success: true, message: 'Categories reordered successfully' });
+  } catch (error: any) {
+    return res.status(500).json({ error: 'Failed to reorder categories', details: error.message });
+  }
+};

@@ -502,7 +502,7 @@ export class CheckoutComponent implements OnInit {
   recalculateShippingForAddress() {
     this.shippingService.setCalculationLoading();
     setTimeout(() => {
-      this.shippingService.calculateCartShipping(this.ds.activeCheckoutItems() || [], true);
+      this.shippingService.calculateCartShipping(this.ds.activeCheckoutItems() || [], true, this.subtotal());
     }, 150);
   }
 

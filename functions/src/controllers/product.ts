@@ -1148,20 +1148,43 @@ export const getProducts = async (req: Request, res: Response) => {
       });
     });
 
-    // Sorting
-    if (sort === 'newest') {
-      filtered.sort((a, b) => b.id.localeCompare(a.id));
-    } else if (sort === 'price-asc') {
-      filtered.sort((a, b) => a.activePrice - b.activePrice);
-    } else if (sort === 'price-desc') {
-      filtered.sort((a, b) => b.activePrice - a.activePrice);
-    } else if (sort === 'rating-desc') {
-      filtered.sort((a, b) => b.avgRating - a.avgRating);
-    } else if (sort === 'name-asc') {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sort === 'bestselling' || sort === 'popularity') {
-      filtered.sort((a, b) => (b.reviews?.length || 0) - (a.reviews?.length || 0));
-    }
+    // Out of Stock helper: in-stock products appear first, out-of-stock products appear at the end
+    const isProdOutOfStock = (p: any): boolean => {
+      if (p.stockStatus === 'OUT_OF_STOCK' || p.stock_status === 'OUT_OF_STOCK') return true;
+      if (p.status === 'out_of_stock') return true;
+      const stockVal = p.stock !== undefined && p.stock !== null ? Number(p.stock) : (p.inventory?.stock !== undefined ? Number(p.inventory.stock) : undefined);
+      if (stockVal !== undefined && !isNaN(stockVal) && stockVal <= 0) {
+        if (Array.isArray(p.variants) && p.variants.length > 0) {
+          const hasInStockVariant = p.variants.some((v: any) => v.isActive !== false && v.stock !== undefined && v.stock !== null && Number(v.stock) > 0);
+          return !hasInStockVariant;
+        }
+        return true;
+      }
+      return false;
+    };
+
+    // Sorting: Partition In-Stock first (0) vs Out-of-Stock last (1), then apply requested sort order
+    filtered.sort((a, b) => {
+      const aOos = isProdOutOfStock(a) ? 1 : 0;
+      const bOos = isProdOutOfStock(b) ? 1 : 0;
+      if (aOos !== bOos) {
+        return aOos - bOos;
+      }
+
+      if (sort === 'newest') {
+        return b.id.localeCompare(a.id);
+      } else if (sort === 'price-asc') {
+        return a.activePrice - b.activePrice;
+      } else if (sort === 'price-desc') {
+        return b.activePrice - a.activePrice;
+      } else if (sort === 'rating-desc') {
+        return b.avgRating - a.avgRating;
+      } else if (sort === 'name-asc') {
+        return a.name.localeCompare(b.name);
+      } else {
+        return (b.reviews?.length || 0) - (a.reviews?.length || 0);
+      }
+    });
 
     // Paging
     const total = filtered.length;

@@ -536,7 +536,25 @@ export const getDetailedDynamicHomepageData = async (req: Request, res: Response
       reviewCount: 12
     });
 
-    const mappedProducts = products.map(mapProduct);
+    const isHomepageProdOutOfStock = (p: any): boolean => {
+      if (p.stockStatus === 'OUT_OF_STOCK' || p.stock_status === 'OUT_OF_STOCK') return true;
+      if (p.status === 'out_of_stock') return true;
+      const stockVal = p.stock !== undefined && p.stock !== null ? Number(p.stock) : (p.inventory?.stock !== undefined ? Number(p.inventory.stock) : undefined);
+      if (stockVal !== undefined && !isNaN(stockVal) && stockVal <= 0) {
+        if (Array.isArray(p.variants) && p.variants.length > 0) {
+          const hasInStockVariant = p.variants.some((v: any) => v.isActive !== false && v.stock !== undefined && v.stock !== null && Number(v.stock) > 0);
+          return !hasInStockVariant;
+        }
+        return true;
+      }
+      return false;
+    };
+
+    const mappedProducts = products.map(mapProduct).sort((a: any, b: any) => {
+      const aOos = isHomepageProdOutOfStock(a) ? 1 : 0;
+      const bOos = isHomepageProdOutOfStock(b) ? 1 : 0;
+      return aOos - bOos;
+    });
 
     // Hero slides
     const heroSlides = (settingsData.heroSlides && Array.isArray(settingsData.heroSlides) && settingsData.heroSlides.length > 0)

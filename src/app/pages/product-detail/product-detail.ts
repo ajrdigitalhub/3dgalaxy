@@ -1161,21 +1161,23 @@ export class ProductDetail {
 
   relatedProducts = computed(() => {
     const explicit = this.fetchedRelatedProducts();
+    let list: Product[] = [];
     if (explicit.length > 0) {
-      return explicit.slice(0, 8);
+      list = explicit;
+    } else {
+      const p = this.product();
+      if (!p) return [];
+
+      const categoryId = p.category_id || p.categoryId;
+      list = this.ds
+        .products()
+        .filter((x) => {
+          const itemCategory = x.category_id || (x as any).categoryId;
+          return itemCategory === categoryId && x.id !== p.id;
+        });
     }
 
-    const p = this.product();
-    if (!p) return [];
-
-    const categoryId = p.category_id || p.categoryId;
-    return this.ds
-      .products()
-      .filter((x) => {
-        const itemCategory = x.category_id || (x as any).categoryId;
-        return itemCategory === categoryId && x.id !== p.id;
-      })
-      .slice(0, 8);
+    return this.ds.sortInStockFirst(list).slice(0, 8);
   });
 
   isRelatedProductOutOfStock(rp: any): boolean {
@@ -1316,13 +1318,14 @@ export class ProductDetail {
         ? JSON.parse(p.recommendedFilaments)
         : p.recommendedFilaments;
     if (!Array.isArray(list)) return [];
-    return list
+    const mapped = list
       .map((item: any) => {
         if (item && typeof item === "object" && item.name) return item;
         const id = typeof item === "string" ? item : item.id;
         return this.ds.products().find((x) => x.id === id);
       })
       .filter((x) => x !== undefined) as Product[];
+    return this.ds.sortInStockFirst(mapped);
   });
 
   scrollRelatedProducts(direction: number) {
@@ -1954,8 +1957,36 @@ export class ProductDetail {
       calculatedPrice: wData.totalPrice
     } : undefined;
 
-    // 1. Standard Product Variants take precedence if variants are present
-    if (p.variants && p.variants.length > 0) {
+    // 1. Custom Bundle Builder mode takes precedence if activeBundleGroup is present
+    if (this.variantEngine.activeBundleGroup()) {
+      const bundleGrp = this.variantEngine.activeBundleGroup();
+      if (this.variantEngine.bundleSlots().length === 0 && this.variantEngine.selectedBundleTier()) {
+        this.variantEngine.selectBundleTier(this.variantEngine.selectedBundleTier()!, bundleGrp || undefined);
+      }
+
+      const bundleResult = this.variantEngine.bundleResult();
+      if (!bundleResult.isComplete) {
+        const msg = bundleResult.errorMessages[0] || "Please select options for all slots in the bundle.";
+        this.toastService.error(msg);
+        return;
+      }
+      const bundleDetails = this.variantEngine.buildCartBundleDetails();
+      if (!bundleDetails) {
+        return;
+      }
+
+      this.isAddingToCart.set(true);
+      this.ds.addBundleToCart(p, bundleDetails, this.quantity());
+      try {
+        const trackingItem = mapProductToAnalyticsItem(p, {
+          quantity: this.quantity(),
+          price: bundleDetails.effectivePrice || bundleDetails.bundlePrice || p.salePrice || p.basePrice || 0
+        });
+        this.analytics.trackAddToCart(trackingItem, this.quantity());
+      } catch (e) {}
+    } 
+    // 2. Standard Product Variants if variants are present
+    else if (p.variants && p.variants.length > 0) {
       let selected = this.selectedVariant() || this.galleryVariant() || p.variants.find((v: any) => v.isDefault || v.isActive !== false) || p.variants[0];
       if (!selected) {
         this.showVariantValidation.set(true);
@@ -1999,32 +2030,6 @@ export class ProductDetail {
         const trackingItem = mapProductToAnalyticsItem(p, this.quantity(), enrichedVariant);
         this.analytics.trackAddToCart(trackingItem, this.quantity());
       } catch (e) {}
-    } 
-    // 2. Custom Bundle Builder mode
-    else if (this.variantEngine.activeBundleGroup() && this.variantEngine.selectedBundleTier()) {
-      const bundleResult = this.variantEngine.bundleResult();
-      if (!bundleResult.isComplete) {
-        const msg = bundleResult.errorMessages[0] || "Please select options for all slots in the bundle.";
-        this.toastService.error(msg);
-        return;
-      }
-      const bundleDetails = this.variantEngine.buildCartBundleDetails();
-      if (bundleDetails) {
-        this.isAddingToCart.set(true);
-        this.ds.addBundleToCart(p, bundleDetails, this.quantity());
-        try {
-          const trackingItem = mapProductToAnalyticsItem(p, {
-            quantity: this.quantity(),
-            price: bundleDetails.effectivePrice || bundleDetails.bundlePrice || p.salePrice || p.basePrice || 0
-          });
-          this.analytics.trackAddToCart(trackingItem, this.quantity());
-        } catch (e) {}
-        setTimeout(() => {
-          this.isAddingToCart.set(false);
-          this.toastService.success(`${bundleDetails.bundleName} bundle added to cart!`);
-        }, 600);
-        return;
-      }
     } 
     // 3. Standard Product without variants
     else {
@@ -2075,7 +2080,9 @@ export class ProductDetail {
 
     setTimeout(() => {
       this.isAddingToCart.set(false);
-      this.toastService.success(`${p.name} added to cart!`);
+      const isBundle = this.variantEngine.activeBundleGroup() && this.variantEngine.selectedBundleTier();
+      const msg = isBundle ? `${this.variantEngine.selectedBundleTier()?.name || "Bundle"} added to cart!` : `${p.name} added to cart!`;
+      this.toastService.success(msg);
     }, 600);
   }
 

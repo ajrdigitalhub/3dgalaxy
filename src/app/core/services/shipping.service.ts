@@ -185,7 +185,7 @@ export class ShippingService {
    * 2. CATEGORY-BASED SHIPPING (Weight Range Pricing / Flat / Free)
    * 3. DEFAULT / COMMON SHIPPING (Default Weight Range / Flat Rate)
    */
-  public calculateCartShipping(cartItems: any[], updateStateSignal: boolean = false): ShippingCalculationResult {
+  public calculateCartShipping(cartItems: any[], updateStateSignal: boolean = false, overrideCartSubtotal?: number): ShippingCalculationResult {
     if (!cartItems || cartItems.length === 0) {
       return {
         shippingCharge: 0,
@@ -251,20 +251,31 @@ export class ShippingService {
       const qty = Math.max(1, Number(item.quantity) || 1);
       const variant = item.variant || null;
 
-      const price =
-        variant?.salePrice ||
-        variant?.sale_price ||
-        variant?.price ||
-        prod.salePrice ||
-        prod.sale_price ||
-        prod.basePrice ||
-        prod.mrp ||
-        prod.price ||
-        item.price ||
+      const resolvedItemPrice =
+        (item.calculatedPrice !== undefined && item.calculatedPrice !== null && !isNaN(Number(item.calculatedPrice)) && Number(item.calculatedPrice) > 0 ? Number(item.calculatedPrice) : null) ??
+        (item.effectivePrice !== undefined && item.effectivePrice !== null && !isNaN(Number(item.effectivePrice)) && Number(item.effectivePrice) > 0 ? Number(item.effectivePrice) : null) ??
+        (item.unitPrice !== undefined && item.unitPrice !== null && !isNaN(Number(item.unitPrice)) && Number(item.unitPrice) > 0 ? Number(item.unitPrice) : null) ??
+        (item.price !== undefined && item.price !== null && !isNaN(Number(item.price)) && Number(item.price) > 0 ? Number(item.price) : null) ??
+        (item.selectedWeightValue && item.unitPricePerWeight ? Number(item.selectedWeightValue) * Number(item.unitPricePerWeight) : null) ??
+        (item.bundleDetails?.effectivePrice || item.bundleDetails?.bundlePrice ? Number(item.bundleDetails.effectivePrice || item.bundleDetails.bundlePrice) : null) ??
+        (variant?.salePrice !== undefined && variant?.salePrice !== null && !isNaN(Number(variant.salePrice)) ? Number(variant.salePrice) : null) ??
+        (variant?.sale_price !== undefined && variant?.sale_price !== null && !isNaN(Number(variant.sale_price)) ? Number(variant.sale_price) : null) ??
+        (variant?.price !== undefined && variant?.price !== null && !isNaN(Number(variant.price)) ? Number(variant.price) : null) ??
+        (prod.salePrice !== undefined && prod.salePrice !== null && !isNaN(Number(prod.salePrice)) ? Number(prod.salePrice) : null) ??
+        (prod.sale_price !== undefined && prod.sale_price !== null && !isNaN(Number(prod.sale_price)) ? Number(prod.sale_price) : null) ??
+        (prod.basePrice !== undefined && prod.basePrice !== null && !isNaN(Number(prod.basePrice)) ? Number(prod.basePrice) : null) ??
+        (prod.mrp !== undefined && prod.mrp !== null && !isNaN(Number(prod.mrp)) ? Number(prod.mrp) : null) ??
+        (prod.price !== undefined && prod.price !== null && !isNaN(Number(prod.price)) ? Number(prod.price) : null) ??
         0;
 
-      const lineSubtotal = Number(price) * qty;
-      totalCartSubtotal += lineSubtotal;
+      const itemLineTotal = (item.lineTotal !== undefined && item.lineTotal !== null && !isNaN(Number(item.lineTotal)) && Number(item.lineTotal) > 0)
+        ? Number(item.lineTotal)
+        : (item.totalPrice !== undefined && item.totalPrice !== null && !isNaN(Number(item.totalPrice)) && Number(item.totalPrice) > 0)
+        ? Number(item.totalPrice)
+        : resolvedItemPrice * qty;
+
+      const lineSubtotal = itemLineTotal;
+      totalCartSubtotal += itemLineTotal;
 
       const unitWeight = getItemWeightGrams(item);
       const itemTotalWeight = unitWeight * qty;
@@ -302,10 +313,15 @@ export class ShippingService {
       }
     }
 
+    const effectiveSubtotalForFreeShipping =
+      overrideCartSubtotal !== undefined && overrideCartSubtotal !== null && !isNaN(Number(overrideCartSubtotal)) && Number(overrideCartSubtotal) > 0
+        ? Math.max(totalCartSubtotal, Number(overrideCartSubtotal))
+        : totalCartSubtotal;
+
     const isGlobalThresholdMet =
       freeShippingThreshold !== null &&
       freeShippingThreshold > 0 &&
-      totalCartSubtotal >= freeShippingThreshold;
+      effectiveSubtotalForFreeShipping >= freeShippingThreshold;
 
     let totalShippingCharge = 0;
     let maxEstimatedDays = 304;
@@ -755,14 +771,19 @@ export class ShippingService {
       }
     }
 
-    if (isGlobalThresholdMet && totalShippingCharge > 0) {
+    if (isGlobalThresholdMet) {
       totalShippingCharge = 0;
       primaryRule = {
         type: "FREE_SHIPPING",
-        name: `Free Shipping (Orders above ₹${freeShippingThreshold})`,
+        name: `Free Shipping (Orders above ₹${freeShippingThreshold.toLocaleString('en-IN')})`,
       };
       sourcesUsed.clear();
       sourcesUsed.add("FREE_SHIPPING");
+      for (const b of breakdown) {
+        b.charge = 0;
+        b.source = "FREE_SHIPPING";
+        b.ruleName = `Free Shipping (Orders above ₹${freeShippingThreshold.toLocaleString('en-IN')})`;
+      }
     }
 
     let mainSource: "PRODUCT" | "CATEGORY" | "DEFAULT" | "FREE_SHIPPING" = "FREE_SHIPPING";

@@ -9,6 +9,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  reorderCategories,
   toggleCategoryProductFeatured,
 } from '../controllers/category';
 import { authenticateToken, requireRole } from '../middleware/auth';
@@ -23,6 +24,8 @@ router.get('/breadcrumbs/slug/:slug', cacheMiddleware(1800), getBreadcrumbsBySlu
 router.get('/breadcrumbs/:id', cacheMiddleware(1800), getBreadcrumbs);
 router.get('/children/:parentId', cacheMiddleware(1800), getDirectChildren);
 
+router.put('/reorder', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), reorderCategories);
+router.post('/reorder', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), reorderCategories);
 router.post('/', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), createCategory);
 router.put('/:id', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), updateCategory);
 router.delete('/:id', authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager', 'admin', 'manager']), deleteCategory);

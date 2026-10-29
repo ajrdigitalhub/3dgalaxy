@@ -754,7 +754,7 @@ export class HeaderMegaMenuComponent implements OnInit {
         if (p.categoryIds && p.categoryIds.some(cid => descendantIds.has(cid))) return true;
         return false;
       });
-      if (filtered.length > 0) return filtered;
+      if (filtered.length > 0) return this.ds.sortInStockFirst(filtered);
     }
 
     // 4. Fallback to datastore active products strictly matching this category
@@ -769,7 +769,7 @@ export class HeaderMegaMenuComponent implements OnInit {
         return false;
       });
       if (matched.length > 0) {
-        return matched.slice(0, 4).map(p => ({
+        return this.ds.sortInStockFirst(matched).slice(0, 4).map(p => ({
           id: p.id,
           name: p.name,
           slug: p.slug || p.id,
@@ -799,7 +799,7 @@ export class HeaderMegaMenuComponent implements OnInit {
 
     // 1. Direct server brand top picks lookup
     if (data.brandTopPicks && Array.isArray(data.brandTopPicks[brand.id]) && data.brandTopPicks[brand.id].length > 0) {
-      return data.brandTopPicks[brand.id];
+      return this.ds.sortInStockFirst(data.brandTopPicks[brand.id]);
     }
 
     // 2. Filter bestSellers by brandId or brandName
@@ -809,7 +809,7 @@ export class HeaderMegaMenuComponent implements OnInit {
         p.brandId === brand.id || 
         (p.brandName && p.brandName.toLowerCase() === bName)
       );
-      if (filtered.length > 0) return filtered;
+      if (filtered.length > 0) return this.ds.sortInStockFirst(filtered);
     }
 
     // 3. Fallback to datastore products strictly matching this brand
@@ -822,7 +822,7 @@ export class HeaderMegaMenuComponent implements OnInit {
         return pBrand === bName || pBrandId === brand.id;
       });
       if (matched.length > 0) {
-        return matched.slice(0, 4).map(p => ({
+        return this.ds.sortInStockFirst(matched).slice(0, 4).map(p => ({
           id: p.id,
           name: p.name,
           slug: p.slug || p.id,

@@ -87,8 +87,27 @@ const fetchProductsByRelevance = async (terms: string[], limit?: number) => {
     allProducts.push(...secondaryProducts);
   }
 
-  // Sort by relevance score
+  const isProdOutOfStock = (p: any): boolean => {
+    if (p.stockStatus === 'OUT_OF_STOCK' || p.stock_status === 'OUT_OF_STOCK') return true;
+    if (p.status === 'out_of_stock') return true;
+    const stockVal = p.stock !== undefined && p.stock !== null ? Number(p.stock) : (p.inventory?.stock !== undefined ? Number(p.inventory.stock) : undefined);
+    if (stockVal !== undefined && !isNaN(stockVal) && stockVal <= 0) {
+      if (Array.isArray(p.variants) && p.variants.length > 0) {
+        const hasInStockVariant = p.variants.some((v: any) => v.isActive !== false && v.stock !== undefined && v.stock !== null && Number(v.stock) > 0);
+        return !hasInStockVariant;
+      }
+      return true;
+    }
+    return false;
+  };
+
+  // Sort: In-stock first, out of stock last, then by relevance score
   allProducts.sort((a, b) => {
+    const aOos = isProdOutOfStock(a) ? 1 : 0;
+    const bOos = isProdOutOfStock(b) ? 1 : 0;
+    if (aOos !== bOos) {
+      return aOos - bOos;
+    }
     const scoreA = computeRelevanceScore(a, fullSearchStr, terms);
     const scoreB = computeRelevanceScore(b, fullSearchStr, terms);
     return scoreB - scoreA;

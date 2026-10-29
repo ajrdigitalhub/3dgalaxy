@@ -137,7 +137,7 @@ export class CartCheckout implements OnInit {
     const featured = active.filter((p: any) => p.featured || p.isFeatured);
     const standard = active.filter((p: any) => !p.featured && !p.isFeatured);
     const combined = [...featured, ...standard];
-    return combined.slice(0, 12);
+    return this.ds.sortInStockFirst(combined).slice(0, 12);
   });
 
   getProductPrice(p: any): number {

@@ -436,8 +436,9 @@ export class HomeFeaturedProductsComponent implements OnInit {
       };
     });
 
-    if (mapped.length > 0) {
-      return [...mapped, ...mapped.slice(0, 4)];
+    const sorted = this.ds.sortInStockFirst(mapped);
+    if (sorted.length > 0) {
+      return [...sorted, ...sorted.slice(0, 4)];
     }
     return [];
   });

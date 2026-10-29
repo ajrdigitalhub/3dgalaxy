@@ -101,7 +101,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
 
     // Recursive tree building & count aggregation
     const buildCategoryNode = (cat: any): any => {
-      const childrenRaw = allCategories.filter(c => c.parentId === cat.id);
+      const childrenRaw = allCategories.filter(c => c.parentId === cat.id).sort((a, b) => (Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0)));
       const children = childrenRaw.map(child => buildCategoryNode(child));
       
       const directCount = directCategoryCountMap.get(cat.id) || 0;
@@ -122,7 +122,7 @@ export const getHeaderMenuData = async (req: Request, res: Response) => {
       };
     };
 
-    const rootCategoriesRaw = allCategories.filter(c => !c.parentId);
+    const rootCategoriesRaw = allCategories.filter(c => !c.parentId).sort((a, b) => (Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0)));
     const categoryTree = rootCategoriesRaw.map(cat => buildCategoryNode(cat));
 
     const brands = brandsRaw.map(b => ({
