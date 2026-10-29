@@ -48,112 +48,112 @@ export class AboutPage implements OnInit {
         about.bodyText ||
         about.intro ||
         about.description ||
-        `Certainly, we offer services that include 3D Printing, 3D Scanning, Creating 3D Miniatures, 3D Customization, 3D Printers, 3D Pen, 3D Filaments, PLA Filaments, 3D Selfies, 3D Miniatures and many more at the modest price. We are Filament and create the best quality 3D Printer Filaments at the best price. Contact us to get further details.`,
+        `Certainly, we offer end-to-end additive manufacturing solutions including 3D Printing, 3D Scanning, Rapid Prototyping, 3D Printers, 3D Pens, and premium PLA Filaments at India's most competitive prices. At 3D Galaxy, we deliver dependable quality and technical support for hobbyists, engineers, and industrial creators. Contact us to learn more.`,
       story:
-        about.story ||
-        about.storyText ||
-        about.bodyText ||
-        `From prototyping to production, 3D Galaxy has been helping customers turn ideas into tangible products with dependable manufacturing and support.`,
+    about.story ||
+      about.storyText ||
+      about.bodyText ||
+      `From prototyping to production, 3D Galaxy has been helping customers turn ideas into tangible products with dependable manufacturing and support.`,
       mission:
-        about.mission ||
-        about.missionText ||
-        `To make advanced manufacturing accessible, dependable, and beautifully executed for everyone we serve.`,
+    about.mission ||
+      about.missionText ||
+      `To make advanced manufacturing accessible, dependable, and beautifully executed for everyone we serve.`,
       vision:
-        about.vision ||
-        about.visionText ||
-        `To become a trusted technology partner that sets the standard for innovation, craftsmanship, and customer experience.`,
+    about.vision ||
+      about.visionText ||
+      `To become a trusted technology partner that sets the standard for innovation, craftsmanship, and customer experience.`,
       heroImage:
-        about.heroImage ||
-        data.logoUrl ||
-        "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=1400&q=80",
+    about.heroImage ||
+      data.logoUrl ||
+      "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=1400&q=80",
       teamMembers,
       gallery,
       achievements,
       contact: {
-        phone: contact.phone || "+91 9111381113",
+      phone: contact.phone || "+91 9111381113",
         email: contact.email || "galaxy.3d@hotmail.com",
-        address:
-          contact.address ||
-          "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001",
+          address:
+      contact.address ||
+        "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001",
         workingHours: contact.workingHours || "Mon-Sat - 11:00 AM - 7:00 PM",
-        mapUrl:
-          contact.mapUrl ||
-          contact.googleMapUrl ||
-          "https://maps.app.goo.gl/Nu2hvW8yBzMUzZxQ7"
-      },
-      socialLinks: {
-        facebook: social.facebook || "",
+          mapUrl:
+      contact.mapUrl ||
+        contact.googleMapUrl ||
+        "https://maps.app.goo.gl/Nu2hvW8yBzMUzZxQ7"
+    },
+    socialLinks: {
+      facebook: social.facebook || "",
         instagram: social.instagram || "",
-        linkedin: social.linkedin || "",
-        youtube: social.youtube || "",
+          linkedin: social.linkedin || "",
+            youtube: social.youtube || "",
       },
-    };
-  });
+  };
+});
 
-  ngOnInit(): void {
-    this.loadSettings();
+ngOnInit(): void {
+  this.loadSettings();
+}
+
+  async loadSettings(): Promise < void> {
+  this.isLoading.set(true);
+  try {
+    await this.settingsService.loadSettings();
+  } catch(error) {
+    console.error("Failed to load about page settings", error);
+  } finally {
+    this.isLoading.set(false);
+  }
+}
+
+getMapUrl(addressOrUrl: string): SafeResourceUrl {
+  const defaultQuery = "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001";
+  let query = (addressOrUrl || defaultQuery).trim();
+
+  if (query.includes('google.com/maps/embed')) {
+    return this.sanitizer.bypassSecurityTrustResourceUrl(query);
   }
 
-  async loadSettings(): Promise<void> {
-    this.isLoading.set(true);
+  if (query.includes('maps.app.goo.gl') || query.includes('maps.google.com')) {
     try {
-      await this.settingsService.loadSettings();
-    } catch (error) {
-      console.error("Failed to load about page settings", error);
-    } finally {
-      this.isLoading.set(false);
+      const urlObj = new URL(query);
+      const qParam = urlObj.searchParams.get('q');
+      query = qParam || defaultQuery;
+    } catch {
+      query = defaultQuery;
     }
   }
 
-  getMapUrl(addressOrUrl: string): SafeResourceUrl {
-    const defaultQuery = "3D Galaxy, Budana Compound, 374/1, Udhyog Nagar, Palda, Indore, Madhya Pradesh 452001";
-    let query = (addressOrUrl || defaultQuery).trim();
+  const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+  return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+}
 
-    if (query.includes('google.com/maps/embed')) {
-      return this.sanitizer.bypassSecurityTrustResourceUrl(query);
-    }
-
-    if (query.includes('maps.app.goo.gl') || query.includes('maps.google.com')) {
-      try {
-        const urlObj = new URL(query);
-        const qParam = urlObj.searchParams.get('q');
-        query = qParam || defaultQuery;
-      } catch {
-        query = defaultQuery;
-      }
-    }
-
-    const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
-  }
-
-  getSocialItems() {
-    const content = this.aboutContent();
-    return [
-      {
-        key: "facebook",
-        label: "Facebook",
-        url: content.socialLinks.facebook,
-        icon: "facebook",
-      },
-      {
-        key: "instagram",
-        label: "Instagram",
-        url: content.socialLinks.instagram,
-        icon: "photo_camera",
-      },
-      {
-        key: "linkedin",
-        label: "LinkedIn",
-        url: content.socialLinks.linkedin,
-        icon: "business",
-      },
-      {
-        key: "youtube",
-        label: "YouTube",
-        url: content.socialLinks.youtube,
-        icon: "play_circle",
-      },
-    ].filter((item) => Boolean(item.url));
-  }
+getSocialItems() {
+  const content = this.aboutContent();
+  return [
+    {
+      key: "facebook",
+      label: "Facebook",
+      url: content.socialLinks.facebook,
+      icon: "facebook",
+    },
+    {
+      key: "instagram",
+      label: "Instagram",
+      url: content.socialLinks.instagram,
+      icon: "photo_camera",
+    },
+    {
+      key: "linkedin",
+      label: "LinkedIn",
+      url: content.socialLinks.linkedin,
+      icon: "business",
+    },
+    {
+      key: "youtube",
+      label: "YouTube",
+      url: content.socialLinks.youtube,
+      icon: "play_circle",
+    },
+  ].filter((item) => Boolean(item.url));
+}
 }

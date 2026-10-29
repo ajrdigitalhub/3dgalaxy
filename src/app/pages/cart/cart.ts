@@ -1,10 +1,11 @@
-import {Component, ChangeDetectionStrategy, inject, signal, computed, effect, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {RouterModule, Router} from '@angular/router';
-import {MatIconModule} from '@angular/material/icon';
-import {DatastoreService} from '../../services/datastore';
-import {ToastService} from '../../shared/components/toast/toast.service';
-import {SettingsService} from '../../core/services/settings.service';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Title, Meta } from '@angular/platform-browser';
+import { RouterModule, Router } from '@angular/router';
+import { MatIconModule } from '@angular/material/icon';
+import { DatastoreService } from '../../services/datastore';
+import { ToastService } from '../../shared/components/toast/toast.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { WeightPipe } from '../../shared/pipes/weight.pipe';
 import { calculateItemWeight, calculatePackageSummary, formatWeight } from '../../shared/utils/weight.utils';
 
@@ -29,6 +30,8 @@ export class CartCheckout implements OnInit {
   deliveryEstimateService = inject(DeliveryEstimateService);
   analytics = inject(AnalyticsService);
   shippingService = inject(ShippingService);
+  private title = inject(Title);
+  private meta = inject(Meta);
 
   isFreeShippingApplicable(p: any): boolean {
     return this.shippingService.isFreeShippingApplicable(p);
@@ -62,6 +65,8 @@ export class CartCheckout implements OnInit {
   }
 
   ngOnInit() {
+    this.title.setTitle('Shopping Cart | 3D Galaxy');
+    this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
     this.ds.clearBuyNowItem();
     this.ds.reloadProducts(false);
 
@@ -132,7 +137,7 @@ export class CartCheckout implements OnInit {
     const list = this.ds.products() || [];
     const active = list.filter((p: any) => p && p.name && p.isActive !== false && p.status !== 'draft');
     if (active.length === 0) return [];
-    
+
     // Sort featured / best sellers first
     const featured = active.filter((p: any) => p.featured || p.isFeatured);
     const standard = active.filter((p: any) => !p.featured && !p.isFeatured);
@@ -176,7 +181,7 @@ export class CartCheckout implements OnInit {
       const itemsSubtotal = mapped.reduce((acc: number, it: any) => acc + (it.price * (it.quantity || 1)), 0);
       try {
         sessionStorage.setItem('last_checkout_tracked_time', String(Date.now()));
-      } catch (e) {}
+      } catch (e) { }
       this.analytics.trackCheckout(mapped, Number(itemsSubtotal.toFixed(2)));
     }
     this.ds.clearBuyNowItem();
