@@ -180,7 +180,7 @@
         {{ backupService.totalCount() }}
       </p>
       <p class="text-[10px] font-mono text-zinc-500 truncate">
-        Retention: Keep latest {{ backupService.config()?.retentionCount || 8 }}
+        Retention: Keep last {{ backupService.config()?.retentionDays || backupService.config()?.retentionCount || 10 }} days
       </p>
     </div>
 

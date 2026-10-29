@@ -35,7 +35,7 @@ class BackupSchedulerService {
     const hour = isNaN(parseInt(timeParts[0] || '2', 10)) ? 2 : parseInt(timeParts[0] || '2', 10);
     const minute = isNaN(parseInt(timeParts[1] || '0', 10)) ? 0 : parseInt(timeParts[1] || '0', 10);
 
-    const scheduleType = (ENV.BACKUP_SCHEDULE || 'twice-weekly').toLowerCase().trim();
+    const scheduleType = (ENV.BACKUP_SCHEDULE || 'daily').toLowerCase().trim();
 
     if (scheduleType === 'hourly') {
       const cronExpr = `${minute} * * * *`;
@@ -66,15 +66,11 @@ class BackupSchedulerService {
         description: `Monthly on the 1st at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
       };
     } else {
-      // Default: twice-weekly
-      const days = (ENV.BACKUP_DAYS || 'Wednesday,Sunday')
-        .split(',')
-        .map((d) => this.dayNameToCron(d))
-        .join(',');
-      const cronExpr = `${minute} ${hour} * * ${days}`;
+      // Default: daily at 02:00
+      const cronExpr = `${minute} ${hour} * * *`;
       return {
         cronExpr,
-        description: `Twice-weekly on ${ENV.BACKUP_DAYS} at ${ENV.BACKUP_TIME} (${ENV.BACKUP_TIMEZONE})`
+        description: `Daily at ${ENV.BACKUP_TIME || '02:00'} (${ENV.BACKUP_TIMEZONE || 'Asia/Kolkata'})`
       };
     }
   }
@@ -95,14 +91,14 @@ class BackupSchedulerService {
     const { cronExpr, description } = this.getCronExpression();
 
     if (!cron.validate(cronExpr)) {
-      console.error(`[BACKUP SCHEDULER] Invalid cron expression calculated: "${cronExpr}". Falling back to twice-weekly 02:00.`);
+      console.error(`[BACKUP SCHEDULER] Invalid cron expression calculated: "${cronExpr}". Falling back to daily 02:00.`);
     }
 
     const safeCronExpr = cron.validate(cronExpr) ? cronExpr : '0 2 * * 3,0';
     console.log(`[BACKUP SCHEDULER] Initializing backup schedule: "${safeCronExpr}" -> ${description}`);
 
     try {
-      // Active: Automated Twice-Weekly Database Backup
+      // Active: Automated Daily Database Backup
       this.scheduledTask = cron.schedule(
         safeCronExpr,
         async () => {
@@ -125,7 +121,11 @@ class BackupSchedulerService {
       //   }
       // );
 
-      console.log(`[BACKUP SCHEDULER] Automated twice-weekly backup active (${safeCronExpr}: ${description}).`);
+      console.log(`[BACKUP SCHEDULER] Automated backup active (${safeCronExpr}: ${description}). Retention: Keep last ${ENV.BACKUP_RETENTION_DAYS} days.`);
+      // Initial non-blocking retention cleanup to prune expired backups (> 10 days)
+      backupEngine.applyRetentionPolicy().catch((retErr) => {
+        console.warn('[BACKUP SCHEDULER] Initial retention cleanup warning:', retErr);
+      });
     } catch (err) {
       console.error('[BACKUP SCHEDULER] Failed to initialize cron task:', err);
     }
@@ -191,7 +191,7 @@ class BackupSchedulerService {
       };
     }
 
-    const scheduleType = (ENV.BACKUP_SCHEDULE || 'twice-weekly').toLowerCase().trim();
+    const scheduleType = (ENV.BACKUP_SCHEDULE || 'daily').toLowerCase().trim();
 
     if (scheduleType === 'hourly') {
       if (elapsedHours >= 1) {

@@ -1192,25 +1192,34 @@ export class BackupEngineService {
   // RETENTION POLICY ENFORCER
   // -------------------------------------------------------------------------
   public async applyRetentionPolicy(): Promise<{ deletedCount: number }> {
-    const keepCount = Math.max(1, ENV.BACKUP_RETENTION_COUNT);
+    const retentionDays = Math.max(1, ENV.BACKUP_RETENTION_DAYS || 10);
     const bucket = getStorageBucket();
     if (!bucket) return { deletedCount: 0 };
 
     try {
-      // Find all successful MANUAL and SCHEDULED backups (exclude PRE_RESTORE safety backups)
+      // Find all successful backups ordered by newest first
       const backups = await prisma.databaseBackup.findMany({
         where: {
-          status: 'SUCCESS',
-          backupType: { in: ['MANUAL', 'SCHEDULED'] }
+          status: 'SUCCESS'
         },
         orderBy: { createdAt: 'desc' }
       });
 
-      if (backups.length <= keepCount) {
+      // Fail-safe: Always retain at least the latest 1 successful backup
+      if (backups.length <= 1) {
         return { deletedCount: 0 };
       }
 
-      const backupsToDelete = backups.slice(keepCount);
+      // Cutoff: Backups before the last 10 days (older than retentionDays * 24h)
+      const now = Date.now();
+      const cutoffTime = now - retentionDays * 24 * 60 * 60 * 1000;
+      const latestBackupId = backups[0]?.id;
+
+      // Identify backups created before the 10-day retention window
+      const backupsToDelete = backups.filter(
+        (b) => b.id !== latestBackupId && new Date(b.createdAt).getTime() < cutoffTime
+      );
+
       let deletedCount = 0;
 
       for (const b of backupsToDelete) {
@@ -1225,10 +1234,32 @@ export class BackupEngineService {
             where: { id: b.id }
           });
           deletedCount++;
-          console.log(`[BACKUP ENGINE] Retention: Deleted old backup ${b.backupName} (${b.storagePath})`);
+          console.log(`[BACKUP ENGINE] Retention: Deleted backup older than ${retentionDays} days: ${b.backupName} (${b.createdAt})`);
         } catch (err) {
           console.warn(`[BACKUP ENGINE] Retention: Failed to delete ${b.storagePath}:`, err);
         }
+      }
+
+      // Also clean up any unreferenced remote storage archives older than retentionDays
+      try {
+        const [files] = await bucket.getFiles({ prefix: `${ENV.BACKUP_STORAGE_ROOT}/` });
+        for (const file of files) {
+          if (!file.name.endsWith('.zip')) continue;
+          if (backups[0]?.storagePath === file.name) continue;
+          const fileTime = new Date(file.metadata.timeCreated || 0).getTime();
+          if (fileTime > 0 && fileTime < cutoffTime) {
+            const isRetainedInDb = backups.some(
+              (b) => b.id !== latestBackupId && !backupsToDelete.some((d) => d.id === b.id) && b.storagePath === file.name
+            );
+            if (!isRetainedInDb) {
+              await file.delete().catch(() => null);
+              deletedCount++;
+              console.log(`[BACKUP ENGINE] Retention: Deleted unreferenced storage backup file older than ${retentionDays} days: ${file.name}`);
+            }
+          }
+        }
+      } catch (storageErr) {
+        console.warn('[BACKUP ENGINE] Retention: Storage scan error (non-fatal):', storageErr);
       }
 
       return { deletedCount };

@@ -32,6 +32,7 @@ export interface BackupConfig {
   backupTime: string;
   backupDays: string;
   timezone: string;
+  retentionDays?: number;
   retentionCount: number;
   storageRoot: string;
   isOverdue: boolean;
