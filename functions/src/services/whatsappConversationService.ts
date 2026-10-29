@@ -309,6 +309,18 @@ export class WhatsAppConversationService {
           mediaId: data.mediaId || null,
           mediaUrl: data.mediaUrl || null,
           mediaMetadata: data.mediaMetadata || null,
+          metadata: {
+            ...(typeof data.mediaMetadata === 'object' && data.mediaMetadata !== null ? data.mediaMetadata : {}),
+            ...((() => {
+              const matches = (data.messageText || '').match(/https?:\/\/[^\s<>"{}|\\^`]+[^\s<>"{}|\\^`.,;:!?)\]]/gi);
+              const extractedUrls = matches && matches.length > 0 ? Array.from(new Set(matches)) : [];
+              const productMatch = extractedUrls.find(u => /\/products?\/([a-zA-Z0-9_-]+)/i.test(u))?.match(/\/products?\/([a-zA-Z0-9_-]+)/i);
+              return {
+                ...(extractedUrls.length > 0 ? { extractedUrls } : {}),
+                ...(productMatch && productMatch[1] ? { referencedProductSlug: productMatch[1] } : {})
+              };
+            })())
+          },
           status: 'RECEIVED',
           rawPayload: data.rawPayload || null,
           createdAt: data.timestamp || new Date()
@@ -347,7 +359,12 @@ export class WhatsAppConversationService {
           lastMessageAt: data.timestamp || new Date(),
           lastDirection: 'INBOUND',
           unreadCount: { increment: 1 },
-          status: 'OPEN'
+          status: 'OPEN',
+          metadata: {
+            ...(typeof (conversation.metadata as any) === 'object' && conversation.metadata !== null ? (conversation.metadata as any) : {}),
+            ...((message.metadata as any)?.extractedUrls ? { lastExtractedUrls: (message.metadata as any).extractedUrls } : {}),
+            ...((message.metadata as any)?.referencedProductSlug ? { lastReferencedProductSlug: (message.metadata as any).referencedProductSlug } : {})
+          }
         },
         include: {
           customer: { include: { user: true } },

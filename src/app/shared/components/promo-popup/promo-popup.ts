@@ -514,7 +514,7 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     } else if (action === 'open_cart') {
       this.router.navigate(['/cart']);
     } else if (action === 'open_whatsapp') {
-      const waNumber = this.ds.settingsService.settingsData()?.supportSettings?.whatsappNumber || '919876543210';
+      const waNumber = this.ds.settingsService.settingsData()?.supportSettings?.whatsappNumber || '919111381113';
       window.open(`https://wa.me/${waNumber}?text=Hi%2C%20I%20want%20to%20claim%20offer%3A%20${encodeURIComponent(camp.headline || camp.title || '')}`, '_blank');
     } else if (targetUrl) {
       if (camp.openInNewTab || targetUrl.startsWith('http')) {

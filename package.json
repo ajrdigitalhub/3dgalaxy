@@ -9,7 +9,7 @@
     "start": "concurrently \"node dist/applet/server/server.mjs\" \"cd server && BACKEND_PORT=4000 npx ts-node --transpile-only src/server.ts\"",
     "test-backend": "cd server && BACKEND_PORT=4000 npx ts-node --transpile-only src/server.ts",
     "build:server": "npx -y esbuild src/server.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/applet/server/server.mjs --external:express --external:axios --external:firebase/* --external:firebase-admin",
-    "build": "ng build",
+    "build": "ng build && npx tsx scripts/sync-html-template.ts",
     "deploy": "npm run test:deployment && npm run test && npm run build && npm run build --prefix functions && firebase deploy",
     "deploy:safe": "npm run test:deployment && npm run test && npm run build && npm run build --prefix functions && firebase deploy",
     "deploy:functions": "npm run test:deployment && npm run test && npm run build --prefix functions && firebase deploy --only functions",

@@ -35,6 +35,13 @@ import notificationRoutes from "./routes/notification";
 import pwaRoutes from "./routes/pwa";
 import headerMenuRoutes from "./routes/headerMenu";
 import marketingRoutes from "./routes/marketing";
+import {
+  handleProductStorefront,
+  handleProductsLegacyStorefront,
+  handleProductsCatalogStorefront,
+  handleCategoryStorefront,
+  handleBrandStorefront
+} from "./controllers/storefrontMeta";
 import homepageRoutes from "./routes/homepage";
 import { bannerRoutes, adminBannerRoutes } from "./modules/banner/banner.routes";
 import { getServiceConfig } from "./controllers/settings";
@@ -215,6 +222,14 @@ app.use(
 app.use("/", sitemapRoutes);
 app.use("/api", sitemapRoutes);
 app.use("/", marketingRoutes);
+
+// Storefront Open Graph & Dynamic SEO Metadata Routes (Public for WhatsApp crawlers and browsers)
+app.get("/product/:slug", handleProductStorefront);
+app.get("/products/:slug", handleProductsLegacyStorefront);
+app.get("/products", handleProductsCatalogStorefront);
+app.get("/product", handleProductsCatalogStorefront);
+app.get("/category/:slug", handleCategoryStorefront);
+app.get("/brand/:slug", handleBrandStorefront);
 app.get("/api/home", cacheMiddleware(300), getConsolidatedHome);
 app.get(
   "/api/home/featured-products",

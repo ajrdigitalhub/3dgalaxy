@@ -653,7 +653,7 @@
 
         <!-- Hidden Native File Input -->
         <input type="file" #filePicker (change)="onFileSelected($event)"
-          accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip"
+          accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,.rar,.7z,.stl,.step,.stp,.3mf"
           class="hidden" />
 
         <!-- Attachment Preview Drawer (Before Sending) -->
@@ -675,10 +675,19 @@
               <mat-icon class="!text-[24px] !w-[24px] !h-[24px]">description</mat-icon>
             </div>
             }
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="text-xs font-bold text-neutral-900 dark:text-neutral-100 truncate font-sans">{{ att.fileName }}</div>
-              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono mt-0.5">
-                {{ formatFileSize(att.fileSize) }} • {{ att.fileType }}
+              <div class="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono mt-0.5 flex items-center gap-2">
+                <span>{{ formatFileSize(att.fileSize) }} • {{ att.fileType }}</span>
+                @if (att.previewUrl) {
+                <span>•</span>
+                <button type="button" (click)="previewPendingAttachment()"
+                  class="text-[#00a884] dark:text-[#25d366] hover:underline font-bold inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-none p-0"
+                  title="Preview attached file">
+                  <mat-icon class="!text-[12px] !w-[12px] !h-[12px]">visibility</mat-icon>
+                  <span>Preview</span>
+                </button>
+                }
               </div>
             </div>
           </div>

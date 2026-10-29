@@ -15,7 +15,7 @@ export const upload = {
   single: (
     fieldname: string,
     maxSize: number = 25 * 1024 * 1024,
-    allowedExtensions: RegExp = /jpeg|jpg|png|gif|webp|svg|csv|pdf|doc|docx|zip|rar|txt|stl|step|stp|3mf/i,
+    allowedExtensions: RegExp = /jpeg|jpg|png|gif|webp|svg|csv|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|txt|stl|step|stp|3mf|mp4|3gp|mov|avi|mp3|ogg|wav|m4a|aac|amr|json/i,
   ) => {
     return (req: Request, res: Response, next: NextFunction) => {
       const contentType = req.headers["content-type"] || "";
@@ -83,9 +83,15 @@ export const upload = {
           const mimeTypeValid =
             allowedExtensions.test(mimetype) ||
             mimetype.includes('image') ||
+            mimetype.includes('video') ||
+            mimetype.includes('audio') ||
             mimetype.includes('pdf') ||
             mimetype.includes('document') ||
             mimetype.includes('msword') ||
+            mimetype.includes('sheet') ||
+            mimetype.includes('excel') ||
+            mimetype.includes('presentation') ||
+            mimetype.includes('powerpoint') ||
             mimetype.includes('zip') ||
             mimetype.includes('compressed') ||
             mimetype.includes('text') ||
@@ -122,11 +128,21 @@ export const upload = {
             try {
               if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
             } catch (_) {}
-            return next(new Error("File size limit exceeded (Max 10MB)!"));
+            const limitMb = Math.round(maxSize / (1024 * 1024));
+            return next(new Error(`File size limit exceeded (Max ${limitMb}MB)!`));
           });
 
           writeStream.on("finish", () => {
             if (errorOccurred) return;
+            let fileBuffer = Buffer.alloc(0);
+            try {
+              if (fs.existsSync(filepath)) {
+                fileBuffer = fs.readFileSync(filepath);
+              }
+            } catch (bufErr) {
+              console.warn('[UPLOAD] Warning reading buffer from disk:', bufErr);
+            }
+
             req.file = {
               fieldname,
               originalname,
@@ -136,7 +152,7 @@ export const upload = {
               filename,
               path: filepath,
               size: fileSize,
-              buffer: Buffer.alloc(0),
+              buffer: fileBuffer,
               stream: fileStream,
             } as any;
             console.log(

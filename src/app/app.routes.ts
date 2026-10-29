@@ -41,6 +41,11 @@ export const routes: Routes = [
     data: { preload: true },
   },
   {
+    path: "products/:slug",
+    redirectTo: "product/:slug",
+    pathMatch: "full",
+  },
+  {
     path: "slicer",
     loadComponent: () =>
       import("./pages/printing-service/printing-service").then(

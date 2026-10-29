@@ -1196,7 +1196,24 @@ export const handleAdminSendAttachment = async (req: AuthenticatedRequest, res: 
     // 4. Save file to Firebase Storage
     const sanitizedFilename = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storagePath = `whatsapp/attachments/${id}/${Date.now()}_${sanitizedFilename}`;
-    const mediaUrl = await uploadFileToStorage(file.buffer, storagePath, mimeType);
+
+    let fileBuffer: Buffer = Buffer.alloc(0);
+    if (file.buffer && Buffer.isBuffer(file.buffer) && file.buffer.length > 0) {
+      fileBuffer = file.buffer;
+    } else if (file.path && fs.existsSync(file.path)) {
+      fileBuffer = fs.readFileSync(file.path);
+    }
+
+    const mediaUrl = await uploadFileToStorage(fileBuffer, storagePath, mimeType);
+
+    // Clean up temporary disk file if created by busboy
+    if (file.path && fs.existsSync(file.path)) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch (cleanErr) {
+        console.warn('[WhatsApp] Could not remove temp file:', cleanErr);
+      }
+    }
 
     // 5. Send via WhatsApp Cloud API
     const settings = await getWhatsappSettings();

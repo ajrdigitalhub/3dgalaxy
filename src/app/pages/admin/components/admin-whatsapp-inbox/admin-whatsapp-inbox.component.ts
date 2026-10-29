@@ -342,11 +342,9 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
     else if (file.type.startsWith('audio/')) fileType = 'AUDIO';
 
     let previewUrl: string | undefined;
-    if (fileType === 'IMAGE') {
-      try {
-        previewUrl = URL.createObjectURL(file);
-      } catch {}
-    }
+    try {
+      previewUrl = URL.createObjectURL(file);
+    } catch {}
 
     this.pendingAttachment.set({
       file,
@@ -357,6 +355,16 @@ export class AdminWhatsappInboxComponent implements OnInit, OnDestroy, AfterView
       mimeType: file.type
     });
     this.sendErrorMessage.set(null);
+  }
+
+  previewPendingAttachment() {
+    const att = this.pendingAttachment();
+    if (!att?.previewUrl) return;
+    if (att.fileType === 'IMAGE') {
+      this.openLightbox(att.previewUrl);
+    } else {
+      window.open(att.previewUrl, '_blank');
+    }
   }
 
   clearPendingAttachment() {
