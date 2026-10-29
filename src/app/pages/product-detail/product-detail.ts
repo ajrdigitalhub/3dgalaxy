@@ -42,6 +42,7 @@ import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
 import { AnalyticsService, mapProductToAnalyticsItem } from "../../core/analytics";
 import { DeliveryEstimatePipe } from "../../shared/pipes/delivery-estimate.pipe";
 import { ShippingChargeSkeletonComponent } from "../../shared/components/skeleton/shipping-charge-skeleton/shipping-charge-skeleton.component";
+import { SettingsService } from "../../core/services/settings.service";
 import { SeoService } from "../../core/services/seo.service";
 
 @Component({
@@ -77,6 +78,7 @@ export class ProductDetail {
   shippingService = inject(ShippingService);
   deliveryEstimateService = inject(DeliveryEstimateService);
   analytics = inject(AnalyticsService);
+  settingsService = inject(SettingsService);
 
   displayProductWeight = computed(() => {
     const p = this.product();
@@ -2244,7 +2246,7 @@ export class ProductDetail {
       if (navigator.share) {
         await navigator.share({
           title: p.name,
-          text: shareText,
+          text: `${shareText}\n${shareUrl}`,
           url: shareUrl,
         });
         this.toastService.success("Product shared successfully.");
@@ -2270,10 +2272,16 @@ export class ProductDetail {
   }
 
   triggerWhatsAppInquiry(p: Product) {
-    const contact = this.ds.settings()?.contactPhone || '919876543210';
+    const contact = this.settingsService?.whatsappSettings()?.adminPhoneNumber ||
+                    this.settingsService?.whatsappSettings()?.adminPhone ||
+                    this.ds.settings()?.contactPhone ||
+                    '919111381113';
+    const origin = (typeof window !== "undefined" && window.location?.origin) || environment.siteUrl || 'https://3dgalaxy.co.in';
+    const productUrl = `${origin}/product/${p.slug}`;
+    const productTitle = this.getProductTitle(p);
     const price = this.activePrice(p);
-    const textMessage = `Hi 3D Galaxy Team! I am interested in purchasing ${p.name} (SKU: ${p.sku}) for ₹${price} / each. Quantity needed: ${this.quantity()}. Kindly advise on bulk delivery times. Thanks!`;
-    const targetUrl = buildWhatsAppUrl(contact, textMessage, '919876543210');
+    const textMessage = `Hi 3D Galaxy, I'm interested in this product: ${productTitle} — ${productUrl} (Quantity: ${this.quantity()}, Price: ₹${price})`;
+    const targetUrl = buildWhatsAppUrl(contact, textMessage, '919111381113');
 
     if (typeof window !== "undefined") {
       window.open(targetUrl, "_blank");

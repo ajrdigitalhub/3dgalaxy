@@ -68,9 +68,9 @@
             {{ e.status.replace('_', ' ') }}
           </span>
           <a
-            [href]="'https://wa.me/919876543210?text=Hi, inquiring about Service Request ' + e.trackingNumber"
+            [href]="getWhatsAppSupportUrl(e)"
             target="_blank"
-            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 text-decoration-none"
+            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 text-decoration-none cursor-pointer"
           >
             <mat-icon class="text-sm">chat</mat-icon>
             <span>WhatsApp Support</span>

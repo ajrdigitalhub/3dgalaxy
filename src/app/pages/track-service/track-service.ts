@@ -1,3 +1,5 @@
+import { SettingsService } from "../../core/services/settings.service";
+import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -19,6 +21,7 @@ export class TrackServiceComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private enquiryService = inject(ServiceEnquiryService);
   private toastService = inject(ToastService);
+  private settingsService = inject(SettingsService);
 
   trackingQuery = signal<string>("");
   authVal = signal<string>("");
@@ -129,6 +132,16 @@ export class TrackServiceComponent implements OnInit {
       },
       error: () => this.toastService.error("Failed to accept quotation."),
     });
+  }
+
+  getWhatsAppSupportUrl(e: ServiceEnquiry): string {
+    const phone =
+      this.settingsService.whatsappSettings()?.adminPhoneNumber ||
+      this.settingsService.contact()?.phone ||
+      '919111381113';
+    const trackingUrl = `https://3dgalaxy.co.in/track-service?query=${encodeURIComponent(e.trackingNumber)}`;
+    const text = `Hi 3D Galaxy, I'm inquiring about Service Request ${e.trackingNumber} (${e.modelName}) — ${trackingUrl}`;
+    return buildWhatsAppUrl(phone, text);
   }
 
   rejectQuote() {

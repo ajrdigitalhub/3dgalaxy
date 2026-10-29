@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import multer from 'multer';
+import { upload } from '../middleware/upload';
 import {
   getCustomerNotifications,
   getCustomerNotificationDetail,
@@ -35,11 +35,7 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
-// Configure memory storage multer for WhatsApp file attachments (up to 50MB)
-const uploadAttachment = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }
-});
+// Cloud-Functions-compatible busboy upload middleware (up to 50MB)
 
 // Real-time SSE Stream Endpoint (Browser EventSource with ?token= query parameter)
 router.get('/admin/whatsapp/stream', whatsappStream);
@@ -54,7 +50,7 @@ router.get('/admin/whatsapp/conversations/:id', authenticateToken, getAdminWhats
 router.get('/admin/whatsapp/conversations/:id/messages', authenticateToken, getAdminWhatsappMessages);
 router.post('/admin/whatsapp/conversations/:id/sync', authenticateToken, syncAdminWhatsappConversation);
 router.post('/admin/whatsapp/conversations/:id/messages', authenticateToken, handleAdminReply);
-router.post('/admin/whatsapp/conversations/:id/attachments', authenticateToken, uploadAttachment.single('file'), handleAdminSendAttachment);
+router.post('/admin/whatsapp/conversations/:id/attachments', authenticateToken, upload.single('file', 50 * 1024 * 1024), handleAdminSendAttachment);
 router.post('/admin/whatsapp/conversations/:id/inbound', authenticateToken, handleSimulateCustomerMessage);
 router.patch('/admin/whatsapp/conversations/:id/status', authenticateToken, handleUpdateConversationStatus);
 router.patch('/admin/whatsapp/conversations/:id/mode', authenticateToken, handleUpdateConversationMode);

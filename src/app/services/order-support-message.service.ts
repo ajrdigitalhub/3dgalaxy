@@ -434,9 +434,9 @@ export class OrderSupportMessageService {
                 this.settingsService.whatsappSettings()?.adminPhone ||
                 this.settingsService.contact()?.phone ||
                 this.settingsService.settingsData()?.support_phone ||
-                '919876543210';
+                '919111381113';
     
-    return formatWhatsAppNumber(raw, '919876543210');
+    return formatWhatsAppNumber(raw, '919111381113');
   }
 
   /**
@@ -444,7 +444,7 @@ export class OrderSupportMessageService {
    */
   generateWhatsAppUrl(whatsappNumber: string, message: string): string {
     const targetPhone = whatsappNumber || this.getAdminWhatsAppNumber();
-    return buildWhatsAppUrl(targetPhone, message, '919876543210');
+    return buildWhatsAppUrl(targetPhone, message, '919111381113');
   }
 
   /**

@@ -24,6 +24,7 @@ import { fromEvent } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { buildWhatsAppUrl } from '../shared/utils/phone.utils';
+import { environment } from '../../environments/environment';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -608,8 +609,34 @@ export class App {
     const phone = this.settingsService.whatsappSettings()?.adminPhoneNumber ||
                   this.settingsService.whatsappSettings()?.adminPhone ||
                   this.settingsService.contact()?.phone ||
-                  '919999999999';
-    return buildWhatsAppUrl(phone, "Hello! I have a query regarding 3D Galaxy store.", '919999999999');
+                  this.ds.settings()?.contactPhone ||
+                  '919111381113';
+    const origin = (typeof window !== 'undefined' ? window.location.origin : '') || environment.siteUrl || 'https://3dgalaxy.co.in';
+    const activeUrl = this.currentUrl() || this.router.url || '';
+
+    let message = `Hello 3D Galaxy, I have a query regarding the store: ${origin}`;
+
+    if (activeUrl.startsWith('/product/')) {
+      const slug = activeUrl.split('/product/')[1]?.split('?')[0]?.split('#')[0] || '';
+      const matched = this.ds.products().find(p => p.slug === slug || p.id === slug);
+      const productTitle = matched?.name || '';
+      const productUrl = `${origin}/product/${slug}`;
+      message = productTitle
+        ? `Hi 3D Galaxy, I'm interested in this product: ${productTitle} — ${productUrl}`
+        : `Hi 3D Galaxy, I'm interested in this product: — ${productUrl}`;
+    } else if (activeUrl.startsWith('/category/')) {
+      const slug = activeUrl.split('/category/')[1]?.split('?')[0]?.split('#')[0] || '';
+      const catUrl = `${origin}/category/${slug}`;
+      message = `Hello 3D Galaxy, I have a query regarding products in this category: ${catUrl}`;
+    } else if (activeUrl.startsWith('/cart')) {
+      message = `Hello 3D Galaxy, I have a query regarding my cart items: ${origin}/cart`;
+    } else if (activeUrl.startsWith('/services') || activeUrl.startsWith('/slicer') || activeUrl.startsWith('/printing-service')) {
+      message = `Hello 3D Galaxy, I have a query regarding 3D printing services: ${origin}${activeUrl}`;
+    } else if (activeUrl && activeUrl !== '/') {
+      message = `Hello 3D Galaxy, I have a query regarding: ${origin}${activeUrl}`;
+    }
+
+    return buildWhatsAppUrl(phone, message, '919111381113');
   }
 
   onImageError(event: Event) {

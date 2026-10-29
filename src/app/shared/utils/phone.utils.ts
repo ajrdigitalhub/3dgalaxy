@@ -20,12 +20,18 @@ export function formatWhatsAppNumber(
   else if (clean.length === 11 && clean.startsWith('0')) {
     clean = '91' + clean.slice(1);
   }
+  // 12-digit without prefix (already 91...)
+  else if (clean.length === 12 && clean.startsWith('91')) {
+    // Already valid
+  }
 
   return clean;
 }
 
 /**
  * Builds a clean wa.me URL ensuring proper country code and encoded text message.
+ * Handles Unicode, spaces, ampersands, Tamil text, emojis, and query parameters cleanly.
+ * Protects against accidental double-encoding.
  */
 export function buildWhatsAppUrl(
   phone: string | number | undefined | null,
@@ -33,6 +39,19 @@ export function buildWhatsAppUrl(
   defaultFallback: string = '919111381113'
 ): string {
   const cleanPhone = formatWhatsAppNumber(phone, defaultFallback);
-  const encodedMsg = encodeURIComponent(message || '');
+
+  let rawMessage = String(message || '').trim();
+
+  // Guard against accidental double-encoding:
+  // If the string already contains %XX encoded sequences, try to normalize by decoding once
+  if (/%[0-9A-Fa-f]{2}/.test(rawMessage)) {
+    try {
+      rawMessage = decodeURIComponent(rawMessage);
+    } catch {
+      // In case of stray percent signs (e.g. "15% discount"), keep raw
+    }
+  }
+
+  const encodedMsg = encodeURIComponent(rawMessage);
   return `https://wa.me/${cleanPhone}${encodedMsg ? '?text=' + encodedMsg : ''}`;
 }

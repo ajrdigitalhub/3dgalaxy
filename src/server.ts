@@ -19,6 +19,26 @@ app.use('/sitemap.xml', createProxyMiddleware({
   changeOrigin: true
 }));
 
+app.use('/product', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
+app.use('/products', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
+app.use('/category', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
+app.use('/brand', createProxyMiddleware({
+  target: 'http://127.0.0.1:4000',
+  changeOrigin: true
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
