@@ -2246,7 +2246,7 @@ export class ProductDetail {
       if (navigator.share) {
         await navigator.share({
           title: p.name,
-          text: `${shareText}\n${shareUrl}`,
+          text: shareText,
           url: shareUrl,
         });
         this.toastService.success("Product shared successfully.");
