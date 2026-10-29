@@ -524,6 +524,7 @@ export class AdminPanel implements OnInit {
   catIsFeatured = signal<boolean>(false);
   catSeoTitle = signal<string>("");
   catSeoDescription = signal<string>("");
+  catSortOrder = signal<number>(1);
   catShippingCharge = signal<number | null>(null);
   catEstimatedDeliveryDays = signal<number | null>(3);
   catEstimatedDeliveryDaysInput = signal<string>("3");
@@ -1390,6 +1391,8 @@ export class AdminPanel implements OnInit {
     this.catIsFeatured.set(cat.isFeatured || false);
     this.catSeoTitle.set(cat.seoTitle || "");
     this.catSeoDescription.set(cat.seoDescription || "");
+    const sOrder = cat.sortOrder !== undefined && cat.sortOrder !== null ? Number(cat.sortOrder) : (cat.display_order !== undefined && cat.display_order !== null ? Number(cat.display_order) : 1);
+    this.catSortOrder.set(sOrder || 1);
 
     const charge = cat.shippingCharge !== undefined && cat.shippingCharge !== null ? Number(cat.shippingCharge) : cat.shipping_charge !== undefined && cat.shipping_charge !== null ? Number(cat.shipping_charge) : null;
     this.catShippingCharge.set(charge);
@@ -1433,6 +1436,7 @@ export class AdminPanel implements OnInit {
     this.catIsFeatured.set(false);
     this.catSeoTitle.set("");
     this.catSeoDescription.set("");
+    this.catSortOrder.set(1);
     this.catShippingCharge.set(null);
     this.catEstimatedDeliveryDays.set(3);
     this.catEstimatedDeliveryDaysInput.set("3");
@@ -1449,10 +1453,8 @@ export class AdminPanel implements OnInit {
     if (!name) return this.toastService.error("Category Name is required.");
 
     // Calculate display order
-    let finalOrder = 1;
-    if (this.editingCategory()) {
-      finalOrder = this.editingCategory()!.display_order || 1;
-    } else {
+    let finalOrder = Number(this.catSortOrder()) || 1;
+    if (!this.editingCategory() && (!this.catSortOrder() || this.catSortOrder() <= 0)) {
       finalOrder = this.ds.categories().length + 1;
     }
 

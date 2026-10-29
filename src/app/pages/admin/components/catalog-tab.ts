@@ -2834,7 +2834,32 @@ import { ShippingService } from "../../../core/services/shipping.service";
                         </span>
                       }
 
+                      <span
+                        class="px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-zinc-200/50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                        title="Display Sequence Order"
+                      >
+                        #{{ c.sortOrder ?? c.display_order ?? 1 }}
+                      </span>
+
                       <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          (click)="moveCategoryUp(c, $event)"
+                          [disabled]="isFirstSibling(c)"
+                          title="Move Category Up in Sequence"
+                          class="p-1 hover:bg-orange-500/10 text-zinc-500 hover:text-orange-500 disabled:opacity-20 disabled:hover:text-zinc-500 rounded-lg border-none bg-transparent cursor-pointer flex items-center justify-center transition-colors"
+                        >
+                          <mat-icon class="text-xs">arrow_upward</mat-icon>
+                        </button>
+                        <button
+                          type="button"
+                          (click)="moveCategoryDown(c, $event)"
+                          [disabled]="isLastSibling(c)"
+                          title="Move Category Down in Sequence"
+                          class="p-1 hover:bg-orange-500/10 text-zinc-500 hover:text-orange-500 disabled:opacity-20 disabled:hover:text-zinc-500 rounded-lg border-none bg-transparent cursor-pointer flex items-center justify-center transition-colors"
+                        >
+                          <mat-icon class="text-xs">arrow_downward</mat-icon>
+                        </button>
                         <button
                           type="button"
                           (click)="$event.stopPropagation(); openEditCategoryModal(c)"
@@ -3293,6 +3318,17 @@ import { ShippingService } from "../../../core/services/shipping.service";
                         </select>
                       </div>
 
+                      <div class="space-y-1">
+                        <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Display Order / Sequence (e.g. 1, 2, 3)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          [value]="admin.catSortOrder()"
+                          (input)="admin.catSortOrder.set(+$any($event.target).value)"
+                          placeholder="1"
+                          class="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none text-zinc-900 dark:text-white"
+                        />
+                      </div>
                       <div class="space-y-1">
                         <label class="text-[10px] font-black uppercase text-zinc-400 tracking-wider">Grid Icon (Material Icon)</label>
                         <input
@@ -5512,7 +5548,14 @@ export class AdminCatalogTab {
 
     const buildTree = (parentId: string | null = null, level = 0, path = ''): any[] => {
       let result: any[] = [];
-      const children = cats.filter((c) => (c.parent_id || c.parentId || null) === parentId);
+      const children = cats
+        .filter((c) => (c.parent_id || c.parentId || null) === parentId)
+        .sort((a, b) => {
+          const aOrder = Number(a.sortOrder !== undefined && a.sortOrder !== null ? a.sortOrder : (a.display_order ?? 0));
+          const bOrder = Number(b.sortOrder !== undefined && b.sortOrder !== null ? b.sortOrder : (b.display_order ?? 0));
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return (a.name || '').localeCompare(b.name || '');
+        });
 
       for (const child of children) {
         const currentPath = path ? `${path} > ${child.name}` : child.name;
@@ -5535,6 +5578,79 @@ export class AdminCatalogTab {
 
     return buildTree();
   });
+
+  isFirstSibling(c: any): boolean {
+    const parentId = c.parent_id || c.parentId || null;
+    const siblings = this.admin.ds.categories()
+      .filter((x: any) => (x.parent_id || x.parentId || null) === parentId)
+      .sort((a: any, b: any) => {
+        const aOrder = Number(a.sortOrder !== undefined && a.sortOrder !== null ? a.sortOrder : (a.display_order ?? 0));
+        const bOrder = Number(b.sortOrder !== undefined && b.sortOrder !== null ? b.sortOrder : (b.display_order ?? 0));
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    return siblings.length > 0 && siblings[0].id === c.id;
+  }
+
+  isLastSibling(c: any): boolean {
+    const parentId = c.parent_id || c.parentId || null;
+    const siblings = this.admin.ds.categories()
+      .filter((x: any) => (x.parent_id || x.parentId || null) === parentId)
+      .sort((a: any, b: any) => {
+        const aOrder = Number(a.sortOrder !== undefined && a.sortOrder !== null ? a.sortOrder : (a.display_order ?? 0));
+        const bOrder = Number(b.sortOrder !== undefined && b.sortOrder !== null ? b.sortOrder : (b.display_order ?? 0));
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+    return siblings.length > 0 && siblings[siblings.length - 1].id === c.id;
+  }
+
+  moveCategoryUp(cat: any, event?: Event) {
+    if (event) event.stopPropagation();
+    this.shiftCategoryOrder(cat, -1);
+  }
+
+  moveCategoryDown(cat: any, event?: Event) {
+    if (event) event.stopPropagation();
+    this.shiftCategoryOrder(cat, 1);
+  }
+
+  private shiftCategoryOrder(cat: any, direction: -1 | 1) {
+    const parentId = cat.parent_id || cat.parentId || null;
+    const allCats = this.admin.ds.categories();
+    const siblings = allCats
+      .filter((c: any) => (c.parent_id || c.parentId || null) === parentId)
+      .sort((a: any, b: any) => {
+        const aOrder = Number(a.sortOrder !== undefined && a.sortOrder !== null ? a.sortOrder : (a.display_order ?? 0));
+        const bOrder = Number(b.sortOrder !== undefined && b.sortOrder !== null ? b.sortOrder : (b.display_order ?? 0));
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+    const index = siblings.findIndex((c: any) => c.id === cat.id);
+    if (index === -1) return;
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= siblings.length) return;
+
+    const targetCat = siblings[targetIndex];
+    siblings[index] = targetCat;
+    siblings[targetIndex] = cat;
+
+    const orders = siblings.map((s: any, idx: number) => ({
+      id: s.id,
+      sortOrder: idx + 1
+    }));
+
+    this.admin.ds.reorderCategories(orders).subscribe({
+      next: () => {
+        this.toastService.success(`"${cat.name}" moved ${direction === -1 ? 'up' : 'down'} successfully.`);
+      },
+      error: (err: any) => {
+        this.toastService.error(err?.error?.error || err?.message || 'Failed to reorder categories');
+      }
+    });
+  }
 
   getProductCount(categoryId: string): number {
     return (this.admin.ds.products() || []).filter(

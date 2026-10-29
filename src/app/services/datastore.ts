@@ -19,7 +19,7 @@ import { DeliveryEstimateService } from '../core/services/delivery-estimate.serv
 import { Router } from '@angular/router';
 import { ToastService } from '../shared/components/toast/toast.service';
 import { of, Observable } from 'rxjs';
-import { catchError, finalize, shareReplay, retry } from 'rxjs/operators';
+import { catchError, finalize, shareReplay, retry, tap } from 'rxjs/operators';
 import { CartBundleDetails } from '../core/models/variant-engine.model';
 import { convertToGrams, formatWeight, getItemWeightGrams } from '../shared/utils/weight.utils';
 
@@ -1737,7 +1737,7 @@ export class DatastoreService {
               isFeatured: c.isFeatured ?? true,
               isActive: c.isActive ?? true
             }));
-            this.categories.set(mappedCats);
+            this.categories.set(this.sortCategories(mappedCats));
           }
 
           // 2b. Brands
@@ -2047,9 +2047,36 @@ export class DatastoreService {
             free_shipping_threshold: c.free_shipping_threshold !== undefined && c.free_shipping_threshold !== null ? Number(c.free_shipping_threshold) : c.freeShippingThreshold !== undefined && c.freeShippingThreshold !== null ? Number(c.freeShippingThreshold) : null,
           };
         });
-        this.categories.set(mappedList);
+        this.categories.set(this.sortCategories(mappedList));
       }
     });
+  }
+
+  reorderCategories(orders: Array<{ id: string; sortOrder: number }>): Observable<any> {
+    const orderMap = new Map<string, number>();
+    orders.forEach(o => orderMap.set(o.id, Number(o.sortOrder) || 0));
+
+    this.categories.update(current => {
+      const updated = current.map(cat => {
+        if (orderMap.has(cat.id)) {
+          const newOrder = orderMap.get(cat.id)!;
+          return { ...cat, sortOrder: newOrder, display_order: newOrder };
+        }
+        return cat;
+      });
+      return this.sortCategories(updated);
+    });
+
+    return this.api.put('/categories/reorder', { orders }).pipe(
+      tap(() => {
+        this.api.clearCache('category');
+        this.api.clearCache('categories');
+        this.api.clearCache('header-menu');
+        this.api.clearCache('explore');
+        this.reloadCategories(true);
+        this.loadHeaderMenu(true);
+      })
+    );
   }
 
   reloadBrands(force = false) {
@@ -2272,6 +2299,16 @@ export class DatastoreService {
       const aOos = this.isProductOutOfStock(a) ? 1 : 0;
       const bOos = this.isProductOutOfStock(b) ? 1 : 0;
       return aOos - bOos;
+    });
+  }
+
+  public sortCategories<T extends any>(cats: T[]): T[] {
+    if (!Array.isArray(cats) || cats.length <= 1) return cats;
+    return [...cats].sort((a: any, b: any) => {
+      const aOrder = Number(a.sortOrder !== undefined && a.sortOrder !== null ? a.sortOrder : (a.display_order ?? 0));
+      const bOrder = Number(b.sortOrder !== undefined && b.sortOrder !== null ? b.sortOrder : (b.display_order ?? 0));
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return String(a.name || '').localeCompare(String(b.name || ''));
     });
   }
 
