@@ -107,30 +107,37 @@ interface PaperParticle {
           </div>
 
           <!-- Order Timeline -->
-          <div class="px-6 sm:px-8 pb-6 sm:pb-8">
-            <h3 class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em] mb-5">Order Progress</h3>
-            <div class="flex items-start justify-between relative">
-              <!-- Progress Line -->
-              <div class="absolute top-4 left-4 right-4 h-0.5 bg-neutral-200 dark:bg-neutral-800"></div>
-              <div class="absolute top-4 left-4 h-0.5 bg-emerald-400 transition-all duration-1000" [style.width]="'15%'"></div>
+          <div class="px-4 sm:px-8 pb-6 sm:pb-8">
+            <h3 class="text-xs font-black text-neutral-400 uppercase tracking-[0.15em] mb-4">Order Progress</h3>
+            <!-- overflow-x-auto ensures very narrow screens can scroll rather than break layout -->
+            <div class="overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div class="flex items-start justify-between relative min-w-[300px]">
+                <!-- Background Progress Line -->
+                <div class="absolute top-4 left-4 right-4 h-0.5 bg-neutral-200 dark:bg-neutral-800"></div>
+                <!-- Active Progress Line -->
+                <div class="absolute top-4 left-4 h-0.5 bg-emerald-400 transition-all duration-1000" [style.width]="'15%'"></div>
 
-              @for (step of timelineSteps; track step.label; let i = $index) {
-              <div class="relative z-10 flex flex-col items-center gap-1.5 w-24 text-center">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm transition-all"
-                  [class]="i === 0
-                    ? 'bg-emerald-500 text-white shadow-emerald-400/30'
-                    : 'bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700 text-neutral-400'">
-                  @if (i === 0) {
-                    <mat-icon class="scale-75">check</mat-icon>
-                  } @else {
-                    <mat-icon class="scale-75 text-neutral-400">{{ step.icon }}</mat-icon>
-                  }
+                @for (step of timelineSteps; track step.label; let i = $index) {
+                <div class="relative z-10 flex flex-col items-center gap-1 flex-1 min-w-0 text-center px-0.5">
+                  <!-- Step Icon Bubble -->
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm transition-all flex-shrink-0"
+                    [class]="i === 0
+                      ? 'bg-emerald-500 text-white shadow-emerald-400/30'
+                      : 'bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700 text-neutral-400'">
+                    @if (i === 0) {
+                      <mat-icon class="scale-75">check</mat-icon>
+                    } @else {
+                      <mat-icon class="scale-75 text-neutral-400">{{ step.icon }}</mat-icon>
+                    }
+                  </div>
+                  <!-- Label: truncate on tiny screens, full on wider -->
+                  <span class="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide leading-tight break-words hyphens-auto w-full"
+                    [class]="i === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'">{{ step.label }}</span>
+                  <!-- Date -->
+                  <span class="text-[8px] sm:text-[9px] font-mono text-neutral-400 dark:text-neutral-500 font-semibold leading-tight break-all w-full">{{ getStepDate(i) }}</span>
                 </div>
-                <span class="text-[9px] font-bold uppercase tracking-wider leading-tight"
-                  [class]="i === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'">{{ step.label }}</span>
-                <span class="text-[9px] font-mono text-neutral-400 dark:text-neutral-500 font-semibold">{{ getStepDate(i) }}</span>
+                }
               </div>
-              }
             </div>
           </div>
         </div>

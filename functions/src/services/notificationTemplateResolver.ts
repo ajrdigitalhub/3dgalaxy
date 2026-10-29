@@ -1,6 +1,7 @@
 import { ENV } from '../config/env';
 import { DeliveryEstimateService } from './deliveryEstimate.service';
 import { WhatsAppNotificationService } from './whatsappNotificationService';
+import { generateOrderAccessToken } from '../utils/orderSecurity';
 
 export interface ResolvedTemplateResult {
   shouldSend: boolean;
@@ -74,7 +75,9 @@ export class NotificationTemplateResolver {
     const siteUrl = extraParams?.origin || whatsappSettings?.siteUrl || ENV.SITE_URL;
 
     const orderId = order?.orderNumber || order?.id || extraParams?.orderId || 'N/A';
-    const orderUrl = extraParams?.orderLink || `${siteUrl}/account/orders/${order?.id || orderId}`;
+    const orderToken = order?.id ? generateOrderAccessToken(order) : '';
+    const tokenQuery = orderToken ? `?token=${orderToken}` : '';
+    const orderUrl = extraParams?.orderLink || `${siteUrl}/account/orders/${order?.id || orderId}${tokenQuery}`;
 
     // Customer Name Resolution
     const customerName = WhatsAppNotificationService.extractCustomerName(order, extraParams);

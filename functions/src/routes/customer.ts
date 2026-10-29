@@ -169,6 +169,36 @@ router.post('/address', authenticateToken, async (req: Request, res: Response) =
     const pin = pincode || postalCode || '600001';
     const formattedLine1 = addressLine1 || `${fullName} | ${phone} | ${addressType} | ${houseNo} ${street}`.trim();
 
+    // Extract bare street part for dedup (strip the "Name | Phone | Type | " prefix if present)
+    const streetPart = formattedLine1.includes('|')
+      ? formattedLine1.split('|').slice(3).join('|').trim()
+      : formattedLine1.trim();
+
+    // ── Dedup: find existing address with same location (city + postalCode + street) ──
+    const existingAddresses = await prisma.customerAddress.findMany({
+      where: { customerId: customer.id, city: city || 'City', postalCode: pin },
+    });
+
+    const duplicate = existingAddresses.find(a => {
+      const existStreet = a.addressLine1.includes('|')
+        ? a.addressLine1.split('|').slice(3).join('|').trim()
+        : a.addressLine1.trim();
+      return existStreet.toLowerCase() === streetPart.toLowerCase()
+        || a.addressLine1 === formattedLine1
+        || a.addressLine1 === (addressLine1 || '');
+    });
+
+    if (duplicate) {
+      // Address already exists – return it without creating a duplicate
+      console.log(`[CustomerAddresses] Dedup: returning existing address ${duplicate.id} for customer ${customer.id}`);
+      if (isDefault && !duplicate.isDefault) {
+        await prisma.customerAddress.updateMany({ where: { customerId: customer.id }, data: { isDefault: false } });
+        await prisma.customerAddress.update({ where: { id: duplicate.id }, data: { isDefault: true } });
+        duplicate.isDefault = true;
+      }
+      return res.status(200).json({ success: true, data: parseCustomerAddress(duplicate) });
+    }
+
     if (isDefault) {
       await prisma.customerAddress.updateMany({
         where: { customerId: customer.id },
@@ -191,6 +221,87 @@ router.post('/address', authenticateToken, async (req: Request, res: Response) =
 
     return res.status(201).json({ success: true, data: parseCustomerAddress(created) });
   } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Alias: POST /addresses (plural) — used by frontend checkout "saveAddressToAccount"
+router.post('/addresses', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const customer = await getOrCreateCustomerForUser(userId);
+    const {
+      fullName = '',
+      phone = '',
+      addressType = 'home',
+      houseNo = '',
+      street = '',
+      addressLine1,
+      addressLine2 = '',
+      city = '',
+      state = '',
+      pincode,
+      postalCode,
+      country = 'India',
+      isDefault = false,
+    } = req.body;
+
+    const pin = pincode || postalCode || '600001';
+    const formattedLine1 = addressLine1 || `${fullName} | ${phone} | ${addressType} | ${houseNo} ${street}`.trim();
+
+    // Extract bare street part for dedup
+    const streetPart = formattedLine1.includes('|')
+      ? formattedLine1.split('|').slice(3).join('|').trim()
+      : formattedLine1.trim();
+
+    // Dedup: find existing address with same location
+    const existingAddresses = await prisma.customerAddress.findMany({
+      where: { customerId: customer.id, city: city || 'City', postalCode: pin },
+    });
+
+    const duplicate = existingAddresses.find((a) => {
+      const existStreet = a.addressLine1.includes('|')
+        ? a.addressLine1.split('|').slice(3).join('|').trim()
+        : a.addressLine1.trim();
+      return existStreet.toLowerCase() === streetPart.toLowerCase()
+        || a.addressLine1 === formattedLine1
+        || a.addressLine1 === (addressLine1 || '');
+    });
+
+    if (duplicate) {
+      console.log(`[CustomerAddresses] Dedup (POST /addresses): returning existing ${duplicate.id} for customer ${customer.id}`);
+      if (isDefault && !duplicate.isDefault) {
+        await prisma.customerAddress.updateMany({ where: { customerId: customer.id }, data: { isDefault: false } });
+        await prisma.customerAddress.update({ where: { id: duplicate.id }, data: { isDefault: true } });
+        duplicate.isDefault = true;
+      }
+      return res.status(200).json({ success: true, data: parseCustomerAddress(duplicate) });
+    }
+
+    if (isDefault) {
+      await prisma.customerAddress.updateMany({
+        where: { customerId: customer.id },
+        data: { isDefault: false },
+      });
+    }
+
+    const created = await prisma.customerAddress.create({
+      data: {
+        customerId: customer.id,
+        addressLine1: formattedLine1,
+        addressLine2: addressLine2 || null,
+        city: city || 'City',
+        state: state || 'State',
+        postalCode: pin,
+        country: country || 'India',
+        isDefault: !!isDefault,
+      },
+    });
+
+    return res.status(201).json({ success: true, data: parseCustomerAddress(created) });
+  } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
 });

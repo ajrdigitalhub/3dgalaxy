@@ -230,6 +230,7 @@ export const processOrderCreation = async (tx: any, payload: any) => {
 
     let shipAddr = null;
     if (customerId) {
+      // Primary dedup: exact match on formatted or raw addressLine1
       shipAddr = await tx.customerAddress.findFirst({
         where: {
           customerId,
@@ -239,6 +240,21 @@ export const processOrderCreation = async (tx: any, payload: any) => {
           ]
         }
       });
+
+      // Secondary dedup: match by city + postalCode + street part (catches pre-saved addresses)
+      if (!shipAddr && postalCode && postalCode !== 'N/A') {
+        const rawStreetPart = rawLine1.trim().toLowerCase();
+        const candidates = await tx.customerAddress.findMany({
+          where: { customerId, city, postalCode }
+        });
+        shipAddr = candidates.find((a: any) => {
+          const existStreet = a.addressLine1.includes('|')
+            ? a.addressLine1.split('|').slice(3).join('|').trim()
+            : a.addressLine1.trim();
+          return existStreet.toLowerCase() === rawStreetPart
+            || a.addressLine1.toLowerCase().includes(rawStreetPart.substring(0, Math.min(rawStreetPart.length, 15)));
+        }) || null;
+      }
     }
 
     if (!shipAddr) {
@@ -274,18 +290,23 @@ export const processOrderCreation = async (tx: any, payload: any) => {
       const billCountry = isBillObj ? (billingAddress.country || 'India') : 'India';
 
       if (billAddrLine1 !== rawLine1) {
-        const billAddr = await tx.customerAddress.create({
-          data: {
-            customerId,
-            addressLine1: billAddrLine1,
-            addressLine2: billAddrLine2,
-            city: billCity,
-            state: billState,
-            postalCode: billPostalCode,
-            country: billCountry,
-            isDefault: false
-          }
-        });
+        let billAddr = customerId ? await tx.customerAddress.findFirst({
+          where: { customerId, OR: [{ addressLine1: billAddrLine1 }], city: billCity, postalCode: billPostalCode }
+        }) : null;
+        if (!billAddr) {
+          billAddr = await tx.customerAddress.create({
+            data: {
+              customerId,
+              addressLine1: billAddrLine1,
+              addressLine2: billAddrLine2,
+              city: billCity,
+              state: billState,
+              postalCode: billPostalCode,
+              country: billCountry,
+              isDefault: false
+            }
+          });
+        }
         billingAddressId = billAddr.id;
       }
     }

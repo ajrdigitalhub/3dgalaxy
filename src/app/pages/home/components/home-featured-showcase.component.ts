@@ -158,14 +158,6 @@ import { AnalyticsService, mapProductToAnalyticsItem } from "../../../core/analy
 
                   <!-- Action Buttons -->
                   <div class="showcase-actions flex flex-wrap items-center gap-3 pt-3">
-                    <button
-                      (click)="buyNow(product)"
-                      type="button"
-                      class="px-7 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-95 flex items-center gap-2 border-none"
-                    >
-                      <mat-icon class="scale-90">shopping_cart</mat-icon>
-                      <span>Buy Now</span>
-                    </button>
                     <a
                       [routerLink]="['/product', product.slug]"
                       class="px-6 py-3 border border-neutral-200 dark:border-neutral-700/80 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer no-underline"

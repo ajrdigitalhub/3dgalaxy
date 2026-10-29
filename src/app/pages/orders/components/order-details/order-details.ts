@@ -7,6 +7,7 @@ import {
   computed,
 } from "@angular/core";
 import { CommonModule, Location } from "@angular/common";
+import { FormsModule } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { MatIconModule } from "@angular/material/icon";
@@ -22,7 +23,7 @@ import { DatastoreService } from "../../../../services/datastore";
 @Component({
   selector: "app-customer-order-details",
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, SupportRequestDialogComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, FormsModule, SupportRequestDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: "./order-details.html",
 })
@@ -39,6 +40,11 @@ export class CustomerOrderDetailsComponent implements OnInit {
   order = signal<any>(null);
   loading = signal(true);
   error = signal("");
+  requiresEmailVerification = signal(false);
+  verificationEmail = signal("");
+  verificationError = signal("");
+  isVerifying = signal(false);
+  activeOrderNumber = signal("");
 
   // Support Center Reactive State Signals
   selectedSupportTopic = signal<string>('');
@@ -385,7 +391,7 @@ export class CustomerOrderDetailsComponent implements OnInit {
     }
   }
 
-  private getHeaders() {
+  private getHeaders(cleanId?: string, emailOverride?: string) {
     const headers: any = {};
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("access_token");
@@ -396,31 +402,99 @@ export class CustomerOrderDetailsComponent implements OnInit {
       if (guestId) {
         headers["x-guest-session-id"] = guestId;
       }
+      // Secure access token from query param or sessionStorage
+      const qToken = this.route.snapshot.queryParamMap.get("token");
+      const storedToken = cleanId ? sessionStorage.getItem(`order_token_${cleanId}`) : null;
+      const orderToken = qToken || storedToken;
+      if (orderToken) {
+        headers["x-order-token"] = orderToken;
+      }
+      // Secure email verification from user prompt, query param, or sessionStorage
+      const qEmail = this.route.snapshot.queryParamMap.get("email");
+      const storedEmail = cleanId ? sessionStorage.getItem(`order_email_${cleanId}`) : null;
+      const orderEmail = emailOverride || qEmail || storedEmail;
+      if (orderEmail) {
+        headers["x-order-email"] = orderEmail;
+      }
     }
     return { headers };
   }
 
-  fetchOrder(id: string) {
-    this.loading.set(true);
+  fetchOrder(id: string, emailOverride?: string) {
     const cleanId = String(id || '').trim();
+    if (!cleanId) return;
+
+    this.activeOrderNumber.set(cleanId);
+    this.loading.set(true);
+    this.error.set('');
+    this.verificationError.set('');
+
+    if (typeof window !== "undefined") {
+      const qToken = this.route.snapshot.queryParamMap.get("token");
+      if (qToken) {
+        sessionStorage.setItem(`order_token_${cleanId}`, qToken);
+      }
+      if (emailOverride) {
+        sessionStorage.setItem(`order_email_${cleanId}`, emailOverride);
+      }
+    }
+
     const url = cleanId.startsWith('http') ? cleanId : `${environment.apiUrl}/orders/${encodeURIComponent(cleanId)}`;
     this.http
-      .get<any>(url, this.getHeaders())
+      .get<any>(url, this.getHeaders(cleanId, emailOverride))
       .pipe(
         catchError((err) => {
+          this.loading.set(false);
+          if (err.status === 403 && (err.error?.code === 'EMAIL_VERIFICATION_REQUIRED' || err.error?.requiresEmail)) {
+            this.requiresEmailVerification.set(true);
+            this.activeOrderNumber.set(err.error?.orderNumber || cleanId);
+            if (emailOverride) {
+              this.verificationError.set(err.error?.error || 'Email does not match this order. Please try again.');
+            }
+            return of(null);
+          }
+          if (err.status === 403 && err.error?.code === 'FORBIDDEN_ORDER_ACCESS') {
+            this.error.set(err.error?.error || "You do not have permission to view this order.");
+            return of(null);
+          }
           this.error.set(
             err.error?.error || "Failed to locate order detail tracking.",
           );
-          this.loading.set(false);
           return of(null);
         }),
       )
       .subscribe((res) => {
-        if (res) {
-          this.order.set(res);
-        }
         this.loading.set(false);
+        if (res) {
+          this.requiresEmailVerification.set(false);
+          this.order.set(res);
+          if (typeof window !== "undefined") {
+            if (res.accessToken) {
+              sessionStorage.setItem(`order_token_${cleanId}`, res.accessToken);
+              if (res.orderNumber) {
+                sessionStorage.setItem(`order_token_${res.orderNumber}`, res.accessToken);
+              }
+            }
+            if (emailOverride) {
+              sessionStorage.setItem(`order_email_${cleanId}`, emailOverride);
+              if (res.orderNumber) {
+                sessionStorage.setItem(`order_email_${res.orderNumber}`, emailOverride);
+              }
+            }
+          }
+        }
       });
+  }
+
+  submitEmailVerification() {
+    const email = this.verificationEmail().trim();
+    if (!email || !email.includes('@')) {
+      this.verificationError.set('Please enter a valid email address.');
+      return;
+    }
+    this.isVerifying.set(true);
+    this.fetchOrder(this.activeOrderNumber(), email);
+    this.isVerifying.set(false);
   }
 
   getVisibleSteps(): any[] {

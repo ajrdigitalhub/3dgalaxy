@@ -77,38 +77,38 @@ export const createRateLimiter = (options: {
   };
 };
 
-// Rate limiter presets
+// Rate limiter presets (configured for 3 minutes window)
 export const authLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5,
-  message: 'Too many authentication attempts. Please try again after 1 minute.',
+  windowMs: 3 * 60 * 1000, // 3 minutes
+  max: 15,
+  message: 'Too many authentication attempts. Please try again after 3 minutes.',
   keyPrefix: 'auth',
 });
 
 export const passwordResetLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3,
+  max: 5,
   message: 'Too many password reset requests. Please try again in 15 minutes.',
   keyPrefix: 'pwd_reset',
 });
 
 export const checkoutLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10,
-  message: 'Too many checkout requests. Please wait a moment before trying again.',
+  windowMs: 3 * 60 * 1000, // 3 minutes
+  max: 30,
+  message: 'Too many checkout requests. Please wait 3 minutes before trying again.',
   keyPrefix: 'checkout',
 });
 
 export const uploadLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 15,
+  max: 30,
   message: 'File upload rate limit exceeded. Please wait before uploading more files.',
   keyPrefix: 'upload',
 });
 
 export const apiLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  max: 120,
-  message: 'Too many requests. Please slow down.',
+  windowMs: 3 * 60 * 1000, // 3 minutes
+  max: 1500, // Generous threshold to prevent false positives during active navigation
+  message: 'Too many requests. Please slow down and try again in 3 minutes.',
   keyPrefix: 'general_api',
 });

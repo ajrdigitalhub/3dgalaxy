@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ENV } from '../config/env';
+import { generateOrderAccessToken } from '../utils/orderSecurity';
 import { getSettingsService } from '../modules/settings/settings.service';
 import { sanitizeTemplateParam, sanitizeComponents } from '../utils/whatsappSanitizer';
 import { NotificationTemplateResolver } from './notificationTemplateResolver';
@@ -593,8 +594,11 @@ export class WhatsAppNotificationService {
       // Extract Customer Name
       const customerName = this.extractCustomerName(order, extraParams);
 
-      const orderId = order?.orderNumber || order?.id || extraParams?.orderId || 'N/A';
-      const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
+      const orderId = String(order?.orderNumber || order?.id || extraParams?.orderId || 'N/A');
+      const orderIdentifier = order?.orderNumber || order?.id || (orderId !== 'N/A' ? orderId : '');
+      const orderToken = order?.id ? generateOrderAccessToken(order) : '';
+      const tokenQuery = orderToken ? `?token=${orderToken}` : '';
+      const orderLink = extraParams?.orderLink || (orderIdentifier ? `${siteUrl}/account/orders/${orderIdentifier}${tokenQuery}` : `${siteUrl}/account/orders`);
 
       // Approved single template name strictly set to order_status_update_3dgal
       const templateName = 'order_status_update';
@@ -621,15 +625,15 @@ export class WhatsAppNotificationService {
       }
 
       // Dynamic button URL parameter for Call to Action button (e.g. {{1}} on https://3dgalaxy.com/{{1}})
-      let buttonUrlParam = 'account/orders';
+      let buttonUrlParam = orderIdentifier ? `account/orders/${orderIdentifier}${tokenQuery}` : 'account/orders';
       if (extraParams?.buttonUrl) {
-        buttonUrlParam = String(extraParams.buttonUrl).replace(/^\//, '');
+        buttonUrlParam = String(extraParams.buttonUrl).replace(/^\/+/, '');
       } else if (orderLink) {
         try {
           const parsed = new URL(orderLink);
-          buttonUrlParam = (parsed.pathname.replace(/^\//, '') + parsed.search) || 'account/orders';
+          buttonUrlParam = (parsed.pathname.replace(/^\/+/, '') + parsed.search) || (orderIdentifier ? `account/orders/${orderIdentifier}` : 'account/orders');
         } catch {
-          buttonUrlParam = String(orderLink).replace(/^https?:\/\/[^\/]+\/?/, '') || 'account/orders';
+          buttonUrlParam = String(orderLink).replace(/^https?:\/\/[^\/]+\/?/, '') || (orderIdentifier ? `account/orders/${orderIdentifier}` : 'account/orders');
         }
       }
 

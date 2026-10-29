@@ -9,6 +9,7 @@ import { TrackingService } from '../services/tracking.service';
 import { logger } from '../utils/logger';
 import { calculateEffectiveItemPrice } from './payment';
 import { sysCache } from '../config/cache';
+import { generateOrderAccessToken, verifyOrderAccessToken, verifyOrderEmail } from '../utils/orderSecurity';
 
 export const invalidateOrdersCache = () => {
   sysCache.clearPattern('admin_orders_');
@@ -615,10 +616,56 @@ export const getOrderById = async (req: any, res: Response) => {
 
     const normalizedRole = userRole ? userRole.toLowerCase().replace(/[\s\-_]/g, '') : '';
     const isAdminOrStaff = ['admin', 'superadmin', 'manager', 'staff', 'employee', 'storeowner', 'owner'].includes(normalizedRole);
+
     if (!isAdminOrStaff) {
-      const isGuestCustomer = order.customer?.customerType === 'guest' || !order.customer?.userId;
-      if (!isGuestCustomer && userId && order.customer?.userId && order.customer.userId !== userId) {
-        return res.status(403).json({ error: 'Forbidden. You do not have access to this order.' });
+      const orderToken = (req.query?.token as string) || (req.headers['x-order-token'] as string);
+      const providedEmail = (req.query?.email as string) || (req.headers['x-order-email'] as string);
+      const guestSessionHeader = req.headers['x-guest-session-id'] as string;
+
+      let isAuthorized = false;
+
+      // 1. Authenticated customer who owns the order
+      if (userId && order.customer?.userId && order.customer.userId === userId) {
+        isAuthorized = true;
+      }
+
+      // 2. Verified via secure order access token (e.g. from WhatsApp / email links)
+      if (!isAuthorized && orderToken) {
+        if (verifyOrderAccessToken(orderToken, order)) {
+          isAuthorized = true;
+        }
+      }
+
+      // 3. Verified via matching email address
+      if (!isAuthorized && providedEmail) {
+        if (verifyOrderEmail(providedEmail, order)) {
+          isAuthorized = true;
+        }
+      }
+
+      // 4. Verified via guest session ID match (for immediate post-checkout access)
+      if (!isAuthorized && guestSessionHeader && order.guestSessionId && order.guestSessionId === guestSessionHeader) {
+        isAuthorized = true;
+      }
+
+      if (!isAuthorized) {
+        if (userId && order.customer?.userId && order.customer.userId !== userId) {
+          // A logged-in customer trying to access another customer's order
+          return res.status(403).json({
+            success: false,
+            error: 'You do not have permission to view this order.',
+            code: 'FORBIDDEN_ORDER_ACCESS'
+          });
+        }
+
+        // Guest or unauthenticated access without token/email
+        return res.status(403).json({
+          success: false,
+          error: 'Email verification required to view this order. Please enter the email address used during purchase.',
+          code: 'EMAIL_VERIFICATION_REQUIRED',
+          orderNumber: order.orderNumber,
+          requiresEmail: true
+        });
       }
     }
 
@@ -674,7 +721,9 @@ export const getOrderById = async (req: any, res: Response) => {
 
     order.statusHistory = statusHistory;
 
-    return res.status(200).json(mapOrderWithVariantDetails(order));
+    const mapped = mapOrderWithVariantDetails(order);
+    mapped.accessToken = generateOrderAccessToken(order);
+    return res.status(200).json(mapped);
   } catch (error: any) {
     logger.error(`Error in getOrderById for ID ${id}:`, error);
     return res.status(500).json({ error: 'Order detail retrieval failed', details: error.message });
@@ -957,6 +1006,7 @@ export const createOrder = async (req: any, res: Response) => {
           formattedLine1 = `${name || 'Customer'} | ${phone || ''} | ${addressType} | ${rawLine1}`.trim();
         }
 
+        // Primary dedup: exact match on formatted or raw addressLine1
         let shipAddr = await tx.customerAddress.findFirst({
           where: {
             customerId: customerIdToUse,
@@ -966,6 +1016,21 @@ export const createOrder = async (req: any, res: Response) => {
             ]
           }
         });
+
+        // Secondary dedup: match by city + postalCode + street part (catches pre-saved addresses)
+        if (!shipAddr && postalCode && postalCode !== '100001') {
+          const rawStreetPart = rawLine1.trim().toLowerCase();
+          const candidates = await tx.customerAddress.findMany({
+            where: { customerId: customerIdToUse, city, postalCode }
+          });
+          shipAddr = candidates.find((a: any) => {
+            const existStreet = a.addressLine1.includes('|')
+              ? a.addressLine1.split('|').slice(3).join('|').trim()
+              : a.addressLine1.trim();
+            return existStreet.toLowerCase() === rawStreetPart
+              || a.addressLine1.toLowerCase().includes(rawStreetPart.substring(0, Math.min(rawStreetPart.length, 15)));
+          }) || null;
+        }
 
         if (!shipAddr) {
           shipAddr = await tx.customerAddress.create({
@@ -999,18 +1064,23 @@ export const createOrder = async (req: any, res: Response) => {
           const billCountry = isBillObj ? (billingAddress.country || 'India') : 'India';
 
           if (billAddrLine1 !== rawLine1) {
-            const billAddr = await tx.customerAddress.create({
-              data: {
-                customerId: customerIdToUse,
-                addressLine1: billAddrLine1,
-                addressLine2: billAddrLine2,
-                city: billCity,
-                state: billState,
-                postalCode: billPostalCode,
-                country: billCountry,
-                isDefault: false
-              }
+            let billAddr = await tx.customerAddress.findFirst({
+              where: { customerId: customerIdToUse, OR: [{ addressLine1: billAddrLine1 }], city: billCity, postalCode: billPostalCode }
             });
+            if (!billAddr) {
+              billAddr = await tx.customerAddress.create({
+                data: {
+                  customerId: customerIdToUse,
+                  addressLine1: billAddrLine1,
+                  addressLine2: billAddrLine2,
+                  city: billCity,
+                  state: billState,
+                  postalCode: billPostalCode,
+                  country: billCountry,
+                  isDefault: false
+                }
+              });
+            }
             billingAddressId = billAddr.id;
           }
         }
@@ -1166,20 +1236,9 @@ export const trackOrder = async (req: Request, res: Response) => {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanNum);
     const order = await prisma.order.findFirst({
       where: {
-        AND: [
-          {
-            OR: [
-              { orderNumber: { equals: cleanNum, mode: 'insensitive' } },
-              ...(isUuid ? [{ id: cleanNum }] : [])
-            ]
-          },
-          {
-            customer: {
-              user: {
-                email: { equals: cleanMail, mode: 'insensitive' }
-              }
-            }
-          }
+        OR: [
+          { orderNumber: { equals: cleanNum, mode: 'insensitive' } },
+          ...(isUuid ? [{ id: cleanNum }] : [])
         ]
       },
       include: {
@@ -1202,11 +1261,16 @@ export const trackOrder = async (req: Request, res: Response) => {
     });
 
     if (!order) {
-      return res.status(404).json({ error: 'No order found matching the provided Number and Email' });
+      return res.status(404).json({ error: 'No order found matching the provided Number' });
+    }
+
+    if (!verifyOrderEmail(cleanMail, order)) {
+      return res.status(403).json({ error: 'Email does not match this order. Please enter the email address used during checkout.' });
     }
 
     return res.status(200).json({
       ...mapOrderWithVariantDetails(order),
+      accessToken: generateOrderAccessToken(order),
       statusHistory: [
         {
           id: `status-curr-${order.id}`,

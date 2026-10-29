@@ -325,6 +325,15 @@ import { LoadingService } from '../../core/services/loading.service';
                           }
                         </div>
                       </div>
+
+                      <div class="border-t border-neutral-200/60 dark:border-neutral-800 pt-3">
+                        <a [routerLink]="['/orders', order().orderNumber]" 
+                           [queryParams]="order().accessToken ? { token: order().accessToken } : {}"
+                           class="w-full py-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 no-underline shadow-xs">
+                          <mat-icon class="text-xs">receipt_long</mat-icon>
+                          <span>View Full Order Details →</span>
+                        </a>
+                      </div>
                     </div>
 
                   </div>
@@ -833,6 +842,14 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       const fetchedOrder = res[1] || res;
 
       this.order.set(fetchedOrder);
+      if (typeof window !== 'undefined') {
+        if (fetchedOrder.accessToken) {
+          sessionStorage.setItem(`order_token_${fetchedOrder.orderNumber}`, fetchedOrder.accessToken);
+          sessionStorage.setItem(`order_token_${fetchedOrder.id}`, fetchedOrder.accessToken);
+        }
+        sessionStorage.setItem(`order_email_${fetchedOrder.orderNumber}`, mail);
+        sessionStorage.setItem(`order_email_${fetchedOrder.id}`, mail);
+      }
       this.currentState.set('success');
       this.triggerHorn();
       this.toast.success('Shipment located successfully!');

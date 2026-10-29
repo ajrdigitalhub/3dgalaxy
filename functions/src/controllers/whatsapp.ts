@@ -1640,7 +1640,8 @@ export const handlePreviewOrderStatusMessage = async (req: Request, res: Respons
       });
     }
 
-    const orderLink = extraParams?.orderLink || `${siteUrl}/account/orders`;
+    const targetOrdId = ordId && ordId !== 'N/A' ? ordId : '';
+    const orderLink = extraParams?.orderLink || (targetOrdId ? `${siteUrl}/account/orders/${targetOrdId}` : `${siteUrl}/account/orders`);
 
     const previewText = `Hello ${name} 👋,\n\n📢 *Your Order Status Has Been Updated*\n\nWe're pleased to inform you that your order has reached a new stage.\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📦 *ORDER DETAILS*\n\n🧾 Order ID: *${ordId}*\n\n📌 Current Status: *${content.currentStatus}*\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n📝 *Update*\n\n${content.statusDescription}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n${content.additionalInformation}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🔗 *View Order*\n\n${orderLink}\n\nNeed assistance?\n\nOur support team is always here to help.\n\nThank you for choosing *${siteName}*.\n\nWe appreciate your trust and look forward to serving you again.\n\nBest Regards,\n\n*${siteName} Team*`;
 
