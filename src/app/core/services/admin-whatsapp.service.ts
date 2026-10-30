@@ -86,7 +86,7 @@ export class AdminWhatsAppService {
     const unreadOnly = this.unreadOnlyFilter();
 
     return list.filter((conv) => {
-      if (status !== 'ALL' && conv.status !== status) return false;
+      if (status !== 'ALL' && (conv.status || '').toUpperCase() !== status.toUpperCase()) return false;
       if (aiMode !== 'ALL' && conv.aiMode !== aiMode) return false;
       if (unreadOnly && conv.unreadCount === 0) return false;
 

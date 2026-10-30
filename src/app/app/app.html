@@ -1455,10 +1455,12 @@
   <app-recent-purchase-popup />
   }
 
+  @if (!isAdminRoute() && !isAuthRoute()) {
   <app-notification-popup></app-notification-popup>
+  }
 
   <!-- Promotional Campaign Popup Renderer -->
-  @if (!isAdminRoute()) {
+  @if (!isAdminRoute() && !isAuthRoute()) {
   <app-promo-popup></app-promo-popup>
   }
 

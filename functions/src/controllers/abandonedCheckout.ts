@@ -289,13 +289,22 @@ export const recoverCartByToken = async (req: Request, res: Response) => {
 };
 
 export const getAdminAbandonedCheckouts = async (req: Request, res: Response) => {
-  const { searchQuery, status, isGuest, minVal, maxVal, dateFrom, dateTo } = req.query;
+  const { searchQuery, search, status, isGuest, minVal, minTotal, maxVal, maxTotal, dateFrom, dateTo } = req.query;
 
   try {
     const where: any = {};
 
-    if (status) {
-      where.recoveryStatus = String(status);
+    if (status && String(status).trim() && String(status).toUpperCase() !== 'ALL') {
+      const st = String(status).trim().toUpperCase();
+      if (st === 'ACTIVE') {
+        where.recoveryStatus = { in: ['Active', 'active', 'Pending', 'pending', 'ACTIVE'] };
+      } else if (st === 'RECOVERED' || st === 'CONVERTED') {
+        where.recoveryStatus = { in: ['Converted', 'converted', 'Recovered', 'recovered', 'CONVERTED', 'RECOVERED'] };
+      } else if (st === 'EXPIRED') {
+        where.recoveryStatus = { in: ['Expired', 'expired', 'EXPIRED'] };
+      } else {
+        where.recoveryStatus = { equals: String(status).trim(), mode: 'insensitive' };
+      }
     }
 
     if (isGuest !== undefined) {
@@ -306,23 +315,48 @@ export const getAdminAbandonedCheckouts = async (req: Request, res: Response) =>
       }
     }
 
-    if (minVal || maxVal) {
-      where.cartTotal = {};
-      if (minVal) where.cartTotal.gte = Number(minVal);
-      if (maxVal) where.cartTotal.lte = Number(maxVal);
+    const effectiveMin = minTotal !== undefined ? minTotal : minVal;
+    const effectiveMax = maxTotal !== undefined ? maxTotal : maxVal;
+    if (effectiveMin !== undefined || effectiveMax !== undefined) {
+      const cartTotalCond: any = {};
+      if (effectiveMin !== undefined && effectiveMin !== '' && !isNaN(Number(effectiveMin))) {
+        cartTotalCond.gte = Number(effectiveMin);
+      }
+      if (effectiveMax !== undefined && effectiveMax !== '' && !isNaN(Number(effectiveMax))) {
+        cartTotalCond.lte = Number(effectiveMax);
+      }
+      if (Object.keys(cartTotalCond).length > 0) {
+        where.cartTotal = cartTotalCond;
+      }
     }
 
     if (dateFrom || dateTo) {
-      where.lastActivity = {};
-      if (dateFrom) where.lastActivity.gte = new Date(String(dateFrom));
-      if (dateTo) where.lastActivity.lte = new Date(String(dateTo));
+      const dateCond: any = {};
+      if (dateFrom && String(dateFrom).trim()) {
+        const dFrom = new Date(String(dateFrom).trim());
+        if (!isNaN(dFrom.getTime())) {
+          dFrom.setHours(0, 0, 0, 0);
+          dateCond.gte = dFrom;
+        }
+      }
+      if (dateTo && String(dateTo).trim()) {
+        const dTo = new Date(String(dateTo).trim());
+        if (!isNaN(dTo.getTime())) {
+          dTo.setHours(23, 59, 59, 999);
+          dateCond.lte = dTo;
+        }
+      }
+      if (Object.keys(dateCond).length > 0) {
+        where.lastActivity = dateCond;
+      }
     }
 
-    if (searchQuery) {
-      const q = String(searchQuery);
+    const rawSearch = search || searchQuery;
+    if (rawSearch && String(rawSearch).trim()) {
+      const q = String(rawSearch).trim();
       where.OR = [
         { email: { contains: q, mode: 'insensitive' } },
-        { mobile: { contains: q } },
+        { mobile: { contains: q, mode: 'insensitive' } },
         { customerName: { contains: q, mode: 'insensitive' } },
         { sessionId: { contains: q, mode: 'insensitive' } }
       ];

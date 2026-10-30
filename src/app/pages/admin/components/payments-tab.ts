@@ -34,11 +34,11 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
           <div class="p-5 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-4 gap-3 bg-zinc-50/50 dark:bg-zinc-900/50">
             <div class="space-y-1">
               <span class="block text-[8px] font-black text-zinc-400 uppercase">Search</span>
-              <input type="text" [(ngModel)]="searchQuery" placeholder="Search Tx ID, Customer ID..." class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
+              <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Search Tx ID, Customer ID..." class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none">
             </div>
             <div class="space-y-1">
               <span class="block text-[8px] font-black text-zinc-400 uppercase">Gateway</span>
-              <select [(ngModel)]="filterGateway" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
+              <select [ngModel]="filterGateway()" (ngModelChange)="filterGateway.set($event)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
                 <option value="">All Gateways</option>
                 <option value="razorpay">Razorpay</option>
                 <option value="cashfree">Cashfree</option>
@@ -47,7 +47,7 @@ import { ToastService } from '../../../shared/components/toast/toast.service';
             </div>
             <div class="space-y-1">
               <span class="block text-[8px] font-black text-zinc-400 uppercase">Status</span>
-              <select [(ngModel)]="filterStatus" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
+              <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)" class="w-full px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none cursor-pointer">
                 <option value="">All Statuses</option>
                 <option value="Captured">Captured</option>
                 <option value="Pending">Pending</option>
@@ -282,9 +282,9 @@ export class AdminPaymentsTab {
   selectedTx = signal<any | null>(null);
 
   // Filters
-  searchQuery = '';
-  filterGateway = '';
-  filterStatus = '';
+  searchQuery = signal('');
+  filterGateway = signal('');
+  filterStatus = signal('');
 
   // Refund Launcher
   refundAmount = 0;
@@ -323,12 +323,19 @@ export class AdminPaymentsTab {
   }
 
   filteredTransactions = computed(() => {
+    const gateway = this.filterGateway().toLowerCase().trim();
+    const status = this.filterStatus().toLowerCase().trim();
+    const q = this.searchQuery().toLowerCase().trim();
     return this.transactions().filter((t) => {
       if (!t) return false;
-      if (this.filterGateway && String(t.gatewayName || t.paymentMethod || '').toLowerCase() !== this.filterGateway.toLowerCase()) return false;
-      if (this.filterStatus && (t.status !== this.filterStatus && t.paymentStatus !== this.filterStatus)) return false;
-      if (this.searchQuery) {
-        const q = this.searchQuery.toLowerCase();
+      if (gateway && String(t.gatewayName || t.paymentMethod || '').toLowerCase() !== gateway) return false;
+      if (status) {
+        const s1 = String(t.status || '').toLowerCase();
+        const s2 = String(t.paymentStatus || '').toLowerCase();
+        if (s1 !== status && s2 !== status) return false;
+      }
+      if (q) {
+
         const idMatch = t.id ? String(t.id).toLowerCase().includes(q) : false;
         const orderMatch = t.orderId ? String(t.orderId).toLowerCase().includes(q) : false;
         const orderNumMatch = t.orderNumber ? String(t.orderNumber).toLowerCase().includes(q) : false;

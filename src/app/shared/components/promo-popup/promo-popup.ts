@@ -39,7 +39,7 @@ interface CountdownTime {
         <div
           [class]="isPreviewMode
             ? 'absolute inset-0 z-30 transition-opacity duration-300 rounded-2xl flex items-center justify-center p-2 overflow-hidden'
-            : 'fixed inset-0 z-50 transition-opacity duration-300 animate-fadeIn'"
+            : 'fixed inset-0 z-[9990] transition-opacity duration-300 animate-fadeIn'"
           [class.bg-black-30]="camp.overlay === 'light'"
           [class.bg-black-70]="camp.overlay === 'dark'"
           [class.bg-black-50-blur]="camp.overlay === 'blur'"
@@ -50,7 +50,7 @@ interface CountdownTime {
           <div
             [class]="isPreviewMode
               ? 'relative z-30 pointer-events-auto flex items-center justify-center w-full max-h-full'
-              : 'fixed z-50 p-2 sm:p-4 transition-all duration-300 pointer-events-auto flex items-center justify-center max-w-[100vw] max-h-[100vh]'"
+              : 'fixed z-[9990] p-2 sm:p-4 transition-all duration-300 pointer-events-auto flex items-center justify-center max-w-[100vw] max-h-[100vh]'"
             [ngClass]="isPreviewMode ? '' : getPositionClasses(camp.popupPosition || 'center')"
           >
             <div
@@ -293,6 +293,8 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
         this.setupTrigger(eligible);
       } else if (!eligible && this.internalVisible()) {
         this.internalVisible.set(false);
+    this.ns.isAdPopupActive.set(false);
+    this.ns.adPopupDismissedTime.set(Date.now());
         this.internalActiveCampaign.set(null);
         this.clearTimer();
         this.removeListeners();
@@ -309,6 +311,7 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.ns.isAdPopupActive.set(false);
     this.clearTimer();
     this.removeListeners();
   }
@@ -376,7 +379,26 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
 
   private triggerShow(camp: any) {
     if (!camp || !camp.id) return;
+
+    if (!this.isPreviewMode) {
+      // 1. Mutual exclusion: If notification prompt is active, defer promo popup
+      if (this.ns.isPromptVisible) {
+        setTimeout(() => this.triggerShow(camp), 4000);
+        return;
+      }
+
+      // 2. Cooldown buffer: If notification prompt was recently dismissed (< 8s), wait for cooldown
+      const timeSincePrompt = Date.now() - this.ns.promptDismissedTime();
+      if (this.ns.promptDismissedTime() > 0 && timeSincePrompt < 8000) {
+        setTimeout(() => this.triggerShow(camp), 8000 - timeSincePrompt + 1000);
+        return;
+      }
+    }
+
     this.internalVisible.set(true);
+    if (!this.isPreviewMode) {
+      this.ns.isAdPopupActive.set(true);
+    }
 
     // Record impression analytics via API and local frequency tracker
     this.ds.recordAdImpression(camp.id);
@@ -465,6 +487,8 @@ export class PromoPopupComponent implements OnInit, OnDestroy {
     }
 
     this.internalVisible.set(false);
+    this.ns.isAdPopupActive.set(false);
+    this.ns.adPopupDismissedTime.set(Date.now());
     this.internalActiveCampaign.set(null);
     this.clearTimer();
     this.removeListeners();
